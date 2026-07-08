@@ -368,16 +368,7 @@ private struct MessengerTodoComposer: View {
                 .onSubmit(submit)
 
             HStack(spacing: 10) {
-                Button {
-                    isFocused = true
-                } label: {
-                    Image(systemName: "plus")
-                        .font(.title3.weight(.regular))
-                        .frame(width: 30, height: 30)
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
-                .accessibilityLabel("タスク入力に戻る")
+                VolumeChip(volume: $volume)
 
                 DirectionChip(selectedDirectionID: $selectedDirectionID, directions: directions)
                     .fixedSize(horizontal: true, vertical: false)
@@ -386,8 +377,6 @@ private struct MessengerTodoComposer: View {
                 DateChip(dateOption: $dateOption)
 
                 Spacer(minLength: 0)
-
-                VolumeChip(volume: $volume)
 
                 Button(action: submit) {
                     Image(systemName: "arrow.up")
