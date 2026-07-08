@@ -18,6 +18,23 @@ struct ThruFlowTests {
         #expect(errors == [.emptyName])
     }
 
+    @Test func directionDraftNormalizesSymbolToFirstEmojiCharacter() {
+        let draft = DirectionDraft(symbolName: "📚🎯")
+
+        #expect(draft.normalizedSymbolName == "📚")
+    }
+
+    @Test func directionDraftRejectsPlainTextSymbol() {
+        let draft = DirectionDraft(symbolName: "book")
+
+        #expect(draft.normalizedSymbolName == "🎯")
+    }
+
+    @Test func emojiValidationSupportsJoinedEmojiAndSkinTone() {
+        #expect(EmojiValidation.normalizedSingleEmoji(from: "🧑🏽‍💻") == "🧑🏽‍💻")
+        #expect(EmojiValidation.normalizedSingleEmoji(from: "👍🏽") == "👍🏽")
+    }
+
     @Test func enabledGoalRequiresPositiveTargetPeriodAndUnit() {
         let draft = DirectionDraft(
             name: "Training",

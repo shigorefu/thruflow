@@ -74,6 +74,12 @@ Reason: Today capture should be fast and visually quiet, with Direction availabl
 
 Task rows use the selected Direction color in Today. Tasks captured without a selected Direction route to the automatic `タスク` Direction but render without a Direction color.
 
+### D-011: Direction icons use local Unicode emoji
+
+Direction icons are Unicode emoji strings. The picker stores recent emoji locally, keeps the latest 20 values, and removes duplicates. Manual emoji input is normalized to the first valid `Character`; plain text is rejected and falls back to the default `🎯`.
+
+Reason: using Unicode keeps the model simple and supports ZWJ and skin tone emoji without image assets or third-party emoji libraries.
+
 ## Current Risks
 
 - The project deployment targets are set to OS version 26.5, which may restrict local simulator/device availability.
