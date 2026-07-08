@@ -60,7 +60,13 @@ private struct FlowMenuBarLabel: View {
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
 
     var body: some View {
-        Label(menuTitle, systemImage: "timer")
+        if activeFlowStore.timerState == nil {
+            Label("Flow", systemImage: "timer")
+        } else {
+            Text(menuTitle)
+                .font(.system(.body, design: .monospaced))
+                .monospacedDigit()
+        }
     }
 
     private var menuTitle: String {

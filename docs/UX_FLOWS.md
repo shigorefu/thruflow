@@ -21,6 +21,14 @@ Today should show progress in concrete terms:
 
 Empty states should suggest creating a Direction or Todo without implying the day has failed.
 
+Today tasks are visually grouped by Direction type:
+
+- Must;
+- Normal;
+- Bonus, only when there are Bonus tasks.
+
+Generated Must tasks start as editable task fields with the Direction in the placeholder, so the user can replace "Task (Reading)" with a concrete book or action.
+
 ## Direction Management
 
 Core actions:

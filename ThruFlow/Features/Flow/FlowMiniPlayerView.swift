@@ -18,12 +18,18 @@ struct FlowMiniPlayerView: View {
     @State private var showsConfiguration = false
     @State private var resultText = ""
 
+    private let todayFilter = TodayTodoFilter()
+
     private var activeDirections: [Direction] {
         directions.filter { !$0.isArchived }
     }
 
     private var activeTodos: [Todo] {
         todos.filter { !$0.isArchived && !$0.isDeleted }
+    }
+
+    private var todayTodos: [Todo] {
+        activeTodos.filter { todayFilter.includes($0) }
     }
 
     private var selectedDirection: Direction? {
@@ -46,7 +52,7 @@ struct FlowMiniPlayerView: View {
         .sheet(isPresented: $showsConfiguration) {
             FlowConfigurationView(
                 directions: activeDirections,
-                todos: activeTodos,
+                todos: todayTodos,
                 selectedDirectionID: $activeFlowStore.selectedDirectionID,
                 selectedTodoID: $activeFlowStore.selectedTodoID,
                 selectedMode: $activeFlowStore.selectedMode,
@@ -93,6 +99,8 @@ struct FlowMiniPlayerView: View {
                             .accessibilityLabel("残り時間 \(activeFlowStore.remainingText(now: now))")
                     }
 
+                    todayTaskMenu
+
                     transportControls
                 }
                 .padding(.horizontal, 14)
@@ -135,6 +143,42 @@ struct FlowMiniPlayerView: View {
         .menuStyle(.borderlessButton)
         .accessibilityLabel("Flowモード")
         .disabled(activeFlowStore.timerState != nil)
+    }
+
+    private var todayTaskMenu: some View {
+        Menu {
+            Button {
+                activeFlowStore.selectedTodoID = nil
+            } label: {
+                menuRow(text: "タスクなし", isSelected: activeFlowStore.selectedTodoID == nil)
+            }
+
+            if !todayTodos.isEmpty {
+                Divider()
+
+                ForEach(todayTodos) { todo in
+                    Button {
+                        activeFlowStore.configure(direction: todo.direction, todo: todo)
+                    } label: {
+                        menuRow(text: todoMenuTitle(todo), isSelected: activeFlowStore.selectedTodoID == todo.id)
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 5) {
+                Image(systemName: "checklist")
+                    .imageScale(.small)
+                Text(selectedTodo.map(todoMenuTitle) ?? "今日タスク")
+                    .lineLimit(1)
+            }
+            .font(.caption.weight(.semibold))
+            .padding(.horizontal, 9)
+            .padding(.vertical, 6)
+            .background(Color.primary.opacity(0.08))
+            .clipShape(Capsule())
+        }
+        .menuStyle(.borderlessButton)
+        .accessibilityLabel("今日のタスクを選択")
     }
 
     private var playerArtwork: some View {
@@ -203,13 +247,13 @@ struct FlowMiniPlayerView: View {
 
     private var transportControls: some View {
         HStack(spacing: 6) {
-            if canSeek {
-                seekBackwardButton
+            if activeFlowStore.timerState != nil {
+                destroyButton
+                stopButton
             }
 
-            if activeFlowStore.timerState != nil {
-                stopButton
-                destroyButton
+            if canSeek {
+                seekBackwardButton
             }
 
             primaryButton
@@ -431,6 +475,26 @@ struct FlowMiniPlayerView: View {
         let taskInbox = DefaultDirections.makeTaskInbox()
         modelContext.insert(taskInbox)
         return taskInbox
+    }
+
+    @ViewBuilder
+    private func menuRow(text: String, isSelected: Bool) -> some View {
+        if isSelected {
+            Label(text, systemImage: "checkmark")
+        } else {
+            Text(text)
+        }
+    }
+
+    private func todoMenuTitle(_ todo: Todo) -> String {
+        let title = todo.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let taskText = title.isEmpty ? "タスク" : title
+
+        guard let direction = todo.direction else {
+            return taskText
+        }
+
+        return "\(taskText)（\(direction.name)）"
     }
 }
 
