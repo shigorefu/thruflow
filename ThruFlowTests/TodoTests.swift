@@ -92,4 +92,61 @@ struct TodoTests {
         #expect(filter.includes(todo, on: Date(timeIntervalSince1970: 86_400 + 60)))
         #expect(!filter.includes(todo, on: Date(timeIntervalSince1970: 0)))
     }
+
+    @Test func dailyMustDirectionCreatesTodayTodoDraft() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+
+        let direction = Direction(
+            name: "読書",
+            type: .must,
+            goalTarget: 1,
+            goalPeriod: .daily,
+            goalUnit: .focusBlocks,
+            goalSchedule: .everyDay
+        )
+        let planner = RequiredTodoPlanner(calendar: calendar)
+        let date = Date(timeIntervalSince1970: 0)
+        let todo = planner.makeRequiredTodo(for: direction, on: date)
+
+        #expect(todo?.title == "読書")
+        #expect(todo?.measurement == .focusBlocks)
+        #expect(todo?.plannedAmount == 1)
+        #expect(todo?.scheduledDate == date)
+    }
+
+    @Test func weeklyCountWithoutSelectedWeekdaysDoesNotCreateTodayTodo() {
+        let direction = Direction(
+            name: "筋トレ",
+            type: .must,
+            goalTarget: 3,
+            goalPeriod: .weekly,
+            goalUnit: .occurrences,
+            goalSchedule: .weeklyCount,
+            weeklyTargetCount: 3
+        )
+
+        #expect(!RequiredTodoPlanner().shouldAppearToday(direction, on: Date(timeIntervalSince1970: 0)))
+    }
+
+    @Test func selectedWeekdayMustDirectionAppearsOnlyOnThatWeekday() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+
+        let monday = Date(timeIntervalSince1970: 4 * 86_400)
+        let tuesday = Date(timeIntervalSince1970: 5 * 86_400)
+        let direction = Direction(
+            name: "Anki",
+            type: .must,
+            goalTarget: 1,
+            goalPeriod: .weekly,
+            goalUnit: .focusBlocks,
+            goalSchedule: .weekdays,
+            weekdayMask: GoalWeekday.monday.rawValue
+        )
+        let planner = RequiredTodoPlanner(calendar: calendar)
+
+        #expect(planner.shouldAppearToday(direction, on: monday))
+        #expect(!planner.shouldAppearToday(direction, on: tuesday))
+    }
 }

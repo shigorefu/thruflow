@@ -209,6 +209,7 @@ struct FlowMiniPlayerView: View {
 
             if activeFlowStore.timerState != nil {
                 stopButton
+                destroyButton
             }
 
             primaryButton
@@ -258,7 +259,20 @@ struct FlowMiniPlayerView: View {
         }
         .buttonStyle(.plain)
         .foregroundStyle(.secondary)
-        .accessibilityLabel("Flowをリセット")
+        .accessibilityLabel("Flowを停止して保存")
+    }
+
+    private var destroyButton: some View {
+        Button(role: .destructive) {
+            activeFlowStore.destroy(modelContext: modelContext)
+        } label: {
+            Image(systemName: "trash.fill")
+                .font(.callout.weight(.semibold))
+                .frame(width: 34, height: 34)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.red)
+        .accessibilityLabel("Flowを破壊")
     }
 
     private var primaryButton: some View {
@@ -432,7 +446,7 @@ private struct FlowConfigurationView: View {
     @Environment(\.dismiss) private var dismiss
 
     private var filteredTodos: [Todo] {
-        guard let selectedDirectionID else { return [] }
+        guard let selectedDirectionID else { return todos }
         return todos.filter { $0.direction?.id == selectedDirectionID }
     }
 
@@ -452,7 +466,7 @@ private struct FlowConfigurationView: View {
                         .pickerStyle(.inline)
                     }
 
-                    section("タスク") {
+                    section("記録するタスク（任意）") {
                         Picker("タスク", selection: $selectedTodoID) {
                             Text("具体的なタスクなし").tag(UUID?.none)
 
@@ -493,6 +507,15 @@ private struct FlowConfigurationView: View {
                 if !filteredTodos.contains(where: { $0.id == selectedTodoID }) {
                     selectedTodoID = nil
                 }
+            }
+            .onChange(of: selectedTodoID) { _, id in
+                guard selectedDirectionID == nil,
+                      let id,
+                      let todo = todos.first(where: { $0.id == id }) else {
+                    return
+                }
+
+                selectedDirectionID = todo.direction?.id
             }
         }
     }

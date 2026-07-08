@@ -15,17 +15,21 @@ struct FlowProgressCalculator {
             direction.addFocusDuration(seconds: focusedSeconds, now: now)
         }
 
-        guard let todo else { return }
+        guard let todo,
+              let goalUnit = direction?.goalUnit else { return }
 
-        todo.addFocusDuration(seconds: focusedSeconds, now: now)
-
-        switch todo.measurement {
-        case .checkbox:
+        switch goalUnit {
+        case .occurrences:
             break
         case .focusBlocks:
+            todo.addFocusDuration(seconds: focusedSeconds, now: now)
             let completedBlocks = BlockUnit.wholeBlocks(forFocusedSeconds: todo.recordedFocusSeconds)
             todo.setProgress(completedBlocks, now: now)
         case .minutes:
+            todo.addFocusDuration(seconds: focusedSeconds, now: now)
+            todo.setProgress(todo.recordedFocusSeconds / 60, now: now)
+        case .hours:
+            todo.addFocusDuration(seconds: focusedSeconds, now: now)
             todo.setProgress(todo.recordedFocusSeconds / 60, now: now)
         }
     }

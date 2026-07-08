@@ -123,6 +123,13 @@ Minimum sections:
 
 Neutral Directions do not appear in Today by themselves. Their Todos appear only when created or scheduled.
 
+MVP generation rule:
+
+- a Must Direction with `everyDay` appears as a Todo for today;
+- a Must Direction with explicit weekdays appears only on matching weekdays;
+- a weekly-count Direction without explicit weekdays remains a weekly goal and does not create a daily Todo by itself;
+- generated Todos use the Direction name, today's scheduled date, and a measurement derived from the Direction goal unit.
+
 ## Successful Day
 
 A day is complete when every Must requirement that applies to that day is complete.
@@ -159,6 +166,12 @@ Fields:
 - `updatedAt`.
 
 Intent answers "What am I going to do?" Result answers "What actually happened?" These fields must stay separate.
+
+When a Flow is attached to a Todo, progress is applied from the Direction goal unit:
+
+- `occurrences`: no timer progress is written to the Todo;
+- `focusBlocks`: focused seconds are accumulated and converted to whole Blocks;
+- `minutes` and `hours`: focused seconds are accumulated and converted to minutes.
 
 ## Flow Modes
 

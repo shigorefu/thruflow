@@ -77,8 +77,22 @@ struct FlowTests {
     }
 
     @Test func focusProgressStaysAttachedToItsDirectionAndTodo() {
-        let reading = Direction(name: "読書", type: .must)
-        let anki = Direction(name: "Anki", type: .must)
+        let reading = Direction(
+            name: "読書",
+            type: .must,
+            goalTarget: 1,
+            goalPeriod: .daily,
+            goalUnit: .focusBlocks,
+            goalSchedule: .everyDay
+        )
+        let anki = Direction(
+            name: "Anki",
+            type: .must,
+            goalTarget: 1,
+            goalPeriod: .daily,
+            goalUnit: .focusBlocks,
+            goalSchedule: .everyDay
+        )
         let readingTodo = Todo(title: "第8章", direction: reading, measurement: .focusBlocks, plannedAmount: 1)
         let ankiTodo = Todo(title: "復習", direction: anki, measurement: .focusBlocks, plannedAmount: 1)
         let calculator = FlowProgressCalculator()
@@ -95,7 +109,14 @@ struct FlowTests {
     }
 
     @Test func todoReceivesFullBlockAfterAccumulatedFocusMinutesReachTwentyFive() {
-        let direction = Direction(name: "仕事", type: .neutral)
+        let direction = Direction(
+            name: "仕事",
+            type: .neutral,
+            goalTarget: 2,
+            goalPeriod: .daily,
+            goalUnit: .focusBlocks,
+            goalSchedule: .everyDay
+        )
         let todo = Todo(title: "資料", direction: direction, measurement: .focusBlocks, plannedAmount: 2)
         let calculator = FlowProgressCalculator()
 
@@ -105,6 +126,43 @@ struct FlowTests {
         #expect(todo.recordedFocusSeconds == 25 * 60)
         #expect(todo.actualProgress == 1)
         #expect(direction.recordedFocusSeconds == 25 * 60)
+    }
+
+    @Test func occurrenceDirectionDoesNotWriteFlowProgressToTodo() {
+        let direction = Direction(
+            name: "筋トレ",
+            type: .must,
+            goalTarget: 1,
+            goalPeriod: .daily,
+            goalUnit: .occurrences,
+            goalSchedule: .everyDay
+        )
+        let todo = Todo(title: "筋トレ", direction: direction, measurement: .checkbox)
+        let calculator = FlowProgressCalculator()
+
+        calculator.applyFocusDuration(seconds: 25 * 60, direction: direction, todo: todo)
+
+        #expect(direction.recordedFocusSeconds == 25 * 60)
+        #expect(todo.recordedFocusSeconds == 0)
+        #expect(todo.actualProgress == 0)
+    }
+
+    @Test func minuteDirectionWritesFocusedMinutesToTodo() {
+        let direction = Direction(
+            name: "日本語",
+            type: .must,
+            goalTarget: 30,
+            goalPeriod: .daily,
+            goalUnit: .minutes,
+            goalSchedule: .everyDay
+        )
+        let todo = Todo(title: "日本語", direction: direction, measurement: .minutes, plannedAmount: 30)
+        let calculator = FlowProgressCalculator()
+
+        calculator.applyFocusDuration(seconds: 12 * 60, direction: direction, todo: todo)
+
+        #expect(todo.recordedFocusSeconds == 12 * 60)
+        #expect(todo.actualProgress == 12)
     }
 
     @Test func seekForwardStepsThroughTwelveTwentyFiveFiftyThenAddsWholeBlocks() {
