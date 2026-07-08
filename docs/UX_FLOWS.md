@@ -124,6 +124,17 @@ At 50 minutes, offer:
 
 All extensions belong to the same FlowSession.
 
+## Statistics
+
+Statistics is a separate app section. The main view uses a contribution-style heatmap of Flow activity by day.
+
+Filters:
+
+- period: 90 days, 180 days, or 1 year;
+- Direction: all Directions or one selected Direction.
+
+Each cell represents one local calendar day. Cell intensity represents total focused time. If multiple Directions contributed on the same day, the cell uses a weighted color mix based on each Direction's focused duration.
+
 ## Day Completion Feedback
 
 When the day first becomes complete, record one DailyCompletion event and show a simple visual feedback in MVP.

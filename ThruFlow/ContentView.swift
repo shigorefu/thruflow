@@ -21,6 +21,9 @@ struct ContentView: View {
 
                 Label("方向", systemImage: "point.3.connected.trianglepath.dotted")
                     .tag(AppSection.directions)
+
+                Label("統計", systemImage: "square.grid.3x3")
+                    .tag(AppSection.statistics)
             }
             .navigationTitle("スルフロ")
         } detail: {
@@ -29,6 +32,8 @@ struct ContentView: View {
                 TodayView()
             case .directions:
                 DirectionListView()
+            case .statistics:
+                StatisticsView()
             }
         }
         .safeAreaInset(edge: .bottom) {
@@ -49,6 +54,12 @@ struct ContentView: View {
                     Label("方向", systemImage: "point.3.connected.trianglepath.dotted")
                 }
                 .tag(AppSection.directions)
+
+            StatisticsView()
+                .tabItem {
+                    Label("統計", systemImage: "square.grid.3x3")
+                }
+                .tag(AppSection.statistics)
         }
         .safeAreaInset(edge: .bottom) {
             if tabSelection != .today {
@@ -62,6 +73,7 @@ struct ContentView: View {
 private enum AppSection: Hashable {
     case today
     case directions
+    case statistics
 }
 
 #Preview {

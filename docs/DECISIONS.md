@@ -110,6 +110,12 @@ Reason: tests should not read or mutate the user's local app store, and stale de
 
 Reason: adding ActivityKit UI requires target/capability/signing project changes. Those must be done deliberately in Xcode or in a separate target-management slice without changing Bundle ID, Signing Team, or CloudKit configuration by accident.
 
+### D-016: Statistics is derived from FlowSession history
+
+The Statistics tab reads existing `FlowSession` records and does not introduce a separate daily aggregate model in MVP. The heatmap groups focused seconds by local calendar day. When several Directions appear on the same day, the cell color is a weighted mix of Direction colors by focused duration.
+
+Reason: derived statistics avoid duplicated persistence while the Flow history model is still evolving.
+
 ## Current Risks
 
 - The project deployment targets are set to OS version 26.5, which may restrict local simulator/device availability.
