@@ -38,7 +38,6 @@ struct RequiredTodoPlanner {
             guard todo.direction?.id == direction.id,
                   !todo.isArchived,
                   !todo.isDeleted,
-                  todo.title == direction.name,
                   let scheduledDate = todo.scheduledDate else {
                 return false
             }
@@ -56,7 +55,7 @@ struct RequiredTodoPlanner {
         let target = max(1, direction.goalTarget ?? direction.weeklyTargetCount ?? 1)
 
         return Todo(
-            title: direction.name,
+            title: "",
             direction: direction,
             measurement: measurement(for: goalUnit),
             plannedAmount: plannedAmount(for: goalUnit, target: target),

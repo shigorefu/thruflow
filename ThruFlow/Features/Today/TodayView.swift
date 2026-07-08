@@ -21,6 +21,7 @@ struct TodayView: View {
     @State private var newTodoVolume: QuickTodoVolume = .checkbox
     @State private var newTodoDateOption: QuickTodoDate = .today
     @State private var newTodoError: String?
+    @AppStorage("today.groupOrder") private var groupOrderRaw = TodayTodoGroup.defaultOrderRaw
 
     private let filter = TodayTodoFilter()
     private let requiredPlanner = RequiredTodoPlanner()
@@ -35,61 +36,34 @@ struct TodayView: View {
         todos.filter { filter.includes($0) }
     }
 
+    private var todayGroups: [TodayTodoGroup] {
+        TodayTodoGroup.groups(for: todayTodos, order: groupOrder)
+    }
+
+    private var groupOrder: [DirectionType] {
+        TodayTodoGroup.order(from: groupOrderRaw)
+    }
+
     var body: some View {
         List {
-            if todayTodos.isEmpty {
+            if todayGroups.isEmpty {
                 EmptyRow(text: "今日のタスクはまだありません。")
                     .listRowSeparator(.hidden)
             } else {
-                ForEach(todayTodos) { todo in
-                    TodoRow(
-                        todo: todo,
-                        summary: progress.summary(
-                            measurement: todo.measurement,
-                            plannedAmount: todo.plannedAmount,
-                            actualProgress: todo.actualProgress,
-                            focusDurationSeconds: todo.focusDurationSeconds
-                        )
-                    )
-                    .onTapGesture(count: 2) {
-                        editingTodo = todo
+                ForEach(todayGroups) { group in
+                    Section {
+                        ForEach(group.todos) { todo in
+                            todoRow(todo)
+                        }
+                        .onMove { source, destination in
+                            moveTodos(in: group.type, from: source, to: destination)
+                        }
+                    } header: {
+                        TodaySectionHeader(group: group)
                     }
-                    .contextMenu {
-                        Button("編集", systemImage: "pencil") {
-                            editingTodo = todo
-                        }
-
-                        Menu("移動") {
-                            Button("今日") {
-                                todo.reschedule(to: .now)
-                            }
-                            Button("明日") {
-                                todo.reschedule(to: Calendar.current.date(byAdding: .day, value: 1, to: .now))
-                            }
-                            Button("日付なし") {
-                                todo.reschedule(to: nil)
-                            }
-                        }
-
-                        Divider()
-
-                        Button("Flowを開始", systemImage: "play.fill") {
-                            activeFlowStore.configure(direction: todo.direction, todo: todo)
-                        }
-
-                        Divider()
-
-                        Button("削除", systemImage: "trash", role: .destructive) {
-                            todo.softDelete()
-                        }
-                    }
-                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                        Button("削除", systemImage: "trash", role: .destructive) {
-                            todo.softDelete()
-                        }
-                    }
+                    .listSectionSeparator(.hidden)
                 }
-                .onMove(perform: moveTodos)
+                .onMove(perform: moveGroups)
             }
         }
         .listStyle(.plain)
@@ -122,11 +96,80 @@ struct TodayView: View {
         }
     }
 
-    private func moveTodos(from source: IndexSet, to destination: Int) {
-        var reordered = todayTodos
+    private func todoRow(_ todo: Todo) -> some View {
+        TodoRow(
+            todo: todo,
+            summary: progress.summary(
+                measurement: todo.measurement,
+                plannedAmount: todo.plannedAmount,
+                actualProgress: todo.actualProgress,
+                focusDurationSeconds: todo.focusDurationSeconds
+            )
+        )
+        .onTapGesture(count: 2) {
+            editingTodo = todo
+        }
+        .contextMenu {
+            Button("編集", systemImage: "pencil") {
+                editingTodo = todo
+            }
+
+            Menu("移動") {
+                Button("今日") {
+                    todo.reschedule(to: .now)
+                }
+                Button("明日") {
+                    todo.reschedule(to: Calendar.current.date(byAdding: .day, value: 1, to: .now))
+                }
+                Button("日付なし") {
+                    todo.reschedule(to: nil)
+                }
+            }
+
+            Divider()
+
+            Button("Flowを開始", systemImage: "play.fill") {
+                activeFlowStore.configure(direction: todo.direction, todo: todo)
+            }
+
+            Divider()
+
+            Button("削除", systemImage: "trash", role: .destructive) {
+                todo.softDelete()
+            }
+        }
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            Button("削除", systemImage: "trash", role: .destructive) {
+                todo.softDelete()
+            }
+        }
+    }
+
+    private func moveGroups(from source: IndexSet, to destination: Int) {
+        var visibleOrder = todayGroups.map(\.type)
+        visibleOrder.move(fromOffsets: source, toOffset: destination)
+
+        let hiddenOrder = groupOrder.filter { type in
+            !visibleOrder.contains(type)
+        }
+
+        groupOrderRaw = (visibleOrder + hiddenOrder)
+            .map(\.rawValue)
+            .joined(separator: ",")
+    }
+
+    private func moveTodos(in type: DirectionType, from source: IndexSet, to destination: Int) {
+        var reordered = todayTodos.filter { TodayTodoGroup.type(for: $0) == type }
         reordered.move(fromOffsets: source, toOffset: destination)
 
-        for (index, todo) in reordered.enumerated() {
+        let groupedTodos = Dictionary(grouping: todayTodos) { todo in
+            TodayTodoGroup.type(for: todo)
+        }
+        let orderedTodos = groupOrder.flatMap { groupType -> [Todo] in
+            groupType == type ? reordered : groupedTodos[groupType] ?? []
+        }
+
+        for (index, todo) in orderedTodos.enumerated() {
             todo.setSortIndex(index)
         }
 
@@ -525,6 +568,85 @@ private extension View {
     }
 }
 
+private struct TodayTodoGroup: Identifiable {
+    let type: DirectionType
+    let todos: [Todo]
+
+    var id: String { type.rawValue }
+
+    var title: String {
+        switch type {
+        case .must:
+            "必須"
+        case .neutral:
+            "普通"
+        case .bonus:
+            "ボーナス"
+        }
+    }
+
+    var tint: Color {
+        switch type {
+        case .must:
+            .red
+        case .neutral:
+            .blue
+        case .bonus:
+            .green
+        }
+    }
+
+    static let defaultOrderRaw = "must,neutral,bonus"
+
+    static func order(from rawValue: String) -> [DirectionType] {
+        let parsed = rawValue
+            .split(separator: ",")
+            .compactMap { DirectionType(rawValue: String($0)) }
+        let missing = DirectionType.allCases.filter { !parsed.contains($0) }
+        return parsed.isEmpty ? [.must, .neutral, .bonus] : parsed + missing
+    }
+
+    static func groups(for todos: [Todo], order: [DirectionType]) -> [TodayTodoGroup] {
+        order.compactMap { type in
+            let items = todos.filter { Self.type(for: $0) == type }
+            guard !items.isEmpty else { return nil }
+            return TodayTodoGroup(type: type, todos: items)
+        }
+    }
+
+    static func type(for todo: Todo) -> DirectionType {
+        todo.direction?.type ?? .neutral
+    }
+}
+
+private struct TodaySectionHeader: View {
+    let group: TodayTodoGroup
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Circle()
+                .fill(group.tint)
+                .frame(width: 7, height: 7)
+
+            Text(group.title)
+                .font(.caption.weight(.semibold))
+
+            Text("\(group.todos.count)")
+                .font(.caption2.weight(.medium))
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(Color.secondary.opacity(0.12))
+                .clipShape(Capsule())
+
+            Spacer(minLength: 0)
+        }
+        .padding(.top, 12)
+        .padding(.bottom, 4)
+        .textCase(nil)
+    }
+}
+
 private struct TodoRow: View {
     @Environment(\.modelContext) private var modelContext
 
@@ -532,6 +654,15 @@ private struct TodoRow: View {
     let summary: String
 
     @State private var isHovering = false
+
+    private var titleBinding: Binding<String> {
+        Binding {
+            todo.title
+        } set: { value in
+            todo.title = value
+            todo.updatedAt = .now
+        }
+    }
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -560,10 +691,13 @@ private struct TodoRow: View {
             .accessibilityLabel(todo.isCompleted ? "未完了に戻す" : "完了にする")
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(todo.title)
+                TextField(titlePlaceholder, text: titleBinding)
+                    .textFieldStyle(.plain)
                     .font(.body.weight(.medium))
                     .strikethrough(todo.isCompleted)
                     .foregroundStyle(todo.isCompleted ? .secondary : .primary)
+                    .onSubmit(save)
+                    .accessibilityLabel("タスク名")
 
                 HStack(spacing: 6) {
                     if let direction = todo.direction {
@@ -587,9 +721,22 @@ private struct TodoRow: View {
         .onHover { hovering in
             isHovering = hovering
         }
+        .onDisappear(perform: save)
         .listRowInsets(EdgeInsets(top: 3, leading: 10, bottom: 3, trailing: 10))
         .listRowSeparator(.hidden)
         .listRowBackground(rowBackground)
+    }
+
+    private func save() {
+        try? modelContext.save()
+    }
+
+    private var titlePlaceholder: String {
+        guard let direction = todo.direction else {
+            return "タスク"
+        }
+
+        return "タスク（\(direction.name)）"
     }
 
     private var rowBackground: some View {

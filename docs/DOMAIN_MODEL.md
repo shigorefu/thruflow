@@ -128,7 +128,7 @@ MVP generation rule:
 - a Must Direction with `everyDay` appears as a Todo for today;
 - a Must Direction with explicit weekdays appears only on matching weekdays;
 - a weekly-count Direction without explicit weekdays remains a weekly goal and does not create a daily Todo by itself;
-- generated Todos use the Direction name, today's scheduled date, and a measurement derived from the Direction goal unit.
+- generated Todos use today's scheduled date, a measurement derived from the Direction goal unit, and an empty editable title shown with a `Task (Direction)` placeholder.
 
 ## Successful Day
 

@@ -109,7 +109,7 @@ struct TodoTests {
         let date = Date(timeIntervalSince1970: 0)
         let todo = planner.makeRequiredTodo(for: direction, on: date)
 
-        #expect(todo?.title == "読書")
+        #expect(todo?.title == "")
         #expect(todo?.measurement == .focusBlocks)
         #expect(todo?.plannedAmount == 1)
         #expect(todo?.scheduledDate == date)
