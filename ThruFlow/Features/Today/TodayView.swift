@@ -23,6 +23,7 @@ struct TodayView: View {
     @State private var newTodoError: String?
 
     private let filter = TodayTodoFilter()
+    private let requiredPlanner = RequiredTodoPlanner()
     private let progress = TodoProgressCalculator()
     private let validator = TodoValidator()
 
@@ -113,6 +114,12 @@ struct TodayView: View {
         .sheet(item: $editingTodo) { todo in
             TodoFormView(mode: .edit(todo))
         }
+        .onAppear {
+            ensureRequiredTodosForToday()
+        }
+        .onChange(of: directions.map(\.updatedAt)) { _, _ in
+            ensureRequiredTodosForToday()
+        }
     }
 
     private func moveTodos(from source: IndexSet, to destination: Int) {
@@ -160,6 +167,35 @@ struct TodayView: View {
 
         newTodoTitle = ""
         newTodoError = nil
+    }
+
+    private func ensureRequiredTodosForToday(now: Date = .now) {
+        let requiredDirections = activeDirections.filter {
+            requiredPlanner.shouldAppearToday($0, on: now)
+        }
+
+        guard !requiredDirections.isEmpty else { return }
+
+        var inserted = false
+        let minimumSortIndex = todos.map(\.sortIndex).min() ?? 0
+
+        for (offset, direction) in requiredDirections.enumerated() {
+            guard requiredPlanner.existingRequiredTodo(for: direction, in: todos, on: now) == nil,
+                  let todo = requiredPlanner.makeRequiredTodo(
+                    for: direction,
+                    on: now,
+                    sortIndex: minimumSortIndex - offset - 1
+                  ) else {
+                continue
+            }
+
+            modelContext.insert(todo)
+            inserted = true
+        }
+
+        if inserted {
+            try? modelContext.save()
+        }
     }
 
     private func resolvedDirection(for id: UUID?) -> Direction {

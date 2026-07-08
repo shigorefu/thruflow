@@ -76,7 +76,8 @@ Basic controls:
 - Start;
 - Pause;
 - Resume;
-- Finish.
+- Stop and save focused time;
+- Destroy the current Flow without saving progress.
 
 The timer should derive actual duration from timestamps, not only in-memory ticks.
 
@@ -125,4 +126,3 @@ MVP UI should be compatible with:
 - VoiceOver;
 - Reduce Motion;
 - Reduce Transparency.
-
