@@ -11,11 +11,14 @@ import SwiftUI
 struct StatisticsView: View {
     @Query(sort: \FlowSession.startedAt, order: .reverse) private var sessions: [FlowSession]
     @Query(sort: \Direction.name, order: .forward) private var directions: [Direction]
+    @Query(sort: \Todo.updatedAt, order: .reverse) private var todos: [Todo]
 
+    @State private var selectedMode: StatisticsMode = .achievement
     @State private var selectedRange: StatisticsRange = .year
     @State private var selectedDirectionID: UUID?
 
-    private let builder = StatisticsHeatmapBuilder()
+    private let flowBuilder = StatisticsHeatmapBuilder()
+    private let achievementBuilder = AchievementHeatmapBuilder()
 
     private var activeDirections: [Direction] {
         directions.filter { !$0.isArchived }
@@ -26,27 +29,67 @@ struct StatisticsView: View {
         return directions.first { $0.id == selectedDirectionID }
     }
 
-    private var result: StatisticsHeatmapResult {
-        builder.build(
+    private var flowResult: StatisticsHeatmapResult {
+        flowBuilder.build(
             sessions: sessions,
+            filter: StatisticsFilter(range: selectedRange, directionID: selectedDirectionID)
+        )
+    }
+
+    private var achievementResult: AchievementHeatmapResult {
+        achievementBuilder.build(
+            todos: todos,
             filter: StatisticsFilter(range: selectedRange, directionID: selectedDirectionID)
         )
     }
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
-                filterBar
-                summaryRow
-                contributionSection
+            VStack(alignment: .leading, spacing: 18) {
+                header
+                controls
+
+                switch selectedMode {
+                case .achievement:
+                    achievementSummaryRow
+                    achievementSection
+                case .flow:
+                    flowSummaryRow
+                    flowSection
+                }
             }
             .padding(20)
         }
         .navigationTitle("統計")
     }
 
-    private var filterBar: some View {
+    private var header: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(headerTitle)
+                .font(.title2.weight(.semibold))
+                .lineLimit(2)
+                .minimumScaleFactor(0.75)
+
+            Spacer(minLength: 12)
+
+            DirectionFilterMenu(
+                selectedDirectionID: $selectedDirectionID,
+                directions: activeDirections,
+                selectedDirection: selectedDirection
+            )
+        }
+    }
+
+    private var controls: some View {
         VStack(alignment: .leading, spacing: 12) {
+            Picker("表示", selection: $selectedMode) {
+                ForEach(StatisticsMode.allCases) { mode in
+                    Text(mode.displayName).tag(mode)
+                }
+            }
+            .pickerStyle(.segmented)
+            .accessibilityLabel("統計表示")
+
             Picker("期間", selection: $selectedRange) {
                 ForEach(StatisticsRange.allCases) { range in
                     Text(range.displayName).tag(range)
@@ -54,49 +97,66 @@ struct StatisticsView: View {
             }
             .pickerStyle(.segmented)
             .accessibilityLabel("統計期間")
-
-            HStack(spacing: 10) {
-                Text("フィルター")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.secondary)
-
-                DirectionFilterMenu(
-                    selectedDirectionID: $selectedDirectionID,
-                    directions: activeDirections,
-                    selectedDirection: selectedDirection
-                )
-
-                Spacer(minLength: 0)
-            }
         }
     }
 
-    private var summaryRow: some View {
+    private var headerTitle: String {
+        switch selectedMode {
+        case .achievement:
+            "\(achievementResult.summary.completedCount) 達成 in \(selectedRange.summaryText)"
+        case .flow:
+            "\(flowResult.summary.sessionCount) Flow in \(selectedRange.summaryText)"
+        }
+    }
+
+    private var flowSummaryRow: some View {
         HStack(spacing: 12) {
             StatisticSummaryTile(
                 title: "合計",
-                value: blocksText(result.summary.totalBlocks),
-                subtitle: "\(result.summary.sessionCount) Flow"
+                value: blocksText(flowResult.summary.totalBlocks),
+                subtitle: "\(flowResult.summary.sessionCount) Flow"
             )
 
             StatisticSummaryTile(
                 title: "活動日",
-                value: "\(result.summary.activeDayCount)日",
+                value: "\(flowResult.summary.activeDayCount)日",
                 subtitle: selectedRange.displayName
             )
 
             StatisticSummaryTile(
                 title: "時間",
-                value: durationText(result.summary.totalFocusSeconds),
+                value: durationText(flowResult.summary.totalFocusSeconds),
                 subtitle: "集中のみ"
             )
         }
     }
 
-    private var contributionSection: some View {
+    private var achievementSummaryRow: some View {
+        HStack(spacing: 12) {
+            StatisticSummaryTile(
+                title: "達成",
+                value: "\(achievementResult.summary.completedCount)",
+                subtitle: "完了タスク"
+            )
+
+            StatisticSummaryTile(
+                title: "達成日",
+                value: "\(achievementResult.summary.activeDayCount)日",
+                subtitle: selectedRange.displayName
+            )
+
+            StatisticSummaryTile(
+                title: "方向",
+                value: "\(achievementResult.summary.directionCount)",
+                subtitle: "完了あり"
+            )
+        }
+    }
+
+    private var flowSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("Flow Heatmap")
+                Text("Flow")
                     .font(.headline)
 
                 Spacer()
@@ -106,7 +166,36 @@ struct StatisticsView: View {
                     .foregroundStyle(.secondary)
             }
 
-            StatisticsHeatmap(days: result.days)
+            StatisticsHeatmap(days: flowResult.days)
+
+            HStack(spacing: 6) {
+                Text("少ない")
+                ForEach(0..<5, id: \.self) { level in
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(level == 0 ? Color.secondary.opacity(0.14) : Color.accentColor.opacity(Double(level) * 0.18 + 0.16))
+                        .frame(width: 12, height: 12)
+                }
+                Text("多い")
+            }
+            .font(.caption2)
+            .foregroundStyle(.secondary)
+        }
+    }
+
+    private var achievementSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("達成")
+                    .font(.headline)
+
+                Spacer()
+
+                Text("複数の方向は色を混ぜて表示")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            AchievementHeatmap(days: achievementResult.days)
 
             HStack(spacing: 6) {
                 Text("少ない")
@@ -248,6 +337,31 @@ private struct StatisticsHeatmap: View {
     }
 }
 
+private struct AchievementHeatmap: View {
+    let days: [AchievementDay]
+
+    private let rows = Array(repeating: GridItem(.fixed(13), spacing: 4), count: 7)
+    private let calendar = Calendar.current
+
+    private var paddedDays: [AchievementDay?] {
+        guard let first = days.first else { return [] }
+        let weekday = calendar.component(.weekday, from: first.date)
+        return Array(repeating: nil, count: max(0, weekday - 1)) + days.map(Optional.some)
+    }
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            LazyHGrid(rows: rows, spacing: 4) {
+                ForEach(Array(paddedDays.enumerated()), id: \.offset) { _, day in
+                    AchievementHeatmapCell(day: day)
+                }
+            }
+            .padding(.vertical, 2)
+            .accessibilityElement(children: .contain)
+        }
+    }
+}
+
 private struct HeatmapCell: View {
     let day: StatisticsDay?
 
@@ -294,6 +408,58 @@ private struct HeatmapCell: View {
             return 0.68
         case (50 * 60)..<(100 * 60):
             return 0.84
+        default:
+            return 1.0
+        }
+    }
+}
+
+private struct AchievementHeatmapCell: View {
+    let day: AchievementDay?
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 3)
+            .fill(fillColor)
+            .frame(width: 13, height: 13)
+            .overlay {
+                RoundedRectangle(cornerRadius: 3)
+                    .strokeBorder(Color.primary.opacity(0.05))
+            }
+            .accessibilityLabel(accessibilityLabel)
+    }
+
+    private var fillColor: Color {
+        guard let day, !day.isEmpty else {
+            return Color.secondary.opacity(0.14)
+        }
+
+        let baseColor = Color(hex: day.mixedColorHex ?? "#34C759")
+        return baseColor.opacity(opacity(for: day.completedCount))
+    }
+
+    private var accessibilityLabel: String {
+        guard let day else { return "空白" }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ja_JP")
+        formatter.dateStyle = .medium
+
+        if day.isEmpty {
+            return "\(formatter.string(from: day.date)) 達成なし"
+        }
+
+        return "\(formatter.string(from: day.date)) \(day.completedCount)達成 \(day.directionCount)方向"
+    }
+
+    private func opacity(for count: Int) -> Double {
+        switch count {
+        case 1:
+            return 0.40
+        case 2:
+            return 0.58
+        case 3:
+            return 0.74
+        case 4:
+            return 0.88
         default:
             return 1.0
         }
