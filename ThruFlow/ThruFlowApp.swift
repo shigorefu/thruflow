@@ -10,6 +10,8 @@ import SwiftData
 
 @main
 struct ThruFlowApp: App {
+    @StateObject private var activeFlowStore = ActiveFlowStore()
+
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Direction.self,
@@ -31,7 +33,18 @@ struct ThruFlowApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(activeFlowStore)
         }
         .modelContainer(sharedModelContainer)
+
+#if os(macOS)
+        MenuBarExtra("スルフロ Flow", systemImage: "timer") {
+            FlowMiniPlayerView()
+                .environmentObject(activeFlowStore)
+                .frame(width: 560)
+        }
+        .menuBarExtraStyle(.window)
+        .modelContainer(sharedModelContainer)
+#endif
     }
 }

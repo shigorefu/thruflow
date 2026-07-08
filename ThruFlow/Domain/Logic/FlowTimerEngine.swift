@@ -125,6 +125,65 @@ struct FlowTimerEngine {
         return next
     }
 
+    /// Increases the current block size by one step (12 -> 25 -> 50 -> 75 -> ...),
+    /// keeping already-elapsed focus time intact by pushing the planned end forward.
+    func seekForward(_ state: FlowTimerState, now: Date) -> FlowTimerState {
+        guard state.phase == .focusing || state.phase == .paused else { return state }
+        return applyPlannedFocusDuration(
+            Self.nextBlockDurationSeconds(after: state.plannedFocusDurationSeconds),
+            to: state
+        )
+    }
+
+    /// Decreases the current block size by one step (... -> 50 -> 25 -> 12),
+    /// never going below the smallest block size.
+    func seekBackward(_ state: FlowTimerState, now: Date) -> FlowTimerState {
+        guard state.phase == .focusing || state.phase == .paused else { return state }
+        return applyPlannedFocusDuration(
+            Self.previousBlockDurationSeconds(before: state.plannedFocusDurationSeconds),
+            to: state
+        )
+    }
+
+    private func applyPlannedFocusDuration(_ duration: Int, to state: FlowTimerState) -> FlowTimerState {
+        guard duration != state.plannedFocusDurationSeconds else { return state }
+
+        let delta = duration - state.plannedFocusDurationSeconds
+        var next = state
+        next.plannedFocusDurationSeconds = duration
+        next.plannedBreakDurationSeconds = FlowMode.adaptiveBreakDurationSeconds(forFocusSeconds: duration)
+        next.plannedEndAt = state.plannedEndAt.addingTimeInterval(TimeInterval(delta))
+        return next
+    }
+
+    static func nextBlockDurationSeconds(after seconds: Int) -> Int {
+        switch seconds {
+        case ..<(12 * 60):
+            12 * 60
+        case (12 * 60)..<(25 * 60):
+            25 * 60
+        case (25 * 60)..<(50 * 60):
+            50 * 60
+        default:
+            seconds + 25 * 60
+        }
+    }
+
+    static func previousBlockDurationSeconds(before seconds: Int) -> Int {
+        switch seconds {
+        case ...(12 * 60):
+            12 * 60
+        case (12 * 60 + 1)...(25 * 60):
+            12 * 60
+        case (25 * 60 + 1)...(50 * 60):
+            25 * 60
+        case (50 * 60 + 1)...(75 * 60):
+            50 * 60
+        default:
+            seconds - 25 * 60
+        }
+    }
+
     func remainingSeconds(for state: FlowTimerState, now: Date) -> Int {
         let referenceDate = state.phase == .paused ? (state.pausedAt ?? now) : now
         return max(0, Int(state.plannedEndAt.timeIntervalSince(referenceDate).rounded(.up)))

@@ -63,39 +63,51 @@ struct FlowMiniPlayerView: View {
         VStack(spacing: 8) {
             if activeFlowStore.phase == .awaitingExtensionDecision {
                 adaptiveDecisionBar
-            }
-
-            if activeFlowStore.phase == .awaitingResult {
+            } else if activeFlowStore.phase == .awaitingResult {
                 resultBar
             } else {
                 HStack(spacing: 12) {
-                    modeMenu
+                    Button {
+                        showsConfiguration = true
+                    } label: {
+                        playerArtwork
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Flow設定を開く")
 
                     Button {
                         showsConfiguration = true
                     } label: {
-                        contextLabel(now: now)
+                        contextLabel
                     }
                     .buttonStyle(.plain)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
+                    modeMenu
+
                     if activeFlowStore.timerState != nil {
                         Text(activeFlowStore.remainingText(now: now))
                             .font(.system(.body, design: .monospaced).weight(.semibold))
+                            .foregroundStyle(.primary)
+                            .frame(minWidth: 54, alignment: .trailing)
                             .accessibilityLabel("残り時間 \(activeFlowStore.remainingText(now: now))")
                     }
 
-                    primaryButton
+                    transportControls
                 }
                 .padding(.horizontal, 14)
-                .padding(.vertical, 12)
-                .background(.regularMaterial)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-                .shadow(color: .black.opacity(0.08), radius: 12, y: 4)
+                .padding(.vertical, 10)
+                .background(.ultraThinMaterial)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14)
+                        .strokeBorder(Color.primary.opacity(0.08))
+                }
+                .shadow(color: .black.opacity(0.10), radius: 14, y: 5)
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
         .background(.bar)
     }
 
@@ -113,18 +125,35 @@ struct FlowMiniPlayerView: View {
             }
         } label: {
             Text(activeFlowStore.selectedMode.displayName)
-                .font(.subheadline.weight(.semibold))
-                .padding(.horizontal, 10)
-                .padding(.vertical, 7)
-                .background(.quaternary)
+                .font(.caption.weight(.semibold))
+                .lineLimit(1)
+                .padding(.horizontal, 9)
+                .padding(.vertical, 6)
+                .background(Color.primary.opacity(0.08))
                 .clipShape(Capsule())
         }
-        .menuStyle(.button)
+        .menuStyle(.borderlessButton)
         .accessibilityLabel("Flowモード")
         .disabled(activeFlowStore.timerState != nil)
     }
 
-    private func contextLabel(now: Date) -> some View {
+    private var playerArtwork: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 8)
+                .fill(artworkColor.opacity(0.18))
+
+            Text(selectedDirection?.symbolName ?? selectedTodo?.direction?.symbolName ?? "▶")
+                .font(.system(size: 22))
+        }
+        .frame(width: 42, height: 42)
+        .overlay {
+            RoundedRectangle(cornerRadius: 8)
+                .strokeBorder(artworkColor.opacity(0.24))
+        }
+        .accessibilityHidden(true)
+    }
+
+    private var contextLabel: some View {
         VStack(alignment: .leading, spacing: 2) {
             if let selectedDirection {
                 Text("\(selectedDirection.symbolName) \(selectedDirection.name)")
@@ -135,16 +164,101 @@ struct FlowMiniPlayerView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
+            } else if let selectedTodo {
+                Text(selectedTodo.title)
+                    .font(.headline)
+                    .lineLimit(1)
+
+                Text(selectedTodo.direction?.name ?? "タスク")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
             } else {
-                Text("タスクを選択")
+                Text("すぐ開始")
                     .font(.headline)
 
-                Text("方向・タスク・意図")
+                Text("自動: タスク")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
         }
         .accessibilityElement(children: .combine)
+    }
+
+    private var canSeek: Bool {
+        activeFlowStore.phase == .focusing || activeFlowStore.phase == .paused
+    }
+
+    private var artworkColor: Color {
+        if let selectedDirection {
+            return Color(hex: selectedDirection.colorHex)
+        }
+
+        if let direction = selectedTodo?.direction, !DefaultDirections.isTaskInbox(direction) {
+            return Color(hex: direction.colorHex)
+        }
+
+        return .accentColor
+    }
+
+    private var transportControls: some View {
+        HStack(spacing: 6) {
+            if canSeek {
+                seekBackwardButton
+            }
+
+            if activeFlowStore.timerState != nil {
+                stopButton
+            }
+
+            primaryButton
+
+            if canSeek {
+                seekForwardButton
+            }
+        }
+        .padding(3)
+        .background(Color.primary.opacity(0.06))
+        .clipShape(Capsule())
+    }
+
+    private var seekBackwardButton: some View {
+        Button {
+            activeFlowStore.seekBackward(modelContext: modelContext)
+        } label: {
+            Image(systemName: "gobackward.minus")
+                .font(.callout.weight(.semibold))
+                .frame(width: 34, height: 34)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.secondary)
+        .accessibilityLabel("ブロックを短縮")
+    }
+
+    private var seekForwardButton: some View {
+        Button {
+            activeFlowStore.seekForward(modelContext: modelContext)
+        } label: {
+            Image(systemName: "goforward.plus")
+                .font(.callout.weight(.semibold))
+                .frame(width: 34, height: 34)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.secondary)
+        .accessibilityLabel("ブロックを延長")
+    }
+
+    private var stopButton: some View {
+        Button {
+            activeFlowStore.stop(modelContext: modelContext)
+        } label: {
+            Image(systemName: "stop.fill")
+                .font(.callout.weight(.semibold))
+                .frame(width: 34, height: 34)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.secondary)
+        .accessibilityLabel("Flowをリセット")
     }
 
     private var primaryButton: some View {
@@ -154,7 +268,7 @@ struct FlowMiniPlayerView: View {
             Label(primaryButtonTitle, systemImage: primaryButtonImage)
                 .labelStyle(.iconOnly)
                 .font(.title3.weight(.semibold))
-                .frame(width: 44, height: 44)
+                .frame(width: 42, height: 42)
                 .background(primaryButtonColor)
                 .foregroundStyle(.white)
                 .clipShape(Circle())
@@ -264,14 +378,13 @@ struct FlowMiniPlayerView: View {
     private func handlePrimaryAction() {
         switch activeFlowStore.phase {
         case .idle, .configured, .completed:
-            guard let selectedDirection else {
-                showsConfiguration = true
-                return
-            }
+            let direction = resolvedStartDirection()
+            let todo = selectedTodo
 
+            activeFlowStore.configure(direction: direction, todo: todo)
             activeFlowStore.start(
-                direction: selectedDirection,
-                todo: selectedTodo,
+                direction: direction,
+                todo: todo,
                 modelContext: modelContext
             )
         case .focusing:
@@ -286,6 +399,24 @@ struct FlowMiniPlayerView: View {
             activeFlowStore.completeResult(resultText, modelContext: modelContext)
             resultText = ""
         }
+    }
+
+    private func resolvedStartDirection() -> Direction {
+        if let selectedDirection {
+            return selectedDirection
+        }
+
+        if let direction = selectedTodo?.direction, !direction.isArchived {
+            return direction
+        }
+
+        if let taskInbox = DefaultDirections.existingTaskInbox(in: activeDirections) {
+            return taskInbox
+        }
+
+        let taskInbox = DefaultDirections.makeTaskInbox()
+        modelContext.insert(taskInbox)
+        return taskInbox
     }
 }
 

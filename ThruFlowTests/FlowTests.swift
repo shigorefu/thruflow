@@ -106,4 +106,48 @@ struct FlowTests {
         #expect(todo.actualProgress == 1)
         #expect(direction.recordedFocusSeconds == 25 * 60)
     }
+
+    @Test func seekForwardStepsThroughTwelveTwentyFiveFiftyThenAddsWholeBlocks() {
+        let engine = FlowTimerEngine()
+        let start = Date(timeIntervalSince1970: 4_000)
+
+        let twelve = engine.start(mode: .twelveThree, now: start)
+        let twentyFive = engine.seekForward(twelve, now: start)
+        let fifty = engine.seekForward(twentyFive, now: start)
+        let seventyFive = engine.seekForward(fifty, now: start)
+
+        #expect(twentyFive.plannedFocusDurationSeconds == 25 * 60)
+        #expect(twentyFive.plannedBreakDurationSeconds == 5 * 60)
+        #expect(fifty.plannedFocusDurationSeconds == 50 * 60)
+        #expect(fifty.plannedBreakDurationSeconds == 10 * 60)
+        #expect(seventyFive.plannedFocusDurationSeconds == 75 * 60)
+        #expect(seventyFive.plannedEndAt == fifty.plannedEndAt.addingTimeInterval(25 * 60))
+    }
+
+    @Test func seekBackwardStepsDownAndStopsAtSmallestBlock() {
+        let engine = FlowTimerEngine()
+        let start = Date(timeIntervalSince1970: 5_000)
+
+        let fifty = engine.start(mode: .fiftyTen, now: start)
+        let twentyFive = engine.seekBackward(fifty, now: start)
+        let twelve = engine.seekBackward(twentyFive, now: start)
+        let stillTwelve = engine.seekBackward(twelve, now: start)
+
+        #expect(twentyFive.plannedFocusDurationSeconds == 25 * 60)
+        #expect(twelve.plannedFocusDurationSeconds == 12 * 60)
+        #expect(stillTwelve.plannedFocusDurationSeconds == 12 * 60)
+        #expect(stillTwelve.plannedEndAt == twelve.plannedEndAt)
+    }
+
+    @Test func seekIsIgnoredOutsideFocusingOrPausedPhases() {
+        let engine = FlowTimerEngine()
+        let start = Date(timeIntervalSince1970: 6_000)
+
+        let initial = engine.start(mode: .twentyFiveFive, now: start)
+        let inBreak = engine.advanceIfNeeded(initial, now: start.addingTimeInterval(26 * 60))
+        let unchanged = engine.seekForward(inBreak, now: start.addingTimeInterval(26 * 60))
+
+        #expect(inBreak.phase == .breakTime)
+        #expect(unchanged == inBreak)
+    }
 }
