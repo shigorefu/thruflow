@@ -30,6 +30,12 @@ Weekly goals are judged by week totals. Individual empty days are factual empty 
 
 Reason: this matches goals such as training 3 times per week and avoids punishing flexible schedules.
 
+### D-004a: Required Direction goal schedule is explicit
+
+Only `必須` Directions ask for a goal. The creation flow records a goal value, a unit, and one frequency mode: `毎日`, `週回`, or `曜日`. `通常` and `ボーナス` Directions stop after type selection and do not carry goal fields.
+
+Reason: goal setup should stay clear at creation time and avoid showing irrelevant controls for non-required Directions.
+
 ### D-005: Intent and Result stay separate
 
 FlowSession must keep the pre-work intent separate from the post-work result.
@@ -59,6 +65,12 @@ Reason: the product should start with a clear default locale while preserving ma
 Todo creation may start without an explicit Direction. In that case the app creates or reuses a neutral default Direction named `タスク`. The SwiftData relationship is optional at the storage level.
 
 Reason: quick task capture must stay low-friction while preserving a Direction relationship for later organization, statistics, and CloudKit schema evolution.
+
+### D-010: Today uses bottom quick capture
+
+The Today screen creates checkbox Todos from a bottom messenger-style input. The Direction picker appears only while the user is typing or focusing the field. Detailed measurement setup belongs to a later edit flow.
+
+Reason: Today capture should be fast and visually quiet, with Direction available only when it helps the current entry.
 
 ## Current Risks
 

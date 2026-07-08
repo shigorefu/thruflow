@@ -13,10 +13,13 @@ ThruFlow uses Japanese as the default user-facing language. Code identifiers, en
 | Neutral | 通常 |
 | Bonus | ボーナス |
 | Goal | 目標 |
+| Goal value | 目標値 |
+| Goal frequency | 頻度 |
 | Daily | 毎日 |
-| Weekly | 毎週 |
+| Weekly count | 週回 |
+| Weekday | 曜日 |
 | Occurrence | 回数 |
-| Focus block | 集中ブロック |
+| Flow block | フローブロック |
 | Minutes | 分 |
 | Hours | 時間 |
 | Todo | タスク |

@@ -12,7 +12,7 @@ import Testing
 struct ThruFlowTests {
 
     @Test func directionDraftRequiresName() {
-        let draft = DirectionDraft(name: "   ", type: .must)
+        let draft = DirectionDraft(name: "   ", type: .neutral)
         let errors = DirectionValidator().validate(draft)
 
         #expect(errors == [.emptyName])
@@ -25,12 +25,13 @@ struct ThruFlowTests {
             goalEnabled: true,
             goalTarget: 0,
             goalPeriod: nil,
-            goalUnit: nil
+            goalUnit: nil,
+            goalSchedule: nil
         )
 
         let errors = DirectionValidator().validate(draft)
 
-        #expect(errors == [.invalidGoalTarget, .missingGoalPeriod, .missingGoalUnit])
+        #expect(errors == [.invalidGoalTarget, .missingGoalUnit, .missingGoalSchedule])
     }
 
     @Test func disabledGoalAllowsMissingGoalFields() {
@@ -46,6 +47,21 @@ struct ThruFlowTests {
         let errors = DirectionValidator().validate(draft)
 
         #expect(errors.isEmpty)
+    }
+
+    @Test func weekdayGoalRequiresSelectedWeekdays() {
+        let draft = DirectionDraft(
+            name: "Training",
+            type: .must,
+            goalTarget: 1,
+            goalUnit: .focusBlocks,
+            goalSchedule: .weekdays,
+            weekdayMask: nil
+        )
+
+        let errors = DirectionValidator().validate(draft)
+
+        #expect(errors == [.missingWeekdays])
     }
 
     @Test func directionArchivesWithoutChangingStableIdentifier() {
@@ -79,12 +95,16 @@ struct ThruFlowTests {
             goalTarget: 5,
             goalPeriod: .weekly,
             goalUnit: .hours,
+            goalSchedule: .weeklyCount,
+            weeklyTargetCount: 3,
             now: Date(timeIntervalSince1970: 300)
         )
 
         #expect(direction.typeRawValue == "must")
         #expect(direction.goalPeriodRawValue == "weekly")
         #expect(direction.goalUnitRawValue == "hours")
+        #expect(direction.goalScheduleRawValue == "weeklyCount")
+        #expect(direction.weeklyTargetCount == 3)
         #expect(direction.hasGoal)
     }
 

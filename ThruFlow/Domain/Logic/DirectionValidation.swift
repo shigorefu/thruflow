@@ -16,16 +16,22 @@ struct DirectionDraft {
     var goalTarget: Int?
     var goalPeriod: GoalPeriod?
     var goalUnit: GoalUnit?
+    var goalSchedule: GoalScheduleKind?
+    var weeklyTargetCount: Int?
+    var weekdayMask: Int?
 
     init(
         name: String = "",
-        type: DirectionType = .must,
+        type: DirectionType = .neutral,
         symbolName: String = "🎯",
         colorHex: String = "#007AFF",
         goalEnabled: Bool = false,
         goalTarget: Int? = nil,
         goalPeriod: GoalPeriod? = .daily,
-        goalUnit: GoalUnit? = .focusBlocks
+        goalUnit: GoalUnit? = .focusBlocks,
+        goalSchedule: GoalScheduleKind? = .everyDay,
+        weeklyTargetCount: Int? = 1,
+        weekdayMask: Int? = nil
     ) {
         self.name = name
         self.type = type
@@ -35,6 +41,9 @@ struct DirectionDraft {
         self.goalTarget = goalTarget
         self.goalPeriod = goalPeriod
         self.goalUnit = goalUnit
+        self.goalSchedule = goalSchedule
+        self.weeklyTargetCount = weeklyTargetCount
+        self.weekdayMask = weekdayMask
     }
 
     init(direction: Direction) {
@@ -46,6 +55,9 @@ struct DirectionDraft {
         self.goalTarget = direction.goalTarget
         self.goalPeriod = direction.goalPeriod ?? .daily
         self.goalUnit = direction.goalUnit ?? .focusBlocks
+        self.goalSchedule = direction.goalSchedule ?? .everyDay
+        self.weeklyTargetCount = direction.weeklyTargetCount ?? 1
+        self.weekdayMask = direction.weekdayMask
     }
 
     var trimmedName: String {
@@ -61,8 +73,10 @@ struct DirectionDraft {
 enum DirectionValidationError: Error, Equatable, LocalizedError {
     case emptyName
     case invalidGoalTarget
-    case missingGoalPeriod
     case missingGoalUnit
+    case missingGoalSchedule
+    case invalidWeeklyTargetCount
+    case missingWeekdays
 
     var errorDescription: String? {
         switch self {
@@ -70,10 +84,14 @@ enum DirectionValidationError: Error, Equatable, LocalizedError {
             "名前を入力してください。"
         case .invalidGoalTarget:
             "目標値は1以上にしてください。"
-        case .missingGoalPeriod:
-            "目標を使う場合は期間を選んでください。"
         case .missingGoalUnit:
             "目標を使う場合は単位を選んでください。"
+        case .missingGoalSchedule:
+            "必須の方向は頻度を選んでください。"
+        case .invalidWeeklyTargetCount:
+            "週回は1〜7回で選んでください。"
+        case .missingWeekdays:
+            "曜日を1つ以上選んでください。"
         }
     }
 }
@@ -86,17 +104,31 @@ struct DirectionValidator {
             errors.append(.emptyName)
         }
 
-        if draft.goalEnabled {
+        if draft.type == .must {
             if (draft.goalTarget ?? 0) <= 0 {
                 errors.append(.invalidGoalTarget)
             }
 
-            if draft.goalPeriod == nil {
-                errors.append(.missingGoalPeriod)
-            }
-
             if draft.goalUnit == nil {
                 errors.append(.missingGoalUnit)
+            }
+
+            guard let goalSchedule = draft.goalSchedule else {
+                errors.append(.missingGoalSchedule)
+                return errors
+            }
+
+            switch goalSchedule {
+            case .everyDay:
+                break
+            case .weeklyCount:
+                if !(1...7).contains(draft.weeklyTargetCount ?? 0) {
+                    errors.append(.invalidWeeklyTargetCount)
+                }
+            case .weekdays:
+                if (draft.weekdayMask ?? 0) == 0 {
+                    errors.append(.missingWeekdays)
+                }
             }
         }
 
