@@ -34,7 +34,7 @@ struct TodoTests {
         #expect(calculator.progress(measurement: .minutes, plannedAmount: 30, actualProgress: -5) == 0)
     }
 
-    @Test func todoDraftRequiresTitleAndDirection() {
+    @Test func todoDraftAllowsMissingDirectionButRequiresTitleAndPlannedAmount() {
         let draft = TodoDraft(
             title: " ",
             direction: nil,
@@ -44,7 +44,16 @@ struct TodoTests {
 
         let errors = TodoValidator().validate(draft)
 
-        #expect(errors == [.emptyTitle, .missingDirection, .invalidPlannedAmount])
+        #expect(errors == [.emptyTitle, .invalidPlannedAmount])
+    }
+
+    @Test func defaultTaskInboxDirectionIsNeutral() {
+        let direction = DefaultDirections.makeTaskInbox(now: Date(timeIntervalSince1970: 0))
+
+        #expect(direction.name == "タスク")
+        #expect(direction.type == .neutral)
+        #expect(direction.symbolName == "📝")
+        #expect(direction.colorHex == "#007AFF")
     }
 
     @Test func activeUnscheduledTodoAppearsInToday() {

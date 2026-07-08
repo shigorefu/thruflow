@@ -20,8 +20,8 @@ struct DirectionDraft {
     init(
         name: String = "",
         type: DirectionType = .must,
-        symbolName: String = "circle",
-        colorHex: String = "#3B82F6",
+        symbolName: String = "🎯",
+        colorHex: String = "#007AFF",
         goalEnabled: Bool = false,
         goalTarget: Int? = nil,
         goalPeriod: GoalPeriod? = .daily,
@@ -54,7 +54,7 @@ struct DirectionDraft {
 
     var normalizedSymbolName: String {
         let trimmed = symbolName.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? "circle" : trimmed
+        return trimmed.isEmpty ? "🎯" : trimmed
     }
 }
 

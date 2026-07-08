@@ -60,7 +60,6 @@ struct TodoDraft {
 
 enum TodoValidationError: Error, Equatable, LocalizedError {
     case emptyTitle
-    case missingDirection
     case invalidPlannedAmount
     case invalidActualProgress
 
@@ -68,8 +67,6 @@ enum TodoValidationError: Error, Equatable, LocalizedError {
         switch self {
         case .emptyTitle:
             "タイトルを入力してください。"
-        case .missingDirection:
-            "方向を選んでください。"
         case .invalidPlannedAmount:
             "予定量は1以上にしてください。"
         case .invalidActualProgress:
@@ -84,10 +81,6 @@ struct TodoValidator {
 
         if draft.trimmedTitle.isEmpty {
             errors.append(.emptyTitle)
-        }
-
-        if draft.direction == nil {
-            errors.append(.missingDirection)
         }
 
         if draft.measurement != .checkbox, (draft.plannedAmount ?? 0) <= 0 {

@@ -74,7 +74,7 @@ struct TodoFormView: View {
                         Text("未選択").tag(UUID?.none)
 
                         ForEach(activeDirections) { direction in
-                            Label(direction.name, systemImage: direction.symbolName)
+                            Text("\(direction.symbolName) \(direction.name)")
                                 .tag(Optional(direction.id))
                         }
                     }
@@ -179,12 +179,7 @@ struct TodoFormView: View {
     }
 
     private func selectInitialDirectionIfNeeded() {
-        if draft.direction == nil,
-           selectedDirectionID == nil,
-           let firstDirection = activeDirections.first {
-            selectedDirectionID = firstDirection.id
-            draft.direction = firstDirection
-        } else if draft.direction == nil {
+        if draft.direction == nil {
             draft.direction = direction(for: selectedDirectionID)
         }
     }
@@ -200,7 +195,10 @@ struct TodoFormView: View {
         draft.deadline = usesDeadline ? draft.deadline ?? .now : nil
 
         validationErrors = validator.validate(draft)
-        guard validationErrors.isEmpty, let direction = draft.direction else { return }
+        guard validationErrors.isEmpty else { return }
+
+        let direction = resolvedDirection(for: selectedDirectionID)
+        draft.direction = direction
 
         let plannedAmount = draft.measurement == .checkbox ? nil : draft.plannedAmount
         let actualProgress = draft.measurement == .checkbox ? min(max(draft.actualProgress, 0), 1) : max(0, draft.actualProgress)
@@ -237,6 +235,20 @@ struct TodoFormView: View {
         }
 
         dismiss()
+    }
+
+    private func resolvedDirection(for id: UUID?) -> Direction {
+        if let direction = direction(for: id) {
+            return direction
+        }
+
+        if let taskInbox = DefaultDirections.existingTaskInbox(in: activeDirections) {
+            return taskInbox
+        }
+
+        let taskInbox = DefaultDirections.makeTaskInbox()
+        modelContext.insert(taskInbox)
+        return taskInbox
     }
 }
 
