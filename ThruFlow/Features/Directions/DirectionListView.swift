@@ -123,5 +123,5 @@ private struct DirectionRow: View {
 
 #Preview {
     DirectionListView()
-        .modelContainer(for: [Direction.self, Todo.self], inMemory: true)
+        .modelContainer(for: [Direction.self, Todo.self, FlowSession.self], inMemory: true)
 }

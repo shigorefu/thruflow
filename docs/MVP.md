@@ -4,6 +4,13 @@ MVP 0.1 proves the core ThruFlow loop with local SwiftData storage.
 
 ## Included
 
+### Canonical Block
+
+- `1 Block = 25 focused minutes`;
+- breaks are excluded;
+- 12 focused minutes display as `0.5 Block`;
+- progress is derived from focus duration, not from the number of completed Flow sessions.
+
 ### Direction
 
 - create;

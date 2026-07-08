@@ -80,12 +80,43 @@ Direction icons are Unicode emoji strings. The picker stores recent emoji locall
 
 Reason: using Unicode keeps the model simple and supports ZWJ and skin tone emoji without image assets or third-party emoji libraries.
 
+### D-012: Block is derived from focused duration
+
+Canonical productivity unit:
+
+- `1 Block = 25 focused minutes`.
+- Breaks are excluded.
+- 12 focused minutes are presented as `0.5 Block`.
+
+Blocks are not stored as standalone durable entities. `FlowSession` records actual focus work, while Todo and Direction progress accumulate focused seconds and display that duration in Blocks.
+
+Reason: one completed FlowSession can be 12, 25, 50, or another duration. Treating every session as one Block would distort progress and history.
+
+### D-013: Flow is controlled from a bottom mini-player
+
+The primary Flow control surface lives at the bottom of the app shell, similar to a compact media player. It is available across the main Today and Direction screens and avoids a heavy form-first start flow.
+
+Reason: Flow is the app's main action and should be startable with minimal navigation.
+
+### D-014: Tests use isolated SwiftData storage
+
+When the app process runs under XCTest or receives `--uitesting`, the SwiftData container uses in-memory storage.
+
+Reason: tests should not read or mutate the user's local app store, and stale development data can contain invalid relationships while the schema is evolving.
+
+### D-015: Live Activity is behind a service boundary before adding a Widget Extension
+
+`LiveActivityService` defines the lifecycle boundary for future ActivityKit integration. The current slice does not create the Widget Extension target.
+
+Reason: adding ActivityKit UI requires target/capability/signing project changes. Those must be done deliberately in Xcode or in a separate target-management slice without changing Bundle ID, Signing Team, or CloudKit configuration by accident.
+
 ## Current Risks
 
 - The project deployment targets are set to OS version 26.5, which may restrict local simulator/device availability.
 - CloudKit entitlement exists but no iCloud container identifier is configured.
 - The app target currently includes visionOS platforms, although the product scope is iPhone, iPad, and macOS first.
-- Todo capture is still a narrow vertical slice; Flow, Today completion, and History are still pending.
+- Todo capture is still a narrow vertical slice; Today completion and History are still pending.
+- Flow mini-player is implemented, but ActivityKit Widget Extension and Dynamic Island UI are not yet added.
 - CoreSimulator was unavailable from the current sandbox during `xcodebuild -list`; full build/test verification may need Xcode or an approved command environment.
 
 ## Open Questions

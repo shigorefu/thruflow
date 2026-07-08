@@ -14,8 +14,12 @@ struct ThruFlowApp: App {
         let schema = Schema([
             Direction.self,
             Todo.self,
+            FlowSession.self,
         ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+        let processInfo = ProcessInfo.processInfo
+        let isRunningTests = processInfo.environment["XCTestConfigurationFilePath"] != nil ||
+            processInfo.arguments.contains("--uitesting")
+        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: isRunningTests)
 
         do {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])
