@@ -19,6 +19,25 @@ Examples:
 - AWS
 - Japanese
 
+### Canonical Block
+
+Canonical productivity unit:
+
+- `1 Block = 25 focused minutes`.
+- Breaks are excluded.
+- Blocks are derived from actual focused duration, not stored as separate completed entities.
+- `FlowSession` remains the durable record of actual work.
+- Todo progress and Direction progress accumulate focused seconds, then present that duration in Blocks.
+
+MVP product display rules:
+
+- 12 focused minutes are presented as `0.5 Block`.
+- 25 focused minutes are presented as `1 Block`.
+- 50 focused minutes are presented as `2 Blocks`.
+- Partial time beyond full Blocks is preserved and can be shown as `1 Block + 12 min`.
+
+A completed FlowSession does not automatically equal one Block. Only focused duration determines Block progress.
+
 ### Direction Type
 
 `DirectionType` has stable raw values:

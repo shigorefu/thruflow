@@ -10,6 +10,7 @@ import SwiftData
 
 struct ContentView: View {
     @State private var selection: AppSection? = .today
+    @StateObject private var activeFlowStore = ActiveFlowStore()
 
     var body: some View {
 #if os(macOS)
@@ -30,6 +31,10 @@ struct ContentView: View {
                 DirectionListView()
             }
         }
+        .safeAreaInset(edge: .bottom) {
+            FlowMiniPlayerView()
+        }
+        .environmentObject(activeFlowStore)
 #else
         TabView {
             TodayView()
@@ -42,6 +47,10 @@ struct ContentView: View {
                     Label("方向", systemImage: "point.3.connected.trianglepath.dotted")
                 }
         }
+        .safeAreaInset(edge: .bottom) {
+            FlowMiniPlayerView()
+        }
+        .environmentObject(activeFlowStore)
 #endif
     }
 }
@@ -53,5 +62,5 @@ private enum AppSection: Hashable {
 
 #Preview {
     ContentView()
-        .modelContainer(for: [Direction.self, Todo.self], inMemory: true)
+        .modelContainer(for: [Direction.self, Todo.self, FlowSession.self], inMemory: true)
 }

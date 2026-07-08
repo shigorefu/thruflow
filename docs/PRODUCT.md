@@ -13,6 +13,22 @@ It combines:
 - History and statistics.
 - Future AI summaries.
 
+## Canonical Block
+
+The canonical productivity unit is:
+
+`1 Block = 25 focused minutes`.
+
+Breaks are excluded. Blocks are computed from actual focus duration and are not stored as standalone completed entities. `FlowSession` stores what actually happened; Todo and Direction progress accumulate focus duration and display it as Blocks.
+
+MVP display uses product-friendly values:
+
+- 12 focused minutes: `0.5 Block`;
+- 25 focused minutes: `1 Block`;
+- 50 focused minutes: `2 Blocks`.
+
+For partial values, prefer clear mixed display such as `1 Block + 12 min` instead of decimal noise like `0.48`.
+
 ## Product Principle
 
 ThruFlow trains returning to work. It must not punish distraction, breaks, or uneven work patterns.

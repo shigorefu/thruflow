@@ -37,12 +37,20 @@ struct TodoProgressCalculator {
     func summary(
         measurement: TodoMeasurement,
         plannedAmount: Int?,
-        actualProgress: Int
+        actualProgress: Int,
+        focusDurationSeconds: Int? = nil
     ) -> String {
         switch measurement {
         case .checkbox:
             return actualProgress > 0 ? "完了" : "未完了"
         case .focusBlocks:
+            if let focusDurationSeconds {
+                return BlockUnit.progressText(
+                    focusedSeconds: focusDurationSeconds,
+                    targetBlocks: plannedAmount ?? 0
+                )
+            }
+
             return "\(max(0, actualProgress))/\(plannedAmount ?? 0) ブロック"
         case .minutes:
             return "\(max(0, actualProgress))/\(plannedAmount ?? 0) 分"

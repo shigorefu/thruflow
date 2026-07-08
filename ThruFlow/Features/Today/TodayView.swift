@@ -10,6 +10,7 @@ import SwiftUI
 
 struct TodayView: View {
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var activeFlowStore: ActiveFlowStore
 
     @Query(sort: \Direction.name, order: .forward) private var directions: [Direction]
     @Query(sort: \Todo.createdAt, order: .forward) private var todos: [Todo]
@@ -61,12 +62,18 @@ struct TodayView: View {
                             summary: progress.summary(
                                 measurement: todo.measurement,
                                 plannedAmount: todo.plannedAmount,
-                                actualProgress: todo.actualProgress
+                                actualProgress: todo.actualProgress,
+                                focusDurationSeconds: todo.focusDurationSeconds
                             )
                         )
                         .contentShape(Rectangle())
                         .onTapGesture {
                             editingTodo = todo
+                        }
+                        .contextMenu {
+                            Button("Flowを開始", systemImage: "play.fill") {
+                                activeFlowStore.configure(direction: todo.direction, todo: todo)
+                            }
                         }
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             Button("アーカイブ", systemImage: "archivebox", role: .destructive) {
@@ -364,5 +371,6 @@ private struct EmptyRow: View {
 
 #Preview {
     TodayView()
-        .modelContainer(for: [Direction.self, Todo.self], inMemory: true)
+        .environmentObject(ActiveFlowStore())
+        .modelContainer(for: [Direction.self, Todo.self, FlowSession.self], inMemory: true)
 }

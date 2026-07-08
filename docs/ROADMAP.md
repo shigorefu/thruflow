@@ -49,17 +49,26 @@ Included in the first pass:
 
 ## Stage 4: Basic Flow
 
+Status: first vertical slice implemented.
+
+Included:
+
 - FlowSession model.
 - Timer state machine.
 - Start, pause, resume, finish.
-- Intent and Result.
+- Intent and Result capture.
 - Persistence.
+- Bottom mini-player shell.
 - Tests.
 
 ## Stage 5: Adaptive Flow
 
+Status: domain logic implemented; UI decision controls are in the mini-player.
+
+Included:
+
 - 12 to 25 to 50 minute transition logic.
-- One session across extensions.
+- One timer/session state across extensions.
 - Transition tests.
 - Timer restoration after app backgrounding.
 
@@ -97,4 +106,5 @@ Included in the first pass:
 - CloudKit sync across iPhone, iPad, and Mac.
 - Active Flow visibility across devices.
 - Apple Watch, widgets, Live Activities, and Shortcuts.
+- ActivityKit Widget Extension and Dynamic Island UI for Flow.
 - Web client and AWS backend only if later explicitly required.

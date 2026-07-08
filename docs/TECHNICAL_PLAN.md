@@ -62,6 +62,17 @@ Todo slice status:
 3. Today routes manual and scheduled Todo items.
 4. Todo creation and editing start from Today.
 
+Flow slice status:
+
+1. Canonical Block calculation is implemented as pure domain logic.
+2. Schema includes FlowSession.
+3. FlowTimerEngine handles start, pause, resume, early finish, break transition, timestamp restoration, and Adaptive 12 -> 25 -> 50 transitions.
+4. FlowMiniPlayerView is available from the app shell bottom safe area.
+5. Flow configuration selects Direction, optional Todo, Intent, and mode.
+6. Result capture is available after finishing.
+7. Local notification scheduling is abstracted behind FlowNotificationService.
+8. Live Activity is abstracted behind LiveActivityService; Widget Extension target creation is deferred to a separate target/capability/signing-safe slice.
+
 ## Calculation Logic
 
 The following should be pure and testable without SwiftUI:
@@ -104,6 +115,8 @@ Use UI tests sparingly for launch and high-value flows:
 - app launches;
 - Direction can be created;
 - Today shows required items.
+
+The app uses an in-memory SwiftData container when launched by XCTest or with `--uitesting`. This keeps tests isolated from the user's local persistent store while the schema evolves.
 
 ## Verification
 

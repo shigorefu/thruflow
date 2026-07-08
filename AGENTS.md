@@ -13,6 +13,7 @@ This repository follows the product and implementation instructions in `CODEX.md
 - Do not add third-party dependencies unless a future task explicitly justifies one.
 - Keep local SwiftData operation independent of CloudKit.
 - Do not implement AI, AWS, accounts, subscriptions, widgets, Live Activities, Apple Watch, or a full timeline editor in MVP 0.1.
+- Canonical productivity unit: `1 Block = 25 focused minutes`. Breaks are excluded. 12 focused minutes are presented as `0.5 Block`.
 
 ## Architecture Expectations
 

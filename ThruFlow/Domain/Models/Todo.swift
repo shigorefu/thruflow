@@ -55,6 +55,7 @@ final class Todo {
     var measurementRawValue: String
     var plannedAmount: Int?
     var actualProgress: Int
+    var focusDurationSeconds: Int?
     var statusRawValue: String
     var scheduledDate: Date?
     var deadline: Date?
@@ -71,6 +72,7 @@ final class Todo {
         measurement: TodoMeasurement = .checkbox,
         plannedAmount: Int? = nil,
         actualProgress: Int = 0,
+        focusDurationSeconds: Int? = nil,
         status: TodoStatus = .active,
         scheduledDate: Date? = nil,
         deadline: Date? = nil,
@@ -86,6 +88,7 @@ final class Todo {
         self.measurementRawValue = measurement.rawValue
         self.plannedAmount = plannedAmount
         self.actualProgress = actualProgress
+        self.focusDurationSeconds = focusDurationSeconds
         self.statusRawValue = status.rawValue
         self.scheduledDate = scheduledDate
         self.deadline = deadline
@@ -115,6 +118,11 @@ final class Todo {
 
     var isCompleted: Bool {
         status == .completed
+    }
+
+    var recordedFocusSeconds: Int {
+        get { max(0, focusDurationSeconds ?? 0) }
+        set { focusDurationSeconds = max(0, newValue) }
     }
 
     func update(
@@ -174,6 +182,11 @@ final class Todo {
     func archive(now: Date = .now) {
         archivedAt = now
         status = .archived
+        updatedAt = now
+    }
+
+    func addFocusDuration(seconds: Int, now: Date = .now) {
+        recordedFocusSeconds += max(0, seconds)
         updatedAt = now
     }
 }

@@ -148,6 +148,7 @@ final class Direction {
     var goalScheduleRawValue: String?
     var weeklyTargetCount: Int?
     var weekdayMask: Int?
+    var focusDurationSeconds: Int?
     var createdAt: Date
     var updatedAt: Date
     var archivedAt: Date?
@@ -164,6 +165,7 @@ final class Direction {
         goalSchedule: GoalScheduleKind? = nil,
         weeklyTargetCount: Int? = nil,
         weekdayMask: Int? = nil,
+        focusDurationSeconds: Int? = nil,
         createdAt: Date = .now,
         updatedAt: Date = .now,
         archivedAt: Date? = nil
@@ -179,6 +181,7 @@ final class Direction {
         self.goalScheduleRawValue = goalSchedule?.rawValue
         self.weeklyTargetCount = weeklyTargetCount
         self.weekdayMask = weekdayMask
+        self.focusDurationSeconds = focusDurationSeconds
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.archivedAt = archivedAt
@@ -221,6 +224,11 @@ final class Direction {
         archivedAt != nil
     }
 
+    var recordedFocusSeconds: Int {
+        get { max(0, focusDurationSeconds ?? 0) }
+        set { focusDurationSeconds = max(0, newValue) }
+    }
+
     var hasGoal: Bool {
         goalTarget != nil && goalPeriod != nil && goalUnit != nil && goalSchedule != nil
     }
@@ -253,6 +261,11 @@ final class Direction {
 
     func archive(now: Date = .now) {
         archivedAt = now
+        updatedAt = now
+    }
+
+    func addFocusDuration(seconds: Int, now: Date = .now) {
+        recordedFocusSeconds += max(0, seconds)
         updatedAt = now
     }
 }
