@@ -200,10 +200,11 @@
 				};
 			};
 			buildConfigurationList = 2E1176E82FFE20CF0011219C /* Build configuration list for PBXProject "ThruFlow" */;
-			developmentRegion = en;
+			developmentRegion = ja;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
+				ja,
 				Base,
 			);
 			mainGroup = 2E1176E42FFE20CF0011219C;
