@@ -43,6 +43,7 @@ struct FlowTests {
         #expect(engine.remainingSeconds(for: resumed, now: resumedAt) == 20 * 60)
         #expect(finished.phase == .awaitingResult)
         #expect(finished.actualFocusDurationSeconds == 12 * 60)
+        #expect(engine.remainingSeconds(for: finished, now: finishedAt) == 0)
     }
 
     @Test func timerRestoresFromBackgroundByAdvancingToBreak() {

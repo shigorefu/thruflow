@@ -408,20 +408,67 @@ struct FlowMiniPlayerView: View {
     }
 
     private var resultBar: some View {
-        HStack(spacing: 10) {
-            TextField("結果を入力", text: $resultText)
-                .textFieldStyle(.roundedBorder)
+        VStack(alignment: .leading, spacing: 14) {
+            TextField("何をしましたか", text: $resultText, axis: .vertical)
+                .textFieldStyle(.plain)
+                .font(.body)
+                .lineLimit(2...5)
 
-            Button("保存") {
-                activeFlowStore.completeResult(resultText, modelContext: modelContext)
-                resultText = ""
+            HStack(spacing: 10) {
+                Button {
+                    showsConfiguration = true
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.body.weight(.medium))
+                        .frame(width: 28, height: 28)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                .accessibilityLabel("Flow設定を開く")
+
+                HStack(spacing: 5) {
+                    Image(systemName: "note.text")
+                        .imageScale(.small)
+                    Text("メモ")
+                }
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.secondary)
+
+                Spacer(minLength: 0)
+
+                Text(activeFlowStore.remainingText(now: activeFlowStore.displayDate))
+                    .font(.system(.caption, design: .monospaced).weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+
+                Button {
+                    submitResult()
+                } label: {
+                    Image(systemName: "arrow.up")
+                        .font(.headline.weight(.semibold))
+                        .frame(width: 38, height: 38)
+                        .background(resultText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.secondary.opacity(0.35) : Color.accentColor)
+                        .foregroundStyle(.white)
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("メモを保存")
             }
-            .buttonStyle(.borderedProminent)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .background(.regularMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .padding(.horizontal, 16)
+        .padding(.top, 14)
+        .padding(.bottom, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 22)
+                .fill(Color.primary.opacity(0.08))
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 22)
+                .strokeBorder(Color.primary.opacity(0.12))
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(.bar)
     }
 
     private var adaptiveExtensionMinutes: Int {
@@ -454,9 +501,13 @@ struct FlowMiniPlayerView: View {
         case .awaitingExtensionDecision:
             activeFlowStore.finish(modelContext: modelContext)
         case .awaitingResult:
-            activeFlowStore.completeResult(resultText, modelContext: modelContext)
-            resultText = ""
+            submitResult()
         }
+    }
+
+    private func submitResult() {
+        activeFlowStore.completeResult(resultText, modelContext: modelContext)
+        resultText = ""
     }
 
     private func resolvedStartDirection() -> Direction {
