@@ -54,3 +54,4 @@ Next implementation work should continue with Direction polish only if needed, t
 - [MVP](docs/MVP.md)
 - [Roadmap](docs/ROADMAP.md)
 - [Decisions](docs/DECISIONS.md)
+- [Japanese Vocabulary](docs/VOCABULARY.md)

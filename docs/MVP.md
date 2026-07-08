@@ -18,11 +18,11 @@ MVP 0.1 proves the core ThruFlow loop with local SwiftData storage.
 
 - create;
 - choose Direction;
-- checkbox or target blocks;
+- checkbox, focus block, or minute target;
 - show on Today;
 - change status;
 - reschedule;
-- archive or delete.
+- archive.
 
 ### Basic Flow
 
@@ -98,4 +98,3 @@ The MVP is successful when a user can:
 5. Record what actually happened.
 6. See basic history.
 7. Complete a day when Must requirements are satisfied.
-

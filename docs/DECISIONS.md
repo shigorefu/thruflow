@@ -54,6 +54,12 @@ Use Japanese for user-facing text by default. Keep Swift identifiers, stable enu
 
 Reason: the product should start with a clear default locale while preserving maintainable code and stable persistence values.
 
+### D-009: Todo belongs to Direction, but storage relationship is optional
+
+Todo creation and validation require a Direction. The SwiftData relationship is optional at the storage level.
+
+Reason: this keeps the domain rule in UI and validation while leaving room for future SwiftData and CloudKit schema evolution.
+
 ## Current Risks
 
 - The project deployment targets are set to OS version 26.5, which may restrict local simulator/device availability.

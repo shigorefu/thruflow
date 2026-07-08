@@ -9,7 +9,6 @@ import SwiftData
 import SwiftUI
 
 struct DirectionListView: View {
-    @Environment(\.modelContext) private var modelContext
     @Query(sort: \Direction.name, order: .forward) private var directions: [Direction]
 
     @State private var isShowingAddSheet = false
@@ -21,56 +20,54 @@ struct DirectionListView: View {
     }
 
     var body: some View {
-        NavigationViewWrapper {
-            List {
-                if visibleDirections.isEmpty {
-                    ContentUnavailableView(
-                        showingArchived ? "アーカイブ済みの方向はありません" : "方向はまだありません",
-                        systemImage: showingArchived ? "archivebox" : "point.3.connected.trianglepath.dotted",
-                        description: Text(showingArchived ? "アーカイブした方向がここに表示されます。" : "進捗に変えたい領域を最初に作成しましょう。")
-                    )
-                } else {
-                    Section {
-                        ForEach(visibleDirections) { direction in
-                            DirectionRow(direction: direction)
-                                .contentShape(Rectangle())
-                                .onTapGesture {
-                                    editingDirection = direction
-                                }
-                                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                    if !direction.isArchived {
-                                        Button("アーカイブ", systemImage: "archivebox", role: .destructive) {
-                                            direction.archive()
-                                        }
+        List {
+            if visibleDirections.isEmpty {
+                ContentUnavailableView(
+                    showingArchived ? "アーカイブ済みの方向はありません" : "方向はまだありません",
+                    systemImage: showingArchived ? "archivebox" : "point.3.connected.trianglepath.dotted",
+                    description: Text(showingArchived ? "アーカイブした方向がここに表示されます。" : "進捗に変えたい領域を最初に作成しましょう。")
+                )
+            } else {
+                Section {
+                    ForEach(visibleDirections) { direction in
+                        DirectionRow(direction: direction)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                editingDirection = direction
+                            }
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                if !direction.isArchived {
+                                    Button("アーカイブ", systemImage: "archivebox", role: .destructive) {
+                                        direction.archive()
                                     }
                                 }
-                        }
+                            }
                     }
                 }
             }
-            .navigationTitle("方向")
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        isShowingAddSheet = true
-                    } label: {
-                        Label("方向を追加", systemImage: "plus")
-                    }
+        }
+        .navigationTitle("方向")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    isShowingAddSheet = true
+                } label: {
+                    Label("方向を追加", systemImage: "plus")
                 }
+            }
 
-                ToolbarItem {
-                    Toggle(isOn: $showingArchived) {
-                        Label("アーカイブ", systemImage: "archivebox")
-                    }
-                    .toggleStyle(.button)
+            ToolbarItem {
+                Toggle(isOn: $showingArchived) {
+                    Label("アーカイブ", systemImage: "archivebox")
                 }
+                .toggleStyle(.button)
             }
-            .sheet(isPresented: $isShowingAddSheet) {
-                DirectionFormView(mode: .create)
-            }
-            .sheet(item: $editingDirection) { direction in
-                DirectionFormView(mode: .edit(direction))
-            }
+        }
+        .sheet(isPresented: $isShowingAddSheet) {
+            DirectionFormView(mode: .create)
+        }
+        .sheet(item: $editingDirection) { direction in
+            DirectionFormView(mode: .edit(direction))
         }
     }
 }
@@ -125,26 +122,7 @@ private struct DirectionRow: View {
     }
 }
 
-private struct NavigationViewWrapper<Content: View>: View {
-    let content: () -> Content
-
-    var body: some View {
-#if os(macOS)
-        NavigationSplitView {
-            content()
-        } detail: {
-            Text("方向を選択")
-                .foregroundStyle(.secondary)
-        }
-#else
-        NavigationStack {
-            content()
-        }
-#endif
-    }
-}
-
 #Preview {
     DirectionListView()
-        .modelContainer(for: Direction.self, inMemory: true)
+        .modelContainer(for: [Direction.self, Todo.self], inMemory: true)
 }

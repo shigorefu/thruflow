@@ -13,6 +13,7 @@ struct ThruFlowApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Direction.self,
+            Todo.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
