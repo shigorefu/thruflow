@@ -65,7 +65,7 @@ enum GoalUnit: String, CaseIterable, Codable, Identifiable {
     var displayName: String {
         switch self {
         case .occurrences:
-            "回数"
+            "回"
         case .focusBlocks:
             "フローブロック"
         case .minutes:

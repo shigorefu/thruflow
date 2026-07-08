@@ -28,7 +28,7 @@ struct DirectionDraft {
         goalEnabled: Bool = false,
         goalTarget: Int? = nil,
         goalPeriod: GoalPeriod? = .daily,
-        goalUnit: GoalUnit? = .focusBlocks,
+        goalUnit: GoalUnit? = .occurrences,
         goalSchedule: GoalScheduleKind? = .everyDay,
         weeklyTargetCount: Int? = 1,
         weekdayMask: Int? = nil
@@ -54,7 +54,7 @@ struct DirectionDraft {
         self.goalEnabled = direction.hasGoal
         self.goalTarget = direction.goalTarget
         self.goalPeriod = direction.goalPeriod ?? .daily
-        self.goalUnit = direction.goalUnit ?? .focusBlocks
+        self.goalUnit = direction.goalUnit ?? .occurrences
         self.goalSchedule = direction.goalSchedule ?? .everyDay
         self.weeklyTargetCount = direction.weeklyTargetCount ?? 1
         self.weekdayMask = direction.weekdayMask

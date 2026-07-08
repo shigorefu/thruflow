@@ -251,7 +251,7 @@ struct DirectionFormView: View {
 
     private var goalUnitBinding: Binding<GoalUnit> {
         Binding(
-            get: { draft.goalUnit ?? .focusBlocks },
+            get: { draft.goalUnit ?? .occurrences },
             set: { draft.goalUnit = $0 }
         )
     }
@@ -365,7 +365,7 @@ struct DirectionFormView: View {
 
         draft.goalEnabled = true
         draft.goalTarget = draft.goalTarget ?? 1
-        draft.goalUnit = draft.goalUnit ?? .focusBlocks
+        draft.goalUnit = draft.goalUnit ?? .occurrences
         draft.goalSchedule = draft.goalSchedule ?? .everyDay
         draft.goalPeriod = draft.goalSchedule?.goalPeriod
 
@@ -459,6 +459,7 @@ private let colorOptions: [(name: String, hex: String)] = [
 ]
 
 private let goalUnitOptions: [GoalUnit] = [
+    .occurrences,
     .focusBlocks,
     .minutes
 ]
