@@ -64,7 +64,7 @@ private struct FlowMenuBarLabel: View {
             Label("Flow", systemImage: "timer")
         } else {
             Text(menuTitle)
-                .font(.system(.body, design: .monospaced))
+                .font(.system(.body, design: .default))
                 .monospacedDigit()
         }
     }
@@ -74,7 +74,24 @@ private struct FlowMenuBarLabel: View {
             return "Flow"
         }
 
-        return activeFlowStore.remainingText(now: activeFlowStore.displayDate)
+        let session = activeFlowStore.activeSession
+        let emoji = session?.direction?.symbolName ?? "▶"
+        let taskName = resolvedTaskName(session: session)
+        return "\(emoji): \(taskName) - \(activeFlowStore.remainingText(now: activeFlowStore.displayDate))"
+    }
+
+    private func resolvedTaskName(session: FlowSession?) -> String {
+        if let todoTitle = session?.todo?.title.trimmingCharacters(in: .whitespacesAndNewlines),
+           !todoTitle.isEmpty {
+            return todoTitle
+        }
+
+        if let directionName = session?.direction?.name.trimmingCharacters(in: .whitespacesAndNewlines),
+           !directionName.isEmpty {
+            return directionName
+        }
+
+        return "タスク"
     }
 }
 #endif

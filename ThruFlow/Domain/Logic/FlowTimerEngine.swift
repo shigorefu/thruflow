@@ -185,6 +185,10 @@ struct FlowTimerEngine {
     }
 
     func remainingSeconds(for state: FlowTimerState, now: Date) -> Int {
+        guard state.phase == .focusing || state.phase == .paused || state.phase == .breakTime else {
+            return 0
+        }
+
         let referenceDate = state.phase == .paused ? (state.pausedAt ?? now) : now
         return max(0, Int(state.plannedEndAt.timeIntervalSince(referenceDate).rounded(.up)))
     }

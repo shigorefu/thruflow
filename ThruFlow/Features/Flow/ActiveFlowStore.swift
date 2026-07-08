@@ -179,20 +179,8 @@ final class ActiveFlowStore: ObservableObject {
     func stop(modelContext: ModelContext, now: Date = .now) {
         notifications.cancelPendingFlowNotifications()
 
-        if let timerState {
-            let finished = engine.finish(timerState, now: now)
-            let completed = engine.completeResult(finished, now: now)
-            activeSession?.apply(timerState: completed, now: now)
-            applyProgressIfNeeded(
-                seconds: finished.actualFocusDurationSeconds ?? engine.actualFocusDuration(for: timerState, now: now),
-                now: now
-            )
-        }
-
-        activeSession = nil
-        timerState = nil
-        didApplyProgress = false
-        try? modelContext.save()
+        guard let timerState else { return }
+        apply(engine.finish(timerState, now: now), modelContext: modelContext, now: now)
     }
 
     func destroy(modelContext: ModelContext, now: Date = .now) {

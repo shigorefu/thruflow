@@ -95,6 +95,10 @@ After finish, prompt gently for Result. Result can be optional, but the interfac
 
 Finishing a Flow may update Direction and Todo progress based on deterministic rules, but AI must never close a Todo without user confirmation.
 
+Stopping a Flow also preserves the focused time and opens the same memo prompt. The memo is stored as the FlowSession result.
+
+On macOS, the menu bar label for an active Flow should show the current context as `Direction emoji: task name - remaining time`.
+
 ## Adaptive Flow
 
 Adaptive Flow starts at 12 minutes.
