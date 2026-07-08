@@ -15,7 +15,11 @@ final class ActiveFlowStore: ObservableObject {
     @Published var selectedTodoID: UUID?
     @Published var selectedMode: FlowMode
     @Published var intent: String
-    @Published var timerState: FlowTimerState?
+    @Published var timerState: FlowTimerState? {
+        didSet {
+            synchronizeDisplayClock()
+        }
+    }
     @Published var activeSession: FlowSession?
     @Published private(set) var displayDate: Date = .now
 
@@ -36,11 +40,6 @@ final class ActiveFlowStore: ObservableObject {
         selectedTodoID = defaults.uuid(forKey: "flow.selectedTodoID")
         selectedMode = defaults.flowMode(forKey: "flow.selectedMode") ?? .twentyFiveFive
         intent = defaults.string(forKey: "flow.lastIntent") ?? ""
-        displayClock = Timer.publish(every: 1, on: .main, in: .common)
-            .autoconnect()
-            .sink { [weak self] date in
-                self?.displayDate = date
-            }
     }
 
     var phase: FlowPhase {
@@ -97,6 +96,7 @@ final class ActiveFlowStore: ObservableObject {
     func refresh(modelContext: ModelContext, now: Date = .now) {
         guard let timerState else { return }
         let next = engine.advanceIfNeeded(timerState, now: now)
+        guard next != timerState else { return }
         apply(next, modelContext: modelContext, now: now)
     }
 
@@ -155,6 +155,7 @@ final class ActiveFlowStore: ObservableObject {
     func seekForward(modelContext: ModelContext, now: Date = .now) {
         guard let timerState else { return }
         let next = engine.seekForward(timerState, now: now)
+        guard next != timerState else { return }
         notifications.scheduleFocusFinished(
             mode: next.mode,
             focusedSeconds: next.plannedFocusDurationSeconds,
@@ -166,6 +167,7 @@ final class ActiveFlowStore: ObservableObject {
     func seekBackward(modelContext: ModelContext, now: Date = .now) {
         guard let timerState else { return }
         let next = engine.seekBackward(timerState, now: now)
+        guard next != timerState else { return }
         notifications.scheduleFocusFinished(
             mode: next.mode,
             focusedSeconds: next.plannedFocusDurationSeconds,
@@ -208,6 +210,8 @@ final class ActiveFlowStore: ObservableObject {
     }
 
     private func apply(_ state: FlowTimerState, modelContext: ModelContext, now: Date) {
+        guard state != timerState else { return }
+
         let previousPhase = timerState?.phase
         timerState = state
         activeSession?.apply(timerState: state, now: now)
@@ -221,6 +225,24 @@ final class ActiveFlowStore: ObservableObject {
         }
 
         try? modelContext.save()
+    }
+
+    private func synchronizeDisplayClock() {
+        displayDate = .now
+
+        guard timerState != nil else {
+            displayClock?.cancel()
+            displayClock = nil
+            return
+        }
+
+        guard displayClock == nil else { return }
+
+        displayClock = Timer.publish(every: 1, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] date in
+                self?.displayDate = date
+            }
     }
 
     private func applyProgressIfNeeded(seconds: Int, now: Date) {
