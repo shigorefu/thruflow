@@ -6,6 +6,9 @@ ThruFlow uses Japanese as the default user-facing language. Code identifiers, en
 | --- | --- |
 | ThruFlow | スルフロ |
 | Direction | 方向 |
+| Default task inbox direction | タスク |
+| Direction symbol | 絵文字 |
+| Direction color | カラー |
 | Must | 必須 |
 | Neutral | 通常 |
 | Bonus | ボーナス |

@@ -77,9 +77,8 @@ private struct DirectionRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: direction.symbolName)
-                .font(.title3)
-                .foregroundStyle(Color(hex: direction.colorHex))
+            Text(direction.symbolName)
+                .font(.title2)
                 .frame(width: 32, height: 32)
                 .accessibilityHidden(true)
 

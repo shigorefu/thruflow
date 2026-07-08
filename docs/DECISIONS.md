@@ -56,16 +56,16 @@ Reason: the product should start with a clear default locale while preserving ma
 
 ### D-009: Todo belongs to Direction, but storage relationship is optional
 
-Todo creation and validation require a Direction. The SwiftData relationship is optional at the storage level.
+Todo creation may start without an explicit Direction. In that case the app creates or reuses a neutral default Direction named `タスク`. The SwiftData relationship is optional at the storage level.
 
-Reason: this keeps the domain rule in UI and validation while leaving room for future SwiftData and CloudKit schema evolution.
+Reason: quick task capture must stay low-friction while preserving a Direction relationship for later organization, statistics, and CloudKit schema evolution.
 
 ## Current Risks
 
 - The project deployment targets are set to OS version 26.5, which may restrict local simulator/device availability.
 - CloudKit entitlement exists but no iCloud container identifier is configured.
 - The app target currently includes visionOS platforms, although the product scope is iPhone, iPad, and macOS first.
-- The current code has only the Direction vertical slice; Todo, Flow, Today completion, and History are still pending.
+- Todo capture is still a narrow vertical slice; Flow, Today completion, and History are still pending.
 - CoreSimulator was unavailable from the current sandbox during `xcodebuild -list`; full build/test verification may need Xcode or an approved command environment.
 
 ## Open Questions

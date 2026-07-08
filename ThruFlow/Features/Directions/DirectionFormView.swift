@@ -55,6 +55,7 @@ struct DirectionFormView: View {
                             Text(type.displayName).tag(type)
                         }
                     }
+                    .pickerStyle(.segmented)
 
                     Text(draft.type.description)
                         .font(.footnote)
@@ -62,19 +63,9 @@ struct DirectionFormView: View {
                 }
 
                 Section("表示") {
-                    Picker("シンボル", selection: $draft.symbolName) {
-                        ForEach(symbolOptions, id: \.self) { symbolName in
-                            Label(symbolName, systemImage: symbolName).tag(symbolName)
-                        }
-                    }
+                    EmojiSelector(selection: $draft.symbolName)
 
-                    Picker("色", selection: $draft.colorHex) {
-                        ForEach(colorOptions, id: \.hex) { option in
-                            Label(option.name, systemImage: "circle.fill")
-                                .foregroundStyle(Color(hex: option.hex))
-                                .tag(option.hex)
-                        }
-                    }
+                    ColorSwatchSelector(selection: $draft.colorHex)
                 }
 
                 Section("目標") {
@@ -183,24 +174,112 @@ struct DirectionFormView: View {
     }
 }
 
-private let symbolOptions = [
-    "circle",
-    "briefcase",
-    "book.closed",
-    "graduationcap",
-    "figure.run",
-    "house",
-    "cloud",
-    "character.book.closed"
+private struct EmojiSelector: View {
+    @Binding var selection: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("絵文字")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(emojiOptions, id: \.self) { emoji in
+                        Button {
+                            selection = emoji
+                        } label: {
+                            Text(emoji)
+                                .font(.title2)
+                                .frame(width: 36, height: 36)
+                                .background(selection == emoji ? Color.accentColor.opacity(0.18) : Color.clear)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("絵文字 \(emoji)")
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+
+            TextField("Apple絵文字", text: $selection)
+                .textFieldStyle(.roundedBorder)
+        }
+    }
+}
+
+private struct ColorSwatchSelector: View {
+    @Binding var selection: String
+
+    private let columns = [
+        GridItem(.adaptive(minimum: 44), spacing: 8)
+    ]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("色")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
+                ForEach(colorOptions, id: \.hex) { option in
+                    Button {
+                        selection = option.hex
+                    } label: {
+                        Circle()
+                            .fill(Color(hex: option.hex))
+                            .frame(width: 28, height: 28)
+                            .overlay {
+                                if selection == option.hex {
+                                    Image(systemName: "checkmark")
+                                        .font(.caption.weight(.bold))
+                                        .foregroundStyle(.white)
+                                }
+                            }
+                            .frame(width: 44, height: 36)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(option.name)
+                }
+            }
+        }
+    }
+}
+
+private let emojiOptions = [
+    "🎯",
+    "📝",
+    "💼",
+    "📚",
+    "🧠",
+    "💻",
+    "☁️",
+    "🗾",
+    "🏃‍♂️",
+    "🏋️",
+    "🧹",
+    "🚶",
+    "🍱",
+    "😴",
+    "🎮",
+    "🏠",
+    "📌",
+    "⭐️"
 ]
 
 private let colorOptions: [(name: String, hex: String)] = [
-    ("青", "#3B82F6"),
-    ("緑", "#10B981"),
-    ("オレンジ", "#F97316"),
-    ("ピンク", "#EC4899"),
-    ("藍", "#6366F1"),
-    ("グレー", "#6B7280")
+    ("ブルー", "#007AFF"),
+    ("グリーン", "#34C759"),
+    ("ミント", "#00C7BE"),
+    ("ティール", "#30B0C7"),
+    ("シアン", "#32ADE6"),
+    ("インディゴ", "#5856D6"),
+    ("パープル", "#AF52DE"),
+    ("ピンク", "#FF2D55"),
+    ("レッド", "#FF3B30"),
+    ("オレンジ", "#FF9500"),
+    ("イエロー", "#FFCC00"),
+    ("グレー", "#8E8E93")
 ]
 
 extension Color {

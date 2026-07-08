@@ -94,8 +94,8 @@ final class Direction {
         id: UUID = UUID(),
         name: String,
         type: DirectionType,
-        symbolName: String = "circle",
-        colorHex: String = "#3B82F6",
+        symbolName: String = "🎯",
+        colorHex: String = "#007AFF",
         goalTarget: Int? = nil,
         goalPeriod: GoalPeriod? = nil,
         goalUnit: GoalUnit? = nil,
@@ -176,8 +176,8 @@ extension Direction {
         Direction(
             name: "読書",
             type: .must,
-            symbolName: "book.closed",
-            colorHex: "#10B981",
+            symbolName: "📚",
+            colorHex: "#34C759",
             goalTarget: 1,
             goalPeriod: .daily,
             goalUnit: .focusBlocks
