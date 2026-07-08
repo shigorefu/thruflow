@@ -380,7 +380,8 @@ private struct MessengerTodoComposer: View {
                 .accessibilityLabel("タスク入力に戻る")
 
                 DirectionChip(selectedDirectionID: $selectedDirectionID, directions: directions)
-                    .layoutPriority(1)
+                    .fixedSize(horizontal: true, vertical: false)
+                    .layoutPriority(3)
 
                 DateChip(dateOption: $dateOption)
 
@@ -442,6 +443,14 @@ private struct DirectionChip: View {
         return directions.first { $0.id == selectedDirectionID }
     }
 
+    private var labelText: String {
+        guard let selectedDirection else {
+            return "📝 タスク"
+        }
+
+        return "\(selectedDirection.symbolName) \(selectedDirection.name)"
+    }
+
     var body: some View {
         Menu {
             Button {
@@ -465,12 +474,10 @@ private struct DirectionChip: View {
                 }
             }
         } label: {
-            HStack(spacing: 4) {
-                Text(selectedDirection?.symbolName ?? "📝")
-                Text(selectedDirection?.name ?? "タスク")
-                    .truncationMode(.tail)
-            }
-            .chipStyle(tint: chipColor)
+            Text(labelText)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
+                .chipStyle(tint: chipColor)
         }
         .menuStyle(.borderlessButton)
         .accessibilityLabel("方向を選択")
