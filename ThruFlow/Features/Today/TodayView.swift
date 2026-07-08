@@ -191,7 +191,7 @@ private struct MessengerTodoComposer: View {
             HStack(spacing: 10) {
                 Image(systemName: "square")
                     .imageScale(.large)
-                    .foregroundStyle(isExpanded ? Color.primary.opacity(0.8) : Color.secondary.opacity(0.35))
+                    .foregroundStyle(squareColor)
                     .frame(width: 26)
                     .accessibilityHidden(true)
 
@@ -224,6 +224,19 @@ private struct MessengerTodoComposer: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
         .background(.regularMaterial)
+    }
+
+    private var selectedDirection: Direction? {
+        guard let selectedDirectionID else { return nil }
+        return directions.first { $0.id == selectedDirectionID }
+    }
+
+    private var squareColor: Color {
+        if let selectedDirection {
+            return Color(hex: selectedDirection.colorHex)
+        }
+
+        return isExpanded ? Color.primary.opacity(0.55) : Color.secondary.opacity(0.35)
     }
 }
 
@@ -291,6 +304,7 @@ private struct TodoRow: View {
             } label: {
                 Image(systemName: todo.isCompleted ? "checkmark.circle.fill" : "circle")
                     .imageScale(.large)
+                    .foregroundStyle(taskColor ?? Color.secondary.opacity(0.65))
             }
             .buttonStyle(.plain)
             .accessibilityLabel(todo.isCompleted ? "未完了に戻す" : "完了にする")
@@ -303,12 +317,13 @@ private struct TodoRow: View {
                 HStack(spacing: 8) {
                     if let direction = todo.direction {
                         Text(direction.name)
+                            .foregroundStyle(taskColor ?? Color.secondary)
                     }
 
                     Text(summary)
+                        .foregroundStyle(.secondary)
                 }
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
             }
 
             Spacer()
@@ -326,6 +341,15 @@ private struct TodoRow: View {
             get: { todo.actualProgress },
             set: { todo.setProgress($0) }
         )
+    }
+
+    private var taskColor: Color? {
+        guard let direction = todo.direction,
+              !DefaultDirections.isTaskInbox(direction) else {
+            return nil
+        }
+
+        return Color(hex: direction.colorHex)
     }
 }
 
