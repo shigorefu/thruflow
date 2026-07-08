@@ -105,7 +105,7 @@ struct DirectionFormView: View {
             Button("削除", role: .destructive, action: deleteDirection)
             Button("キャンセル", role: .cancel) {}
         } message: {
-            Text("この操作は元に戻せません。")
+            Text("履歴と関連タスクを保つため、方向はアーカイブされます。")
         }
     }
 
@@ -347,7 +347,7 @@ struct DirectionFormView: View {
     private func deleteDirection() {
         guard case .edit(let direction) = mode else { return }
 
-        modelContext.delete(direction)
+        direction.archive()
         dismiss()
     }
 
