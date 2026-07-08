@@ -65,8 +65,7 @@ struct DirectionDraft {
     }
 
     var normalizedSymbolName: String {
-        let trimmed = symbolName.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? "🎯" : trimmed
+        EmojiValidation.normalizedSingleEmoji(from: symbolName) ?? "🎯"
     }
 }
 

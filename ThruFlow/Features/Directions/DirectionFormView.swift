@@ -30,6 +30,7 @@ struct DirectionFormView: View {
 
     @State private var draft: DirectionDraft
     @State private var validationErrors: [DirectionValidationError] = []
+    @State private var isShowingEmojiPicker = false
 
     private let validator = DirectionValidator()
 
@@ -46,70 +47,23 @@ struct DirectionFormView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section("基本") {
-                    HStack(spacing: 12) {
-                        EmojiPopoverButton(selection: $draft.symbolName)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    headerCard
+                    typeCard
 
-                        TextField("方向名", text: $draft.name)
-                            .textFieldStyle(.plain)
-
-                        ColorPopoverButton(selection: $draft.colorHex)
+                    if draft.type == .must {
+                        goalCard
                     }
-                    .padding(.vertical, 4)
+
+                    colorCard
+                    validationCard
                 }
-
-                Section("種類") {
-                    Picker("種類", selection: $draft.type) {
-                        ForEach(DirectionType.allCases) { type in
-                            Text(type.displayName).tag(type)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-
-                    Text(draft.type.description)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-
-                if draft.type == .must {
-                    Section("目標") {
-                        HStack {
-                            Text("目標値")
-
-                            TextField("1", value: goalTargetBinding, format: .number)
-                                .textFieldStyle(.roundedBorder)
-                                .frame(maxWidth: 90)
-
-                            Picker("単位", selection: goalUnitBinding) {
-                                ForEach(goalUnitOptions) { unit in
-                                    Text(unit.displayName).tag(unit)
-                                }
-                            }
-                            .labelsHidden()
-                            .frame(maxWidth: 180)
-                        }
-
-                        Picker("頻度", selection: goalScheduleBinding) {
-                            ForEach(GoalScheduleKind.allCases) { schedule in
-                                Text(schedule.displayName).tag(schedule)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-
-                        goalScheduleDetails
-                    }
-                }
-
-                if !validationErrors.isEmpty {
-                    Section {
-                        ForEach(validationErrors, id: \.self) { error in
-                            Label(error.localizedDescription, systemImage: "exclamationmark.triangle")
-                                .foregroundStyle(.red)
-                        }
-                    }
-                }
+                .padding(20)
+                .frame(maxWidth: 620, alignment: .leading)
+                .frame(maxWidth: .infinity)
             }
+            .background(.background)
             .navigationTitle(mode.title)
 #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -134,6 +88,136 @@ struct DirectionFormView: View {
         }
         .onChange(of: draft.goalSchedule) { _, _ in
             normalizeGoalState(for: draft.type)
+        }
+#if os(iOS)
+        .sheet(isPresented: $isShowingEmojiPicker) {
+            EmojiPickerView(selection: $draft.symbolName)
+        }
+#else
+        .popover(isPresented: $isShowingEmojiPicker, arrowEdge: .bottom) {
+            EmojiPickerView(selection: $draft.symbolName)
+                .frame(width: 420, height: 560)
+        }
+#endif
+    }
+
+    private var headerCard: some View {
+        DirectionSectionCard {
+            HStack(alignment: .center, spacing: 16) {
+                Button {
+                    isShowingEmojiPicker = true
+                } label: {
+                    Text(draft.normalizedSymbolName)
+                        .font(.system(size: 48))
+                        .minimumScaleFactor(0.7)
+                        .frame(width: 76, height: 76)
+                        .background(Color.secondary.opacity(0.10))
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("絵文字を選択")
+                .accessibilityValue(draft.normalizedSymbolName)
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("方向名")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    TextField("名前", text: $draft.name)
+                        .font(.title3.weight(.semibold))
+                        .textFieldStyle(.plain)
+                        .accessibilityLabel("方向名")
+                }
+            }
+        }
+    }
+
+    private var typeCard: some View {
+        DirectionSectionCard(title: "種類") {
+            Picker("種類", selection: $draft.type) {
+                ForEach(DirectionType.allCases) { type in
+                    Text(type.displayName).tag(type)
+                }
+            }
+            .pickerStyle(.segmented)
+            .accessibilityLabel("種類")
+
+            Text(draft.type.description)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var goalCard: some View {
+        DirectionSectionCard(title: "目標") {
+            HStack(spacing: 10) {
+                TextField("1", value: goalTargetBinding, format: .number)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 82)
+                    .accessibilityLabel("目標値")
+
+                Picker("単位", selection: goalUnitBinding) {
+                    ForEach(goalUnitOptions) { unit in
+                        Text(unit.displayName).tag(unit)
+                    }
+                }
+                .labelsHidden()
+                .frame(maxWidth: 180)
+                .accessibilityLabel("単位")
+
+                Spacer(minLength: 0)
+            }
+
+            Picker("頻度", selection: goalScheduleBinding) {
+                ForEach(GoalScheduleKind.allCases) { schedule in
+                    Text(schedule.displayName).tag(schedule)
+                }
+            }
+            .pickerStyle(.segmented)
+            .accessibilityLabel("頻度")
+
+            goalScheduleDetails
+        }
+    }
+
+    private var colorCard: some View {
+        DirectionSectionCard(title: "カラー") {
+            LazyVGrid(columns: colorColumns, alignment: .leading, spacing: 10) {
+                ForEach(colorOptions, id: \.hex) { option in
+                    Button {
+                        draft.colorHex = option.hex
+                    } label: {
+                        Circle()
+                            .fill(Color(hex: option.hex))
+                            .frame(width: 30, height: 30)
+                            .overlay {
+                                if draft.colorHex == option.hex {
+                                    Image(systemName: "checkmark")
+                                        .font(.caption.weight(.bold))
+                                        .foregroundStyle(.white)
+                                }
+                            }
+                            .frame(width: 42, height: 38)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(option.name)
+                    .accessibilityAddTraits(draft.colorHex == option.hex ? [.isSelected] : [])
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var validationCard: some View {
+        if !validationErrors.isEmpty {
+            DirectionSectionCard {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(validationErrors, id: \.self) { error in
+                        Label(error.localizedDescription, systemImage: "exclamationmark.triangle")
+                            .foregroundStyle(.red)
+                    }
+                }
+            }
         }
     }
 
@@ -263,127 +347,28 @@ struct DirectionFormView: View {
     }
 }
 
-private struct EmojiPopoverButton: View {
-    @Binding var selection: String
+private struct DirectionSectionCard<Content: View>: View {
+    var title: String?
+    @ViewBuilder let content: Content
 
-    @State private var isPresented = false
-
-    var body: some View {
-        Button {
-            isPresented.toggle()
-        } label: {
-            Text(selection)
-                .font(.largeTitle)
-                .frame(width: 52, height: 52)
-                .background(.quaternary)
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("絵文字")
-        .popover(isPresented: $isPresented, arrowEdge: .bottom) {
-            EmojiGrid(selection: $selection)
-                .frame(width: 320, height: 280)
-                .padding()
-        }
+    init(title: String? = nil, @ViewBuilder content: () -> Content) {
+        self.title = title
+        self.content = content()
     }
-}
-
-private struct EmojiGrid: View {
-    @Binding var selection: String
-
-    private let columns = [
-        GridItem(.adaptive(minimum: 36), spacing: 6)
-    ]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("絵文字")
-                .font(.headline)
-
-            ScrollView {
-                LazyVGrid(columns: columns, alignment: .leading, spacing: 6) {
-                    ForEach(emojiOptions, id: \.self) { emoji in
-                        Button {
-                            selection = emoji
-                        } label: {
-                            Text(emoji)
-                                .font(.title2)
-                                .frame(width: 36, height: 36)
-                                .background(selection == emoji ? Color.accentColor.opacity(0.2) : Color.clear)
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("絵文字 \(emoji)")
-                    }
-                }
+        VStack(alignment: .leading, spacing: 12) {
+            if let title {
+                Text(title)
+                    .font(.headline)
             }
 
-            TextField("絵文字を入力", text: $selection)
-                .textFieldStyle(.roundedBorder)
+            content
         }
-    }
-}
-
-private struct ColorPopoverButton: View {
-    @Binding var selection: String
-
-    @State private var isPresented = false
-
-    var body: some View {
-        Button {
-            isPresented.toggle()
-        } label: {
-            Circle()
-                .fill(Color(hex: selection))
-                .frame(width: 24, height: 24)
-                .padding(8)
-                .background(.quaternary)
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("カラー")
-        .popover(isPresented: $isPresented, arrowEdge: .bottom) {
-            ColorGrid(selection: $selection)
-                .frame(width: 260)
-                .padding()
-        }
-    }
-}
-
-private struct ColorGrid: View {
-    @Binding var selection: String
-
-    private let columns = [
-        GridItem(.adaptive(minimum: 44), spacing: 8)
-    ]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("カラー")
-                .font(.headline)
-
-            LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
-                ForEach(colorOptions, id: \.hex) { option in
-                    Button {
-                        selection = option.hex
-                    } label: {
-                        Circle()
-                            .fill(Color(hex: option.hex))
-                            .frame(width: 28, height: 28)
-                            .overlay {
-                                if selection == option.hex {
-                                    Image(systemName: "checkmark")
-                                        .font(.caption.weight(.bold))
-                                        .foregroundStyle(.white)
-                                }
-                            }
-                            .frame(width: 44, height: 36)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(option.name)
-                }
-            }
-        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.secondary.opacity(0.07))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 }
 
@@ -404,6 +389,7 @@ private struct WeekdaySelectionView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(weekday.displayName)
+                .accessibilityAddTraits(isSelected(weekday) ? [.isSelected] : [])
             }
         }
     }
@@ -425,14 +411,8 @@ private struct WeekdaySelectionView: View {
     }
 }
 
-private let emojiOptions = [
-    "🎯", "📝", "💼", "📚", "🧠", "💻", "☁️", "🗾",
-    "🏃‍♂️", "🏋️", "🧹", "🚶", "🍱", "😴", "🎮", "🏠",
-    "📌", "⭐️", "✅", "🔥", "💡", "📈", "📅", "✍️",
-    "📖", "🎧", "🎨", "🎹", "📷", "🌱", "🌙", "☀️",
-    "❤️", "🧘", "🚴", "🏊", "🛠️", "💬", "💰", "🧾",
-    "🧩", "🧪", "🗂️", "📦", "🚀", "🛒", "🍎", "🥗",
-    "☕️", "🌍", "🧳"
+private let colorColumns = [
+    GridItem(.adaptive(minimum: 42), spacing: 8)
 ]
 
 private let colorOptions: [(name: String, hex: String)] = [
