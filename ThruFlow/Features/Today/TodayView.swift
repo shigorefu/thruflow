@@ -359,34 +359,49 @@ private struct MessengerTodoComposer: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 10) {
-                RoundedRectangle(cornerRadius: 5)
-                    .strokeBorder(Color.secondary.opacity(0.4), lineWidth: 1.6)
-                    .frame(width: 20, height: 20)
-                    .accessibilityHidden(true)
+        VStack(alignment: .leading, spacing: 10) {
+            TextField("何でもできます", text: $title, axis: .vertical)
+                .textFieldStyle(.plain)
+                .font(.body)
+                .lineLimit(2...5)
+                .focused($isFocused)
+                .onSubmit(submit)
 
-                TextField("タスクを追加", text: $title)
-                    .textFieldStyle(.plain)
-                    .focused($isFocused)
-                    .onSubmit(submit)
+            HStack(spacing: 10) {
+                Button {
+                    isFocused = true
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.title3.weight(.regular))
+                        .frame(width: 30, height: 30)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                .accessibilityLabel("タスク入力に戻る")
+
+                DirectionChip(selectedDirectionID: $selectedDirectionID, directions: directions)
+                    .layoutPriority(1)
+
+                DateChip(dateOption: $dateOption)
+
+                Spacer(minLength: 0)
+
+                VolumeChip(volume: $volume)
 
                 Button(action: submit) {
-                    Image(systemName: "arrow.up.circle.fill")
-                        .imageScale(.large)
-                        .foregroundStyle(trimmedTitle.isEmpty ? Color.secondary.opacity(0.4) : Color.accentColor)
+                    Image(systemName: "arrow.up")
+                        .font(.headline.weight(.semibold))
+                        .frame(width: 38, height: 38)
+                        .background(trimmedTitle.isEmpty ? Color.secondary.opacity(0.35) : Color.accentColor)
+                        .foregroundStyle(.white)
+                        .clipShape(Circle())
                 }
                 .buttonStyle(.plain)
                 .disabled(trimmedTitle.isEmpty)
                 .accessibilityLabel("タスクを追加")
             }
-
-            HStack(spacing: 8) {
-                DirectionChip(selectedDirectionID: $selectedDirectionID, directions: directions)
-                VolumeChip(volume: $volume)
-                DateChip(dateOption: $dateOption)
-                Spacer(minLength: 0)
-            }
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
 
             if let validationMessage {
                 Text(validationMessage)
@@ -394,9 +409,20 @@ private struct MessengerTodoComposer: View {
                     .foregroundStyle(.red)
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .background(.regularMaterial)
+        .padding(.horizontal, 16)
+        .padding(.top, 16)
+        .padding(.bottom, 10)
+        .background {
+            RoundedRectangle(cornerRadius: 22)
+                .fill(Color.primary.opacity(0.08))
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 22)
+                .strokeBorder(Color.primary.opacity(0.12))
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(.bar)
     }
 
     private func submit() {
@@ -442,6 +468,7 @@ private struct DirectionChip: View {
             HStack(spacing: 4) {
                 Text(selectedDirection?.symbolName ?? "📝")
                 Text(selectedDirection?.name ?? "タスク")
+                    .truncationMode(.tail)
             }
             .chipStyle(tint: chipColor)
         }

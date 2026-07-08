@@ -29,6 +29,8 @@ Today tasks are visually grouped by Direction type:
 
 Generated Must tasks start as editable task fields with the Direction in the placeholder, so the user can replace "Task (Reading)" with a concrete book or action.
 
+Quick task capture uses a bottom composer. The description field is the primary surface, with Direction, date, and Flow amount controls in the lower row. Direction is displayed as full emoji plus Direction name, not emoji alone.
+
 ## Direction Management
 
 Core actions:
