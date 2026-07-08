@@ -12,16 +12,19 @@ import SwiftData
 struct ThruFlowApp: App {
     @StateObject private var activeFlowStore = ActiveFlowStore()
 
+    private static var isRunningTests: Bool {
+        let processInfo = ProcessInfo.processInfo
+        return processInfo.environment["XCTestConfigurationFilePath"] != nil ||
+            processInfo.arguments.contains("--uitesting")
+    }
+
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Direction.self,
             Todo.self,
             FlowSession.self,
         ])
-        let processInfo = ProcessInfo.processInfo
-        let isRunningTests = processInfo.environment["XCTestConfigurationFilePath"] != nil ||
-            processInfo.arguments.contains("--uitesting")
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: isRunningTests)
+        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: Self.isRunningTests)
 
         do {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])
@@ -38,13 +41,34 @@ struct ThruFlowApp: App {
         .modelContainer(sharedModelContainer)
 
 #if os(macOS)
-        MenuBarExtra("スルフロ Flow", systemImage: "timer") {
+        MenuBarExtra {
             FlowMiniPlayerView()
                 .environmentObject(activeFlowStore)
                 .frame(width: 560)
+        } label: {
+            FlowMenuBarLabel()
+                .environmentObject(activeFlowStore)
         }
         .menuBarExtraStyle(.window)
         .modelContainer(sharedModelContainer)
 #endif
     }
 }
+
+#if os(macOS)
+private struct FlowMenuBarLabel: View {
+    @EnvironmentObject private var activeFlowStore: ActiveFlowStore
+
+    var body: some View {
+        Label(menuTitle, systemImage: "timer")
+    }
+
+    private var menuTitle: String {
+        guard activeFlowStore.timerState != nil else {
+            return "Flow"
+        }
+
+        return activeFlowStore.remainingText(now: activeFlowStore.displayDate)
+    }
+}
+#endif

@@ -54,13 +54,24 @@ enum FlowMode: String, CaseIterable, Codable, Identifiable {
     var blockSummary: String {
         switch self {
         case .twelveThree:
-            "0.5 Block"
+            "12分集中 / 3分休憩"
         case .twentyFiveFive:
-            "1 Block"
+            "25分集中 / 5分休憩"
         case .fiftyTen:
-            "2 Blocks"
+            "50分集中 / 10分休憩"
         case .adaptive:
-            "短く始めて伸ばす"
+            "12分から開始"
+        }
+    }
+
+    var shortDurationText: String {
+        switch self {
+        case .twelveThree, .adaptive:
+            "12/3"
+        case .twentyFiveFive:
+            "25/5"
+        case .fiftyTen:
+            "50/10"
         }
     }
 
