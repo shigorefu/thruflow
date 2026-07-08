@@ -19,13 +19,13 @@ enum FlowMode: String, CaseIterable, Codable, Identifiable {
     var displayName: String {
         switch self {
         case .twelveThree:
-            "12/3"
+            "ウォームアップ"
         case .twentyFiveFive:
-            "25/5"
+            "フォーカス"
         case .fiftyTen:
-            "50/10"
+            "ディープ"
         case .adaptive:
-            "Adaptive"
+            "オート"
         }
     }
 
@@ -54,13 +54,13 @@ enum FlowMode: String, CaseIterable, Codable, Identifiable {
     var blockSummary: String {
         switch self {
         case .twelveThree:
-            "0.5 Block focus"
+            "0.5 Block"
         case .twentyFiveFive:
-            "1 Block focus"
+            "1 Block"
         case .fiftyTen:
-            "2 Blocks focus"
+            "2 Blocks"
         case .adaptive:
-            "12分から開始"
+            "短く始めて伸ばす"
         }
     }
 

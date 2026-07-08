@@ -145,6 +145,41 @@ final class ActiveFlowStore: ObservableObject {
         apply(next, modelContext: modelContext, now: now)
     }
 
+    func seekForward(modelContext: ModelContext, now: Date = .now) {
+        guard let timerState else { return }
+        let next = engine.seekForward(timerState, now: now)
+        notifications.scheduleFocusFinished(
+            mode: next.mode,
+            focusedSeconds: next.plannedFocusDurationSeconds,
+            fireDate: next.plannedEndAt
+        )
+        apply(next, modelContext: modelContext, now: now)
+    }
+
+    func seekBackward(modelContext: ModelContext, now: Date = .now) {
+        guard let timerState else { return }
+        let next = engine.seekBackward(timerState, now: now)
+        notifications.scheduleFocusFinished(
+            mode: next.mode,
+            focusedSeconds: next.plannedFocusDurationSeconds,
+            fireDate: next.plannedEndAt
+        )
+        apply(next, modelContext: modelContext, now: now)
+    }
+
+    func stop(modelContext: ModelContext, now: Date = .now) {
+        notifications.cancelPendingFlowNotifications()
+
+        if let activeSession {
+            modelContext.delete(activeSession)
+        }
+
+        activeSession = nil
+        timerState = nil
+        didApplyProgress = false
+        try? modelContext.save()
+    }
+
     func skipBreak(modelContext: ModelContext, now: Date = .now) {
         guard let timerState else { return }
         notifications.cancelPendingFlowNotifications()

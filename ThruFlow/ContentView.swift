@@ -11,7 +11,6 @@ import SwiftData
 struct ContentView: View {
     @State private var selection: AppSection? = .today
     @State private var tabSelection: AppSection = .today
-    @StateObject private var activeFlowStore = ActiveFlowStore()
 
     var body: some View {
 #if os(macOS)
@@ -37,7 +36,6 @@ struct ContentView: View {
                 FlowMiniPlayerView()
             }
         }
-        .environmentObject(activeFlowStore)
 #else
         TabView(selection: $tabSelection) {
             TodayView()
@@ -57,7 +55,6 @@ struct ContentView: View {
                 FlowMiniPlayerView()
             }
         }
-        .environmentObject(activeFlowStore)
 #endif
     }
 }
@@ -69,5 +66,6 @@ private enum AppSection: Hashable {
 
 #Preview {
     ContentView()
+        .environmentObject(ActiveFlowStore())
         .modelContainer(for: [Direction.self, Todo.self, FlowSession.self], inMemory: true)
 }

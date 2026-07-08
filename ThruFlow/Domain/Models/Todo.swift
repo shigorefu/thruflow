@@ -59,6 +59,7 @@ final class Todo {
     var statusRawValue: String
     var scheduledDate: Date?
     var deadline: Date?
+    var sortIndex: Int = 0
     var createdAt: Date
     var updatedAt: Date
     var archivedAt: Date?
@@ -76,6 +77,7 @@ final class Todo {
         status: TodoStatus = .active,
         scheduledDate: Date? = nil,
         deadline: Date? = nil,
+        sortIndex: Int = 0,
         createdAt: Date = .now,
         updatedAt: Date = .now,
         archivedAt: Date? = nil,
@@ -92,11 +94,13 @@ final class Todo {
         self.statusRawValue = status.rawValue
         self.scheduledDate = scheduledDate
         self.deadline = deadline
+        self.sortIndex = sortIndex
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.archivedAt = archivedAt
         self.deletedAt = deletedAt
     }
+
 
     var measurement: TodoMeasurement {
         get { TodoMeasurement(rawValue: measurementRawValue) ?? .checkbox }
@@ -182,6 +186,21 @@ final class Todo {
     func archive(now: Date = .now) {
         archivedAt = now
         status = .archived
+        updatedAt = now
+    }
+
+    func softDelete(now: Date = .now) {
+        deletedAt = now
+        updatedAt = now
+    }
+
+    func reschedule(to date: Date?, now: Date = .now) {
+        scheduledDate = date
+        updatedAt = now
+    }
+
+    func setSortIndex(_ value: Int, now: Date = .now) {
+        sortIndex = value
         updatedAt = now
     }
 
