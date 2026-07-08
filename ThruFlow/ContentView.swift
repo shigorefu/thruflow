@@ -10,6 +10,7 @@ import SwiftData
 
 struct ContentView: View {
     @State private var selection: AppSection? = .today
+    @State private var tabSelection: AppSection = .today
     @StateObject private var activeFlowStore = ActiveFlowStore()
 
     var body: some View {
@@ -32,23 +33,29 @@ struct ContentView: View {
             }
         }
         .safeAreaInset(edge: .bottom) {
-            FlowMiniPlayerView()
+            if selection != .today {
+                FlowMiniPlayerView()
+            }
         }
         .environmentObject(activeFlowStore)
 #else
-        TabView {
+        TabView(selection: $tabSelection) {
             TodayView()
                 .tabItem {
                     Label("今日", systemImage: "sun.max")
                 }
+                .tag(AppSection.today)
 
             DirectionListView()
                 .tabItem {
                     Label("方向", systemImage: "point.3.connected.trianglepath.dotted")
                 }
+                .tag(AppSection.directions)
         }
         .safeAreaInset(edge: .bottom) {
-            FlowMiniPlayerView()
+            if tabSelection != .today {
+                FlowMiniPlayerView()
+            }
         }
         .environmentObject(activeFlowStore)
 #endif

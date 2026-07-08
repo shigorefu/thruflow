@@ -12,11 +12,16 @@ struct DirectionListView: View {
     @Query(sort: \Direction.name, order: .forward) private var directions: [Direction]
 
     @State private var isShowingAddSheet = false
-    @State private var editingDirection: Direction?
+    @State private var editingDirectionID: UUID?
     @State private var showingArchived = false
 
     private var visibleDirections: [Direction] {
         directions.filter { showingArchived ? $0.isArchived : !$0.isArchived }
+    }
+
+    private var editingDirection: Direction? {
+        guard let editingDirectionID else { return nil }
+        return directions.first { $0.id == editingDirectionID }
     }
 
     var body: some View {
@@ -33,7 +38,7 @@ struct DirectionListView: View {
                         DirectionRow(direction: direction)
                             .contentShape(Rectangle())
                             .onTapGesture {
-                                editingDirection = direction
+                                editingDirectionID = direction.id
                             }
                             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                 if !direction.isArchived {
@@ -66,8 +71,15 @@ struct DirectionListView: View {
         .sheet(isPresented: $isShowingAddSheet) {
             DirectionFormView(mode: .create)
         }
-        .sheet(item: $editingDirection) { direction in
-            DirectionFormView(mode: .edit(direction))
+        .sheet(
+            isPresented: Binding(
+                get: { editingDirectionID != nil },
+                set: { if !$0 { editingDirectionID = nil } }
+            )
+        ) {
+            if let editingDirection {
+                DirectionFormView(mode: .edit(editingDirection))
+            }
         }
     }
 }
