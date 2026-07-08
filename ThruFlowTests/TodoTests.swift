@@ -54,6 +54,13 @@ struct TodoTests {
         #expect(direction.type == .neutral)
         #expect(direction.symbolName == "📝")
         #expect(direction.colorHex == "#007AFF")
+        #expect(DefaultDirections.isTaskInbox(direction))
+    }
+
+    @Test func userDirectionIsNotTaskInboxColorlessDefault() {
+        let direction = Direction(name: "仕事", type: .neutral)
+
+        #expect(!DefaultDirections.isTaskInbox(direction))
     }
 
     @Test func activeUnscheduledTodoAppearsInToday() {

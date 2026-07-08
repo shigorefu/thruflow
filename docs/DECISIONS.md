@@ -72,6 +72,8 @@ The Today screen creates checkbox Todos from a bottom messenger-style input. The
 
 Reason: Today capture should be fast and visually quiet, with Direction available only when it helps the current entry.
 
+Task rows use the selected Direction color in Today. Tasks captured without a selected Direction route to the automatic `タスク` Direction but render without a Direction color.
+
 ## Current Risks
 
 - The project deployment targets are set to OS version 26.5, which may restrict local simulator/device availability.

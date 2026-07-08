@@ -25,9 +25,13 @@ enum DefaultDirections {
 
     static func existingTaskInbox(in directions: [Direction]) -> Direction? {
         directions.first {
-            !$0.isArchived &&
-            $0.type == .neutral &&
-            $0.name == taskInboxName
+            isTaskInbox($0)
         }
+    }
+
+    static func isTaskInbox(_ direction: Direction) -> Bool {
+        !direction.isArchived &&
+        direction.type == .neutral &&
+        direction.name == taskInboxName
     }
 }
