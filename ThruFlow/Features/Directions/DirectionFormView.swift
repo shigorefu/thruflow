@@ -31,6 +31,7 @@ struct DirectionFormView: View {
     @State private var draft: DirectionDraft
     @State private var validationErrors: [DirectionValidationError] = []
     @State private var isShowingEmojiPicker = false
+    @State private var isShowingDeleteConfirmation = false
 
     private let validator = DirectionValidator()
 
@@ -58,9 +59,10 @@ struct DirectionFormView: View {
 
                     colorCard
                     validationCard
+                    deleteCard
                 }
-                .padding(20)
-                .frame(maxWidth: 620, alignment: .leading)
+                .padding(24)
+                .frame(maxWidth: 760, alignment: .leading)
                 .frame(maxWidth: .infinity)
             }
             .background(.background)
@@ -96,14 +98,20 @@ struct DirectionFormView: View {
 #else
         .popover(isPresented: $isShowingEmojiPicker, arrowEdge: .bottom) {
             EmojiPickerView(selection: $draft.symbolName)
-                .frame(width: 420, height: 560)
+                .frame(width: 560, height: 680)
         }
 #endif
+        .confirmationDialog("この方向を削除しますか？", isPresented: $isShowingDeleteConfirmation) {
+            Button("削除", role: .destructive, action: deleteDirection)
+            Button("キャンセル", role: .cancel) {}
+        } message: {
+            Text("この操作は元に戻せません。")
+        }
     }
 
     private var headerCard: some View {
         DirectionSectionCard {
-            HStack(alignment: .center, spacing: 16) {
+            HStack(alignment: .firstTextBaseline, spacing: 18) {
                 Button {
                     isShowingEmojiPicker = true
                 } label: {
@@ -118,16 +126,11 @@ struct DirectionFormView: View {
                 .accessibilityLabel("絵文字を選択")
                 .accessibilityValue(draft.normalizedSymbolName)
 
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("方向名")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-
-                    TextField("名前", text: $draft.name)
-                        .font(.title3.weight(.semibold))
-                        .textFieldStyle(.plain)
-                        .accessibilityLabel("方向名")
-                }
+                TextField("名前", text: $draft.name)
+                    .font(.title3.weight(.semibold))
+                    .textFieldStyle(.plain)
+                    .accessibilityLabel("方向名")
+                    .padding(.bottom, 18)
             }
         }
     }
@@ -217,6 +220,24 @@ struct DirectionFormView: View {
                             .foregroundStyle(.red)
                     }
                 }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var deleteCard: some View {
+        if case .edit = mode {
+            DirectionSectionCard {
+                Button(role: .destructive) {
+                    isShowingDeleteConfirmation = true
+                } label: {
+                    Label("方向を削除", systemImage: "trash")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.red)
+                .controlSize(.large)
+                .accessibilityHint("この方向を削除します")
             }
         }
     }
@@ -320,6 +341,13 @@ struct DirectionFormView: View {
             )
         }
 
+        dismiss()
+    }
+
+    private func deleteDirection() {
+        guard case .edit(let direction) = mode else { return }
+
+        modelContext.delete(direction)
         dismiss()
     }
 
