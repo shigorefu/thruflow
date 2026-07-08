@@ -166,7 +166,19 @@ struct StatisticsView: View {
                     .foregroundStyle(.secondary)
             }
 
-            StatisticsHeatmap(days: flowResult.days)
+            ContributionHeatmap(
+                days: flowResult.days.map { day in
+                    ContributionDay(
+                        date: day.date,
+                        value: day.totalFocusSeconds,
+                        mixedColorHex: day.mixedColorHex,
+                        directionCount: day.directionCount,
+                        emptyAccessibilityText: "Flowなし",
+                        valueAccessibilityText: BlockUnit.displayText(forFocusedSeconds: day.totalFocusSeconds)
+                    )
+                },
+                intensity: flowOpacity
+            )
 
             HStack(spacing: 6) {
                 Text("少ない")
@@ -195,7 +207,19 @@ struct StatisticsView: View {
                     .foregroundStyle(.secondary)
             }
 
-            AchievementHeatmap(days: achievementResult.days)
+            ContributionHeatmap(
+                days: achievementResult.days.map { day in
+                    ContributionDay(
+                        date: day.date,
+                        value: day.completedCount,
+                        mixedColorHex: day.mixedColorHex,
+                        directionCount: day.directionCount,
+                        emptyAccessibilityText: "達成なし",
+                        valueAccessibilityText: "\(day.completedCount)達成"
+                    )
+                },
+                intensity: achievementOpacity
+            )
 
             HStack(spacing: 6) {
                 Text("少ない")
@@ -227,6 +251,36 @@ struct StatisticsView: View {
             return "\(remainingMinutes)分"
         }
         return "\(hours)時間\(remainingMinutes)分"
+    }
+
+    private func flowOpacity(_ seconds: Int) -> Double {
+        switch seconds {
+        case 1..<(12 * 60):
+            return 0.35
+        case (12 * 60)..<(25 * 60):
+            return 0.50
+        case (25 * 60)..<(50 * 60):
+            return 0.68
+        case (50 * 60)..<(100 * 60):
+            return 0.84
+        default:
+            return 1.0
+        }
+    }
+
+    private func achievementOpacity(_ count: Int) -> Double {
+        switch count {
+        case 1:
+            return 0.40
+        case 2:
+            return 0.58
+        case 3:
+            return 0.74
+        case 4:
+            return 0.88
+        default:
+            return 1.0
+        }
     }
 }
 
@@ -312,157 +366,177 @@ private struct StatisticSummaryTile: View {
     }
 }
 
-private struct StatisticsHeatmap: View {
-    let days: [StatisticsDay]
+private struct ContributionDay: Identifiable {
+    let date: Date
+    let value: Int
+    let mixedColorHex: String?
+    let directionCount: Int
+    let emptyAccessibilityText: String
+    let valueAccessibilityText: String
 
+    var id: Date { date }
+
+    var isEmpty: Bool {
+        value <= 0
+    }
+}
+
+private struct ContributionHeatmap: View {
+    let days: [ContributionDay]
+    let intensity: (Int) -> Double
+
+    private let cellSize: CGFloat = 13
+    private let cellSpacing: CGFloat = 4
+    private let labelColumnWidth: CGFloat = 28
+    private let monthLabelHeight: CGFloat = 18
     private let rows = Array(repeating: GridItem(.fixed(13), spacing: 4), count: 7)
     private let calendar = Calendar.current
 
-    private var paddedDays: [StatisticsDay?] {
+    private var paddedDays: [ContributionDay?] {
         guard let first = days.first else { return [] }
         let weekday = calendar.component(.weekday, from: first.date)
         return Array(repeating: nil, count: max(0, weekday - 1)) + days.map(Optional.some)
     }
 
+    private var columnCount: Int {
+        Int(ceil(Double(paddedDays.count) / 7.0))
+    }
+
+    private var monthLabels: [MonthLabel] {
+        var labels: [MonthLabel] = []
+        var seenMonths: Set<String> = []
+
+        for (index, day) in paddedDays.enumerated() {
+            guard let day else { continue }
+
+            let components = calendar.dateComponents([.year, .month], from: day.date)
+            let key = "\(components.year ?? 0)-\(components.month ?? 0)"
+            guard !seenMonths.contains(key) else { continue }
+
+            seenMonths.insert(key)
+            labels.append(
+                MonthLabel(
+                    id: key,
+                    title: monthFormatter.string(from: day.date),
+                    column: index / 7
+                )
+            )
+        }
+
+        return labels
+    }
+
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            LazyHGrid(rows: rows, spacing: 4) {
-                ForEach(Array(paddedDays.enumerated()), id: \.offset) { _, day in
-                    HeatmapCell(day: day)
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(alignment: .top, spacing: 0) {
+                    Color.clear
+                        .frame(width: labelColumnWidth, height: monthLabelHeight)
+
+                    ZStack(alignment: .topLeading) {
+                        ForEach(monthLabels) { label in
+                            Text(label.title)
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                                .frame(width: 44, alignment: .leading)
+                                .offset(x: CGFloat(label.column) * columnWidth)
+                        }
+                    }
+                    .frame(width: max(0, CGFloat(columnCount) * columnWidth), height: monthLabelHeight, alignment: .leading)
+                }
+
+                HStack(alignment: .top, spacing: 8) {
+                    weekdayLabels
+
+                    LazyHGrid(rows: rows, spacing: cellSpacing) {
+                        ForEach(Array(paddedDays.enumerated()), id: \.offset) { _, day in
+                            ContributionHeatmapCell(day: day, intensity: intensity)
+                        }
+                    }
+                    .accessibilityElement(children: .contain)
                 }
             }
             .padding(.vertical, 2)
-            .accessibilityElement(children: .contain)
         }
     }
-}
 
-private struct AchievementHeatmap: View {
-    let days: [AchievementDay]
-
-    private let rows = Array(repeating: GridItem(.fixed(13), spacing: 4), count: 7)
-    private let calendar = Calendar.current
-
-    private var paddedDays: [AchievementDay?] {
-        guard let first = days.first else { return [] }
-        let weekday = calendar.component(.weekday, from: first.date)
-        return Array(repeating: nil, count: max(0, weekday - 1)) + days.map(Optional.some)
-    }
-
-    var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            LazyHGrid(rows: rows, spacing: 4) {
-                ForEach(Array(paddedDays.enumerated()), id: \.offset) { _, day in
-                    AchievementHeatmapCell(day: day)
-                }
+    private var weekdayLabels: some View {
+        VStack(alignment: .trailing, spacing: cellSpacing) {
+            ForEach(0..<7, id: \.self) { index in
+                Text(weekdayLabel(for: index))
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+                    .frame(width: labelColumnWidth, height: cellSize, alignment: .trailing)
             }
-            .padding(.vertical, 2)
-            .accessibilityElement(children: .contain)
         }
     }
-}
 
-private struct HeatmapCell: View {
-    let day: StatisticsDay?
-
-    var body: some View {
-        RoundedRectangle(cornerRadius: 3)
-            .fill(fillColor)
-            .frame(width: 13, height: 13)
-            .overlay {
-                RoundedRectangle(cornerRadius: 3)
-                    .strokeBorder(Color.primary.opacity(0.05))
-            }
-            .accessibilityLabel(accessibilityLabel)
+    private var columnWidth: CGFloat {
+        cellSize + cellSpacing
     }
 
-    private var fillColor: Color {
-        guard let day, !day.isEmpty else {
-            return Color.secondary.opacity(0.14)
-        }
-
-        let baseColor = Color(hex: day.mixedColorHex ?? "#34C759")
-        return baseColor.opacity(opacity(for: day.totalFocusSeconds))
-    }
-
-    private var accessibilityLabel: String {
-        guard let day else { return "空白" }
+    private var monthFormatter: DateFormatter {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "ja_JP")
-        formatter.dateStyle = .medium
-
-        if day.isEmpty {
-            return "\(formatter.string(from: day.date)) Flowなし"
-        }
-
-        return "\(formatter.string(from: day.date)) \(BlockUnit.displayText(forFocusedSeconds: day.totalFocusSeconds)) \(day.directionCount)方向"
+        formatter.dateFormat = "MMM"
+        return formatter
     }
 
-    private func opacity(for seconds: Int) -> Double {
-        switch seconds {
-        case 1..<(12 * 60):
-            return 0.35
-        case (12 * 60)..<(25 * 60):
-            return 0.50
-        case (25 * 60)..<(50 * 60):
-            return 0.68
-        case (50 * 60)..<(100 * 60):
-            return 0.84
-        default:
-            return 1.0
-        }
-    }
-}
-
-private struct AchievementHeatmapCell: View {
-    let day: AchievementDay?
-
-    var body: some View {
-        RoundedRectangle(cornerRadius: 3)
-            .fill(fillColor)
-            .frame(width: 13, height: 13)
-            .overlay {
-                RoundedRectangle(cornerRadius: 3)
-                    .strokeBorder(Color.primary.opacity(0.05))
-            }
-            .accessibilityLabel(accessibilityLabel)
-    }
-
-    private var fillColor: Color {
-        guard let day, !day.isEmpty else {
-            return Color.secondary.opacity(0.14)
-        }
-
-        let baseColor = Color(hex: day.mixedColorHex ?? "#34C759")
-        return baseColor.opacity(opacity(for: day.completedCount))
-    }
-
-    private var accessibilityLabel: String {
-        guard let day else { return "空白" }
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ja_JP")
-        formatter.dateStyle = .medium
-
-        if day.isEmpty {
-            return "\(formatter.string(from: day.date)) 達成なし"
-        }
-
-        return "\(formatter.string(from: day.date)) \(day.completedCount)達成 \(day.directionCount)方向"
-    }
-
-    private func opacity(for count: Int) -> Double {
-        switch count {
+    private func weekdayLabel(for index: Int) -> String {
+        switch index {
         case 1:
-            return 0.40
-        case 2:
-            return 0.58
+            "月"
         case 3:
-            return 0.74
-        case 4:
-            return 0.88
+            "水"
+        case 5:
+            "金"
         default:
-            return 1.0
+            ""
         }
+    }
+}
+
+private struct MonthLabel: Identifiable {
+    let id: String
+    let title: String
+    let column: Int
+}
+
+private struct ContributionHeatmapCell: View {
+    let day: ContributionDay?
+    let intensity: (Int) -> Double
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 3)
+            .fill(fillColor)
+            .frame(width: 13, height: 13)
+            .overlay {
+                RoundedRectangle(cornerRadius: 3)
+                    .strokeBorder(Color.primary.opacity(0.05))
+            }
+            .accessibilityLabel(accessibilityLabel)
+    }
+
+    private var fillColor: Color {
+        guard let day, !day.isEmpty else {
+            return Color.secondary.opacity(0.14)
+        }
+
+        let baseColor = Color(hex: day.mixedColorHex ?? "#34C759")
+        return baseColor.opacity(intensity(day.value))
+    }
+
+    private var accessibilityLabel: String {
+        guard let day else { return "空白" }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ja_JP")
+        formatter.dateStyle = .medium
+
+        if day.isEmpty {
+            return "\(formatter.string(from: day.date)) \(day.emptyAccessibilityText)"
+        }
+
+        return "\(formatter.string(from: day.date)) \(day.valueAccessibilityText) \(day.directionCount)方向"
     }
 }
 
