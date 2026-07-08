@@ -36,11 +36,15 @@ Included:
 
 ## Stage 3: Todo Vertical Slice
 
+Status: in progress.
+
+Included in the first pass:
+
 - SwiftData Todo model.
 - Direction relationship.
 - Today list integration.
-- Checkbox and block target progress.
-- Create, edit, archive/delete.
+- Checkbox, block, and minute target progress.
+- Create, edit, and archive support.
 - Tests.
 
 ## Stage 4: Basic Flow

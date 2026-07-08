@@ -55,6 +55,13 @@ Template replacement status:
 3. `ContentView` routes to Direction UI.
 4. `Item` has been removed.
 
+Todo slice status:
+
+1. Todo model and tests are added.
+2. Schema includes Todo.
+3. Today routes manual and scheduled Todo items.
+4. Todo creation and editing start from Today.
+
 ## Calculation Logic
 
 The following should be pure and testable without SwiftUI:
