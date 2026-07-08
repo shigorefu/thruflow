@@ -68,9 +68,9 @@ Reason: quick task capture must stay low-friction while preserving a Direction r
 
 ### D-010: Today uses bottom quick capture
 
-The Today screen creates checkbox Todos from a bottom messenger-style input. The Direction picker appears only while the user is typing or focusing the field. Detailed measurement setup belongs to a later edit flow.
+The Today screen creates Todos from a bottom composer-style input. The top area is a free text description field. The lower toolbar keeps quick controls visible: Direction as full emoji plus name, date, and Flow amount.
 
-Reason: Today capture should be fast and visually quiet, with Direction available only when it helps the current entry.
+Reason: Today capture should be fast and visually quiet while still making Direction, schedule, and Flow size understandable before submit.
 
 Task rows use the selected Direction color in Today. Tasks captured without a selected Direction route to the automatic `タスク` Direction but render without a Direction color.
 
