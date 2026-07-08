@@ -360,7 +360,7 @@ private struct MessengerTodoComposer: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            TextField("何でもできます", text: $title, axis: .vertical)
+            TextField("タスクを入力してください", text: $title, axis: .vertical)
                 .textFieldStyle(.plain)
                 .font(.body)
                 .lineLimit(2...5)
