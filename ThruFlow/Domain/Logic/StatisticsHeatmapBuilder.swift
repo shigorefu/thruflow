@@ -24,6 +24,33 @@ enum StatisticsRange: Int, CaseIterable, Identifiable {
             "1年"
         }
     }
+
+    var summaryText: String {
+        switch self {
+        case .days90:
+            "過去90日"
+        case .days180:
+            "過去180日"
+        case .year:
+            "過去1年"
+        }
+    }
+}
+
+enum StatisticsMode: String, CaseIterable, Identifiable {
+    case achievement
+    case flow
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .achievement:
+            "達成"
+        case .flow:
+            "Flow"
+        }
+    }
 }
 
 struct StatisticsFilter: Equatable {
@@ -57,6 +84,30 @@ struct StatisticsSummary: Equatable {
 struct StatisticsHeatmapResult: Equatable {
     let days: [StatisticsDay]
     let summary: StatisticsSummary
+}
+
+struct AchievementDay: Identifiable, Equatable {
+    let date: Date
+    let completedCount: Int
+    let mixedColorHex: String?
+    let directionCount: Int
+
+    var id: Date { date }
+
+    var isEmpty: Bool {
+        completedCount <= 0
+    }
+}
+
+struct AchievementSummary: Equatable {
+    let completedCount: Int
+    let activeDayCount: Int
+    let directionCount: Int
+}
+
+struct AchievementHeatmapResult: Equatable {
+    let days: [AchievementDay]
+    let summary: AchievementSummary
 }
 
 struct StatisticsHeatmapBuilder {
@@ -154,6 +205,81 @@ struct StatisticsHeatmapBuilder {
             green: Int(green.rounded()),
             blue: Int(blue.rounded())
         ).hex
+    }
+}
+
+struct AchievementHeatmapBuilder {
+    private let calendar: Calendar
+
+    init(calendar: Calendar = .current) {
+        self.calendar = calendar
+    }
+
+    func build(
+        todos: [Todo],
+        filter: StatisticsFilter,
+        now: Date = .now
+    ) -> AchievementHeatmapResult {
+        let startDate = startDate(for: filter.range, now: now)
+        let endDate = calendar.startOfDay(for: now)
+        let eligibleTodos = todos.filter { todo in
+            let completionDate = calendar.startOfDay(for: todo.updatedAt)
+            guard completionDate >= startDate, completionDate <= endDate else { return false }
+            guard todo.status == .completed, !todo.isDeleted else { return false }
+            guard let directionID = filter.directionID else { return true }
+            return todo.direction?.id == directionID
+        }
+
+        let groupedByDay = Dictionary(grouping: eligibleTodos) { todo in
+            calendar.startOfDay(for: todo.updatedAt)
+        }
+
+        let days = daysBetween(startDate, and: endDate).map { date in
+            makeDay(date: date, todos: groupedByDay[date] ?? [])
+        }
+
+        let directionIDs = Set(eligibleTodos.compactMap { $0.direction?.id })
+        let summary = AchievementSummary(
+            completedCount: eligibleTodos.count,
+            activeDayCount: days.filter { !$0.isEmpty }.count,
+            directionCount: directionIDs.count
+        )
+
+        return AchievementHeatmapResult(days: days, summary: summary)
+    }
+
+    private func startDate(for range: StatisticsRange, now: Date) -> Date {
+        let today = calendar.startOfDay(for: now)
+        return calendar.date(byAdding: .day, value: -(range.rawValue - 1), to: today) ?? today
+    }
+
+    private func daysBetween(_ startDate: Date, and endDate: Date) -> [Date] {
+        guard startDate <= endDate else { return [] }
+
+        var days: [Date] = []
+        var current = startDate
+        while current <= endDate {
+            days.append(current)
+            guard let next = calendar.date(byAdding: .day, value: 1, to: current) else {
+                break
+            }
+            current = next
+        }
+        return days
+    }
+
+    private func makeDay(date: Date, todos: [Todo]) -> AchievementDay {
+        let weightedColors = todos.compactMap { todo -> WeightedHexColor? in
+            guard let direction = todo.direction else { return nil }
+            return WeightedHexColor(hex: direction.colorHex, weight: 1)
+        }
+
+        return AchievementDay(
+            date: date,
+            completedCount: todos.count,
+            mixedColorHex: StatisticsHeatmapBuilder.mixedHexColor(weightedColors),
+            directionCount: Set(todos.compactMap { $0.direction?.id }).count
+        )
     }
 }
 

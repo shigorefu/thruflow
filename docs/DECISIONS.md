@@ -112,7 +112,9 @@ Reason: adding ActivityKit UI requires target/capability/signing project changes
 
 ### D-016: Statistics is derived from FlowSession history
 
-The Statistics tab reads existing `FlowSession` records and does not introduce a separate daily aggregate model in MVP. The heatmap groups focused seconds by local calendar day. When several Directions appear on the same day, the cell color is a weighted mix of Direction colors by focused duration.
+The Statistics tab has two modes: `Flow` and `Achievement`. Flow mode reads existing `FlowSession` records and groups focused seconds by local calendar day. Achievement mode reads currently completed `Todo` records and groups them by their latest update day. Neither mode introduces a separate daily aggregate model in MVP.
+
+When several Directions appear on the same day, the cell color is a weighted mix of Direction colors. Flow mode weights by focused duration; Achievement mode weights each completed Todo equally.
 
 Reason: derived statistics avoid duplicated persistence while the Flow history model is still evolving.
 

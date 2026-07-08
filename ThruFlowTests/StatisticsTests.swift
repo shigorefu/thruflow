@@ -43,6 +43,31 @@ struct StatisticsTests {
         #expect(result.days.last?.mixedColorHex == "#00FF00")
     }
 
+    @Test func achievementHeatmapUsesCompletedTodosAndDirectionFilter() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let builder = AchievementHeatmapBuilder(calendar: calendar)
+
+        let reading = Direction(name: "読書", type: .must, symbolName: "📚", colorHex: "#00FF00")
+        let work = Direction(name: "仕事", type: .neutral, symbolName: "💻", colorHex: "#0000FF")
+        let now = Date(timeIntervalSince1970: 2 * 24 * 60 * 60)
+
+        let result = builder.build(
+            todos: [
+                todo(direction: reading, updatedAt: now, status: .completed),
+                todo(direction: work, updatedAt: now, status: .completed),
+                todo(direction: reading, updatedAt: now, status: .active)
+            ],
+            filter: StatisticsFilter(range: .days90, directionID: reading.id),
+            now: now
+        )
+
+        #expect(result.days.count == 90)
+        #expect(result.summary.completedCount == 1)
+        #expect(result.summary.activeDayCount == 1)
+        #expect(result.days.last?.mixedColorHex == "#00FF00")
+    }
+
     private func session(direction: Direction, startedAt: Date, seconds: Int) -> FlowSession {
         FlowSession(
             direction: direction,
@@ -55,6 +80,15 @@ struct StatisticsTests {
             plannedFocusDurationSeconds: seconds,
             actualFocusDurationSeconds: seconds,
             plannedBreakDurationSeconds: 5 * 60
+        )
+    }
+
+    private func todo(direction: Direction, updatedAt: Date, status: TodoStatus) -> Todo {
+        Todo(
+            title: "Task",
+            direction: direction,
+            status: status,
+            updatedAt: updatedAt
         )
     }
 }
