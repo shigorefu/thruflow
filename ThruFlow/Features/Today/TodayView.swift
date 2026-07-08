@@ -14,12 +14,9 @@ struct TodayView: View {
     @Query(sort: \Direction.name, order: .forward) private var directions: [Direction]
     @Query(sort: \Todo.createdAt, order: .forward) private var todos: [Todo]
 
-    @State private var isShowingTodoSheet = false
     @State private var editingTodo: Todo?
     @State private var newTodoTitle = ""
     @State private var newTodoDirectionID: UUID?
-    @State private var newTodoMeasurement = TodoMeasurement.checkbox
-    @State private var newTodoPlannedAmount = 1
     @State private var newTodoError: String?
 
     private let filter = TodayTodoFilter()
@@ -55,16 +52,6 @@ struct TodayView: View {
             }
 
             Section("タスク") {
-                InlineTodoComposer(
-                    title: $newTodoTitle,
-                    selectedDirectionID: $newTodoDirectionID,
-                    measurement: $newTodoMeasurement,
-                    plannedAmount: $newTodoPlannedAmount,
-                    directions: activeDirections,
-                    validationMessage: newTodoError,
-                    onSubmit: createInlineTodo
-                )
-
                 if todayTodos.isEmpty {
                     EmptyRow(text: "今日のタスクはまだありません。")
                 } else {
@@ -101,18 +88,14 @@ struct TodayView: View {
             }
         }
         .navigationTitle("今日")
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    newTodoError = nil
-                    isShowingTodoSheet = true
-                } label: {
-                    Label("詳細入力", systemImage: "plus")
-                }
-            }
-        }
-        .sheet(isPresented: $isShowingTodoSheet) {
-            TodoFormView(mode: .create)
+        .safeAreaInset(edge: .bottom) {
+            MessengerTodoComposer(
+                title: $newTodoTitle,
+                selectedDirectionID: $newTodoDirectionID,
+                directions: activeDirections,
+                validationMessage: newTodoError,
+                onSubmit: createInlineTodo
+            )
         }
         .sheet(item: $editingTodo) { todo in
             TodoFormView(mode: .edit(todo))
@@ -120,12 +103,11 @@ struct TodayView: View {
     }
 
     private func createInlineTodo() {
-        let plannedAmount = newTodoMeasurement == .checkbox ? nil : newTodoPlannedAmount
         let draft = TodoDraft(
             title: newTodoTitle,
             direction: direction(for: newTodoDirectionID),
-            measurement: newTodoMeasurement,
-            plannedAmount: plannedAmount,
+            measurement: .checkbox,
+            plannedAmount: nil,
             scheduledDate: .now
         )
         let errors = validator.validate(draft)
@@ -139,11 +121,11 @@ struct TodayView: View {
         let todo = Todo(
             title: draft.trimmedTitle,
             direction: direction,
-            measurement: newTodoMeasurement,
-            plannedAmount: plannedAmount,
+            measurement: .checkbox,
+            plannedAmount: nil,
             status: progress.status(
-                measurement: newTodoMeasurement,
-                plannedAmount: plannedAmount,
+                measurement: .checkbox,
+                plannedAmount: nil,
                 actualProgress: 0
             ),
             scheduledDate: .now
@@ -152,8 +134,6 @@ struct TodayView: View {
 
         newTodoTitle = ""
         newTodoError = nil
-        newTodoMeasurement = .checkbox
-        newTodoPlannedAmount = 1
     }
 
     private func resolvedDirection(for id: UUID?) -> Direction {
@@ -176,11 +156,9 @@ struct TodayView: View {
     }
 }
 
-private struct InlineTodoComposer: View {
+private struct MessengerTodoComposer: View {
     @Binding var title: String
     @Binding var selectedDirectionID: UUID?
-    @Binding var measurement: TodoMeasurement
-    @Binding var plannedAmount: Int
 
     let directions: [Direction]
     let validationMessage: String?
@@ -191,68 +169,61 @@ private struct InlineTodoComposer: View {
     private var isExpanded: Bool {
         isFocused ||
         !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
-        selectedDirectionID != nil ||
-        measurement != .checkbox
+        selectedDirectionID != nil
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
+            if isExpanded {
+                Picker("方向", selection: $selectedDirectionID) {
+                    Text("自動: タスク").tag(UUID?.none)
+
+                    ForEach(directions) { direction in
+                        Text("\(direction.symbolName) \(direction.name)")
+                            .tag(Optional(direction.id))
+                    }
+                }
+                .labelsHidden()
+                .frame(maxWidth: 220)
+                .controlSize(.small)
+            }
+
             HStack(spacing: 10) {
-                Text("[]")
-                    .font(.system(.body, design: .monospaced))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 28, alignment: .leading)
+                Image(systemName: "square")
+                    .imageScale(.large)
+                    .foregroundStyle(isExpanded ? Color.primary.opacity(0.8) : Color.secondary.opacity(0.35))
+                    .frame(width: 26)
                     .accessibilityHidden(true)
 
-                TextField("タスク", text: $title)
+                TextField("タスクを入力", text: $title)
                     .textFieldStyle(.plain)
                     .focused($isFocused)
                     .onSubmit(onSubmit)
 
-                Button(action: onSubmit) {
-                    Image(systemName: "return")
+                if !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Button(action: onSubmit) {
+                        Image(systemName: "arrow.up.circle.fill")
+                            .imageScale(.large)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("タスクを追加")
                 }
-                .buttonStyle(.borderless)
-                .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                .accessibilityLabel("タスクを追加")
             }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(.quaternary)
+            .clipShape(RoundedRectangle(cornerRadius: 14))
 
-            if isExpanded {
-                HStack(spacing: 12) {
-                    Picker("方向", selection: $selectedDirectionID) {
-                        Text("自動: タスク").tag(UUID?.none)
-
-                        ForEach(directions) { direction in
-                            Text("\(direction.symbolName) \(direction.name)")
-                                .tag(Optional(direction.id))
-                        }
-                    }
-                    .labelsHidden()
-                    .frame(maxWidth: 180)
-
-                    Picker("測定", selection: $measurement) {
-                        ForEach(TodoMeasurement.allCases) { measurement in
-                            Text(measurement.displayName).tag(measurement)
-                        }
-                    }
-                    .labelsHidden()
-                    .frame(maxWidth: 150)
-
-                    if measurement != .checkbox {
-                        Stepper("予定: \(plannedAmount)", value: $plannedAmount, in: 1...999)
-                            .frame(maxWidth: 130)
-                    }
-                }
-                .controlSize(.small)
-
-                if let validationMessage {
-                    Text(validationMessage)
-                        .font(.caption)
-                        .foregroundStyle(.red)
-                }
+            if let validationMessage {
+                Text(validationMessage)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .padding(.horizontal, 4)
             }
         }
-        .padding(.vertical, 4)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(.regularMaterial)
     }
 }
 
@@ -280,12 +251,32 @@ private struct DirectionRequirementRow: View {
 
     private var summary: String {
         guard let target = direction.goalTarget,
-              let period = direction.goalPeriod,
+              let schedule = direction.goalSchedule,
               let unit = direction.goalUnit else {
             return direction.type.description
         }
 
-        return "\(target) \(unit.displayName) / \(period.displayName)"
+        return "\(target) \(unit.displayName) / \(scheduleSummary(schedule))"
+    }
+
+    private func scheduleSummary(_ schedule: GoalScheduleKind) -> String {
+        switch schedule {
+        case .everyDay:
+            return schedule.displayName
+        case .weeklyCount:
+            return "週 \(direction.weeklyTargetCount ?? 1) 回"
+        case .weekdays:
+            return selectedWeekdaysSummary
+        }
+    }
+
+    private var selectedWeekdaysSummary: String {
+        let names = GoalWeekday.allCases
+            .filter { ((direction.weekdayMask ?? 0) & $0.rawValue) != 0 }
+            .map(\.displayName)
+            .joined(separator: "・")
+
+        return names.isEmpty ? "曜日" : names
     }
 }
 

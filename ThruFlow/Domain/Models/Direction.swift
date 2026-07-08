@@ -9,8 +9,8 @@ import Foundation
 import SwiftData
 
 enum DirectionType: String, CaseIterable, Codable, Identifiable {
-    case must
     case neutral
+    case must
     case bonus
 
     var id: String { rawValue }
@@ -67,11 +67,70 @@ enum GoalUnit: String, CaseIterable, Codable, Identifiable {
         case .occurrences:
             "回数"
         case .focusBlocks:
-            "集中ブロック"
+            "フローブロック"
         case .minutes:
             "分"
         case .hours:
             "時間"
+        }
+    }
+}
+
+enum GoalScheduleKind: String, CaseIterable, Codable, Identifiable {
+    case everyDay
+    case weeklyCount
+    case weekdays
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .everyDay:
+            "毎日"
+        case .weeklyCount:
+            "週回"
+        case .weekdays:
+            "曜日"
+        }
+    }
+
+    var goalPeriod: GoalPeriod {
+        switch self {
+        case .everyDay:
+            .daily
+        case .weeklyCount, .weekdays:
+            .weekly
+        }
+    }
+}
+
+enum GoalWeekday: Int, CaseIterable, Codable, Identifiable {
+    case sunday = 1
+    case monday = 2
+    case tuesday = 4
+    case wednesday = 8
+    case thursday = 16
+    case friday = 32
+    case saturday = 64
+
+    var id: Int { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .sunday:
+            "日"
+        case .monday:
+            "月"
+        case .tuesday:
+            "火"
+        case .wednesday:
+            "水"
+        case .thursday:
+            "木"
+        case .friday:
+            "金"
+        case .saturday:
+            "土"
         }
     }
 }
@@ -86,6 +145,9 @@ final class Direction {
     var goalTarget: Int?
     var goalPeriodRawValue: String?
     var goalUnitRawValue: String?
+    var goalScheduleRawValue: String?
+    var weeklyTargetCount: Int?
+    var weekdayMask: Int?
     var createdAt: Date
     var updatedAt: Date
     var archivedAt: Date?
@@ -99,6 +161,9 @@ final class Direction {
         goalTarget: Int? = nil,
         goalPeriod: GoalPeriod? = nil,
         goalUnit: GoalUnit? = nil,
+        goalSchedule: GoalScheduleKind? = nil,
+        weeklyTargetCount: Int? = nil,
+        weekdayMask: Int? = nil,
         createdAt: Date = .now,
         updatedAt: Date = .now,
         archivedAt: Date? = nil
@@ -111,6 +176,9 @@ final class Direction {
         self.goalTarget = goalTarget
         self.goalPeriodRawValue = goalPeriod?.rawValue
         self.goalUnitRawValue = goalUnit?.rawValue
+        self.goalScheduleRawValue = goalSchedule?.rawValue
+        self.weeklyTargetCount = weeklyTargetCount
+        self.weekdayMask = weekdayMask
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.archivedAt = archivedAt
@@ -137,12 +205,24 @@ final class Direction {
         set { goalUnitRawValue = newValue?.rawValue }
     }
 
+    var goalSchedule: GoalScheduleKind? {
+        get {
+            if let goalScheduleRawValue {
+                return GoalScheduleKind(rawValue: goalScheduleRawValue)
+            }
+
+            guard let goalPeriod else { return nil }
+            return goalPeriod == .daily ? .everyDay : .weeklyCount
+        }
+        set { goalScheduleRawValue = newValue?.rawValue }
+    }
+
     var isArchived: Bool {
         archivedAt != nil
     }
 
     var hasGoal: Bool {
-        goalTarget != nil && goalPeriod != nil && goalUnit != nil
+        goalTarget != nil && goalPeriod != nil && goalUnit != nil && goalSchedule != nil
     }
 
     func update(
@@ -153,6 +233,9 @@ final class Direction {
         goalTarget: Int?,
         goalPeriod: GoalPeriod?,
         goalUnit: GoalUnit?,
+        goalSchedule: GoalScheduleKind? = nil,
+        weeklyTargetCount: Int? = nil,
+        weekdayMask: Int? = nil,
         now: Date = .now
     ) {
         self.name = name
@@ -162,6 +245,9 @@ final class Direction {
         self.goalTarget = goalTarget
         self.goalPeriod = goalPeriod
         self.goalUnit = goalUnit
+        self.goalSchedule = goalSchedule
+        self.weeklyTargetCount = weeklyTargetCount
+        self.weekdayMask = weekdayMask
         updatedAt = now
     }
 
@@ -180,7 +266,8 @@ extension Direction {
             colorHex: "#34C759",
             goalTarget: 1,
             goalPeriod: .daily,
-            goalUnit: .focusBlocks
+            goalUnit: .focusBlocks,
+            goalSchedule: .everyDay
         )
     }
 }
