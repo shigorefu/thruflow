@@ -17,12 +17,14 @@ final class ActiveFlowStore: ObservableObject {
     @Published var intent: String
     @Published var timerState: FlowTimerState?
     @Published var activeSession: FlowSession?
+    @Published private(set) var displayDate: Date = .now
 
     private let engine = FlowTimerEngine()
     private let progress = FlowProgressCalculator()
     private let notifications: FlowNotificationService
     private let defaults: UserDefaults
     private var didApplyProgress = false
+    private var displayClock: AnyCancellable?
 
     init(
         defaults: UserDefaults = .standard,
@@ -34,6 +36,11 @@ final class ActiveFlowStore: ObservableObject {
         selectedTodoID = defaults.uuid(forKey: "flow.selectedTodoID")
         selectedMode = defaults.flowMode(forKey: "flow.selectedMode") ?? .twentyFiveFive
         intent = defaults.string(forKey: "flow.lastIntent") ?? ""
+        displayClock = Timer.publish(every: 1, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] date in
+                self?.displayDate = date
+            }
     }
 
     var phase: FlowPhase {

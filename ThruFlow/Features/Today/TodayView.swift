@@ -97,8 +97,6 @@ struct TodayView: View {
         .navigationTitle("今日")
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 0) {
-                FlowMiniPlayerView()
-
                 MessengerTodoComposer(
                     title: $newTodoTitle,
                     selectedDirectionID: $newTodoDirectionID,
@@ -108,6 +106,8 @@ struct TodayView: View {
                     validationMessage: newTodoError,
                     onSubmit: createInlineTodo
                 )
+
+                FlowMiniPlayerView()
             }
         }
         .sheet(item: $editingTodo) { todo in

@@ -118,13 +118,13 @@ struct FlowMiniPlayerView: View {
                     activeFlowStore.selectedMode = mode
                 } label: {
                     VStack(alignment: .leading) {
-                        Text(mode.displayName)
+                        Text("\(mode.displayName) \(mode.shortDurationText)")
                         Text(mode.blockSummary)
                     }
                 }
             }
         } label: {
-            Text(activeFlowStore.selectedMode.displayName)
+            Text("\(activeFlowStore.selectedMode.displayName) \(activeFlowStore.selectedMode.shortDurationText)")
                 .font(.caption.weight(.semibold))
                 .lineLimit(1)
                 .padding(.horizontal, 9)
