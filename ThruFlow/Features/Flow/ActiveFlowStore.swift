@@ -22,6 +22,7 @@ final class ActiveFlowStore: ObservableObject {
     }
     @Published var activeSession: FlowSession?
     @Published private(set) var displayDate: Date = .now
+    @Published private(set) var isAwaitingBreakMemo = false
 
     private let engine = FlowTimerEngine()
     private let progress = FlowProgressCalculator()
@@ -133,6 +134,7 @@ final class ActiveFlowStore: ObservableObject {
         activeSession = nil
         self.timerState = nil
         didApplyProgress = false
+        isAwaitingBreakMemo = false
     }
 
     func extendAdaptive(modelContext: ModelContext, now: Date = .now) {
@@ -151,6 +153,19 @@ final class ActiveFlowStore: ObservableObject {
         notifications.cancelPendingFlowNotifications()
         let next = engine.startBreak(timerState, now: now)
         apply(next, modelContext: modelContext, now: now)
+    }
+
+    func requestBreakMemo() {
+        guard timerState != nil else { return }
+        isAwaitingBreakMemo = true
+    }
+
+    func completeBreakMemo(_ result: String?, modelContext: ModelContext, now: Date = .now) {
+        guard let timerState else { return }
+        activeSession?.setMemo(result, now: now)
+        isAwaitingBreakMemo = false
+        notifications.cancelPendingFlowNotifications()
+        apply(engine.startBreak(timerState, now: now), modelContext: modelContext, now: now)
     }
 
     func seekForward(modelContext: ModelContext, now: Date = .now) {
@@ -194,6 +209,7 @@ final class ActiveFlowStore: ObservableObject {
         activeSession = nil
         timerState = nil
         didApplyProgress = false
+        isAwaitingBreakMemo = false
         try? modelContext.save()
     }
 
@@ -204,6 +220,7 @@ final class ActiveFlowStore: ObservableObject {
         activeSession = nil
         self.timerState = nil
         didApplyProgress = false
+        isAwaitingBreakMemo = false
     }
 
     func remainingText(now: Date = .now) -> String {

@@ -88,6 +88,19 @@ struct FlowTests {
         #expect(engine.remainingSeconds(for: breakState, now: breakStartedAt.addingTimeInterval(6 * 60)) == -60)
     }
 
+    @Test func manualBreakAfterThresholdKeepsActualOvertimeFocus() {
+        let engine = FlowTimerEngine()
+        let start = Date(timeIntervalSince1970: 2_700)
+        let breakStartedAt = start.addingTimeInterval(35 * 60)
+
+        let initial = engine.start(mode: .twentyFiveFive, now: start)
+        let breakState = engine.startBreak(initial, now: breakStartedAt)
+
+        #expect(breakState.phase == .breakTime)
+        #expect(breakState.actualFocusDurationSeconds == 35 * 60)
+        #expect(breakState.plannedBreakDurationSeconds == 5 * 60)
+    }
+
     @Test func adaptiveExtendsOneTimerStateThroughTwelveTwentyFiveFifty() {
         let engine = FlowTimerEngine()
         let start = Date(timeIntervalSince1970: 3_000)
@@ -156,6 +169,19 @@ struct FlowTests {
         #expect(todo.recordedFocusSeconds == 25 * 60)
         #expect(todo.actualProgress == 1)
         #expect(direction.recordedFocusSeconds == 25 * 60)
+    }
+
+    @Test func manualBlockTodoProgressUsesTodoMeasurementWithoutDirectionGoal() {
+        let direction = Direction(name: "仕事", type: .neutral)
+        let todo = Todo(title: "実装", direction: direction, measurement: .focusBlocks, plannedAmount: 2)
+        let calculator = FlowProgressCalculator()
+
+        calculator.applyFocusDuration(seconds: 25 * 60, direction: direction, todo: todo)
+
+        #expect(direction.recordedFocusSeconds == 25 * 60)
+        #expect(todo.recordedFocusSeconds == 25 * 60)
+        #expect(todo.actualProgress == 1)
+        #expect(todo.status == .active)
     }
 
     @Test func occurrenceDirectionDoesNotWriteFlowProgressToTodo() {

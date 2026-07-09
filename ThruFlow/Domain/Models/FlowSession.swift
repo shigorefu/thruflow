@@ -243,6 +243,12 @@ final class FlowSession {
         status = .completed
         updatedAt = now
     }
+
+    func setMemo(_ result: String?, now: Date = .now) {
+        let trimmed = result?.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.result = trimmed?.isEmpty == true ? nil : trimmed
+        updatedAt = now
+    }
 }
 
 extension FlowSessionStatus {
