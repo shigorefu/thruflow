@@ -64,26 +64,6 @@ struct FlowMiniPlayerView: View {
                     activeFlowStore.refresh(modelContext: modelContext, now: date)
                 }
         }
-        .sheet(isPresented: $showsTaskPicker) {
-            FlowTaskPickerView(
-                directions: visibleDirections,
-                todos: todayTodos,
-                selectedDirectionID: $activeFlowStore.selectedDirectionID,
-                selectedTodoID: $activeFlowStore.selectedTodoID
-            )
-#if os(macOS)
-            .frame(minWidth: 520, minHeight: 440)
-#endif
-        }
-        .sheet(isPresented: $showsModePicker) {
-            FlowModePickerView(
-                selectedMode: $activeFlowStore.selectedMode,
-                modes: selectableModes
-            )
-#if os(macOS)
-            .frame(minWidth: 460, minHeight: 340)
-#endif
-        }
     }
 
     @ViewBuilder
@@ -175,6 +155,15 @@ struct FlowMiniPlayerView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Flowタスクを選択")
+        .popover(isPresented: $showsTaskPicker, arrowEdge: .bottom) {
+            FlowTaskPickerView(
+                directions: activeDirections,
+                todos: todayTodos,
+                selectedDirectionID: $activeFlowStore.selectedDirectionID,
+                selectedTodoID: $activeFlowStore.selectedTodoID
+            )
+            .frame(width: style == .compact ? 430 : 520, height: 460)
+        }
     }
 
     private var modePickerButton: some View {
@@ -217,6 +206,13 @@ struct FlowMiniPlayerView: View {
         .buttonStyle(.plain)
         .accessibilityLabel("Focusを選択")
         .disabled(activeFlowStore.timerState != nil)
+        .popover(isPresented: $showsModePicker, arrowEdge: .bottom) {
+            FlowModePickerView(
+                selectedMode: $activeFlowStore.selectedMode,
+                modes: selectableModes
+            )
+            .frame(width: 320)
+        }
     }
 
     private func timerCluster(now: Date) -> some View {
@@ -738,113 +734,191 @@ private struct FlowTaskPickerView: View {
     @Binding var selectedTodoID: UUID?
 
     @Environment(\.dismiss) private var dismiss
+    @State private var selectedTab: FlowTaskPickerTab = .tasks
+
+    private var taskGroups: [FlowTaskPickerGroup] {
+        FlowTaskPickerGroup.groups(for: todos)
+    }
+
+    private var otherDirection: Direction? {
+        DefaultDirections.existingTaskInbox(in: directions)
+    }
+
+    private var userDirections: [Direction] {
+        directions
+            .filter { !DefaultDirections.isTaskInbox($0) }
+            .sorted {
+                if $0.type != $1.type {
+                    return FlowTaskPickerGroup.order.firstIndex(of: $0.type) ?? 0 <
+                        FlowTaskPickerGroup.order.firstIndex(of: $1.type) ?? 0
+                }
+
+                if $0.sortIndex != $1.sortIndex {
+                    return $0.sortIndex < $1.sortIndex
+                }
+
+                return $0.name < $1.name
+            }
+    }
 
     var body: some View {
-        NavigationStack {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Flowタスク")
+                    .font(.headline.weight(.semibold))
+
+                Spacer(minLength: 0)
+
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.caption.weight(.bold))
+                        .frame(width: 26, height: 26)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+            }
+
+            Picker("表示", selection: $selectedTab) {
+                ForEach(FlowTaskPickerTab.allCases) { tab in
+                    Text(tab.title).tag(tab)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+
             ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    Button {
-                        selectedDirectionID = nil
-                        selectedTodoID = nil
-                        dismiss()
-                    } label: {
-                        pickerRow(
-                            icon: "tray",
-                            title: "具体的なタスクなし",
-                            subtitle: "自動: その他",
-                            color: .secondary,
-                            isSelected: selectedTodoID == nil && selectedDirectionID == nil
-                        )
-                    }
-                    .buttonStyle(.plain)
+                if selectedTab == .tasks {
+                    taskTab
+                } else {
+                    noTaskTab
+                }
+            }
+            .scrollIndicators(.hidden)
+        }
+        .padding(14)
+        .background(.bar)
+        .onChange(of: selectedDirectionID) { _, _ in
+            if !todos.contains(where: { $0.id == selectedTodoID }) {
+                selectedTodoID = nil
+            }
+        }
+        .onChange(of: selectedTodoID) { _, id in
+            guard selectedDirectionID == nil,
+                  let id,
+                  let todo = todos.first(where: { $0.id == id }) else {
+                return
+            }
 
-                    section("タスク") {
-                        if todos.isEmpty {
-                            Text("今日のタスクはありません")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        } else {
-                            VStack(spacing: 8) {
-                                ForEach(todos) { todo in
-                                    Button {
-                                        selectedTodoID = todo.id
-                                        selectedDirectionID = todo.direction?.id
-                                        dismiss()
-                                    } label: {
-                                        pickerRow(
-                                            iconText: todo.direction?.symbolName ?? "・",
-                                            title: TodoDisplay.title(for: todo),
-                                            subtitle: todo.direction?.name ?? "その他",
-                                            color: directionColor(todo.direction),
-                                            isSelected: selectedTodoID == todo.id
-                                        )
-                                    }
-                                    .buttonStyle(.plain)
-                                }
-                            }
-                        }
-                    }
-
-                    section("方向だけ選ぶ") {
-                        VStack(spacing: 8) {
-                            ForEach(directions) { direction in
-                                Button {
-                                    selectedDirectionID = direction.id
-                                    selectedTodoID = nil
-                                    dismiss()
-                                } label: {
-                                    pickerRow(
-                                        iconText: direction.symbolName,
-                                        title: "(\(direction.name))",
-                                        subtitle: direction.name,
-                                        color: Color(hex: direction.colorHex),
-                                        isSelected: selectedTodoID == nil && selectedDirectionID == direction.id
-                                    )
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
-                    }
-                }
-                .padding(20)
-            }
-            .navigationTitle("Flowタスク")
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("閉じる") {
-                        dismiss()
-                    }
-                }
-            }
-            .onChange(of: selectedDirectionID) { _, _ in
-                if !todos.contains(where: { $0.id == selectedTodoID }) {
-                    selectedTodoID = nil
-                }
-            }
-            .onChange(of: selectedTodoID) { _, id in
-                guard selectedDirectionID == nil,
-                      let id,
-                      let todo = todos.first(where: { $0.id == id }) else {
-                    return
-                }
-
-                selectedDirectionID = todo.direction?.id
-            }
+            selectedDirectionID = todo.direction?.id
         }
     }
 
-    private func section<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+    @ViewBuilder
+    private var taskTab: some View {
+        if taskGroups.isEmpty {
+            emptyState("今日のタスクはありません")
+        } else {
+            VStack(alignment: .leading, spacing: 12) {
+                ForEach(taskGroups) { group in
+                    sectionHeader(title: group.title, count: group.todos.count, tint: group.tint)
+
+                    VStack(spacing: 7) {
+                        ForEach(group.todos) { todo in
+                            taskRow(todo)
+                        }
+                    }
+                }
+            }
+            .padding(.top, 2)
+        }
+    }
+
+    private var noTaskTab: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.headline)
-            content()
+            directionRow(
+                iconText: otherDirection?.symbolName ?? DefaultDirections.taskInboxSymbol,
+                title: "その他の方向",
+                color: .secondary,
+                isSelected: selectedTodoID == nil && (selectedDirectionID == otherDirection?.id || selectedDirectionID == nil)
+            ) {
+                selectedTodoID = nil
+                selectedDirectionID = otherDirection?.id
+                dismiss()
+            }
+
+            ForEach(userDirections) { direction in
+                directionRow(
+                    iconText: direction.symbolName,
+                    title: direction.name,
+                    color: Color(hex: direction.colorHex),
+                    isSelected: selectedTodoID == nil && selectedDirectionID == direction.id
+                ) {
+                    selectedTodoID = nil
+                    selectedDirectionID = direction.id
+                    dismiss()
+                }
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, 2)
+    }
+
+    private func taskRow(_ todo: Todo) -> some View {
+        Button {
+            selectedTodoID = todo.id
+            selectedDirectionID = todo.direction?.id
+            dismiss()
+        } label: {
+            pickerRow(
+                iconText: todo.direction?.symbolName ?? DefaultDirections.taskInboxSymbol,
+                title: TodoDisplay.title(for: todo),
+                subtitle: taskSubtitle(todo),
+                color: directionColor(todo.direction),
+                isSelected: selectedTodoID == todo.id
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func directionRow(
+        iconText: String,
+        title: String,
+        color: Color,
+        isSelected: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Text(iconText)
+                    .font(.title3)
+                    .frame(width: 34, height: 34)
+                    .background(color.opacity(0.14))
+                    .clipShape(RoundedRectangle(cornerRadius: 9))
+
+                Text(title)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+
+                Spacer(minLength: 0)
+
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.tint)
+                }
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(isSelected ? color.opacity(0.14) : Color.primary.opacity(0.05))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+        .buttonStyle(.plain)
     }
 
     private func pickerRow(
-        icon: String? = nil,
-        iconText: String? = nil,
+        iconText: String,
         title: String,
         subtitle: String,
         color: Color,
@@ -855,16 +929,10 @@ private struct FlowTaskPickerView: View {
                 RoundedRectangle(cornerRadius: 10)
                     .fill(color.opacity(0.16))
 
-                if let iconText {
-                    Text(iconText)
-                        .font(.title3)
-                } else if let icon {
-                    Image(systemName: icon)
-                        .font(.callout.weight(.semibold))
-                        .foregroundStyle(color)
-                }
+                Text(iconText)
+                    .font(.title3)
             }
-            .frame(width: 42, height: 42)
+            .frame(width: 38, height: 38)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
@@ -897,6 +965,111 @@ private struct FlowTaskPickerView: View {
 
         return Color(hex: direction.colorHex)
     }
+
+    private func taskSubtitle(_ todo: Todo) -> String {
+        let directionName = todo.direction?.name ?? "その他"
+        let priority = todo.priority == .low && todo.isRoomIfPossible ? "余裕があれば" : todo.priority.displayName
+        return "\(directionName) ・ \(priority)"
+    }
+
+    private func sectionHeader(title: String, count: Int, tint: Color) -> some View {
+        HStack(spacing: 7) {
+            Circle()
+                .fill(tint)
+                .frame(width: 7, height: 7)
+
+            Text(title)
+                .font(.caption.weight(.semibold))
+
+            Text("\(count)")
+                .font(.caption2.weight(.medium))
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(Color.secondary.opacity(0.12))
+                .clipShape(Capsule())
+
+            Spacer(minLength: 0)
+        }
+        .padding(.top, 4)
+    }
+
+    private func emptyState(_ text: String) -> some View {
+        Text(text)
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, minHeight: 240, alignment: .center)
+    }
+}
+
+private enum FlowTaskPickerTab: String, CaseIterable, Identifiable {
+    case tasks
+    case noTask
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .tasks:
+            "タスク"
+        case .noTask:
+            "タスクなし"
+        }
+    }
+}
+
+private struct FlowTaskPickerGroup: Identifiable {
+    static let order: [DirectionType] = [.habit, .neutral, .nice]
+
+    let type: DirectionType
+    let todos: [Todo]
+
+    var id: String { type.rawValue }
+
+    var title: String {
+        switch type {
+        case .habit:
+            "習慣"
+        case .neutral:
+            "通常"
+        case .nice:
+            "ナイス"
+        }
+    }
+
+    var tint: Color {
+        switch type {
+        case .habit:
+            .red
+        case .neutral:
+            .blue
+        case .nice:
+            .green
+        }
+    }
+
+    static func groups(for todos: [Todo]) -> [FlowTaskPickerGroup] {
+        order.compactMap { type in
+            let items = todos
+                .filter { ($0.direction?.type ?? .neutral) == type }
+                .sorted(by: sortTodos)
+
+            guard !items.isEmpty else { return nil }
+            return FlowTaskPickerGroup(type: type, todos: items)
+        }
+    }
+
+    nonisolated private static func sortTodos(_ lhs: Todo, _ rhs: Todo) -> Bool {
+        if lhs.isCompleted != rhs.isCompleted {
+            return !lhs.isCompleted
+        }
+
+        if lhs.sortIndex != rhs.sortIndex {
+            return lhs.sortIndex < rhs.sortIndex
+        }
+
+        return lhs.createdAt < rhs.createdAt
+    }
 }
 
 private struct FlowModePickerView: View {
@@ -906,61 +1079,67 @@ private struct FlowModePickerView: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 10) {
-                ForEach(modes) { mode in
-                    Button {
-                        selectedMode = mode
-                        dismiss()
-                    } label: {
-                        HStack(spacing: 12) {
-                            Image(systemName: iconName(mode))
-                                .font(.title3.weight(.semibold))
-                                .foregroundStyle(.white)
-                                .frame(width: 46, height: 46)
-                                .background(iconColor(mode))
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
-
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text(mode.displayName)
-                                    .font(.headline)
-                                    .foregroundStyle(.primary)
-
-                                Text(subtitle(mode))
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                            }
-
-                            Spacer(minLength: 0)
-
-                            if selectedMode == mode {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundStyle(.tint)
-                            }
-                        }
-                        .padding(12)
-                        .background(selectedMode == mode ? iconColor(mode).opacity(0.14) : Color.primary.opacity(0.05))
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 16)
-                                .strokeBorder(selectedMode == mode ? iconColor(mode).opacity(0.42) : Color.primary.opacity(0.08))
-                        }
-                    }
-                    .buttonStyle(.plain)
-                }
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("Focus")
+                    .font(.headline.weight(.semibold))
 
                 Spacer(minLength: 0)
+
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.caption.weight(.bold))
+                        .frame(width: 26, height: 26)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
             }
-            .padding(20)
-            .navigationTitle("Focus")
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("閉じる") {
-                        dismiss()
+
+            ForEach(modes) { mode in
+                Button {
+                    selectedMode = mode
+                    dismiss()
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: iconName(mode))
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .frame(width: 42, height: 42)
+                            .background(iconColor(mode))
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(mode.displayName)
+                                .font(.headline)
+                                .foregroundStyle(.primary)
+
+                            Text(subtitle(mode))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Spacer(minLength: 0)
+
+                        if selectedMode == mode {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.tint)
+                        }
+                    }
+                    .padding(10)
+                    .background(selectedMode == mode ? iconColor(mode).opacity(0.14) : Color.primary.opacity(0.05))
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 14)
+                            .strokeBorder(selectedMode == mode ? iconColor(mode).opacity(0.42) : Color.primary.opacity(0.08))
                     }
                 }
+                .buttonStyle(.plain)
             }
         }
+        .padding(14)
+        .background(.bar)
     }
 
     private func iconName(_ mode: FlowMode) -> String {

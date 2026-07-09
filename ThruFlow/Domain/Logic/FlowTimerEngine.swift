@@ -8,6 +8,8 @@
 import Foundation
 
 struct FlowTimerEngine {
+    static let minimumCreditableFocusDurationSeconds = 5 * 60
+
     func start(mode: FlowMode, now: Date) -> FlowTimerState {
         FlowTimerState(
             mode: mode,
@@ -53,7 +55,7 @@ struct FlowTimerEngine {
         next.phase = .awaitingResult
         next.endedAt = now
         next.completedAt = now
-        next.actualFocusDurationSeconds = actualFocusDuration(for: state, now: now)
+        next.actualFocusDurationSeconds = creditableFocusDuration(actualFocusDuration(for: state, now: now))
         return next
     }
 
@@ -90,7 +92,7 @@ struct FlowTimerEngine {
 
     func startBreak(_ state: FlowTimerState, now: Date) -> FlowTimerState {
         let elapsedFocusSeconds = elapsedFocusDuration(for: state, now: now)
-        let actualFocusSeconds = normalizedFocusDurationForBreak(elapsedFocusSeconds)
+        let actualFocusSeconds = creditableFocusDuration(normalizedFocusDurationForBreak(elapsedFocusSeconds))
         let breakSeconds = breakDurationForBreak(elapsedFocusSeconds)
 
         var next = state
@@ -216,6 +218,11 @@ struct FlowTimerEngine {
         default:
             return elapsed
         }
+    }
+
+    private func creditableFocusDuration(_ seconds: Int) -> Int {
+        let focusedSeconds = max(0, seconds)
+        return focusedSeconds < Self.minimumCreditableFocusDurationSeconds ? 0 : focusedSeconds
     }
 
     private func breakDurationForBreak(_ elapsedFocusSeconds: Int) -> Int {
