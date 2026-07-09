@@ -24,7 +24,7 @@ struct StatisticsTests {
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         let builder = StatisticsHeatmapBuilder(calendar: calendar)
 
-        let reading = Direction(name: "読書", type: .must, symbolName: "📚", colorHex: "#00FF00")
+        let reading = Direction(name: "読書", type: .habit, symbolName: "📚", colorHex: "#00FF00")
         let work = Direction(name: "仕事", type: .neutral, symbolName: "💻", colorHex: "#0000FF")
         let now = Date(timeIntervalSince1970: 2 * 24 * 60 * 60)
 
@@ -48,7 +48,7 @@ struct StatisticsTests {
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         let builder = AchievementHeatmapBuilder(calendar: calendar)
 
-        let reading = Direction(name: "読書", type: .must, symbolName: "📚", colorHex: "#00FF00")
+        let reading = Direction(name: "読書", type: .habit, symbolName: "📚", colorHex: "#00FF00")
         let work = Direction(name: "仕事", type: .neutral, symbolName: "💻", colorHex: "#0000FF")
         let now = Date(timeIntervalSince1970: 2 * 24 * 60 * 60)
 

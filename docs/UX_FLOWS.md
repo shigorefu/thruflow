@@ -8,9 +8,9 @@ Today is the primary daily screen.
 
 Sections:
 
-- Must: required Direction goals that apply today.
-- Tasks: scheduled or manually added Todos.
-- Bonus: optional positive activities.
+- 習慣: recurring Direction goals that apply today and are generated automatically.
+- 通常: scheduled or manually added Todos.
+- ナイス: optional positive activities.
 
 Today should show progress in concrete terms:
 
@@ -23,13 +23,13 @@ Empty states should suggest creating a Direction or Todo without implying the da
 
 Today tasks are visually grouped by Direction type:
 
-- Must;
-- Normal;
-- Bonus, only when there are Bonus tasks.
+- 習慣;
+- 通常;
+- ナイス, only when there are Nice tasks.
 
-Generated Must tasks start as editable task fields with the Direction in the placeholder, so the user can replace "Task (Reading)" with a concrete book or action.
+Generated Habit tasks start as editable task fields with the Direction in the placeholder, so the user can replace "タスク (読書)" with a concrete book or action.
 
-Quick task capture uses a bottom composer. The description field is the primary surface, with Direction, date, and Flow amount controls in the lower row. Direction is displayed as full emoji plus Direction name, not emoji alone.
+Quick task capture uses a bottom composer. The description field is the primary surface, with Direction, priority, date, and record-type controls in the lower row. Direction is displayed as full emoji plus Direction name, not emoji alone. Record type controls the trailing visual: checkbox for `チェック`, a filling ring for `ブロック`, and a remaining-time ring for `分`.
 
 ## Direction Management
 

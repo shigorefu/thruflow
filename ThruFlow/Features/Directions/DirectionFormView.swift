@@ -53,7 +53,7 @@ struct DirectionFormView: View {
                     headerCard
                     typeCard
 
-                    if draft.type == .must {
+                    if draft.type == .habit {
                         goalCard
                     }
 
@@ -303,7 +303,7 @@ struct DirectionFormView: View {
         validationErrors = validator.validate(draft)
         guard validationErrors.isEmpty else { return }
 
-        let requiresGoal = draft.type == .must
+        let requiresGoal = draft.type == .habit
         let goalSchedule = requiresGoal ? draft.goalSchedule : nil
         let goalTarget = requiresGoal ? draft.goalTarget : nil
         let goalPeriod = goalSchedule?.goalPeriod
@@ -352,7 +352,7 @@ struct DirectionFormView: View {
     }
 
     private func normalizeGoalState(for type: DirectionType) {
-        guard type == .must else {
+        guard type == .habit else {
             draft.goalEnabled = false
             draft.goalTarget = nil
             draft.goalPeriod = nil

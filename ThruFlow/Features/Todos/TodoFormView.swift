@@ -87,6 +87,16 @@ struct TodoFormView: View {
                         }
                     }
 
+                    Picker("優先度", selection: $draft.priority) {
+                        ForEach(TodoPriority.allCases) { priority in
+                            Text(priority.displayName).tag(priority)
+                        }
+                    }
+
+                    if draft.priority == .low {
+                        Toggle("余裕があれば", isOn: $draft.isRoomIfPossible)
+                    }
+
                     if draft.measurement != .checkbox {
                         Stepper(value: plannedAmountBinding, in: 1...999) {
                             Text("予定量: \(draft.plannedAmount ?? 1)")
@@ -210,6 +220,8 @@ struct TodoFormView: View {
                 notes: draft.trimmedNotes,
                 direction: direction,
                 measurement: draft.measurement,
+                priority: draft.priority,
+                isRoomIfPossible: draft.priority == .low && draft.isRoomIfPossible,
                 plannedAmount: plannedAmount,
                 actualProgress: actualProgress,
                 status: TodoProgressCalculator().status(
@@ -227,6 +239,8 @@ struct TodoFormView: View {
                 notes: draft.trimmedNotes,
                 direction: direction,
                 measurement: draft.measurement,
+                priority: draft.priority,
+                isRoomIfPossible: draft.priority == .low && draft.isRoomIfPossible,
                 plannedAmount: plannedAmount,
                 actualProgress: actualProgress,
                 scheduledDate: draft.scheduledDate,

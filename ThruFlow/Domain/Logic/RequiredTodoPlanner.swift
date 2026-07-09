@@ -11,7 +11,7 @@ struct RequiredTodoPlanner {
     var calendar: Calendar = .current
 
     func shouldAppearToday(_ direction: Direction, on date: Date = .now) -> Bool {
-        guard direction.type == .must,
+        guard direction.type == .habit,
               !direction.isArchived,
               direction.hasGoal,
               direction.goalUnit != nil else {
@@ -58,6 +58,8 @@ struct RequiredTodoPlanner {
             title: "",
             direction: direction,
             measurement: measurement(for: goalUnit),
+            priority: .high,
+            isRoomIfPossible: false,
             plannedAmount: plannedAmount(for: goalUnit, target: target),
             scheduledDate: date,
             sortIndex: sortIndex

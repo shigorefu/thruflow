@@ -42,11 +42,13 @@ A completed FlowSession does not automatically equal one Block. Only focused dur
 
 `DirectionType` has stable raw values:
 
-- `must`: required direction that can affect Today and successful day completion.
+- `habit`: recurring direction that can generate Today items automatically.
 - `neutral`: optional work direction; its Todos matter only when manually created or planned.
-- `bonus`: positive optional direction; activity counts as an extra positive result but never blocks day completion.
+- `nice`: positive optional direction; activity counts as an extra positive result but never blocks day completion.
 
-Neutral must never be framed as bad or unimportant. Bonus must never be framed as required.
+Neutral must never be framed as bad or unimportant. Nice must never be framed as required.
+
+Older local data may store Direction raw values `must` and `bonus`. The app treats them as `habit` and `nice` when reading, and writes new values after editing.
 
 ### Direction Goal Rule
 
@@ -91,6 +93,8 @@ Fields:
 - optional `deadline`;
 - planned amount;
 - actual progress;
+- priority;
+- optional low-priority room flag;
 - status;
 - reschedule support;
 - archive or soft delete support.
@@ -109,17 +113,17 @@ A Todo must not automatically become a Habit or Direction.
 
 It combines:
 
-- Must goal items generated from Direction rules;
+- Habit goal items generated from Direction rules;
 - manually added or scheduled Todos;
 - planned weekly Direction occurrences;
 - carried tasks;
-- Bonus activities.
+- Nice activities.
 
 Minimum sections:
 
-- Must
+- Habit
 - Tasks
-- Bonus
+- Nice
 
 Neutral Directions do not appear in Today by themselves. Their Todos appear only when created or scheduled.
 

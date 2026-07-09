@@ -80,7 +80,7 @@ struct FlowTests {
     @Test func focusProgressStaysAttachedToItsDirectionAndTodo() {
         let reading = Direction(
             name: "読書",
-            type: .must,
+            type: .habit,
             goalTarget: 1,
             goalPeriod: .daily,
             goalUnit: .focusBlocks,
@@ -88,7 +88,7 @@ struct FlowTests {
         )
         let anki = Direction(
             name: "Anki",
-            type: .must,
+            type: .habit,
             goalTarget: 1,
             goalPeriod: .daily,
             goalUnit: .focusBlocks,
@@ -132,7 +132,7 @@ struct FlowTests {
     @Test func occurrenceDirectionDoesNotWriteFlowProgressToTodo() {
         let direction = Direction(
             name: "筋トレ",
-            type: .must,
+            type: .habit,
             goalTarget: 1,
             goalPeriod: .daily,
             goalUnit: .occurrences,
@@ -151,7 +151,7 @@ struct FlowTests {
     @Test func minuteDirectionWritesFocusedMinutesToTodo() {
         let direction = Direction(
             name: "日本語",
-            type: .must,
+            type: .habit,
             goalTarget: 30,
             goalPeriod: .daily,
             goalUnit: .minutes,

@@ -9,31 +9,44 @@ import Foundation
 import SwiftData
 
 enum DirectionType: String, CaseIterable, Codable, Identifiable {
+    case habit
     case neutral
-    case must
-    case bonus
+    case nice
 
     var id: String { rawValue }
 
+    static func normalized(rawValue: String) -> DirectionType? {
+        switch rawValue {
+        case DirectionType.habit.rawValue, "must":
+            .habit
+        case DirectionType.neutral.rawValue:
+            .neutral
+        case DirectionType.nice.rawValue, "bonus":
+            .nice
+        default:
+            nil
+        }
+    }
+
     var displayName: String {
         switch self {
-        case .must:
-            "必須"
+        case .habit:
+            "習慣"
         case .neutral:
             "通常"
-        case .bonus:
-            "ボーナス"
+        case .nice:
+            "ナイス"
         }
     }
 
     var description: String {
         switch self {
-        case .must:
-            "今日の達成条件に入る重要な方向です。"
+        case .habit:
+            "毎日の今日に自動で入る習慣です。"
         case .neutral:
             "必要なときにタスクを計画する作業領域です。"
-        case .bonus:
-            "できると良い任意の活動です。日の達成は妨げません。"
+        case .nice:
+            "できると嬉しい任意の活動です。"
         }
     }
 }
@@ -188,7 +201,7 @@ final class Direction {
     }
 
     var type: DirectionType {
-        get { DirectionType(rawValue: typeRawValue) ?? .neutral }
+        get { DirectionType.normalized(rawValue: typeRawValue) ?? .neutral }
         set { typeRawValue = newValue.rawValue }
     }
 
@@ -274,7 +287,7 @@ extension Direction {
     static var sample: Direction {
         Direction(
             name: "読書",
-            type: .must,
+            type: .habit,
             symbolName: "📚",
             colorHex: "#34C759",
             goalTarget: 1,

@@ -38,7 +38,7 @@ struct ThruFlowTests {
     @Test func enabledGoalRequiresPositiveTargetPeriodAndUnit() {
         let draft = DirectionDraft(
             name: "Training",
-            type: .must,
+            type: .habit,
             goalEnabled: true,
             goalTarget: 0,
             goalPeriod: nil,
@@ -69,7 +69,7 @@ struct ThruFlowTests {
     @Test func weekdayGoalRequiresSelectedWeekdays() {
         let draft = DirectionDraft(
             name: "Training",
-            type: .must,
+            type: .habit,
             goalTarget: 1,
             goalUnit: .focusBlocks,
             goalSchedule: .weekdays,
@@ -87,7 +87,7 @@ struct ThruFlowTests {
         let direction = Direction(
             id: id,
             name: "Reading",
-            type: .must,
+            type: .habit,
             createdAt: now,
             updatedAt: now
         )
@@ -102,11 +102,11 @@ struct ThruFlowTests {
     }
 
     @Test func directionUpdateNormalizesGoalRawValues() {
-        let direction = Direction(name: "Japanese", type: .bonus)
+        let direction = Direction(name: "Japanese", type: .nice)
 
         direction.update(
             name: "Japanese",
-            type: .must,
+            type: .habit,
             symbolName: "character.book.closed",
             colorHex: "#10B981",
             goalTarget: 5,
@@ -117,12 +117,23 @@ struct ThruFlowTests {
             now: Date(timeIntervalSince1970: 300)
         )
 
-        #expect(direction.typeRawValue == "must")
+        #expect(direction.typeRawValue == "habit")
         #expect(direction.goalPeriodRawValue == "weekly")
         #expect(direction.goalUnitRawValue == "hours")
         #expect(direction.goalScheduleRawValue == "weeklyCount")
         #expect(direction.weeklyTargetCount == 3)
         #expect(direction.hasGoal)
+    }
+
+    @Test func directionTypeReadsLegacyRawValues() {
+        let habit = Direction(name: "Anki", type: .neutral)
+        habit.typeRawValue = "must"
+
+        let nice = Direction(name: "散歩", type: .neutral)
+        nice.typeRawValue = "bonus"
+
+        #expect(habit.type == .habit)
+        #expect(nice.type == .nice)
     }
 
 }
