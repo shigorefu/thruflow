@@ -24,10 +24,12 @@ Breaks are excluded. Blocks are computed from actual focus duration and are not 
 MVP display uses product-friendly values:
 
 - 12 focused minutes: `0.5 Block`;
+- 24 focused minutes: `1 Block`;
 - 25 focused minutes: `1 Block`;
+- 37 focused minutes: `1.5 Blocks`;
 - 50 focused minutes: `2 Blocks`.
 
-For partial values, prefer clear mixed display such as `1 Block + 12 min` instead of decimal noise like `0.48`.
+For block-based tasks, do not show raw minute totals like `24分 / 2 Blocks`. Exact minute accounting belongs to the `分` record type.
 
 ## Product Principle
 

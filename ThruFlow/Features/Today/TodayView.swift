@@ -945,7 +945,7 @@ private struct TodoRow: View {
            let plannedAmount = todo.plannedAmount,
            plannedAmount > 0 {
             return min(
-                Double(todo.recordedFocusSeconds) / Double(plannedAmount * BlockUnit.secondsPerBlock),
+                BlockUnit.blocks(forFocusedSeconds: todo.recordedFocusSeconds) / Double(plannedAmount),
                 1
             )
         }

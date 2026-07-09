@@ -11,18 +11,20 @@ import Testing
 
 struct FlowTests {
     @Test func blockDisplayUsesProductValues() {
+        #expect(BlockUnit.displayText(forFocusedSeconds: 11 * 60) == "0 Block")
         #expect(BlockUnit.displayText(forFocusedSeconds: 12 * 60) == "0.5 Block")
+        #expect(BlockUnit.displayText(forFocusedSeconds: 24 * 60) == "1 Block")
         #expect(BlockUnit.displayText(forFocusedSeconds: 25 * 60) == "1 Block")
+        #expect(BlockUnit.displayText(forFocusedSeconds: 37 * 60) == "1.5 Blocks")
         #expect(BlockUnit.displayText(forFocusedSeconds: 50 * 60) == "2 Blocks")
-        #expect(BlockUnit.displayText(forFocusedSeconds: 37 * 60) == "1 Block + 12分")
     }
 
-    @Test func blockCalculationExcludesBreaksWhenOnlyFocusSecondsArePassed() {
+    @Test func blockCalculationUsesHalfBlockUnits() {
         let focusSeconds = 25 * 60
         let breakSeconds = 5 * 60
 
         #expect(BlockUnit.blocks(forFocusedSeconds: focusSeconds) == 1)
-        #expect(BlockUnit.blocks(forFocusedSeconds: focusSeconds + breakSeconds) != 1)
+        #expect(BlockUnit.blocks(forFocusedSeconds: focusSeconds + breakSeconds) == 1)
     }
 
     @Test func timerStartPauseResumeAndFinishUseAbsoluteDates() {
@@ -169,6 +171,25 @@ struct FlowTests {
         #expect(todo.recordedFocusSeconds == 25 * 60)
         #expect(todo.actualProgress == 1)
         #expect(direction.recordedFocusSeconds == 25 * 60)
+    }
+
+    @Test func twoHalfBlocksCompleteOneBlockTodo() {
+        let direction = Direction(name: "読書", type: .habit)
+        let todo = Todo(title: "タスク", direction: direction, measurement: .focusBlocks, plannedAmount: 2)
+        let calculator = FlowProgressCalculator()
+
+        calculator.applyFocusDuration(seconds: 12 * 60, direction: direction, todo: todo)
+        calculator.applyFocusDuration(seconds: 12 * 60, direction: direction, todo: todo)
+
+        #expect(todo.recordedFocusSeconds == 24 * 60)
+        #expect(todo.actualProgress == 1)
+        #expect(todo.status == .active)
+        #expect(TodoProgressCalculator().summary(
+            measurement: todo.measurement,
+            plannedAmount: todo.plannedAmount,
+            actualProgress: todo.actualProgress,
+            focusDurationSeconds: todo.focusDurationSeconds
+        ) == "1 Block / 2 Blocks")
     }
 
     @Test func manualBlockTodoProgressUsesTodoMeasurementWithoutDirectionGoal() {
