@@ -77,7 +77,7 @@ struct StatisticsSummary: Equatable {
     let sessionCount: Int
 
     var totalBlocks: Double {
-        Double(totalFocusSeconds) / Double(BlockUnit.secondsPerBlock)
+        BlockUnit.blocks(forFocusedSeconds: totalFocusSeconds)
     }
 }
 

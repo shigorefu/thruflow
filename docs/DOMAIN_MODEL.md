@@ -34,9 +34,11 @@ Canonical productivity unit:
 MVP product display rules:
 
 - 12 focused minutes are presented as `0.5 Block`.
+- 24 focused minutes are presented as `1 Block` because two half-blocks complete one full Block.
 - 25 focused minutes are presented as `1 Block`.
+- 37 focused minutes are presented as `1.5 Blocks`.
 - 50 focused minutes are presented as `2 Blocks`.
-- Partial time beyond full Blocks is preserved and can be shown as `1 Block + 12 min`.
+- Block-based Todo UI should not show raw focused minutes. Use the `minutes` measurement when exact minute accounting is the user's goal.
 
 A completed FlowSession does not automatically equal one Block. Only focused duration determines Block progress.
 

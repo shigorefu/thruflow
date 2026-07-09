@@ -91,6 +91,8 @@ Canonical productivity unit:
 - `1 Block = 25 focused minutes`.
 - Breaks are excluded.
 - 12 focused minutes are presented as `0.5 Block`.
+- Block display and Todo progress use half-block credits. Two 12-minute focused runs display as `1 Block`, not `24分`.
+- Exact minute accounting belongs to the `分` Todo measurement.
 
 Blocks are not stored as standalone durable entities. `FlowSession` records actual focus work, while Todo and Direction progress accumulate focused seconds and display that duration in Blocks.
 
