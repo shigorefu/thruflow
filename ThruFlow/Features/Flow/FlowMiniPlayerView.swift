@@ -94,22 +94,24 @@ struct FlowMiniPlayerView: View {
             } else if activeFlowStore.phase == .awaitingResult || activeFlowStore.isAwaitingBreakMemo {
                 resultBar
             } else {
-                HStack(spacing: 12) {
+                HStack(spacing: style == .compact ? 8 : 12) {
                     taskPickerButton
                         .frame(
-                            minWidth: style == .header ? 280 : 220,
-                            maxWidth: style == .header ? .infinity : 260,
+                            minWidth: style == .header ? 280 : 158,
+                            maxWidth: style == .header ? .infinity : 176,
                             alignment: .leading
                         )
 
                     modePickerButton
 
-                    timerCluster(now: now)
+                    if style == .header {
+                        timerCluster(now: now)
+                    }
 
                     transportControls
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
+                .padding(.horizontal, style == .compact ? 10 : 14)
+                .padding(.vertical, style == .compact ? 8 : 10)
                 .background(.ultraThinMaterial)
                 .clipShape(RoundedRectangle(cornerRadius: 14))
                 .overlay {
@@ -138,8 +140,8 @@ struct FlowMiniPlayerView: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
+            .padding(.horizontal, style == .compact ? 10 : 14)
+            .padding(.vertical, style == .compact ? 8 : 10)
             .background(Color.primary.opacity(0.05))
             .clipShape(RoundedRectangle(cornerRadius: 14))
             .overlay {
@@ -168,7 +170,7 @@ struct FlowMiniPlayerView: View {
                         .font(.caption.weight(.semibold))
                         .lineLimit(1)
 
-                    Text(modeSubtitle(activeFlowStore.selectedMode))
+                    Text(style == .compact ? activeFlowStore.selectedMode.shortDurationText : modeSubtitle(activeFlowStore.selectedMode))
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
@@ -178,7 +180,7 @@ struct FlowMiniPlayerView: View {
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(.secondary)
             }
-            .frame(width: style == .header ? 190 : 150, alignment: .leading)
+            .frame(width: style == .header ? 190 : 112, alignment: .leading)
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
             .background(Color.primary.opacity(0.05))
@@ -201,11 +203,11 @@ struct FlowMiniPlayerView: View {
 
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text(activeFlowStore.timerState == nil ? activeFlowStore.selectedMode.shortDurationText : activeFlowStore.remainingText(now: now))
-                    .font(.system(.title2, design: .monospaced).weight(.bold))
+                    .font(.system(style == .compact ? .body : .title2, design: .monospaced).weight(.bold))
                     .foregroundStyle(.primary)
                     .monospacedDigit()
 
-                if activeFlowStore.timerState != nil {
+                if style == .header && activeFlowStore.timerState != nil {
                     Text("/ \(activeFlowStore.selectedMode.initialFocusDurationSeconds / 60):00")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
@@ -213,7 +215,7 @@ struct FlowMiniPlayerView: View {
                 }
             }
         }
-        .frame(width: style == .header ? 130 : 92, alignment: .leading)
+        .frame(width: style == .header ? 130 : 58, alignment: .leading)
         .accessibilityLabel(activeFlowStore.timerState == nil ? "Flow未開始" : "残り時間 \(activeFlowStore.remainingText(now: now))")
     }
 
@@ -238,7 +240,7 @@ struct FlowMiniPlayerView: View {
             Text(flowDirection?.symbolName ?? "▶")
                 .font(.system(size: 22))
         }
-        .frame(width: 42, height: 42)
+        .frame(width: style == .compact ? 34 : 42, height: style == .compact ? 34 : 42)
         .overlay {
             RoundedRectangle(cornerRadius: 8)
                 .strokeBorder(artworkColor.opacity(0.24))
@@ -249,11 +251,11 @@ struct FlowMiniPlayerView: View {
     private var contextLabel: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(flowTaskTitle)
-                .font(.headline)
+                .font(style == .compact ? .caption.weight(.semibold) : .headline)
                 .lineLimit(1)
 
             Text(flowDirectionName)
-                .font(.subheadline)
+                .font(style == .compact ? .caption2 : .subheadline)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
         }
@@ -297,27 +299,36 @@ struct FlowMiniPlayerView: View {
     }
 
     private var transportControls: some View {
-        HStack(spacing: 6) {
-            if activeFlowStore.timerState != nil {
-                destroyButton
-                stopButton
-            }
+        HStack(spacing: style == .compact ? 4 : 6) {
+            if style == .compact {
+                if activeFlowStore.timerState != nil {
+                    destroyButton
+                    stopButton
+                }
 
-            if activeFlowStore.phase == .focusing {
-                breakButton
-            }
+                primaryButton
+            } else {
+                if activeFlowStore.timerState != nil {
+                    destroyButton
+                    stopButton
+                }
 
-            if canSeek {
-                seekBackwardButton
-            }
+                if activeFlowStore.phase == .focusing {
+                    breakButton
+                }
 
-            primaryButton
+                if canSeek {
+                    seekBackwardButton
+                }
 
-            if canSeek {
-                seekForwardButton
+                primaryButton
+
+                if canSeek {
+                    seekForwardButton
+                }
             }
         }
-        .padding(3)
+        .padding(style == .compact ? 2 : 3)
         .background(Color.primary.opacity(0.06))
         .clipShape(Capsule())
     }
@@ -391,12 +402,21 @@ struct FlowMiniPlayerView: View {
         Button {
             handlePrimaryAction()
         } label: {
-            Label(primaryButtonTitle, systemImage: primaryButtonImage)
-                .font(.headline.weight(.semibold))
-                .frame(width: 142, height: 44)
-                .background(primaryButtonColor)
-                .foregroundStyle(.white)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+            if style == .compact {
+                Image(systemName: primaryButtonImage)
+                    .font(.title3.weight(.semibold))
+                    .frame(width: 40, height: 40)
+                    .background(primaryButtonColor)
+                    .foregroundStyle(.white)
+                    .clipShape(Circle())
+            } else {
+                Label(primaryButtonTitle, systemImage: primaryButtonImage)
+                    .font(.headline.weight(.semibold))
+                    .frame(width: 142, height: 44)
+                    .background(primaryButtonColor)
+                    .foregroundStyle(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+            }
         }
         .buttonStyle(.plain)
         .accessibilityLabel(primaryButtonTitle)
