@@ -128,6 +128,12 @@ The Direction list groups active Directions by `習慣`, `通常`, and `ナイ�
 
 Reason: Direction order is part of the user's working map, not just metadata.
 
+### D-018: Flow timers do not auto-switch phases
+
+When focus reaches its planned end, the timer continues as overtime instead of automatically switching to rest. The user starts rest manually. Starting rest before 24 focused minutes uses a 3-minute rest; starting rest at or after 24 focused minutes records it as a 25-minute focus with a 5-minute rest. Rest also continues as overtime after its planned end.
+
+Reason: the app should record the user's real rhythm while still giving clear session-like thresholds.
+
 ## Current Risks
 
 - The project deployment targets are set to OS version 26.5, which may restrict local simulator/device availability.

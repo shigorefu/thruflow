@@ -46,7 +46,7 @@ struct FlowTests {
         #expect(engine.remainingSeconds(for: finished, now: finishedAt) == 0)
     }
 
-    @Test func timerRestoresFromBackgroundByAdvancingToBreak() {
+    @Test func timerRestoresFromBackgroundWithoutAutoStartingBreak() {
         let engine = FlowTimerEngine()
         let start = Date(timeIntervalSince1970: 2_000)
         let restoredAt = start.addingTimeInterval(26 * 60)
@@ -54,9 +54,38 @@ struct FlowTests {
         let initial = engine.start(mode: .twentyFiveFive, now: start)
         let restored = engine.advanceIfNeeded(initial, now: restoredAt)
 
-        #expect(restored.phase == .breakTime)
-        #expect(restored.actualFocusDurationSeconds == 25 * 60)
-        #expect(engine.remainingSeconds(for: restored, now: restoredAt) == 5 * 60)
+        #expect(restored.phase == .focusing)
+        #expect(restored.actualFocusDurationSeconds == nil)
+        #expect(engine.remainingSeconds(for: restored, now: restoredAt) == -60)
+        #expect(engine.actualFocusDuration(for: restored, now: restoredAt) == 26 * 60)
+    }
+
+    @Test func manualBreakBeforeTwentyFourMinutesUsesShortBreak() {
+        let engine = FlowTimerEngine()
+        let start = Date(timeIntervalSince1970: 2_500)
+        let breakStartedAt = start.addingTimeInterval(23 * 60)
+
+        let initial = engine.start(mode: .twentyFiveFive, now: start)
+        let breakState = engine.startBreak(initial, now: breakStartedAt)
+
+        #expect(breakState.phase == .breakTime)
+        #expect(breakState.actualFocusDurationSeconds == 23 * 60)
+        #expect(breakState.plannedBreakDurationSeconds == 3 * 60)
+        #expect(engine.remainingSeconds(for: breakState, now: breakStartedAt) == 3 * 60)
+    }
+
+    @Test func manualBreakAtTwentyFourMinutesCountsAsTwentyFiveFive() {
+        let engine = FlowTimerEngine()
+        let start = Date(timeIntervalSince1970: 2_600)
+        let breakStartedAt = start.addingTimeInterval(24 * 60)
+
+        let initial = engine.start(mode: .twentyFiveFive, now: start)
+        let breakState = engine.startBreak(initial, now: breakStartedAt)
+
+        #expect(breakState.phase == .breakTime)
+        #expect(breakState.actualFocusDurationSeconds == 25 * 60)
+        #expect(breakState.plannedBreakDurationSeconds == 5 * 60)
+        #expect(engine.remainingSeconds(for: breakState, now: breakStartedAt.addingTimeInterval(6 * 60)) == -60)
     }
 
     @Test func adaptiveExtendsOneTimerStateThroughTwelveTwentyFiveFifty() {
@@ -203,7 +232,7 @@ struct FlowTests {
         let start = Date(timeIntervalSince1970: 6_000)
 
         let initial = engine.start(mode: .twentyFiveFive, now: start)
-        let inBreak = engine.advanceIfNeeded(initial, now: start.addingTimeInterval(26 * 60))
+        let inBreak = engine.startBreak(initial, now: start.addingTimeInterval(26 * 60))
         let unchanged = engine.seekForward(inBreak, now: start.addingTimeInterval(26 * 60))
 
         #expect(inBreak.phase == .breakTime)

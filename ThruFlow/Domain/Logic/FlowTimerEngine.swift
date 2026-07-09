@@ -76,9 +76,7 @@ struct FlowTimerEngine {
         var next = state
 
         if state.phase == .breakTime {
-            next.phase = .completed
-            next.completedAt = now
-            return next
+            return state
         }
 
         if state.mode == .adaptive {
@@ -87,18 +85,19 @@ struct FlowTimerEngine {
             return next
         }
 
-        next.actualFocusDurationSeconds = state.plannedFocusDurationSeconds
-        next.phase = .breakTime
-        next.breakStartedAt = now
-        next.plannedEndAt = now.addingTimeInterval(TimeInterval(state.plannedBreakDurationSeconds))
-        return next
+        return state
     }
 
     func startBreak(_ state: FlowTimerState, now: Date) -> FlowTimerState {
+        let actualFocusSeconds = normalizedFocusDurationForBreak(from: state, now: now)
+        let breakSeconds = FlowMode.adaptiveBreakDurationSeconds(forFocusSeconds: actualFocusSeconds)
+
         var next = state
+        next.actualFocusDurationSeconds = actualFocusSeconds
+        next.plannedBreakDurationSeconds = breakSeconds
         next.phase = .breakTime
         next.breakStartedAt = now
-        next.plannedEndAt = now.addingTimeInterval(TimeInterval(state.plannedBreakDurationSeconds))
+        next.plannedEndAt = now.addingTimeInterval(TimeInterval(breakSeconds))
         return next
     }
 
@@ -190,7 +189,7 @@ struct FlowTimerEngine {
         }
 
         let referenceDate = state.phase == .paused ? (state.pausedAt ?? now) : now
-        return max(0, Int(state.plannedEndAt.timeIntervalSince(referenceDate).rounded(.up)))
+        return Int(state.plannedEndAt.timeIntervalSince(referenceDate).rounded(.up))
     }
 
     func actualFocusDuration(for state: FlowTimerState, now: Date) -> Int {
@@ -198,9 +197,26 @@ struct FlowTimerEngine {
             return actualFocusDurationSeconds
         }
 
-        let endDate = min(now, state.plannedEndAt)
-        let elapsed = max(0, Int(endDate.timeIntervalSince(state.startedAt)))
-        return min(state.plannedFocusDurationSeconds, max(0, elapsed - state.accumulatedPauseDurationSeconds))
+        return elapsedFocusDuration(for: state, now: now)
+    }
+
+    func elapsedFocusDuration(for state: FlowTimerState, now: Date) -> Int {
+        let referenceDate = state.phase == .paused ? (state.pausedAt ?? now) : now
+        let elapsed = max(0, Int(referenceDate.timeIntervalSince(state.startedAt)))
+        return max(0, elapsed - state.accumulatedPauseDurationSeconds)
+    }
+
+    private func normalizedFocusDurationForBreak(from state: FlowTimerState, now: Date) -> Int {
+        let elapsed = elapsedFocusDuration(for: state, now: now)
+
+        switch elapsed {
+        case (49 * 60)...:
+            return max(50 * 60, elapsed)
+        case (24 * 60)...:
+            return 25 * 60
+        default:
+            return elapsed
+        }
     }
 }
 

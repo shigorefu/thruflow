@@ -148,6 +148,7 @@ final class ActiveFlowStore: ObservableObject {
 
     func startBreak(modelContext: ModelContext, now: Date = .now) {
         guard let timerState else { return }
+        notifications.cancelPendingFlowNotifications()
         let next = engine.startBreak(timerState, now: now)
         apply(next, modelContext: modelContext, now: now)
     }
@@ -208,12 +209,17 @@ final class ActiveFlowStore: ObservableObject {
     func remainingText(now: Date = .now) -> String {
         guard let timerState else { return "--:--" }
         let seconds = engine.remainingSeconds(for: timerState, now: now)
-        return Self.timeText(seconds: seconds)
+        return Self.timeText(seconds: seconds, allowsOvertime: timerState.phase == .focusing || timerState.phase == .breakTime)
     }
 
     func actualFocusSeconds(now: Date = .now) -> Int {
         guard let timerState else { return 0 }
         return engine.actualFocusDuration(for: timerState, now: now)
+    }
+
+    func isFocusOvertime(now: Date = .now) -> Bool {
+        guard let timerState, timerState.phase == .focusing else { return false }
+        return engine.remainingSeconds(for: timerState, now: now) <= 0
     }
 
     private func apply(_ state: FlowTimerState, modelContext: ModelContext, now: Date) {
@@ -270,7 +276,12 @@ final class ActiveFlowStore: ObservableObject {
         defaults.set(intent, forKey: "flow.lastIntent")
     }
 
-    static func timeText(seconds: Int) -> String {
+    static func timeText(seconds: Int, allowsOvertime: Bool = false) -> String {
+        if allowsOvertime, seconds < 0 {
+            let overtimeSeconds = abs(seconds)
+            return String(format: "+%02d:%02d", overtimeSeconds / 60, overtimeSeconds % 60)
+        }
+
         let clampedSeconds = max(0, seconds)
         return String(format: "%02d:%02d", clampedSeconds / 60, clampedSeconds % 60)
     }
