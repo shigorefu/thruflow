@@ -9,6 +9,11 @@ import SwiftData
 import SwiftUI
 
 struct FlowMiniPlayerView: View {
+    enum Style {
+        case header
+        case compact
+    }
+
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
 
@@ -16,9 +21,15 @@ struct FlowMiniPlayerView: View {
     @Query(sort: \Todo.createdAt, order: .forward) private var todos: [Todo]
 
     @State private var showsTaskPicker = false
+    @State private var showsModePicker = false
     @State private var resultText = ""
 
+    private let style: Style
     private let todayFilter = TodayTodoFilter()
+
+    init(style: Style = .header) {
+        self.style = style
+    }
 
     private var activeDirections: [Direction] {
         directions.filter { !$0.isArchived }
@@ -64,6 +75,15 @@ struct FlowMiniPlayerView: View {
             .frame(minWidth: 520, minHeight: 440)
 #endif
         }
+        .sheet(isPresented: $showsModePicker) {
+            FlowModePickerView(
+                selectedMode: $activeFlowStore.selectedMode,
+                modes: selectableModes
+            )
+#if os(macOS)
+            .frame(minWidth: 460, minHeight: 340)
+#endif
+        }
     }
 
     @ViewBuilder
@@ -75,30 +95,14 @@ struct FlowMiniPlayerView: View {
                 resultBar
             } else {
                 HStack(spacing: 12) {
-                    Button {
-                        showsTaskPicker = true
-                    } label: {
-                        HStack(spacing: 10) {
-                            playerArtwork
-                            contextLabel
-                        }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 10)
-                        .background(Color.primary.opacity(0.05))
-                        .clipShape(RoundedRectangle(cornerRadius: 14))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 14)
-                                .strokeBorder(Color.primary.opacity(0.08))
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    .frame(width: 300, alignment: .leading)
-                    .accessibilityLabel("Flowタスクを選択")
+                    taskPickerButton
+                        .frame(
+                            minWidth: style == .header ? 280 : 220,
+                            maxWidth: style == .header ? .infinity : 260,
+                            alignment: .leading
+                        )
 
-                    focusModeCards
-
-                    Divider()
-                        .frame(height: 54)
+                    modePickerButton
 
                     timerCluster(now: now)
 
@@ -120,49 +124,72 @@ struct FlowMiniPlayerView: View {
         .background(.bar)
     }
 
-    private var focusModeCards: some View {
-        HStack(spacing: 8) {
-            ForEach(selectableModes) { mode in
-                modeCard(mode)
+    private var taskPickerButton: some View {
+        Button {
+            showsTaskPicker = true
+        } label: {
+            HStack(spacing: 12) {
+                playerArtwork
+                contextLabel
+
+                Spacer(minLength: 0)
+
+                Image(systemName: "chevron.down")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(Color.primary.opacity(0.05))
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .overlay {
+                RoundedRectangle(cornerRadius: 14)
+                    .strokeBorder(Color.primary.opacity(0.08))
             }
         }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Flowタスクを選択")
     }
 
-    private func modeCard(_ mode: FlowMode) -> some View {
+    private var modePickerButton: some View {
         Button {
-            activeFlowStore.selectedMode = mode
+            showsModePicker = true
         } label: {
-            HStack(spacing: 10) {
-                Image(systemName: modeIconName(mode))
-                    .font(.title3.weight(.semibold))
+            HStack(spacing: 8) {
+                Image(systemName: modeIconName(activeFlowStore.selectedMode))
+                    .font(.callout.weight(.semibold))
                     .foregroundStyle(.white)
-                    .frame(width: 38, height: 38)
-                    .background(modeIconColor(mode))
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .frame(width: 32, height: 32)
+                    .background(modeIconColor(activeFlowStore.selectedMode))
+                    .clipShape(RoundedRectangle(cornerRadius: 9))
 
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(mode.displayName)
-                        .font(.subheadline.weight(.semibold))
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(activeFlowStore.selectedMode.displayName)
+                        .font(.caption.weight(.semibold))
                         .lineLimit(1)
 
-                    Text(modeSubtitle(mode))
+                    Text(modeSubtitle(activeFlowStore.selectedMode))
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
+
+                Image(systemName: "chevron.down")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
             }
-            .frame(width: 170, alignment: .leading)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .background(mode == activeFlowStore.selectedMode ? modeIconColor(mode).opacity(0.20) : Color.primary.opacity(0.05))
+            .frame(width: style == .header ? 190 : 150, alignment: .leading)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(Color.primary.opacity(0.05))
             .clipShape(RoundedRectangle(cornerRadius: 14))
             .overlay {
                 RoundedRectangle(cornerRadius: 14)
-                    .strokeBorder(mode == activeFlowStore.selectedMode ? modeIconColor(mode).opacity(0.48) : Color.primary.opacity(0.08))
+                    .strokeBorder(Color.primary.opacity(0.08))
             }
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(mode.displayName)を選択")
+        .accessibilityLabel("Focusを選択")
         .disabled(activeFlowStore.timerState != nil)
     }
 
@@ -186,7 +213,7 @@ struct FlowMiniPlayerView: View {
                 }
             }
         }
-        .frame(width: 130, alignment: .leading)
+        .frame(width: style == .header ? 130 : 92, alignment: .leading)
         .accessibilityLabel(activeFlowStore.timerState == nil ? "Flow未開始" : "残り時間 \(activeFlowStore.remainingText(now: now))")
     }
 
@@ -410,13 +437,13 @@ struct FlowMiniPlayerView: View {
     private var primaryButtonColor: Color {
         switch activeFlowStore.phase {
         case .focusing:
-            activeFlowStore.isFocusOvertime(now: activeFlowStore.displayDate) ? .blue : .orange
+            activeFlowStore.isFocusOvertime(now: activeFlowStore.displayDate) ? .blue : artworkColor
         case .paused:
             .green
         case .breakTime:
             .blue
         default:
-            .accentColor
+            artworkColor
         }
     }
 
@@ -636,11 +663,6 @@ private struct FlowTaskPickerView: View {
 
     @Environment(\.dismiss) private var dismiss
 
-    private var filteredTodos: [Todo] {
-        guard let selectedDirectionID else { return todos }
-        return todos.filter { $0.direction?.id == selectedDirectionID }
-    }
-
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -660,14 +682,14 @@ private struct FlowTaskPickerView: View {
                     }
                     .buttonStyle(.plain)
 
-                    section("今日のタスク") {
-                        if filteredTodos.isEmpty {
+                    section("タスク") {
+                        if todos.isEmpty {
                             Text("今日のタスクはありません")
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                         } else {
                             VStack(spacing: 8) {
-                                ForEach(filteredTodos) { todo in
+                                ForEach(todos) { todo in
                                     Button {
                                         selectedTodoID = todo.id
                                         selectedDirectionID = todo.direction?.id
@@ -719,7 +741,7 @@ private struct FlowTaskPickerView: View {
                 }
             }
             .onChange(of: selectedDirectionID) { _, _ in
-                if !filteredTodos.contains(where: { $0.id == selectedTodoID }) {
+                if !todos.contains(where: { $0.id == selectedTodoID }) {
                     selectedTodoID = nil
                 }
             }
@@ -798,6 +820,110 @@ private struct FlowTaskPickerView: View {
         }
 
         return Color(hex: direction.colorHex)
+    }
+}
+
+private struct FlowModePickerView: View {
+    @Binding var selectedMode: FlowMode
+    let modes: [FlowMode]
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 10) {
+                ForEach(modes) { mode in
+                    Button {
+                        selectedMode = mode
+                        dismiss()
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: iconName(mode))
+                                .font(.title3.weight(.semibold))
+                                .foregroundStyle(.white)
+                                .frame(width: 46, height: 46)
+                                .background(iconColor(mode))
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(mode.displayName)
+                                    .font(.headline)
+                                    .foregroundStyle(.primary)
+
+                                Text(subtitle(mode))
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            Spacer(minLength: 0)
+
+                            if selectedMode == mode {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(.tint)
+                            }
+                        }
+                        .padding(12)
+                        .background(selectedMode == mode ? iconColor(mode).opacity(0.14) : Color.primary.opacity(0.05))
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 16)
+                                .strokeBorder(selectedMode == mode ? iconColor(mode).opacity(0.42) : Color.primary.opacity(0.08))
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                Spacer(minLength: 0)
+            }
+            .padding(20)
+            .navigationTitle("Focus")
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("閉じる") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+
+    private func iconName(_ mode: FlowMode) -> String {
+        switch mode {
+        case .twelveThree:
+            "flame.fill"
+        case .twentyFiveFive:
+            "target"
+        case .fiftyTen:
+            "mountain.2.fill"
+        case .adaptive:
+            "sparkles"
+        }
+    }
+
+    private func iconColor(_ mode: FlowMode) -> Color {
+        switch mode {
+        case .twelveThree:
+            .orange
+        case .twentyFiveFive:
+            .blue
+        case .fiftyTen:
+            .purple
+        case .adaptive:
+            .teal
+        }
+    }
+
+    private func subtitle(_ mode: FlowMode) -> String {
+        switch mode {
+        case .twelveThree:
+            "12分作業 / 3分休憩"
+        case .twentyFiveFive:
+            "25分作業 / 5分休憩"
+        case .fiftyTen:
+            "50分作業 / 10分休憩"
+        case .adaptive:
+            "12分から開始"
+        }
     }
 }
 

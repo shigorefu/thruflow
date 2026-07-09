@@ -42,9 +42,9 @@ struct ThruFlowApp: App {
 
 #if os(macOS)
         MenuBarExtra {
-            FlowMiniPlayerView()
+            FlowMiniPlayerView(style: .compact)
                 .environmentObject(activeFlowStore)
-                .frame(width: 560)
+                .frame(width: 520)
         } label: {
             FlowMenuBarLabel()
                 .environmentObject(activeFlowStore)

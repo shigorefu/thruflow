@@ -30,19 +30,13 @@ struct ContentView: View {
             }
             .navigationTitle("スルフロ")
         } detail: {
-            switch selection ?? .today {
-            case .today:
-                TodayView()
-            case .inbox:
-                InboxView()
-            case .directions:
-                DirectionListView()
-            case .statistics:
-                StatisticsView()
+            VStack(spacing: 0) {
+                FlowMiniPlayerView(style: .header)
+
+                Divider()
+
+                detailContent
             }
-        }
-        .safeAreaInset(edge: .top) {
-            FlowMiniPlayerView()
         }
 #else
         TabView(selection: $tabSelection) {
@@ -71,10 +65,26 @@ struct ContentView: View {
                 .tag(AppSection.statistics)
         }
         .safeAreaInset(edge: .top) {
-            FlowMiniPlayerView()
+            FlowMiniPlayerView(style: .header)
         }
 #endif
     }
+
+#if os(macOS)
+    @ViewBuilder
+    private var detailContent: some View {
+        switch selection ?? .today {
+        case .today:
+            TodayView()
+        case .inbox:
+            InboxView()
+        case .directions:
+            DirectionListView()
+        case .statistics:
+            StatisticsView()
+        }
+    }
+#endif
 }
 
 private enum AppSection: Hashable {
