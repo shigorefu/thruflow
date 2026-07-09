@@ -121,6 +121,7 @@ final class ActiveFlowStore: ObservableObject {
     func finish(modelContext: ModelContext, now: Date = .now) {
         guard let timerState else { return }
         notifications.cancelPendingFlowNotifications()
+        guard !discardShortFlowIfNeeded(timerState, modelContext: modelContext, now: now) else { return }
         apply(engine.finish(timerState, now: now), modelContext: modelContext, now: now)
     }
 
@@ -152,17 +153,20 @@ final class ActiveFlowStore: ObservableObject {
     func startBreak(modelContext: ModelContext, now: Date = .now) {
         guard let timerState else { return }
         notifications.cancelPendingFlowNotifications()
+        guard !discardShortFlowIfNeeded(timerState, modelContext: modelContext, now: now) else { return }
         let next = engine.startBreak(timerState, now: now)
         apply(next, modelContext: modelContext, now: now)
     }
 
-    func requestBreakMemo() {
-        guard timerState != nil else { return }
+    func requestBreakMemo(modelContext: ModelContext, now: Date = .now) {
+        guard let timerState else { return }
+        guard !discardShortFlowIfNeeded(timerState, modelContext: modelContext, now: now) else { return }
         isAwaitingBreakMemo = true
     }
 
     func completeBreakMemo(_ result: String?, modelContext: ModelContext, now: Date = .now) {
         guard let timerState else { return }
+        guard !discardShortFlowIfNeeded(timerState, modelContext: modelContext, now: now) else { return }
         activeSession?.todo?.setMemo(result, now: now)
         isAwaitingBreakMemo = false
         notifications.cancelPendingFlowNotifications()
@@ -197,6 +201,7 @@ final class ActiveFlowStore: ObservableObject {
         notifications.cancelPendingFlowNotifications()
 
         guard let timerState else { return }
+        guard !discardShortFlowIfNeeded(timerState, modelContext: modelContext, now: now) else { return }
         apply(engine.finish(timerState, now: now), modelContext: modelContext, now: now)
     }
 
@@ -285,6 +290,27 @@ final class ActiveFlowStore: ObservableObject {
             now: now
         )
         didApplyProgress = true
+    }
+
+    private func discardShortFlowIfNeeded(
+        _ state: FlowTimerState,
+        modelContext: ModelContext,
+        now: Date
+    ) -> Bool {
+        guard engine.actualFocusDuration(for: state, now: now) < FlowTimerEngine.minimumCreditableFocusDurationSeconds else {
+            return false
+        }
+
+        if let activeSession {
+            modelContext.delete(activeSession)
+        }
+
+        activeSession = nil
+        timerState = nil
+        didApplyProgress = false
+        isAwaitingBreakMemo = false
+        try? modelContext.save()
+        return true
     }
 
     private func persistConfiguration() {

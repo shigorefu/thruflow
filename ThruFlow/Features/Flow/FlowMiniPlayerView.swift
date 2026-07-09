@@ -426,7 +426,7 @@ struct FlowMiniPlayerView: View {
 
     private var breakButton: some View {
         Button {
-            activeFlowStore.requestBreakMemo()
+            activeFlowStore.requestBreakMemo(modelContext: modelContext)
         } label: {
             Image(systemName: "cup.and.saucer.fill")
                 .font(.callout.weight(.semibold))
@@ -533,7 +533,7 @@ struct FlowMiniPlayerView: View {
             }
 
             Button("休憩") {
-                activeFlowStore.requestBreakMemo()
+                activeFlowStore.requestBreakMemo(modelContext: modelContext)
             }
 
             Button("終了") {
@@ -568,6 +568,14 @@ struct FlowMiniPlayerView: View {
                     .font(.system(.caption, design: .monospaced).weight(.semibold))
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
+
+                Button("メモなし") {
+                    submitWithoutResult()
+                }
+                .font(.caption.weight(.semibold))
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                .accessibilityLabel("メモなしで続ける")
 
                 Button {
                     submitResult()
@@ -622,7 +630,7 @@ struct FlowMiniPlayerView: View {
             )
         case .focusing:
             if activeFlowStore.isFocusOvertime(now: activeFlowStore.displayDate) {
-                activeFlowStore.requestBreakMemo()
+                activeFlowStore.requestBreakMemo(modelContext: modelContext)
             } else {
                 activeFlowStore.pause(modelContext: modelContext)
             }
@@ -644,6 +652,15 @@ struct FlowMiniPlayerView: View {
             activeFlowStore.completeResult(resultText, modelContext: modelContext)
         }
         resultText = ""
+    }
+
+    private func submitWithoutResult() {
+        resultText = ""
+        if activeFlowStore.isAwaitingBreakMemo {
+            activeFlowStore.completeBreakMemo(nil, modelContext: modelContext)
+        } else {
+            activeFlowStore.completeResult(nil, modelContext: modelContext)
+        }
     }
 
     private func resolvedStartDirection() -> Direction {

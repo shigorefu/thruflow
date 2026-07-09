@@ -8,7 +8,7 @@
 import Foundation
 
 struct FlowTimerEngine {
-    static let minimumCreditableFocusDurationSeconds = 5 * 60
+    static let minimumCreditableFocusDurationSeconds = 60
 
     func start(mode: FlowMode, now: Date) -> FlowTimerState {
         FlowTimerState(
