@@ -14,7 +14,7 @@ struct StatisticsView: View {
     @Query(sort: \Todo.updatedAt, order: .reverse) private var todos: [Todo]
 
     @State private var selectedMode: StatisticsMode = .achievement
-    @State private var selectedRange: StatisticsRange = .year
+    @State private var selectedRange: StatisticsRange = .calendarYear
     @State private var selectedDirectionID: UUID?
 
     private let flowBuilder = StatisticsHeatmapBuilder()

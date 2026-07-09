@@ -7,32 +7,32 @@
 
 import Foundation
 
-enum StatisticsRange: Int, CaseIterable, Identifiable {
-    case days90 = 90
-    case days180 = 180
-    case year = 365
+enum StatisticsRange: String, CaseIterable, Identifiable {
+    case currentMonth
+    case days180
+    case calendarYear
 
-    var id: Int { rawValue }
+    var id: String { rawValue }
 
     var displayName: String {
         switch self {
-        case .days90:
-            "90日"
+        case .currentMonth:
+            "今月"
         case .days180:
             "180日"
-        case .year:
-            "1年"
+        case .calendarYear:
+            "年"
         }
     }
 
     var summaryText: String {
         switch self {
-        case .days90:
-            "過去90日"
+        case .currentMonth:
+            "今月"
         case .days180:
             "過去180日"
-        case .year:
-            "過去1年"
+        case .calendarYear:
+            "今年"
         }
     }
 }
@@ -54,7 +54,7 @@ enum StatisticsMode: String, CaseIterable, Identifiable {
 }
 
 struct StatisticsFilter: Equatable {
-    var range: StatisticsRange = .year
+    var range: StatisticsRange = .calendarYear
     var directionID: UUID?
 }
 
@@ -122,8 +122,9 @@ struct StatisticsHeatmapBuilder {
         filter: StatisticsFilter,
         now: Date = .now
     ) -> StatisticsHeatmapResult {
-        let startDate = startDate(for: filter.range, now: now)
-        let endDate = calendar.startOfDay(for: now)
+        let interval = dateInterval(for: filter.range, now: now)
+        let startDate = interval.start
+        let endDate = interval.end
         let eligibleSessions = sessions.filter { session in
             let sessionDate = calendar.startOfDay(for: session.startedAt)
             guard sessionDate >= startDate, sessionDate <= endDate else { return false }
@@ -150,9 +151,24 @@ struct StatisticsHeatmapBuilder {
         return StatisticsHeatmapResult(days: days, summary: summary)
     }
 
-    private func startDate(for range: StatisticsRange, now: Date) -> Date {
+    private func dateInterval(for range: StatisticsRange, now: Date) -> (start: Date, end: Date) {
         let today = calendar.startOfDay(for: now)
-        return calendar.date(byAdding: .day, value: -(range.rawValue - 1), to: today) ?? today
+
+        switch range {
+        case .currentMonth:
+            let components = calendar.dateComponents([.year, .month], from: today)
+            let start = calendar.date(from: components) ?? today
+            let nextMonth = calendar.date(byAdding: .month, value: 1, to: start) ?? today
+            let end = calendar.date(byAdding: .day, value: -1, to: nextMonth) ?? today
+            return (start, end)
+        case .days180:
+            return (calendar.date(byAdding: .day, value: -179, to: today) ?? today, today)
+        case .calendarYear:
+            let year = calendar.component(.year, from: today)
+            let start = calendar.date(from: DateComponents(year: year, month: 1, day: 1)) ?? today
+            let end = calendar.date(from: DateComponents(year: year, month: 12, day: 31)) ?? today
+            return (start, end)
+        }
     }
 
     private func daysBetween(_ startDate: Date, and endDate: Date) -> [Date] {
@@ -220,8 +236,9 @@ struct AchievementHeatmapBuilder {
         filter: StatisticsFilter,
         now: Date = .now
     ) -> AchievementHeatmapResult {
-        let startDate = startDate(for: filter.range, now: now)
-        let endDate = calendar.startOfDay(for: now)
+        let interval = dateInterval(for: filter.range, now: now)
+        let startDate = interval.start
+        let endDate = interval.end
         let eligibleTodos = todos.filter { todo in
             let completionDate = calendar.startOfDay(for: todo.updatedAt)
             guard completionDate >= startDate, completionDate <= endDate else { return false }
@@ -248,9 +265,24 @@ struct AchievementHeatmapBuilder {
         return AchievementHeatmapResult(days: days, summary: summary)
     }
 
-    private func startDate(for range: StatisticsRange, now: Date) -> Date {
+    private func dateInterval(for range: StatisticsRange, now: Date) -> (start: Date, end: Date) {
         let today = calendar.startOfDay(for: now)
-        return calendar.date(byAdding: .day, value: -(range.rawValue - 1), to: today) ?? today
+
+        switch range {
+        case .currentMonth:
+            let components = calendar.dateComponents([.year, .month], from: today)
+            let start = calendar.date(from: components) ?? today
+            let nextMonth = calendar.date(byAdding: .month, value: 1, to: start) ?? today
+            let end = calendar.date(byAdding: .day, value: -1, to: nextMonth) ?? today
+            return (start, end)
+        case .days180:
+            return (calendar.date(byAdding: .day, value: -179, to: today) ?? today, today)
+        case .calendarYear:
+            let year = calendar.component(.year, from: today)
+            let start = calendar.date(from: DateComponents(year: year, month: 1, day: 1)) ?? today
+            let end = calendar.date(from: DateComponents(year: year, month: 12, day: 31)) ?? today
+            return (start, end)
+        }
     }
 
     private func daysBetween(_ startDate: Date, and endDate: Date) -> [Date] {

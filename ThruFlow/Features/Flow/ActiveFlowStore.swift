@@ -125,7 +125,8 @@ final class ActiveFlowStore: ObservableObject {
     }
 
     func completeResult(_ result: String?, modelContext: ModelContext, now: Date = .now) {
-        activeSession?.setResult(result, now: now)
+        activeSession?.todo?.setMemo(result, now: now)
+        activeSession?.complete(now: now)
 
         if let timerState {
             apply(engine.completeResult(timerState, now: now), modelContext: modelContext, now: now)
@@ -162,7 +163,7 @@ final class ActiveFlowStore: ObservableObject {
 
     func completeBreakMemo(_ result: String?, modelContext: ModelContext, now: Date = .now) {
         guard let timerState else { return }
-        activeSession?.setMemo(result, now: now)
+        activeSession?.todo?.setMemo(result, now: now)
         isAwaitingBreakMemo = false
         notifications.cancelPendingFlowNotifications()
         apply(engine.startBreak(timerState, now: now), modelContext: modelContext, now: now)

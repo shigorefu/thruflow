@@ -67,14 +67,11 @@ struct TodoDraft {
 }
 
 enum TodoValidationError: Error, Equatable, LocalizedError {
-    case emptyTitle
     case invalidPlannedAmount
     case invalidActualProgress
 
     var errorDescription: String? {
         switch self {
-        case .emptyTitle:
-            "タイトルを入力してください。"
         case .invalidPlannedAmount:
             "予定量は1以上にしてください。"
         case .invalidActualProgress:
@@ -86,10 +83,6 @@ enum TodoValidationError: Error, Equatable, LocalizedError {
 struct TodoValidator {
     func validate(_ draft: TodoDraft) -> [TodoValidationError] {
         var errors: [TodoValidationError] = []
-
-        if draft.trimmedTitle.isEmpty {
-            errors.append(.emptyTitle)
-        }
 
         if draft.measurement != .checkbox, (draft.plannedAmount ?? 0) <= 0 {
             errors.append(.invalidPlannedAmount)

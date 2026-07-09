@@ -247,6 +247,12 @@ final class Todo {
         recordedFocusSeconds += max(0, seconds)
         updatedAt = now
     }
+
+    func setMemo(_ memo: String?, now: Date = .now) {
+        let trimmed = memo?.trimmingCharacters(in: .whitespacesAndNewlines)
+        notes = trimmed?.isEmpty == true ? nil : trimmed
+        updatedAt = now
+    }
 }
 
 extension Todo {

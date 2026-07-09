@@ -1,52 +1,28 @@
-# Japanese Vocabulary
+# Vocabulary
 
-ThruFlow uses Japanese as the default user-facing language. Code identifiers, enum raw values, and persistence names stay English.
-
-| Domain term | Japanese UI |
+| English | Japanese UI |
 | --- | --- |
 | ThruFlow | スルフロ |
 | Direction | 方向 |
-| Default task inbox direction | タスク |
-| Direction symbol | 絵文字 |
-| Direction color | カラー |
-| Habit | 習慣 |
-| Neutral | 通常 |
-| Nice | ナイス |
-| High priority | 高 |
-| Medium priority | 中 |
-| Low priority | 低い |
-| If there is room | 余裕があれば |
-| Goal | 目標 |
-| Goal value | 目標値 |
-| Goal frequency | 頻度 |
-| Daily | 毎日 |
-| Weekly count | 週回 |
-| Weekday | 曜日 |
-| Occurrence | 回数 |
-| Flow block | フローブロック |
-| Minutes | 分 |
-| Hours | 時間 |
-| Todo | タスク |
+| Normal Direction | 通常 |
+| Habit Direction | 習慣 |
+| Nice Direction | ナイス |
+| System Other Direction | その他 |
+| Task / Todo | タスク |
+| Inbox | Inbox |
 | Today | 今日 |
-| Tasks | タスク |
-| Flow Session | フローセッション |
-| Flow | フロー |
-| Intent | 意図 |
-| Result | 結果 |
-| Start | 開始 |
-| Pause | 一時停止 |
-| Resume | 再開 |
-| Finish | 完了 |
-| Adaptive Flow | アダプティブフロー |
-| Recovery Flow | 復帰フロー |
-| Break / Rest | 休憩 |
-| Long break | 長めの休憩 |
-| History | 履歴 |
+| Memo | メモ |
+| Check | チェック |
+| Focus Block | 集中ブロック |
+| Minutes | 分 |
+| Priority high | 高 |
+| Priority medium | 中 |
+| Priority low | 低い |
+| If there is room | 余裕があれば |
+| Flow | Flow |
+| Short Flow | Short |
+| Focus Flow | Focus |
+| Deep Flow | Deep |
 | Statistics | 統計 |
-| Timeline | タイムライン |
-| Timeline Segment | タイムライン区間 |
-| Unknown time | 未分類の時間 |
-| Daily Completion | 今日の達成 |
-| Successful day | 達成した日 |
-| Archive | アーカイブ |
-| Archived | アーカイブ済み |
+| Tasks statistics mode | Tasks |
+| Flow statistics mode | Flow |

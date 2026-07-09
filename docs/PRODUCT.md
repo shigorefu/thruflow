@@ -1,79 +1,59 @@
 # Product
 
-ThruFlow / スルフロ is a personal attention-management app for Apple platforms.
+ThruFlow / スルフロ records focused work and turns it into visible task progress.
 
-It combines:
+Core loop:
 
-- Directions: recurring areas of life or work.
-- Todos: concrete one-time tasks inside a Direction.
-- Flow sessions: focused work segments with intent and result.
-- Must, Neutral, and Bonus goal categories.
-- Daily and weekly norms.
-- A future continuous day timeline.
-- History and statistics.
-- Future AI summaries.
+```text
+方向 -> Task -> Flow -> focused time -> progress -> statistics
+```
 
-## Canonical Block
+## 方向
 
-The canonical productivity unit is:
+`方向` is a persistent area of activity.
 
-`1 Block = 25 focused minutes`.
+- `通常`: normal area. No automatic daily task.
+- `習慣`: scheduled recurring requirement. Creates automatic habit tasks.
+- `ナイス`: optional positive activity. Does not block day completion.
+- `その他`: system Direction for tasks/flows without a chosen Direction. It is hidden only from Direction management, not from statistics.
 
-Breaks are excluded. Blocks are computed from actual focus duration and are not stored as standalone completed entities. `FlowSession` stores what actually happened; Todo and Direction progress accumulate focus duration and display it as Blocks.
+## Tasks
 
-MVP display uses product-friendly values:
+Tasks are the daily Todo surface.
 
-- 12 focused minutes: `0.5 Block`;
-- 24 focused minutes: `1 Block`;
-- 25 focused minutes: `1 Block`;
-- 37 focused minutes: `1.5 Blocks`;
-- 50 focused minutes: `2 Blocks`.
+Task title may be empty. When empty, UI displays `(方向)`, for example `(読書)` or `(その他)`.
 
-For block-based tasks, do not show raw minute totals like `24分 / 2 Blocks`. Exact minute accounting belongs to the `分` record type.
+Tasks without a date live in Inbox. They are not shown in 今日 until scheduled.
 
-## Product Principle
+Task completion:
 
-ThruFlow trains returning to work. It must not punish distraction, breaks, or uneven work patterns.
+- `チェック`: user checks it.
+- `集中ブロック`: accumulated focused time reaches planned Blocks.
+- `分`: accumulated focused minutes reaches planned minutes.
 
-A user may complete one block in the morning, one at lunch, and two in the evening. If the required Must volume is complete by the end of the day, the app treats the day as successfully completed.
+## Flow
 
-## Tone
+Flow is a media-player-like recorder.
 
-The product voice is:
+Modes:
 
-- calm;
-- supportive;
-- concrete;
-- non-infantile;
-- non-accusatory.
+- `Short`: 12 focus / 3 break = 0.5 Block.
+- `Focus`: 25 focus / 5 break = 1 Block.
+- `Deep`: 50 focus / 10 break = 2 Blocks.
 
-The app must not use red-screen failure language, punishment framing, or streak destruction as its primary motivator.
+Focus does not auto-stop or auto-switch to break. Break starts only after the user confirms memo. Memo is stored on Todo, not FlowSession.
 
-## Platforms
+## Statistics
 
-MVP development is iPhone-first. iPad and macOS should remain viable through SwiftUI layout choices and shared domain logic.
+Statistics use a contribution-style grid.
 
-## Language
+- `Flow`: Blocks per day.
+- `Tasks`: completed Tasks per day.
 
-Default user-facing language is Japanese. Code identifiers, stable raw values, and internal technical documentation stay English unless they are directly shown to the user.
+Ranges:
 
-Deferred platforms:
+- current month;
+- last 180 days;
+- current calendar year.
 
-- Apple Watch;
-- widgets;
-- Live Activities;
-- Shortcuts;
-- web client;
-- AWS backend.
-
-## Product Boundaries
-
-ThruFlow is not:
-
-- a pure Pomodoro app;
-- a standalone habit tracker;
-- a generic todo list;
-- a social productivity app;
-- an AI automation tool in MVP 0.1.
-
-The first release should prove the core loop: define Directions, plan Today, run Flow, record progress, and determine whether the required day is complete.
+Cell brightness is relative to the maximum day in the selected range.

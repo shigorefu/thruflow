@@ -1,158 +1,81 @@
 # UX Flows
 
-ThruFlow should make the common path fast and calm. The app should reduce friction before a Flow while still capturing enough structured data for future history and AI summaries.
+## 方向
 
-## Today
+The Direction screen manages only user-editable Directions:
 
-Today is the primary daily screen.
+- `通常`;
+- `習慣`;
+- `ナイス`.
+
+The system Direction `その他` is not shown here and cannot be edited from this screen.
+
+## 今日
+
+今日 shows scheduled tasks for the current day.
 
 Sections:
 
-- 習慣: recurring Direction goals that apply today and are generated automatically.
-- 通常: scheduled or manually added Todos.
-- ナイス: optional positive activities.
+- `習慣`: automatically generated habit tasks;
+- `通常`: normal scheduled tasks;
+- `ナイス`: optional positive tasks.
 
-Today should show progress in concrete terms:
+Task rows:
 
-- Anki: 0/1 block
-- Reading: 0/1 block
-- IT: 1/2 blocks
-- Prepare slides: 1/3 blocks
+- empty title displays `(方向)`;
+- completed tasks are visually muted, struck through, and sorted below active tasks;
+- Direction color is used unless the Direction is `その他`;
+- `チェック` shows a checkbox;
+- `集中ブロック` shows a filling ring;
+- `分` shows minute progress.
 
-Empty states should suggest creating a Direction or Todo without implying the day has failed.
+Quick capture behaves like a messenger composer. The user can set measurement, Direction, priority, and date from compact controls.
 
-Today tasks are visually grouped by Direction type:
+`日付なし` sends the task to Inbox, not 今日.
 
-- 習慣;
-- 通常;
-- ナイス, only when there are Nice tasks.
+## Inbox
 
-Generated Habit tasks start as editable task fields with the Direction in the placeholder, so the user can replace "タスク (読書)" with a concrete book or action.
+Inbox shows active tasks with no scheduled date.
 
-Quick task capture uses a bottom composer. The description field is the primary surface, with Direction, priority, date, and record-type controls in the lower row. Direction is displayed as full emoji plus Direction name, not emoji alone. Record type controls the trailing visual: checkbox for `チェック`, a filling ring for `ブロック`, and a remaining-time ring for `分`.
+The user can quickly move a task to:
 
-## Direction Management
+- 今日;
+- 明日;
+- another date through edit.
 
-Core actions:
+## Flow Player
 
-- list Directions;
-- create Direction;
-- edit name, type, symbol, color, and goal;
-- reorder Directions inside their type group;
-- archive Direction.
+The Flow player is always available and behaves like a compact media player.
 
-The Direction list is grouped by `習慣`, `通常`, and `ナイス`. Rows should use the same quiet card-like rhythm as Today, without heavy system separators.
+Mode labels:
 
-Validation:
+- `Short 12/3`;
+- `Focus 25/5`;
+- `Deep 50/10`.
 
-- name is required;
-- Direction type is required;
-- goal values must be positive when a goal is enabled.
+Flow can be started with a selected Task, with only a Direction, or with neither. If no Direction is chosen, the resolved Direction is `その他`.
 
-Archived Directions should not appear in normal creation pickers unless the UI explicitly supports viewing archived data.
+At the planned focus end, Flow does not auto-switch. The timer continues. The user chooses:
 
-## Todo Management
+- continue;
+- start break;
+- stop.
 
-Core actions:
-
-- create Todo inside a Direction;
-- set measurement type;
-- set planned target;
-- update progress or checkbox status;
-- schedule or reschedule;
-- archive or delete without damaging historical Flow sessions.
-
-Neutral Direction Todos may be moved, edited, or removed without affecting successful day completion.
-
-## Starting Flow
-
-The start path should be short:
-
-1. Choose Direction.
-2. Choose Todo when relevant.
-3. Enter Intent.
-4. Choose mode.
-5. Start.
-
-Quick-start affordances should later support:
-
-- last Direction;
-- last Todo;
-- recent Intents;
-- continuing the previous task;
-- "just start" using Adaptive Flow.
-
-## During Flow
-
-Basic controls:
-
-- Start;
-- Pause;
-- Resume;
-- Stop and save focused time;
-- Destroy the current Flow without saving progress.
-
-The timer should derive actual duration from timestamps, not only in-memory ticks.
-
-## Finishing Flow
-
-After finish, prompt gently for Result. Result can be optional, but the interface should make it clear that capturing the result improves history.
-
-Finishing a Flow may update Direction and Todo progress based on deterministic rules, but AI must never close a Todo without user confirmation.
-
-When focus reaches the planned end, the player shows overtime instead of switching to rest automatically. The user starts rest manually, writes a memo, and the focus block keeps counting until the memo is saved. Rest also shows overtime if the user does not resume work before the planned rest ends.
-
-Stopping a Flow also preserves the focused time and opens the same memo prompt. The memo is stored as the FlowSession result.
-
-On macOS, the menu bar label for an active Flow should show the current context as `Direction emoji: task name - remaining time`.
-
-## Adaptive Flow
-
-Adaptive Flow starts at 12 minutes.
-
-At 12 minutes, offer:
-
-- continue 13 minutes;
-- rest 3 minutes;
-- finish.
-
-At 25 minutes, offer:
-
-- continue 25 minutes;
-- rest 5 minutes;
-- finish.
-
-At 50 minutes, offer:
-
-- rest 10 minutes;
-- finish.
-
-All extensions belong to the same FlowSession.
+Start break opens a memo prompt. Focus time keeps counting until memo is saved. The memo writes to the Todo.
 
 ## Statistics
 
-Statistics is a separate app section. The main view uses a contribution-style heatmap with a segmented control for `達成` and `Flow`.
+Statistics uses a contribution grid.
 
-Filters:
+Modes:
 
-- period: 90 days, 180 days, or 1 year;
-- Direction: all Directions or one selected Direction.
+- `Tasks`: completed tasks;
+- `Flow`: focused Block activity.
 
-Each cell represents one local calendar day. In `Flow`, cell intensity represents total focused time. In `達成`, cell intensity represents completed task count. If multiple Directions contributed on the same day, the cell uses a weighted color mix based on the selected mode.
+Ranges:
 
-## Day Completion Feedback
+- current month;
+- last 180 days;
+- calendar year.
 
-When the day first becomes complete, record one DailyCompletion event and show a simple visual feedback in MVP.
-
-Do not replay the reward every time the app opens an already completed day.
-
-## Accessibility
-
-MVP UI should be compatible with:
-
-- Light Mode;
-- Dark Mode;
-- Dynamic Type;
-- VoiceOver;
-- Reduce Motion;
-- Reduce Transparency.
+The `その他` Direction may appear in statistics and filters because it represents real captured work.

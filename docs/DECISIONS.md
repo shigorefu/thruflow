@@ -1,153 +1,77 @@
 # Decisions
 
-## Accepted
+## D-001: CONCEPT.md Is Product Source Of Truth
 
-### D-001: Local-first SwiftData MVP
+`CONCEPT.md` defines the product model. `CODEX.md` and `docs/` summarize it for implementation.
 
-Use SwiftData locally for MVP 0.1. CloudKit is planned but must not be required for launch or local testing.
+Reason: the product direction changed, and older Must/Bonus/Result wording is deprecated.
 
-Reason: the core product loop must be reliable before sync complexity is introduced.
+## D-002: Direction Types
 
-### D-002: Direction is the central object
+Current visible Direction types are:
 
-Direction represents a recurring area of attention and owns the meaning that habit categories, activity areas, and life domains would otherwise split across multiple concepts.
+- `通常`;
+- `習慣`;
+- `ナイス`.
 
-Reason: this keeps Today, Todos, Flow, and future statistics connected to a stable domain object.
+Reason: these terms match the current Japanese UI model.
 
-### D-003: Habit, Neutral, and Nice are explicit types
+## D-003: System Direction
 
-Use stable enum raw values for Direction type:
+Tasks and Flow without a user-selected Direction are assigned to system Direction `その他`.
 
-- `habit`
-- `neutral`
-- `nice`
+`その他` is hidden only from Direction management to prevent editing. It may appear in task context and statistics.
 
-Reason: the product separates automatic recurring work from manually planned tasks and positive optional activity. Older local stores may still contain `must` and `bonus`; the app reads them as `habit` and `nice`.
+Reason: the app needs a stable Direction relationship without forcing the user to choose one every time.
 
-### D-004: Weekly goals are not failed by empty days
+## D-004: Empty Todo Title Is Valid
 
-Weekly goals are judged by week totals. Individual empty days are factual empty days, not failed habit days.
+Todo title may be empty. UI displays `(Direction name)` when title is empty.
 
-Reason: this matches goals such as training 3 times per week and avoids punishing flexible schedules.
+Reason: habit tasks and auto-created Flow tasks should start as lightweight templates.
 
-### D-004a: Habit Direction goal schedule is explicit
+## D-005: Inbox Is Date-less Tasks
 
-Only `習慣` Directions ask for a goal. The creation flow records a goal value, a unit, and one frequency mode: `毎日`, `週回`, or `曜日`. `通常` and `ナイス` Directions stop after type selection and do not carry goal fields.
+`scheduledDate == nil` means Inbox. Inbox tasks do not appear in 今日.
 
-Reason: goal setup should stay clear at creation time and avoid showing irrelevant controls for non-habit Directions.
+Reason: date-less tasks should not automatically become daily noise.
 
-### D-005: Intent and Result stay separate
+## D-006: Todo Owns Memo
 
-FlowSession must keep the pre-work intent separate from the post-work result.
+Flow memo is written to the associated Todo. FlowSession stores timing/history, not user-facing memo.
 
-Reason: future summaries and task-progress suggestions need both planned and actual work.
+Reason: the user describes what was done for the task, not for an abstract timer record.
 
-### D-006: Adaptive Flow extends one session
+## D-007: Block Display Uses Half-Block Credits
 
-Adaptive Flow changes the planned duration of the same FlowSession through 12, 25, and 50 minutes.
+Exact focused seconds are preserved. Block display converts accumulated task focus into half-block credits:
 
-Reason: splitting extensions into multiple sessions would distort history and statistics.
+- 12 minutes -> 0.5 Block;
+- 24 minutes -> 1 Block;
+- 25 minutes -> 1 Block.
 
-### D-007: DailyCompletion is an event
+Reason: short Flow sessions on the same task should combine into useful Block progress.
 
-The first transition into a complete day records one DailyCompletion event.
+## D-008: Flow Does Not Auto-Switch
 
-Reason: this prevents repeated reward triggers when opening an already completed day.
+When planned focus time ends, the timer continues. Break starts only after user action and memo confirmation.
 
-### D-008: Japanese is the default UI language
+Reason: ThruFlow records actual work rhythm rather than forcing automatic Pomodoro transitions.
 
-Use Japanese for user-facing text by default. Keep Swift identifiers, stable enum raw values, and technical documentation in English unless an artifact is directly shown in the app.
+## D-009: Statistics Ranges
 
-Reason: the product should start with a clear default locale while preserving maintainable code and stable persistence values.
+Statistics ranges are:
 
-### D-009: Todo belongs to Direction, but storage relationship is optional
+- current month;
+- last 180 days;
+- current calendar year.
 
-Todo creation may start without an explicit Direction. In that case the app creates or reuses a neutral default Direction named `タスク`. The SwiftData relationship is optional at the storage level.
-
-Reason: quick task capture must stay low-friction while preserving a Direction relationship for later organization, statistics, and CloudKit schema evolution.
-
-### D-010: Today uses bottom quick capture
-
-The Today screen creates Todos from a bottom composer-style input. The top area is a free text description field. The lower toolbar keeps quick controls visible: Direction as full emoji plus name, date, and Flow amount.
-
-Reason: Today capture should be fast and visually quiet while still making Direction, schedule, and Flow size understandable before submit.
-
-Task rows use the selected Direction color in Today. Tasks captured without a selected Direction route to the automatic `タスク` Direction but render without a Direction color.
-
-Manual Today tasks carry a priority and a record type. Priority is `高`, `中`, or `低い`; when `低い` is selected the user may mark it as `余裕があれば`. Record type reuses `TodoMeasurement`: `チェック`, `ブロック`, and `分`.
-
-Reason: Direction answers "where does this belong?", while priority and record type answer "how should Today treat this specific task?"
-
-### D-011: Direction icons use local Unicode emoji
-
-Direction icons are Unicode emoji strings. The picker stores recent emoji locally, keeps the latest 20 values, and removes duplicates. Manual emoji input is normalized to the first valid `Character`; plain text is rejected and falls back to the default `🎯`.
-
-Reason: using Unicode keeps the model simple and supports ZWJ and skin tone emoji without image assets or third-party emoji libraries.
-
-### D-012: Block is derived from focused duration
-
-Canonical productivity unit:
-
-- `1 Block = 25 focused minutes`.
-- Breaks are excluded.
-- 12 focused minutes are presented as `0.5 Block`.
-- Block display and Todo progress use half-block credits. Two 12-minute focused runs display as `1 Block`, not `24分`.
-- Exact minute accounting belongs to the `分` Todo measurement.
-
-Blocks are not stored as standalone durable entities. `FlowSession` records actual focus work, while Todo and Direction progress accumulate focused seconds and display that duration in Blocks.
-
-Reason: one completed FlowSession can be 12, 25, 50, or another duration. Treating every session as one Block would distort progress and history.
-
-### D-013: Flow is controlled from a bottom mini-player
-
-The primary Flow control surface lives at the bottom of the app shell, similar to a compact media player. It is available across the main Today and Direction screens and avoids a heavy form-first start flow.
-
-Reason: Flow is the app's main action and should be startable with minimal navigation.
-
-### D-014: Tests use isolated SwiftData storage
-
-When the app process runs under XCTest or receives `--uitesting`, the SwiftData container uses in-memory storage.
-
-Reason: tests should not read or mutate the user's local app store, and stale development data can contain invalid relationships while the schema is evolving.
-
-### D-015: Live Activity is behind a service boundary before adding a Widget Extension
-
-`LiveActivityService` defines the lifecycle boundary for future ActivityKit integration. The current slice does not create the Widget Extension target.
-
-Reason: adding ActivityKit UI requires target/capability/signing project changes. Those must be done deliberately in Xcode or in a separate target-management slice without changing Bundle ID, Signing Team, or CloudKit configuration by accident.
-
-### D-016: Statistics is derived from FlowSession history
-
-The Statistics tab has two modes: `Flow` and `Achievement`. Flow mode reads existing `FlowSession` records and groups focused seconds by local calendar day. Achievement mode reads currently completed `Todo` records and groups them by their latest update day. Neither mode introduces a separate daily aggregate model in MVP.
-
-When several Directions appear on the same day, the cell color is a weighted mix of Direction colors. Flow mode weights by focused duration; Achievement mode weights each completed Todo equally.
-
-Reason: derived statistics avoid duplicated persistence while the Flow history model is still evolving.
-
-### D-017: Direction order is user-controlled inside type groups
-
-The Direction list groups active Directions by `習慣`, `通常`, and `ナイス`. Each Direction stores a `sortIndex` so users can drag rows inside their current type group without depending on alphabetical order.
-
-Reason: Direction order is part of the user's working map, not just metadata.
-
-### D-018: Flow timers do not auto-switch phases
-
-When focus reaches its planned end, the timer continues as overtime instead of automatically switching to rest. The user starts rest manually and writes a memo before rest begins. Focus continues counting until that memo is saved. Starting rest before 24 focused minutes uses a 3-minute rest; starting rest at or after 24 focused minutes records at least a 25-minute focus with a 5-minute rest. Rest also continues as overtime after its planned end.
-
-Reason: the app should record the user's real rhythm while still giving clear session-like thresholds.
-
-## Current Risks
-
-- The project deployment targets are set to OS version 26.5, which may restrict local simulator/device availability.
-- CloudKit entitlement exists but no iCloud container identifier is configured.
-- The app target currently includes visionOS platforms, although the product scope is iPhone, iPad, and macOS first.
-- Todo capture is still a narrow vertical slice; Today completion and History are still pending.
-- Flow mini-player is implemented, but ActivityKit Widget Extension and Dynamic Island UI are not yet added.
-- CoreSimulator was unavailable from the current sandbox during `xcodebuild -list`; full build/test verification may need Xcode or an approved command environment.
+Reason: these match the current concept and keep GitHub-like statistics understandable.
 
 ## Open Questions
 
-- Should visionOS remain in supported platforms for now, or be removed until there is a product plan?
-- What default Direction symbols and colors should seed an empty install, if any?
-- Should archive or soft delete be the default for Todos in MVP 0.1?
-- How strict should Today be for weekly Must goals before a user-facing strict planning mode exists?
+- What measurement and planned amount should be used for an auto-created Task when Flow starts with only a Direction or with neither Direction nor Task?
+- Should Adaptive/Auto Flow remain, or should MVP expose only Short, Focus, and Deep?
+- How exactly should the “continue for longer break” prompt behave when less than 5 minutes remain to the next threshold?
+- What is the exact meaning of deleting the “last 1 Block” from a Flow series?
+- How should the 4-Block long-break series counter be represented and reset?
