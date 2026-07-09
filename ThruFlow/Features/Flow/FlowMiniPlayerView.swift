@@ -24,6 +24,10 @@ struct FlowMiniPlayerView: View {
         directions.filter { !$0.isArchived }
     }
 
+    private var visibleDirections: [Direction] {
+        activeDirections.filter { !DefaultDirections.isTaskInbox($0) }
+    }
+
     private var activeTodos: [Todo] {
         todos.filter { !$0.isArchived && !$0.isDeleted }
     }
@@ -51,7 +55,7 @@ struct FlowMiniPlayerView: View {
         }
         .sheet(isPresented: $showsConfiguration) {
             FlowConfigurationView(
-                directions: activeDirections,
+                directions: visibleDirections,
                 todos: todayTodos,
                 selectedDirectionID: $activeFlowStore.selectedDirectionID,
                 selectedTodoID: $activeFlowStore.selectedTodoID,
@@ -204,16 +208,16 @@ struct FlowMiniPlayerView: View {
                     .font(.headline)
                     .lineLimit(1)
 
-                Text(selectedTodo?.title ?? "具体的なタスクなし")
+                Text(selectedTodoTitle)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             } else if let selectedTodo {
-                Text(selectedTodo.title)
+                Text(TodoDisplay.title(for: selectedTodo))
                     .font(.headline)
                     .lineLimit(1)
 
-                Text(selectedTodo.direction?.name ?? "タスク")
+                Text(selectedTodo.direction?.name ?? "その他")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -221,7 +225,7 @@ struct FlowMiniPlayerView: View {
                 Text("すぐ開始")
                     .font(.headline)
 
-                Text("自動: タスク")
+                Text("自動: その他")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -231,6 +235,11 @@ struct FlowMiniPlayerView: View {
 
     private var canSeek: Bool {
         activeFlowStore.phase == .focusing || activeFlowStore.phase == .paused
+    }
+
+    private var selectedTodoTitle: String {
+        guard let selectedTodo else { return "具体的なタスクなし" }
+        return TodoDisplay.title(for: selectedTodo)
     }
 
     private var artworkColor: Color {
@@ -552,10 +561,17 @@ struct FlowMiniPlayerView: View {
     }
 
     private func todoMenuTitle(_ todo: Todo) -> String {
-        let title = todo.title.trimmingCharacters(in: .whitespacesAndNewlines)
-        let taskText = title.isEmpty ? "タスク" : title
+        if todo.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return TodoDisplay.title(for: todo)
+        }
+
+        let taskText = TodoDisplay.title(for: todo)
 
         guard let direction = todo.direction else {
+            return taskText
+        }
+
+        guard !DefaultDirections.isTaskInbox(direction) else {
             return taskText
         }
 
@@ -600,7 +616,7 @@ private struct FlowConfigurationView: View {
                             Text("具体的なタスクなし").tag(UUID?.none)
 
                             ForEach(filteredTodos) { todo in
-                                Text(todo.title).tag(Optional(todo.id))
+                                Text(TodoDisplay.title(for: todo)).tag(Optional(todo.id))
                             }
                         }
                         .pickerStyle(.inline)

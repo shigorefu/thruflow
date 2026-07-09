@@ -19,11 +19,11 @@ enum FlowMode: String, CaseIterable, Codable, Identifiable {
     var displayName: String {
         switch self {
         case .twelveThree:
-            "ウォームアップ"
+            "Short"
         case .twentyFiveFive:
-            "フォーカス"
+            "Focus"
         case .fiftyTen:
-            "ディープ"
+            "Deep"
         case .adaptive:
             "オート"
         }
@@ -236,17 +236,9 @@ final class FlowSession {
         updatedAt = now
     }
 
-    func setResult(_ result: String?, now: Date = .now) {
-        let trimmed = result?.trimmingCharacters(in: .whitespacesAndNewlines)
-        self.result = trimmed?.isEmpty == true ? nil : trimmed
+    func complete(now: Date = .now) {
         phase = .completed
         status = .completed
-        updatedAt = now
-    }
-
-    func setMemo(_ result: String?, now: Date = .now) {
-        let trimmed = result?.trimmingCharacters(in: .whitespacesAndNewlines)
-        self.result = trimmed?.isEmpty == true ? nil : trimmed
         updatedAt = now
     }
 }

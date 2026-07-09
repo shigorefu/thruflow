@@ -33,11 +33,11 @@ struct StatisticsTests {
                 session(direction: reading, startedAt: now, seconds: 25 * 60),
                 session(direction: work, startedAt: now, seconds: 50 * 60)
             ],
-            filter: StatisticsFilter(range: .days90, directionID: reading.id),
+            filter: StatisticsFilter(range: .days180, directionID: reading.id),
             now: now
         )
 
-        #expect(result.days.count == 90)
+        #expect(result.days.count == 180)
         #expect(result.summary.sessionCount == 1)
         #expect(result.summary.totalFocusSeconds == 25 * 60)
         #expect(result.days.last?.mixedColorHex == "#00FF00")
@@ -58,14 +58,38 @@ struct StatisticsTests {
                 todo(direction: work, updatedAt: now, status: .completed),
                 todo(direction: reading, updatedAt: now, status: .active)
             ],
-            filter: StatisticsFilter(range: .days90, directionID: reading.id),
+            filter: StatisticsFilter(range: .days180, directionID: reading.id),
             now: now
         )
 
-        #expect(result.days.count == 90)
+        #expect(result.days.count == 180)
         #expect(result.summary.completedCount == 1)
         #expect(result.summary.activeDayCount == 1)
         #expect(result.days.last?.mixedColorHex == "#00FF00")
+    }
+
+    @Test func calendarYearRangeBuildsWholeYear() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let builder = StatisticsHeatmapBuilder(calendar: calendar)
+        let reading = Direction(name: "読書", type: .habit, symbolName: "📚", colorHex: "#00FF00")
+        let now = Date(timeIntervalSince1970: 1704067200)
+
+        let result = builder.build(
+            sessions: [
+                session(direction: reading, startedAt: now, seconds: 12 * 60)
+            ],
+            filter: StatisticsFilter(range: .calendarYear),
+            now: now
+        )
+
+        #expect(result.days.count == 366)
+        #expect(result.days.first == StatisticsDay(
+            date: now,
+            totalFocusSeconds: 12 * 60,
+            mixedColorHex: "#00FF00",
+            directionCount: 1
+        ))
     }
 
     private func session(direction: Direction, startedAt: Date, seconds: Int) -> FlowSession {

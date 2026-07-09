@@ -19,6 +19,7 @@ struct DirectionListView: View {
 
     private var visibleDirections: [Direction] {
         directions
+            .filter { !DefaultDirections.isTaskInbox($0) }
             .filter { showingArchived ? $0.isArchived : !$0.isArchived }
             .sorted(by: directionSort)
     }
@@ -124,7 +125,7 @@ struct DirectionListView: View {
     }
 
     private func normalizeSortIndexesIfNeeded() {
-        let activeDirections = directions.filter { !$0.isArchived }
+        let activeDirections = directions.filter { !$0.isArchived && !DefaultDirections.isTaskInbox($0) }
         let hasDuplicateIndexes = Set(activeDirections.map(\.sortIndex)).count != activeDirections.count
 
         guard hasDuplicateIndexes else { return }

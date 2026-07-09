@@ -42,6 +42,10 @@ struct TodoFormView: View {
         directions.filter { !$0.isArchived }
     }
 
+    private var visibleDirections: [Direction] {
+        activeDirections.filter { !DefaultDirections.isTaskInbox($0) }
+    }
+
     init(mode: Mode) {
         self.mode = mode
 
@@ -73,7 +77,7 @@ struct TodoFormView: View {
                     Picker("方向", selection: selectedDirectionBinding) {
                         Text("未選択").tag(UUID?.none)
 
-                        ForEach(activeDirections) { direction in
+                        ForEach(visibleDirections) { direction in
                             Text("\(direction.symbolName) \(direction.name)")
                                 .tag(Optional(direction.id))
                         }
@@ -196,7 +200,7 @@ struct TodoFormView: View {
 
     private func direction(for id: UUID?) -> Direction? {
         guard let id else { return nil }
-        return activeDirections.first { $0.id == id }
+        return visibleDirections.first { $0.id == id }
     }
 
     private func save() {

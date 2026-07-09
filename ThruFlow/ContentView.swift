@@ -19,6 +19,9 @@ struct ContentView: View {
                 Label("今日", systemImage: "sun.max")
                     .tag(AppSection.today)
 
+                Label("Inbox", systemImage: "tray")
+                    .tag(AppSection.inbox)
+
                 Label("方向", systemImage: "point.3.connected.trianglepath.dotted")
                     .tag(AppSection.directions)
 
@@ -30,6 +33,8 @@ struct ContentView: View {
             switch selection ?? .today {
             case .today:
                 TodayView()
+            case .inbox:
+                InboxView()
             case .directions:
                 DirectionListView()
             case .statistics:
@@ -55,6 +60,12 @@ struct ContentView: View {
                 }
                 .tag(AppSection.directions)
 
+            InboxView()
+                .tabItem {
+                    Label("Inbox", systemImage: "tray")
+                }
+                .tag(AppSection.inbox)
+
             StatisticsView()
                 .tabItem {
                     Label("統計", systemImage: "square.grid.3x3")
@@ -72,6 +83,7 @@ struct ContentView: View {
 
 private enum AppSection: Hashable {
     case today
+    case inbox
     case directions
     case statistics
 }

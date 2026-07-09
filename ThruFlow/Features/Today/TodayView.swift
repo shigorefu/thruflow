@@ -34,6 +34,10 @@ struct TodayView: View {
         directions.filter { !$0.isArchived }
     }
 
+    private var visibleDirections: [Direction] {
+        activeDirections.filter { !DefaultDirections.isTaskInbox($0) }
+    }
+
     private var todayTodos: [Todo] {
         todos.filter { filter.includes($0) }
     }
@@ -81,7 +85,7 @@ struct TodayView: View {
                     priority: $newTodoPriority,
                     isRoomIfPossible: $newTodoIsRoomIfPossible,
                     dateOption: $newTodoDateOption,
-                    directions: activeDirections,
+                    directions: visibleDirections,
                     validationMessage: newTodoError,
                     onSubmit: createInlineTodo
                 )
@@ -268,7 +272,7 @@ struct TodayView: View {
 
     private func direction(for id: UUID?) -> Direction? {
         guard let id else { return nil }
-        return activeDirections.first { $0.id == id }
+        return visibleDirections.first { $0.id == id }
     }
 }
 
@@ -421,12 +425,11 @@ private struct MessengerTodoComposer: View {
                     Image(systemName: "arrow.up")
                         .font(.headline.weight(.semibold))
                         .frame(width: 38, height: 38)
-                        .background(trimmedTitle.isEmpty ? Color.secondary.opacity(0.35) : Color.accentColor)
+                        .background(Color.accentColor)
                         .foregroundStyle(.white)
                         .clipShape(Circle())
                 }
                 .buttonStyle(.plain)
-                .disabled(trimmedTitle.isEmpty)
                 .accessibilityLabel("タスクを追加")
             }
             .lineLimit(1)
@@ -455,7 +458,6 @@ private struct MessengerTodoComposer: View {
     }
 
     private func submit() {
-        guard !trimmedTitle.isEmpty else { return }
         onSubmit()
         isFocused = true
     }
@@ -565,7 +567,7 @@ private struct DirectionChip: View {
 
     private var labelText: String {
         guard let selectedDirection else {
-            return "📝 タスク"
+            return "その他"
         }
 
         return "\(selectedDirection.symbolName) \(selectedDirection.name)"
@@ -576,7 +578,7 @@ private struct DirectionChip: View {
             Button {
                 selectedDirectionID = nil
             } label: {
-                menuRow(text: "自動: 📝 タスク", isSelected: selectedDirectionID == nil)
+                menuRow(text: "自動: その他", isSelected: selectedDirectionID == nil)
             }
 
             if !directions.isEmpty {
@@ -846,7 +848,7 @@ private struct TodoRow: View {
                     .accessibilityLabel("タスク名")
 
                 HStack(spacing: 6) {
-                    if let direction = todo.direction {
+                    if let direction = todo.direction, !DefaultDirections.isTaskInbox(direction) {
                         Text("\(direction.symbolName) \(direction.name)")
                             .foregroundStyle(checkboxTint)
                         Text("·")
@@ -974,11 +976,7 @@ private struct TodoRow: View {
     }
 
     private var titlePlaceholder: String {
-        guard let direction = todo.direction else {
-            return "タスク"
-        }
-
-        return "タスク（\(direction.name)）"
+        TodoDisplay.placeholder(for: todo)
     }
 
     private var rowBackground: some View {

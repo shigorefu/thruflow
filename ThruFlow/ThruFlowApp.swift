@@ -81,9 +81,8 @@ private struct FlowMenuBarLabel: View {
     }
 
     private func resolvedTaskName(session: FlowSession?) -> String {
-        if let todoTitle = session?.todo?.title.trimmingCharacters(in: .whitespacesAndNewlines),
-           !todoTitle.isEmpty {
-            return todoTitle
+        if let todo = session?.todo {
+            return TodoDisplay.title(for: todo)
         }
 
         if let directionName = session?.direction?.name.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -91,7 +90,7 @@ private struct FlowMenuBarLabel: View {
             return directionName
         }
 
-        return "タスク"
+        return "その他"
     }
 }
 #endif

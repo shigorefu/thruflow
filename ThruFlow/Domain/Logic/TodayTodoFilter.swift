@@ -13,10 +13,17 @@ struct TodayTodoFilter {
     func includes(_ todo: Todo, on date: Date = .now) -> Bool {
         guard !todo.isArchived, !todo.isDeleted else { return false }
 
-        guard let scheduledDate = todo.scheduledDate else {
-            return todo.status == .active
-        }
+        guard let scheduledDate = todo.scheduledDate else { return false }
 
         return calendar.isDate(scheduledDate, inSameDayAs: date)
+    }
+}
+
+struct InboxTodoFilter {
+    func includes(_ todo: Todo) -> Bool {
+        !todo.isArchived &&
+        !todo.isDeleted &&
+        todo.status == .active &&
+        todo.scheduledDate == nil
     }
 }
