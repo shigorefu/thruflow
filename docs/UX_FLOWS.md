@@ -45,7 +45,15 @@ The user can quickly move a task to:
 
 ## Flow Player
 
-The Flow player is always available and behaves like a compact media player.
+The Flow player is always available as a top header. It is not placed below Today input.
+
+The header layout is:
+
+- left Task card with Direction icon, Task title, and smaller Direction name;
+- Task card opens a separate picker for today's Tasks and Direction-only starts;
+- Direction icon color follows the selected Task Direction;
+- visible mode cards for `Short`, `Focus`, and `Deep`;
+- timer and transport controls on the right.
 
 Mode labels:
 

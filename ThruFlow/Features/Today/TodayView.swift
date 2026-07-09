@@ -77,21 +77,17 @@ struct TodayView: View {
         .animation(.default, value: todayTodos.map(\.id))
         .navigationTitle("今日")
         .safeAreaInset(edge: .bottom) {
-            VStack(spacing: 0) {
-                MessengerTodoComposer(
-                    title: $newTodoTitle,
-                    selectedDirectionID: $newTodoDirectionID,
-                    volume: $newTodoVolume,
-                    priority: $newTodoPriority,
-                    isRoomIfPossible: $newTodoIsRoomIfPossible,
-                    dateOption: $newTodoDateOption,
-                    directions: visibleDirections,
-                    validationMessage: newTodoError,
-                    onSubmit: createInlineTodo
-                )
-
-                FlowMiniPlayerView()
-            }
+            MessengerTodoComposer(
+                title: $newTodoTitle,
+                selectedDirectionID: $newTodoDirectionID,
+                volume: $newTodoVolume,
+                priority: $newTodoPriority,
+                isRoomIfPossible: $newTodoIsRoomIfPossible,
+                dateOption: $newTodoDateOption,
+                directions: visibleDirections,
+                validationMessage: newTodoError,
+                onSubmit: createInlineTodo
+            )
         }
         .sheet(item: $editingTodo) { todo in
             TodoFormView(mode: .edit(todo))

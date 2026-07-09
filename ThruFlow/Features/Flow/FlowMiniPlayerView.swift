@@ -15,7 +15,7 @@ struct FlowMiniPlayerView: View {
     @Query(sort: \Direction.name, order: .forward) private var directions: [Direction]
     @Query(sort: \Todo.createdAt, order: .forward) private var todos: [Todo]
 
-    @State private var showsConfiguration = false
+    @State private var showsTaskPicker = false
     @State private var resultText = ""
 
     private let todayFilter = TodayTodoFilter()
@@ -53,17 +53,15 @@ struct FlowMiniPlayerView: View {
                     activeFlowStore.refresh(modelContext: modelContext, now: date)
                 }
         }
-        .sheet(isPresented: $showsConfiguration) {
-            FlowConfigurationView(
+        .sheet(isPresented: $showsTaskPicker) {
+            FlowTaskPickerView(
                 directions: visibleDirections,
                 todos: todayTodos,
                 selectedDirectionID: $activeFlowStore.selectedDirectionID,
-                selectedTodoID: $activeFlowStore.selectedTodoID,
-                selectedMode: $activeFlowStore.selectedMode,
-                intent: $activeFlowStore.intent
+                selectedTodoID: $activeFlowStore.selectedTodoID
             )
 #if os(macOS)
-            .frame(minWidth: 560, minHeight: 460)
+            .frame(minWidth: 520, minHeight: 440)
 #endif
         }
     }
@@ -78,32 +76,31 @@ struct FlowMiniPlayerView: View {
             } else {
                 HStack(spacing: 12) {
                     Button {
-                        showsConfiguration = true
+                        showsTaskPicker = true
                     } label: {
-                        playerArtwork
+                        HStack(spacing: 10) {
+                            playerArtwork
+                            contextLabel
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 10)
+                        .background(Color.primary.opacity(0.05))
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 14)
+                                .strokeBorder(Color.primary.opacity(0.08))
+                        }
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("Flow設定を開く")
+                    .frame(width: 300, alignment: .leading)
+                    .accessibilityLabel("Flowタスクを選択")
 
-                    Button {
-                        showsConfiguration = true
-                    } label: {
-                        contextLabel
-                    }
-                    .buttonStyle(.plain)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    focusModeCards
 
-                    modeMenu
+                    Divider()
+                        .frame(height: 54)
 
-                    if activeFlowStore.timerState != nil {
-                        Text(activeFlowStore.remainingText(now: now))
-                            .font(.system(.body, design: .monospaced).weight(.semibold))
-                            .foregroundStyle(.primary)
-                            .frame(minWidth: 54, alignment: .trailing)
-                            .accessibilityLabel("残り時間 \(activeFlowStore.remainingText(now: now))")
-                    }
-
-                    todayTaskMenu
+                    timerCluster(now: now)
 
                     transportControls
                 }
@@ -123,66 +120,87 @@ struct FlowMiniPlayerView: View {
         .background(.bar)
     }
 
-    private var modeMenu: some View {
-        Menu {
-            ForEach(FlowMode.allCases) { mode in
-                Button {
-                    activeFlowStore.selectedMode = mode
-                } label: {
-                    VStack(alignment: .leading) {
-                        Text("\(mode.displayName) \(mode.shortDurationText)")
-                        Text(mode.blockSummary)
-                    }
+    private var focusModeCards: some View {
+        HStack(spacing: 8) {
+            ForEach(selectableModes) { mode in
+                modeCard(mode)
+            }
+        }
+    }
+
+    private func modeCard(_ mode: FlowMode) -> some View {
+        Button {
+            activeFlowStore.selectedMode = mode
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: modeIconName(mode))
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 38, height: 38)
+                    .background(modeIconColor(mode))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(mode.displayName)
+                        .font(.subheadline.weight(.semibold))
+                        .lineLimit(1)
+
+                    Text(modeSubtitle(mode))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
             }
-        } label: {
-            Text("\(activeFlowStore.selectedMode.displayName) \(activeFlowStore.selectedMode.shortDurationText)")
-                .font(.caption.weight(.semibold))
-                .lineLimit(1)
-                .padding(.horizontal, 9)
-                .padding(.vertical, 6)
-                .background(Color.primary.opacity(0.08))
-                .clipShape(Capsule())
+            .frame(width: 170, alignment: .leading)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(mode == activeFlowStore.selectedMode ? modeIconColor(mode).opacity(0.20) : Color.primary.opacity(0.05))
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .overlay {
+                RoundedRectangle(cornerRadius: 14)
+                    .strokeBorder(mode == activeFlowStore.selectedMode ? modeIconColor(mode).opacity(0.48) : Color.primary.opacity(0.08))
+            }
         }
-        .menuStyle(.borderlessButton)
-        .accessibilityLabel("Flowモード")
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(mode.displayName)を選択")
         .disabled(activeFlowStore.timerState != nil)
     }
 
-    private var todayTaskMenu: some View {
-        Menu {
-            Button {
-                activeFlowStore.selectedTodoID = nil
-            } label: {
-                menuRow(text: "タスクなし", isSelected: activeFlowStore.selectedTodoID == nil)
-            }
+    private func timerCluster(now: Date) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(timerEyebrow)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.secondary)
 
-            if !todayTodos.isEmpty {
-                Divider()
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text(activeFlowStore.timerState == nil ? activeFlowStore.selectedMode.shortDurationText : activeFlowStore.remainingText(now: now))
+                    .font(.system(.title2, design: .monospaced).weight(.bold))
+                    .foregroundStyle(.primary)
+                    .monospacedDigit()
 
-                ForEach(todayTodos) { todo in
-                    Button {
-                        activeFlowStore.configure(direction: todo.direction, todo: todo)
-                    } label: {
-                        menuRow(text: todoMenuTitle(todo), isSelected: activeFlowStore.selectedTodoID == todo.id)
-                    }
+                if activeFlowStore.timerState != nil {
+                    Text("/ \(activeFlowStore.selectedMode.initialFocusDurationSeconds / 60):00")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
                 }
             }
-        } label: {
-            HStack(spacing: 5) {
-                Image(systemName: "checklist")
-                    .imageScale(.small)
-                Text(selectedTodo.map(todoMenuTitle) ?? "今日タスク")
-                    .lineLimit(1)
-            }
-            .font(.caption.weight(.semibold))
-            .padding(.horizontal, 9)
-            .padding(.vertical, 6)
-            .background(Color.primary.opacity(0.08))
-            .clipShape(Capsule())
         }
-        .menuStyle(.borderlessButton)
-        .accessibilityLabel("今日のタスクを選択")
+        .frame(width: 130, alignment: .leading)
+        .accessibilityLabel(activeFlowStore.timerState == nil ? "Flow未開始" : "残り時間 \(activeFlowStore.remainingText(now: now))")
+    }
+
+    private var timerEyebrow: String {
+        switch activeFlowStore.phase {
+        case .focusing:
+            "集中"
+        case .paused:
+            "一時停止"
+        case .breakTime:
+            "休憩"
+        default:
+            "待機中"
+        }
     }
 
     private var playerArtwork: some View {
@@ -190,7 +208,7 @@ struct FlowMiniPlayerView: View {
             RoundedRectangle(cornerRadius: 8)
                 .fill(artworkColor.opacity(0.18))
 
-            Text(selectedDirection?.symbolName ?? selectedTodo?.direction?.symbolName ?? "▶")
+            Text(flowDirection?.symbolName ?? "▶")
                 .font(.system(size: 22))
         }
         .frame(width: 42, height: 42)
@@ -203,32 +221,14 @@ struct FlowMiniPlayerView: View {
 
     private var contextLabel: some View {
         VStack(alignment: .leading, spacing: 2) {
-            if let selectedDirection {
-                Text("\(selectedDirection.symbolName) \(selectedDirection.name)")
-                    .font(.headline)
-                    .lineLimit(1)
+            Text(flowTaskTitle)
+                .font(.headline)
+                .lineLimit(1)
 
-                Text(selectedTodoTitle)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            } else if let selectedTodo {
-                Text(TodoDisplay.title(for: selectedTodo))
-                    .font(.headline)
-                    .lineLimit(1)
-
-                Text(selectedTodo.direction?.name ?? "その他")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            } else {
-                Text("すぐ開始")
-                    .font(.headline)
-
-                Text("自動: その他")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
+            Text(flowDirectionName)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
         }
         .accessibilityElement(children: .combine)
     }
@@ -237,17 +237,32 @@ struct FlowMiniPlayerView: View {
         activeFlowStore.phase == .focusing || activeFlowStore.phase == .paused
     }
 
-    private var selectedTodoTitle: String {
-        guard let selectedTodo else { return "具体的なタスクなし" }
-        return TodoDisplay.title(for: selectedTodo)
+    private var flowDirection: Direction? {
+        if let direction = selectedTodo?.direction {
+            return direction
+        }
+
+        return selectedDirection
+    }
+
+    private var flowTaskTitle: String {
+        if let selectedTodo {
+            return TodoDisplay.title(for: selectedTodo)
+        }
+
+        if let selectedDirection {
+            return "(\(selectedDirection.name))"
+        }
+
+        return "具体的なタスクなし"
+    }
+
+    private var flowDirectionName: String {
+        flowDirection?.name ?? "その他"
     }
 
     private var artworkColor: Color {
-        if let selectedDirection {
-            return Color(hex: selectedDirection.colorHex)
-        }
-
-        if let direction = selectedTodo?.direction, !DefaultDirections.isTaskInbox(direction) {
+        if let direction = flowDirection, !DefaultDirections.isTaskInbox(direction) {
             return Color(hex: direction.colorHex)
         }
 
@@ -350,12 +365,11 @@ struct FlowMiniPlayerView: View {
             handlePrimaryAction()
         } label: {
             Label(primaryButtonTitle, systemImage: primaryButtonImage)
-                .labelStyle(.iconOnly)
-                .font(.title3.weight(.semibold))
-                .frame(width: 42, height: 42)
+                .font(.headline.weight(.semibold))
+                .frame(width: 142, height: 44)
                 .background(primaryButtonColor)
                 .foregroundStyle(.white)
-                .clipShape(Circle())
+                .clipShape(RoundedRectangle(cornerRadius: 12))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(primaryButtonTitle)
@@ -364,7 +378,7 @@ struct FlowMiniPlayerView: View {
     private var primaryButtonTitle: String {
         switch activeFlowStore.phase {
         case .idle, .configured:
-            "開始"
+            "Flowを開始"
         case .focusing:
             activeFlowStore.isFocusOvertime(now: activeFlowStore.displayDate) ? "休憩" : "一時停止"
         case .paused:
@@ -376,7 +390,7 @@ struct FlowMiniPlayerView: View {
         case .awaitingResult:
             "保存"
         case .completed:
-            "開始"
+            "Flowを開始"
         }
     }
 
@@ -551,12 +565,46 @@ struct FlowMiniPlayerView: View {
         return taskInbox
     }
 
-    @ViewBuilder
-    private func menuRow(text: String, isSelected: Bool) -> some View {
-        if isSelected {
-            Label(text, systemImage: "checkmark")
-        } else {
-            Text(text)
+    private var selectableModes: [FlowMode] {
+        [.twelveThree, .twentyFiveFive, .fiftyTen]
+    }
+
+    private func modeIconName(_ mode: FlowMode) -> String {
+        switch mode {
+        case .twelveThree:
+            "flame.fill"
+        case .twentyFiveFive:
+            "target"
+        case .fiftyTen:
+            "mountain.2.fill"
+        case .adaptive:
+            "sparkles"
+        }
+    }
+
+    private func modeIconColor(_ mode: FlowMode) -> Color {
+        switch mode {
+        case .twelveThree:
+            .orange
+        case .twentyFiveFive:
+            .blue
+        case .fiftyTen:
+            .purple
+        case .adaptive:
+            .teal
+        }
+    }
+
+    private func modeSubtitle(_ mode: FlowMode) -> String {
+        switch mode {
+        case .twelveThree:
+            "12分作業 / 3分休憩"
+        case .twentyFiveFive:
+            "25分作業 / 5分休憩"
+        case .fiftyTen:
+            "50分作業 / 10分休憩"
+        case .adaptive:
+            "12分から開始"
         }
     }
 
@@ -579,14 +627,12 @@ struct FlowMiniPlayerView: View {
     }
 }
 
-private struct FlowConfigurationView: View {
+private struct FlowTaskPickerView: View {
     let directions: [Direction]
     let todos: [Todo]
 
     @Binding var selectedDirectionID: UUID?
     @Binding var selectedTodoID: UUID?
-    @Binding var selectedMode: FlowMode
-    @Binding var intent: String
 
     @Environment(\.dismiss) private var dismiss
 
@@ -599,51 +645,75 @@ private struct FlowConfigurationView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    section("方向") {
-                        Picker("方向", selection: $selectedDirectionID) {
-                            Text("未選択").tag(UUID?.none)
+                    Button {
+                        selectedDirectionID = nil
+                        selectedTodoID = nil
+                        dismiss()
+                    } label: {
+                        pickerRow(
+                            icon: "tray",
+                            title: "具体的なタスクなし",
+                            subtitle: "自動: その他",
+                            color: .secondary,
+                            isSelected: selectedTodoID == nil && selectedDirectionID == nil
+                        )
+                    }
+                    .buttonStyle(.plain)
 
+                    section("今日のタスク") {
+                        if filteredTodos.isEmpty {
+                            Text("今日のタスクはありません")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            VStack(spacing: 8) {
+                                ForEach(filteredTodos) { todo in
+                                    Button {
+                                        selectedTodoID = todo.id
+                                        selectedDirectionID = todo.direction?.id
+                                        dismiss()
+                                    } label: {
+                                        pickerRow(
+                                            iconText: todo.direction?.symbolName ?? "・",
+                                            title: TodoDisplay.title(for: todo),
+                                            subtitle: todo.direction?.name ?? "その他",
+                                            color: directionColor(todo.direction),
+                                            isSelected: selectedTodoID == todo.id
+                                        )
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+                    }
+
+                    section("方向だけ選ぶ") {
+                        VStack(spacing: 8) {
                             ForEach(directions) { direction in
-                                Text("\(direction.symbolName) \(direction.name)")
-                                    .tag(Optional(direction.id))
+                                Button {
+                                    selectedDirectionID = direction.id
+                                    selectedTodoID = nil
+                                    dismiss()
+                                } label: {
+                                    pickerRow(
+                                        iconText: direction.symbolName,
+                                        title: "(\(direction.name))",
+                                        subtitle: direction.name,
+                                        color: Color(hex: direction.colorHex),
+                                        isSelected: selectedTodoID == nil && selectedDirectionID == direction.id
+                                    )
+                                }
+                                .buttonStyle(.plain)
                             }
                         }
-                        .pickerStyle(.inline)
-                    }
-
-                    section("記録するタスク（任意）") {
-                        Picker("タスク", selection: $selectedTodoID) {
-                            Text("具体的なタスクなし").tag(UUID?.none)
-
-                            ForEach(filteredTodos) { todo in
-                                Text(TodoDisplay.title(for: todo)).tag(Optional(todo.id))
-                            }
-                        }
-                        .pickerStyle(.inline)
-                    }
-
-                    section("モード") {
-                        Picker("モード", selection: $selectedMode) {
-                            ForEach(FlowMode.allCases) { mode in
-                                Text("\(mode.displayName) ・ \(mode.blockSummary)")
-                                    .tag(mode)
-                            }
-                        }
-                        .pickerStyle(.inline)
-                    }
-
-                    section("意図") {
-                        TextField("このFlowで進めること", text: $intent, axis: .vertical)
-                            .textFieldStyle(.roundedBorder)
-                            .lineLimit(2...4)
                     }
                 }
                 .padding(20)
             }
-            .navigationTitle("Flow")
+            .navigationTitle("Flowタスク")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("完了") {
+                    Button("閉じる") {
                         dismiss()
                     }
                 }
@@ -672,6 +742,62 @@ private struct FlowConfigurationView: View {
             content()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func pickerRow(
+        icon: String? = nil,
+        iconText: String? = nil,
+        title: String,
+        subtitle: String,
+        color: Color,
+        isSelected: Bool
+    ) -> some View {
+        HStack(spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(color.opacity(0.16))
+
+                if let iconText {
+                    Text(iconText)
+                        .font(.title3)
+                } else if let icon {
+                    Image(systemName: icon)
+                        .font(.callout.weight(.semibold))
+                        .foregroundStyle(color)
+                }
+            }
+            .frame(width: 42, height: 42)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 0)
+
+            if isSelected {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(.tint)
+            }
+        }
+        .padding(10)
+        .background(isSelected ? Color.accentColor.opacity(0.12) : Color.primary.opacity(0.05))
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+    }
+
+    private func directionColor(_ direction: Direction?) -> Color {
+        guard let direction, !DefaultDirections.isTaskInbox(direction) else {
+            return .secondary
+        }
+
+        return Color(hex: direction.colorHex)
     }
 }
 
