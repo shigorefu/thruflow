@@ -340,7 +340,7 @@ struct FlowMiniPlayerView: View {
         case .idle, .configured:
             "開始"
         case .focusing:
-            "一時停止"
+            activeFlowStore.isFocusOvertime(now: activeFlowStore.displayDate) ? "休憩" : "一時停止"
         case .paused:
             "再開"
         case .breakTime:
@@ -357,7 +357,7 @@ struct FlowMiniPlayerView: View {
     private var primaryButtonImage: String {
         switch activeFlowStore.phase {
         case .focusing:
-            "pause.fill"
+            activeFlowStore.isFocusOvertime(now: activeFlowStore.displayDate) ? "cup.and.saucer.fill" : "pause.fill"
         case .breakTime:
             "forward.fill"
         case .awaitingResult:
@@ -370,7 +370,7 @@ struct FlowMiniPlayerView: View {
     private var primaryButtonColor: Color {
         switch activeFlowStore.phase {
         case .focusing:
-            .orange
+            activeFlowStore.isFocusOvertime(now: activeFlowStore.displayDate) ? .blue : .orange
         case .paused:
             .green
         case .breakTime:
@@ -493,7 +493,11 @@ struct FlowMiniPlayerView: View {
                 modelContext: modelContext
             )
         case .focusing:
-            activeFlowStore.pause(modelContext: modelContext)
+            if activeFlowStore.isFocusOvertime(now: activeFlowStore.displayDate) {
+                activeFlowStore.startBreak(modelContext: modelContext)
+            } else {
+                activeFlowStore.pause(modelContext: modelContext)
+            }
         case .paused:
             activeFlowStore.resume(modelContext: modelContext)
         case .breakTime:

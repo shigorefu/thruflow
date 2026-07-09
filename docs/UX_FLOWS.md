@@ -100,6 +100,8 @@ After finish, prompt gently for Result. Result can be optional, but the interfac
 
 Finishing a Flow may update Direction and Todo progress based on deterministic rules, but AI must never close a Todo without user confirmation.
 
+When focus reaches the planned end, the player shows overtime instead of switching to rest automatically. In overtime, the primary player action starts rest manually. Rest also shows overtime if the user does not resume work before the planned rest ends.
+
 Stopping a Flow also preserves the focused time and opens the same memo prompt. The memo is stored as the FlowSession result.
 
 On macOS, the menu bar label for an active Flow should show the current context as `Direction emoji: task name - remaining time`.
