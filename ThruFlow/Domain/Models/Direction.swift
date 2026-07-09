@@ -162,6 +162,7 @@ final class Direction {
     var weeklyTargetCount: Int?
     var weekdayMask: Int?
     var focusDurationSeconds: Int?
+    var sortIndex: Int = 0
     var createdAt: Date
     var updatedAt: Date
     var archivedAt: Date?
@@ -179,6 +180,7 @@ final class Direction {
         weeklyTargetCount: Int? = nil,
         weekdayMask: Int? = nil,
         focusDurationSeconds: Int? = nil,
+        sortIndex: Int = 0,
         createdAt: Date = .now,
         updatedAt: Date = .now,
         archivedAt: Date? = nil
@@ -195,6 +197,7 @@ final class Direction {
         self.weeklyTargetCount = weeklyTargetCount
         self.weekdayMask = weekdayMask
         self.focusDurationSeconds = focusDurationSeconds
+        self.sortIndex = sortIndex
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.archivedAt = archivedAt
@@ -279,6 +282,11 @@ final class Direction {
 
     func addFocusDuration(seconds: Int, now: Date = .now) {
         recordedFocusSeconds += max(0, seconds)
+        updatedAt = now
+    }
+
+    func setSortIndex(_ value: Int, now: Date = .now) {
+        sortIndex = value
         updatedAt = now
     }
 }

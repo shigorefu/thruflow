@@ -38,7 +38,10 @@ Core actions:
 - list Directions;
 - create Direction;
 - edit name, type, symbol, color, and goal;
+- reorder Directions inside their type group;
 - archive Direction.
+
+The Direction list is grouped by `習慣`, `通常`, and `ナイス`. Rows should use the same quiet card-like rhythm as Today, without heavy system separators.
 
 Validation:
 
