@@ -48,6 +48,20 @@ struct FlowTests {
         #expect(engine.remainingSeconds(for: finished, now: finishedAt) == 0)
     }
 
+    @Test func focusUnderOneMinuteIsNotCredited() {
+        let engine = FlowTimerEngine()
+        let start = Date(timeIntervalSince1970: 1_500)
+
+        let initial = engine.start(mode: .twentyFiveFive, now: start)
+        let finishedTooSoon = engine.finish(initial, now: start.addingTimeInterval(59))
+        let finishedAtThreshold = engine.finish(initial, now: start.addingTimeInterval(60))
+        let breakTooSoon = engine.startBreak(initial, now: start.addingTimeInterval(59))
+
+        #expect(finishedTooSoon.actualFocusDurationSeconds == 0)
+        #expect(finishedAtThreshold.actualFocusDurationSeconds == 60)
+        #expect(breakTooSoon.actualFocusDurationSeconds == 0)
+    }
+
     @Test func timerRestoresFromBackgroundWithoutAutoStartingBreak() {
         let engine = FlowTimerEngine()
         let start = Date(timeIntervalSince1970: 2_000)
