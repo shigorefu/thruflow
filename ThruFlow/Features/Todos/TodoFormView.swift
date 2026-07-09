@@ -46,6 +46,18 @@ struct TodoFormView: View {
         activeDirections.filter { !DefaultDirections.isTaskInbox($0) }
     }
 
+    private var editedTodo: Todo? {
+        if case .edit(let todo) = mode {
+            return todo
+        }
+
+        return nil
+    }
+
+    private var isHabitTodoEdit: Bool {
+        editedTodo?.direction?.type == .habit
+    }
+
     init(mode: Mode) {
         self.mode = mode
 
@@ -74,55 +86,63 @@ struct TodoFormView: View {
                     TextField("メモ", text: $draft.notes, axis: .vertical)
                         .lineLimit(2...5)
 
-                    Picker("方向", selection: selectedDirectionBinding) {
-                        Text("未選択").tag(UUID?.none)
+                    if !isHabitTodoEdit {
+                        Picker("方向", selection: selectedDirectionBinding) {
+                            Text("未選択").tag(UUID?.none)
 
-                        ForEach(visibleDirections) { direction in
-                            Text("\(direction.symbolName) \(direction.name)")
-                                .tag(Optional(direction.id))
+                            ForEach(visibleDirections) { direction in
+                                Text("\(direction.symbolName) \(direction.name)")
+                                    .tag(Optional(direction.id))
+                            }
                         }
                     }
                 }
 
                 Section("進捗") {
-                    Picker("測定", selection: $draft.measurement) {
-                        ForEach(TodoMeasurement.allCases) { measurement in
-                            Text(measurement.displayName).tag(measurement)
+                    if !isHabitTodoEdit {
+                        Picker("測定", selection: $draft.measurement) {
+                            ForEach(TodoMeasurement.allCases) { measurement in
+                                Text(measurement.displayName).tag(measurement)
+                            }
                         }
-                    }
 
-                    Picker("優先度", selection: $draft.priority) {
-                        ForEach(TodoPriority.allCases) { priority in
-                            Text(priority.displayName).tag(priority)
+                        Picker("優先度", selection: $draft.priority) {
+                            ForEach(TodoPriority.allCases) { priority in
+                                Text(priority.displayName).tag(priority)
+                            }
                         }
-                    }
 
-                    if draft.priority == .low {
-                        Toggle("余裕があれば", isOn: $draft.isRoomIfPossible)
+                        if draft.priority == .low {
+                            Toggle("余裕があれば", isOn: $draft.isRoomIfPossible)
+                        }
+
+                        if draft.measurement != .checkbox {
+                            Stepper(value: plannedAmountBinding, in: 1...999) {
+                                Text("予定量: \(draft.plannedAmount ?? 1)")
+                            }
+                        }
                     }
 
                     if draft.measurement != .checkbox {
-                        Stepper(value: plannedAmountBinding, in: 1...999) {
-                            Text("予定量: \(draft.plannedAmount ?? 1)")
-                        }
-
                         Stepper(value: actualProgressBinding, in: 0...999) {
                             Text("進捗: \(draft.actualProgress)")
                         }
                     }
                 }
 
-                Section("日付") {
-                    Toggle("今日に入れる", isOn: $usesScheduledDate)
+                if !isHabitTodoEdit {
+                    Section("日付") {
+                        Toggle("今日に入れる", isOn: $usesScheduledDate)
 
-                    if usesScheduledDate {
-                        DatePicker("予定日", selection: scheduledDateBinding, displayedComponents: .date)
-                    }
+                        if usesScheduledDate {
+                            DatePicker("予定日", selection: scheduledDateBinding, displayedComponents: .date)
+                        }
 
-                    Toggle("期限を使う", isOn: $usesDeadline)
+                        Toggle("期限を使う", isOn: $usesDeadline)
 
-                    if usesDeadline {
-                        DatePicker("期限", selection: deadlineBinding, displayedComponents: .date)
+                        if usesDeadline {
+                            DatePicker("期限", selection: deadlineBinding, displayedComponents: .date)
+                        }
                     }
                 }
 
@@ -204,18 +224,25 @@ struct TodoFormView: View {
     }
 
     private func save() {
-        draft.direction = direction(for: selectedDirectionID)
-        draft.scheduledDate = usesScheduledDate ? draft.scheduledDate ?? .now : nil
-        draft.deadline = usesDeadline ? draft.deadline ?? .now : nil
+        if !isHabitTodoEdit {
+            draft.direction = direction(for: selectedDirectionID)
+            draft.scheduledDate = usesScheduledDate ? draft.scheduledDate ?? .now : nil
+            draft.deadline = usesDeadline ? draft.deadline ?? .now : nil
+        }
 
         validationErrors = validator.validate(draft)
         guard validationErrors.isEmpty else { return }
 
-        let direction = resolvedDirection(for: selectedDirectionID)
+        let direction = isHabitTodoEdit ? editedTodo?.direction ?? resolvedDirection(for: selectedDirectionID) : resolvedDirection(for: selectedDirectionID)
+        let measurement = isHabitTodoEdit ? editedTodo?.measurement ?? draft.measurement : draft.measurement
+        let priority = isHabitTodoEdit ? editedTodo?.priority ?? draft.priority : draft.priority
+        let isRoomIfPossible = isHabitTodoEdit ? editedTodo?.isRoomIfPossible ?? false : draft.priority == .low && draft.isRoomIfPossible
+        let scheduledDate = isHabitTodoEdit ? editedTodo?.scheduledDate : draft.scheduledDate
+        let deadline = isHabitTodoEdit ? editedTodo?.deadline : draft.deadline
         draft.direction = direction
 
-        let plannedAmount = draft.measurement == .checkbox ? nil : draft.plannedAmount
-        let actualProgress = draft.measurement == .checkbox ? min(max(draft.actualProgress, 0), 1) : max(0, draft.actualProgress)
+        let plannedAmount = measurement == .checkbox ? nil : isHabitTodoEdit ? editedTodo?.plannedAmount : draft.plannedAmount
+        let actualProgress = measurement == .checkbox ? min(max(draft.actualProgress, 0), 1) : max(0, draft.actualProgress)
 
         switch mode {
         case .create:
@@ -223,18 +250,18 @@ struct TodoFormView: View {
                 title: draft.trimmedTitle,
                 notes: draft.trimmedNotes,
                 direction: direction,
-                measurement: draft.measurement,
-                priority: draft.priority,
-                isRoomIfPossible: draft.priority == .low && draft.isRoomIfPossible,
+                measurement: measurement,
+                priority: priority,
+                isRoomIfPossible: isRoomIfPossible,
                 plannedAmount: plannedAmount,
                 actualProgress: actualProgress,
                 status: TodoProgressCalculator().status(
-                    measurement: draft.measurement,
+                    measurement: measurement,
                     plannedAmount: plannedAmount,
                     actualProgress: actualProgress
                 ),
-                scheduledDate: draft.scheduledDate,
-                deadline: draft.deadline
+                scheduledDate: scheduledDate,
+                deadline: deadline
             )
             modelContext.insert(todo)
         case .edit(let todo):
@@ -242,13 +269,13 @@ struct TodoFormView: View {
                 title: draft.trimmedTitle,
                 notes: draft.trimmedNotes,
                 direction: direction,
-                measurement: draft.measurement,
-                priority: draft.priority,
-                isRoomIfPossible: draft.priority == .low && draft.isRoomIfPossible,
+                measurement: measurement,
+                priority: priority,
+                isRoomIfPossible: isRoomIfPossible,
                 plannedAmount: plannedAmount,
                 actualProgress: actualProgress,
-                scheduledDate: draft.scheduledDate,
-                deadline: draft.deadline
+                scheduledDate: scheduledDate,
+                deadline: deadline
             )
         }
 
