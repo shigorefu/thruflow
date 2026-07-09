@@ -97,14 +97,14 @@ struct FlowMiniPlayerView: View {
                 HStack(spacing: style == .compact ? 8 : 12) {
                     taskPickerButton
                         .frame(
-                            minWidth: style == .header ? 280 : 158,
-                            maxWidth: style == .header ? .infinity : 176,
+                            minWidth: style == .header ? 280 : 150,
+                            maxWidth: style == .header ? .infinity : 170,
                             alignment: .leading
                         )
 
                     modePickerButton
 
-                    if style == .header {
+                    if style == .header || activeFlowStore.timerState != nil {
                         timerCluster(now: now)
                     }
 
@@ -180,7 +180,7 @@ struct FlowMiniPlayerView: View {
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(.secondary)
             }
-            .frame(width: style == .header ? 190 : 112, alignment: .leading)
+            .frame(width: style == .header ? 190 : 104, alignment: .leading)
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
             .background(Color.primary.opacity(0.05))
@@ -300,37 +300,36 @@ struct FlowMiniPlayerView: View {
 
     private var transportControls: some View {
         HStack(spacing: style == .compact ? 4 : 6) {
-            if style == .compact {
-                if activeFlowStore.timerState != nil {
-                    destroyButton
-                    stopButton
-                }
+            if activeFlowStore.timerState != nil {
+                destroyButton
+                stopButton
+            }
 
-                primaryButton
-            } else {
-                if activeFlowStore.timerState != nil {
-                    destroyButton
-                    stopButton
-                }
+            if activeFlowStore.phase == .focusing {
+                breakButton
+            }
 
-                if activeFlowStore.phase == .focusing {
-                    breakButton
-                }
+            if canSeek {
+                seekBackwardButton
+            }
 
-                if canSeek {
-                    seekBackwardButton
-                }
+            primaryButton
 
-                primaryButton
-
-                if canSeek {
-                    seekForwardButton
-                }
+            if canSeek {
+                seekForwardButton
             }
         }
         .padding(style == .compact ? 2 : 3)
         .background(Color.primary.opacity(0.06))
         .clipShape(Capsule())
+    }
+
+    private var controlButtonSize: CGFloat {
+        style == .compact ? 30 : 34
+    }
+
+    private var primaryControlButtonSize: CGFloat {
+        style == .compact ? 36 : 42
     }
 
     private var seekBackwardButton: some View {
@@ -339,7 +338,7 @@ struct FlowMiniPlayerView: View {
         } label: {
             Image(systemName: "gobackward.minus")
                 .font(.callout.weight(.semibold))
-                .frame(width: 34, height: 34)
+                .frame(width: controlButtonSize, height: controlButtonSize)
         }
         .buttonStyle(.plain)
         .foregroundStyle(.secondary)
@@ -352,7 +351,7 @@ struct FlowMiniPlayerView: View {
         } label: {
             Image(systemName: "goforward.plus")
                 .font(.callout.weight(.semibold))
-                .frame(width: 34, height: 34)
+                .frame(width: controlButtonSize, height: controlButtonSize)
         }
         .buttonStyle(.plain)
         .foregroundStyle(.secondary)
@@ -365,7 +364,7 @@ struct FlowMiniPlayerView: View {
         } label: {
             Image(systemName: "stop.fill")
                 .font(.callout.weight(.semibold))
-                .frame(width: 34, height: 34)
+                .frame(width: controlButtonSize, height: controlButtonSize)
         }
         .buttonStyle(.plain)
         .foregroundStyle(.secondary)
@@ -378,7 +377,7 @@ struct FlowMiniPlayerView: View {
         } label: {
             Image(systemName: "cup.and.saucer.fill")
                 .font(.callout.weight(.semibold))
-                .frame(width: 34, height: 34)
+                .frame(width: controlButtonSize, height: controlButtonSize)
         }
         .buttonStyle(.plain)
         .foregroundStyle(.secondary)
@@ -391,7 +390,7 @@ struct FlowMiniPlayerView: View {
         } label: {
             Image(systemName: "trash.fill")
                 .font(.callout.weight(.semibold))
-                .frame(width: 34, height: 34)
+                .frame(width: controlButtonSize, height: controlButtonSize)
         }
         .buttonStyle(.plain)
         .foregroundStyle(.red)
@@ -405,7 +404,7 @@ struct FlowMiniPlayerView: View {
             if style == .compact {
                 Image(systemName: primaryButtonImage)
                     .font(.title3.weight(.semibold))
-                    .frame(width: 40, height: 40)
+                    .frame(width: primaryControlButtonSize, height: primaryControlButtonSize)
                     .background(primaryButtonColor)
                     .foregroundStyle(.white)
                     .clipShape(Circle())
