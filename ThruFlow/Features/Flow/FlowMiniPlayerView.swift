@@ -94,36 +94,60 @@ struct FlowMiniPlayerView: View {
             } else if activeFlowStore.phase == .awaitingResult || activeFlowStore.isAwaitingBreakMemo {
                 resultBar
             } else {
-                HStack(spacing: style == .compact ? 8 : 12) {
-                    taskPickerButton
-                        .frame(
-                            minWidth: style == .header ? 280 : 150,
-                            maxWidth: style == .header ? .infinity : 170,
-                            alignment: .leading
-                        )
-
-                    modePickerButton
-
-                    if style == .header || activeFlowStore.timerState != nil {
-                        timerCluster(now: now)
-                    }
-
-                    transportControls
+                if style == .compact {
+                    compactMenuBarPlayer(now: now)
+                } else {
+                    headerPlayer(now: now)
                 }
-                .padding(.horizontal, style == .compact ? 10 : 14)
-                .padding(.vertical, style == .compact ? 8 : 10)
-                .background(.ultraThinMaterial)
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 14)
-                        .strokeBorder(Color.primary.opacity(0.08))
-                }
-                .shadow(color: .black.opacity(0.10), radius: 14, y: 5)
             }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .background(.bar)
+    }
+
+    private func headerPlayer(now: Date) -> some View {
+        HStack(spacing: 12) {
+            taskPickerButton
+                .frame(minWidth: 280, maxWidth: .infinity, alignment: .leading)
+
+            modePickerButton
+            timerCluster(now: now)
+            transportControls
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14)
+                .strokeBorder(Color.primary.opacity(0.08))
+        }
+        .shadow(color: .black.opacity(0.10), radius: 14, y: 5)
+    }
+
+    private func compactMenuBarPlayer(now: Date) -> some View {
+        HStack(spacing: 10) {
+            taskPickerButton
+                .frame(width: 168, alignment: .leading)
+
+            modePickerButton
+
+            timerCluster(now: now)
+
+            transportControls
+                .frame(width: 210, alignment: .center)
+        }
+        .frame(maxWidth: .infinity, alignment: .center)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14)
+                .strokeBorder(Color.primary.opacity(0.08))
+        }
+        .shadow(color: .black.opacity(0.10), radius: 14, y: 5)
     }
 
     private var taskPickerButton: some View {
@@ -180,7 +204,7 @@ struct FlowMiniPlayerView: View {
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(.secondary)
             }
-            .frame(width: style == .header ? 190 : 104, alignment: .leading)
+            .frame(width: style == .header ? 190 : 94, alignment: .leading)
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
             .background(Color.primary.opacity(0.05))
@@ -300,28 +324,61 @@ struct FlowMiniPlayerView: View {
 
     private var transportControls: some View {
         HStack(spacing: style == .compact ? 4 : 6) {
-            if activeFlowStore.timerState != nil {
-                destroyButton
-                stopButton
-            }
+            if style == .compact {
+                compactControlSlot(isEnabled: activeFlowStore.timerState != nil) {
+                    destroyButton
+                }
 
-            if activeFlowStore.phase == .focusing {
-                breakButton
-            }
+                compactControlSlot(isEnabled: activeFlowStore.timerState != nil) {
+                    stopButton
+                }
 
-            if canSeek {
-                seekBackwardButton
-            }
+                compactControlSlot(isEnabled: activeFlowStore.phase == .focusing) {
+                    breakButton
+                }
 
-            primaryButton
+                compactControlSlot(isEnabled: canSeek) {
+                    seekBackwardButton
+                }
 
-            if canSeek {
-                seekForwardButton
+                primaryButton
+
+                compactControlSlot(isEnabled: canSeek) {
+                    seekForwardButton
+                }
+            } else {
+                if activeFlowStore.timerState != nil {
+                    destroyButton
+                    stopButton
+                }
+
+                if activeFlowStore.phase == .focusing {
+                    breakButton
+                }
+
+                if canSeek {
+                    seekBackwardButton
+                }
+
+                primaryButton
+
+                if canSeek {
+                    seekForwardButton
+                }
             }
         }
         .padding(style == .compact ? 2 : 3)
         .background(Color.primary.opacity(0.06))
         .clipShape(Capsule())
+    }
+
+    private func compactControlSlot<Content: View>(
+        isEnabled: Bool,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        content()
+            .disabled(!isEnabled)
+            .opacity(isEnabled ? 1 : 0.34)
     }
 
     private var controlButtonSize: CGFloat {
