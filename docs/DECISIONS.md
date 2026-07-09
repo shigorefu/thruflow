@@ -130,7 +130,7 @@ Reason: Direction order is part of the user's working map, not just metadata.
 
 ### D-018: Flow timers do not auto-switch phases
 
-When focus reaches its planned end, the timer continues as overtime instead of automatically switching to rest. The user starts rest manually. Starting rest before 24 focused minutes uses a 3-minute rest; starting rest at or after 24 focused minutes records it as a 25-minute focus with a 5-minute rest. Rest also continues as overtime after its planned end.
+When focus reaches its planned end, the timer continues as overtime instead of automatically switching to rest. The user starts rest manually and writes a memo before rest begins. Focus continues counting until that memo is saved. Starting rest before 24 focused minutes uses a 3-minute rest; starting rest at or after 24 focused minutes records at least a 25-minute focus with a 5-minute rest. Rest also continues as overtime after its planned end.
 
 Reason: the app should record the user's real rhythm while still giving clear session-like thresholds.
 

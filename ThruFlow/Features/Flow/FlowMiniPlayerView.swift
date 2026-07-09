@@ -69,7 +69,7 @@ struct FlowMiniPlayerView: View {
         VStack(spacing: 8) {
             if activeFlowStore.phase == .awaitingExtensionDecision {
                 adaptiveDecisionBar
-            } else if activeFlowStore.phase == .awaitingResult {
+            } else if activeFlowStore.phase == .awaitingResult || activeFlowStore.isAwaitingBreakMemo {
                 resultBar
             } else {
                 HStack(spacing: 12) {
@@ -252,6 +252,10 @@ struct FlowMiniPlayerView: View {
                 stopButton
             }
 
+            if activeFlowStore.phase == .focusing {
+                breakButton
+            }
+
             if canSeek {
                 seekBackwardButton
             }
@@ -304,6 +308,19 @@ struct FlowMiniPlayerView: View {
         .buttonStyle(.plain)
         .foregroundStyle(.secondary)
         .accessibilityLabel("Flowを停止して保存")
+    }
+
+    private var breakButton: some View {
+        Button {
+            activeFlowStore.requestBreakMemo()
+        } label: {
+            Image(systemName: "cup.and.saucer.fill")
+                .font(.callout.weight(.semibold))
+                .frame(width: 34, height: 34)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.secondary)
+        .accessibilityLabel("休憩を開始")
     }
 
     private var destroyButton: some View {
@@ -394,7 +411,7 @@ struct FlowMiniPlayerView: View {
             }
 
             Button("休憩") {
-                activeFlowStore.startBreak(modelContext: modelContext)
+                activeFlowStore.requestBreakMemo()
             }
 
             Button("終了") {
@@ -415,17 +432,6 @@ struct FlowMiniPlayerView: View {
                 .lineLimit(2...5)
 
             HStack(spacing: 10) {
-                Button {
-                    showsConfiguration = true
-                } label: {
-                    Image(systemName: "plus")
-                        .font(.body.weight(.medium))
-                        .frame(width: 28, height: 28)
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
-                .accessibilityLabel("Flow設定を開く")
-
                 HStack(spacing: 5) {
                     Image(systemName: "note.text")
                         .imageScale(.small)
@@ -494,7 +500,7 @@ struct FlowMiniPlayerView: View {
             )
         case .focusing:
             if activeFlowStore.isFocusOvertime(now: activeFlowStore.displayDate) {
-                activeFlowStore.startBreak(modelContext: modelContext)
+                activeFlowStore.requestBreakMemo()
             } else {
                 activeFlowStore.pause(modelContext: modelContext)
             }
@@ -510,7 +516,11 @@ struct FlowMiniPlayerView: View {
     }
 
     private func submitResult() {
-        activeFlowStore.completeResult(resultText, modelContext: modelContext)
+        if activeFlowStore.isAwaitingBreakMemo {
+            activeFlowStore.completeBreakMemo(resultText, modelContext: modelContext)
+        } else {
+            activeFlowStore.completeResult(resultText, modelContext: modelContext)
+        }
         resultText = ""
     }
 

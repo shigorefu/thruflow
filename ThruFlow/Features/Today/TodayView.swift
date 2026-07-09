@@ -762,7 +762,9 @@ private struct TodayTodoGroup: Identifiable {
 
     static func groups(for todos: [Todo], order: [DirectionType]) -> [TodayTodoGroup] {
         order.compactMap { type in
-            let items = todos.filter { Self.type(for: $0) == type }
+            let items = todos
+                .filter { Self.type(for: $0) == type }
+                .sorted(by: todoSort)
             guard !items.isEmpty else { return nil }
             return TodayTodoGroup(type: type, todos: items)
         }
@@ -770,6 +772,18 @@ private struct TodayTodoGroup: Identifiable {
 
     static func type(for todo: Todo) -> DirectionType {
         todo.direction?.type ?? .neutral
+    }
+
+    nonisolated private static func todoSort(_ lhs: Todo, _ rhs: Todo) -> Bool {
+        if lhs.isCompleted != rhs.isCompleted {
+            return !lhs.isCompleted
+        }
+
+        if lhs.sortIndex != rhs.sortIndex {
+            return lhs.sortIndex < rhs.sortIndex
+        }
+
+        return lhs.createdAt < rhs.createdAt
     }
 }
 
@@ -927,7 +941,25 @@ private struct TodoRow: View {
     }
 
     private var progressValue: Double {
-        TodoProgressCalculator().progress(
+        if todo.measurement == .focusBlocks,
+           let plannedAmount = todo.plannedAmount,
+           plannedAmount > 0 {
+            return min(
+                Double(todo.recordedFocusSeconds) / Double(plannedAmount * BlockUnit.secondsPerBlock),
+                1
+            )
+        }
+
+        if todo.measurement == .minutes,
+           let plannedAmount = todo.plannedAmount,
+           plannedAmount > 0 {
+            return min(
+                Double(todo.recordedFocusSeconds / 60) / Double(plannedAmount),
+                1
+            )
+        }
+
+        return TodoProgressCalculator().progress(
             measurement: todo.measurement,
             plannedAmount: todo.plannedAmount,
             actualProgress: todo.actualProgress
