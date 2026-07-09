@@ -41,10 +41,8 @@ struct ContentView: View {
                 StatisticsView()
             }
         }
-        .safeAreaInset(edge: .bottom) {
-            if selection != .today {
-                FlowMiniPlayerView()
-            }
+        .safeAreaInset(edge: .top) {
+            FlowMiniPlayerView()
         }
 #else
         TabView(selection: $tabSelection) {
@@ -72,10 +70,8 @@ struct ContentView: View {
                 }
                 .tag(AppSection.statistics)
         }
-        .safeAreaInset(edge: .bottom) {
-            if tabSelection != .today {
-                FlowMiniPlayerView()
-            }
+        .safeAreaInset(edge: .top) {
+            FlowMiniPlayerView()
         }
 #endif
     }
