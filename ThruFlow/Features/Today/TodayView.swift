@@ -110,9 +110,6 @@ struct TodayView: View {
                 focusDurationSeconds: todo.focusDurationSeconds
             )
         )
-        .onTapGesture(count: 2) {
-            editingTodo = todo
-        }
         .contextMenu {
             Button("編集", systemImage: "pencil") {
                 editingTodo = todo
@@ -820,28 +817,16 @@ private struct TodoRow: View {
     let summary: String
 
     @State private var isHovering = false
-
-    private var titleBinding: Binding<String> {
-        Binding {
-            todo.title
-        } set: { value in
-            todo.title = value
-            todo.updatedAt = .now
-        }
-    }
+    @State private var isEditingTitle = false
+    @State private var draftTitle = ""
+    @FocusState private var isTitleFocused: Bool
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             progressControl
 
             VStack(alignment: .leading, spacing: 4) {
-                TextField(titlePlaceholder, text: titleBinding)
-                    .textFieldStyle(.plain)
-                    .font(.body.weight(.medium))
-                    .strikethrough(todo.isCompleted)
-                    .foregroundStyle(todo.isCompleted ? .secondary : .primary)
-                    .onSubmit(save)
-                    .accessibilityLabel("タスク名")
+                titleEditor
 
                 HStack(spacing: 6) {
                     if let direction = todo.direction, !DefaultDirections.isTaskInbox(direction) {
@@ -869,14 +854,74 @@ private struct TodoRow: View {
         .onHover { hovering in
             isHovering = hovering
         }
-        .onDisappear(perform: save)
+        .onAppear {
+            draftTitle = todo.title
+        }
+        .onChange(of: todo.title) { _, newValue in
+            guard !isEditingTitle else { return }
+            draftTitle = newValue
+        }
+        .onChange(of: isTitleFocused) { _, isFocused in
+            if !isFocused, isEditingTitle {
+                commitTitle()
+            }
+        }
+        .onDisappear(perform: commitTitleIfNeeded)
         .listRowInsets(EdgeInsets(top: 3, leading: 10, bottom: 3, trailing: 10))
         .listRowSeparator(.hidden)
         .listRowBackground(rowBackground)
     }
 
-    private func save() {
+    @ViewBuilder
+    private var titleEditor: some View {
+        if isEditingTitle {
+            TextField(titlePlaceholder, text: $draftTitle)
+                .textFieldStyle(.plain)
+                .font(.body.weight(.medium))
+                .strikethrough(todo.isCompleted)
+                .foregroundStyle(todo.isCompleted ? .secondary : .primary)
+                .focused($isTitleFocused)
+                .onSubmit(commitTitle)
+                .accessibilityLabel("タスク名")
+        } else {
+            Text(TodoDisplay.title(for: todo))
+                .font(.body.weight(.medium))
+                .strikethrough(todo.isCompleted)
+                .foregroundStyle(todo.isCompleted ? .secondary : .primary)
+                .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    beginTitleEdit()
+                }
+                .accessibilityLabel("タスク名")
+        }
+    }
+
+    private func beginTitleEdit() {
+        draftTitle = todo.title
+        isEditingTitle = true
+
+        Task { @MainActor in
+            isTitleFocused = true
+        }
+    }
+
+    private func commitTitle() {
+        let normalizedTitle = draftTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        if todo.title != normalizedTitle {
+            todo.title = normalizedTitle
+            todo.updatedAt = .now
+        }
+
+        isEditingTitle = false
+        isTitleFocused = false
         try? modelContext.save()
+    }
+
+    private func commitTitleIfNeeded() {
+        guard isEditingTitle else { return }
+        commitTitle()
     }
 
     @ViewBuilder
