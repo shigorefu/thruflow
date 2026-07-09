@@ -86,7 +86,7 @@ enum DirectionValidationError: Error, Equatable, LocalizedError {
         case .missingGoalUnit:
             "目標を使う場合は単位を選んでください。"
         case .missingGoalSchedule:
-            "必須の方向は頻度を選んでください。"
+            "習慣の方向は頻度を選んでください。"
         case .invalidWeeklyTargetCount:
             "週回は1〜7回で選んでください。"
         case .missingWeekdays:
@@ -103,7 +103,7 @@ struct DirectionValidator {
             errors.append(.emptyName)
         }
 
-        if draft.type == .must {
+        if draft.type == .habit {
             if (draft.goalTarget ?? 0) <= 0 {
                 errors.append(.invalidGoalTarget)
             }

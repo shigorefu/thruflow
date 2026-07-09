@@ -9,9 +9,13 @@ ThruFlow uses Japanese as the default user-facing language. Code identifiers, en
 | Default task inbox direction | タスク |
 | Direction symbol | 絵文字 |
 | Direction color | カラー |
-| Must | 必須 |
+| Habit | 習慣 |
 | Neutral | 通常 |
-| Bonus | ボーナス |
+| Nice | ナイス |
+| High priority | 高 |
+| Medium priority | 中 |
+| Low priority | 低い |
+| If there is room | 余裕があれば |
 | Goal | 目標 |
 | Goal value | 目標値 |
 | Goal frequency | 頻度 |

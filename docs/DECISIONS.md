@@ -14,15 +14,15 @@ Direction represents a recurring area of attention and owns the meaning that hab
 
 Reason: this keeps Today, Todos, Flow, and future statistics connected to a stable domain object.
 
-### D-003: Must, Neutral, and Bonus are explicit types
+### D-003: Habit, Neutral, and Nice are explicit types
 
 Use stable enum raw values for Direction type:
 
-- `must`
+- `habit`
 - `neutral`
-- `bonus`
+- `nice`
 
-Reason: successful-day logic depends on the difference between required work, optional work, and positive optional activity.
+Reason: the product separates automatic recurring work from manually planned tasks and positive optional activity. Older local stores may still contain `must` and `bonus`; the app reads them as `habit` and `nice`.
 
 ### D-004: Weekly goals are not failed by empty days
 
@@ -30,11 +30,11 @@ Weekly goals are judged by week totals. Individual empty days are factual empty 
 
 Reason: this matches goals such as training 3 times per week and avoids punishing flexible schedules.
 
-### D-004a: Required Direction goal schedule is explicit
+### D-004a: Habit Direction goal schedule is explicit
 
-Only `必須` Directions ask for a goal. The creation flow records a goal value, a unit, and one frequency mode: `毎日`, `週回`, or `曜日`. `通常` and `ボーナス` Directions stop after type selection and do not carry goal fields.
+Only `習慣` Directions ask for a goal. The creation flow records a goal value, a unit, and one frequency mode: `毎日`, `週回`, or `曜日`. `通常` and `ナイス` Directions stop after type selection and do not carry goal fields.
 
-Reason: goal setup should stay clear at creation time and avoid showing irrelevant controls for non-required Directions.
+Reason: goal setup should stay clear at creation time and avoid showing irrelevant controls for non-habit Directions.
 
 ### D-005: Intent and Result stay separate
 
@@ -73,6 +73,10 @@ The Today screen creates Todos from a bottom composer-style input. The top area 
 Reason: Today capture should be fast and visually quiet while still making Direction, schedule, and Flow size understandable before submit.
 
 Task rows use the selected Direction color in Today. Tasks captured without a selected Direction route to the automatic `タスク` Direction but render without a Direction color.
+
+Manual Today tasks carry a priority and a record type. Priority is `高`, `中`, or `低い`; when `低い` is selected the user may mark it as `余裕があれば`. Record type reuses `TodoMeasurement`: `チェック`, `ブロック`, and `分`.
+
+Reason: Direction answers "where does this belong?", while priority and record type answer "how should Today treat this specific task?"
 
 ### D-011: Direction icons use local Unicode emoji
 

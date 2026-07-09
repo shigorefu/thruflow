@@ -93,13 +93,13 @@ struct TodoTests {
         #expect(!filter.includes(todo, on: Date(timeIntervalSince1970: 0)))
     }
 
-    @Test func dailyMustDirectionCreatesTodayTodoDraft() {
+    @Test func dailyHabitDirectionCreatesTodayTodoDraft() {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
 
         let direction = Direction(
             name: "読書",
-            type: .must,
+            type: .habit,
             goalTarget: 1,
             goalPeriod: .daily,
             goalUnit: .focusBlocks,
@@ -111,6 +111,8 @@ struct TodoTests {
 
         #expect(todo?.title == "")
         #expect(todo?.measurement == .focusBlocks)
+        #expect(todo?.priority == .high)
+        #expect(todo?.isRoomIfPossible == false)
         #expect(todo?.plannedAmount == 1)
         #expect(todo?.scheduledDate == date)
     }
@@ -118,7 +120,7 @@ struct TodoTests {
     @Test func weeklyCountWithoutSelectedWeekdaysDoesNotCreateTodayTodo() {
         let direction = Direction(
             name: "筋トレ",
-            type: .must,
+            type: .habit,
             goalTarget: 3,
             goalPeriod: .weekly,
             goalUnit: .occurrences,
@@ -129,7 +131,7 @@ struct TodoTests {
         #expect(!RequiredTodoPlanner().shouldAppearToday(direction, on: Date(timeIntervalSince1970: 0)))
     }
 
-    @Test func selectedWeekdayMustDirectionAppearsOnlyOnThatWeekday() {
+    @Test func selectedWeekdayHabitDirectionAppearsOnlyOnThatWeekday() {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
 
@@ -137,7 +139,7 @@ struct TodoTests {
         let tuesday = Date(timeIntervalSince1970: 5 * 86_400)
         let direction = Direction(
             name: "Anki",
-            type: .must,
+            type: .habit,
             goalTarget: 1,
             goalPeriod: .weekly,
             goalUnit: .focusBlocks,

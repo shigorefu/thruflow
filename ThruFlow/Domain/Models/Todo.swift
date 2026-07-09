@@ -27,6 +27,25 @@ enum TodoMeasurement: String, CaseIterable, Codable, Identifiable {
     }
 }
 
+enum TodoPriority: String, CaseIterable, Codable, Identifiable {
+    case high
+    case medium
+    case low
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .high:
+            "高"
+        case .medium:
+            "中"
+        case .low:
+            "低い"
+        }
+    }
+}
+
 enum TodoStatus: String, CaseIterable, Codable, Identifiable {
     case active
     case completed
@@ -53,6 +72,8 @@ final class Todo {
     var notes: String?
     var direction: Direction?
     var measurementRawValue: String
+    var priorityRawValue: String = TodoPriority.medium.rawValue
+    var isRoomIfPossible: Bool = false
     var plannedAmount: Int?
     var actualProgress: Int
     var focusDurationSeconds: Int?
@@ -71,6 +92,8 @@ final class Todo {
         notes: String? = nil,
         direction: Direction,
         measurement: TodoMeasurement = .checkbox,
+        priority: TodoPriority = .medium,
+        isRoomIfPossible: Bool = false,
         plannedAmount: Int? = nil,
         actualProgress: Int = 0,
         focusDurationSeconds: Int? = nil,
@@ -88,6 +111,8 @@ final class Todo {
         self.notes = notes
         self.direction = direction
         self.measurementRawValue = measurement.rawValue
+        self.priorityRawValue = priority.rawValue
+        self.isRoomIfPossible = isRoomIfPossible
         self.plannedAmount = plannedAmount
         self.actualProgress = actualProgress
         self.focusDurationSeconds = focusDurationSeconds
@@ -105,6 +130,16 @@ final class Todo {
     var measurement: TodoMeasurement {
         get { TodoMeasurement(rawValue: measurementRawValue) ?? .checkbox }
         set { measurementRawValue = newValue.rawValue }
+    }
+
+    var priority: TodoPriority {
+        get { TodoPriority(rawValue: priorityRawValue) ?? .medium }
+        set {
+            priorityRawValue = newValue.rawValue
+            if newValue != .low {
+                isRoomIfPossible = false
+            }
+        }
     }
 
     var status: TodoStatus {
@@ -134,6 +169,8 @@ final class Todo {
         notes: String?,
         direction: Direction,
         measurement: TodoMeasurement,
+        priority: TodoPriority,
+        isRoomIfPossible: Bool,
         plannedAmount: Int?,
         actualProgress: Int,
         scheduledDate: Date?,
@@ -144,6 +181,8 @@ final class Todo {
         self.notes = notes
         self.direction = direction
         self.measurement = measurement
+        self.priority = priority
+        self.isRoomIfPossible = priority == .low && isRoomIfPossible
         self.plannedAmount = plannedAmount
         self.actualProgress = actualProgress
         self.scheduledDate = scheduledDate

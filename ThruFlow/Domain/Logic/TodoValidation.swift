@@ -12,6 +12,8 @@ struct TodoDraft {
     var notes: String
     var direction: Direction?
     var measurement: TodoMeasurement
+    var priority: TodoPriority
+    var isRoomIfPossible: Bool
     var plannedAmount: Int?
     var actualProgress: Int
     var scheduledDate: Date?
@@ -22,6 +24,8 @@ struct TodoDraft {
         notes: String = "",
         direction: Direction? = nil,
         measurement: TodoMeasurement = .checkbox,
+        priority: TodoPriority = .medium,
+        isRoomIfPossible: Bool = false,
         plannedAmount: Int? = nil,
         actualProgress: Int = 0,
         scheduledDate: Date? = .now,
@@ -31,6 +35,8 @@ struct TodoDraft {
         self.notes = notes
         self.direction = direction
         self.measurement = measurement
+        self.priority = priority
+        self.isRoomIfPossible = isRoomIfPossible
         self.plannedAmount = plannedAmount
         self.actualProgress = actualProgress
         self.scheduledDate = scheduledDate
@@ -42,6 +48,8 @@ struct TodoDraft {
         self.notes = todo.notes ?? ""
         self.direction = todo.direction
         self.measurement = todo.measurement
+        self.priority = todo.priority
+        self.isRoomIfPossible = todo.isRoomIfPossible
         self.plannedAmount = todo.plannedAmount
         self.actualProgress = todo.actualProgress
         self.scheduledDate = todo.scheduledDate

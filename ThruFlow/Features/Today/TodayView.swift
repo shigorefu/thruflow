@@ -19,6 +19,8 @@ struct TodayView: View {
     @State private var newTodoTitle = ""
     @State private var newTodoDirectionID: UUID?
     @State private var newTodoVolume: QuickTodoVolume = .checkbox
+    @State private var newTodoPriority: TodoPriority = .medium
+    @State private var newTodoIsRoomIfPossible = false
     @State private var newTodoDateOption: QuickTodoDate = .today
     @State private var newTodoError: String?
     @AppStorage("today.groupOrder") private var groupOrderRaw = TodayTodoGroup.defaultOrderRaw
@@ -76,6 +78,8 @@ struct TodayView: View {
                     title: $newTodoTitle,
                     selectedDirectionID: $newTodoDirectionID,
                     volume: $newTodoVolume,
+                    priority: $newTodoPriority,
+                    isRoomIfPossible: $newTodoIsRoomIfPossible,
                     dateOption: $newTodoDateOption,
                     directions: activeDirections,
                     validationMessage: newTodoError,
@@ -181,6 +185,8 @@ struct TodayView: View {
             title: newTodoTitle,
             direction: direction(for: newTodoDirectionID),
             measurement: newTodoVolume.measurement,
+            priority: newTodoPriority,
+            isRoomIfPossible: newTodoPriority == .low && newTodoIsRoomIfPossible,
             plannedAmount: newTodoVolume.plannedAmount,
             scheduledDate: newTodoDateOption.resolvedDate
         )
@@ -196,6 +202,8 @@ struct TodayView: View {
             title: draft.trimmedTitle,
             direction: direction,
             measurement: newTodoVolume.measurement,
+            priority: newTodoPriority,
+            isRoomIfPossible: newTodoPriority == .low && newTodoIsRoomIfPossible,
             plannedAmount: newTodoVolume.plannedAmount,
             status: progress.status(
                 measurement: newTodoVolume.measurement,
@@ -209,6 +217,9 @@ struct TodayView: View {
         try? modelContext.save()
 
         newTodoTitle = ""
+        if newTodoPriority != .low {
+            newTodoIsRoomIfPossible = false
+        }
         newTodoError = nil
     }
 
@@ -266,8 +277,17 @@ struct TodayView: View {
 enum QuickTodoVolume: Hashable {
     case checkbox
     case blocks(Int)
+    case minutes(Int)
 
-    static let options: [QuickTodoVolume] = [.checkbox, .blocks(1), .blocks(2), .blocks(3), .blocks(4)]
+    static let options: [QuickTodoVolume] = [
+        .checkbox,
+        .blocks(1),
+        .blocks(2),
+        .blocks(3),
+        .minutes(15),
+        .minutes(25),
+        .minutes(50)
+    ]
 
     var measurement: TodoMeasurement {
         switch self {
@@ -275,11 +295,18 @@ enum QuickTodoVolume: Hashable {
             .checkbox
         case .blocks:
             .focusBlocks
+        case .minutes:
+            .minutes
         }
     }
 
     var plannedAmount: Int? {
-        if case .blocks(let count) = self { count } else { nil }
+        switch self {
+        case .checkbox:
+            nil
+        case .blocks(let count), .minutes(let count):
+            count
+        }
     }
 
     var menuLabel: String {
@@ -288,6 +315,8 @@ enum QuickTodoVolume: Hashable {
             "チェックのみ"
         case .blocks(let count):
             count == 1 ? "1 Block" : "\(count) Blocks"
+        case .minutes(let count):
+            "\(count)分"
         }
     }
 
@@ -297,6 +326,8 @@ enum QuickTodoVolume: Hashable {
             "チェック"
         case .blocks(let count):
             count == 1 ? "1 Block" : "\(count) Blocks"
+        case .minutes(let count):
+            "\(count)分"
         }
     }
 }
@@ -346,6 +377,8 @@ private struct MessengerTodoComposer: View {
     @Binding var title: String
     @Binding var selectedDirectionID: UUID?
     @Binding var volume: QuickTodoVolume
+    @Binding var priority: TodoPriority
+    @Binding var isRoomIfPossible: Bool
     @Binding var dateOption: QuickTodoDate
 
     let directions: [Direction]
@@ -373,6 +406,12 @@ private struct MessengerTodoComposer: View {
                 DirectionChip(selectedDirectionID: $selectedDirectionID, directions: directions)
                     .fixedSize(horizontal: true, vertical: false)
                     .layoutPriority(3)
+
+                PriorityChip(priority: $priority, isRoomIfPossible: $isRoomIfPossible)
+
+                if priority == .low {
+                    RoomIfPossibleChip(isSelected: $isRoomIfPossible)
+                }
 
                 DateChip(dateOption: $dateOption)
 
@@ -419,6 +458,98 @@ private struct MessengerTodoComposer: View {
         guard !trimmedTitle.isEmpty else { return }
         onSubmit()
         isFocused = true
+    }
+}
+
+private struct PriorityChip: View {
+    @Binding var priority: TodoPriority
+    @Binding var isRoomIfPossible: Bool
+
+    var body: some View {
+        Menu {
+            ForEach(TodoPriority.allCases) { option in
+                Button {
+                    priority = option
+                    if option != .low {
+                        isRoomIfPossible = false
+                    }
+                } label: {
+                    menuRow(text: option.displayName, isSelected: priority == option)
+                }
+            }
+
+            if priority == .low {
+                Divider()
+
+                Button {
+                    isRoomIfPossible.toggle()
+                } label: {
+                    menuRow(text: "余裕があれば", isSelected: isRoomIfPossible)
+                }
+            }
+        } label: {
+            Text(labelText)
+                .chipStyle(tint: tint)
+        }
+        .menuStyle(.borderlessButton)
+        .accessibilityLabel("優先度を選択")
+    }
+
+    private var labelText: String {
+        return priority.displayName
+    }
+
+    private var tint: Color {
+        switch priority {
+        case .high:
+            .red
+        case .medium:
+            .secondary
+        case .low:
+            .green
+        }
+    }
+
+    @ViewBuilder
+    private func menuRow(text: String, isSelected: Bool) -> some View {
+        if isSelected {
+            Label(text, systemImage: "checkmark")
+        } else {
+            Text(text)
+        }
+    }
+}
+
+private struct RoomIfPossibleChip: View {
+    @Binding var isSelected: Bool
+
+    var body: some View {
+        Button {
+            isSelected.toggle()
+        } label: {
+            HStack(spacing: 5) {
+                RoundedRectangle(cornerRadius: 3)
+                    .strokeBorder(Color.green, lineWidth: 1.4)
+                    .background(
+                        RoundedRectangle(cornerRadius: 3)
+                            .fill(isSelected ? Color.green : Color.clear)
+                    )
+                    .overlay {
+                        if isSelected {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 8, weight: .bold))
+                                .foregroundStyle(.white)
+                        }
+                    }
+                    .frame(width: 13, height: 13)
+
+                Text("余裕があれば")
+            }
+            .chipStyle(tint: .green)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("余裕があれば")
+        .accessibilityAddTraits(isSelected ? [.isSelected] : [])
     }
 }
 
@@ -599,34 +730,34 @@ private struct TodayTodoGroup: Identifiable {
 
     var title: String {
         switch type {
-        case .must:
-            "必須"
+        case .habit:
+            "習慣"
         case .neutral:
-            "普通"
-        case .bonus:
-            "ボーナス"
+            "通常"
+        case .nice:
+            "ナイス"
         }
     }
 
     var tint: Color {
         switch type {
-        case .must:
+        case .habit:
             .red
         case .neutral:
             .blue
-        case .bonus:
+        case .nice:
             .green
         }
     }
 
-    static let defaultOrderRaw = "must,neutral,bonus"
+    static let defaultOrderRaw = "habit,neutral,nice"
 
     static func order(from rawValue: String) -> [DirectionType] {
         let parsed = rawValue
             .split(separator: ",")
-            .compactMap { DirectionType(rawValue: String($0)) }
+            .compactMap { DirectionType.normalized(rawValue: String($0)) }
         let missing = DirectionType.allCases.filter { !parsed.contains($0) }
-        return parsed.isEmpty ? [.must, .neutral, .bonus] : parsed + missing
+        return parsed.isEmpty ? [.habit, .neutral, .nice] : parsed + missing
     }
 
     static func groups(for todos: [Todo], order: [DirectionType]) -> [TodayTodoGroup] {
@@ -689,29 +820,7 @@ private struct TodoRow: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            Button {
-                todo.setCompleted(!todo.isCompleted)
-                try? modelContext.save()
-            } label: {
-                RoundedRectangle(cornerRadius: 5)
-                    .strokeBorder(checkboxTint, lineWidth: 1.6)
-                    .background(
-                        RoundedRectangle(cornerRadius: 5)
-                            .fill(todo.isCompleted ? checkboxTint : Color.clear)
-                    )
-                    .overlay {
-                        if todo.isCompleted {
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundStyle(.white)
-                        }
-                    }
-                    .frame(width: 20, height: 20)
-                    .frame(width: 34, height: 34)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(todo.isCompleted ? "未完了に戻す" : "完了にする")
+            progressControl
 
             VStack(alignment: .leading, spacing: 4) {
                 TextField(titlePlaceholder, text: titleBinding)
@@ -728,6 +837,10 @@ private struct TodoRow: View {
                             .foregroundStyle(checkboxTint)
                         Text("·")
                     }
+
+                    Text(priorityLabel)
+
+                    Text("·")
 
                     Text(summary)
                 }
@@ -752,6 +865,80 @@ private struct TodoRow: View {
 
     private func save() {
         try? modelContext.save()
+    }
+
+    @ViewBuilder
+    private var progressControl: some View {
+        Button {
+            todo.setCompleted(!todo.isCompleted)
+            try? modelContext.save()
+        } label: {
+            switch todo.measurement {
+            case .checkbox:
+                checkboxControl
+            case .focusBlocks:
+                progressRing(systemImage: todo.isCompleted ? "checkmark" : nil)
+            case .minutes:
+                progressRing(systemImage: "timer")
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(todo.isCompleted ? "未完了に戻す" : "完了にする")
+    }
+
+    private var checkboxControl: some View {
+        RoundedRectangle(cornerRadius: 5)
+            .strokeBorder(checkboxTint, lineWidth: 1.6)
+            .background(
+                RoundedRectangle(cornerRadius: 5)
+                    .fill(todo.isCompleted ? checkboxTint : Color.clear)
+            )
+            .overlay {
+                if todo.isCompleted {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(.white)
+                }
+            }
+            .frame(width: 20, height: 20)
+            .frame(width: 34, height: 34)
+            .contentShape(Rectangle())
+    }
+
+    private func progressRing(systemImage: String?) -> some View {
+        ZStack {
+            Circle()
+                .stroke(checkboxTint.opacity(0.22), lineWidth: 3)
+
+            Circle()
+                .trim(from: 0, to: progressValue)
+                .stroke(checkboxTint, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+
+            if let systemImage {
+                Image(systemName: systemImage)
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(checkboxTint)
+            }
+        }
+        .frame(width: 22, height: 22)
+        .frame(width: 34, height: 34)
+        .contentShape(Rectangle())
+    }
+
+    private var progressValue: Double {
+        TodoProgressCalculator().progress(
+            measurement: todo.measurement,
+            plannedAmount: todo.plannedAmount,
+            actualProgress: todo.actualProgress
+        )
+    }
+
+    private var priorityLabel: String {
+        if todo.priority == .low, todo.isRoomIfPossible {
+            return "余裕があれば"
+        }
+        return todo.priority.displayName
     }
 
     private var titlePlaceholder: String {
