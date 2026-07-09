@@ -122,6 +122,12 @@ When several Directions appear on the same day, the cell color is a weighted mix
 
 Reason: derived statistics avoid duplicated persistence while the Flow history model is still evolving.
 
+### D-017: Direction order is user-controlled inside type groups
+
+The Direction list groups active Directions by `習慣`, `通常`, and `ナイス`. Each Direction stores a `sortIndex` so users can drag rows inside their current type group without depending on alphabetical order.
+
+Reason: Direction order is part of the user's working map, not just metadata.
+
 ## Current Risks
 
 - The project deployment targets are set to OS version 26.5, which may restrict local simulator/device availability.

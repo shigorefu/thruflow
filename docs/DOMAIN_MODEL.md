@@ -19,6 +19,8 @@ Examples:
 - AWS
 - Japanese
 
+Directions keep a user-defined `sortIndex` so the `方向` screen can be grouped by type while preserving manual order inside each group.
+
 ### Canonical Block
 
 Canonical productivity unit:
