@@ -63,12 +63,11 @@ struct TodoTests {
         #expect(!DefaultDirections.isTaskInbox(direction))
     }
 
-    @Test func activeUnscheduledTodoAppearsInInboxNotToday() {
+    @Test func activeUnscheduledTodoDoesNotAppearInDailyTasks() {
         let direction = Direction(name: "仕事", type: .neutral)
         let todo = Todo(title: "資料を作る", direction: direction)
 
         #expect(!TodayTodoFilter().includes(todo, on: Date(timeIntervalSince1970: 0)))
-        #expect(InboxTodoFilter().includes(todo))
     }
 
     @Test func archivedTodoDoesNotAppearInToday() {
@@ -118,18 +117,67 @@ struct TodoTests {
         #expect(todo?.scheduledDate == date)
     }
 
-    @Test func weeklyCountWithoutSelectedWeekdaysDoesNotCreateTodayTodo() {
+    @Test func weeklyCountWithoutSelectedWeekdaysCreatesCurrentTodo() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+
         let direction = Direction(
             name: "筋トレ",
             type: .habit,
-            goalTarget: 3,
+            goalTarget: 1,
             goalPeriod: .weekly,
             goalUnit: .occurrences,
             goalSchedule: .weeklyCount,
             weeklyTargetCount: 3
         )
+        let planner = RequiredTodoPlanner(calendar: calendar)
+        let date = Date(timeIntervalSince1970: 0)
 
-        #expect(!RequiredTodoPlanner().shouldAppearToday(direction, on: Date(timeIntervalSince1970: 0)))
+        #expect(planner.shouldAppearToday(direction, on: date))
+        #expect(planner.makeRequiredTodo(for: direction, on: date) != nil)
+    }
+
+    @Test func movedWeeklyHabitDoesNotCreateReplacement() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+
+        let direction = weeklyHabitDirection()
+        let planner = RequiredTodoPlanner(calendar: calendar)
+        let today = date(2026, 7, 6, calendar: calendar)
+        let tomorrow = date(2026, 7, 7, calendar: calendar)
+        let movedTodo = Todo(title: "", direction: direction, scheduledDate: tomorrow)
+
+        #expect(!planner.shouldCreateRequiredTodo(for: direction, in: [movedTodo], on: today))
+    }
+
+    @Test func nextWeeklyHabitAppearsOnFollowingDayAfterCompletion() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+
+        let direction = weeklyHabitDirection()
+        let planner = RequiredTodoPlanner(calendar: calendar)
+        let monday = date(2026, 7, 6, calendar: calendar)
+        let tuesday = date(2026, 7, 7, calendar: calendar)
+        let completedTodo = Todo(title: "", direction: direction, scheduledDate: monday)
+        completedTodo.setCompleted(true, now: monday)
+
+        #expect(!planner.shouldCreateRequiredTodo(for: direction, in: [completedTodo], on: monday))
+        #expect(planner.shouldCreateRequiredTodo(for: direction, in: [completedTodo], on: tuesday))
+    }
+
+    @Test func weeklyHabitCannotMovePastAchievableDate() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        calendar.firstWeekday = 2
+
+        let direction = weeklyHabitDirection(target: 4)
+        let planner = RequiredTodoPlanner(calendar: calendar)
+        let friday = date(2026, 7, 10, calendar: calendar)
+        let todo = Todo(title: "", direction: direction, scheduledDate: friday)
+        let options = planner.weeklyRescheduleOptions(for: todo, in: [todo], now: friday)
+
+        #expect(options.first?.date == friday)
+        #expect(options.allSatisfy { !$0.isAllowed })
     }
 
     @Test func selectedWeekdayHabitDirectionAppearsOnlyOnThatWeekday() {
@@ -151,5 +199,21 @@ struct TodoTests {
 
         #expect(planner.shouldAppearToday(direction, on: monday))
         #expect(!planner.shouldAppearToday(direction, on: tuesday))
+    }
+
+    private func weeklyHabitDirection(target: Int = 3) -> Direction {
+        Direction(
+            name: "筋トレ",
+            type: .habit,
+            goalTarget: 1,
+            goalPeriod: .weekly,
+            goalUnit: .occurrences,
+            goalSchedule: .weeklyCount,
+            weeklyTargetCount: target
+        )
+    }
+
+    private func date(_ year: Int, _ month: Int, _ day: Int, calendar: Calendar) -> Date {
+        calendar.date(from: DateComponents(year: year, month: month, day: day))!
     }
 }

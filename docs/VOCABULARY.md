@@ -9,8 +9,7 @@
 | Nice Direction | ナイス |
 | System Other Direction | その他 |
 | Task / Todo | タスク |
-| Inbox | Inbox |
-| Today | 今日 |
+| Daily task screen | タスク |
 | Memo | メモ |
 | Check | チェック |
 | Focus Block | 集中ブロック |

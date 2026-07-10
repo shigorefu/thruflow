@@ -10,9 +10,9 @@ Current MVP goal:
 
 - Direction management for `通常`, `習慣`, and `ナイス`.
 - System Direction `その他`, hidden only from Direction management so it cannot be edited.
-- Today task list.
-- Inbox for date-less tasks.
+- Daily `タスク` list.
 - Automatic habit tasks.
+- Sequential weekly-count Habit generation and safe rescheduling.
 - Quick task capture.
 - Task measurements: `チェック`, `集中ブロック`, `分`.
 - Flow player with Short, Focus, and Deep modes.
@@ -31,6 +31,7 @@ Current MVP goal:
 - Widgets.
 - Live Activities.
 - Apple Watch.
+- A replacement workflow for date-less Tasks.
 
 ## Known Product Gaps
 

@@ -23,7 +23,9 @@ Tasks are the daily Todo surface.
 
 Task title may be empty. When empty, UI displays `(方向)`, for example `(読書)` or `(その他)`.
 
-Tasks without a date live in Inbox. They are not shown in 今日 until scheduled.
+The screen is named `タスク`. There is no separate Inbox navigation item; date-less Task behavior is deferred.
+
+Weekly-count Habits create one pending Task at a time. Completion allows the next instance on a later day, while moving the pending Task never creates a duplicate or makes the weekly goal impossible.
 
 Task completion:
 
