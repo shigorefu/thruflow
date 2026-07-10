@@ -42,7 +42,9 @@ The Flow player is always available as a top header. It is not placed below the 
 The header layout is:
 
 - left Task card with Direction icon, Task title, and smaller Direction name;
-- Task card opens a separate picker for today's Tasks and Direction-only starts;
+- Task card opens a picker with `タスク`, `習慣`, and `方向` tabs;
+- `タスク` and `習慣` use separate lists of today's items;
+- `方向` uses an emoji-and-name grid with `その他` first for Direction-only starts;
 - Direction icon color follows the selected Task Direction;
 - compact Focus selector opens a separate picker for `Short`, `Focus`, and `Deep`;
 - timer and transport controls on the right.
