@@ -14,6 +14,19 @@ The system Direction `その他` is not shown here and cannot be edited from thi
 
 タスク shows scheduled tasks for the current day.
 
+Calendar ranges:
+
+- `1日`: detailed list for the selected date;
+- `3日`: three kanban columns;
+- `7日`: seven horizontally scrollable kanban columns;
+- `月`: month grid with completion counts, Direction dots, and incomplete Habit markers.
+
+Filters are `すべて`, `タスク`, and `習慣`. Habit instances stay in the same calendar as normal Tasks but remain visually separated.
+
+Active normal Tasks can be dragged between day columns. Month remains an overview and opens a day for detailed actions. Completed Tasks and fixed daily/weekday Habit Tasks stay on their original date. Weekly-count Habit moves are validated against the remaining weekly target.
+
+Clicking a month cell opens that date in `1日`. The quick composer follows the selected date or kanban column.
+
 Sections:
 
 - `習慣`: automatically generated habit tasks;
@@ -34,6 +47,8 @@ Quick capture behaves like a messenger composer. The user can set measurement, D
 There is no separate Inbox navigation item. Date-less task behavior is deferred.
 
 Weekly-count habits create one pending task at a time. After completion, the next instance may appear on a later eligible day until the weekly target is met. Moving the pending instance does not create a replacement for today, and dates that would make the target impossible are disabled.
+
+Daily and selected-weekday Habit instances are generated for visible current/future dates. Weekly-count habits are not expanded across future calendar columns.
 
 ## Flow Player
 

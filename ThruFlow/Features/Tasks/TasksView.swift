@@ -23,10 +23,17 @@ struct TasksView: View {
     @State private var newTodoIsRoomIfPossible = false
     @State private var newTodoDateOption: QuickTodoDate = .today
     @State private var newTodoError: String?
+    @State private var anchorDate = Calendar.current.startOfDay(for: .now)
+    @State private var selectedDate = Calendar.current.startOfDay(for: .now)
+    @State private var calendarRange: TaskCalendarRange = .oneDay
+    @State private var taskFilter: TaskCalendarFilter = .all
+    @State private var moveError: String?
     @AppStorage("today.groupOrder") private var groupOrderRaw = TasksTodoGroup.defaultOrderRaw
 
     private let filter = TodayTodoFilter()
     private let requiredPlanner = RequiredTodoPlanner()
+    private let calendarBuilder = TaskCalendarBuilder()
+    private let rescheduleService = TaskRescheduleService()
     private let progress = TodoProgressCalculator()
     private let validator = TodoValidator()
 
@@ -38,43 +45,37 @@ struct TasksView: View {
         activeDirections.filter { !DefaultDirections.isTaskInbox($0) }
     }
 
-    private var todayTodos: [Todo] {
-        todos.filter { filter.includes($0) }
+    private var selectedDateTodos: [Todo] {
+        todos.filter { filter.includes($0, on: selectedDate) && taskFilter.includes($0) }
     }
 
-    private var todayGroups: [TasksTodoGroup] {
-        TasksTodoGroup.groups(for: todayTodos, order: groupOrder)
+    private var selectedDateGroups: [TasksTodoGroup] {
+        TasksTodoGroup.groups(for: selectedDateTodos, order: groupOrder)
     }
 
     private var groupOrder: [DirectionType] {
         TasksTodoGroup.order(from: groupOrderRaw)
     }
 
+    private var visibleDates: [Date] {
+        calendarBuilder.dates(for: calendarRange, anchoredAt: anchorDate)
+    }
+
     var body: some View {
-        List {
-            if todayGroups.isEmpty {
-                EmptyRow(text: "今日のタスクはまだありません。")
-                    .listRowSeparator(.hidden)
-            } else {
-                ForEach(todayGroups) { group in
-                    Section {
-                        ForEach(group.todos) { todo in
-                            todoRow(todo)
-                        }
-                        .onMove { source, destination in
-                            moveTodos(in: group.type, from: source, to: destination)
-                        }
-                    } header: {
-                        TasksSectionHeader(group: group)
-                    }
-                    .listSectionSeparator(.hidden)
-                }
-                .onMove(perform: moveGroups)
-            }
+        VStack(spacing: 0) {
+            TaskCalendarToolbar(
+                range: $calendarRange,
+                filter: $taskFilter,
+                anchorDate: anchorDate,
+                onPrevious: { moveRange(-1) },
+                onNext: { moveRange(1) },
+                onToday: moveToToday
+            )
+
+            Divider()
+
+            boardContent
         }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
-        .animation(.default, value: todayTodos.map(\.id))
         .navigationTitle("タスク")
         .safeAreaInset(edge: .bottom) {
             MessengerTodoComposer(
@@ -92,17 +93,164 @@ struct TasksView: View {
         .sheet(item: $editingTodo) { todo in
             TodoFormView(mode: .edit(todo))
         }
+        .alert("移動できません", isPresented: moveErrorIsPresented) {
+            Button("OK", role: .cancel) {
+                moveError = nil
+            }
+        } message: {
+            Text(moveError ?? "")
+        }
         .onAppear {
-            ensureRequiredTodosForToday()
+            selectComposerDate(selectedDate)
+            ensureRequiredTodosForVisibleDates()
+        }
+        .onChange(of: calendarRange) { _, _ in
+            anchorDate = selectedDate
+            ensureRequiredTodosForVisibleDates()
+        }
+        .onChange(of: anchorDate) { _, _ in
+            ensureRequiredTodosForVisibleDates()
+        }
+        .onChange(of: selectedDate) { _, newDate in
+            selectComposerDate(newDate)
         }
         .onChange(of: directions.map(\.updatedAt)) { _, _ in
-            ensureRequiredTodosForToday()
-        }
-        .onChange(of: todos.map(\.updatedAt)) { _, _ in
-            ensureRequiredTodosForToday()
+            ensureRequiredTodosForVisibleDates()
         }
         .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) { _ in
-            ensureRequiredTodosForToday()
+            ensureRequiredTodosForVisibleDates()
+        }
+    }
+
+    @ViewBuilder
+    private var boardContent: some View {
+        switch calendarRange {
+        case .oneDay:
+            oneDayList
+        case .threeDays, .sevenDays:
+            TaskMultiDayBoard(
+                dates: visibleDates,
+                selectedDate: selectedDate,
+                todos: todos.filter { !$0.isArchived && !$0.isDeleted },
+                filter: taskFilter,
+                columnWidth: calendarRange == .threeDays ? 320 : 238,
+                onSelectDate: selectDate,
+                onToggle: toggleTodo,
+                onEdit: { editingTodo = $0 },
+                onStartFlow: startFlow,
+                onDelete: deleteTodo,
+                onMove: moveTodo
+            )
+        case .month:
+            TaskMonthGrid(
+                anchorDate: anchorDate,
+                dates: visibleDates,
+                selectedDate: selectedDate,
+                todos: todos.filter { !$0.isArchived && !$0.isDeleted },
+                filter: taskFilter,
+                onSelectDate: openDay
+            )
+        }
+    }
+
+    private var oneDayList: some View {
+        List {
+            if selectedDateGroups.isEmpty {
+                EmptyRow(text: "この日のタスクはありません。")
+                    .listRowSeparator(.hidden)
+            } else {
+                ForEach(selectedDateGroups) { group in
+                    Section {
+                        ForEach(group.todos) { todo in
+                            todoRow(todo)
+                        }
+                        .onMove { source, destination in
+                            moveTodos(in: group.type, from: source, to: destination)
+                        }
+                    } header: {
+                        TasksSectionHeader(group: group)
+                    }
+                    .listSectionSeparator(.hidden)
+                }
+                .onMove(perform: moveGroups)
+            }
+        }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .animation(.default, value: selectedDateTodos.map(\.id))
+    }
+
+    private var moveErrorIsPresented: Binding<Bool> {
+        Binding(
+            get: { moveError != nil },
+            set: { isPresented in
+                if !isPresented {
+                    moveError = nil
+                }
+            }
+        )
+    }
+
+    private func moveRange(_ direction: Int) {
+        let nextDate = calendarBuilder.advancedDate(
+            from: anchorDate,
+            range: calendarRange,
+            direction: direction
+        )
+        anchorDate = Calendar.current.startOfDay(for: nextDate)
+        selectedDate = anchorDate
+    }
+
+    private func moveToToday() {
+        let today = Calendar.current.startOfDay(for: .now)
+        anchorDate = today
+        selectedDate = today
+    }
+
+    private func selectDate(_ date: Date) {
+        selectedDate = Calendar.current.startOfDay(for: date)
+    }
+
+    private func openDay(_ date: Date) {
+        let day = Calendar.current.startOfDay(for: date)
+        selectedDate = day
+        anchorDate = day
+        calendarRange = .oneDay
+    }
+
+    private func selectComposerDate(_ date: Date) {
+        let calendar = Calendar.current
+        if calendar.isDateInToday(date) {
+            newTodoDateOption = .today
+        } else if calendar.isDateInTomorrow(date) {
+            newTodoDateOption = .tomorrow
+        } else {
+            newTodoDateOption = .custom(calendar.startOfDay(for: date))
+        }
+    }
+
+    private func toggleTodo(_ todo: Todo) {
+        todo.setCompleted(!todo.isCompleted)
+        try? modelContext.save()
+    }
+
+    private func startFlow(_ todo: Todo) {
+        activeFlowStore.configure(direction: todo.direction, todo: todo)
+    }
+
+    private func deleteTodo(_ todo: Todo) {
+        todo.softDelete()
+        try? modelContext.save()
+    }
+
+    private func moveTodo(_ todo: Todo, to date: Date) {
+        switch rescheduleService.validate(todo, movingTo: date, among: todos) {
+        case .success:
+            todo.reschedule(to: Calendar.current.startOfDay(for: date))
+            todo.setSortIndex((todos.map(\.sortIndex).min() ?? 0) - 1)
+            try? modelContext.save()
+        case .failure(let failure):
+            moveError = failure.message
         }
     }
 
@@ -203,7 +351,7 @@ struct TasksView: View {
     }()
 
     private func moveGroups(from source: IndexSet, to destination: Int) {
-        var visibleOrder = todayGroups.map(\.type)
+        var visibleOrder = selectedDateGroups.map(\.type)
         visibleOrder.move(fromOffsets: source, toOffset: destination)
 
         let hiddenOrder = groupOrder.filter { type in
@@ -216,10 +364,10 @@ struct TasksView: View {
     }
 
     private func moveTodos(in type: DirectionType, from source: IndexSet, to destination: Int) {
-        var reordered = todayTodos.filter { TasksTodoGroup.type(for: $0) == type }
+        var reordered = selectedDateTodos.filter { TasksTodoGroup.type(for: $0) == type }
         reordered.move(fromOffsets: source, toOffset: destination)
 
-        let groupedTodos = Dictionary(grouping: todayTodos) { todo in
+        let groupedTodos = Dictionary(grouping: selectedDateTodos) { todo in
             TasksTodoGroup.type(for: todo)
         }
         let orderedTodos = groupOrder.flatMap { groupType -> [Todo] in
@@ -276,28 +424,45 @@ struct TasksView: View {
         newTodoError = nil
     }
 
-    private func ensureRequiredTodosForToday(now: Date = .now) {
-        let requiredDirections = activeDirections.filter {
-            requiredPlanner.shouldAppearToday($0, on: now)
-        }
+    private func ensureRequiredTodosForVisibleDates(now: Date = .now) {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: now)
+        let dates = visibleDates
+            .filter { $0 >= today }
+            .filter { date in
+                calendarRange != .month || calendarBuilder.isDate(date, inMonthContaining: anchorDate)
+            }
+            .sorted()
 
-        guard !requiredDirections.isEmpty else { return }
+        guard !dates.isEmpty else { return }
 
+        var knownTodos = todos
         var inserted = false
         let minimumSortIndex = todos.map(\.sortIndex).min() ?? 0
 
-        for (offset, direction) in requiredDirections.enumerated() {
-            guard let todo = requiredPlanner.makeRequiredTodo(
-                    for: direction,
-                    existingTodos: todos,
-                    on: now,
-                    sortIndex: minimumSortIndex - offset - 1
-                  ) else {
-                continue
+        for (dateOffset, date) in dates.enumerated() {
+            let requiredDirections = activeDirections.filter { direction in
+                guard requiredPlanner.shouldAppearToday(direction, on: date) else { return false }
+                if direction.goalSchedule == .weeklyCount {
+                    return calendar.isDate(date, inSameDayAs: today)
+                }
+                return true
             }
 
-            modelContext.insert(todo)
-            inserted = true
+            for (directionOffset, direction) in requiredDirections.enumerated() {
+                guard let todo = requiredPlanner.makeRequiredTodo(
+                    for: direction,
+                    existingTodos: knownTodos,
+                    on: date,
+                    sortIndex: minimumSortIndex - (dateOffset * max(1, requiredDirections.count)) - directionOffset - 1
+                ) else {
+                    continue
+                }
+
+                modelContext.insert(todo)
+                knownTodos.append(todo)
+                inserted = true
+            }
         }
 
         if inserted {

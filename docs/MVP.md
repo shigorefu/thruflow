@@ -11,6 +11,8 @@ Current MVP goal:
 - Direction management for `通常`, `習慣`, and `ナイス`.
 - System Direction `その他`, hidden only from Direction management so it cannot be edited.
 - Daily `タスク` list.
+- Calendar kanban ranges: `1日`, `3日`, `7日`, and `月`.
+- Task/Habit filters and validated drag-and-drop between dates.
 - Automatic habit tasks.
 - Sequential weekly-count Habit generation and safe rescheduling.
 - Quick task capture.

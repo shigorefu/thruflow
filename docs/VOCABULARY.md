@@ -10,6 +10,11 @@
 | System Other Direction | その他 |
 | Task / Todo | タスク |
 | Daily task screen | タスク |
+| All task filter | すべて |
+| One-day range | 1日 |
+| Three-day range | 3日 |
+| Seven-day range | 7日 |
+| Month range | 月 |
 | Memo | メモ |
 | Check | チェック |
 | Focus Block | 集中ブロック |

@@ -25,6 +25,8 @@ Task title may be empty. When empty, UI displays `(方向)`, for example `(読�
 
 The screen is named `タスク`. There is no separate Inbox navigation item; date-less Task behavior is deferred.
 
+`タスク` supports `1日`, `3日`, `7日`, and `月` calendar ranges. The multi-day modes are kanban boards, while the month mode is a calendar overview. Filters show all work, normal Tasks, or Habit instances. Active Tasks can be moved between dates subject to Habit rules.
+
 Weekly-count Habits create one pending Task at a time. Completion allows the next instance on a later day, while moving the pending Task never creates a duplicate or makes the weekly goal impossible.
 
 Task completion:
