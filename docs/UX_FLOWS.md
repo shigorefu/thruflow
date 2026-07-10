@@ -96,3 +96,15 @@ Ranges:
 - calendar year.
 
 The `その他` Direction may appear in statistics and filters because it represents real captured work.
+
+Selecting any contribution cell opens `履歴` for that day.
+
+## Day History
+
+`履歴` is also available directly below `タスク` and opens today by default. The user can move one day backward or forward or choose a date.
+
+- `タイムライン`: chronological Flow sessions and completed Tasks.
+- `タスク`: focus totals grouped by Task.
+- `方向`: focus totals grouped by Direction.
+
+Completed Tasks with an exact completion timestamp appear in chronology. Legacy completions without one appear under `完了時刻なし`. Selecting a Flow opens its inspector for correction or deletion.

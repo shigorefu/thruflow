@@ -21,6 +21,7 @@ The product is not a Pomodoro clone, a standalone habit tracker, or a generic To
 - `Flow`: media-player-like focused-work recorder.
 - `メモ`: stored on Todo.
 - `統計`: contribution-style grid for Tasks and Flow.
+- `履歴`: day timeline and Task/Direction summaries, available directly below `タスク` and from statistics cells.
 
 ## Platforms
 

@@ -22,6 +22,9 @@ SwiftUI views should call domain logic instead of owning product rules directly.
 - `FlowProgressCalculator` writes focused time to Direction and Todo.
 - `Todo.notes` stores memo.
 - `FlowSession` stores timing/history.
+- `Todo.completedAt` stores the exact completion time for new completions.
+- `DayHistoryBuilder` creates daily timeline and Task/Direction aggregates.
+- `FlowHistoryEditor` applies progress deltas when historical Flow records change.
 
 ## Test Expectations
 
@@ -34,6 +37,7 @@ Cover:
 - Block conversion and progress.
 - Flow timer transitions.
 - Statistics range construction and filters.
+- Day-history grouping, legacy untimed completions, and Flow correction deltas.
 
 ## Migration Caution
 

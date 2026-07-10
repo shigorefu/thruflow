@@ -78,6 +78,7 @@ final class Todo {
     var actualProgress: Int
     var focusDurationSeconds: Int?
     var statusRawValue: String
+    var completedAt: Date?
     var scheduledDate: Date?
     var deadline: Date?
     var sortIndex: Int = 0
@@ -98,6 +99,7 @@ final class Todo {
         actualProgress: Int = 0,
         focusDurationSeconds: Int? = nil,
         status: TodoStatus = .active,
+        completedAt: Date? = nil,
         scheduledDate: Date? = nil,
         deadline: Date? = nil,
         sortIndex: Int = 0,
@@ -117,6 +119,7 @@ final class Todo {
         self.actualProgress = actualProgress
         self.focusDurationSeconds = focusDurationSeconds
         self.statusRawValue = status.rawValue
+        self.completedAt = completedAt
         self.scheduledDate = scheduledDate
         self.deadline = deadline
         self.sortIndex = sortIndex
@@ -187,11 +190,13 @@ final class Todo {
         self.actualProgress = actualProgress
         self.scheduledDate = scheduledDate
         self.deadline = deadline
-        self.status = TodoProgressCalculator().status(
+        let nextStatus = TodoProgressCalculator().status(
             measurement: measurement,
             plannedAmount: plannedAmount,
             actualProgress: actualProgress
         )
+        updateCompletionDate(for: nextStatus, now: now)
+        self.status = nextStatus
         updatedAt = now
     }
 
@@ -209,16 +214,19 @@ final class Todo {
             }
         }
 
+        updateCompletionDate(for: status, now: now)
         updatedAt = now
     }
 
     func setProgress(_ value: Int, now: Date = .now) {
         actualProgress = max(0, value)
-        status = TodoProgressCalculator().status(
+        let nextStatus = TodoProgressCalculator().status(
             measurement: measurement,
             plannedAmount: plannedAmount,
             actualProgress: actualProgress
         )
+        updateCompletionDate(for: nextStatus, now: now)
+        status = nextStatus
         updatedAt = now
     }
 
@@ -252,6 +260,14 @@ final class Todo {
         let trimmed = memo?.trimmingCharacters(in: .whitespacesAndNewlines)
         notes = trimmed?.isEmpty == true ? nil : trimmed
         updatedAt = now
+    }
+
+    private func updateCompletionDate(for nextStatus: TodoStatus, now: Date) {
+        if nextStatus == .completed {
+            completedAt = completedAt ?? now
+        } else {
+            completedAt = nil
+        }
     }
 }
 

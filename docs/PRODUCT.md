@@ -61,3 +61,9 @@ Ranges:
 - current calendar year.
 
 Cell brightness is relative to the maximum day in the selected range.
+
+## History
+
+`履歴` is a dedicated navigation item below `タスク`. Clicking a statistics cell opens the same screen on that date.
+
+It provides `タイムライン`, `タスク`, and `方向` modes with a daily summary of focus time, Blocks, Flow count, and completed Tasks. Historical Flow entries may be corrected or deleted; Direction totals and measured Todo progress must be adjusted by the same delta.

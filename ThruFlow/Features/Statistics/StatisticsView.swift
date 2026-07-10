@@ -16,6 +16,7 @@ struct StatisticsView: View {
     @State private var selectedMode: StatisticsMode = .achievement
     @State private var selectedRange: StatisticsRange = .calendarYear
     @State private var selectedDirectionID: UUID?
+    @State private var selectedHistoryDate: Date?
 
     private let flowBuilder = StatisticsHeatmapBuilder()
     private let achievementBuilder = AchievementHeatmapBuilder()
@@ -44,6 +45,18 @@ struct StatisticsView: View {
     }
 
     var body: some View {
+        Group {
+            if let selectedHistoryDate {
+                DayHistoryView(initialDate: selectedHistoryDate) {
+                    self.selectedHistoryDate = nil
+                }
+            } else {
+                statisticsContent
+            }
+        }
+    }
+
+    private var statisticsContent: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 header
@@ -177,7 +190,8 @@ struct StatisticsView: View {
                         valueAccessibilityText: BlockUnit.displayText(forFocusedSeconds: day.totalFocusSeconds)
                     )
                 },
-                intensity: flowOpacity
+                intensity: flowOpacity,
+                onSelectDate: { selectedHistoryDate = $0 }
             )
 
             HStack(spacing: 6) {
@@ -218,7 +232,8 @@ struct StatisticsView: View {
                         valueAccessibilityText: "\(day.completedCount)達成"
                     )
                 },
-                intensity: achievementOpacity
+                intensity: achievementOpacity,
+                onSelectDate: { selectedHistoryDate = $0 }
             )
 
             HStack(spacing: 6) {
@@ -384,6 +399,7 @@ private struct ContributionDay: Identifiable {
 private struct ContributionHeatmap: View {
     let days: [ContributionDay]
     let intensity: (Int) -> Double
+    let onSelectDate: (Date) -> Void
 
     private let cellSize: CGFloat = 13
     private let cellSpacing: CGFloat = 4
@@ -450,7 +466,11 @@ private struct ContributionHeatmap: View {
 
                     LazyHGrid(rows: rows, spacing: cellSpacing) {
                         ForEach(Array(paddedDays.enumerated()), id: \.offset) { _, day in
-                            ContributionHeatmapCell(day: day, intensity: intensity)
+                            ContributionHeatmapCell(
+                                day: day,
+                                intensity: intensity,
+                                onSelectDate: onSelectDate
+                            )
                         }
                     }
                     .accessibilityElement(children: .contain)
@@ -505,16 +525,25 @@ private struct MonthLabel: Identifiable {
 private struct ContributionHeatmapCell: View {
     let day: ContributionDay?
     let intensity: (Int) -> Double
+    let onSelectDate: (Date) -> Void
 
     var body: some View {
-        RoundedRectangle(cornerRadius: 3)
-            .fill(fillColor)
-            .frame(width: 13, height: 13)
-            .overlay {
-                RoundedRectangle(cornerRadius: 3)
-                    .strokeBorder(Color.primary.opacity(0.05))
-            }
-            .accessibilityLabel(accessibilityLabel)
+        Button {
+            guard let day else { return }
+            onSelectDate(day.date)
+        } label: {
+            RoundedRectangle(cornerRadius: 3)
+                .fill(fillColor)
+                .frame(width: 13, height: 13)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 3)
+                        .strokeBorder(Color.primary.opacity(0.05))
+                }
+        }
+        .buttonStyle(.plain)
+        .disabled(day == nil)
+        .accessibilityLabel(accessibilityLabel)
+        .accessibilityHint(day == nil ? "" : "この日の履歴を開く")
     }
 
     private var fillColor: Color {
