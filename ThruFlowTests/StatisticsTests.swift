@@ -41,6 +41,7 @@ struct StatisticsTests {
         #expect(result.summary.sessionCount == 1)
         #expect(result.summary.totalFocusSeconds == 25 * 60)
         #expect(result.days.last?.mixedColorHex == "#00FF00")
+        #expect(result.days.last?.sessionCount == 1)
     }
 
     @Test func achievementHeatmapUsesCompletedTodosAndDirectionFilter() {
@@ -88,7 +89,8 @@ struct StatisticsTests {
             date: now,
             totalFocusSeconds: 12 * 60,
             mixedColorHex: "#00FF00",
-            directionCount: 1
+            directionCount: 1,
+            sessionCount: 1
         ))
     }
 
