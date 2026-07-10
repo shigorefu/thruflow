@@ -121,6 +121,11 @@ final class ActiveFlowStore: ObservableObject {
     func finish(modelContext: ModelContext, now: Date = .now) {
         guard let timerState else { return }
         notifications.cancelPendingFlowNotifications()
+        if timerState.phase == .breakTime {
+            completeBreak(modelContext: modelContext, now: now)
+            return
+        }
+
         guard !discardShortFlowIfNeeded(timerState, modelContext: modelContext, now: now) else { return }
         apply(engine.finish(timerState, now: now), modelContext: modelContext, now: now)
     }
@@ -160,12 +165,19 @@ final class ActiveFlowStore: ObservableObject {
 
     func requestBreakMemo(modelContext: ModelContext, now: Date = .now) {
         guard let timerState else { return }
+        guard timerState.phase == .focusing || timerState.phase == .awaitingExtensionDecision else { return }
         guard !discardShortFlowIfNeeded(timerState, modelContext: modelContext, now: now) else { return }
         isAwaitingBreakMemo = true
     }
 
     func completeBreakMemo(_ result: String?, modelContext: ModelContext, now: Date = .now) {
         guard let timerState else { return }
+        guard isAwaitingBreakMemo else { return }
+        guard timerState.phase == .focusing || timerState.phase == .awaitingExtensionDecision else {
+            isAwaitingBreakMemo = false
+            return
+        }
+
         guard !discardShortFlowIfNeeded(timerState, modelContext: modelContext, now: now) else { return }
         activeSession?.todo?.setMemo(result, now: now)
         isAwaitingBreakMemo = false
@@ -201,6 +213,11 @@ final class ActiveFlowStore: ObservableObject {
         notifications.cancelPendingFlowNotifications()
 
         guard let timerState else { return }
+        if timerState.phase == .breakTime {
+            completeBreak(modelContext: modelContext, now: now)
+            return
+        }
+
         guard !discardShortFlowIfNeeded(timerState, modelContext: modelContext, now: now) else { return }
         apply(engine.finish(timerState, now: now), modelContext: modelContext, now: now)
     }
@@ -222,6 +239,12 @@ final class ActiveFlowStore: ObservableObject {
     func skipBreak(modelContext: ModelContext, now: Date = .now) {
         guard let timerState else { return }
         notifications.cancelPendingFlowNotifications()
+        guard timerState.phase == .breakTime else { return }
+        completeBreak(modelContext: modelContext, now: now)
+    }
+
+    private func completeBreak(modelContext: ModelContext, now: Date) {
+        guard let timerState else { return }
         apply(engine.skipBreak(timerState, now: now), modelContext: modelContext, now: now)
         activeSession = nil
         self.timerState = nil
