@@ -569,6 +569,16 @@ struct FlowMiniPlayerView: View {
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
 
+                if activeFlowStore.isAwaitingBreakMemo {
+                    Button("キャンセル") {
+                        cancelBreakMemo()
+                    }
+                    .font(.caption.weight(.semibold))
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.secondary)
+                    .accessibilityLabel("メモ入力をキャンセル")
+                }
+
                 Button("メモなし") {
                     submitWithoutResult()
                 }
@@ -661,6 +671,11 @@ struct FlowMiniPlayerView: View {
         } else {
             activeFlowStore.completeResult(nil, modelContext: modelContext)
         }
+    }
+
+    private func cancelBreakMemo() {
+        resultText = ""
+        activeFlowStore.cancelBreakMemo()
     }
 
     private func resolvedStartDirection() -> Direction {
