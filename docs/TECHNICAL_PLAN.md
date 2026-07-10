@@ -15,6 +15,8 @@ SwiftUI views should call domain logic instead of owning product rules directly.
 
 - `DefaultDirections` resolves system `その他`.
 - `TodayTodoFilter` includes only scheduled tasks for the selected day.
+- `TaskCalendarBuilder` creates deterministic visible date ranges and month grids.
+- `TaskRescheduleService` validates kanban and month-grid drag-and-drop.
 - Date-less Task presentation is deferred; no Inbox navigation is exposed.
 - `RequiredTodoPlanner` creates scheduled habit tasks.
 - `FlowProgressCalculator` writes focused time to Direction and Todo.
@@ -27,6 +29,7 @@ Cover:
 
 - Direction validation and legacy raw value normalization.
 - Todo validation and daily Task filtering.
+- Calendar range, filtering, and rescheduling tests.
 - Habit task generation.
 - Block conversion and progress.
 - Flow timer transitions.

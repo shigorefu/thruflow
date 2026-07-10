@@ -74,6 +74,18 @@ A weekly-count Habit creates one pending Task at a time. Moving it does not crea
 
 Reason: the daily surface stays focused while the weekly commitment remains achievable.
 
+## D-011: Tasks Use A Calendar Kanban
+
+The `タスク` screen combines `1日`, `3日`, `7日`, and `月` ranges. Habit instances remain on the same calendar as normal Tasks and can be isolated with a filter instead of a separate navigation destination.
+
+Reason: users plan work by date and should not need to check separate screens for Tasks and Habits.
+
+## D-012: Calendar Moves Preserve Habit Rules
+
+Drag-and-drop between kanban day columns changes `scheduledDate` only for active normal Tasks and feasible weekly-count Habit Tasks. Month remains an overview. Completed Tasks and fixed-schedule Habit instances remain on their original date.
+
+Reason: calendar planning must not silently invalidate historical completion or recurring commitments.
+
 ## Open Questions
 
 - What measurement and planned amount should be used for an auto-created Task when Flow starts with only a Direction or with neither Direction nor Task?
