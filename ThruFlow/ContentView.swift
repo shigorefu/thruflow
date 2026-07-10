@@ -19,6 +19,9 @@ struct ContentView: View {
                 Label("タスク", systemImage: "checklist")
                     .tag(AppSection.tasks)
 
+                Label("履歴", systemImage: "clock.arrow.circlepath")
+                    .tag(AppSection.history)
+
                 Label("方向", systemImage: "point.3.connected.trianglepath.dotted")
                     .tag(AppSection.directions)
 
@@ -42,6 +45,12 @@ struct ContentView: View {
                     Label("タスク", systemImage: "checklist")
                 }
                 .tag(AppSection.tasks)
+
+            DayHistoryView()
+                .tabItem {
+                    Label("履歴", systemImage: "clock.arrow.circlepath")
+                }
+                .tag(AppSection.history)
 
             DirectionListView()
                 .tabItem {
@@ -67,6 +76,8 @@ struct ContentView: View {
         switch selection ?? .tasks {
         case .tasks:
             TasksView()
+        case .history:
+            DayHistoryView()
         case .directions:
             DirectionListView()
         case .statistics:
@@ -78,6 +89,7 @@ struct ContentView: View {
 
 private enum AppSection: Hashable {
     case tasks
+    case history
     case directions
     case statistics
 }

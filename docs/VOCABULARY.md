@@ -28,5 +28,8 @@
 | Focus Flow | Focus |
 | Deep Flow | Deep |
 | Statistics | 統計 |
+| History | 履歴 |
+| Timeline | タイムライン |
+| Completion time unavailable | 完了時刻なし |
 | Tasks statistics mode | Tasks |
 | Flow statistics mode | Flow |

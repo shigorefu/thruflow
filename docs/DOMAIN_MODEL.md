@@ -35,6 +35,7 @@ Important fields:
 - `scheduledDate`: optional task date; the UI behavior for nil is deferred;
 - `plannedAmount` and `actualProgress`;
 - `focusDurationSeconds`: exact accumulated focused seconds.
+- `completedAt`: optional exact completion timestamp; nil on active and legacy completed records.
 
 Display rule:
 
@@ -89,4 +90,6 @@ Normal active Tasks may change `scheduledDate`. Completed Tasks and fixed daily/
 
 ## Statistics
 
-Flow statistics are derived from FlowSession actual focus seconds. Task statistics are derived from completed Todos.
+Flow statistics and day history are derived from FlowSession actual focus seconds. Task statistics use `Todo.completedAt`, with `updatedAt` as a legacy date fallback. Legacy completed Todos without `completedAt` are displayed without an invented clock time.
+
+`DayHistoryBuilder` produces the daily timeline and Task/Direction aggregates. `FlowHistoryEditor` corrects Direction and measured Todo totals when a historical Flow is changed or deleted.

@@ -240,7 +240,7 @@ struct AchievementHeatmapBuilder {
         let startDate = interval.start
         let endDate = interval.end
         let eligibleTodos = todos.filter { todo in
-            let completionDate = calendar.startOfDay(for: todo.updatedAt)
+            let completionDate = calendar.startOfDay(for: todo.completedAt ?? todo.updatedAt)
             guard completionDate >= startDate, completionDate <= endDate else { return false }
             guard todo.status == .completed, !todo.isDeleted else { return false }
             guard let directionID = filter.directionID else { return true }
@@ -248,7 +248,7 @@ struct AchievementHeatmapBuilder {
         }
 
         let groupedByDay = Dictionary(grouping: eligibleTodos) { todo in
-            calendar.startOfDay(for: todo.updatedAt)
+            calendar.startOfDay(for: todo.completedAt ?? todo.updatedAt)
         }
 
         let days = daysBetween(startDate, and: endDate).map { date in
