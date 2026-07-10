@@ -783,7 +783,13 @@ private struct FlowTaskPickerView: View {
     @State private var selectedTab: FlowTaskPickerTab = .tasks
 
     private var taskGroups: [FlowTaskPickerGroup] {
-        FlowTaskPickerGroup.groups(for: todos)
+        FlowTaskPickerGroup.groups(for: todos.filter { $0.direction?.type != .habit })
+    }
+
+    private var habitTodos: [Todo] {
+        todos
+            .filter { $0.direction?.type == .habit }
+            .sorted(by: FlowTaskPickerGroup.sortTodos)
     }
 
     private var otherDirection: Direction? {
@@ -835,10 +841,13 @@ private struct FlowTaskPickerView: View {
             .labelsHidden()
 
             ScrollView {
-                if selectedTab == .tasks {
+                switch selectedTab {
+                case .tasks:
                     taskTab
-                } else {
-                    noTaskTab
+                case .habits:
+                    habitTab
+                case .directions:
+                    directionTab
                 }
             }
             .scrollIndicators(.hidden)
@@ -881,11 +890,29 @@ private struct FlowTaskPickerView: View {
         }
     }
 
-    private var noTaskTab: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            directionRow(
+    @ViewBuilder
+    private var habitTab: some View {
+        if habitTodos.isEmpty {
+            emptyState("今日の習慣はありません")
+        } else {
+            VStack(spacing: 7) {
+                ForEach(habitTodos) { todo in
+                    taskRow(todo)
+                }
+            }
+            .padding(.top, 2)
+        }
+    }
+
+    private var directionTab: some View {
+        LazyVGrid(
+            columns: [GridItem(.adaptive(minimum: 120, maximum: 170), spacing: 10)],
+            alignment: .leading,
+            spacing: 10
+        ) {
+            directionGridItem(
                 iconText: otherDirection?.symbolName ?? DefaultDirections.taskInboxSymbol,
-                title: "その他の方向",
+                title: otherDirection?.name ?? "その他",
                 color: .secondary,
                 isSelected: selectedTodoID == nil && (selectedDirectionID == otherDirection?.id || selectedDirectionID == nil)
             ) {
@@ -895,7 +922,7 @@ private struct FlowTaskPickerView: View {
             }
 
             ForEach(userDirections) { direction in
-                directionRow(
+                directionGridItem(
                     iconText: direction.symbolName,
                     title: direction.name,
                     color: Color(hex: direction.colorHex),
@@ -907,7 +934,6 @@ private struct FlowTaskPickerView: View {
                 }
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.top, 2)
     }
 
@@ -929,7 +955,7 @@ private struct FlowTaskPickerView: View {
         .buttonStyle(.plain)
     }
 
-    private func directionRow(
+    private func directionGridItem(
         iconText: String,
         title: String,
         color: Color,
@@ -937,29 +963,36 @@ private struct FlowTaskPickerView: View {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            HStack(spacing: 12) {
+            VStack(spacing: 8) {
                 Text(iconText)
-                    .font(.title3)
-                    .frame(width: 34, height: 34)
+                    .font(.system(size: 28))
+                    .frame(width: 46, height: 46)
                     .background(color.opacity(0.14))
-                    .clipShape(RoundedRectangle(cornerRadius: 9))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
 
                 Text(title)
-                    .font(.body.weight(.semibold))
+                    .font(.caption.weight(.semibold))
                     .foregroundStyle(.primary)
-                    .lineLimit(1)
-
-                Spacer(minLength: 0)
-
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .frame(height: 32, alignment: .top)
+            }
+            .frame(maxWidth: .infinity, minHeight: 92)
+            .padding(8)
+            .background(isSelected ? color.opacity(0.14) : Color.primary.opacity(0.05))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .overlay(alignment: .topTrailing) {
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.tint)
+                        .font(.caption)
+                        .foregroundStyle(color)
+                        .padding(7)
                 }
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-            .background(isSelected ? color.opacity(0.14) : Color.primary.opacity(0.05))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .overlay {
+                RoundedRectangle(cornerRadius: 8)
+                    .strokeBorder(isSelected ? color.opacity(0.65) : Color.clear, lineWidth: 1)
+            }
         }
         .buttonStyle(.plain)
     }
@@ -1052,7 +1085,8 @@ private struct FlowTaskPickerView: View {
 
 private enum FlowTaskPickerTab: String, CaseIterable, Identifiable {
     case tasks
-    case noTask
+    case habits
+    case directions
 
     var id: String { rawValue }
 
@@ -1060,8 +1094,10 @@ private enum FlowTaskPickerTab: String, CaseIterable, Identifiable {
         switch self {
         case .tasks:
             "タスク"
-        case .noTask:
-            "タスクなし"
+        case .habits:
+            "習慣"
+        case .directions:
+            "方向"
         }
     }
 }
@@ -1107,7 +1143,7 @@ private struct FlowTaskPickerGroup: Identifiable {
         }
     }
 
-    nonisolated private static func sortTodos(_ lhs: Todo, _ rhs: Todo) -> Bool {
+    nonisolated static func sortTodos(_ lhs: Todo, _ rhs: Todo) -> Bool {
         if lhs.isCompleted != rhs.isCompleted {
             return !lhs.isCompleted
         }
