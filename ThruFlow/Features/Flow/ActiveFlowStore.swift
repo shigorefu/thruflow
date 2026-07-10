@@ -185,6 +185,10 @@ final class ActiveFlowStore: ObservableObject {
         apply(engine.startBreak(timerState, now: now), modelContext: modelContext, now: now)
     }
 
+    func cancelBreakMemo() {
+        isAwaitingBreakMemo = false
+    }
+
     func seekForward(modelContext: ModelContext, now: Date = .now) {
         guard let timerState else { return }
         let next = engine.seekForward(timerState, now: now)
