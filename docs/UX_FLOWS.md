@@ -99,6 +99,8 @@ The `その他` Direction may appear in statistics and filters because it repres
 
 Selecting any contribution cell opens `履歴` for that day.
 
+Hovering a cell shows its date, completed Task count, Flow count, Blocks, and focused duration. `今月` is arranged as a seven-column month calendar; `180日` uses larger contribution cells than the year view.
+
 ## Day History
 
 `履歴` is also available directly below `タスク` and opens today by default. The user can move one day backward or forward or choose a date.

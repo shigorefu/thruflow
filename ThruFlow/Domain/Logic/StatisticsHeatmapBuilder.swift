@@ -63,6 +63,7 @@ struct StatisticsDay: Identifiable, Equatable {
     let totalFocusSeconds: Int
     let mixedColorHex: String?
     let directionCount: Int
+    let sessionCount: Int
 
     var id: Date { date }
 
@@ -200,7 +201,8 @@ struct StatisticsHeatmapBuilder {
             date: date,
             totalFocusSeconds: totalSeconds,
             mixedColorHex: Self.mixedHexColor(weightedColors),
-            directionCount: Set(sessions.compactMap { $0.direction?.id }).count
+            directionCount: Set(sessions.compactMap { $0.direction?.id }).count,
+            sessionCount: sessions.count
         )
     }
 

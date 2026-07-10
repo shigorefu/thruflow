@@ -44,6 +44,14 @@ struct StatisticsView: View {
         )
     }
 
+    private var flowDaysByDate: [Date: StatisticsDay] {
+        Dictionary(uniqueKeysWithValues: flowResult.days.map { ($0.date, $0) })
+    }
+
+    private var achievementDaysByDate: [Date: AchievementDay] {
+        Dictionary(uniqueKeysWithValues: achievementResult.days.map { ($0.date, $0) })
+    }
+
     var body: some View {
         Group {
             if let selectedHistoryDate {
@@ -186,10 +194,14 @@ struct StatisticsView: View {
                         value: day.totalFocusSeconds,
                         mixedColorHex: day.mixedColorHex,
                         directionCount: day.directionCount,
+                        completedTaskCount: achievementDaysByDate[day.date]?.completedCount ?? 0,
+                        flowCount: day.sessionCount,
+                        flowSeconds: day.totalFocusSeconds,
                         emptyAccessibilityText: "Flowなし",
                         valueAccessibilityText: BlockUnit.displayText(forFocusedSeconds: day.totalFocusSeconds)
                     )
                 },
+                range: selectedRange,
                 intensity: flowOpacity,
                 onSelectDate: { selectedHistoryDate = $0 }
             )
@@ -228,10 +240,14 @@ struct StatisticsView: View {
                         value: day.completedCount,
                         mixedColorHex: day.mixedColorHex,
                         directionCount: day.directionCount,
+                        completedTaskCount: day.completedCount,
+                        flowCount: flowDaysByDate[day.date]?.sessionCount ?? 0,
+                        flowSeconds: flowDaysByDate[day.date]?.totalFocusSeconds ?? 0,
                         emptyAccessibilityText: "達成なし",
                         valueAccessibilityText: "\(day.completedCount)達成"
                     )
                 },
+                range: selectedRange,
                 intensity: achievementOpacity,
                 onSelectDate: { selectedHistoryDate = $0 }
             )
@@ -386,6 +402,9 @@ private struct ContributionDay: Identifiable {
     let value: Int
     let mixedColorHex: String?
     let directionCount: Int
+    let completedTaskCount: Int
+    let flowCount: Int
+    let flowSeconds: Int
     let emptyAccessibilityText: String
     let valueAccessibilityText: String
 
@@ -398,15 +417,20 @@ private struct ContributionDay: Identifiable {
 
 private struct ContributionHeatmap: View {
     let days: [ContributionDay]
+    let range: StatisticsRange
     let intensity: (Int) -> Double
     let onSelectDate: (Date) -> Void
 
-    private let cellSize: CGFloat = 13
-    private let cellSpacing: CGFloat = 4
-    private let labelColumnWidth: CGFloat = 28
     private let monthLabelHeight: CGFloat = 18
-    private let rows = Array(repeating: GridItem(.fixed(13), spacing: 4), count: 7)
     private let calendar = Calendar.current
+
+    private var layout: ContributionHeatmapLayout {
+        ContributionHeatmapLayout(range: range)
+    }
+
+    private var rows: [GridItem] {
+        Array(repeating: GridItem(.fixed(layout.cellSize), spacing: layout.cellSpacing), count: 7)
+    }
 
     private var paddedDays: [ContributionDay?] {
         guard let first = days.first else { return [] }
@@ -443,11 +467,21 @@ private struct ContributionHeatmap: View {
     }
 
     var body: some View {
+        Group {
+            if range == .currentMonth {
+                monthGrid
+            } else {
+                contributionGrid
+            }
+        }
+    }
+
+    private var contributionGrid: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(alignment: .top, spacing: 0) {
                     Color.clear
-                        .frame(width: labelColumnWidth, height: monthLabelHeight)
+                        .frame(width: layout.labelColumnWidth, height: monthLabelHeight)
 
                     ZStack(alignment: .topLeading) {
                         ForEach(monthLabels) { label in
@@ -464,10 +498,11 @@ private struct ContributionHeatmap: View {
                 HStack(alignment: .top, spacing: 8) {
                     weekdayLabels
 
-                    LazyHGrid(rows: rows, spacing: cellSpacing) {
+                    LazyHGrid(rows: rows, spacing: layout.cellSpacing) {
                         ForEach(Array(paddedDays.enumerated()), id: \.offset) { _, day in
                             ContributionHeatmapCell(
                                 day: day,
+                                cellSize: layout.cellSize,
                                 intensity: intensity,
                                 onSelectDate: onSelectDate
                             )
@@ -478,21 +513,57 @@ private struct ContributionHeatmap: View {
             }
             .padding(.vertical, 2)
         }
+        .scrollClipDisabled()
+    }
+
+    private var monthGrid: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(monthLabels.first?.title ?? "")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            LazyVGrid(
+                columns: Array(
+                    repeating: GridItem(.fixed(layout.cellSize), spacing: layout.cellSpacing),
+                    count: 7
+                ),
+                alignment: .leading,
+                spacing: layout.cellSpacing
+            ) {
+                ForEach(Array(monthGridItems.enumerated()), id: \.offset) { _, item in
+                    switch item {
+                    case let .weekday(label):
+                        Text(label)
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(.secondary)
+                            .frame(width: layout.cellSize, height: 16)
+                    case let .day(day):
+                        ContributionHeatmapCell(
+                            day: day,
+                            cellSize: layout.cellSize,
+                            intensity: intensity,
+                            onSelectDate: onSelectDate
+                        )
+                    }
+                }
+            }
+        }
+        .padding(.vertical, 2)
     }
 
     private var weekdayLabels: some View {
-        VStack(alignment: .trailing, spacing: cellSpacing) {
+        VStack(alignment: .trailing, spacing: layout.cellSpacing) {
             ForEach(0..<7, id: \.self) { index in
                 Text(weekdayLabel(for: index))
                     .font(.caption.weight(.medium))
                     .foregroundStyle(.secondary)
-                    .frame(width: labelColumnWidth, height: cellSize, alignment: .trailing)
+                    .frame(width: layout.labelColumnWidth, height: layout.cellSize, alignment: .trailing)
             }
         }
     }
 
     private var columnWidth: CGFloat {
-        cellSize + cellSpacing
+        layout.cellSize + layout.cellSpacing
     }
 
     private var monthFormatter: DateFormatter {
@@ -514,6 +585,43 @@ private struct ContributionHeatmap: View {
             ""
         }
     }
+
+    private var monthWeekdayLabels: [String] {
+        ["日", "月", "火", "水", "木", "金", "土"]
+    }
+
+    private var monthGridItems: [MonthGridItem] {
+        monthWeekdayLabels.map(MonthGridItem.weekday)
+            + paddedDays.map(MonthGridItem.day)
+    }
+}
+
+private enum MonthGridItem {
+    case weekday(String)
+    case day(ContributionDay?)
+}
+
+private struct ContributionHeatmapLayout {
+    let cellSize: CGFloat
+    let cellSpacing: CGFloat
+    let labelColumnWidth: CGFloat
+
+    init(range: StatisticsRange) {
+        switch range {
+        case .currentMonth:
+            cellSize = 24
+            cellSpacing = 6
+            labelColumnWidth = 28
+        case .days180:
+            cellSize = 16
+            cellSpacing = 5
+            labelColumnWidth = 28
+        case .calendarYear:
+            cellSize = 13
+            cellSpacing = 4
+            labelColumnWidth = 28
+        }
+    }
 }
 
 private struct MonthLabel: Identifiable {
@@ -524,24 +632,45 @@ private struct MonthLabel: Identifiable {
 
 private struct ContributionHeatmapCell: View {
     let day: ContributionDay?
+    let cellSize: CGFloat
     let intensity: (Int) -> Double
     let onSelectDate: (Date) -> Void
 
+    @State private var isHovered = false
+
     var body: some View {
-        Button {
-            guard let day else { return }
-            onSelectDate(day.date)
-        } label: {
-            RoundedRectangle(cornerRadius: 3)
-                .fill(fillColor)
-                .frame(width: 13, height: 13)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 3)
-                        .strokeBorder(Color.primary.opacity(0.05))
-                }
+        ZStack {
+            Button {
+                guard let day else { return }
+                onSelectDate(day.date)
+            } label: {
+                RoundedRectangle(cornerRadius: min(4, cellSize * 0.22))
+                    .fill(fillColor)
+                    .frame(width: cellSize, height: cellSize)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: min(4, cellSize * 0.22))
+                            .strokeBorder(Color.primary.opacity(0.06))
+                    }
+                    .scaleEffect(isHovered && day != nil ? 1.08 : 1)
+            }
+            .buttonStyle(.plain)
+            .disabled(day == nil)
+
+            if isHovered, let day {
+                ContributionHoverCard(day: day)
+                    .offset(y: -(cellSize / 2 + 36))
+                    .transition(.opacity.combined(with: .scale(scale: 0.96)))
+                    .zIndex(10)
+                    .allowsHitTesting(false)
+            }
         }
-        .buttonStyle(.plain)
-        .disabled(day == nil)
+        .frame(width: cellSize, height: cellSize)
+        .zIndex(isHovered ? 10 : 0)
+        .onHover { hovering in
+            withAnimation(.easeOut(duration: 0.12)) {
+                isHovered = hovering && day != nil
+            }
+        }
         .accessibilityLabel(accessibilityLabel)
         .accessibilityHint(day == nil ? "" : "この日の履歴を開く")
     }
@@ -562,10 +691,54 @@ private struct ContributionHeatmapCell: View {
         formatter.dateStyle = .medium
 
         if day.isEmpty {
-            return "\(formatter.string(from: day.date)) \(day.emptyAccessibilityText)"
+            return "\(formatter.string(from: day.date)) \(day.emptyAccessibilityText) タスク\(day.completedTaskCount)件 Flow\(day.flowCount)件"
         }
 
-        return "\(formatter.string(from: day.date)) \(day.valueAccessibilityText) \(day.directionCount)方向"
+        return "\(formatter.string(from: day.date)) \(day.valueAccessibilityText) \(day.directionCount)方向 タスク\(day.completedTaskCount)件 Flow\(day.flowCount)件"
+    }
+}
+
+private struct ContributionHoverCard: View {
+    let day: ContributionDay
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(dateText)
+                .font(.caption.weight(.semibold))
+
+            Text("タスク \(day.completedTaskCount) ・ Flow \(day.flowCount)")
+                .font(.caption2)
+                .foregroundStyle(.white.opacity(0.78))
+
+            if day.flowSeconds > 0 {
+                Text("\(BlockUnit.displayText(forFocusedSeconds: day.flowSeconds)) ・ \(durationText)")
+                    .font(.caption2.monospacedDigit())
+                    .foregroundStyle(.white.opacity(0.78))
+            }
+        }
+        .foregroundStyle(.white)
+        .padding(.horizontal, 9)
+        .padding(.vertical, 7)
+        .background(Color.black.opacity(0.88))
+        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .shadow(color: .black.opacity(0.25), radius: 5, y: 2)
+        .fixedSize()
+        .accessibilityHidden(true)
+    }
+
+    private var dateText: String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ja_JP")
+        formatter.dateFormat = "M月d日（E）"
+        return formatter.string(from: day.date)
+    }
+
+    private var durationText: String {
+        let minutes = max(0, day.flowSeconds) / 60
+        if minutes < 60 {
+            return "\(minutes)分"
+        }
+        return "\(minutes / 60)時間\(minutes % 60)分"
     }
 }
 
