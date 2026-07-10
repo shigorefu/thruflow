@@ -271,7 +271,8 @@ struct FlowMiniPlayerView: View {
     private var contextLabel: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(flowTaskTitle)
-                .font(style == .compact ? .caption.weight(.semibold) : .headline)
+                .font(contextTitleFont)
+                .foregroundStyle(flowTaskTitleIsPlaceholder ? Color.secondary.opacity(0.7) : Color.primary)
                 .lineLimit(1)
 
             Text(flowDirectionName)
@@ -304,6 +305,19 @@ struct FlowMiniPlayerView: View {
         }
 
         return "具体的なタスクなし"
+    }
+
+    private var flowTaskTitleIsPlaceholder: Bool {
+        if let selectedTodo {
+            return selectedTodo.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
+
+        return selectedDirection != nil
+    }
+
+    private var contextTitleFont: Font {
+        let font: Font = style == .compact ? .caption.weight(.semibold) : .headline
+        return flowTaskTitleIsPlaceholder ? font.italic() : font
     }
 
     private var flowDirectionName: String {
@@ -908,7 +922,8 @@ private struct FlowTaskPickerView: View {
                 title: TodoDisplay.title(for: todo),
                 subtitle: taskSubtitle(todo),
                 color: directionColor(todo.direction),
-                isSelected: selectedTodoID == todo.id
+                isSelected: selectedTodoID == todo.id,
+                isPlaceholder: todo.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             )
         }
         .buttonStyle(.plain)
@@ -954,7 +969,8 @@ private struct FlowTaskPickerView: View {
         title: String,
         subtitle: String,
         color: Color,
-        isSelected: Bool
+        isSelected: Bool,
+        isPlaceholder: Bool
     ) -> some View {
         HStack(spacing: 12) {
             ZStack {
@@ -968,8 +984,8 @@ private struct FlowTaskPickerView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(.primary)
+                    .font(isPlaceholder ? .body.weight(.semibold).italic() : .body.weight(.semibold))
+                    .foregroundStyle(isPlaceholder ? Color.secondary.opacity(0.7) : Color.primary)
                     .lineLimit(1)
 
                 Text(subtitle)

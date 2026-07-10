@@ -15,7 +15,7 @@ SwiftUI views should call domain logic instead of owning product rules directly.
 
 - `DefaultDirections` resolves system `その他`.
 - `TodayTodoFilter` includes only scheduled tasks for the selected day.
-- `InboxTodoFilter` includes active date-less tasks.
+- Date-less Task presentation is deferred; no Inbox navigation is exposed.
 - `RequiredTodoPlanner` creates scheduled habit tasks.
 - `FlowProgressCalculator` writes focused time to Direction and Todo.
 - `Todo.notes` stores memo.
@@ -26,7 +26,7 @@ SwiftUI views should call domain logic instead of owning product rules directly.
 Cover:
 
 - Direction validation and legacy raw value normalization.
-- Todo validation and Inbox/Today filtering.
+- Todo validation and daily Task filtering.
 - Habit task generation.
 - Block conversion and progress.
 - Flow timer transitions.

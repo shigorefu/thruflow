@@ -1,5 +1,5 @@
 //
-//  TodayView.swift
+//  TasksView.swift
 //  ThruFlow
 //
 //  Created by Codex on 2026/07/08.
@@ -8,7 +8,7 @@
 import SwiftData
 import SwiftUI
 
-struct TodayView: View {
+struct TasksView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
 
@@ -23,7 +23,7 @@ struct TodayView: View {
     @State private var newTodoIsRoomIfPossible = false
     @State private var newTodoDateOption: QuickTodoDate = .today
     @State private var newTodoError: String?
-    @AppStorage("today.groupOrder") private var groupOrderRaw = TodayTodoGroup.defaultOrderRaw
+    @AppStorage("today.groupOrder") private var groupOrderRaw = TasksTodoGroup.defaultOrderRaw
 
     private let filter = TodayTodoFilter()
     private let requiredPlanner = RequiredTodoPlanner()
@@ -42,12 +42,12 @@ struct TodayView: View {
         todos.filter { filter.includes($0) }
     }
 
-    private var todayGroups: [TodayTodoGroup] {
-        TodayTodoGroup.groups(for: todayTodos, order: groupOrder)
+    private var todayGroups: [TasksTodoGroup] {
+        TasksTodoGroup.groups(for: todayTodos, order: groupOrder)
     }
 
     private var groupOrder: [DirectionType] {
-        TodayTodoGroup.order(from: groupOrderRaw)
+        TasksTodoGroup.order(from: groupOrderRaw)
     }
 
     var body: some View {
@@ -65,7 +65,7 @@ struct TodayView: View {
                             moveTodos(in: group.type, from: source, to: destination)
                         }
                     } header: {
-                        TodaySectionHeader(group: group)
+                        TasksSectionHeader(group: group)
                     }
                     .listSectionSeparator(.hidden)
                 }
@@ -75,7 +75,7 @@ struct TodayView: View {
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
         .animation(.default, value: todayTodos.map(\.id))
-        .navigationTitle("今日")
+        .navigationTitle("タスク")
         .safeAreaInset(edge: .bottom) {
             MessengerTodoComposer(
                 title: $newTodoTitle,
@@ -98,6 +98,12 @@ struct TodayView: View {
         .onChange(of: directions.map(\.updatedAt)) { _, _ in
             ensureRequiredTodosForToday()
         }
+        .onChange(of: todos.map(\.updatedAt)) { _, _ in
+            ensureRequiredTodosForToday()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) { _ in
+            ensureRequiredTodosForToday()
+        }
     }
 
     private func todoRow(_ todo: Todo) -> some View {
@@ -115,16 +121,12 @@ struct TodayView: View {
                 editingTodo = todo
             }
 
-            Menu("移動") {
-                Button("今日") {
-                    todo.reschedule(to: .now)
+            if todo.direction?.type == .habit {
+                if todo.direction?.goalSchedule == .weeklyCount {
+                    weeklyHabitMoveMenu(for: todo)
                 }
-                Button("明日") {
-                    todo.reschedule(to: Calendar.current.date(byAdding: .day, value: 1, to: .now))
-                }
-                Button("日付なし") {
-                    todo.reschedule(to: nil)
-                }
+            } else {
+                standardMoveMenu(for: todo)
             }
 
             Divider()
@@ -146,6 +148,60 @@ struct TodayView: View {
         }
     }
 
+    @ViewBuilder
+    private func standardMoveMenu(for todo: Todo) -> some View {
+        Menu("移動") {
+            Button("今日") {
+                reschedule(todo, to: .now)
+            }
+            Button("明日") {
+                reschedule(todo, to: Calendar.current.date(byAdding: .day, value: 1, to: .now))
+            }
+            Button("日付なし") {
+                reschedule(todo, to: nil)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func weeklyHabitMoveMenu(for todo: Todo) -> some View {
+        let options = requiredPlanner.weeklyRescheduleOptions(for: todo, in: todos)
+
+        Menu("移動") {
+            ForEach(options, id: \.date) { option in
+                Button(rescheduleLabel(for: option.date)) {
+                    reschedule(todo, to: option.date)
+                }
+                .disabled(!option.isAllowed)
+                .help(option.isAllowed ? "" : "週間目標を達成できなくなるため移動できません")
+            }
+        }
+    }
+
+    private func reschedule(_ todo: Todo, to date: Date?) {
+        todo.reschedule(to: date)
+        try? modelContext.save()
+    }
+
+    private func rescheduleLabel(for date: Date) -> String {
+        let calendar = Calendar.current
+        if calendar.isDateInToday(date) {
+            return "今日"
+        }
+        if calendar.isDateInTomorrow(date) {
+            return "明日"
+        }
+
+        return Self.rescheduleDateFormatter.string(from: date)
+    }
+
+    private static let rescheduleDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ja_JP")
+        formatter.dateFormat = "M/d（E）"
+        return formatter
+    }()
+
     private func moveGroups(from source: IndexSet, to destination: Int) {
         var visibleOrder = todayGroups.map(\.type)
         visibleOrder.move(fromOffsets: source, toOffset: destination)
@@ -160,11 +216,11 @@ struct TodayView: View {
     }
 
     private func moveTodos(in type: DirectionType, from source: IndexSet, to destination: Int) {
-        var reordered = todayTodos.filter { TodayTodoGroup.type(for: $0) == type }
+        var reordered = todayTodos.filter { TasksTodoGroup.type(for: $0) == type }
         reordered.move(fromOffsets: source, toOffset: destination)
 
         let groupedTodos = Dictionary(grouping: todayTodos) { todo in
-            TodayTodoGroup.type(for: todo)
+            TasksTodoGroup.type(for: todo)
         }
         let orderedTodos = groupOrder.flatMap { groupType -> [Todo] in
             groupType == type ? reordered : groupedTodos[groupType] ?? []
@@ -231,9 +287,9 @@ struct TodayView: View {
         let minimumSortIndex = todos.map(\.sortIndex).min() ?? 0
 
         for (offset, direction) in requiredDirections.enumerated() {
-            guard requiredPlanner.existingRequiredTodo(for: direction, in: todos, on: now) == nil,
-                  let todo = requiredPlanner.makeRequiredTodo(
+            guard let todo = requiredPlanner.makeRequiredTodo(
                     for: direction,
+                    existingTodos: todos,
                     on: now,
                     sortIndex: minimumSortIndex - offset - 1
                   ) else {
@@ -369,7 +425,7 @@ enum QuickTodoDate: Hashable {
     }()
 }
 
-/// Compact, chip-based quick-add composer pinned to the bottom of Today.
+/// Compact, chip-based quick-add composer pinned to the bottom of Tasks.
 private struct MessengerTodoComposer: View {
     @Binding var title: String
     @Binding var selectedDirectionID: UUID?
@@ -717,7 +773,7 @@ private extension View {
     }
 }
 
-private struct TodayTodoGroup: Identifiable {
+private struct TasksTodoGroup: Identifiable {
     let type: DirectionType
     let todos: [Todo]
 
@@ -755,13 +811,13 @@ private struct TodayTodoGroup: Identifiable {
         return parsed.isEmpty ? [.habit, .neutral, .nice] : parsed + missing
     }
 
-    static func groups(for todos: [Todo], order: [DirectionType]) -> [TodayTodoGroup] {
+    static func groups(for todos: [Todo], order: [DirectionType]) -> [TasksTodoGroup] {
         order.compactMap { type in
             let items = todos
                 .filter { Self.type(for: $0) == type }
                 .sorted(by: todoSort)
             guard !items.isEmpty else { return nil }
-            return TodayTodoGroup(type: type, todos: items)
+            return TasksTodoGroup(type: type, todos: items)
         }
     }
 
@@ -782,8 +838,8 @@ private struct TodayTodoGroup: Identifiable {
     }
 }
 
-private struct TodaySectionHeader: View {
-    let group: TodayTodoGroup
+private struct TasksSectionHeader: View {
+    let group: TasksTodoGroup
 
     var body: some View {
         HStack(spacing: 8) {
@@ -885,9 +941,9 @@ private struct TodoRow: View {
                 .accessibilityLabel("タスク名")
         } else {
             Text(TodoDisplay.title(for: todo))
-                .font(.body.weight(.medium))
+                .font(titleIsPlaceholder ? .body.weight(.medium).italic() : .body.weight(.medium))
                 .strikethrough(todo.isCompleted)
-                .foregroundStyle(todo.isCompleted ? .secondary : .primary)
+                .foregroundStyle(titleColor)
                 .lineLimit(1)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
@@ -1020,6 +1076,18 @@ private struct TodoRow: View {
         TodoDisplay.placeholder(for: todo)
     }
 
+    private var titleIsPlaceholder: Bool {
+        todo.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private var titleColor: Color {
+        if todo.isCompleted {
+            return .secondary
+        }
+
+        return titleIsPlaceholder ? .secondary.opacity(0.7) : .primary
+    }
+
     private var rowBackground: some View {
         RoundedRectangle(cornerRadius: 10)
             .fill(tintColor)
@@ -1057,7 +1125,7 @@ private struct EmptyRow: View {
 }
 
 #Preview {
-    TodayView()
+    TasksView()
         .environmentObject(ActiveFlowStore())
         .modelContainer(for: [Direction.self, Todo.self, FlowSession.self], inMemory: true)
 }

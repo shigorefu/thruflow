@@ -9,18 +9,15 @@ import SwiftUI
 import SwiftData
 
 struct ContentView: View {
-    @State private var selection: AppSection? = .today
-    @State private var tabSelection: AppSection = .today
+    @State private var selection: AppSection? = .tasks
+    @State private var tabSelection: AppSection = .tasks
 
     var body: some View {
 #if os(macOS)
         NavigationSplitView {
             List(selection: $selection) {
-                Label("今日", systemImage: "sun.max")
-                    .tag(AppSection.today)
-
-                Label("Inbox", systemImage: "tray")
-                    .tag(AppSection.inbox)
+                Label("タスク", systemImage: "checklist")
+                    .tag(AppSection.tasks)
 
                 Label("方向", systemImage: "point.3.connected.trianglepath.dotted")
                     .tag(AppSection.directions)
@@ -40,23 +37,17 @@ struct ContentView: View {
         }
 #else
         TabView(selection: $tabSelection) {
-            TodayView()
+            TasksView()
                 .tabItem {
-                    Label("今日", systemImage: "sun.max")
+                    Label("タスク", systemImage: "checklist")
                 }
-                .tag(AppSection.today)
+                .tag(AppSection.tasks)
 
             DirectionListView()
                 .tabItem {
                     Label("方向", systemImage: "point.3.connected.trianglepath.dotted")
                 }
                 .tag(AppSection.directions)
-
-            InboxView()
-                .tabItem {
-                    Label("Inbox", systemImage: "tray")
-                }
-                .tag(AppSection.inbox)
 
             StatisticsView()
                 .tabItem {
@@ -73,11 +64,9 @@ struct ContentView: View {
 #if os(macOS)
     @ViewBuilder
     private var detailContent: some View {
-        switch selection ?? .today {
-        case .today:
-            TodayView()
-        case .inbox:
-            InboxView()
+        switch selection ?? .tasks {
+        case .tasks:
+            TasksView()
         case .directions:
             DirectionListView()
         case .statistics:
@@ -88,8 +77,7 @@ struct ContentView: View {
 }
 
 private enum AppSection: Hashable {
-    case today
-    case inbox
+    case tasks
     case directions
     case statistics
 }

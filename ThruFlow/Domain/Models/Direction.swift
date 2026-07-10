@@ -42,7 +42,7 @@ enum DirectionType: String, CaseIterable, Codable, Identifiable {
     var description: String {
         switch self {
         case .habit:
-            "毎日の今日に自動で入る習慣です。"
+            "予定日にタスクへ自動で入る習慣です。"
         case .neutral:
             "必要なときにタスクを計画する作業領域です。"
         case .nice:

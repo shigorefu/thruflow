@@ -22,7 +22,7 @@ Habit Directions may have:
 
 ## Todo
 
-`Todo` is the daily/inbox task model.
+`Todo` is the task model used by the daily `タスク` screen.
 
 Important fields:
 
@@ -32,7 +32,7 @@ Important fields:
 - `measurement`: checkbox, focus blocks, or minutes;
 - `priority`: high, medium, low;
 - `isRoomIfPossible`: only meaningful for low priority;
-- `scheduledDate`: nil means Inbox;
+- `scheduledDate`: optional task date; the UI behavior for nil is deferred;
 - `plannedAmount` and `actualProgress`;
 - `focusDurationSeconds`: exact accumulated focused seconds.
 
@@ -41,6 +41,7 @@ Display rule:
 - non-empty title displays as title;
 - empty title displays as `(Direction name)`;
 - no visible Direction fallback displays as `(その他)`.
+- an empty-title fallback is rendered as translucent italic text.
 
 Completion:
 
@@ -76,9 +77,9 @@ Block display is derived from focused seconds:
 
 The exact seconds are preserved. Block UI displays half-block credits; minute UI displays exact minutes.
 
-## Inbox
+## Weekly Habit Generation
 
-`scheduledDate == nil` means the Todo is in Inbox. Inbox items do not appear in 今日 until scheduled.
+Weekly-count Habit Directions create one pending Todo at a time. A completed Todo permits the next instance on a later eligible day in the same week. A rescheduled pending Todo blocks duplicate generation, and rescheduling cannot leave too few eligible days to meet the weekly target.
 
 ## Statistics
 

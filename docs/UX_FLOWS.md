@@ -10,9 +10,9 @@ The Direction screen manages only user-editable Directions:
 
 The system Direction `その他` is not shown here and cannot be edited from this screen.
 
-## 今日
+## タスク
 
-今日 shows scheduled tasks for the current day.
+タスク shows scheduled tasks for the current day.
 
 Sections:
 
@@ -22,7 +22,7 @@ Sections:
 
 Task rows:
 
-- empty title displays `(方向)`;
+- empty title displays `(方向)` in a translucent italic style;
 - completed tasks are visually muted, struck through, and sorted below active tasks;
 - Direction color is used unless the Direction is `その他`;
 - `チェック` shows a checkbox;
@@ -31,21 +31,13 @@ Task rows:
 
 Quick capture behaves like a messenger composer. The user can set measurement, Direction, priority, and date from compact controls.
 
-`日付なし` sends the task to Inbox, not 今日.
+There is no separate Inbox navigation item. Date-less task behavior is deferred.
 
-## Inbox
-
-Inbox shows active tasks with no scheduled date.
-
-The user can quickly move a task to:
-
-- 今日;
-- 明日;
-- another date through edit.
+Weekly-count habits create one pending task at a time. After completion, the next instance may appear on a later eligible day until the weekly target is met. Moving the pending instance does not create a replacement for today, and dates that would make the target impossible are disabled.
 
 ## Flow Player
 
-The Flow player is always available as a top header. It is not placed below Today input.
+The Flow player is always available as a top header. It is not placed below the Task input.
 
 The header layout is:
 

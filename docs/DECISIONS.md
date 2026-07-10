@@ -30,11 +30,11 @@ Todo title may be empty. UI displays `(Direction name)` when title is empty.
 
 Reason: habit tasks and auto-created Flow tasks should start as lightweight templates.
 
-## D-005: Inbox Is Date-less Tasks
+## D-005: Date-less Task Behavior Is Deferred
 
-`scheduledDate == nil` means Inbox. Inbox tasks do not appear in 今日.
+There is no separate Inbox navigation item in the current UI. The storage field remains optional, but product behavior for date-less Tasks will be defined later.
 
-Reason: date-less tasks should not automatically become daily noise.
+Reason: the previous Inbox concept was removed before the replacement workflow was defined.
 
 ## D-006: Todo Owns Memo
 
@@ -67,6 +67,12 @@ Statistics ranges are:
 - current calendar year.
 
 Reason: these match the current concept and keep GitHub-like statistics understandable.
+
+## D-010: Weekly Habits Are Sequential
+
+A weekly-count Habit creates one pending Task at a time. Moving it does not create a duplicate, and a move is blocked when the remaining eligible days cannot satisfy the weekly target.
+
+Reason: the daily surface stays focused while the weekly commitment remains achievable.
 
 ## Open Questions
 

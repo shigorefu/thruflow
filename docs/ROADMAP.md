@@ -4,7 +4,8 @@
 
 - Align code with `CONCEPT.md`.
 - Keep `その他` system Direction hidden from Direction editing.
-- Keep Inbox separate from 今日.
+- Use `タスク` as the daily task surface without a separate Inbox tab.
+- Generate weekly-count Habit Tasks sequentially without duplicates.
 - Store Flow memo on Todo.
 - Keep Flow progress deterministic and testable.
 - Keep statistics focused on Flow Blocks and completed Tasks.
@@ -16,6 +17,7 @@
 - Define Flow-series deletion behavior.
 - Add day-detail view from statistics cells.
 - Add manual correction UI for historical task progress/time.
+- Define the replacement workflow for date-less Tasks.
 
 ## Later
 
