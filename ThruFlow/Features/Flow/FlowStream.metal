@@ -27,7 +27,7 @@ static float hash21(float2 value) {
     float3 accumulated = float3(0.0);
     float alpha = 0.0;
     int count = clamp(int(layerCount), 1, 10);
-    float thickness = mix(0.075, 0.145, volume);
+    float thickness = mix(0.105, 0.195, volume);
 
     for (int index = 0; index < count; index++) {
         float layer = float(index);
@@ -44,7 +44,7 @@ static float hash21(float2 value) {
 
         float distanceToBand = abs(uv.y - center);
         float band = 1.0 - smoothstep(thickness * 0.20, thickness, distanceToBand);
-        float glow = 1.0 - smoothstep(thickness, thickness * 2.2, distanceToBand);
+        float glow = 1.0 - smoothstep(thickness * 0.82, thickness * 2.55, distanceToBand);
         float edgeLight = smoothstep(thickness * 0.58, thickness * 0.18, distanceToBand);
 
         float firstBlend = 0.5 + sin(uv.x * 4.8 + seed * 6.28318 + time * 0.08) * 0.5;
@@ -52,11 +52,11 @@ static float hash21(float2 value) {
         half4 firstPair = mix(color0, color1, half(firstBlend));
         half4 secondPair = mix(color2, color3, half(secondBlend));
         half4 selected = mix(firstPair, secondPair, half(fract(lane + progress * 0.45)));
-        float brightness = 0.72 + edgeLight * 0.42 + progress * 0.16;
-        float contribution = band * (0.16 + seed * 0.08) + glow * 0.045;
+        float brightness = 0.94 + edgeLight * 0.54 + progress * 0.22;
+        float contribution = band * (0.19 + seed * 0.09) + glow * 0.075;
 
         accumulated += float3(selected.rgb) * brightness * contribution;
-        alpha = min(1.0, alpha + contribution * 0.72);
+        alpha = min(1.0, alpha + contribution * 0.82);
     }
 
     float shimmer = 0.96 + sin((uv.x + uv.y) * 10.0 - time * 0.42) * 0.04;

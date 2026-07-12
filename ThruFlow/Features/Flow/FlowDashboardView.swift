@@ -29,10 +29,7 @@ struct FlowDashboardView: View {
             let snapshot = snapshot(now: timeline.date)
 
             ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    hero(snapshot: snapshot)
-                    lowerDashboard(snapshot: snapshot)
-                }
+                dashboardLayout(snapshot: snapshot)
                 .frame(maxWidth: 1320)
                 .padding(20)
                 .frame(maxWidth: .infinity)
@@ -66,20 +63,30 @@ struct FlowDashboardView: View {
         )
     }
 
-    private func hero(snapshot: FlowDashboardSnapshot) -> some View {
+    private func dashboardLayout(snapshot: FlowDashboardSnapshot) -> some View {
         ViewThatFits(in: .horizontal) {
-            HStack(alignment: .top, spacing: 16) {
-                flowStage(snapshot: snapshot)
-                    .frame(minWidth: 560, maxWidth: .infinity)
+            Grid(horizontalSpacing: 16, verticalSpacing: 16) {
+                GridRow(alignment: .top) {
+                    flowStage(snapshot: snapshot)
+                        .frame(minWidth: 560, maxWidth: .infinity)
 
-                FlowMiniPlayerView(style: .dashboard)
-                    .frame(width: 310)
+                    FlowMiniPlayerView(style: .dashboard)
+                        .frame(width: 310)
+                }
+
+                GridRow(alignment: .top) {
+                    taskColumns
+                    statisticsPanel(snapshot: snapshot)
+                        .frame(width: 310)
+                }
             }
             .frame(minWidth: 900)
 
             VStack(spacing: 16) {
                 flowStage(snapshot: snapshot)
                 FlowMiniPlayerView(style: .dashboard)
+                taskColumns
+                statisticsPanel(snapshot: snapshot)
             }
         }
     }
@@ -188,22 +195,6 @@ struct FlowDashboardView: View {
                         .foregroundStyle(.tertiary)
                     if label != "24:00" { Spacer() }
                 }
-            }
-        }
-    }
-
-    private func lowerDashboard(snapshot: FlowDashboardSnapshot) -> some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(alignment: .top, spacing: 16) {
-                taskColumns
-                statisticsPanel(snapshot: snapshot)
-                    .frame(width: 250)
-            }
-            .frame(minWidth: 820)
-
-            VStack(spacing: 16) {
-                taskColumns
-                statisticsPanel(snapshot: snapshot)
             }
         }
     }
