@@ -20,11 +20,20 @@ struct FlowDashboardView: View {
 
     @State private var inspectedSession: FlowSession?
     @State private var editingTodo: Todo?
+    @State private var showsQuickComposer = false
+    @State private var newTodoTitle = ""
+    @State private var newTodoDirectionID: UUID?
+    @State private var newTodoVolume: QuickTodoVolume = .checkbox
+    @State private var newTodoPriority: TodoPriority = .medium
+    @State private var newTodoIsRoomIfPossible = false
+    @State private var newTodoDateOption: QuickTodoDate = .today
+    @State private var newTodoError: String?
 
     private let builder = FlowDashboardBuilder()
     private let todayFilter = TodayTodoFilter()
     private let requiredPlanner = RequiredTodoPlanner()
     private let progressCalculator = TodoProgressCalculator()
+    private let validator = TodoValidator()
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { timeline in
@@ -212,7 +221,13 @@ struct FlowDashboardView: View {
                 todos: standardTodos,
                 progressText: progressText,
                 onToggle: toggleTodo,
-                onOpen: { editingTodo = $0 }
+                onOpen: { editingTodo = $0 },
+                onAdd: {
+                    withAnimation(.snappy(duration: 0.22)) {
+                        showsQuickComposer.toggle()
+                    }
+                },
+                composer: showsQuickComposer ? AnyView(dashboardComposer) : nil
             )
 
             DashboardTodoColumn(
@@ -339,6 +354,87 @@ struct FlowDashboardView: View {
         todayTodos.filter(\.isCompleted).count
     }
 
+    private var dashboardComposer: some View {
+        MessengerTodoComposer(
+            title: $newTodoTitle,
+            selectedDirectionID: $newTodoDirectionID,
+            volume: $newTodoVolume,
+            priority: $newTodoPriority,
+            isRoomIfPossible: $newTodoIsRoomIfPossible,
+            dateOption: $newTodoDateOption,
+            directions: visibleDirections,
+            validationMessage: newTodoError,
+            allowsDateSelection: false,
+            onSubmit: createDashboardTodo
+        )
+        .padding(.horizontal, -12)
+        .padding(.bottom, -8)
+    }
+
+    private var activeDirections: [Direction] {
+        directions.filter { !$0.isArchived }
+    }
+
+    private var visibleDirections: [Direction] {
+        activeDirections.filter { !DefaultDirections.isTaskInbox($0) }
+    }
+
+    private func createDashboardTodo() {
+        let selectedDirection = newTodoDirectionID.flatMap { id in
+            visibleDirections.first { $0.id == id }
+        }
+        let draft = TodoDraft(
+            title: newTodoTitle,
+            direction: selectedDirection,
+            measurement: newTodoVolume.measurement,
+            priority: newTodoPriority,
+            isRoomIfPossible: newTodoPriority == .low && newTodoIsRoomIfPossible,
+            plannedAmount: newTodoVolume.plannedAmount,
+            scheduledDate: .now
+        )
+        let errors = validator.validate(draft)
+
+        guard errors.isEmpty else {
+            newTodoError = errors.map(\.localizedDescription).joined(separator: "\n")
+            return
+        }
+
+        let direction = selectedDirection ?? resolvedOtherDirection()
+        let todo = Todo(
+            title: draft.trimmedTitle,
+            direction: direction,
+            measurement: newTodoVolume.measurement,
+            priority: newTodoPriority,
+            isRoomIfPossible: newTodoPriority == .low && newTodoIsRoomIfPossible,
+            plannedAmount: newTodoVolume.plannedAmount,
+            status: progressCalculator.status(
+                measurement: newTodoVolume.measurement,
+                plannedAmount: newTodoVolume.plannedAmount,
+                actualProgress: 0
+            ),
+            scheduledDate: .now,
+            sortIndex: (todos.map(\.sortIndex).min() ?? 0) - 1
+        )
+        modelContext.insert(todo)
+        try? modelContext.save()
+
+        newTodoTitle = ""
+        newTodoError = nil
+        if newTodoPriority != .low {
+            newTodoIsRoomIfPossible = false
+        }
+    }
+
+    private func resolvedOtherDirection() -> Direction {
+        if let existing = DefaultDirections.existingTaskInbox(in: activeDirections) {
+            return existing
+        }
+
+        let direction = DefaultDirections.makeTaskInbox()
+        modelContext.insert(direction)
+        return direction
+    }
+
     private var completionRate: Double {
         guard !todayTodos.isEmpty else { return 0 }
         return Double(completedTodoCount) / Double(todayTodos.count)
@@ -443,6 +539,8 @@ private struct DashboardTodoColumn: View {
     let progressText: (Todo) -> String
     let onToggle: (Todo) -> Void
     let onOpen: (Todo) -> Void
+    var onAdd: (() -> Void)?
+    var composer: AnyView?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -454,6 +552,15 @@ private struct DashboardTodoColumn: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
+
+                if let onAdd {
+                    Button(action: onAdd) {
+                        Image(systemName: "plus")
+                    }
+                    .buttonStyle(.plain)
+                    .help("タスクを追加")
+                    .accessibilityLabel("タスクを追加")
+                }
             }
 
             if todos.isEmpty {
@@ -471,6 +578,10 @@ private struct DashboardTodoColumn: View {
                         }
                     }
                 }
+            }
+
+            if let composer {
+                composer
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)

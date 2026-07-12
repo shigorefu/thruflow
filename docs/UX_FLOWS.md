@@ -84,6 +84,8 @@ The daily stream is formed by very broad, bright, softly glowing translucent rib
 
 Below the Flow stage are today's `タスク` and `習慣` columns. `ナイス` is omitted when empty. Rows use the same square Check and circular Block/Minute progress controls as the Tasks screen, and can be completed or opened for editing. A compact `統計` panel shows today's completion rate and Direction focus distribution.
 
+The Task column header has a compact add button. It reveals the shared messenger-style composer inside that column with Direction, measurement, and priority controls; its date is fixed to `今日`. Habit has no manual add action. Opening the composer expands all lower dashboard panels to the same height.
+
 ## Statistics
 
 Statistics uses a contribution grid.
