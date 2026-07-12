@@ -9,6 +9,8 @@ import SwiftData
 import SwiftUI
 
 struct FlowDashboardView: View {
+    private static let topPanelHeight: CGFloat = 410
+
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
 
@@ -69,15 +71,17 @@ struct FlowDashboardView: View {
                 GridRow(alignment: .top) {
                     flowStage(snapshot: snapshot)
                         .frame(minWidth: 560, maxWidth: .infinity)
+                        .frame(height: Self.topPanelHeight)
 
                     FlowMiniPlayerView(style: .dashboard)
-                        .frame(width: 310)
+                        .frame(width: 310, height: Self.topPanelHeight)
                 }
 
                 GridRow(alignment: .top) {
                     taskColumns
                     statisticsPanel(snapshot: snapshot)
                         .frame(width: 310)
+                        .frame(maxHeight: .infinity)
                 }
             }
             .frame(minWidth: 900)
@@ -150,7 +154,7 @@ struct FlowDashboardView: View {
                     .padding(12)
             }
         }
-        .frame(minHeight: 300, idealHeight: 360, maxHeight: 420)
+        .frame(minHeight: 185, idealHeight: 200, maxHeight: 215)
         .background(modeSurfaceTint)
         .clipShape(RoundedRectangle(cornerRadius: 8))
     }
@@ -230,7 +234,7 @@ struct FlowDashboardView: View {
                 )
             }
         }
-        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     private func statisticsPanel(snapshot: FlowDashboardSnapshot) -> some View {
@@ -299,7 +303,7 @@ struct FlowDashboardView: View {
                 }
             }
         }
-        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(16)
         .background(Color.primary.opacity(0.035))
         .clipShape(RoundedRectangle(cornerRadius: 8))
@@ -468,7 +472,7 @@ private struct DashboardTodoColumn: View {
                 }
             }
         }
-        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(16)
         .background(Color.primary.opacity(0.035))
         .clipShape(RoundedRectangle(cornerRadius: 8))
