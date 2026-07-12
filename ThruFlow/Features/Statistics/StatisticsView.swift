@@ -16,10 +16,14 @@ struct StatisticsView: View {
     @State private var selectedMode: StatisticsMode = .achievement
     @State private var selectedRange: StatisticsRange = .calendarYear
     @State private var selectedDirectionID: UUID?
-    @State private var selectedHistoryDate: Date?
+    let onSelectHistoryDate: (Date) -> Void
 
     private let flowBuilder = StatisticsHeatmapBuilder()
     private let achievementBuilder = AchievementHeatmapBuilder()
+
+    init(onSelectHistoryDate: @escaping (Date) -> Void = { _ in }) {
+        self.onSelectHistoryDate = onSelectHistoryDate
+    }
 
     private var activeDirections: [Direction] {
         directions.filter { !$0.isArchived }
@@ -53,15 +57,7 @@ struct StatisticsView: View {
     }
 
     var body: some View {
-        Group {
-            if let selectedHistoryDate {
-                DayHistoryView(initialDate: selectedHistoryDate) {
-                    self.selectedHistoryDate = nil
-                }
-            } else {
-                statisticsContent
-            }
-        }
+        statisticsContent
     }
 
     private var statisticsContent: some View {
@@ -203,7 +199,7 @@ struct StatisticsView: View {
                 },
                 range: selectedRange,
                 intensity: flowOpacity,
-                onSelectDate: { selectedHistoryDate = $0 }
+                onSelectDate: onSelectHistoryDate
             )
 
             HStack(spacing: 6) {
@@ -249,7 +245,7 @@ struct StatisticsView: View {
                 },
                 range: selectedRange,
                 intensity: achievementOpacity,
-                onSelectDate: { selectedHistoryDate = $0 }
+                onSelectDate: onSelectHistoryDate
             )
 
             HStack(spacing: 6) {

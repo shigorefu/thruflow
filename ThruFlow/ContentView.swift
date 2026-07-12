@@ -11,6 +11,7 @@ import SwiftData
 struct ContentView: View {
     @State private var selection: AppSection? = .flow
     @State private var tabSelection: AppSection = .flow
+    @State private var historyDate = Calendar.current.startOfDay(for: .now)
 
     var body: some View {
 #if os(macOS)
@@ -57,7 +58,8 @@ struct ContentView: View {
                 }
                 .tag(AppSection.tasks)
 
-            DayHistoryView()
+            DayHistoryView(initialDate: historyDate)
+                .id(historyDate)
                 .tabItem {
                     Label("履歴", systemImage: "clock.arrow.circlepath")
                 }
@@ -69,7 +71,10 @@ struct ContentView: View {
                 }
                 .tag(AppSection.directions)
 
-            StatisticsView()
+            StatisticsView { date in
+                historyDate = Calendar.current.startOfDay(for: date)
+                tabSelection = .history
+            }
                 .tabItem {
                     Label("統計", systemImage: "square.grid.3x3")
                 }
@@ -92,11 +97,15 @@ struct ContentView: View {
         case .tasks:
             TasksView()
         case .history:
-            DayHistoryView()
+            DayHistoryView(initialDate: historyDate)
+                .id(historyDate)
         case .directions:
             DirectionListView()
         case .statistics:
-            StatisticsView()
+            StatisticsView { date in
+                historyDate = Calendar.current.startOfDay(for: date)
+                selection = .history
+            }
         }
     }
 #endif
