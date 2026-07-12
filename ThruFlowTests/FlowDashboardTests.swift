@@ -125,6 +125,7 @@ struct FlowDashboardTests {
         #expect(active.progress == idle.progress)
         #expect(active.volume == idle.volume)
         #expect(active.speed > idle.speed)
+        #expect(active.speed - idle.speed >= 0.5)
     }
 
     private func makeSession(

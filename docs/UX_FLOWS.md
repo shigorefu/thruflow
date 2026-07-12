@@ -52,7 +52,7 @@ Daily and selected-weekday Habit instances are generated for visible current/fut
 
 ## Flow Player
 
-`Flow` is the first/default navigation item. In a wide window, its dashboard places the animated daily stream and 0:00–24:00 timeline across roughly three quarters of the content. A separate panel on the right contains Task and mode pickers, a large circular timer, and fixed transport controls. Other app sections keep the player available as a top header; the dashboard does not show a duplicate header.
+`Flow` is the first/default navigation item. In a wide window, its dashboard uses one aligned two-column grid: the animated daily stream and 0:00–24:00 timeline sit above today's Tasks on the left, while the square player sits above compact Statistics on the right. The left side occupies roughly three quarters of the content. Other app sections keep the player available as a top header; the dashboard does not show a duplicate header.
 
 The header layout is:
 
@@ -80,7 +80,7 @@ At the planned focus end, Flow does not auto-switch. The timer continues. The us
 
 Start break opens a memo prompt. Focus time keeps counting until memo is saved. The memo writes to the Todo.
 
-The daily stream is formed by broad overlapping translucent ribbons. It moves gently and smoothly while idle, then gains speed, volume, layers, and Direction colors as focused Blocks accumulate, reaching its visual maximum at 6 Blocks. Short uses energetic waves, Focus balanced waves, and Deep broad slow bends; the background tint follows the selected mode. The current Flow appears live after its first creditable minute. Reduce Motion keeps the visualization static. Selecting a completed timeline segment opens the existing Flow history inspector.
+The daily stream is formed by very broad, bright, softly glowing translucent ribbons. It moves gently and smoothly while idle, immediately accelerates when any Flow starts, then gains speed, volume, layers, and Direction colors as focused Blocks accumulate, reaching its visual maximum at 6 Blocks. Short uses energetic waves, Focus balanced waves, and Deep broad slow bends; the background tint follows the selected mode. The current Flow appears live after its first creditable minute. Reduce Motion keeps the visualization static. Selecting a completed timeline segment opens the existing Flow history inspector.
 
 Below the Flow stage are today's `タスク` and `習慣` columns. `ナイス` is omitted when empty. Rows use the same square Check and circular Block/Minute progress controls as the Tasks screen, and can be completed or opened for editing. A compact `統計` panel shows today's completion rate and Direction focus distribution.
 
