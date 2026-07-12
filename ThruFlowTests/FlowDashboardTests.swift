@@ -41,6 +41,8 @@ struct FlowDashboardTests {
         #expect(snapshot.blocks == 3)
         #expect(snapshot.flowCount == 2)
         #expect(snapshot.palette == ["#0A84FF", "#34C759"])
+        #expect(snapshot.directionSummaries.map(\.name) == ["執筆", "読書"])
+        #expect(snapshot.directionSummaries.map(\.focusSeconds) == [50 * 60, 25 * 60])
         #expect(abs(snapshot.segments[0].startFraction - 0.25) < 0.0001)
         #expect(abs(snapshot.segments[1].startFraction - 0.75) < 0.0001)
     }

@@ -52,7 +52,7 @@ Daily and selected-weekday Habit instances are generated for visible current/fut
 
 ## Flow Player
 
-`Flow` is the first/default navigation item. Its dashboard places the expanded player at the top, the animated daily stream in the center, and a 0:00–24:00 Flow timeline below. Other app sections keep the player available as a top header; the dashboard does not show a duplicate header.
+`Flow` is the first/default navigation item. In a wide window, its dashboard places the animated daily stream and 0:00–24:00 timeline across roughly three quarters of the content. A separate panel on the right contains Task and mode pickers, a large circular timer, and fixed transport controls. Other app sections keep the player available as a top header; the dashboard does not show a duplicate header.
 
 The header layout is:
 
@@ -80,7 +80,9 @@ At the planned focus end, Flow does not auto-switch. The timer continues. The us
 
 Start break opens a memo prompt. Focus time keeps counting until memo is saved. The memo writes to the Todo.
 
-The daily stream gains thickness, layers, and Direction colors as focused work accumulates. The current Flow appears live after its first creditable minute. Reduce Motion keeps the visualization static. Selecting a completed timeline segment opens the existing Flow history inspector.
+The daily stream gains thickness, layers, and Direction colors as focused work accumulates. It moves gently while idle; active movement is fastest for Short, medium for Focus, and slowest for Deep. The background tint follows the selected mode. The current Flow appears live after its first creditable minute. Reduce Motion keeps the visualization static. Selecting a completed timeline segment opens the existing Flow history inspector.
+
+Below the Flow stage are today's `タスク` and `習慣` columns. `ナイス` is omitted when empty. Rows can be completed or opened for editing. A compact `統計` panel shows today's completion rate and Direction focus distribution.
 
 ## Statistics
 

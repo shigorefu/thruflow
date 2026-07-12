@@ -21,6 +21,30 @@ struct FlowDashboardSnapshot {
     var intensity: Double {
         min(max(Double(totalFocusSeconds) / Double(4 * 60 * 60), 0), 1)
     }
+
+    var directionSummaries: [FlowDashboardDirectionSummary] {
+        Dictionary(grouping: segments, by: \FlowDashboardSegment.directionID)
+            .values
+            .map { values in
+                let first = values[0]
+                return FlowDashboardDirectionSummary(
+                    id: first.directionID,
+                    symbol: first.symbol,
+                    name: first.directionName,
+                    colorHex: first.colorHex,
+                    focusSeconds: values.reduce(0) { $0 + $1.focusSeconds }
+                )
+            }
+            .sorted { $0.focusSeconds > $1.focusSeconds }
+    }
+}
+
+struct FlowDashboardDirectionSummary: Identifiable {
+    let id: UUID
+    let symbol: String
+    let name: String
+    let colorHex: String
+    let focusSeconds: Int
 }
 
 struct FlowDashboardSegment: Identifiable {
@@ -29,6 +53,8 @@ struct FlowDashboardSegment: Identifiable {
     let startFraction: Double
     let endFraction: Double
     let focusSeconds: Int
+    let directionID: UUID
+    let directionName: String
     let colorHex: String
     let symbol: String
     let taskTitle: String
@@ -81,6 +107,8 @@ struct FlowDashboardBuilder {
                 startFraction: start,
                 endFraction: min(1, max(end, start + (1 / dayDuration))),
                 focusSeconds: focusSeconds,
+                directionID: direction?.id ?? session.id,
+                directionName: direction?.name ?? "その他",
                 colorHex: direction?.colorHex ?? "#8E8E93",
                 symbol: direction?.symbolName ?? "📥",
                 taskTitle: session.todo.map(TodoDisplay.title(for:)) ?? "(\(direction?.name ?? "その他"))",
