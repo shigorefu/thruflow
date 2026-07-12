@@ -175,8 +175,8 @@ struct FlowMiniPlayerView: View {
 
             transportControls
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(18)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .overlay {
