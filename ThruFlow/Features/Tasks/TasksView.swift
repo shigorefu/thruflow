@@ -1044,7 +1044,10 @@ private struct TodoRow: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            progressControl
+            TodoProgressControl(todo: todo) {
+                todo.setCompleted(!todo.isCompleted)
+                try? modelContext.save()
+            }
 
             VStack(alignment: .leading, spacing: 4) {
                 titleEditor
@@ -1143,91 +1146,6 @@ private struct TodoRow: View {
     private func commitTitleIfNeeded() {
         guard isEditingTitle else { return }
         commitTitle()
-    }
-
-    @ViewBuilder
-    private var progressControl: some View {
-        Button {
-            todo.setCompleted(!todo.isCompleted)
-            try? modelContext.save()
-        } label: {
-            switch todo.measurement {
-            case .checkbox:
-                checkboxControl
-            case .focusBlocks:
-                progressRing(systemImage: todo.isCompleted ? "checkmark" : nil)
-            case .minutes:
-                progressRing(systemImage: "timer")
-            }
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(todo.isCompleted ? "未完了に戻す" : "完了にする")
-    }
-
-    private var checkboxControl: some View {
-        RoundedRectangle(cornerRadius: 5)
-            .strokeBorder(checkboxTint, lineWidth: 1.6)
-            .background(
-                RoundedRectangle(cornerRadius: 5)
-                    .fill(todo.isCompleted ? checkboxTint : Color.clear)
-            )
-            .overlay {
-                if todo.isCompleted {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(.white)
-                }
-            }
-            .frame(width: 20, height: 20)
-            .frame(width: 34, height: 34)
-            .contentShape(Rectangle())
-    }
-
-    private func progressRing(systemImage: String?) -> some View {
-        ZStack {
-            Circle()
-                .stroke(checkboxTint.opacity(0.22), lineWidth: 3)
-
-            Circle()
-                .trim(from: 0, to: progressValue)
-                .stroke(checkboxTint, style: StrokeStyle(lineWidth: 3, lineCap: .round))
-                .rotationEffect(.degrees(-90))
-
-            if let systemImage {
-                Image(systemName: systemImage)
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(checkboxTint)
-            }
-        }
-        .frame(width: 22, height: 22)
-        .frame(width: 34, height: 34)
-        .contentShape(Rectangle())
-    }
-
-    private var progressValue: Double {
-        if todo.measurement == .focusBlocks,
-           let plannedAmount = todo.plannedAmount,
-           plannedAmount > 0 {
-            return min(
-                BlockUnit.blocks(forFocusedSeconds: todo.recordedFocusSeconds) / Double(plannedAmount),
-                1
-            )
-        }
-
-        if todo.measurement == .minutes,
-           let plannedAmount = todo.plannedAmount,
-           plannedAmount > 0 {
-            return min(
-                Double(todo.recordedFocusSeconds / 60) / Double(plannedAmount),
-                1
-            )
-        }
-
-        return TodoProgressCalculator().progress(
-            measurement: todo.measurement,
-            plannedAmount: todo.plannedAmount,
-            actualProgress: todo.actualProgress
-        )
     }
 
     private var priorityLabel: String {

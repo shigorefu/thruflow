@@ -80,9 +80,9 @@ At the planned focus end, Flow does not auto-switch. The timer continues. The us
 
 Start break opens a memo prompt. Focus time keeps counting until memo is saved. The memo writes to the Todo.
 
-The daily stream gains thickness, layers, and Direction colors as focused work accumulates. It moves gently while idle; active movement is fastest for Short, medium for Focus, and slowest for Deep. The background tint follows the selected mode. The current Flow appears live after its first creditable minute. Reduce Motion keeps the visualization static. Selecting a completed timeline segment opens the existing Flow history inspector.
+The daily stream is formed by broad overlapping translucent ribbons. It moves gently and smoothly while idle, then gains speed, volume, layers, and Direction colors as focused Blocks accumulate, reaching its visual maximum at 6 Blocks. Short uses energetic waves, Focus balanced waves, and Deep broad slow bends; the background tint follows the selected mode. The current Flow appears live after its first creditable minute. Reduce Motion keeps the visualization static. Selecting a completed timeline segment opens the existing Flow history inspector.
 
-Below the Flow stage are today's `タスク` and `習慣` columns. `ナイス` is omitted when empty. Rows can be completed or opened for editing. A compact `統計` panel shows today's completion rate and Direction focus distribution.
+Below the Flow stage are today's `タスク` and `習慣` columns. `ナイス` is omitted when empty. Rows use the same square Check and circular Block/Minute progress controls as the Tasks screen, and can be completed or opened for editing. A compact `統計` panel shows today's completion rate and Direction focus distribution.
 
 ## Statistics
 
