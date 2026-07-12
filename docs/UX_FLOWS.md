@@ -103,13 +103,13 @@ Ranges:
 
 The `その他` Direction may appear in statistics and filters because it represents real captured work.
 
-Selecting any contribution cell opens `履歴` for that day.
+Selecting any contribution cell switches the app navigation to the single canonical `履歴` section for that day. Statistics never embeds a duplicate Day History view.
 
 Hovering a cell shows its date, completed Task count, Flow count, Blocks, and focused duration. `今月` is arranged as a seven-column month calendar; `180日` uses larger contribution cells than the year view.
 
 ## Day History
 
-`履歴` is also available directly below `タスク` and opens today by default. The user can move one day backward or forward or choose a date.
+`履歴` is available directly below `タスク`, owns Day History presentation, and initially opens today. It preserves the date selected from Statistics. The user can move one day backward or forward or choose a date.
 
 - `タイムライン`: chronological Flow sessions and completed Tasks.
 - `タスク`: focus totals grouped by Task.

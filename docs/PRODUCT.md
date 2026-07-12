@@ -70,6 +70,6 @@ Cell brightness is relative to the maximum day in the selected range.
 
 ## History
 
-`履歴` is a dedicated navigation item below `タスク`. Clicking a statistics cell opens the same screen on that date.
+`履歴` is the single canonical Day History surface and a dedicated navigation item below `タスク`. Clicking a statistics cell switches navigation to this section on that date; Statistics does not embed another history view.
 
 It provides `タイムライン`, `タスク`, and `方向` modes with a daily summary of focus time, Blocks, Flow count, and completed Tasks. Historical Flow entries may be corrected or deleted; Direction totals and measured Todo progress must be adjusted by the same delta.
