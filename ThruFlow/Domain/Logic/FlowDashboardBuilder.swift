@@ -19,7 +19,7 @@ struct FlowDashboardSnapshot {
     }
 
     var intensity: Double {
-        min(max(Double(totalFocusSeconds) / Double(4 * 60 * 60), 0), 1)
+        min(max(blocks / FlowVisualState.maximumGrowthBlocks, 0), 1)
     }
 
     var directionSummaries: [FlowDashboardDirectionSummary] {

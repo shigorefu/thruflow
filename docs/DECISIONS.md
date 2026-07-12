@@ -88,7 +88,7 @@ Reason: calendar planning must not silently invalidate historical completion or 
 
 ## D-013: Flow Is The Daily Dashboard
 
-`Flow` is the first/default app section. Its wide dashboard gives roughly three quarters of the content to the animated stream and timeline, with a separate circular player panel on the right and today's Task/Habit/optional Nice sections plus compact Statistics below. It reuses the existing player behavior and derives all visual data from Todo and FlowSession records. SwiftUI Canvas provides the visual layer without adding a new persistence model or third-party rendering dependency.
+`Flow` is the first/default app section. Its wide dashboard gives roughly three quarters of the content to the animated stream and timeline, with a separate circular player panel on the right and today's Task/Habit/optional Nice sections plus compact Statistics below. It reuses the existing player behavior and derives all visual data from Todo and FlowSession records. A system Metal shader provides the broad, smooth visual layer without adding a persistence model or third-party rendering dependency; visual growth is capped at 6 Blocks and controlled by the testable `FlowVisualState` projection.
 
 Reason: starting focused work and seeing its accumulated shape should be the primary app experience, while Tasks, History, Directions, and Statistics remain dedicated supporting surfaces.
 

@@ -41,7 +41,7 @@ Flow is a media-player-like recorder.
 
 `Flow` is the first/default navigation section and today's primary dashboard. In wide layout, the stream and 24-hour timeline occupy roughly three quarters of the content while a separate right panel holds the circular timer and player controls. Direction colors compose the stream palette, while focus duration and session count control its visual volume.
 
-The stream moves slowly while idle. Active speed follows the mode: Short is fast, Focus is medium, and Deep is slow. A subtle mode-specific tint is applied to the dashboard. Below it, today's normal Tasks and Habits remain actionable, Nice appears only when present, and compact Statistics show completion and Direction focus distribution.
+The stream is a field of broad translucent ribbons rendered on the GPU. It remains smooth while idle and gains movement, volume, and saturation from today's focused Blocks, reaching its visual maximum at 6 Blocks. Short, Focus, and Deep change the wave character, while a subtle mode-specific tint is applied to the dashboard. Below it, today's normal Tasks and Habits remain actionable with the same Check, Block, and Minute indicators as Tasks; Nice appears only when present, and compact Statistics show completion and Direction focus distribution.
 
 Modes:
 

@@ -101,6 +101,32 @@ struct FlowDashboardTests {
         #expect(snapshot.blocks == 0.5)
     }
 
+    @Test func visualStateGrowsSmoothlyAndStopsAtSixBlocks() {
+        let empty = FlowVisualState(blocks: 0, flowCount: 0, isActive: false, mode: .twentyFiveFive)
+        let middle = FlowVisualState(blocks: 3, flowCount: 3, isActive: false, mode: .twentyFiveFive)
+        let full = FlowVisualState(blocks: 6, flowCount: 8, isActive: false, mode: .twentyFiveFive)
+        let overflow = FlowVisualState(blocks: 12, flowCount: 20, isActive: false, mode: .twentyFiveFive)
+
+        #expect(empty.progress == 0)
+        #expect(middle.progress == 0.5)
+        #expect(full.progress == 1)
+        #expect(overflow.progress == 1)
+        #expect(empty.speed < middle.speed)
+        #expect(middle.speed < full.speed)
+        #expect(full.speed == overflow.speed)
+        #expect(full.volume == overflow.volume)
+        #expect(full.layerCount <= 10)
+    }
+
+    @Test func activeFlowAcceleratesWithoutChangingDailyGrowth() {
+        let idle = FlowVisualState(blocks: 2, flowCount: 2, isActive: false, mode: .twentyFiveFive)
+        let active = FlowVisualState(blocks: 2, flowCount: 2, isActive: true, mode: .twentyFiveFive)
+
+        #expect(active.progress == idle.progress)
+        #expect(active.volume == idle.volume)
+        #expect(active.speed > idle.speed)
+    }
+
     private func makeSession(
         direction: Direction,
         start: Date,

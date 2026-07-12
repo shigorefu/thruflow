@@ -129,7 +129,7 @@ struct FlowDashboardView: View {
     private func streamSurface(snapshot: FlowDashboardSnapshot) -> some View {
         ZStack(alignment: .bottomLeading) {
             FlowStreamView(
-                intensity: snapshot.intensity,
+                blocks: snapshot.blocks,
                 flowCount: snapshot.flowCount,
                 palette: snapshot.palette,
                 isActive: activeFlowStore.phase == .focusing,
@@ -489,15 +489,9 @@ private struct DashboardTodoColumn: View {
 
     private func todoRow(_ todo: Todo) -> some View {
         HStack(spacing: 10) {
-            Button {
+            TodoProgressControl(todo: todo) {
                 onToggle(todo)
-            } label: {
-                Image(systemName: todo.isCompleted ? "checkmark.circle.fill" : "circle")
-                    .font(.title3)
-                    .foregroundStyle(todo.isCompleted ? Color.green : directionColor(todo))
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(todo.isCompleted ? "未完了に戻す" : "完了にする")
 
             Button {
                 onOpen(todo)
@@ -525,13 +519,6 @@ private struct DashboardTodoColumn: View {
             .buttonStyle(.plain)
         }
         .padding(.vertical, 9)
-    }
-
-    private func directionColor(_ todo: Todo) -> Color {
-        guard let direction = todo.direction, !DefaultDirections.isTaskInbox(direction) else {
-            return .secondary
-        }
-        return Color(hex: direction.colorHex)
     }
 }
 
