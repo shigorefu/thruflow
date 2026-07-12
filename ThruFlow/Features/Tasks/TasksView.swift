@@ -591,7 +591,7 @@ enum QuickTodoDate: Hashable {
 }
 
 /// Compact, chip-based quick-add composer pinned to the bottom of Tasks.
-private struct MessengerTodoComposer: View {
+struct MessengerTodoComposer: View {
     @Binding var title: String
     @Binding var selectedDirectionID: UUID?
     @Binding var volume: QuickTodoVolume
@@ -601,6 +601,7 @@ private struct MessengerTodoComposer: View {
 
     let directions: [Direction]
     let validationMessage: String?
+    var allowsDateSelection = true
     let onSubmit: () -> Void
 
     @FocusState private var isFocused: Bool
@@ -631,7 +632,13 @@ private struct MessengerTodoComposer: View {
                     RoomIfPossibleChip(isSelected: $isRoomIfPossible)
                 }
 
-                DateChip(dateOption: $dateOption)
+                if allowsDateSelection {
+                    DateChip(dateOption: $dateOption)
+                } else {
+                    Text("今日")
+                        .chipStyle(tint: .secondary)
+                        .accessibilityLabel("日付 今日")
+                }
 
                 Spacer(minLength: 0)
 
