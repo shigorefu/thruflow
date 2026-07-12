@@ -27,7 +27,7 @@ static float hash21(float2 value) {
     float3 accumulated = float3(0.0);
     float alpha = 0.0;
     int count = clamp(int(layerCount), 1, 10);
-    float thickness = mix(0.105, 0.195, volume);
+    float thickness = mix(0.210, 0.390, volume);
 
     for (int index = 0; index < count; index++) {
         float layer = float(index);
