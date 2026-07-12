@@ -17,6 +17,7 @@ struct FlowStreamView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.controlActiveState) private var controlActiveState
     @Environment(\.scenePhase) private var scenePhase
+    @State private var animationClock = FlowAnimationClock()
 
     var body: some View {
         let state = FlowVisualState(blocks: blocks, flowCount: flowCount, isActive: isActive, mode: mode)
@@ -29,7 +30,11 @@ struct FlowStreamView: View {
                     .colorEffect(
                         ShaderLibrary.flowStream(
                             .float2(proxy.size),
-                            .float(shaderTime(timeline.date, speed: state.speed)),
+                            .float(Float(animationClock.phase(
+                                at: timeline.date,
+                                speed: state.speed,
+                                isPaused: animationIsPaused
+                            ))),
                             .float(Float(state.progress)),
                             .float(Float(state.volume)),
                             .float(Float(state.layerCount)),
@@ -65,11 +70,6 @@ struct FlowStreamView: View {
 
     private var isUITesting: Bool {
         ProcessInfo.processInfo.arguments.contains("--uitesting")
-    }
-
-    private func shaderTime(_ date: Date, speed: Double) -> Float {
-        guard !animationIsPaused else { return 0 }
-        return Float(date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 10_000) * speed)
     }
 
     private func accessibilityValue(_ state: FlowVisualState) -> String {

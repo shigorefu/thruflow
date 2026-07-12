@@ -42,3 +42,32 @@ struct FlowVisualState: Equatable {
         }
     }
 }
+
+final class FlowAnimationClock {
+    private(set) var phase = 0.0
+    private var lastDate: Date?
+    private var lastSpeed = 0.0
+    private var wasPaused = true
+
+    func phase(at date: Date, speed: Double, isPaused: Bool) -> Double {
+        guard !isPaused else {
+            lastDate = date
+            lastSpeed = speed
+            wasPaused = true
+            return phase
+        }
+
+        guard !wasPaused, let lastDate else {
+            self.lastDate = date
+            lastSpeed = speed
+            wasPaused = false
+            return phase
+        }
+
+        let elapsed = max(0, date.timeIntervalSince(lastDate))
+        phase = (phase + elapsed * lastSpeed).truncatingRemainder(dividingBy: 10_000)
+        self.lastDate = date
+        lastSpeed = speed
+        return phase
+    }
+}
