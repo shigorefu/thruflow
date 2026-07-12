@@ -75,16 +75,22 @@ struct FlowMiniPlayerView: View {
             } else if activeFlowStore.phase == .awaitingResult || activeFlowStore.isAwaitingBreakMemo {
                 resultBar
             } else {
-                if style == .compact {
+                if style == .dashboard {
+                    dashboardPlayer(now: now)
+                } else if style == .compact {
                     compactMenuBarPlayer(now: now)
                 } else {
                     headerPlayer(now: now)
                 }
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(.bar)
+        .padding(.horizontal, style == .dashboard ? 0 : 12)
+        .padding(.vertical, style == .dashboard ? 0 : 8)
+        .background {
+            if style != .dashboard {
+                Rectangle().fill(.bar)
+            }
+        }
     }
 
     private func headerPlayer(now: Date) -> some View {
@@ -129,6 +135,65 @@ struct FlowMiniPlayerView: View {
                 .strokeBorder(Color.primary.opacity(0.08))
         }
         .shadow(color: .black.opacity(0.10), radius: 14, y: 5)
+    }
+
+    private func dashboardPlayer(now: Date) -> some View {
+        VStack(spacing: 18) {
+            taskPickerButton
+
+            modePickerButton
+
+            ZStack {
+                Circle()
+                    .stroke(Color.primary.opacity(0.08), lineWidth: 10)
+
+                Circle()
+                    .trim(from: 0, to: dashboardTimerProgress(now: now))
+                    .stroke(
+                        primaryButtonColor,
+                        style: StrokeStyle(lineWidth: 10, lineCap: .round)
+                    )
+                    .rotationEffect(.degrees(-90))
+
+                VStack(spacing: 5) {
+                    Text(timerEyebrow)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+
+                    Text(dashboardTimerText(now: now))
+                        .font(.system(.title, design: .rounded).weight(.bold))
+                        .monospacedDigit()
+
+                    Text(activeFlowStore.selectedMode.displayName)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .frame(width: 158, height: 158)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Flowタイマー")
+
+            transportControls
+        }
+        .frame(maxWidth: .infinity)
+        .padding(18)
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .overlay {
+            RoundedRectangle(cornerRadius: 8)
+                .strokeBorder(Color.primary.opacity(0.08))
+        }
+    }
+
+    private func dashboardTimerProgress(now: Date) -> Double {
+        guard activeFlowStore.timerState != nil else { return 0 }
+        return activeFlowStore.phaseProgress(now: now)
+    }
+
+    private func dashboardTimerText(now: Date) -> String {
+        activeFlowStore.timerState == nil
+            ? String(format: "%02d:00", activeFlowStore.selectedMode.initialFocusDurationSeconds / 60)
+            : activeFlowStore.remainingText(now: now)
     }
 
     private var taskPickerButton: some View {
@@ -194,7 +259,7 @@ struct FlowMiniPlayerView: View {
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(.secondary)
             }
-            .frame(width: style == .compact ? 94 : 190, alignment: .leading)
+            .frame(width: style == .dashboard ? 220 : (style == .compact ? 94 : 190), alignment: .leading)
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
             .background(Color.primary.opacity(0.05))
@@ -335,7 +400,7 @@ struct FlowMiniPlayerView: View {
 
     private var transportControls: some View {
         HStack(spacing: style == .compact ? 4 : 6) {
-            if style == .compact {
+            if style == .compact || style == .dashboard {
                 compactControlSlot(isEnabled: activeFlowStore.timerState != nil) {
                     destroyButton
                 }
@@ -469,7 +534,7 @@ struct FlowMiniPlayerView: View {
         Button {
             handlePrimaryAction()
         } label: {
-            if style == .compact {
+            if style == .compact || style == .dashboard {
                 Image(systemName: primaryButtonImage)
                     .font(.title3.weight(.semibold))
                     .frame(width: primaryControlButtonSize, height: primaryControlButtonSize)

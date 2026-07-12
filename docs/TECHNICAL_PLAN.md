@@ -26,7 +26,9 @@ SwiftUI views should call domain logic instead of owning product rules directly.
 - `DayHistoryBuilder` creates daily timeline and Task/Direction aggregates.
 - `FlowHistoryEditor` applies progress deltas when historical Flow records change.
 - `FlowDashboardBuilder` derives today's totals, Direction palette, and normalized 24-hour segments from `FlowSession`, with a live overlay for the active creditable Flow.
-- `FlowStreamView` renders the derived state with SwiftUI `Canvas` and a capped animation timeline. It pauses decorative animation for Reduce Motion and does not own timer or persistence logic.
+- `FlowStreamView` renders the derived state with SwiftUI `Canvas` and a capped periodic timeline. Idle uses 2 FPS, active Flow uses 15 FPS, and Reduce Motion effectively pauses decorative animation. It does not own timer or persistence logic.
+- The dashboard reuses `FlowMiniPlayerView` behavior through its dedicated dashboard layout instead of creating a second timer controller. `ActiveFlowStore.phaseProgress` provides the circular timer progress.
+- The dashboard projects today's Todo groups and uses `RequiredTodoPlanner` to ensure today's Habit instances exist when Flow is the first opened screen.
 
 ## Test Expectations
 

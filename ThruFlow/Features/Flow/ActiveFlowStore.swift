@@ -267,6 +267,22 @@ final class ActiveFlowStore: ObservableObject {
         return engine.actualFocusDuration(for: timerState, now: now)
     }
 
+    func phaseProgress(now: Date = .now) -> Double {
+        guard let timerState else { return 0 }
+
+        let duration: Int
+        switch timerState.phase {
+        case .breakTime:
+            duration = timerState.plannedBreakDurationSeconds
+        default:
+            duration = timerState.plannedFocusDurationSeconds
+        }
+
+        guard duration > 0 else { return 0 }
+        let remaining = engine.remainingSeconds(for: timerState, now: now)
+        return min(max(1 - (Double(remaining) / Double(duration)), 0), 1)
+    }
+
     func isFocusOvertime(now: Date = .now) -> Bool {
         guard let timerState, timerState.phase == .focusing else { return false }
         return engine.remainingSeconds(for: timerState, now: now) <= 0

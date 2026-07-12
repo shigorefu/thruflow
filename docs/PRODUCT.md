@@ -39,7 +39,9 @@ Task completion:
 
 Flow is a media-player-like recorder.
 
-`Flow` is the first/default navigation section and today's primary dashboard. It combines the expanded player, an animated stream derived from today's focused work, daily focus/Block/Flow totals, and a 24-hour Flow timeline. Direction colors compose the stream palette, while focus duration and session count control its visual volume.
+`Flow` is the first/default navigation section and today's primary dashboard. In wide layout, the stream and 24-hour timeline occupy roughly three quarters of the content while a separate right panel holds the circular timer and player controls. Direction colors compose the stream palette, while focus duration and session count control its visual volume.
+
+The stream moves slowly while idle. Active speed follows the mode: Short is fast, Focus is medium, and Deep is slow. A subtle mode-specific tint is applied to the dashboard. Below it, today's normal Tasks and Habits remain actionable, Nice appears only when present, and compact Statistics show completion and Direction focus distribution.
 
 Modes:
 
