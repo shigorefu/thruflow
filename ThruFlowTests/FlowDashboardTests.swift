@@ -128,6 +128,33 @@ struct FlowDashboardTests {
         #expect(active.speed - idle.speed >= 0.5)
     }
 
+    @Test func animationClockKeepsPhaseContinuousWhenSpeedChanges() {
+        let clock = FlowAnimationClock()
+        let start = Date(timeIntervalSinceReferenceDate: 1_000)
+
+        #expect(clock.phase(at: start, speed: 0.1, isPaused: false) == 0)
+        #expect(abs(clock.phase(at: start.addingTimeInterval(2), speed: 0.1, isPaused: false) - 0.2) < 0.0001)
+
+        let transitionPhase = clock.phase(
+            at: start.addingTimeInterval(2),
+            speed: 0.8,
+            isPaused: false
+        )
+        #expect(abs(transitionPhase - 0.2) < 0.0001)
+        #expect(abs(clock.phase(at: start.addingTimeInterval(3), speed: 0.8, isPaused: false) - 1.0) < 0.0001)
+    }
+
+    @Test func animationClockFreezesWhilePaused() {
+        let clock = FlowAnimationClock()
+        let start = Date(timeIntervalSinceReferenceDate: 2_000)
+
+        _ = clock.phase(at: start, speed: 0.5, isPaused: false)
+        #expect(abs(clock.phase(at: start.addingTimeInterval(2), speed: 0.5, isPaused: false) - 1.0) < 0.0001)
+        #expect(abs(clock.phase(at: start.addingTimeInterval(20), speed: 0.5, isPaused: true) - 1.0) < 0.0001)
+        #expect(abs(clock.phase(at: start.addingTimeInterval(40), speed: 0.5, isPaused: false) - 1.0) < 0.0001)
+        #expect(abs(clock.phase(at: start.addingTimeInterval(41), speed: 0.5, isPaused: false) - 1.5) < 0.0001)
+    }
+
     private func makeSession(
         direction: Direction,
         start: Date,
