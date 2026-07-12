@@ -86,6 +86,12 @@ Drag-and-drop between kanban day columns changes `scheduledDate` only for active
 
 Reason: calendar planning must not silently invalidate historical completion or recurring commitments.
 
+## D-013: Flow Is The Daily Dashboard
+
+`Flow` is the first/default app section. It reuses the existing player and derives an animated stream, daily totals, and a 24-hour timeline from today's `FlowSession` records. SwiftUI Canvas provides the visual layer without adding a new persistence model or third-party rendering dependency.
+
+Reason: starting focused work and seeing its accumulated shape should be the primary app experience, while Tasks, History, Directions, and Statistics remain dedicated supporting surfaces.
+
 ## Open Questions
 
 - What measurement and planned amount should be used for an auto-created Task when Flow starts with only a Direction or with neither Direction nor Task?

@@ -65,6 +65,8 @@ Completion:
 
 Todo memo is not stored in FlowSession. The current model may keep legacy `result` storage for migration compatibility, but new memo writes go to `Todo.notes`.
 
+The Flow dashboard is a projection, not a persisted model. `FlowDashboardBuilder` derives today's totals, Direction color palette, and timeline segments from `FlowSession`; the active session contributes a live overlay only after the one-minute credit threshold.
+
 ## Block
 
 Block display is derived from focused seconds:

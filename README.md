@@ -19,6 +19,7 @@ The product is not a Pomodoro clone, a standalone habit tracker, or a generic To
 - `その他`: system Direction for work without a chosen Direction. It is hidden from Direction editing but can appear in task context and statistics.
 - `Task`: daily or Inbox item.
 - `Flow`: media-player-like focused-work recorder.
+- `Flow dashboard`: the first screen, with the expanded player, animated daily stream, totals, and a 24-hour Flow timeline.
 - `メモ`: stored on Todo.
 - `統計`: contribution-style grid for Tasks and Flow.
 - `履歴`: day timeline and Task/Direction summaries, available directly below `タスク` and from statistics cells.
