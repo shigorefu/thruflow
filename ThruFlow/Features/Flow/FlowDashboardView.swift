@@ -117,6 +117,7 @@ struct FlowDashboardView: View {
             timelineSurface(snapshot: snapshot)
         }
         .padding(18)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(Color.primary.opacity(0.035))
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .overlay {

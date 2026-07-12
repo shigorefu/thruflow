@@ -15,6 +15,7 @@ struct FlowStreamView: View {
     let mode: FlowMode
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.controlActiveState) private var controlActiveState
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -59,7 +60,7 @@ struct FlowStreamView: View {
     }
 
     private var animationIsPaused: Bool {
-        reduceMotion || isUITesting || scenePhase != .active
+        reduceMotion || isUITesting || scenePhase != .active || controlActiveState != .key
     }
 
     private var isUITesting: Bool {

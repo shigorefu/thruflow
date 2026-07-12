@@ -27,7 +27,7 @@ SwiftUI views should call domain logic instead of owning product rules directly.
 - `FlowHistoryEditor` applies progress deltas when historical Flow records change.
 - `FlowDashboardBuilder` derives today's totals, Direction palette, and normalized 24-hour segments from `FlowSession`, with a live overlay for the active creditable Flow.
 - `FlowVisualState` converts 0...6 daily Blocks into clamped speed, volume, layer count, and mode-specific wave character without placing those rules in SwiftUI.
-- `FlowStream.metal` renders the broad multi-color stream as one GPU effect. The SwiftUI host supplies only time and visual-state uniforms, uses 30 FPS while idle and 60 FPS while active, and pauses when the scene is inactive or Reduce Motion is enabled.
+- `FlowStream.metal` renders the broad multi-color stream as one GPU effect. The SwiftUI host supplies only time and visual-state uniforms, uses 30 FPS while idle and 60 FPS while active, and pauses when its window is not key, the scene is inactive, or Reduce Motion is enabled.
 - The dashboard reuses `FlowMiniPlayerView` behavior through its dedicated dashboard layout instead of creating a second timer controller. `ActiveFlowStore.phaseProgress` provides the circular timer progress.
 - The dashboard projects today's Todo groups and uses `RequiredTodoPlanner` to ensure today's Habit instances exist when Flow is the first opened screen.
 - `TodoProgressControl` is the shared Check/Block/Minute control used by Tasks and the dashboard.
