@@ -25,6 +25,8 @@ SwiftUI views should call domain logic instead of owning product rules directly.
 - `Todo.completedAt` stores the exact completion time for new completions.
 - `DayHistoryBuilder` creates daily timeline and Task/Direction aggregates.
 - `FlowHistoryEditor` applies progress deltas when historical Flow records change.
+- `FlowDashboardBuilder` derives today's totals, Direction palette, and normalized 24-hour segments from `FlowSession`, with a live overlay for the active creditable Flow.
+- `FlowStreamView` renders the derived state with SwiftUI `Canvas` and a capped animation timeline. It pauses decorative animation for Reduce Motion and does not own timer or persistence logic.
 
 ## Test Expectations
 
@@ -38,6 +40,7 @@ Cover:
 - Flow timer transitions.
 - Statistics range construction and filters.
 - Day-history grouping, legacy untimed completions, and Flow correction deltas.
+- Flow dashboard totals, palette ordering, day filtering, live minimum-credit behavior, and timeline normalization.
 
 ## Migration Caution
 

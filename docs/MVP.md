@@ -18,6 +18,7 @@ Current MVP goal:
 - Quick task capture.
 - Task measurements: `チェック`, `集中ブロック`, `分`.
 - Flow player with Short, Focus, and Deep modes.
+- First/default `Flow` dashboard with expanded player, animated daily stream, totals, and 24-hour Flow timeline.
 - Manual break start with memo before break begins.
 - Todo memo storage.
 - Flow and Tasks contribution-style statistics.

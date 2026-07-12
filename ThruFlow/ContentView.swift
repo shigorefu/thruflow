@@ -9,13 +9,16 @@ import SwiftUI
 import SwiftData
 
 struct ContentView: View {
-    @State private var selection: AppSection? = .tasks
-    @State private var tabSelection: AppSection = .tasks
+    @State private var selection: AppSection? = .flow
+    @State private var tabSelection: AppSection = .flow
 
     var body: some View {
 #if os(macOS)
         NavigationSplitView {
             List(selection: $selection) {
+                Label("Flow", systemImage: "waveform.path")
+                    .tag(AppSection.flow)
+
                 Label("タスク", systemImage: "checklist")
                     .tag(AppSection.tasks)
 
@@ -31,15 +34,23 @@ struct ContentView: View {
             .navigationTitle("スルフロ")
         } detail: {
             VStack(spacing: 0) {
-                FlowMiniPlayerView(style: .header)
+                if selection != .flow {
+                    FlowMiniPlayerView(style: .header)
 
-                Divider()
+                    Divider()
+                }
 
                 detailContent
             }
         }
 #else
         TabView(selection: $tabSelection) {
+            FlowDashboardView()
+                .tabItem {
+                    Label("Flow", systemImage: "waveform.path")
+                }
+                .tag(AppSection.flow)
+
             TasksView()
                 .tabItem {
                     Label("タスク", systemImage: "checklist")
@@ -65,7 +76,9 @@ struct ContentView: View {
                 .tag(AppSection.statistics)
         }
         .safeAreaInset(edge: .top) {
-            FlowMiniPlayerView(style: .header)
+            if tabSelection != .flow {
+                FlowMiniPlayerView(style: .header)
+            }
         }
 #endif
     }
@@ -73,7 +86,9 @@ struct ContentView: View {
 #if os(macOS)
     @ViewBuilder
     private var detailContent: some View {
-        switch selection ?? .tasks {
+        switch selection ?? .flow {
+        case .flow:
+            FlowDashboardView()
         case .tasks:
             TasksView()
         case .history:
@@ -88,6 +103,7 @@ struct ContentView: View {
 }
 
 private enum AppSection: Hashable {
+    case flow
     case tasks
     case history
     case directions

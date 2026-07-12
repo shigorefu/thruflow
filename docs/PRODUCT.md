@@ -39,6 +39,8 @@ Task completion:
 
 Flow is a media-player-like recorder.
 
+`Flow` is the first/default navigation section and today's primary dashboard. It combines the expanded player, an animated stream derived from today's focused work, daily focus/Block/Flow totals, and a 24-hour Flow timeline. Direction colors compose the stream palette, while focus duration and session count control its visual volume.
+
 Modes:
 
 - `Short`: 12 focus / 3 break = 0.5 Block.
@@ -46,6 +48,8 @@ Modes:
 - `Deep`: 50 focus / 10 break = 2 Blocks.
 
 Focus does not auto-stop or auto-switch to break. Break starts only after the user confirms memo. Memo is stored on Todo, not FlowSession.
+
+The active creditable Flow updates the dashboard live. Completed timeline segments open the existing historical Flow inspector.
 
 ## Statistics
 

@@ -12,6 +12,7 @@ struct FlowMiniPlayerView: View {
     enum Style {
         case header
         case compact
+        case dashboard
     }
 
     @Environment(\.modelContext) private var modelContext
@@ -89,14 +90,14 @@ struct FlowMiniPlayerView: View {
     private func headerPlayer(now: Date) -> some View {
         HStack(spacing: 12) {
             taskPickerButton
-                .frame(minWidth: 280, maxWidth: .infinity, alignment: .leading)
+                .frame(minWidth: style == .dashboard ? 360 : 280, maxWidth: .infinity, alignment: .leading)
 
             modePickerButton
             timerCluster(now: now)
             transportControls
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
+        .padding(.horizontal, style == .dashboard ? 18 : 14)
+        .padding(.vertical, style == .dashboard ? 14 : 10)
         .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 14))
         .overlay {
@@ -193,7 +194,7 @@ struct FlowMiniPlayerView: View {
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(.secondary)
             }
-            .frame(width: style == .header ? 190 : 94, alignment: .leading)
+            .frame(width: style == .compact ? 94 : 190, alignment: .leading)
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
             .background(Color.primary.opacity(0.05))
@@ -227,7 +228,7 @@ struct FlowMiniPlayerView: View {
                     .foregroundStyle(.primary)
                     .monospacedDigit()
 
-                if style == .header && activeFlowStore.timerState != nil {
+                if style != .compact && activeFlowStore.timerState != nil {
                     Text("/ \(activeFlowStore.selectedMode.initialFocusDurationSeconds / 60):00")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
@@ -235,7 +236,7 @@ struct FlowMiniPlayerView: View {
                 }
             }
         }
-        .frame(width: style == .header ? 130 : 58, alignment: .leading)
+        .frame(width: style == .compact ? 58 : 130, alignment: .leading)
         .accessibilityLabel(activeFlowStore.timerState == nil ? "Flow未開始" : "残り時間 \(activeFlowStore.remainingText(now: now))")
     }
 
