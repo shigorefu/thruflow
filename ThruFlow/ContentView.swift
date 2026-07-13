@@ -34,15 +34,7 @@ struct ContentView: View {
             }
             .navigationTitle("スルフロ")
         } detail: {
-            VStack(spacing: 0) {
-                if selection != .flow {
-                    FlowMiniPlayerView(style: .header)
-
-                    Divider()
-                }
-
-                detailContent
-            }
+            detailContent
         }
 #else
         TabView(selection: $tabSelection) {
@@ -79,11 +71,6 @@ struct ContentView: View {
                     Label("統計", systemImage: "square.grid.3x3")
                 }
                 .tag(AppSection.statistics)
-        }
-        .safeAreaInset(edge: .top) {
-            if tabSelection != .flow {
-                FlowMiniPlayerView(style: .header)
-            }
         }
 #endif
     }
