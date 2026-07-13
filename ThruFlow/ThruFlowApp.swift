@@ -76,6 +76,10 @@ private struct FlowMenuBarLabel: View {
             return "Flow"
         }
 
+        if activeFlowStore.isBreakPhase {
+            return "☕️ 休憩 - \(activeFlowStore.remainingText(now: activeFlowStore.displayDate))"
+        }
+
         let session = activeFlowStore.activeSession
         let emoji = session?.direction?.symbolName ?? "▶"
         let taskName = resolvedTaskName(session: session)

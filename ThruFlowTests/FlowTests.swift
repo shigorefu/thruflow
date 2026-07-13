@@ -301,6 +301,38 @@ struct FlowTests {
         #expect(unchanged == inBreak)
     }
 
+    @Test func changingModeMovesThePlannedEndWithoutResettingElapsedFocus() {
+        let engine = FlowTimerEngine()
+        let start = Date(timeIntervalSince1970: 6_500)
+        let changedAt = start.addingTimeInterval(10 * 60)
+        let initial = engine.start(mode: .twentyFiveFive, now: start)
+
+        let deep = engine.changeMode(.fiftyTen, for: initial)
+
+        #expect(deep.mode == .fiftyTen)
+        #expect(deep.startedAt == start)
+        #expect(deep.plannedFocusDurationSeconds == 50 * 60)
+        #expect(deep.plannedBreakDurationSeconds == 10 * 60)
+        #expect(engine.actualFocusDuration(for: deep, now: changedAt) == 10 * 60)
+        #expect(engine.remainingSeconds(for: deep, now: changedAt) == 40 * 60)
+    }
+
+    @Test func changingModeIsIgnoredDuringBreakIncludingPausedBreak() {
+        let engine = FlowTimerEngine()
+        let start = Date(timeIntervalSince1970: 6_600)
+        let focus = engine.start(mode: .twentyFiveFive, now: start)
+        let resting = engine.startBreak(focus, now: start.addingTimeInterval(25 * 60))
+        let pausedRest = engine.pause(resting, now: start.addingTimeInterval(26 * 60))
+
+        #expect(engine.changeMode(.fiftyTen, for: resting) == resting)
+        #expect(engine.changeMode(.fiftyTen, for: pausedRest) == pausedRest)
+    }
+
+    @Test func breakOvertimeIsFormattedAsADecreasingCountdown() {
+        #expect(ActiveFlowStore.timeText(seconds: 3 * 60) == "03:00")
+        #expect(ActiveFlowStore.timeText(seconds: -1, allowsOvertime: true, overtimePrefix: "-") == "-00:01")
+    }
+
     @Test func segmentedFlowCreditsEachTaskOnlyForItsOwnFocusTime() {
         let start = Date(timeIntervalSince1970: 7_000)
         let writing = Direction(name: "執筆", type: .neutral)
