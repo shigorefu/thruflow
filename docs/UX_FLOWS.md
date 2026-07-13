@@ -68,7 +68,7 @@ In the narrow vertical dashboard layout, the player comes first, followed by the
 - the Task card reuses the canonical completion/progress control and shows remaining Blocks or Minutes;
 - generated titles for empty Tasks and Habits are consistently italic and visually muted in the player, picker, Tasks screen, and dashboard panels;
 - dashboard `タスク` rows show priority before progress, including `余裕があれば` for low-priority optional work; fixed Habit priority is not displayed;
-- double-clicking the selected Task title edits it inline; Enter or focus loss saves and Escape cancels, while a single click retains the normal picker behavior and clicking elsewhere closes the editor;
+- double-clicking the selected Task title edits it inline; Enter or focus loss saves and Escape cancels. Double-click recognition is limited to the visible title bounds so the rest of the Task card opens the picker immediately;
 - the Task card provides the same short pressed-state feedback as the Focus selector without changing its single/double-click actions;
 - timer and transport controls on the right.
 
