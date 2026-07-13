@@ -11,7 +11,6 @@ import SwiftUI
 struct FlowMiniPlayerView: View {
     enum Style {
         case header
-        case compact
         case dashboard
     }
 
@@ -77,8 +76,6 @@ struct FlowMiniPlayerView: View {
             } else {
                 if style == .dashboard {
                     dashboardPlayer(now: now)
-                } else if style == .compact {
-                    compactMenuBarPlayer(now: now)
                 } else {
                     headerPlayer(now: now)
                 }
@@ -104,30 +101,6 @@ struct FlowMiniPlayerView: View {
         }
         .padding(.horizontal, style == .dashboard ? 18 : 14)
         .padding(.vertical, style == .dashboard ? 14 : 10)
-        .background(.ultraThinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .overlay {
-            RoundedRectangle(cornerRadius: 14)
-                .strokeBorder(Color.primary.opacity(0.08))
-        }
-        .shadow(color: .black.opacity(0.10), radius: 14, y: 5)
-    }
-
-    private func compactMenuBarPlayer(now: Date) -> some View {
-        HStack(spacing: 10) {
-            taskPickerButton
-                .frame(width: 168, alignment: .leading)
-
-            modePickerButton
-
-            timerCluster(now: now)
-
-            transportControls
-                .frame(width: 210, alignment: .center)
-        }
-        .frame(maxWidth: .infinity, alignment: .center)
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
         .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 14))
         .overlay {
@@ -210,8 +183,8 @@ struct FlowMiniPlayerView: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
             }
-            .padding(.horizontal, style == .compact ? 10 : 14)
-            .padding(.vertical, style == .compact ? 8 : 10)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
             .background(Color.primary.opacity(0.05))
             .clipShape(RoundedRectangle(cornerRadius: 14))
             .overlay {
@@ -228,7 +201,7 @@ struct FlowMiniPlayerView: View {
                 selectedDirectionID: $activeFlowStore.selectedDirectionID,
                 selectedTodoID: $activeFlowStore.selectedTodoID
             )
-            .frame(width: style == .compact ? 430 : 520, height: 460)
+            .frame(width: 520, height: 460)
         }
     }
 
@@ -249,7 +222,7 @@ struct FlowMiniPlayerView: View {
                         .font(.caption.weight(.semibold))
                         .lineLimit(1)
 
-                    Text(style == .compact ? activeFlowStore.selectedMode.shortDurationText : modeSubtitle(activeFlowStore.selectedMode))
+                    Text(modeSubtitle(activeFlowStore.selectedMode))
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
@@ -259,7 +232,7 @@ struct FlowMiniPlayerView: View {
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(.secondary)
             }
-            .frame(width: style == .dashboard ? 220 : (style == .compact ? 94 : 190), alignment: .leading)
+            .frame(width: style == .dashboard ? 220 : 190, alignment: .leading)
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
             .background(Color.primary.opacity(0.05))
@@ -289,11 +262,11 @@ struct FlowMiniPlayerView: View {
 
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text(activeFlowStore.timerState == nil ? activeFlowStore.selectedMode.shortDurationText : activeFlowStore.remainingText(now: now))
-                    .font(.system(style == .compact ? .body : .title2, design: .monospaced).weight(.bold))
+                    .font(.system(.title2, design: .monospaced).weight(.bold))
                     .foregroundStyle(.primary)
                     .monospacedDigit()
 
-                if style != .compact && activeFlowStore.timerState != nil {
+                if activeFlowStore.timerState != nil {
                     Text("/ \(activeFlowStore.selectedMode.initialFocusDurationSeconds / 60):00")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
@@ -301,7 +274,7 @@ struct FlowMiniPlayerView: View {
                 }
             }
         }
-        .frame(width: style == .compact ? 58 : 130, alignment: .leading)
+        .frame(width: 130, alignment: .leading)
         .accessibilityLabel(activeFlowStore.timerState == nil ? "Flow未開始" : "残り時間 \(activeFlowStore.remainingText(now: now))")
     }
 
@@ -326,7 +299,7 @@ struct FlowMiniPlayerView: View {
             Text(flowDirection?.symbolName ?? "▶")
                 .font(.system(size: 22))
         }
-        .frame(width: style == .compact ? 34 : 42, height: style == .compact ? 34 : 42)
+        .frame(width: 42, height: 42)
         .overlay {
             RoundedRectangle(cornerRadius: 8)
                 .strokeBorder(artworkColor.opacity(0.24))
@@ -342,7 +315,7 @@ struct FlowMiniPlayerView: View {
                 .lineLimit(1)
 
             Text(flowDirectionName)
-                .font(style == .compact ? .caption2 : .subheadline)
+                .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
         }
@@ -382,7 +355,7 @@ struct FlowMiniPlayerView: View {
     }
 
     private var contextTitleFont: Font {
-        let font: Font = style == .compact ? .caption.weight(.semibold) : .headline
+        let font: Font = .headline
         return flowTaskTitleIsPlaceholder ? font.italic() : font
     }
 
@@ -399,8 +372,8 @@ struct FlowMiniPlayerView: View {
     }
 
     private var transportControls: some View {
-        HStack(spacing: style == .compact ? 4 : 6) {
-            if style == .compact || style == .dashboard {
+        HStack(spacing: 6) {
+            if style == .dashboard {
                 compactControlSlot(isEnabled: activeFlowStore.timerState != nil) {
                     destroyButton
                 }
@@ -443,7 +416,7 @@ struct FlowMiniPlayerView: View {
                 }
             }
         }
-        .padding(style == .compact ? 2 : 3)
+        .padding(3)
         .background(Color.primary.opacity(0.06))
         .clipShape(Capsule())
     }
@@ -458,11 +431,11 @@ struct FlowMiniPlayerView: View {
     }
 
     private var controlButtonSize: CGFloat {
-        style == .compact ? 30 : 34
+        34
     }
 
     private var primaryControlButtonSize: CGFloat {
-        style == .compact ? 36 : 42
+        42
     }
 
     private var seekBackwardButton: some View {
@@ -534,7 +507,7 @@ struct FlowMiniPlayerView: View {
         Button {
             handlePrimaryAction()
         } label: {
-            if style == .compact || style == .dashboard {
+            if style == .dashboard {
                 Image(systemName: primaryButtonImage)
                     .font(.title3.weight(.semibold))
                     .frame(width: primaryControlButtonSize, height: primaryControlButtonSize)
