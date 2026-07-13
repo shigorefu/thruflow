@@ -384,7 +384,7 @@ struct FlowMiniPlayerView: View {
                 .font(contextTitleFont)
                 .foregroundStyle(flowTaskTitleIsPlaceholder ? Color.secondary.opacity(0.7) : Color.primary)
                 .lineLimit(1)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .truncationMode(.tail)
                 .contentShape(Rectangle())
                 .highPriorityGesture(
                     TapGesture(count: 2)
