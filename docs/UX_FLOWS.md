@@ -84,7 +84,7 @@ The daily stream is formed by very broad, bright, softly glowing translucent rib
 
 Below the Flow stage are today's `タスク` and `習慣` columns. `ナイス` is omitted when empty. Rows use the same square Check and circular Block/Minute progress controls as the Tasks screen, and can be completed or opened for editing. A compact `統計` panel shows today's completion rate and Direction focus distribution.
 
-Dashboard Task columns do not contain an add button. In the player Task picker, the `タスク` tab has a trailing `+` beside the segmented control. It morphs into the shared messenger-style composer inside the same popover with Direction, measurement, and priority controls; its date is fixed to `今日`. The new Task is immediately selected for Flow. Habit has no manual add action.
+The Dashboard Task header `+` opens the shared messenger-style composer in a separate popover. The Flow Task picker's `タスク` tab also ends with an add row that opens the same popover; a Task created there is immediately selected for Flow. Direction, measurement, and priority remain editable, while the date is fixed to `今日`. The composer has an explicit close button that discards the unfinished action. Habit has no manual add action.
 
 ## Statistics
 

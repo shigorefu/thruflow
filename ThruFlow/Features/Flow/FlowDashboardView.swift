@@ -20,6 +20,7 @@ struct FlowDashboardView: View {
 
     @State private var inspectedSession: FlowSession?
     @State private var editingTodo: Todo?
+    @State private var showsQuickComposer = false
 
     private let builder = FlowDashboardBuilder()
     private let todayFilter = TodayTodoFilter()
@@ -212,7 +213,8 @@ struct FlowDashboardView: View {
                 todos: standardTodos,
                 progressText: progressText,
                 onToggle: toggleTodo,
-                onOpen: { editingTodo = $0 }
+                onOpen: { editingTodo = $0 },
+                addControl: AnyView(dashboardAddButton)
             )
 
             DashboardTodoColumn(
@@ -339,6 +341,24 @@ struct FlowDashboardView: View {
         todayTodos.filter(\.isCompleted).count
     }
 
+    private var activeDirections: [Direction] {
+        directions.filter { !$0.isArchived }
+    }
+
+    private var dashboardAddButton: some View {
+        Button {
+            showsQuickComposer = true
+        } label: {
+            Image(systemName: "plus")
+        }
+        .buttonStyle(.plain)
+        .help("タスクを追加")
+        .accessibilityLabel("タスクを追加")
+        .popover(isPresented: $showsQuickComposer, arrowEdge: .top) {
+            QuickTodoCreationPopover(directions: activeDirections)
+        }
+    }
+
     private var completionRate: Double {
         guard !todayTodos.isEmpty else { return 0 }
         return Double(completedTodoCount) / Double(todayTodos.count)
@@ -443,6 +463,7 @@ private struct DashboardTodoColumn: View {
     let progressText: (Todo) -> String
     let onToggle: (Todo) -> Void
     let onOpen: (Todo) -> Void
+    var addControl: AnyView?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -454,6 +475,10 @@ private struct DashboardTodoColumn: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
+
+                if let addControl {
+                    addControl
+                }
             }
 
             if todos.isEmpty {
