@@ -184,7 +184,10 @@ struct FlowDashboardView: View {
                         let centerX = proxy.size.width * segment.startFraction + (width / 2)
 
                         Button {
-                            selectedTimelineSegmentID = segment.id
+                            withAnimation(.snappy(duration: 0.22)) {
+                                hoveredTimelineSegmentID = nil
+                                selectedTimelineSegmentID = segment.id
+                            }
                         } label: {
                             ZStack {
                                 Color.clear
@@ -210,10 +213,10 @@ struct FlowDashboardView: View {
                         TimelineSegmentHoverCard(segment: hoveredSegment)
                             .position(
                                 x: timelineCardX(for: hoveredSegment, totalWidth: proxy.size.width),
-                                y: -24
+                                y: 58
                             )
                             .allowsHitTesting(false)
-                            .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .bottom)))
+                            .transition(.opacity.combined(with: .scale(scale: 0.88, anchor: .top)))
                             .zIndex(3)
                     }
 
