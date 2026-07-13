@@ -25,6 +25,7 @@ struct FlowMiniPlayerView: View {
     @State private var resultText = ""
     @State private var editingTaskTitleID: UUID?
     @State private var taskTitleDraft = ""
+    @State private var taskCardIsPressed = false
     @FocusState private var isTaskTitleFocused: Bool
 
     private let style: Style
@@ -201,7 +202,8 @@ struct FlowMiniPlayerView: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
             .contentShape(Rectangle())
-            .modifier(FlowTaskCardPressEffect())
+            .scaleEffect(taskCardIsPressed ? 0.985 : 1)
+            .opacity(taskCardIsPressed ? 0.82 : 1)
             .onTapGesture {
                 openTaskPicker()
             }
@@ -418,7 +420,18 @@ struct FlowMiniPlayerView: View {
         if editingTaskTitleID != nil {
             commitTaskTitle()
         }
+
+        withAnimation(.easeOut(duration: 0.08)) {
+            taskCardIsPressed = true
+        }
         showsTaskPicker = true
+
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(90))
+            withAnimation(.easeOut(duration: 0.12)) {
+                taskCardIsPressed = false
+            }
+        }
     }
 
     private func beginTaskTitleEdit() {
@@ -1357,23 +1370,6 @@ private struct FlowTaskPickerGroup: Identifiable {
         }
 
         return lhs.createdAt < rhs.createdAt
-    }
-}
-
-private struct FlowTaskCardPressEffect: ViewModifier {
-    @GestureState private var isPressed = false
-
-    func body(content: Content) -> some View {
-        content
-            .scaleEffect(isPressed ? 0.985 : 1)
-            .opacity(isPressed ? 0.82 : 1)
-            .animation(.easeOut(duration: 0.12), value: isPressed)
-            .simultaneousGesture(
-                DragGesture(minimumDistance: 0)
-                    .updating($isPressed) { _, state, _ in
-                        state = true
-                    }
-            )
     }
 }
 
