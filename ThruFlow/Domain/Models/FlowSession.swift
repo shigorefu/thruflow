@@ -153,6 +153,8 @@ final class FlowSession {
     var interruptionCount: Int
     var createdAt: Date
     var updatedAt: Date
+    @Relationship(deleteRule: .cascade, inverse: \FlowSegment.session)
+    var segments: [FlowSegment] = []
 
     init(
         id: UUID = UUID(),

@@ -94,6 +94,35 @@ struct StatisticsTests {
         ))
     }
 
+    @Test func segmentedFlowFiltersAndMixesBySegmentDirection() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let now = Date(timeIntervalSince1970: 4 * 24 * 60 * 60)
+        let writing = Direction(name: "執筆", type: .neutral, colorHex: "#FF0000")
+        let review = Direction(name: "確認", type: .neutral, colorHex: "#0000FF")
+        let flow = session(direction: review, startedAt: now, seconds: 25 * 60)
+        let first = FlowSegment(session: flow, direction: writing, todo: nil, startedAt: now, startFocusSeconds: 0)
+        first.close(at: now.addingTimeInterval(10 * 60), totalFocusSeconds: 10 * 60)
+        let second = FlowSegment(session: flow, direction: review, todo: nil, startedAt: now.addingTimeInterval(10 * 60), startFocusSeconds: 10 * 60)
+        second.close(at: now.addingTimeInterval(25 * 60), totalFocusSeconds: 25 * 60)
+        flow.segments = [first, second]
+        let builder = StatisticsHeatmapBuilder(calendar: calendar)
+
+        let all = builder.build(sessions: [flow], filter: StatisticsFilter(range: .days180), now: now)
+        let writingOnly = builder.build(
+            sessions: [flow],
+            filter: StatisticsFilter(range: .days180, directionID: writing.id),
+            now: now
+        )
+
+        #expect(all.summary.sessionCount == 1)
+        #expect(all.summary.totalFocusSeconds == 25 * 60)
+        #expect(all.days.last?.directionCount == 2)
+        #expect(writingOnly.summary.sessionCount == 1)
+        #expect(writingOnly.summary.totalFocusSeconds == 10 * 60)
+        #expect(writingOnly.days.last?.mixedColorHex == "#FF0000")
+    }
+
     private func session(direction: Direction, startedAt: Date, seconds: Int) -> FlowSession {
         FlowSession(
             direction: direction,

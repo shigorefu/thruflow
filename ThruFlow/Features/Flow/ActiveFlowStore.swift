@@ -82,6 +82,17 @@ final class ActiveFlowStore: ObservableObject {
         )
 
         modelContext.insert(session)
+        let segment = FlowSegment(
+            session: session,
+            direction: direction,
+            todo: todo,
+            startedAt: now,
+            startFocusSeconds: 0
+        )
+        modelContext.insert(segment)
+        if !session.segments.contains(where: { $0.id == segment.id }) {
+            session.segments.append(segment)
+        }
         activeSession = session
         timerState = state
         didApplyProgress = false
@@ -92,6 +103,45 @@ final class ActiveFlowStore: ObservableObject {
             focusedSeconds: state.plannedFocusDurationSeconds,
             fireDate: state.plannedEndAt
         )
+    }
+
+    func selectContext(
+        direction: Direction?,
+        todo: Todo?,
+        modelContext: ModelContext,
+        now: Date = .now
+    ) {
+        guard let direction else { return }
+
+        if let state = timerState,
+           state.phase == .focusing || state.phase == .paused || state.phase == .awaitingExtensionDecision,
+           let session = activeSession {
+            let currentTodoID = session.segments.last(where: { $0.endedAt == nil })?.todo?.id
+            let currentDirectionID = session.segments.last(where: { $0.endedAt == nil })?.direction?.id
+
+            if currentTodoID != todo?.id || currentDirectionID != direction.id {
+                let focusedSeconds = engine.actualFocusDuration(for: state, now: now)
+                closeCurrentSegment(at: now, totalFocusSeconds: focusedSeconds)
+
+                let segment = FlowSegment(
+                    session: session,
+                    direction: direction,
+                    todo: todo,
+                    startedAt: now,
+                    startFocusSeconds: focusedSeconds
+                )
+                modelContext.insert(segment)
+                if !session.segments.contains(where: { $0.id == segment.id }) {
+                    session.segments.append(segment)
+                }
+                session.direction = direction
+                session.todo = todo
+                session.updatedAt = now
+            }
+        }
+
+        configure(direction: direction, todo: todo)
+        try? modelContext.save()
     }
 
     func refresh(modelContext: ModelContext, now: Date = .now) {
@@ -296,7 +346,9 @@ final class ActiveFlowStore: ObservableObject {
         activeSession?.apply(timerState: state, now: now)
 
         if state.phase == .breakTime || state.phase == .awaitingResult || state.phase == .completed {
-            applyProgressIfNeeded(seconds: state.actualFocusDurationSeconds ?? engine.actualFocusDuration(for: state, now: now), now: now)
+            let focusedSeconds = state.actualFocusDurationSeconds ?? engine.actualFocusDuration(for: state, now: now)
+            closeCurrentSegment(at: now, totalFocusSeconds: focusedSeconds)
+            applyProgressIfNeeded(seconds: focusedSeconds, now: now)
         }
 
         if state.phase == .breakTime && previousPhase != .breakTime {
@@ -326,13 +378,17 @@ final class ActiveFlowStore: ObservableObject {
 
     private func applyProgressIfNeeded(seconds: Int, now: Date) {
         guard !didApplyProgress else { return }
-        progress.applyFocusDuration(
-            seconds: seconds,
-            direction: activeSession?.direction,
-            todo: activeSession?.todo,
-            now: now
-        )
+
+        if let activeSession {
+            progress.applySession(activeSession, fallbackSeconds: seconds, now: now)
+        }
         didApplyProgress = true
+    }
+
+    private func closeCurrentSegment(at date: Date, totalFocusSeconds: Int) {
+        activeSession?.segments
+            .last(where: { $0.endedAt == nil })?
+            .close(at: date, totalFocusSeconds: totalFocusSeconds)
     }
 
     private func discardShortFlowIfNeeded(

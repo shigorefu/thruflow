@@ -282,5 +282,5 @@ private struct DirectionSectionHeader: View {
 
 #Preview {
     DirectionListView()
-        .modelContainer(for: [Direction.self, Todo.self, FlowSession.self], inMemory: true)
+        .modelContainer(for: [Direction.self, Todo.self, FlowSession.self, FlowSegment.self], inMemory: true)
 }

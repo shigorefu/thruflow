@@ -126,27 +126,25 @@ struct StatisticsHeatmapBuilder {
         let interval = dateInterval(for: filter.range, now: now)
         let startDate = interval.start
         let endDate = interval.end
-        let eligibleSessions = sessions.filter { session in
-            let sessionDate = calendar.startOfDay(for: session.startedAt)
-            guard sessionDate >= startDate, sessionDate <= endDate else { return false }
-            guard session.resolvedActualFocusDurationSeconds > 0 else { return false }
-            guard session.status != .interrupted else { return false }
+        let contributions = sessions.flatMap(makeContributions).filter { contribution in
+            let contributionDate = calendar.startOfDay(for: contribution.startedAt)
+            guard contributionDate >= startDate, contributionDate <= endDate else { return false }
             guard let directionID = filter.directionID else { return true }
-            return session.direction?.id == directionID
+            return contribution.direction?.id == directionID
         }
 
-        let groupedByDay = Dictionary(grouping: eligibleSessions) { session in
-            calendar.startOfDay(for: session.startedAt)
+        let groupedByDay = Dictionary(grouping: contributions) { contribution in
+            calendar.startOfDay(for: contribution.startedAt)
         }
 
         let days = daysBetween(startDate, and: endDate).map { date in
-            makeDay(date: date, sessions: groupedByDay[date] ?? [])
+            makeDay(date: date, contributions: groupedByDay[date] ?? [])
         }
 
         let summary = StatisticsSummary(
             totalFocusSeconds: days.reduce(0) { $0 + $1.totalFocusSeconds },
             activeDayCount: days.filter { !$0.isEmpty }.count,
-            sessionCount: eligibleSessions.count
+            sessionCount: Set(contributions.map(\.sessionID)).count
         )
 
         return StatisticsHeatmapResult(days: days, summary: summary)
@@ -187,13 +185,13 @@ struct StatisticsHeatmapBuilder {
         return days
     }
 
-    private func makeDay(date: Date, sessions: [FlowSession]) -> StatisticsDay {
-        let totalSeconds = sessions.reduce(0) { $0 + $1.resolvedActualFocusDurationSeconds }
-        let weightedColors = sessions.compactMap { session -> WeightedHexColor? in
-            guard let direction = session.direction else { return nil }
+    private func makeDay(date: Date, contributions: [FlowContribution]) -> StatisticsDay {
+        let totalSeconds = contributions.reduce(0) { $0 + $1.focusSeconds }
+        let weightedColors = contributions.compactMap { contribution -> WeightedHexColor? in
+            guard let direction = contribution.direction else { return nil }
             return WeightedHexColor(
                 hex: direction.colorHex,
-                weight: session.resolvedActualFocusDurationSeconds
+                weight: contribution.focusSeconds
             )
         }
 
@@ -201,9 +199,33 @@ struct StatisticsHeatmapBuilder {
             date: date,
             totalFocusSeconds: totalSeconds,
             mixedColorHex: Self.mixedHexColor(weightedColors),
-            directionCount: Set(sessions.compactMap { $0.direction?.id }).count,
-            sessionCount: sessions.count
+            directionCount: Set(contributions.compactMap { $0.direction?.id }).count,
+            sessionCount: Set(contributions.map(\.sessionID)).count
         )
+    }
+
+    private func makeContributions(_ session: FlowSession) -> [FlowContribution] {
+        guard session.status != .interrupted else { return [] }
+
+        if !session.segments.isEmpty {
+            return session.segments.compactMap { segment in
+                guard segment.resolvedFocusSeconds > 0 else { return nil }
+                return FlowContribution(
+                    sessionID: session.id,
+                    startedAt: segment.startedAt,
+                    direction: segment.direction,
+                    focusSeconds: segment.resolvedFocusSeconds
+                )
+            }
+        }
+
+        guard session.resolvedActualFocusDurationSeconds > 0 else { return [] }
+        return [FlowContribution(
+            sessionID: session.id,
+            startedAt: session.startedAt,
+            direction: session.direction,
+            focusSeconds: session.resolvedActualFocusDurationSeconds
+        )]
     }
 
     static func mixedHexColor(_ colors: [WeightedHexColor]) -> String? {
@@ -224,6 +246,13 @@ struct StatisticsHeatmapBuilder {
             blue: Int(blue.rounded())
         ).hex
     }
+}
+
+private struct FlowContribution {
+    let sessionID: UUID
+    let startedAt: Date
+    let direction: Direction?
+    let focusSeconds: Int
 }
 
 struct AchievementHeatmapBuilder {

@@ -79,41 +79,55 @@ struct FlowDashboardBuilder {
         let nextDay = calendar.date(byAdding: .day, value: 1, to: day) ?? day.addingTimeInterval(86_400)
         let dayDuration = max(nextDay.timeIntervalSince(day), 1)
 
-        let segments = sessions.compactMap { session -> FlowDashboardSegment? in
+        let segments = sessions.flatMap { session -> [FlowDashboardSegment] in
             guard calendar.isDate(session.startedAt, inSameDayAs: day),
                   session.status != .interrupted else {
-                return nil
+                return []
             }
 
             let isActive = session.id == activeSessionID
             let resolvedFocusSeconds = isActive
                 ? max(session.resolvedActualFocusDurationSeconds, activeFocusSeconds)
                 : session.resolvedActualFocusDurationSeconds
+
+            if !session.segments.isEmpty {
+                return session.segments.compactMap { segment in
+                    let focusSeconds = segment.endFocusSeconds.map { max(0, $0 - segment.startFocusSeconds) }
+                        ?? (isActive ? max(0, resolvedFocusSeconds - segment.startFocusSeconds) : 0)
+                    guard focusSeconds > 0 else { return nil }
+
+                    return dashboardSegment(
+                        id: segment.id,
+                        session: session,
+                        direction: segment.direction,
+                        todo: segment.todo,
+                        startedAt: segment.startedAt,
+                        endedAt: segment.endedAt ?? (isActive ? date : nil),
+                        focusSeconds: focusSeconds,
+                        isActive: isActive && segment.endedAt == nil,
+                        day: day,
+                        dayDuration: dayDuration
+                    )
+                }
+            }
+
             let focusSeconds = isActive && resolvedFocusSeconds < FlowTimerEngine.minimumCreditableFocusDurationSeconds
                 ? 0
                 : resolvedFocusSeconds
-            guard focusSeconds > 0 else { return nil }
+            guard focusSeconds > 0 else { return [] }
 
-            let start = min(max(session.startedAt.timeIntervalSince(day) / dayDuration, 0), 1)
-            let endDate = isActive && session.endedAt == nil
-                ? date
-                : (session.endedAt ?? session.startedAt.addingTimeInterval(TimeInterval(focusSeconds)))
-            let end = min(max(endDate.timeIntervalSince(day) / dayDuration, start), 1)
-            let direction = session.direction
-
-            return FlowDashboardSegment(
+            return [dashboardSegment(
                 id: session.id,
                 session: session,
-                startFraction: start,
-                endFraction: min(1, max(end, start + (1 / dayDuration))),
+                direction: session.direction,
+                todo: session.todo,
+                startedAt: session.startedAt,
+                endedAt: isActive && session.endedAt == nil ? date : session.endedAt,
                 focusSeconds: focusSeconds,
-                directionID: direction?.id ?? session.id,
-                directionName: direction?.name ?? "その他",
-                colorHex: direction?.colorHex ?? "#8E8E93",
-                symbol: direction?.symbolName ?? "📥",
-                taskTitle: session.todo.map(TodoDisplay.title(for:)) ?? "(\(direction?.name ?? "その他"))",
-                isActive: isActive
-            )
+                isActive: isActive,
+                day: day,
+                dayDuration: dayDuration
+            )]
         }
         .sorted { $0.startFraction < $1.startFraction }
 
@@ -127,9 +141,40 @@ struct FlowDashboardBuilder {
         return FlowDashboardSnapshot(
             date: day,
             totalFocusSeconds: totalFocusSeconds,
-            flowCount: segments.count,
+            flowCount: Set(segments.map { $0.session.id }).count,
             segments: segments,
             palette: groupedColors.map(\.colorHex)
+        )
+    }
+
+    private func dashboardSegment(
+        id: UUID,
+        session: FlowSession,
+        direction: Direction?,
+        todo: Todo?,
+        startedAt: Date,
+        endedAt: Date?,
+        focusSeconds: Int,
+        isActive: Bool,
+        day: Date,
+        dayDuration: TimeInterval
+    ) -> FlowDashboardSegment {
+        let start = min(max(startedAt.timeIntervalSince(day) / dayDuration, 0), 1)
+        let resolvedEnd = endedAt ?? startedAt.addingTimeInterval(TimeInterval(focusSeconds))
+        let end = min(max(resolvedEnd.timeIntervalSince(day) / dayDuration, start), 1)
+
+        return FlowDashboardSegment(
+            id: id,
+            session: session,
+            startFraction: start,
+            endFraction: min(1, max(end, start + (1 / dayDuration))),
+            focusSeconds: focusSeconds,
+            directionID: direction?.id ?? id,
+            directionName: direction?.name ?? "その他",
+            colorHex: direction?.colorHex ?? "#8E8E93",
+            symbol: direction?.symbolName ?? "📥",
+            taskTitle: todo.map(TodoDisplay.title(for:)) ?? "(\(direction?.name ?? "その他"))",
+            isActive: isActive
         )
     }
 }
