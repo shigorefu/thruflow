@@ -320,29 +320,34 @@ struct FlowDashboardView: View {
             Label("統計", systemImage: "chart.bar.xaxis")
                 .font(.headline)
 
-            HStack(spacing: 14) {
+            VStack(spacing: 10) {
                 ZStack {
                     Circle()
-                        .stroke(Color.primary.opacity(0.08), lineWidth: 7)
-                    Circle()
-                        .trim(from: 0, to: completionRate)
-                        .stroke(Color.green, style: StrokeStyle(lineWidth: 7, lineCap: .round))
-                        .rotationEffect(.degrees(-90))
-                    Text("\(Int((completionRate * 100).rounded()))%")
-                        .font(.caption.weight(.bold))
-                        .monospacedDigit()
-                }
-                .frame(width: 66, height: 66)
+                        .stroke(Color.primary.opacity(0.08), lineWidth: 12)
 
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("今日の達成")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text("\(completedTodoCount) / \(todayTodos.count)")
-                        .font(.title3.weight(.semibold))
+                    ForEach(completionSlices) { slice in
+                        Circle()
+                            .trim(from: slice.start, to: slice.end)
+                            .stroke(
+                                Color(hex: slice.colorHex),
+                                style: StrokeStyle(lineWidth: 12, lineCap: .butt)
+                            )
+                            .rotationEffect(.degrees(-90))
+                    }
+
+                    Text("\(Int((completionRate * 100).rounded()))%")
+                        .font(.title3.weight(.bold))
                         .monospacedDigit()
                 }
+                .frame(width: 112, height: 112)
+                .animation(.easeInOut(duration: 0.25), value: completedTodoCount)
+
+                Text("今日の達成  \(completedTodoCount) / \(todayTodos.count)")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
             }
+            .frame(maxWidth: .infinity)
 
             Divider()
 
@@ -437,6 +442,30 @@ struct FlowDashboardView: View {
     private var completionRate: Double {
         guard !todayTodos.isEmpty else { return 0 }
         return Double(completedTodoCount) / Double(todayTodos.count)
+    }
+
+    private var completionSlices: [DashboardCompletionSlice] {
+        guard !todayTodos.isEmpty else { return [] }
+
+        let completedGroups = Dictionary(
+            grouping: todayTodos.filter(\.isCompleted)
+        ) { todo in
+            todo.direction?.id.uuidString ?? "other"
+        }
+        .sorted { $0.key < $1.key }
+
+        var cursor = 0.0
+        return completedGroups.map { key, todos in
+            let fraction = Double(todos.count) / Double(todayTodos.count)
+            let slice = DashboardCompletionSlice(
+                id: key,
+                start: cursor,
+                end: cursor + fraction,
+                colorHex: todos.first?.direction?.colorHex ?? "#8E8E93"
+            )
+            cursor += fraction
+            return slice
+        }
     }
 
     private var modeBackgroundTint: Color {
@@ -728,6 +757,13 @@ private enum TimelineSegmentFormat {
         let remainingSeconds = seconds % 60
         return remainingSeconds == 0 ? "\(minutes)分" : "\(minutes)分\(remainingSeconds)秒"
     }
+}
+
+private struct DashboardCompletionSlice: Identifiable {
+    let id: String
+    let start: Double
+    let end: Double
+    let colorHex: String
 }
 
 private struct DashboardTodoColumn: View {
