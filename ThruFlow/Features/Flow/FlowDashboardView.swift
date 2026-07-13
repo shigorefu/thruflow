@@ -171,6 +171,9 @@ struct FlowDashboardView: View {
                 .foregroundStyle(.secondary)
 
             GeometryReader { proxy in
+                let selectedSegment = snapshot.segments.first { $0.id == selectedTimelineSegmentID }
+                let anchorPoint = timelineAnchorPoint(for: selectedSegment, totalWidth: proxy.size.width)
+
                 ZStack(alignment: .leading) {
                     Capsule()
                         .fill(Color.primary.opacity(0.07))
@@ -206,7 +209,7 @@ struct FlowDashboardView: View {
                     }
 
                     if let hoveredSegment = snapshot.segments.first(where: { $0.id == hoveredTimelineSegmentID }),
-                       selectedTimelineSegmentID != hoveredSegment.id {
+                       selectedTimelineSegmentID == nil {
                         TimelineSegmentHoverCard(segment: hoveredSegment)
                             .position(
                                 x: timelineCardX(for: hoveredSegment, totalWidth: proxy.size.width),
@@ -217,29 +220,26 @@ struct FlowDashboardView: View {
                             .zIndex(3)
                     }
 
-                    if let selectedSegment = snapshot.segments.first(where: { $0.id == selectedTimelineSegmentID }) {
-                        let width = segmentWidth(selectedSegment, totalWidth: proxy.size.width)
-                        let centerX = proxy.size.width * selectedSegment.startFraction + (width / 2)
-
-                        Color.clear
-                            .frame(width: max(width, 14), height: 18)
-                            .position(x: centerX, y: proxy.size.height / 2)
-                            .popover(isPresented: timelinePopoverBinding, arrowEdge: .bottom) {
-                                TimelineSegmentPopover(
-                                    segment: selectedSegment,
-                                    onDelete: selectedSegment.isActive ? nil : {
-                                        deleteTimelineSegment(selectedSegment)
-                                    },
-                                    onOpenHistory: selectedSegment.isActive ? nil : {
-                                        selectedTimelineSegmentID = nil
-                                        inspectedSession = selectedSegment.session
-                                    }
-                                )
-                            }
-                            .zIndex(4)
-                    }
                 }
                 .frame(maxHeight: .infinity)
+                .popover(
+                    isPresented: timelinePopoverBinding,
+                    attachmentAnchor: .point(anchorPoint),
+                    arrowEdge: .bottom
+                ) {
+                    if let selectedSegment {
+                        TimelineSegmentPopover(
+                            segment: selectedSegment,
+                            onDelete: selectedSegment.isActive ? nil : {
+                                deleteTimelineSegment(selectedSegment)
+                            },
+                            onOpenHistory: selectedSegment.isActive ? nil : {
+                                selectedTimelineSegmentID = nil
+                                inspectedSession = selectedSegment.session
+                            }
+                        )
+                    }
+                }
             }
             .frame(height: 20)
 
@@ -504,6 +504,16 @@ struct FlowDashboardView: View {
         let width = segmentWidth(segment, totalWidth: totalWidth)
         let center = totalWidth * segment.startFraction + (width / 2)
         return min(max(center, 95), max(95, totalWidth - 95))
+    }
+
+    private func timelineAnchorPoint(
+        for segment: FlowDashboardSegment?,
+        totalWidth: CGFloat
+    ) -> UnitPoint {
+        guard let segment, totalWidth > 0 else { return .center }
+        let width = segmentWidth(segment, totalWidth: totalWidth)
+        let center = totalWidth * segment.startFraction + (width / 2)
+        return UnitPoint(x: min(max(center / totalWidth, 0), 1), y: 0.5)
     }
 
     private func deleteTimelineSegment(_ segment: FlowDashboardSegment) {
