@@ -64,6 +64,8 @@ In the narrow vertical dashboard layout, the player comes first, followed by the
 - `方向` uses an emoji-and-name grid with `その他` first for Direction-only starts;
 - Direction icon color follows the selected Task Direction;
 - compact Focus selector opens a separate picker for `Short`, `Focus`, and `Deep`;
+- selecting another Focus mode during focus or pause preserves elapsed time and only moves the planned end, matching the seek controls;
+- break time counts down past zero with a negative sign, while menu bar status becomes `☕️ 休憩 - time`;
 - choosing another Task during focus or pause keeps the current Flow running and starts a new history segment; no memo prompt is shown for this switch;
 - the Task card reuses the canonical completion/progress control and shows remaining Blocks or Minutes;
 - generated titles for empty Tasks and Habits are consistently italic and visually muted in the player, picker, Tasks screen, and dashboard panels;

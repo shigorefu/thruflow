@@ -287,11 +287,14 @@ struct FlowMiniPlayerView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Focusを選択")
-        .disabled(activeFlowStore.timerState != nil)
+        .disabled(!activeFlowStore.canChangeMode)
         .popover(isPresented: $showsModePicker, arrowEdge: .bottom) {
             FlowModePickerView(
-                selectedMode: $activeFlowStore.selectedMode,
-                modes: selectableModes
+                selectedMode: activeFlowStore.selectedMode,
+                modes: selectableModes,
+                onSelect: { mode in
+                    activeFlowStore.selectMode(mode, modelContext: modelContext)
+                }
             )
             .frame(width: 320)
         }
@@ -1374,8 +1377,9 @@ private struct FlowTaskPickerGroup: Identifiable {
 }
 
 private struct FlowModePickerView: View {
-    @Binding var selectedMode: FlowMode
+    let selectedMode: FlowMode
     let modes: [FlowMode]
+    let onSelect: (FlowMode) -> Void
 
     @Environment(\.dismiss) private var dismiss
 
@@ -1400,7 +1404,7 @@ private struct FlowModePickerView: View {
 
             ForEach(modes) { mode in
                 Button {
-                    selectedMode = mode
+                    onSelect(mode)
                     dismiss()
                 } label: {
                     HStack(spacing: 12) {

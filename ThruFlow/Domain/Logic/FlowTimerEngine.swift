@@ -147,6 +147,18 @@ struct FlowTimerEngine {
         )
     }
 
+    /// Changes the preset without restarting the current Flow. Elapsed focus and
+    /// pause accounting remain intact; only the planned duration and end move.
+    func changeMode(_ mode: FlowMode, for state: FlowTimerState) -> FlowTimerState {
+        let isPausedFocus = state.phase == .paused && state.phaseBeforePause != .breakTime
+        guard state.phase == .focusing || isPausedFocus else { return state }
+
+        var next = applyPlannedFocusDuration(mode.initialFocusDurationSeconds, to: state)
+        next.mode = mode
+        next.plannedBreakDurationSeconds = mode.breakDurationSeconds
+        return next
+    }
+
     private func applyPlannedFocusDuration(_ duration: Int, to state: FlowTimerState) -> FlowTimerState {
         guard duration != state.plannedFocusDurationSeconds else { return state }
 

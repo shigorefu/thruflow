@@ -51,6 +51,18 @@ final class ActiveFlowStore: ObservableObject {
         selectedDirectionID != nil && timerState == nil
     }
 
+    var canChangeMode: Bool {
+        guard let timerState else { return true }
+        return timerState.phase == .focusing ||
+            (timerState.phase == .paused && timerState.phaseBeforePause != .breakTime)
+    }
+
+    var isBreakPhase: Bool {
+        guard let timerState else { return false }
+        return timerState.phase == .breakTime ||
+            (timerState.phase == .paused && timerState.phaseBeforePause == .breakTime)
+    }
+
     func configure(direction: Direction?, todo: Todo?, intent: String? = nil, mode: FlowMode? = nil) {
         selectedDirectionID = direction?.id
         selectedTodoID = todo?.id
@@ -263,6 +275,27 @@ final class ActiveFlowStore: ObservableObject {
         apply(next, modelContext: modelContext, now: now)
     }
 
+    func selectMode(_ mode: FlowMode, modelContext: ModelContext, now: Date = .now) {
+        guard mode != selectedMode else { return }
+
+        selectedMode = mode
+        persistConfiguration()
+
+        guard let timerState else { return }
+        let next = engine.changeMode(mode, for: timerState)
+        guard next != timerState else { return }
+
+        notifications.cancelPendingFlowNotifications()
+        if next.phase == .focusing {
+            notifications.scheduleFocusFinished(
+                mode: next.mode,
+                focusedSeconds: next.plannedFocusDurationSeconds,
+                fireDate: next.plannedEndAt
+            )
+        }
+        apply(next, modelContext: modelContext, now: now)
+    }
+
     func stop(modelContext: ModelContext, now: Date = .now) {
         notifications.cancelPendingFlowNotifications()
 
@@ -309,7 +342,10 @@ final class ActiveFlowStore: ObservableObject {
     func remainingText(now: Date = .now) -> String {
         guard let timerState else { return "--:--" }
         let seconds = engine.remainingSeconds(for: timerState, now: now)
-        return Self.timeText(seconds: seconds, allowsOvertime: timerState.phase == .focusing || timerState.phase == .breakTime)
+        if isBreakPhase {
+            return Self.timeText(seconds: seconds, allowsOvertime: true, overtimePrefix: "-")
+        }
+        return Self.timeText(seconds: seconds, allowsOvertime: timerState.phase == .focusing)
     }
 
     func actualFocusSeconds(now: Date = .now) -> Int {
@@ -419,10 +455,14 @@ final class ActiveFlowStore: ObservableObject {
         defaults.set(intent, forKey: "flow.lastIntent")
     }
 
-    static func timeText(seconds: Int, allowsOvertime: Bool = false) -> String {
+    nonisolated static func timeText(
+        seconds: Int,
+        allowsOvertime: Bool = false,
+        overtimePrefix: String = "+"
+    ) -> String {
         if allowsOvertime, seconds < 0 {
             let overtimeSeconds = abs(seconds)
-            return String(format: "+%02d:%02d", overtimeSeconds / 60, overtimeSeconds % 60)
+            return String(format: "%@%02d:%02d", overtimePrefix, overtimeSeconds / 60, overtimeSeconds % 60)
         }
 
         let clampedSeconds = max(0, seconds)
