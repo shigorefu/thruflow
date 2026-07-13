@@ -52,22 +52,22 @@ static float hash21(float2 value) {
         half4 firstPair = mix(color0, color1, half(firstBlend));
         half4 secondPair = mix(color2, color3, half(secondBlend));
         half4 selected = mix(firstPair, secondPair, half(fract(lane + progress * 0.45)));
-        float brightness = 0.78 + edgeLight * 0.30 + progress * 0.12;
-        float contribution = band * (0.15 + seed * 0.07) + glow * 0.042;
+        float brightness = 0.94 + edgeLight * 0.54 + progress * 0.22;
+        float contribution = band * (0.19 + seed * 0.09) + glow * 0.075;
 
         accumulated += float3(selected.rgb) * brightness * contribution;
-        alpha = min(1.0, alpha + contribution * 0.72);
+        alpha = min(1.0, alpha + contribution * 0.82);
     }
 
-    float shimmer = 0.97 + sin((uv.x + uv.y) * 10.0 - time * 0.42) * 0.03;
-    accumulated *= shimmer;
+    float shimmer = 0.96 + sin((uv.x + uv.y) * 10.0 - time * 0.42) * 0.04;
+    float3 rendered = accumulated * shimmer;
+    float peak = max(max(rendered.r, rendered.g), rendered.b);
 
-    // Compress highlights with one shared scale so overlapping ribbons retain hue.
-    float peak = max(max(accumulated.r, accumulated.g), accumulated.b);
-    float compressedPeak = 0.88 * (1.0 - exp(-peak * 0.92));
-    float3 mapped = peak > 0.0001 ? accumulated * (compressedPeak / peak) : accumulated;
-    float luminance = dot(mapped, float3(0.2126, 0.7152, 0.0722));
-    mapped = clamp(mix(float3(luminance), mapped, 1.12), 0.0, 0.92);
+    // Preserve the original appearance and compress only genuinely clipped highlights.
+    if (peak > 0.94) {
+        float compressedPeak = 0.94 + 0.05 * (1.0 - exp(-(peak - 0.94) * 1.8));
+        rendered *= compressedPeak / peak;
+    }
 
-    return half4(half3(mapped), half(alpha));
+    return half4(half3(rendered), half(alpha));
 }
