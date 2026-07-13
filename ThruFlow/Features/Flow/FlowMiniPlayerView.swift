@@ -91,6 +91,9 @@ struct FlowMiniPlayerView: View {
                 Rectangle().fill(.bar)
             }
         }
+        .onTapGesture {
+            dismissTaskTitleEditor()
+        }
     }
 
     private func headerPlayer(now: Date) -> some View {
@@ -381,15 +384,31 @@ struct FlowMiniPlayerView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
                 .highPriorityGesture(
-                    TapGesture().onEnded {
-                        beginTaskTitleEdit()
-                    }
+                    TapGesture(count: 2)
+                        .exclusively(before: TapGesture(count: 1))
+                        .onEnded { gesture in
+                            switch gesture {
+                            case .first:
+                                beginTaskTitleEdit()
+                            case .second:
+                                openTaskPicker()
+                            }
+                        }
                 )
                 .accessibilityAction(named: "タスク名を編集") {
                     beginTaskTitleEdit()
                 }
                 .accessibilityLabel("タスク名")
         }
+    }
+
+    private func dismissTaskTitleEditor() {
+        guard editingTaskTitleID != nil else { return }
+
+        isTaskTitleFocused = false
+#if os(macOS)
+        NSApp.keyWindow?.makeFirstResponder(nil)
+#endif
     }
 
     private func openTaskPicker() {
