@@ -602,6 +602,7 @@ struct MessengerTodoComposer: View {
     let directions: [Direction]
     let validationMessage: String?
     var allowsDateSelection = true
+    var showsOuterBackground = true
     var onCancel: (() -> Void)?
     let onSubmit: () -> Void
 
@@ -688,9 +689,13 @@ struct MessengerTodoComposer: View {
             RoundedRectangle(cornerRadius: 22)
                 .strokeBorder(Color.primary.opacity(0.12))
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(.bar)
+        .padding(.horizontal, showsOuterBackground ? 12 : 0)
+        .padding(.vertical, showsOuterBackground ? 8 : 0)
+        .background {
+            if showsOuterBackground {
+                Rectangle().fill(.bar)
+            }
+        }
     }
 
     private func submit() {
@@ -737,6 +742,7 @@ struct QuickTodoCreationPopover: View {
             directions: selectableDirections,
             validationMessage: validationMessage,
             allowsDateSelection: false,
+            showsOuterBackground: false,
             onCancel: { dismiss() },
             onSubmit: createTodo
         )
