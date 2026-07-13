@@ -66,6 +66,7 @@ In the narrow vertical dashboard layout, the player comes first, followed by the
 - compact Focus selector opens a separate picker for `Short`, `Focus`, and `Deep`;
 - choosing another Task during focus or pause keeps the current Flow running and starts a new history segment; no memo prompt is shown for this switch;
 - the Task card reuses the canonical completion/progress control and shows remaining Blocks or Minutes;
+- clicking the selected Task title edits it inline; Enter or focus loss saves, Escape cancels, while artwork and chevron continue to open the Task picker;
 - timer and transport controls on the right.
 
 Mode labels:
