@@ -176,18 +176,21 @@ struct FlowDashboardView: View {
                         .frame(height: 16)
 
                     ForEach(snapshot.segments) { segment in
+                        let width = segmentWidth(segment, totalWidth: proxy.size.width)
+                        let centerX = proxy.size.width * segment.startFraction + (width / 2)
+
                         Button {
                             selectedTimelineSegmentID = segment.id
                         } label: {
                             Capsule()
                                 .fill(Color(hex: segment.colorHex))
                                 .frame(
-                                    width: segmentWidth(segment, totalWidth: proxy.size.width),
+                                    width: width,
                                     height: segment.isActive ? 18 : 12
                                 )
                         }
                         .buttonStyle(.plain)
-                        .offset(x: proxy.size.width * segment.startFraction)
+                        .position(x: centerX, y: proxy.size.height / 2)
                         .onHover { isHovered in
                             hoveredTimelineSegmentID = isHovered ? segment.id : nil
                         }
