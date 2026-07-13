@@ -23,6 +23,9 @@ struct FlowMiniPlayerView: View {
     @State private var showsTaskPicker = false
     @State private var showsModePicker = false
     @State private var resultText = ""
+    @State private var editingTaskTitleID: UUID?
+    @State private var taskTitleDraft = ""
+    @FocusState private var isTaskTitleFocused: Bool
 
     private let style: Style
     private let todayFilter = TodayTodoFilter()
@@ -181,25 +184,31 @@ struct FlowMiniPlayerView: View {
                 }
             }
 
-            Button {
-                showsTaskPicker = true
-            } label: {
-                HStack(spacing: 12) {
+            HStack(spacing: 12) {
+                Button {
+                    showsTaskPicker = true
+                } label: {
                     playerArtwork
-                    contextLabel(now: now)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Flowタスクを選択")
 
-                    Spacer(minLength: 0)
+                contextLabel(now: now)
 
+                Spacer(minLength: 0)
+
+                Button {
+                    showsTaskPicker = true
+                } label: {
                     Image(systemName: "chevron.down")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
-                .contentShape(Rectangle())
+                .buttonStyle(.plain)
+                .accessibilityLabel("Flowタスクを選択")
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Flowタスクを選択")
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
         }
         .padding(.leading, selectedTodo == nil ? 0 : 6)
         .background(Color.primary.opacity(0.05))
@@ -222,6 +231,16 @@ struct FlowMiniPlayerView: View {
                 )
             }
             .frame(width: 520, height: 460)
+        }
+        .onChange(of: selectedTodo?.id) { _, newID in
+            if editingTaskTitleID != newID {
+                cancelTaskTitleEdit()
+            }
+        }
+        .onChange(of: isTaskTitleFocused) { _, isFocused in
+            if !isFocused, editingTaskTitleID != nil {
+                commitTaskTitle()
+            }
         }
     }
 
@@ -329,10 +348,7 @@ struct FlowMiniPlayerView: View {
 
     private func contextLabel(now: Date) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(flowTaskTitle)
-                .font(contextTitleFont)
-                .foregroundStyle(flowTaskTitleIsPlaceholder ? Color.secondary.opacity(0.7) : Color.primary)
-                .lineLimit(1)
+            taskTitleEditor
 
             Text(flowDirectionName)
                 .font(.subheadline)
@@ -349,7 +365,66 @@ struct FlowMiniPlayerView: View {
                     .lineLimit(1)
             }
         }
-        .accessibilityElement(children: .combine)
+    }
+
+    @ViewBuilder
+    private var taskTitleEditor: some View {
+        if let selectedTodo, editingTaskTitleID == selectedTodo.id {
+            TextField(TodoDisplay.placeholder(for: selectedTodo), text: $taskTitleDraft)
+                .textFieldStyle(.plain)
+                .font(.headline)
+                .focused($isTaskTitleFocused)
+                .onSubmit(commitTaskTitle)
+                .onExitCommand(perform: cancelTaskTitleEdit)
+                .accessibilityLabel("タスク名")
+        } else {
+            Text(flowTaskTitle)
+                .font(contextTitleFont)
+                .foregroundStyle(flowTaskTitleIsPlaceholder ? Color.secondary.opacity(0.7) : Color.primary)
+                .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    beginTaskTitleEdit()
+                }
+                .accessibilityLabel("タスク名")
+        }
+    }
+
+    private func beginTaskTitleEdit() {
+        guard let selectedTodo else {
+            showsTaskPicker = true
+            return
+        }
+
+        taskTitleDraft = selectedTodo.title
+        editingTaskTitleID = selectedTodo.id
+        Task { @MainActor in
+            isTaskTitleFocused = true
+        }
+    }
+
+    private func commitTaskTitle() {
+        guard let selectedTodo, editingTaskTitleID == selectedTodo.id else {
+            cancelTaskTitleEdit()
+            return
+        }
+
+        let normalizedTitle = taskTitleDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+        if selectedTodo.title != normalizedTitle {
+            selectedTodo.title = normalizedTitle
+            selectedTodo.updatedAt = .now
+            try? modelContext.save()
+        }
+
+        editingTaskTitleID = nil
+        isTaskTitleFocused = false
+    }
+
+    private func cancelTaskTitleEdit() {
+        taskTitleDraft = selectedTodo?.title ?? ""
+        editingTaskTitleID = nil
+        isTaskTitleFocused = false
     }
 
     private var canSeek: Bool {
