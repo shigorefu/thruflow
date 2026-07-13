@@ -267,6 +267,8 @@ struct FlowMiniPlayerView: View {
                         .lineLimit(1)
                 }
 
+                Spacer(minLength: 0)
+
                 Image(systemName: "chevron.down")
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(.secondary)
