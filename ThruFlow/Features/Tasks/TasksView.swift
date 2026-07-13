@@ -120,6 +120,11 @@ struct TasksView: View {
         .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) { _ in
             ensureRequiredTodosForVisibleDates()
         }
+        .onTapGesture {
+#if os(macOS)
+            NSApp.keyWindow?.makeFirstResponder(nil)
+#endif
+        }
     }
 
     @ViewBuilder
@@ -1240,7 +1245,7 @@ private struct TodoRow: View {
                 .lineLimit(1)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
-                .onTapGesture {
+                .onTapGesture(count: 2) {
                     beginTitleEdit()
                 }
                 .accessibilityLabel("タスク名")
