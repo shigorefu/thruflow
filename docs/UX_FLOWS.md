@@ -52,9 +52,9 @@ Daily and selected-weekday Habit instances are generated for visible current/fut
 
 ## Flow Player
 
-`Flow` is the first/default navigation item. In a wide window, its dashboard uses one aligned two-column grid: the animated daily stream and 0:00–24:00 timeline sit above today's Tasks on the left, while the equally tall square player sits above compact Statistics on the right. All lower Task, Habit, optional Nice, and Statistics panels share the height of the tallest lower panel. The left side occupies roughly three quarters of the content. Other app sections keep the player available as a top header; the dashboard does not show a duplicate header.
+`Flow` is the first/default navigation item. In a wide window, its dashboard uses one aligned two-column grid: the animated daily stream and 0:00–24:00 timeline sit above today's Tasks on the left, while the equally tall square player sits above compact Statistics on the right. All lower Task, Habit, optional Nice, and Statistics panels share the height of the tallest lower panel. The left side occupies roughly three quarters of the content. Other app sections do not repeat the player as a top header; macOS keeps it available from the menu bar popover.
 
-The header layout is:
+The player layout is:
 
 - left Task card with Direction icon, Task title, and smaller Direction name;
 - Task card opens a picker with `タスク`, `習慣`, and `方向` tabs;

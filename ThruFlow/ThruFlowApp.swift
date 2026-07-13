@@ -61,7 +61,7 @@ private struct FlowMenuBarLabel: View {
 
     var body: some View {
         if activeFlowStore.timerState == nil {
-            Label("Flow", systemImage: "timer")
+            Label("Flow", systemImage: "waveform.path")
         } else {
             Text(menuTitle)
                 .font(.system(.body, design: .default))
