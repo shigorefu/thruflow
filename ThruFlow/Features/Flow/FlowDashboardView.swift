@@ -796,8 +796,8 @@ private struct DashboardTodoColumn: View {
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text(TodoDisplay.title(for: todo))
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(todo.isCompleted ? .secondary : .primary)
+                            .font(todoTitleFont(todo))
+                            .foregroundStyle(todoTitleColor(todo))
                             .strikethrough(todo.isCompleted)
                             .lineLimit(1)
 
@@ -814,6 +814,23 @@ private struct DashboardTodoColumn: View {
             .buttonStyle(.plain)
         }
         .padding(.vertical, 9)
+    }
+
+    private func todoTitleFont(_ todo: Todo) -> Font {
+        todoTitleIsPlaceholder(todo)
+            ? .subheadline.weight(.medium).italic()
+            : .subheadline.weight(.medium)
+    }
+
+    private func todoTitleColor(_ todo: Todo) -> Color {
+        if todoTitleIsPlaceholder(todo) {
+            return .secondary.opacity(0.7)
+        }
+        return todo.isCompleted ? .secondary : .primary
+    }
+
+    private func todoTitleIsPlaceholder(_ todo: Todo) -> Bool {
+        todo.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 }
 
