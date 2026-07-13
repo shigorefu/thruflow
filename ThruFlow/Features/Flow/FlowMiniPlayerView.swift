@@ -940,20 +940,6 @@ private struct FlowTaskPickerView: View {
     @ViewBuilder
     private var taskTab: some View {
         VStack(alignment: .leading, spacing: 12) {
-            if taskGroups.isEmpty {
-                emptyState("今日のタスクはありません")
-            } else {
-                ForEach(taskGroups) { group in
-                    sectionHeader(title: group.title, count: group.todos.count, tint: group.tint)
-
-                    VStack(spacing: 7) {
-                        ForEach(group.todos) { todo in
-                            taskRow(todo)
-                        }
-                    }
-                }
-            }
-
             Button {
                 showsTaskComposer = true
             } label: {
@@ -970,6 +956,20 @@ private struct FlowTaskPickerView: View {
                 QuickTodoCreationPopover(directions: directions) { todo in
                     selectedTodoID = todo.id
                     selectedDirectionID = todo.direction?.id
+                }
+            }
+
+            if taskGroups.isEmpty {
+                emptyState("今日のタスクはありません")
+            } else {
+                ForEach(taskGroups) { group in
+                    sectionHeader(title: group.title, count: group.todos.count, tint: group.tint)
+
+                    VStack(spacing: 7) {
+                        ForEach(group.todos) { todo in
+                            taskRow(todo)
+                        }
+                    }
                 }
             }
         }
