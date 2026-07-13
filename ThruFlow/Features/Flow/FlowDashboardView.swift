@@ -102,8 +102,13 @@ struct FlowDashboardView: View {
             .frame(minWidth: 900)
 
             VStack(spacing: 16) {
-                flowStage(snapshot: snapshot)
                 FlowMiniPlayerView(style: .dashboard)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 360)
+
+                flowStage(snapshot: snapshot)
+                    .frame(height: 340)
+
                 taskColumns
                 statisticsPanel(snapshot: snapshot)
             }

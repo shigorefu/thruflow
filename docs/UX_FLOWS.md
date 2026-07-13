@@ -56,6 +56,8 @@ Daily and selected-weekday Habit instances are generated for visible current/fut
 
 The player layout is:
 
+In the narrow vertical dashboard layout, the player comes first, followed by the Flow stream/timeline, Tasks/Habits, and Statistics. The narrow player and Flow stage use stable heights so resizing does not reorder controls or cause layout jumps.
+
 - left Task card with Direction icon, Task title, and smaller Direction name;
 - Task card opens a picker with `タスク`, `習慣`, and `方向` tabs;
 - `タスク` and `習慣` use separate lists of today's items;
