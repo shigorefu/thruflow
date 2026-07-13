@@ -8,11 +8,56 @@
 import Foundation
 import SwiftData
 
+struct FlowHistoryTimeDraft: Equatable {
+    private(set) var startedAt: Date
+    private(set) var endedAt: Date
+    private(set) var focusMinutes: Int
+
+    init(startedAt: Date, endedAt: Date?, focusSeconds: Int) {
+        let resolvedSeconds = max(60, focusSeconds)
+        let resolvedMinutes = Self.minutes(between: startedAt, and: endedAt ?? startedAt.addingTimeInterval(TimeInterval(resolvedSeconds)))
+        self.startedAt = startedAt
+        self.focusMinutes = resolvedMinutes
+        self.endedAt = startedAt.addingTimeInterval(TimeInterval(resolvedMinutes * 60))
+    }
+
+    var focusSeconds: Int {
+        focusMinutes * 60
+    }
+
+    mutating func setStartedAt(_ date: Date) {
+        let previousMinutes = focusMinutes
+        startedAt = date
+
+        if endedAt > date {
+            focusMinutes = Self.minutes(between: date, and: endedAt)
+        } else {
+            focusMinutes = previousMinutes
+        }
+        endedAt = date.addingTimeInterval(TimeInterval(focusMinutes * 60))
+    }
+
+    mutating func setEndedAt(_ date: Date) {
+        focusMinutes = Self.minutes(between: startedAt, and: date)
+        endedAt = startedAt.addingTimeInterval(TimeInterval(focusMinutes * 60))
+    }
+
+    mutating func setFocusMinutes(_ minutes: Int) {
+        focusMinutes = min(max(minutes, 1), 720)
+        endedAt = startedAt.addingTimeInterval(TimeInterval(focusMinutes * 60))
+    }
+
+    private static func minutes(between start: Date, and end: Date) -> Int {
+        min(max(Int((end.timeIntervalSince(start) / 60).rounded()), 1), 720)
+    }
+}
+
 struct FlowHistoryEditor {
     func update(
         session: FlowSession,
         todo: Todo?,
         direction: Direction,
+        startedAt: Date? = nil,
         focusSeconds: Int,
         memo: String?,
         modelContext: ModelContext? = nil,
@@ -21,10 +66,13 @@ struct FlowHistoryEditor {
         removeSessionProgress(session, now: now)
 
         let adjustedSeconds = max(0, focusSeconds)
+        let adjustedStart = startedAt ?? session.startedAt
         session.todo = todo
         session.direction = todo?.direction ?? direction
+        session.startedAt = adjustedStart
         session.actualFocusDurationSeconds = adjustedSeconds
-        session.endedAt = session.startedAt.addingTimeInterval(TimeInterval(adjustedSeconds))
+        session.endedAt = adjustedStart.addingTimeInterval(TimeInterval(adjustedSeconds))
+        session.plannedEndAt = session.endedAt ?? adjustedStart
         session.updatedAt = now
         todo?.setMemo(memo, now: now)
 

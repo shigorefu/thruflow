@@ -19,7 +19,7 @@ struct FlowHistoryInspectorView: View {
 
     @State private var selectedTodoID: UUID?
     @State private var selectedDirectionID: UUID?
-    @State private var focusMinutes: Int
+    @State private var timeDraft: FlowHistoryTimeDraft
     @State private var memo: String
     @State private var showsDeleteConfirmation = false
 
@@ -29,7 +29,11 @@ struct FlowHistoryInspectorView: View {
         self.session = session
         _selectedTodoID = State(initialValue: session.todo?.id)
         _selectedDirectionID = State(initialValue: session.direction?.id)
-        _focusMinutes = State(initialValue: max(1, Int((Double(session.resolvedActualFocusDurationSeconds) / 60).rounded())))
+        _timeDraft = State(initialValue: FlowHistoryTimeDraft(
+            startedAt: session.startedAt,
+            endedAt: session.endedAt,
+            focusSeconds: session.resolvedActualFocusDurationSeconds
+        ))
         _memo = State(initialValue: session.todo?.notes ?? "")
     }
 
@@ -51,7 +55,17 @@ struct FlowHistoryInspectorView: View {
     }
 
     private var availableTodos: [Todo] {
-        todos.filter { !$0.isDeleted && !$0.isArchived }
+        todos
+            .filter { todo in
+                if todo.id == session.todo?.id { return true }
+                guard !todo.isDeleted, !todo.isArchived else { return false }
+                return TodayTodoFilter().includes(todo, on: session.startedAt)
+            }
+            .sorted {
+                if $0.isCompleted != $1.isCompleted { return !$0.isCompleted }
+                if $0.sortIndex != $1.sortIndex { return $0.sortIndex < $1.sortIndex }
+                return $0.createdAt < $1.createdAt
+            }
     }
 
     var body: some View {
@@ -103,10 +117,57 @@ struct FlowHistoryInspectorView: View {
                         .disabled(selectedTodo != nil)
                     }
 
-                    field("集中時間") {
-                        Stepper(value: $focusMinutes, in: 1...720) {
-                            Text("\(focusMinutes)分")
+                    field("時間") {
+                        HStack(alignment: .bottom, spacing: 12) {
+                            timeField("開始") {
+                                DatePicker(
+                                    "開始",
+                                    selection: Binding(
+                                        get: { timeDraft.startedAt },
+                                        set: { timeDraft.setStartedAt($0) }
+                                    ),
+                                    displayedComponents: [.hourAndMinute]
+                                )
+                                .labelsHidden()
+                            }
+
+                            Text("–")
+                                .foregroundStyle(.secondary)
+                                .padding(.bottom, 5)
+
+                            timeField("終了") {
+                                DatePicker(
+                                    "終了",
+                                    selection: Binding(
+                                        get: { timeDraft.endedAt },
+                                        set: { timeDraft.setEndedAt($0) }
+                                    ),
+                                    displayedComponents: [.hourAndMinute]
+                                )
+                                .labelsHidden()
+                            }
+
+                            Spacer(minLength: 8)
+
+                            timeField("集中") {
+                                HStack(spacing: 5) {
+                                    TextField(
+                                        "分",
+                                        value: Binding(
+                                            get: { timeDraft.focusMinutes },
+                                            set: { timeDraft.setFocusMinutes($0) }
+                                        ),
+                                        format: .number
+                                    )
+                                    .textFieldStyle(.roundedBorder)
+                                    .frame(width: 68)
+                                    .multilineTextAlignment(.trailing)
+
+                                    Text("分")
+                                        .foregroundStyle(.secondary)
+                                }
                                 .monospacedDigit()
+                            }
                         }
                     }
 
@@ -189,6 +250,16 @@ struct FlowHistoryInspectorView: View {
         }
     }
 
+    @ViewBuilder
+    private func timeField<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(title)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            content()
+        }
+    }
+
     private var dateText: String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "ja_JP")
@@ -202,7 +273,8 @@ struct FlowHistoryInspectorView: View {
             session: session,
             todo: selectedTodo,
             direction: selectedDirection,
-            focusSeconds: focusMinutes * 60,
+            startedAt: timeDraft.startedAt,
+            focusSeconds: timeDraft.focusSeconds,
             memo: memo,
             modelContext: modelContext
         )

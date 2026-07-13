@@ -34,6 +34,26 @@ struct DayHistoryTests {
         #expect(todo.status == .active)
     }
 
+    @Test func flowHistoryTimeDraftKeepsTimesAndMinutesInSync() {
+        let start = Date(timeIntervalSince1970: 20 * 60 * 60 + 41 * 60)
+        let end = start.addingTimeInterval(11 * 60)
+        var draft = FlowHistoryTimeDraft(startedAt: start, endedAt: end, focusSeconds: 11 * 60)
+
+        #expect(draft.focusMinutes == 11)
+
+        draft.setFocusMinutes(20)
+        #expect(draft.endedAt == start.addingTimeInterval(20 * 60))
+
+        draft.setEndedAt(start.addingTimeInterval(5 * 60))
+        #expect(draft.focusMinutes == 5)
+        #expect(draft.focusSeconds == 5 * 60)
+
+        let earlierStart = start.addingTimeInterval(-4 * 60)
+        draft.setStartedAt(earlierStart)
+        #expect(draft.focusMinutes == 9)
+        #expect(draft.endedAt == earlierStart.addingTimeInterval(9 * 60))
+    }
+
     @Test func historyOrdersTimedEntriesAndSeparatesLegacyCompletions() {
         let day = Date(timeIntervalSince1970: 86_400)
         let direction = Direction(name: "読書", type: .habit, symbolName: "📚", colorHex: "#34C759")
@@ -109,10 +129,12 @@ struct DayHistoryTests {
             plannedBreakDurationSeconds: 5 * 60
         )
 
+        let adjustedStart = start.addingTimeInterval(60 * 60)
         FlowHistoryEditor().update(
             session: session,
             todo: newTodo,
             direction: newDirection,
+            startedAt: adjustedStart,
             focusSeconds: 12 * 60,
             memo: "型を復習"
         )
@@ -126,6 +148,9 @@ struct DayHistoryTests {
         #expect(newTodo.notes == "型を復習")
         #expect(session.todo?.id == newTodo.id)
         #expect(session.direction?.id == newDirection.id)
+        #expect(session.startedAt == adjustedStart)
+        #expect(session.endedAt == adjustedStart.addingTimeInterval(12 * 60))
+        #expect(session.plannedEndAt == session.endedAt)
     }
 
     @Test func deletingOneFlowSegmentRemovesOnlyItsProgress() throws {
