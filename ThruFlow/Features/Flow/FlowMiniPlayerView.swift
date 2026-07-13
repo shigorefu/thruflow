@@ -185,30 +185,26 @@ struct FlowMiniPlayerView: View {
             }
 
             HStack(spacing: 12) {
-                Button {
-                    showsTaskPicker = true
-                } label: {
-                    playerArtwork
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Flowタスクを選択")
+                playerArtwork
 
                 contextLabel(now: now)
 
                 Spacer(minLength: 0)
 
-                Button {
-                    showsTaskPicker = true
-                } label: {
-                    Image(systemName: "chevron.down")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Flowタスクを選択")
+                Image(systemName: "chevron.down")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                openTaskPicker()
+            }
+            .accessibilityElement(children: .contain)
+            .accessibilityAction(named: "Flowタスクを選択") {
+                openTaskPicker()
+            }
         }
         .padding(.leading, selectedTodo == nil ? 0 : 6)
         .background(Color.primary.opacity(0.05))
@@ -384,11 +380,23 @@ struct FlowMiniPlayerView: View {
                 .lineLimit(1)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
-                .onTapGesture {
+                .highPriorityGesture(
+                    TapGesture().onEnded {
+                        beginTaskTitleEdit()
+                    }
+                )
+                .accessibilityAction(named: "タスク名を編集") {
                     beginTaskTitleEdit()
                 }
                 .accessibilityLabel("タスク名")
         }
+    }
+
+    private func openTaskPicker() {
+        if editingTaskTitleID != nil {
+            commitTaskTitle()
+        }
+        showsTaskPicker = true
     }
 
     private func beginTaskTitleEdit() {
