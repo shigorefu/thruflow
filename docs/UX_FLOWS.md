@@ -124,6 +124,8 @@ Hovering a cell shows its date, completed Task count, Flow count, Blocks, and fo
 
 `履歴` is available directly below `タスク`, owns Day History presentation, and initially opens today. It preserves the date selected from Statistics. The user can move one day backward or forward or choose a date.
 
+The Flow inspector limits its Task picker to Tasks scheduled on the Flow date plus the currently assigned Task. It edits time through linked `開始`, `終了`, and direct `分` fields: start/end changes recalculate minutes, and minute changes keep start fixed while moving end.
+
 - `タイムライン`: chronological Flow sessions and completed Tasks.
 - `タスク`: focus totals grouped by Task.
 - `方向`: focus totals grouped by Direction.
