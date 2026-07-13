@@ -285,6 +285,7 @@ struct FlowDashboardView: View {
                 title: "タスク",
                 systemImage: "checklist",
                 todos: standardTodos,
+                showsPriority: true,
                 progressText: progressText,
                 onToggle: toggleTodo,
                 onOpen: { editingTodo = $0 },
@@ -733,6 +734,7 @@ private struct DashboardTodoColumn: View {
     let title: String
     let systemImage: String
     let todos: [Todo]
+    var showsPriority = false
     let progressText: (Todo) -> String
     let onToggle: (Todo) -> Void
     let onOpen: (Todo) -> Void
@@ -801,7 +803,7 @@ private struct DashboardTodoColumn: View {
                             .strikethrough(todo.isCompleted)
                             .lineLimit(1)
 
-                        Text(progressText(todo))
+                        Text(todoDetail(todo))
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
@@ -831,6 +833,18 @@ private struct DashboardTodoColumn: View {
 
     private func todoTitleIsPlaceholder(_ todo: Todo) -> Bool {
         todo.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private func todoDetail(_ todo: Todo) -> String {
+        guard showsPriority else { return progressText(todo) }
+        return "\(priorityLabel(todo)) ・ \(progressText(todo))"
+    }
+
+    private func priorityLabel(_ todo: Todo) -> String {
+        if todo.priority == .low, todo.isRoomIfPossible {
+            return "余裕があれば"
+        }
+        return todo.priority.displayName
     }
 }
 
