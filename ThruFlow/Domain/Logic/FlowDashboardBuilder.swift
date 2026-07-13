@@ -50,6 +50,8 @@ struct FlowDashboardDirectionSummary: Identifiable {
 struct FlowDashboardSegment: Identifiable {
     let id: UUID
     let session: FlowSession
+    let startedAt: Date
+    let endedAt: Date
     let startFraction: Double
     let endFraction: Double
     let focusSeconds: Int
@@ -166,6 +168,8 @@ struct FlowDashboardBuilder {
         return FlowDashboardSegment(
             id: id,
             session: session,
+            startedAt: startedAt,
+            endedAt: resolvedEnd,
             startFraction: start,
             endFraction: min(1, max(end, start + (1 / dayDuration))),
             focusSeconds: focusSeconds,

@@ -19,6 +19,8 @@ struct FlowDashboardView: View {
     @Query(sort: \FlowSession.startedAt, order: .forward) private var sessions: [FlowSession]
 
     @State private var inspectedSession: FlowSession?
+    @State private var hoveredTimelineSegmentID: UUID?
+    @State private var selectedTimelineSegmentID: UUID?
     @State private var editingTodo: Todo?
     @State private var showsQuickComposer = false
 
@@ -175,8 +177,7 @@ struct FlowDashboardView: View {
 
                     ForEach(snapshot.segments) { segment in
                         Button {
-                            guard !segment.isActive else { return }
-                            inspectedSession = segment.session
+                            selectedTimelineSegmentID = segment.id
                         } label: {
                             Capsule()
                                 .fill(Color(hex: segment.colorHex))
@@ -187,7 +188,29 @@ struct FlowDashboardView: View {
                         }
                         .buttonStyle(.plain)
                         .offset(x: proxy.size.width * segment.startFraction)
-                        .help("\(segment.symbol) \(segment.taskTitle) · \(focusText(segment.focusSeconds))")
+                        .onHover { isHovered in
+                            hoveredTimelineSegmentID = isHovered ? segment.id : nil
+                        }
+                        .overlay(alignment: .bottom) {
+                            if hoveredTimelineSegmentID == segment.id,
+                               selectedTimelineSegmentID != segment.id {
+                                TimelineSegmentHoverCard(segment: segment)
+                                    .offset(y: -18)
+                                    .allowsHitTesting(false)
+                                    .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .bottom)))
+                            }
+                        }
+                        .popover(isPresented: timelinePopoverBinding(for: segment.id), arrowEdge: .bottom) {
+                            TimelineSegmentPopover(
+                                segment: segment,
+                                onOpenHistory: segment.isActive ? nil : {
+                                    selectedTimelineSegmentID = nil
+                                    inspectedSession = segment.session
+                                }
+                            )
+                        }
+                        .zIndex(hoveredTimelineSegmentID == segment.id ? 2 : 1)
+                        .accessibilityLabel("\(segment.taskTitle)、\(focusText(segment.focusSeconds))")
                     }
                 }
                 .frame(maxHeight: .infinity)
@@ -440,6 +463,17 @@ struct FlowDashboardView: View {
         max(6, totalWidth * (segment.endFraction - segment.startFraction))
     }
 
+    private func timelinePopoverBinding(for id: UUID) -> Binding<Bool> {
+        Binding(
+            get: { selectedTimelineSegmentID == id },
+            set: { isPresented in
+                if !isPresented, selectedTimelineSegmentID == id {
+                    selectedTimelineSegmentID = nil
+                }
+            }
+        )
+    }
+
     private func dateText(_ date: Date) -> String {
         date.formatted(.dateTime.locale(Locale(identifier: "ja_JP")).month(.wide).day().weekday(.wide))
     }
@@ -453,6 +487,117 @@ struct FlowDashboardView: View {
     private func blockText(_ blocks: Double) -> String {
         let rounded = (blocks * 10).rounded() / 10
         return rounded == rounded.rounded() ? "\(Int(rounded))" : String(format: "%.1f", rounded)
+    }
+}
+
+private struct TimelineSegmentHoverCard: View {
+    let segment: FlowDashboardSegment
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text("\(segment.symbol) \(segment.taskTitle)")
+                .font(.caption.weight(.semibold))
+                .lineLimit(1)
+
+            Text("\(TimelineSegmentFormat.interval(segment)) · \(TimelineSegmentFormat.duration(segment.focusSeconds))")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .frame(width: 190, alignment: .leading)
+        .background(.regularMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 7))
+        .overlay {
+            RoundedRectangle(cornerRadius: 7)
+                .strokeBorder(Color.primary.opacity(0.12))
+        }
+        .shadow(color: .black.opacity(0.18), radius: 8, y: 3)
+    }
+}
+
+private struct TimelineSegmentPopover: View {
+    let segment: FlowDashboardSegment
+    let onOpenHistory: (() -> Void)?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 12) {
+                Text(segment.symbol)
+                    .font(.title2)
+                    .frame(width: 42, height: 42)
+                    .background(Color(hex: segment.colorHex).opacity(0.16))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(segment.taskTitle)
+                        .font(.headline)
+                    Text(segment.directionName)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer(minLength: 0)
+
+                if segment.isActive {
+                    Text("実行中")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(Color(hex: segment.colorHex))
+                }
+            }
+
+            Divider()
+
+            segmentDetail("時間", value: TimelineSegmentFormat.interval(segment), systemImage: "clock")
+            segmentDetail("集中", value: TimelineSegmentFormat.duration(segment.focusSeconds), systemImage: "timer")
+            segmentDetail("Flow", value: segment.session.mode.displayName, systemImage: "waveform.path")
+
+            if let onOpenHistory {
+                Button(action: onOpenHistory) {
+                    Label("Flow履歴を開く", systemImage: "arrow.up.forward.app")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Color(hex: segment.colorHex))
+            }
+        }
+        .padding(16)
+        .frame(width: 290)
+    }
+
+    private func segmentDetail(_ title: String, value: String, systemImage: String) -> some View {
+        HStack(spacing: 9) {
+            Image(systemName: systemImage)
+                .foregroundStyle(.secondary)
+                .frame(width: 18)
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Spacer()
+            Text(value)
+                .font(.callout.weight(.medium))
+                .monospacedDigit()
+        }
+    }
+}
+
+private enum TimelineSegmentFormat {
+    private static let timeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ja_JP")
+        formatter.dateFormat = "H:mm"
+        return formatter
+    }()
+
+    static func interval(_ segment: FlowDashboardSegment) -> String {
+        "\(timeFormatter.string(from: segment.startedAt))–\(timeFormatter.string(from: segment.endedAt))"
+    }
+
+    static func duration(_ seconds: Int) -> String {
+        let minutes = seconds / 60
+        let remainingSeconds = seconds % 60
+        return remainingSeconds == 0 ? "\(minutes)分" : "\(minutes)分\(remainingSeconds)秒"
     }
 }
 
