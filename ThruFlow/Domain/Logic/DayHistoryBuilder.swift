@@ -20,6 +20,10 @@ struct DayHistorySnapshot {
         completedTasks.count
     }
 
+    var flowCount: Int {
+        Set(flows.map(\.sessionID)).count
+    }
+
     var directionSummaries: [DayHistoryDirectionSummary] {
         let grouped = Dictionary(grouping: flows, by: \DayHistoryFlow.directionID)
 
@@ -31,7 +35,7 @@ struct DayHistorySnapshot {
                 name: first.directionName,
                 colorHex: first.directionColorHex,
                 focusSeconds: flows.reduce(0) { $0 + $1.focusSeconds },
-                flowCount: flows.count
+                flowCount: Set(flows.map(\.sessionID)).count
             )
         }
         .sorted {
@@ -56,7 +60,7 @@ struct DayHistorySnapshot {
                 directionName: first.directionName,
                 directionColorHex: first.directionColorHex,
                 focusSeconds: flows.reduce(0) { $0 + $1.focusSeconds },
-                flowCount: flows.count
+                flowCount: Set(flows.map(\.sessionID)).count
             )
         }
         .sorted {
@@ -70,6 +74,7 @@ struct DayHistorySnapshot {
 
 struct DayHistoryFlow: Identifiable {
     let id: UUID
+    let sessionID: UUID
     let session: FlowSession
     let startedAt: Date
     let endedAt: Date
@@ -144,7 +149,7 @@ struct DayHistoryBuilder {
                     && session.resolvedActualFocusDurationSeconds > 0
                     && session.status != .interrupted
             }
-            .map(makeFlow)
+            .flatMap(makeFlows)
             .sorted { $0.startedAt < $1.startedAt }
 
         let completedTasks = todos
@@ -169,25 +174,64 @@ struct DayHistoryBuilder {
         return DayHistorySnapshot(date: day, flows: flows, completedTasks: completedTasks)
     }
 
-    private func makeFlow(_ session: FlowSession) -> DayHistoryFlow {
-        let direction = session.direction
-        let fallbackName = "その他"
-        let taskTitle = session.todo.map(TodoDisplay.title(for:)) ?? "(\(direction?.name ?? fallbackName))"
+    private func makeFlows(_ session: FlowSession) -> [DayHistoryFlow] {
+        if !session.segments.isEmpty {
+            return session.segments.compactMap { segment in
+                let focusSeconds = segment.resolvedFocusSeconds
+                guard focusSeconds > 0 else { return nil }
+                return makeFlow(
+                    id: segment.id,
+                    session: session,
+                    direction: segment.direction,
+                    todo: segment.todo,
+                    startedAt: segment.startedAt,
+                    endedAt: segment.endedAt ?? segment.startedAt.addingTimeInterval(TimeInterval(focusSeconds)),
+                    focusSeconds: focusSeconds,
+                    breakSeconds: 0
+                )
+            }
+        }
 
-        return DayHistoryFlow(
+        return [makeFlow(
             id: session.id,
             session: session,
+            direction: session.direction,
+            todo: session.todo,
             startedAt: session.startedAt,
             endedAt: session.endedAt ?? session.startedAt.addingTimeInterval(TimeInterval(session.resolvedActualFocusDurationSeconds)),
             focusSeconds: session.resolvedActualFocusDurationSeconds,
-            breakSeconds: session.plannedBreakDurationSeconds,
-            todoID: session.todo?.id,
+            breakSeconds: session.plannedBreakDurationSeconds
+        )]
+    }
+
+    private func makeFlow(
+        id: UUID,
+        session: FlowSession,
+        direction: Direction?,
+        todo: Todo?,
+        startedAt: Date,
+        endedAt: Date,
+        focusSeconds: Int,
+        breakSeconds: Int
+    ) -> DayHistoryFlow {
+        let fallbackName = "その他"
+        let taskTitle = todo.map(TodoDisplay.title(for:)) ?? "(\(direction?.name ?? fallbackName))"
+
+        return DayHistoryFlow(
+            id: id,
+            sessionID: session.id,
+            session: session,
+            startedAt: startedAt,
+            endedAt: endedAt,
+            focusSeconds: focusSeconds,
+            breakSeconds: breakSeconds,
+            todoID: todo?.id,
             taskTitle: taskTitle,
             directionID: direction?.id ?? session.id,
             directionSymbol: direction?.symbolName ?? "📥",
             directionName: direction?.name ?? fallbackName,
             directionColorHex: direction?.colorHex ?? "#8E8E93",
-            memo: session.todo?.notes
+            memo: todo?.notes
         )
     }
 

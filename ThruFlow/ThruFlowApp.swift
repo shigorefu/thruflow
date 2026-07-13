@@ -23,6 +23,7 @@ struct ThruFlowApp: App {
             Direction.self,
             Todo.self,
             FlowSession.self,
+            FlowSegment.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: Self.isRunningTests)
 

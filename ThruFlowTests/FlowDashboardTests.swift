@@ -155,6 +155,43 @@ struct FlowDashboardTests {
         #expect(abs(clock.phase(at: start.addingTimeInterval(41), speed: 0.5, isPaused: false) - 1.5) < 0.0001)
     }
 
+    @Test func oneFlowWithTaskSwitchesBuildsMultipleTimelineSegments() {
+        let day = Date(timeIntervalSince1970: 518_400)
+        let writing = Direction(name: "執筆", type: .neutral, colorHex: "#0A84FF")
+        let review = Direction(name: "レビュー", type: .neutral, colorHex: "#FF9F0A")
+        let firstTodo = Todo(title: "本文", direction: writing)
+        let secondTodo = Todo(title: "確認", direction: review)
+        let session = makeSession(direction: review, start: day.addingTimeInterval(9 * 3_600), duration: 25 * 60)
+        let first = FlowSegment(
+            session: session,
+            direction: writing,
+            todo: firstTodo,
+            startedAt: session.startedAt,
+            startFocusSeconds: 0
+        )
+        first.close(at: session.startedAt.addingTimeInterval(16 * 60), totalFocusSeconds: 16 * 60)
+        let second = FlowSegment(
+            session: session,
+            direction: review,
+            todo: secondTodo,
+            startedAt: session.startedAt.addingTimeInterval(16 * 60),
+            startFocusSeconds: 16 * 60
+        )
+        second.close(at: session.startedAt.addingTimeInterval(25 * 60), totalFocusSeconds: 25 * 60)
+        session.segments = [first, second]
+
+        let snapshot = FlowDashboardBuilder(calendar: calendar).build(
+            date: day.addingTimeInterval(12 * 3_600),
+            sessions: [session]
+        )
+
+        #expect(snapshot.flowCount == 1)
+        #expect(snapshot.segments.count == 2)
+        #expect(snapshot.totalFocusSeconds == 25 * 60)
+        #expect(snapshot.segments.map(\.taskTitle) == ["本文", "確認"])
+        #expect(snapshot.segments.map(\.focusSeconds) == [16 * 60, 9 * 60])
+    }
+
     private func makeSession(
         direction: Direction,
         start: Date,

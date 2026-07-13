@@ -29,4 +29,25 @@ struct FlowProgressCalculator {
             todo.setProgress(todo.recordedFocusSeconds / 60, now: now)
         }
     }
+
+    func applySession(_ session: FlowSession, fallbackSeconds: Int, now: Date = .now) {
+        if !session.segments.isEmpty {
+            for segment in session.segments where segment.resolvedFocusSeconds > 0 {
+                applyFocusDuration(
+                    seconds: segment.resolvedFocusSeconds,
+                    direction: segment.direction,
+                    todo: segment.todo,
+                    now: now
+                )
+            }
+            return
+        }
+
+        applyFocusDuration(
+            seconds: fallbackSeconds,
+            direction: session.direction,
+            todo: session.todo,
+            now: now
+        )
+    }
 }

@@ -203,7 +203,8 @@ struct FlowHistoryInspectorView: View {
             todo: selectedTodo,
             direction: selectedDirection,
             focusSeconds: focusMinutes * 60,
-            memo: memo
+            memo: memo,
+            modelContext: modelContext
         )
         try? modelContext.save()
         dismiss()

@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftData
 import Testing
 @testable import ThruFlow
 
@@ -299,4 +300,94 @@ struct FlowTests {
         #expect(inBreak.phase == .breakTime)
         #expect(unchanged == inBreak)
     }
+
+    @Test func segmentedFlowCreditsEachTaskOnlyForItsOwnFocusTime() {
+        let start = Date(timeIntervalSince1970: 7_000)
+        let writing = Direction(name: "執筆", type: .neutral)
+        let review = Direction(name: "レビュー", type: .neutral)
+        let writingTodo = Todo(title: "本文", direction: writing, measurement: .minutes, plannedAmount: 30)
+        let reviewTodo = Todo(title: "確認", direction: review, measurement: .minutes, plannedAmount: 20)
+        let session = FlowSession(
+            direction: review,
+            todo: reviewTodo,
+            mode: .twentyFiveFive,
+            startedAt: start,
+            plannedEndAt: start.addingTimeInterval(25 * 60),
+            endedAt: start.addingTimeInterval(25 * 60),
+            plannedFocusDurationSeconds: 25 * 60,
+            actualFocusDurationSeconds: 25 * 60,
+            plannedBreakDurationSeconds: 5 * 60
+        )
+        let first = FlowSegment(
+            session: session,
+            direction: writing,
+            todo: writingTodo,
+            startedAt: start,
+            startFocusSeconds: 0
+        )
+        first.close(at: start.addingTimeInterval(16 * 60), totalFocusSeconds: 16 * 60)
+        let second = FlowSegment(
+            session: session,
+            direction: review,
+            todo: reviewTodo,
+            startedAt: start.addingTimeInterval(16 * 60),
+            startFocusSeconds: 16 * 60
+        )
+        second.close(at: start.addingTimeInterval(25 * 60), totalFocusSeconds: 25 * 60)
+        session.segments = [first, second]
+
+        FlowProgressCalculator().applySession(session, fallbackSeconds: 25 * 60)
+
+        #expect(writingTodo.recordedFocusSeconds == 16 * 60)
+        #expect(writingTodo.actualProgress == 16)
+        #expect(reviewTodo.recordedFocusSeconds == 9 * 60)
+        #expect(reviewTodo.actualProgress == 9)
+        #expect(writing.recordedFocusSeconds == 16 * 60)
+        #expect(review.recordedFocusSeconds == 9 * 60)
+    }
+
+    @Test @MainActor func activeFlowSwitchesTaskWithoutResettingTimer() throws {
+        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let start = Date(timeIntervalSince1970: 8_000)
+        let firstDirection = Direction(name: "執筆", type: .neutral)
+        let secondDirection = Direction(name: "確認", type: .neutral)
+        let firstTodo = Todo(title: "本文", direction: firstDirection, measurement: .minutes, plannedAmount: 30)
+        let secondTodo = Todo(title: "レビュー", direction: secondDirection, measurement: .minutes, plannedAmount: 20)
+        context.insert(firstDirection)
+        context.insert(secondDirection)
+        context.insert(firstTodo)
+        context.insert(secondTodo)
+
+        let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
+        let store = ActiveFlowStore(defaults: defaults, notifications: TestFlowNotificationService())
+        store.configure(direction: firstDirection, todo: firstTodo, mode: .twentyFiveFive)
+        store.start(direction: firstDirection, todo: firstTodo, modelContext: context, now: start)
+        store.selectContext(
+            direction: secondDirection,
+            todo: secondTodo,
+            modelContext: context,
+            now: start.addingTimeInterval(16 * 60)
+        )
+
+        #expect(store.timerState?.startedAt == start)
+        #expect(store.selectedTodoID == secondTodo.id)
+        #expect(store.activeSession?.segments.count == 2)
+
+        store.stop(modelContext: context, now: start.addingTimeInterval(25 * 60))
+
+        let segments = store.activeSession?.segments.sorted { $0.startedAt < $1.startedAt } ?? []
+        #expect(segments.map(\.resolvedFocusSeconds) == [16 * 60, 9 * 60])
+        #expect(firstTodo.recordedFocusSeconds == 16 * 60)
+        #expect(secondTodo.recordedFocusSeconds == 9 * 60)
+    }
+}
+
+private final class TestFlowNotificationService: FlowNotificationService {
+    func requestAuthorizationIfNeeded() {}
+    func scheduleFocusFinished(mode: FlowMode, focusedSeconds: Int, fireDate: Date) {}
+    func scheduleBreakFinished(fireDate: Date) {}
+    func cancelPendingFlowNotifications() {}
 }

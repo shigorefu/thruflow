@@ -62,6 +62,8 @@ The player layout is:
 - `方向` uses an emoji-and-name grid with `その他` first for Direction-only starts;
 - Direction icon color follows the selected Task Direction;
 - compact Focus selector opens a separate picker for `Short`, `Focus`, and `Deep`;
+- choosing another Task during focus or pause keeps the current Flow running and starts a new history segment; no memo prompt is shown for this switch;
+- the Task card reuses the canonical completion/progress control and shows remaining Blocks or Minutes;
 - timer and transport controls on the right.
 
 Mode labels:

@@ -92,7 +92,7 @@ struct FlowMiniPlayerView: View {
 
     private func headerPlayer(now: Date) -> some View {
         HStack(spacing: 12) {
-            taskPickerButton
+            taskPickerButton(now: now)
                 .frame(minWidth: style == .dashboard ? 360 : 280, maxWidth: .infinity, alignment: .leading)
 
             modePickerButton
@@ -112,7 +112,7 @@ struct FlowMiniPlayerView: View {
 
     private func dashboardPlayer(now: Date) -> some View {
         VStack(spacing: 18) {
-            taskPickerButton
+            taskPickerButton(now: now)
 
             modePickerButton
 
@@ -169,38 +169,58 @@ struct FlowMiniPlayerView: View {
             : activeFlowStore.remainingText(now: now)
     }
 
-    private var taskPickerButton: some View {
-        Button {
-            showsTaskPicker = true
-        } label: {
-            HStack(spacing: 12) {
-                playerArtwork
-                contextLabel
-
-                Spacer(minLength: 0)
-
-                Image(systemName: "chevron.down")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
+    private func taskPickerButton(now: Date) -> some View {
+        HStack(spacing: 8) {
+            if let selectedTodo {
+                TodoProgressControl(
+                    todo: selectedTodo,
+                    additionalFocusSeconds: liveSelectedTaskFocusSeconds(now: now)
+                ) {
+                    selectedTodo.setCompleted(!selectedTodo.isCompleted)
+                    try? modelContext.save()
+                }
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(Color.primary.opacity(0.05))
-            .clipShape(RoundedRectangle(cornerRadius: 14))
-            .overlay {
-                RoundedRectangle(cornerRadius: 14)
-                    .strokeBorder(Color.primary.opacity(0.08))
+
+            Button {
+                showsTaskPicker = true
+            } label: {
+                HStack(spacing: 12) {
+                    playerArtwork
+                    contextLabel(now: now)
+
+                    Spacer(minLength: 0)
+
+                    Image(systemName: "chevron.down")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Flowタスクを選択")
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Flowタスクを選択")
+        .padding(.leading, selectedTodo == nil ? 0 : 6)
+        .background(Color.primary.opacity(0.05))
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14)
+                .strokeBorder(Color.primary.opacity(0.08))
+        }
         .popover(isPresented: $showsTaskPicker, arrowEdge: .bottom) {
             FlowTaskPickerView(
                 directions: activeDirections,
                 todos: todayTodos,
-                selectedDirectionID: $activeFlowStore.selectedDirectionID,
-                selectedTodoID: $activeFlowStore.selectedTodoID
-            )
+                selectedDirectionID: activeFlowStore.selectedDirectionID,
+                selectedTodoID: activeFlowStore.selectedTodoID
+            ) { direction, todo in
+                activeFlowStore.selectContext(
+                    direction: direction,
+                    todo: todo,
+                    modelContext: modelContext
+                )
+            }
             .frame(width: 520, height: 460)
         }
     }
@@ -307,7 +327,7 @@ struct FlowMiniPlayerView: View {
         .accessibilityHidden(true)
     }
 
-    private var contextLabel: some View {
+    private func contextLabel(now: Date) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(flowTaskTitle)
                 .font(contextTitleFont)
@@ -318,6 +338,16 @@ struct FlowMiniPlayerView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
+
+            if let selectedTodo, selectedTodo.measurement != .checkbox {
+                Text(todoRemainingText(
+                    selectedTodo,
+                    additionalFocusSeconds: liveSelectedTaskFocusSeconds(now: now)
+                ))
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(artworkColor)
+                    .lineLimit(1)
+            }
         }
         .accessibilityElement(children: .combine)
     }
@@ -369,6 +399,34 @@ struct FlowMiniPlayerView: View {
         }
 
         return .accentColor
+    }
+
+    private func todoRemainingText(_ todo: Todo, additionalFocusSeconds: Int) -> String {
+        let displayedFocusSeconds = todo.recordedFocusSeconds + max(0, additionalFocusSeconds)
+
+        switch todo.measurement {
+        case .checkbox:
+            return todo.isCompleted ? "完了" : "未完了"
+        case .focusBlocks:
+            let planned = Double(todo.plannedAmount ?? 0)
+            let remaining = max(0, planned - BlockUnit.blocks(forFocusedSeconds: displayedFocusSeconds))
+            let value = remaining == remaining.rounded() ? String(Int(remaining)) : String(format: "%.1f", remaining)
+            return "残り \(value) Block"
+        case .minutes:
+            let remainingSeconds = max(0, (todo.plannedAmount ?? 0) * 60 - displayedFocusSeconds)
+            return "残り \(Int(ceil(Double(remainingSeconds) / 60)))分"
+        }
+    }
+
+    private func liveSelectedTaskFocusSeconds(now: Date) -> Int {
+        guard activeFlowStore.phase == .focusing || activeFlowStore.phase == .paused,
+              let selectedTodo,
+              let segment = activeFlowStore.activeSession?.segments.last(where: { $0.endedAt == nil }),
+              segment.todo?.id == selectedTodo.id else {
+            return 0
+        }
+
+        return max(0, activeFlowStore.actualFocusSeconds(now: now) - segment.startFocusSeconds)
     }
 
     private var transportControls: some View {
@@ -814,9 +872,9 @@ struct FlowMiniPlayerView: View {
 private struct FlowTaskPickerView: View {
     let directions: [Direction]
     let todos: [Todo]
-
-    @Binding var selectedDirectionID: UUID?
-    @Binding var selectedTodoID: UUID?
+    let selectedDirectionID: UUID?
+    let selectedTodoID: UUID?
+    let onSelect: (Direction?, Todo?) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var selectedTab: FlowTaskPickerTab = .tasks
@@ -894,20 +952,6 @@ private struct FlowTaskPickerView: View {
         }
         .padding(14)
         .background(.bar)
-        .onChange(of: selectedDirectionID) { _, _ in
-            if !todos.contains(where: { $0.id == selectedTodoID }) {
-                selectedTodoID = nil
-            }
-        }
-        .onChange(of: selectedTodoID) { _, id in
-            guard selectedDirectionID == nil,
-                  let id,
-                  let todo = todos.first(where: { $0.id == id }) else {
-                return
-            }
-
-            selectedDirectionID = todo.direction?.id
-        }
     }
 
     @ViewBuilder
@@ -927,8 +971,7 @@ private struct FlowTaskPickerView: View {
             .buttonStyle(.plain)
             .popover(isPresented: $showsTaskComposer, arrowEdge: .trailing) {
                 QuickTodoCreationPopover(directions: directions) { todo in
-                    selectedTodoID = todo.id
-                    selectedDirectionID = todo.direction?.id
+                    onSelect(todo.direction, todo)
                 }
             }
 
@@ -975,8 +1018,7 @@ private struct FlowTaskPickerView: View {
                 color: .secondary,
                 isSelected: selectedTodoID == nil && (selectedDirectionID == otherDirection?.id || selectedDirectionID == nil)
             ) {
-                selectedTodoID = nil
-                selectedDirectionID = otherDirection?.id
+                onSelect(otherDirection, nil)
                 dismiss()
             }
 
@@ -987,8 +1029,7 @@ private struct FlowTaskPickerView: View {
                     color: Color(hex: direction.colorHex),
                     isSelected: selectedTodoID == nil && selectedDirectionID == direction.id
                 ) {
-                    selectedTodoID = nil
-                    selectedDirectionID = direction.id
+                    onSelect(direction, nil)
                     dismiss()
                 }
             }
@@ -998,8 +1039,7 @@ private struct FlowTaskPickerView: View {
 
     private func taskRow(_ todo: Todo) -> some View {
         Button {
-            selectedTodoID = todo.id
-            selectedDirectionID = todo.direction?.id
+            onSelect(todo.direction, todo)
             dismiss()
         } label: {
             pickerRow(
@@ -1328,5 +1368,5 @@ private struct FlowModePickerView: View {
 #Preview {
     FlowMiniPlayerView()
         .environmentObject(ActiveFlowStore())
-        .modelContainer(for: [Direction.self, Todo.self, FlowSession.self], inMemory: true)
+        .modelContainer(for: [Direction.self, Todo.self, FlowSession.self, FlowSegment.self], inMemory: true)
 }

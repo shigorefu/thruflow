@@ -15,10 +15,10 @@ struct FlowHistoryEditor {
         direction: Direction,
         focusSeconds: Int,
         memo: String?,
+        modelContext: ModelContext? = nil,
         now: Date = .now
     ) {
-        let previousSeconds = session.resolvedActualFocusDurationSeconds
-        removeProgress(seconds: previousSeconds, direction: session.direction, todo: session.todo, now: now)
+        removeSessionProgress(session, now: now)
 
         let adjustedSeconds = max(0, focusSeconds)
         session.todo = todo
@@ -28,17 +28,47 @@ struct FlowHistoryEditor {
         session.updatedAt = now
         todo?.setMemo(memo, now: now)
 
+        if !session.segments.isEmpty {
+            let retained = session.segments[0]
+            retained.direction = session.direction
+            retained.todo = todo
+            retained.startedAt = session.startedAt
+            retained.startFocusSeconds = 0
+            retained.close(at: session.endedAt ?? now, totalFocusSeconds: adjustedSeconds)
+
+            for segment in session.segments.dropFirst() {
+                modelContext?.delete(segment)
+            }
+            session.segments = [retained]
+        }
+
         addProgress(seconds: adjustedSeconds, direction: session.direction, todo: todo, completionDate: session.endedAt ?? now)
     }
 
     func delete(session: FlowSession, modelContext: ModelContext, now: Date = .now) {
+        removeSessionProgress(session, now: now)
+        modelContext.delete(session)
+    }
+
+    private func removeSessionProgress(_ session: FlowSession, now: Date) {
+        if !session.segments.isEmpty {
+            for segment in session.segments where segment.resolvedFocusSeconds > 0 {
+                removeProgress(
+                    seconds: segment.resolvedFocusSeconds,
+                    direction: segment.direction,
+                    todo: segment.todo,
+                    now: now
+                )
+            }
+            return
+        }
+
         removeProgress(
             seconds: session.resolvedActualFocusDurationSeconds,
             direction: session.direction,
             todo: session.todo,
             now: now
         )
-        modelContext.delete(session)
     }
 
     private func addProgress(seconds: Int, direction: Direction?, todo: Todo?, completionDate: Date) {

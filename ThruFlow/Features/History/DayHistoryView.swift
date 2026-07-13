@@ -136,7 +136,7 @@ struct DayHistoryView: View {
             )
             HistorySummaryTile(
                 title: "Flow",
-                value: "\(snapshot.flows.count)",
+                value: "\(snapshot.flowCount)",
                 systemImage: "waveform.path.ecg"
             )
             HistorySummaryTile(
@@ -491,5 +491,5 @@ private struct HistoryAggregateRow: View {
 #Preview {
     DayHistoryView()
         .environmentObject(ActiveFlowStore())
-        .modelContainer(for: [Direction.self, Todo.self, FlowSession.self], inMemory: true)
+        .modelContainer(for: [Direction.self, Todo.self, FlowSession.self, FlowSegment.self], inMemory: true)
 }

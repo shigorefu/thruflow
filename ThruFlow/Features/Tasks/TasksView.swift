@@ -1335,5 +1335,5 @@ private struct EmptyRow: View {
 #Preview {
     TasksView()
         .environmentObject(ActiveFlowStore())
-        .modelContainer(for: [Direction.self, Todo.self, FlowSession.self], inMemory: true)
+        .modelContainer(for: [Direction.self, Todo.self, FlowSession.self, FlowSegment.self], inMemory: true)
 }

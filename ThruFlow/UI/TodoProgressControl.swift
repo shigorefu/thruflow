@@ -9,6 +9,7 @@ import SwiftUI
 
 struct TodoProgressControl: View {
     let todo: Todo
+    var additionalFocusSeconds: Int = 0
     let action: () -> Void
 
     var body: some View {
@@ -71,13 +72,13 @@ struct TodoProgressControl: View {
         if todo.measurement == .focusBlocks,
            let plannedAmount = todo.plannedAmount,
            plannedAmount > 0 {
-            return min(BlockUnit.blocks(forFocusedSeconds: todo.recordedFocusSeconds) / Double(plannedAmount), 1)
+            return min(BlockUnit.blocks(forFocusedSeconds: displayedFocusSeconds) / Double(plannedAmount), 1)
         }
 
         if todo.measurement == .minutes,
            let plannedAmount = todo.plannedAmount,
            plannedAmount > 0 {
-            return min(Double(todo.recordedFocusSeconds / 60) / Double(plannedAmount), 1)
+            return min(Double(displayedFocusSeconds) / 60 / Double(plannedAmount), 1)
         }
 
         return TodoProgressCalculator().progress(
@@ -85,6 +86,10 @@ struct TodoProgressControl: View {
             plannedAmount: todo.plannedAmount,
             actualProgress: todo.actualProgress
         )
+    }
+
+    private var displayedFocusSeconds: Int {
+        todo.recordedFocusSeconds + max(0, additionalFocusSeconds)
     }
 
     private var tint: Color {
@@ -99,7 +104,7 @@ struct TodoProgressControl: View {
             measurement: todo.measurement,
             plannedAmount: todo.plannedAmount,
             actualProgress: todo.actualProgress,
-            focusDurationSeconds: todo.focusDurationSeconds
+            focusDurationSeconds: displayedFocusSeconds
         )
     }
 }
