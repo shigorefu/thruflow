@@ -34,11 +34,16 @@ struct FlowDashboardView: View {
         TimelineView(.periodic(from: .now, by: 1)) { timeline in
             let snapshot = snapshot(now: timeline.date)
 
-            ScrollView {
-                dashboardLayout(snapshot: snapshot)
-                .frame(maxWidth: 1320)
-                .padding(20)
-                .frame(maxWidth: .infinity)
+            GeometryReader { viewport in
+                ScrollView {
+                    dashboardLayout(
+                        snapshot: snapshot,
+                        availableHeight: max(0, viewport.size.height - 40)
+                    )
+                    .frame(maxWidth: 1320)
+                    .padding(20)
+                    .frame(maxWidth: .infinity)
+                }
             }
             .background(modeBackgroundTint.ignoresSafeArea())
         }
@@ -69,8 +74,13 @@ struct FlowDashboardView: View {
         )
     }
 
-    private func dashboardLayout(snapshot: FlowDashboardSnapshot) -> some View {
-        ViewThatFits(in: .horizontal) {
+    private func dashboardLayout(
+        snapshot: FlowDashboardSnapshot,
+        availableHeight: CGFloat
+    ) -> some View {
+        let lowerPanelHeight = max(280, availableHeight - Self.topPanelHeight - 16)
+
+        return ViewThatFits(in: .horizontal) {
             Grid(horizontalSpacing: 16, verticalSpacing: 16) {
                 GridRow(alignment: .top) {
                     flowStage(snapshot: snapshot)
@@ -83,9 +93,10 @@ struct FlowDashboardView: View {
 
                 GridRow(alignment: .top) {
                     taskColumns
+                        .frame(height: lowerPanelHeight)
                     statisticsPanel(snapshot: snapshot)
                         .frame(width: 310)
-                        .frame(maxHeight: .infinity)
+                        .frame(height: lowerPanelHeight)
                 }
             }
             .frame(minWidth: 900)
@@ -184,10 +195,7 @@ struct FlowDashboardView: View {
                         let centerX = proxy.size.width * segment.startFraction + (width / 2)
 
                         Button {
-                            withAnimation(.snappy(duration: 0.22)) {
-                                hoveredTimelineSegmentID = nil
-                                selectedTimelineSegmentID = segment.id
-                            }
+                            selectedTimelineSegmentID = segment.id
                         } label: {
                             ZStack {
                                 Color.clear
@@ -213,10 +221,10 @@ struct FlowDashboardView: View {
                         TimelineSegmentHoverCard(segment: hoveredSegment)
                             .position(
                                 x: timelineCardX(for: hoveredSegment, totalWidth: proxy.size.width),
-                                y: 58
+                                y: -24
                             )
                             .allowsHitTesting(false)
-                            .transition(.opacity.combined(with: .scale(scale: 0.88, anchor: .top)))
+                            .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .bottom)))
                             .zIndex(3)
                     }
 
