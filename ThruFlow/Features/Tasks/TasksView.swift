@@ -602,6 +602,7 @@ struct MessengerTodoComposer: View {
     let directions: [Direction]
     let validationMessage: String?
     var allowsDateSelection = true
+    var onCancel: (() -> Void)?
     let onSubmit: () -> Void
 
     @FocusState private var isFocused: Bool
@@ -612,12 +613,26 @@ struct MessengerTodoComposer: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            TextField("タスクを入力してください", text: $title, axis: .vertical)
-                .textFieldStyle(.plain)
-                .font(.body)
-                .lineLimit(2...5)
-                .focused($isFocused)
-                .onSubmit(submit)
+            HStack(alignment: .top, spacing: 10) {
+                TextField("タスクを入力してください", text: $title, axis: .vertical)
+                    .textFieldStyle(.plain)
+                    .font(.body)
+                    .lineLimit(2...5)
+                    .focused($isFocused)
+                    .onSubmit(submit)
+
+                if let onCancel {
+                    Button(action: onCancel) {
+                        Image(systemName: "xmark")
+                            .font(.caption.weight(.bold))
+                            .frame(width: 26, height: 26)
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.secondary)
+                    .help("閉じる")
+                    .accessibilityLabel("タスク作成を閉じる")
+                }
+            }
 
             HStack(spacing: 10) {
                 VolumeChip(volume: $volume)
@@ -681,6 +696,103 @@ struct MessengerTodoComposer: View {
     private func submit() {
         onSubmit()
         isFocused = true
+    }
+}
+
+struct QuickTodoCreationPopover: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \Todo.sortIndex, order: .forward) private var allTodos: [Todo]
+
+    let directions: [Direction]
+    var onCreated: ((Todo) -> Void)?
+
+    @State private var title = ""
+    @State private var selectedDirectionID: UUID?
+    @State private var volume: QuickTodoVolume = .checkbox
+    @State private var priority: TodoPriority = .medium
+    @State private var isRoomIfPossible = false
+    @State private var dateOption: QuickTodoDate = .today
+    @State private var validationMessage: String?
+
+    private let validator = TodoValidator()
+    private let progressCalculator = TodoProgressCalculator()
+
+    private var activeDirections: [Direction] {
+        directions.filter { !$0.isArchived }
+    }
+
+    private var selectableDirections: [Direction] {
+        activeDirections.filter { !DefaultDirections.isTaskInbox($0) }
+    }
+
+    var body: some View {
+        MessengerTodoComposer(
+            title: $title,
+            selectedDirectionID: $selectedDirectionID,
+            volume: $volume,
+            priority: $priority,
+            isRoomIfPossible: $isRoomIfPossible,
+            dateOption: $dateOption,
+            directions: selectableDirections,
+            validationMessage: validationMessage,
+            allowsDateSelection: false,
+            onCancel: { dismiss() },
+            onSubmit: createTodo
+        )
+        .frame(width: 520)
+    }
+
+    private func createTodo() {
+        let selectedDirection = selectedDirectionID.flatMap { id in
+            selectableDirections.first { $0.id == id }
+        }
+        let draft = TodoDraft(
+            title: title,
+            direction: selectedDirection,
+            measurement: volume.measurement,
+            priority: priority,
+            isRoomIfPossible: priority == .low && isRoomIfPossible,
+            plannedAmount: volume.plannedAmount,
+            scheduledDate: .now
+        )
+        let errors = validator.validate(draft)
+
+        guard errors.isEmpty else {
+            validationMessage = errors.map(\.localizedDescription).joined(separator: "\n")
+            return
+        }
+
+        let direction = selectedDirection ?? resolvedOtherDirection()
+        let todo = Todo(
+            title: draft.trimmedTitle,
+            direction: direction,
+            measurement: volume.measurement,
+            priority: priority,
+            isRoomIfPossible: priority == .low && isRoomIfPossible,
+            plannedAmount: volume.plannedAmount,
+            status: progressCalculator.status(
+                measurement: volume.measurement,
+                plannedAmount: volume.plannedAmount,
+                actualProgress: 0
+            ),
+            scheduledDate: .now,
+            sortIndex: (allTodos.map(\.sortIndex).min() ?? 0) - 1
+        )
+        modelContext.insert(todo)
+        try? modelContext.save()
+        onCreated?(todo)
+        dismiss()
+    }
+
+    private func resolvedOtherDirection() -> Direction {
+        if let existing = DefaultDirections.existingTaskInbox(in: activeDirections) {
+            return existing
+        }
+
+        let direction = DefaultDirections.makeTaskInbox()
+        modelContext.insert(direction)
+        return direction
     }
 }
 
