@@ -201,6 +201,7 @@ struct FlowMiniPlayerView: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
             .contentShape(Rectangle())
+            .modifier(FlowTaskCardPressEffect())
             .onTapGesture {
                 openTaskPicker()
             }
@@ -1354,6 +1355,23 @@ private struct FlowTaskPickerGroup: Identifiable {
         }
 
         return lhs.createdAt < rhs.createdAt
+    }
+}
+
+private struct FlowTaskCardPressEffect: ViewModifier {
+    @GestureState private var isPressed = false
+
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(isPressed ? 0.985 : 1)
+            .opacity(isPressed ? 0.82 : 1)
+            .animation(.easeOut(duration: 0.12), value: isPressed)
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 0)
+                    .updating($isPressed) { _, state, _ in
+                        state = true
+                    }
+            )
     }
 }
 
