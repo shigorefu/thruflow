@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftData
 import Testing
 @testable import ThruFlow
 
@@ -125,5 +126,51 @@ struct DayHistoryTests {
         #expect(newTodo.notes == "型を復習")
         #expect(session.todo?.id == newTodo.id)
         #expect(session.direction?.id == newDirection.id)
+    }
+
+    @Test func deletingOneFlowSegmentRemovesOnlyItsProgress() throws {
+        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let direction = Direction(name: "仕事", type: .neutral, focusDurationSeconds: 25 * 60)
+        let todo = Todo(
+            title: "実装",
+            direction: direction,
+            measurement: .minutes,
+            plannedAmount: 30,
+            actualProgress: 25,
+            focusDurationSeconds: 25 * 60
+        )
+        let start = Date(timeIntervalSince1970: 30_000)
+        let session = FlowSession(
+            direction: direction,
+            todo: todo,
+            mode: .twentyFiveFive,
+            phase: .completed,
+            status: .completed,
+            startedAt: start,
+            plannedEndAt: start.addingTimeInterval(25 * 60),
+            endedAt: start.addingTimeInterval(25 * 60),
+            plannedFocusDurationSeconds: 25 * 60,
+            actualFocusDurationSeconds: 25 * 60,
+            plannedBreakDurationSeconds: 5 * 60
+        )
+        let first = FlowSegment(session: session, direction: direction, todo: todo, startedAt: start, startFocusSeconds: 0)
+        first.close(at: start.addingTimeInterval(10 * 60), totalFocusSeconds: 10 * 60)
+        let second = FlowSegment(session: session, direction: direction, todo: todo, startedAt: start.addingTimeInterval(10 * 60), startFocusSeconds: 10 * 60)
+        second.close(at: start.addingTimeInterval(25 * 60), totalFocusSeconds: 25 * 60)
+        session.segments = [first, second]
+        context.insert(direction)
+        context.insert(todo)
+        context.insert(session)
+
+        FlowHistoryEditor().delete(segment: first, from: session, modelContext: context)
+
+        #expect(session.segments.map(\.id) == [second.id])
+        #expect(session.actualFocusDurationSeconds == 15 * 60)
+        #expect(direction.recordedFocusSeconds == 15 * 60)
+        #expect(todo.recordedFocusSeconds == 15 * 60)
+        #expect(todo.actualProgress == 15)
     }
 }

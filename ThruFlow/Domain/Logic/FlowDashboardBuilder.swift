@@ -50,6 +50,7 @@ struct FlowDashboardDirectionSummary: Identifiable {
 struct FlowDashboardSegment: Identifiable {
     let id: UUID
     let session: FlowSession
+    let storedSegment: FlowSegment?
     let startedAt: Date
     let endedAt: Date
     let startFraction: Double
@@ -101,6 +102,7 @@ struct FlowDashboardBuilder {
                     return dashboardSegment(
                         id: segment.id,
                         session: session,
+                        storedSegment: segment,
                         direction: segment.direction,
                         todo: segment.todo,
                         startedAt: segment.startedAt,
@@ -121,6 +123,7 @@ struct FlowDashboardBuilder {
             return [dashboardSegment(
                 id: session.id,
                 session: session,
+                storedSegment: nil,
                 direction: session.direction,
                 todo: session.todo,
                 startedAt: session.startedAt,
@@ -152,6 +155,7 @@ struct FlowDashboardBuilder {
     private func dashboardSegment(
         id: UUID,
         session: FlowSession,
+        storedSegment: FlowSegment?,
         direction: Direction?,
         todo: Todo?,
         startedAt: Date,
@@ -168,6 +172,7 @@ struct FlowDashboardBuilder {
         return FlowDashboardSegment(
             id: id,
             session: session,
+            storedSegment: storedSegment,
             startedAt: startedAt,
             endedAt: resolvedEnd,
             startFraction: start,

@@ -50,6 +50,24 @@ struct FlowHistoryEditor {
         modelContext.delete(session)
     }
 
+    func delete(segment: FlowSegment, from session: FlowSession, modelContext: ModelContext, now: Date = .now) {
+        let seconds = segment.resolvedFocusSeconds
+        removeProgress(seconds: seconds, direction: segment.direction, todo: segment.todo, now: now)
+
+        session.segments.removeAll { $0.id == segment.id }
+        modelContext.delete(segment)
+
+        guard !session.segments.isEmpty else {
+            modelContext.delete(session)
+            return
+        }
+
+        if let actualSeconds = session.actualFocusDurationSeconds {
+            session.actualFocusDurationSeconds = max(0, actualSeconds - seconds)
+        }
+        session.updatedAt = now
+    }
+
     private func removeSessionProgress(_ session: FlowSession, now: Date) {
         if !session.segments.isEmpty {
             for segment in session.segments where segment.resolvedFocusSeconds > 0 {

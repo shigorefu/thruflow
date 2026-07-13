@@ -28,6 +28,7 @@ struct FlowDashboardView: View {
     private let todayFilter = TodayTodoFilter()
     private let requiredPlanner = RequiredTodoPlanner()
     private let progressCalculator = TodoProgressCalculator()
+    private let historyEditor = FlowHistoryEditor()
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { timeline in
@@ -182,38 +183,60 @@ struct FlowDashboardView: View {
                         Button {
                             selectedTimelineSegmentID = segment.id
                         } label: {
-                            Capsule()
-                                .fill(Color(hex: segment.colorHex))
-                                .frame(
-                                    width: width,
-                                    height: segment.isActive ? 18 : 12
-                                )
+                            ZStack {
+                                Color.clear
+
+                                Capsule()
+                                    .fill(Color(hex: segment.colorHex))
+                                    .frame(
+                                        width: width,
+                                        height: segment.isActive ? 18 : 12
+                                    )
+                            }
+                            .frame(width: max(width, 14), height: 20)
+                            .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
                         .position(x: centerX, y: proxy.size.height / 2)
                         .onHover { isHovered in
                             hoveredTimelineSegmentID = isHovered ? segment.id : nil
                         }
-                        .overlay(alignment: .bottom) {
-                            if hoveredTimelineSegmentID == segment.id,
-                               selectedTimelineSegmentID != segment.id {
-                                TimelineSegmentHoverCard(segment: segment)
-                                    .offset(y: -18)
-                                    .allowsHitTesting(false)
-                                    .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .bottom)))
-                            }
-                        }
-                        .popover(isPresented: timelinePopoverBinding(for: segment.id), arrowEdge: .bottom) {
-                            TimelineSegmentPopover(
-                                segment: segment,
-                                onOpenHistory: segment.isActive ? nil : {
-                                    selectedTimelineSegmentID = nil
-                                    inspectedSession = segment.session
-                                }
-                            )
-                        }
                         .zIndex(hoveredTimelineSegmentID == segment.id ? 2 : 1)
                         .accessibilityLabel("\(segment.taskTitle)、\(focusText(segment.focusSeconds))")
+                    }
+
+                    if let hoveredSegment = snapshot.segments.first(where: { $0.id == hoveredTimelineSegmentID }),
+                       selectedTimelineSegmentID != hoveredSegment.id {
+                        TimelineSegmentHoverCard(segment: hoveredSegment)
+                            .position(
+                                x: timelineCardX(for: hoveredSegment, totalWidth: proxy.size.width),
+                                y: -24
+                            )
+                            .allowsHitTesting(false)
+                            .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .bottom)))
+                            .zIndex(3)
+                    }
+
+                    if let selectedSegment = snapshot.segments.first(where: { $0.id == selectedTimelineSegmentID }) {
+                        let width = segmentWidth(selectedSegment, totalWidth: proxy.size.width)
+                        let centerX = proxy.size.width * selectedSegment.startFraction + (width / 2)
+
+                        Color.clear
+                            .frame(width: max(width, 14), height: 18)
+                            .position(x: centerX, y: proxy.size.height / 2)
+                            .popover(isPresented: timelinePopoverBinding, arrowEdge: .bottom) {
+                                TimelineSegmentPopover(
+                                    segment: selectedSegment,
+                                    onDelete: selectedSegment.isActive ? nil : {
+                                        deleteTimelineSegment(selectedSegment)
+                                    },
+                                    onOpenHistory: selectedSegment.isActive ? nil : {
+                                        selectedTimelineSegmentID = nil
+                                        inspectedSession = selectedSegment.session
+                                    }
+                                )
+                            }
+                            .zIndex(4)
                     }
                 }
                 .frame(maxHeight: .infinity)
@@ -466,15 +489,37 @@ struct FlowDashboardView: View {
         max(6, totalWidth * (segment.endFraction - segment.startFraction))
     }
 
-    private func timelinePopoverBinding(for id: UUID) -> Binding<Bool> {
+    private var timelinePopoverBinding: Binding<Bool> {
         Binding(
-            get: { selectedTimelineSegmentID == id },
+            get: { selectedTimelineSegmentID != nil },
             set: { isPresented in
-                if !isPresented, selectedTimelineSegmentID == id {
+                if !isPresented {
                     selectedTimelineSegmentID = nil
                 }
             }
         )
+    }
+
+    private func timelineCardX(for segment: FlowDashboardSegment, totalWidth: CGFloat) -> CGFloat {
+        let width = segmentWidth(segment, totalWidth: totalWidth)
+        let center = totalWidth * segment.startFraction + (width / 2)
+        return min(max(center, 95), max(95, totalWidth - 95))
+    }
+
+    private func deleteTimelineSegment(_ segment: FlowDashboardSegment) {
+        selectedTimelineSegmentID = nil
+
+        if let storedSegment = segment.storedSegment {
+            historyEditor.delete(
+                segment: storedSegment,
+                from: segment.session,
+                modelContext: modelContext
+            )
+        } else {
+            historyEditor.delete(session: segment.session, modelContext: modelContext)
+        }
+
+        try? modelContext.save()
     }
 
     private func dateText(_ date: Date) -> String {
@@ -522,7 +567,10 @@ private struct TimelineSegmentHoverCard: View {
 
 private struct TimelineSegmentPopover: View {
     let segment: FlowDashboardSegment
+    let onDelete: (() -> Void)?
     let onOpenHistory: (() -> Void)?
+
+    @State private var showsDeleteConfirmation = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -547,6 +595,18 @@ private struct TimelineSegmentPopover: View {
                     Text("実行中")
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(Color(hex: segment.colorHex))
+                } else if onDelete != nil {
+                    Button {
+                        showsDeleteConfirmation = true
+                    } label: {
+                        Image(systemName: "trash.fill")
+                            .font(.callout.weight(.semibold))
+                            .frame(width: 30, height: 30)
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.red)
+                    .help("この区間を削除")
+                    .accessibilityLabel("このFlow区間を削除")
                 }
             }
 
@@ -567,6 +627,18 @@ private struct TimelineSegmentPopover: View {
         }
         .padding(16)
         .frame(width: 290)
+        .confirmationDialog(
+            "このFlow区間を削除しますか？",
+            isPresented: $showsDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("削除", role: .destructive) {
+                onDelete?()
+            }
+            Button("キャンセル", role: .cancel) {}
+        } message: {
+            Text("この区間の集中時間がタスクと方向の進捗から差し引かれます。")
+        }
     }
 
     private func segmentDetail(_ title: String, value: String, systemImage: String) -> some View {
