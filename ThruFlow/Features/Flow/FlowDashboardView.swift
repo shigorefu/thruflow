@@ -201,9 +201,6 @@ struct FlowDashboardView: View {
                         }
                         .buttonStyle(.plain)
                         .position(x: centerX, y: proxy.size.height / 2)
-                        .onHover { isHovered in
-                            hoveredTimelineSegmentID = isHovered ? segment.id : nil
-                        }
                         .zIndex(hoveredTimelineSegmentID == segment.id ? 2 : 1)
                         .accessibilityLabel("\(segment.taskTitle)、\(focusText(segment.focusSeconds))")
                     }
@@ -222,6 +219,18 @@ struct FlowDashboardView: View {
 
                 }
                 .frame(maxHeight: .infinity)
+                .onContinuousHover { phase in
+                    switch phase {
+                    case .active(let location):
+                        hoveredTimelineSegmentID = timelineSegment(
+                            at: location.x,
+                            segments: snapshot.segments,
+                            totalWidth: proxy.size.width
+                        )?.id
+                    case .ended:
+                        hoveredTimelineSegmentID = nil
+                    }
+                }
                 .popover(
                     isPresented: timelinePopoverBinding,
                     attachmentAnchor: .point(anchorPoint),
@@ -514,6 +523,24 @@ struct FlowDashboardView: View {
         let width = segmentWidth(segment, totalWidth: totalWidth)
         let center = totalWidth * segment.startFraction + (width / 2)
         return UnitPoint(x: min(max(center / totalWidth, 0), 1), y: 0.5)
+    }
+
+    private func timelineSegment(
+        at x: CGFloat,
+        segments: [FlowDashboardSegment],
+        totalWidth: CGFloat
+    ) -> FlowDashboardSegment? {
+        segments
+            .compactMap { segment -> (segment: FlowDashboardSegment, distance: CGFloat)? in
+                let width = max(segmentWidth(segment, totalWidth: totalWidth), 14)
+                let center = totalWidth * CGFloat(segment.startFraction)
+                    + (segmentWidth(segment, totalWidth: totalWidth) / 2)
+                let distance = abs(x - center)
+                guard distance <= width / 2 else { return nil }
+                return (segment, distance)
+            }
+            .min { $0.distance < $1.distance }?
+            .segment
     }
 
     private func deleteTimelineSegment(_ segment: FlowDashboardSegment) {
