@@ -839,6 +839,9 @@ struct FlowMiniPlayerView: View {
 }
 
 private struct FlowTaskPickerView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \Todo.sortIndex, order: .forward) private var allTodos: [Todo]
+
     let directions: [Direction]
     let todos: [Todo]
 
@@ -847,6 +850,18 @@ private struct FlowTaskPickerView: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var selectedTab: FlowTaskPickerTab = .tasks
+    @State private var showsTaskComposer = false
+    @State private var newTodoTitle = ""
+    @State private var newTodoDirectionID: UUID?
+    @State private var newTodoVolume: QuickTodoVolume = .checkbox
+    @State private var newTodoPriority: TodoPriority = .medium
+    @State private var newTodoIsRoomIfPossible = false
+    @State private var newTodoDateOption: QuickTodoDate = .today
+    @State private var newTodoError: String?
+    @Namespace private var composerAnimation
+
+    private let validator = TodoValidator()
+    private let progressCalculator = TodoProgressCalculator()
 
     private var taskGroups: [FlowTaskPickerGroup] {
         FlowTaskPickerGroup.groups(for: todos.filter { $0.direction?.type != .habit })
@@ -898,13 +913,40 @@ private struct FlowTaskPickerView: View {
                 .foregroundStyle(.secondary)
             }
 
-            Picker("表示", selection: $selectedTab) {
-                ForEach(FlowTaskPickerTab.allCases) { tab in
-                    Text(tab.title).tag(tab)
+            HStack(spacing: 10) {
+                Picker("表示", selection: $selectedTab) {
+                    ForEach(FlowTaskPickerTab.allCases) { tab in
+                        Text(tab.title).tag(tab)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+
+                if selectedTab == .tasks, !showsTaskComposer {
+                    Button {
+                        withAnimation(.snappy(duration: 0.28)) {
+                            showsTaskComposer = true
+                        }
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(.callout.weight(.bold))
+                            .frame(width: 30, height: 30)
+                            .background(Color.accentColor)
+                            .foregroundStyle(.white)
+                            .clipShape(Circle())
+                            .matchedGeometryEffect(id: "task-composer", in: composerAnimation)
+                    }
+                    .buttonStyle(.plain)
+                    .help("タスクを作成")
+                    .accessibilityLabel("タスクを作成")
                 }
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
+
+            if selectedTab == .tasks, showsTaskComposer {
+                taskComposer
+                    .matchedGeometryEffect(id: "task-composer", in: composerAnimation)
+                    .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .topTrailing)))
+            }
 
             ScrollView {
                 switch selectedTab {
@@ -934,6 +976,90 @@ private struct FlowTaskPickerView: View {
 
             selectedDirectionID = todo.direction?.id
         }
+        .onChange(of: selectedTab) { _, tab in
+            guard tab != .tasks, showsTaskComposer else { return }
+            withAnimation(.snappy(duration: 0.22)) {
+                showsTaskComposer = false
+            }
+        }
+    }
+
+    private var taskComposer: some View {
+        MessengerTodoComposer(
+            title: $newTodoTitle,
+            selectedDirectionID: $newTodoDirectionID,
+            volume: $newTodoVolume,
+            priority: $newTodoPriority,
+            isRoomIfPossible: $newTodoIsRoomIfPossible,
+            dateOption: $newTodoDateOption,
+            directions: userDirections,
+            validationMessage: newTodoError,
+            allowsDateSelection: false,
+            onSubmit: createTodo
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 18))
+    }
+
+    private func createTodo() {
+        let selectedDirection = newTodoDirectionID.flatMap { id in
+            userDirections.first { $0.id == id }
+        }
+        let draft = TodoDraft(
+            title: newTodoTitle,
+            direction: selectedDirection,
+            measurement: newTodoVolume.measurement,
+            priority: newTodoPriority,
+            isRoomIfPossible: newTodoPriority == .low && newTodoIsRoomIfPossible,
+            plannedAmount: newTodoVolume.plannedAmount,
+            scheduledDate: .now
+        )
+        let errors = validator.validate(draft)
+
+        guard errors.isEmpty else {
+            newTodoError = errors.map(\.localizedDescription).joined(separator: "\n")
+            return
+        }
+
+        let direction = selectedDirection ?? resolvedOtherDirection()
+        let todo = Todo(
+            title: draft.trimmedTitle,
+            direction: direction,
+            measurement: newTodoVolume.measurement,
+            priority: newTodoPriority,
+            isRoomIfPossible: newTodoPriority == .low && newTodoIsRoomIfPossible,
+            plannedAmount: newTodoVolume.plannedAmount,
+            status: progressCalculator.status(
+                measurement: newTodoVolume.measurement,
+                plannedAmount: newTodoVolume.plannedAmount,
+                actualProgress: 0
+            ),
+            scheduledDate: .now,
+            sortIndex: (allTodos.map(\.sortIndex).min() ?? 0) - 1
+        )
+        modelContext.insert(todo)
+        try? modelContext.save()
+
+        selectedTodoID = todo.id
+        selectedDirectionID = direction.id
+        newTodoTitle = ""
+        newTodoError = nil
+        if newTodoPriority != .low {
+            newTodoIsRoomIfPossible = false
+        }
+
+        withAnimation(.snappy(duration: 0.24)) {
+            showsTaskComposer = false
+        }
+    }
+
+    private func resolvedOtherDirection() -> Direction {
+        if let existing = DefaultDirections.existingTaskInbox(in: directions) {
+            return existing
+        }
+
+        let direction = DefaultDirections.makeTaskInbox()
+        modelContext.insert(direction)
+        return direction
     }
 
     @ViewBuilder
