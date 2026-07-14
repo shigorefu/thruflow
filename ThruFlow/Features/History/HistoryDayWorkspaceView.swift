@@ -220,7 +220,7 @@ private struct HistoryDayInspectorPane: View {
                     ContentUnavailableView(
                         "記録を選択",
                         systemImage: "cursorarrow.click",
-                        description: Text("Flow、休憩、または達成タスクの詳細をここに表示します。")
+                        description: Text("Flowまたは休憩の詳細をここに表示します。")
                     )
                     .padding(.horizontal, 20)
                     .padding(.vertical, 44)
@@ -281,10 +281,6 @@ private struct HistoryDayInspectorPane: View {
             case .rest:
                 propertyRow("種類", systemImage: "cup.and.saucer") {
                     item.flowBreak?.isLongBreak == true ? "Long Break" : "休憩"
-                }
-            case .completedTask, .untimedTask:
-                propertyRow("状態", systemImage: "checkmark.circle") {
-                    "達成"
                 }
             }
 

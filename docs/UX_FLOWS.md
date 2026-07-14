@@ -134,15 +134,15 @@ The primary `カレンダー` mode provides:
 - `週`: seven synchronized day columns in one vertically scrollable 24-hour grid;
 - `月`: a seven-column month overview.
 
-In `日`, the right pane keeps a mini-calendar above the selected record properties. Selecting a Flow, rest, or completed Task updates that pane; changing the day clears the selection. Elastic includes the day's timed records and current hour with one-hour context and a four-hour minimum. `24時間` shows the full day, and the preference persists locally. At compact widths, selection opens the same inspector as a sheet so the timeline retains useful width.
+In `日`, the right pane keeps a mini-calendar above the selected record properties. Selecting a Flow or rest updates that pane; changing the day clears the selection. Elastic includes the day's timed records and current hour with one-hour context and a four-hour minimum. `24時間` shows the full day, and the preference persists locally. At compact widths, selection opens the same inspector as a sheet so the timeline retains useful width.
 
-Week keeps date headers and the optional `完了時刻なし` row fixed while hours scroll. Opening a day/week grid scrolls near the current time when today is visible, otherwise near the first Flow. A red line marks the current time. Medium/narrow headers wrap into two rows and stable-width week columns scroll horizontally. Month keeps a minimum full-grid width and scrolls horizontally rather than crushing cells.
+Week keeps date headers fixed while hours scroll. Opening a day/week grid scrolls near the current time when today is visible, otherwise near the first Flow. A red line marks the current time. Medium/narrow headers wrap into two rows and stable-width week columns scroll horizontally. Month keeps a minimum full-grid width and scrolls horizontally rather than crushing cells.
 
-Flow and FlowSegment records are timed blocks colored by Direction. FlowBreak records are light-gray timed blocks. Exact Task completions appear at `completedAt`; legacy completions without exact time appear in `完了時刻なし`. Pending scheduled Tasks remain in `タスク` and are excluded from History Calendar.
+Flow and FlowSegment records are timed blocks colored by Direction. FlowBreak records are light-gray timed blocks. Todo completions and pending Tasks never become independent History Calendar blocks.
 
 Timed records keep a small minimum clickable height. Entries below 15 minutes use compact title-only rendering and expose exact time through hover and accessibility. Lane assignment uses the minimum visual duration as well as actual overlap, preventing nearby short records from painting over one another.
 
-Selecting an entry reuses `FlowHistoryInspectorView`, `FlowBreakEditor`, or `TodoFormView`. The calendar is read-oriented in MVP 0.1: it does not provide direct drag/resize and does not persist a second calendar entity.
+Selecting an entry reuses `FlowHistoryInspectorView` or `FlowBreakEditor`. The calendar is read-oriented in MVP 0.1: it does not provide direct drag/resize and does not persist a second calendar entity.
 
 The Flow inspector limits its Task picker to Tasks scheduled on the Flow date plus the currently assigned Task. It edits time through linked `開始`, `終了`, and direct `分` fields: start/end changes recalculate minutes, and minute changes keep start fixed while moving end.
 
@@ -150,4 +150,4 @@ The Flow inspector limits its Task picker to Tasks scheduled on the Flow date pl
 - `タスク`: focus totals grouped by Task.
 - `方向`: focus totals grouped by Direction.
 
-Completed Tasks with an exact completion timestamp appear in chronology. Legacy completions without one appear under `完了時刻なし`. Selecting a Flow opens its inspector for correction or deletion.
+Task completion timestamps remain available to Task summaries and Statistics, but are not rendered in the Flow calendar. Selecting a Flow opens its inspector for correction or deletion.

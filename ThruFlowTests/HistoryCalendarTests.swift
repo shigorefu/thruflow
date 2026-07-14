@@ -31,25 +31,10 @@ struct HistoryCalendarTests {
         #expect(calendar.component(.month, from: month.start) == 7)
     }
 
-    @Test func builderProjectsActualHistoryAndExcludesPendingScheduledTask() {
+    @Test func builderProjectsOnlyFlowAndBreakHistory() {
         let day = Date(timeIntervalSince1970: 1783987200)
         let direction = Direction(name: "仕事", type: .neutral, symbolName: "💻", colorHex: "#34C759")
         let flowTodo = Todo(title: "実装", direction: direction, scheduledDate: day)
-        let completedTodo = Todo(
-            title: "レビュー",
-            direction: direction,
-            status: .completed,
-            completedAt: day.addingTimeInterval(15 * 3600),
-            scheduledDate: day
-        )
-        let pendingTodo = Todo(title: "資料", direction: direction, scheduledDate: day)
-        let legacyTodo = Todo(
-            title: "旧タスク",
-            direction: direction,
-            status: .completed,
-            scheduledDate: day,
-            updatedAt: day.addingTimeInterval(16 * 3600)
-        )
         let session = FlowSession(
             direction: direction,
             todo: flowTodo,
@@ -76,15 +61,13 @@ struct HistoryCalendarTests {
             interval: interval,
             sessions: [session],
             breaks: [rest],
-            todos: [flowTodo, completedTodo, pendingTodo, legacyTodo],
             referenceDate: interval.end
         )
 
         #expect(snapshot.items.filter { $0.kind == .flow }.count == 1)
         #expect(snapshot.items.filter { $0.kind == .rest }.count == 1)
-        #expect(snapshot.items.filter { $0.kind == .completedTask }.count == 1)
-        #expect(snapshot.items.filter { $0.kind == .untimedTask }.count == 1)
-        #expect(snapshot.items.allSatisfy { $0.todo?.id != pendingTodo.id })
+        #expect(snapshot.items.count == 2)
+        #expect(snapshot.items.allSatisfy { $0.kind == .flow || $0.kind == .rest })
         #expect(snapshot.items.first { $0.kind == .rest }?.durationSeconds == 5 * 60)
     }
 
@@ -134,8 +117,7 @@ struct HistoryCalendarTests {
         let item = HistoryCalendarBuilder(calendar: calendar).build(
             interval: interval,
             sessions: [session],
-            breaks: [],
-            todos: []
+            breaks: []
         ).items[0]
 
         let range = HistoryDayTimelineWindowBuilder().hourRange(
@@ -167,7 +149,6 @@ struct HistoryCalendarTests {
             subtitle: "仕事",
             symbol: "🌙",
             colorHex: "#007AFF",
-            isAllDay: false,
             session: nil,
             flowBreak: nil,
             todo: nil

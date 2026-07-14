@@ -73,8 +73,7 @@ struct HistoryDayTimelineWindowBuilder {
 
         let dayInterval = HistoryCalendarRange.day.interval(containing: date, calendar: calendar)
         let timedItems = items.filter { item in
-            !item.isAllDay
-                && item.startedAt < dayInterval.end
+            item.startedAt < dayInterval.end
                 && item.endedAt > dayInterval.start
         }
         var startHour = timedItems.map { item in
@@ -118,8 +117,6 @@ struct HistoryDayTimelineWindowBuilder {
 enum HistoryCalendarItemKind: String, CaseIterable, Hashable {
     case flow
     case rest
-    case completedTask
-    case untimedTask
 }
 
 struct HistoryCalendarItem: Identifiable {
@@ -131,7 +128,6 @@ struct HistoryCalendarItem: Identifiable {
     let subtitle: String
     let symbol: String
     let colorHex: String
-    let isAllDay: Bool
     let session: FlowSession?
     let flowBreak: FlowBreak?
     let todo: Todo?
@@ -144,15 +140,6 @@ struct HistoryCalendarItem: Identifiable {
 struct HistoryCalendarSnapshot {
     let interval: DateInterval
     let items: [HistoryCalendarItem]
-
-    func items(on date: Date, calendar: Calendar) -> [HistoryCalendarItem] {
-        items.filter { item in
-            item.isAllDay
-                ? calendar.isDate(item.startedAt, inSameDayAs: date)
-                : calendar.isDate(item.startedAt, inSameDayAs: date)
-                    || calendar.isDate(item.endedAt.addingTimeInterval(-1), inSameDayAs: date)
-        }
-    }
 }
 
 @MainActor
@@ -167,7 +154,6 @@ struct HistoryCalendarBuilder {
         interval: DateInterval,
         sessions: [FlowSession],
         breaks: [FlowBreak],
-        todos: [Todo],
         referenceDate: Date = .now
     ) -> HistoryCalendarSnapshot {
         let visibleSessions = sessions.filter { session in
@@ -194,14 +180,11 @@ struct HistoryCalendarBuilder {
                 subtitle: direction?.name ?? "Flowシリーズ",
                 symbol: "☕️",
                 colorHex: "#8E8E93",
-                isAllDay: false,
                 session: previousSession,
                 flowBreak: flowBreak,
                 todo: nil
             )
         }
-        items += todos.compactMap { makeTaskItem($0, interval: interval) }
-
         return HistoryCalendarSnapshot(
             interval: interval,
             items: items.sorted {
@@ -256,51 +239,7 @@ struct HistoryCalendarBuilder {
             subtitle: directionName,
             symbol: direction?.symbolName ?? "📝",
             colorHex: direction?.colorHex ?? "#8E8E93",
-            isAllDay: false,
             session: session,
-            flowBreak: nil,
-            todo: todo
-        )
-    }
-
-    private func makeTaskItem(_ todo: Todo, interval: DateInterval) -> HistoryCalendarItem? {
-        guard !todo.isDeleted, !todo.isArchived else { return nil }
-        let directionName = todo.direction?.name ?? "その他"
-        let symbol = todo.direction?.symbolName ?? "📝"
-        let color = todo.direction?.colorHex ?? "#8E8E93"
-
-        if todo.isCompleted, let completedAt = todo.completedAt, interval.contains(completedAt) {
-            return HistoryCalendarItem(
-                id: "completed-task-\(todo.id.uuidString)",
-                kind: .completedTask,
-                startedAt: completedAt,
-                endedAt: completedAt.addingTimeInterval(20 * 60),
-                title: TodoDisplay.title(for: todo),
-                subtitle: "\(directionName) ・ 達成",
-                symbol: symbol,
-                colorHex: color,
-                isAllDay: false,
-                session: nil,
-                flowBreak: nil,
-                todo: todo
-            )
-        }
-
-        guard todo.isCompleted, todo.completedAt == nil else { return nil }
-        let legacyDate = calendar.startOfDay(for: todo.updatedAt)
-        guard interval.contains(legacyDate) else { return nil }
-
-        return HistoryCalendarItem(
-            id: "untimed-task-\(todo.id.uuidString)",
-            kind: .untimedTask,
-            startedAt: legacyDate,
-            endedAt: calendar.date(byAdding: .day, value: 1, to: legacyDate)!,
-            title: TodoDisplay.title(for: todo),
-            subtitle: "\(directionName) ・ 完了時刻なし",
-            symbol: symbol,
-            colorHex: color,
-            isAllDay: true,
-            session: nil,
             flowBreak: nil,
             todo: todo
         )
