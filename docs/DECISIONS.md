@@ -98,6 +98,14 @@ The `日` History range uses a narrow Apple Calendar-style timeline with a persi
 
 Reason: day history needs enough vertical and horizontal space to inspect short Flow records without duplicating editors or compressing the timeline into an unreadable calendar column.
 
+## D-015: History Tracks Follow Flow Series
+
+History groups projected Flow and rest entries by `seriesID`. One series is one continuous visual track: focus keeps Direction colors and persisted rest is light gray. A different series is always a separate track.
+
+Double-clicking empty calendar time may create a completed FlowSession and FlowSegment with a new independent series. It uses the normal progress calculation and does not support manual rest creation.
+
+Reason: the calendar should communicate uninterrupted Flow rhythm without destroying the exact session and rest records required for editing and statistics.
+
 ## Open Questions
 
 - What measurement and planned amount should be used for an auto-created Task when Flow starts with only a Direction or with neither Direction nor Task?

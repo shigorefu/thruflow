@@ -27,9 +27,10 @@ SwiftUI views should call domain logic instead of owning product rules directly.
 - `Todo.completedAt` stores the exact completion time for new completions.
 - `DayHistoryBuilder` creates daily Task/Direction aggregates and legacy day projections.
 - `HistoryCalendarBuilder` creates read-only day/week/month calendar projections from actual Flow and break records; Todo completion never creates a calendar item.
+- `HistoryCalendarTrackBuilder` groups those projections by `seriesID` into continuous work/rest tracks without mutating persistence.
 - `HistoryDayTimelineWindowBuilder` derives the testable Elastic/full-day hour range independently from SwiftUI, including records that cross midnight.
 - `HistoryOverlapLayout` assigns deterministic side-by-side lanes using actual and minimum visual duration so short records cannot overlap in rendering.
-- `FlowHistoryEditor` applies progress deltas when historical Flow records change.
+- `FlowHistoryEditor` creates independent completed manual Flow records and applies progress deltas when historical Flow records change.
 - `FlowDashboardBuilder` derives today's totals, Direction palette, and normalized 24-hour segments from `FlowSession`, with a live overlay for the active creditable Flow.
 - `FlowVisualState` converts 0...6 daily Blocks into clamped speed, volume, layer count, and mode-specific wave character without placing those rules in SwiftUI.
 - `FlowStream.metal` renders the broad multi-color stream as one GPU effect. The SwiftUI host supplies only accumulated phase and visual-state uniforms, uses 30 FPS while idle and 60 FPS while active, and pauses when its window is not key, the scene is inactive, or Reduce Motion is enabled. `FlowAnimationClock` preserves phase when speed changes or rendering pauses, so starting Flow and returning to the window never replace the current stream frame.

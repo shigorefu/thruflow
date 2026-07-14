@@ -156,10 +156,13 @@ struct HistoryTimeGrid: View {
     let selectedItemID: String?
     let onSelect: (HistoryCalendarItem) -> Void
 
+    @State private var creationRequest: HistoryFlowCreationRequest?
+
     private let calendar = Calendar.current
+    private let trackBuilder = HistoryCalendarTrackBuilder()
     private let timeAxisWidth: CGFloat = 72
     private let minimumDayWidth: CGFloat = 132
-    private let minimumItemHeight: CGFloat = 18
+    private let minimumTrackHeight: CGFloat = 18
 
     private var days: [Date] {
         let interval = range.interval(containing: selectedDate, calendar: calendar)
@@ -211,8 +214,11 @@ struct HistoryTimeGrid: View {
             ScrollView(.vertical) {
                 ZStack(alignment: .topLeading) {
                     hourGrid(dayWidth: dayWidth, contentWidth: contentWidth)
-                    timedItems(dayWidth: dayWidth)
+                        .allowsHitTesting(false)
+                    emptyDoubleClickLayer(dayWidth: dayWidth)
+                    timedTracks(dayWidth: dayWidth)
                     currentTimeLine(dayWidth: dayWidth)
+                    creationPopoverAnchor
                 }
                 .frame(width: contentWidth, height: hourHeight * CGFloat(hourRange.count))
             }
@@ -257,27 +263,73 @@ struct HistoryTimeGrid: View {
     }
 
     @ViewBuilder
-    private func timedItems(dayWidth: CGFloat) -> some View {
+    private func timedTracks(dayWidth: CGFloat) -> some View {
         ForEach(Array(days.enumerated()), id: \.offset) { dayIndex, day in
             let dayItems = timedItems(on: day)
-            let placements = placementMap(for: dayItems, day: day)
+            let tracks = trackBuilder.build(items: dayItems)
+            let placements = placementMap(for: tracks, day: day)
 
-            ForEach(dayItems) { item in
-                let placement = placements[item.id] ?? HistoryOverlapPlacement(id: item.id, lane: 0, laneCount: 1)
+            ForEach(tracks) { track in
+                let placement = placements[track.id] ?? HistoryOverlapPlacement(id: track.id, lane: 0, laneCount: 1)
                 let width = (dayWidth - 8) / CGFloat(placement.laneCount)
-                let frame = frame(for: item, on: day)
+                let frame = frame(for: track, on: day)
+                let visibleInterval = visibleInterval(on: day)
 
-                HistoryTimedItemView(
-                    item: item,
-                    isCompact: item.durationSeconds < 15 * 60,
-                    isSelected: selectedItemID == item.id
-                ) { onSelect(item) }
+                HistorySeriesTrackView(
+                    track: track,
+                    visibleInterval: visibleInterval,
+                    selectedItemID: selectedItemID,
+                    onSelect: onSelect
+                )
                     .frame(width: max(32, width - 3), height: frame.height, alignment: .topLeading)
                     .offset(
                         x: timeAxisWidth + CGFloat(dayIndex) * dayWidth + 4 + CGFloat(placement.lane) * width,
                         y: frame.y
                     )
             }
+        }
+    }
+
+    @ViewBuilder
+    private func emptyDoubleClickLayer(dayWidth: CGFloat) -> some View {
+        let height = hourHeight * CGFloat(hourRange.count)
+        ForEach(Array(days.enumerated()), id: \.offset) { dayIndex, day in
+            Color.clear
+                .contentShape(Rectangle())
+                .frame(width: dayWidth, height: height)
+                .offset(x: timeAxisWidth + CGFloat(dayIndex) * dayWidth)
+                .gesture(
+                    SpatialTapGesture(count: 2)
+                        .onEnded { value in
+                            let y = min(max(0, value.location.y), height)
+                            creationRequest = HistoryFlowCreationRequest(
+                                startedAt: date(on: day, y: y),
+                                x: timeAxisWidth + CGFloat(dayIndex) * dayWidth + value.location.x,
+                                y: y
+                            )
+                        }
+                )
+        }
+    }
+
+    @ViewBuilder
+    private var creationPopoverAnchor: some View {
+        if let request = creationRequest {
+            Color.primary
+                .opacity(0.001)
+                .frame(width: 2, height: 2)
+                .offset(x: request.x, y: request.y)
+                .popover(
+                    isPresented: Binding(
+                        get: { creationRequest != nil },
+                        set: { if !$0 { creationRequest = nil } }
+                    ),
+                    arrowEdge: .trailing
+                ) {
+                    ManualFlowCreationView(startedAt: request.startedAt) {
+                        creationRequest = nil
+                    }
+                }
         }
     }
 
@@ -308,30 +360,41 @@ struct HistoryTimeGrid: View {
         return items.filter { $0.startedAt < end && $0.endedAt > start }
     }
 
-    private func placementMap(for items: [HistoryCalendarItem], day: Date) -> [String: HistoryOverlapPlacement] {
-        let dayStart = calendar.startOfDay(for: day)
-        let start = calendar.date(byAdding: .hour, value: hourRange.lowerBound, to: dayStart)!
-        let end = calendar.date(byAdding: .hour, value: hourRange.upperBound, to: dayStart)!
-        let inputs = items.map {
-            HistoryOverlapInput(id: $0.id, start: max($0.startedAt, start), end: min($0.endedAt, end))
+    private func placementMap(for tracks: [HistoryCalendarTrack], day: Date) -> [String: HistoryOverlapPlacement] {
+        let interval = visibleInterval(on: day)
+        let inputs = tracks.map {
+            HistoryOverlapInput(id: $0.id, start: max($0.startedAt, interval.start), end: min($0.endedAt, interval.end))
         }
-        let minimumDuration = TimeInterval(minimumItemHeight / hourHeight * 3600)
+        let minimumDuration = TimeInterval(minimumTrackHeight / hourHeight * 3600)
         let placements = HistoryOverlapLayout().place(inputs, minimumDuration: minimumDuration)
         return Dictionary(uniqueKeysWithValues: placements.map { ($0.id, $0) })
     }
 
-    private func frame(for item: HistoryCalendarItem, on day: Date) -> (y: CGFloat, height: CGFloat) {
-        let startOfDay = calendar.startOfDay(for: day)
-        let visibleStart = calendar.date(byAdding: .hour, value: hourRange.lowerBound, to: startOfDay)!
-        let visibleEnd = calendar.date(byAdding: .hour, value: hourRange.upperBound, to: startOfDay)!
-        let start = max(item.startedAt, visibleStart)
-        let end = min(item.endedAt, visibleEnd)
-        let startSeconds = max(0, start.timeIntervalSince(visibleStart))
+    private func frame(for track: HistoryCalendarTrack, on day: Date) -> (y: CGFloat, height: CGFloat) {
+        let interval = visibleInterval(on: day)
+        let start = max(track.startedAt, interval.start)
+        let end = min(track.endedAt, interval.end)
+        let startSeconds = max(0, start.timeIntervalSince(interval.start))
         let duration = max(0, end.timeIntervalSince(start))
         return (
             CGFloat(startSeconds / 3600) * hourHeight,
-            max(minimumItemHeight, CGFloat(duration / 3600) * hourHeight)
+            max(minimumTrackHeight, CGFloat(duration / 3600) * hourHeight)
         )
+    }
+
+    private func visibleInterval(on day: Date) -> DateInterval {
+        let dayStart = calendar.startOfDay(for: day)
+        return DateInterval(
+            start: calendar.date(byAdding: .hour, value: hourRange.lowerBound, to: dayStart)!,
+            end: calendar.date(byAdding: .hour, value: hourRange.upperBound, to: dayStart)!
+        )
+    }
+
+    private func date(on day: Date, y: CGFloat) -> Date {
+        let interval = visibleInterval(on: day)
+        let rawSeconds = TimeInterval(y / hourHeight * 3600)
+        let roundedSeconds = (rawSeconds / 300).rounded() * 300
+        return min(interval.end.addingTimeInterval(-60), interval.start.addingTimeInterval(roundedSeconds))
     }
 
     private func scrollToRelevantHour(_ proxy: ScrollViewProxy) {
@@ -353,52 +416,85 @@ struct HistoryTimeGrid: View {
     }
 }
 
-private struct HistoryTimedItemView: View {
-    let item: HistoryCalendarItem
-    let isCompact: Bool
-    let isSelected: Bool
-    let action: () -> Void
+private struct HistoryFlowCreationRequest: Identifiable {
+    let id = UUID()
+    let startedAt: Date
+    let x: CGFloat
+    let y: CGFloat
+}
+
+private struct HistorySeriesTrackView: View {
+    let track: HistoryCalendarTrack
+    let visibleInterval: DateInterval
+    let selectedItemID: String?
+    let onSelect: (HistoryCalendarItem) -> Void
 
     var body: some View {
-        Button(action: action) {
-            Group {
-                if isCompact {
-                    HStack(spacing: 3) {
+        GeometryReader { geometry in
+            let clippedStart = max(track.startedAt, visibleInterval.start)
+            let clippedEnd = min(track.endedAt, visibleInterval.end)
+            let duration = max(1, clippedEnd.timeIntervalSince(clippedStart))
+
+            ZStack(alignment: .topLeading) {
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(Color.secondary.opacity(0.07))
+
+                ForEach(track.items) { item in
+                    let start = max(item.startedAt, clippedStart)
+                    let end = min(item.endedAt, clippedEnd)
+                    if end > start {
+                        let y = CGFloat(start.timeIntervalSince(clippedStart) / duration) * geometry.size.height
+                        let height = max(1, CGFloat(end.timeIntervalSince(start) / duration) * geometry.size.height)
+
+                        HistorySeriesSegmentView(
+                            item: item,
+                            height: height,
+                            isSelected: selectedItemID == item.id,
+                            onSelect: { onSelect(item) }
+                        )
+                        .frame(width: geometry.size.width, height: height)
+                        .offset(y: y)
+                    }
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+            .overlay {
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
+            }
+        }
+    }
+}
+
+private struct HistorySeriesSegmentView: View {
+    let item: HistoryCalendarItem
+    let height: CGFloat
+    let isSelected: Bool
+    let onSelect: () -> Void
+
+    var body: some View {
+        Button(action: onSelect) {
+            ZStack(alignment: .topLeading) {
+                background
+
+                if height >= 16 {
+                    HStack(spacing: 4) {
                         Text(item.symbol)
                         Text(item.title)
                             .fontWeight(.semibold)
                             .lineLimit(1)
                     }
                     .font(.caption2)
-                } else {
-                    VStack(alignment: .leading, spacing: 2) {
-                        HStack(spacing: 4) {
-                            Text(item.symbol)
-                            Text(item.title)
-                                .fontWeight(.semibold)
-                                .lineLimit(1)
-                        }
-                        Text(timeText)
-                            .font(.caption2.monospacedDigit())
-                            .lineLimit(1)
-                        if item.durationSeconds >= 35 * 60 {
-                            Text(item.subtitle)
-                                .font(.caption2)
-                                .lineLimit(1)
-                        }
-                    }
-                    .font(.caption)
+                    .foregroundStyle(item.kind == .rest ? Color.primary : Color.white)
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 2)
                 }
             }
-            .foregroundStyle(item.kind == .rest ? Color.primary : Color.white)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .padding(.horizontal, isCompact ? 4 : 5)
-            .padding(.vertical, isCompact ? 2 : 5)
-            .background(background)
-            .clipShape(RoundedRectangle(cornerRadius: 5))
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .overlay {
-                RoundedRectangle(cornerRadius: 5)
-                    .stroke(isSelected ? Color.accentColor : borderColor, lineWidth: isSelected ? 2 : 1)
+                if isSelected {
+                    Rectangle().stroke(Color.accentColor, lineWidth: 2)
+                }
             }
         }
         .buttonStyle(.plain)
@@ -407,12 +503,7 @@ private struct HistoryTimedItemView: View {
     }
 
     private var background: Color {
-        if item.kind == .rest { return Color.secondary.opacity(0.15) }
-        return Color(hex: item.colorHex).opacity(0.9)
-    }
-
-    private var borderColor: Color {
-        item.kind == .rest ? Color.secondary.opacity(0.35) : Color(hex: item.colorHex)
+        item.kind == .rest ? Color.secondary.opacity(0.28) : Color(hex: item.colorHex).opacity(0.9)
     }
 
     private var timeText: String {

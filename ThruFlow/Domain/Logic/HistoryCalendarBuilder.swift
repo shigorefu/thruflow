@@ -135,11 +135,51 @@ struct HistoryCalendarItem: Identifiable {
     var durationSeconds: Int {
         max(0, Int(endedAt.timeIntervalSince(startedAt)))
     }
+
+    var seriesID: UUID? {
+        flowBreak?.seriesID ?? session?.seriesID ?? session?.id
+    }
 }
 
 struct HistoryCalendarSnapshot {
     let interval: DateInterval
     let items: [HistoryCalendarItem]
+}
+
+struct HistoryCalendarTrack: Identifiable {
+    let id: String
+    let seriesID: UUID?
+    let items: [HistoryCalendarItem]
+    let startedAt: Date
+    let endedAt: Date
+}
+
+struct HistoryCalendarTrackBuilder {
+    func build(items: [HistoryCalendarItem]) -> [HistoryCalendarTrack] {
+        let grouped = Dictionary(grouping: items) { item in
+            item.seriesID?.uuidString ?? item.id
+        }
+
+        return grouped.compactMap { key, values in
+            let sorted = values.sorted {
+                if $0.startedAt == $1.startedAt { return $0.endedAt < $1.endedAt }
+                return $0.startedAt < $1.startedAt
+            }
+            guard let startedAt = sorted.map(\.startedAt).min(),
+                  let endedAt = sorted.map(\.endedAt).max() else { return nil }
+            return HistoryCalendarTrack(
+                id: key,
+                seriesID: sorted.first?.seriesID,
+                items: sorted,
+                startedAt: startedAt,
+                endedAt: endedAt
+            )
+        }
+        .sorted {
+            if $0.startedAt == $1.startedAt { return $0.id < $1.id }
+            return $0.startedAt < $1.startedAt
+        }
+    }
 }
 
 @MainActor
