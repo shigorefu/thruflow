@@ -138,7 +138,7 @@ In `日`, the right pane keeps a mini-calendar above the selected record propert
 
 Week keeps date headers fixed while hours scroll. Opening a day/week grid scrolls near the current time when today is visible, otherwise near the first Flow. A red line marks the current time. Medium/narrow headers wrap into two rows and stable-width week columns scroll horizontally. Month keeps a minimum full-grid width and scrolls horizontally rather than crushing cells.
 
-Calendar tracks are grouped by `seriesID`. Flow and FlowSegment records from one series share one continuous track and keep their Direction colors; FlowBreak records occupy the same track as light-gray rest segments. A new series starts a separate track. Todo completions and pending Tasks never become independent History Calendar blocks.
+Flow and FlowSegment records remain separate calendar blocks colored by Direction. FlowBreak records remain separate light-gray calendar blocks. Only the Flow dashboard timeline uses `seriesID` to place one continuous light-gray line beneath the colored work and rest segments of a connected series. Todo completions and pending Tasks never become independent History Calendar blocks.
 
 Timed records keep a small minimum clickable height. Entries below 15 minutes use compact title-only rendering and expose exact time through hover and accessibility. Lane assignment uses the minimum visual duration as well as actual overlap, preventing nearby short records from painting over one another.
 
