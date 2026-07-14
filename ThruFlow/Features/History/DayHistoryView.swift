@@ -9,7 +9,7 @@ import SwiftData
 import SwiftUI
 
 enum DayHistoryMode: String, CaseIterable, Identifiable {
-    case timeline
+    case calendar
     case tasks
     case directions
 
@@ -17,7 +17,7 @@ enum DayHistoryMode: String, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .timeline: "タイムライン"
+        case .calendar: "カレンダー"
         case .tasks: "タスク"
         case .directions: "方向"
         }
@@ -25,14 +25,13 @@ enum DayHistoryMode: String, CaseIterable, Identifiable {
 }
 
 struct DayHistoryView: View {
-    @EnvironmentObject private var activeFlowStore: ActiveFlowStore
-
     @Query(sort: \FlowSession.startedAt, order: .reverse) private var sessions: [FlowSession]
+    @Query(sort: \FlowBreak.startedAt, order: .reverse) private var breaks: [FlowBreak]
     @Query(sort: \Todo.updatedAt, order: .reverse) private var todos: [Todo]
 
     @State private var selectedDate: Date
-    @State private var selectedMode: DayHistoryMode = .timeline
-    @State private var inspectedSession: FlowSession?
+    @State private var selectedMode: DayHistoryMode = .calendar
+    @State private var selectedRange: HistoryCalendarRange = .week
 
     private let onClose: (() -> Void)?
     private let calendar = Calendar.current
@@ -48,28 +47,38 @@ struct DayHistoryView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                header
-                summary
+        VStack(alignment: .leading, spacing: 12) {
+            header
 
+            HStack {
                 Picker("表示", selection: $selectedMode) {
                     ForEach(DayHistoryMode.allCases) { mode in
                         Text(mode.displayName).tag(mode)
                     }
                 }
                 .pickerStyle(.segmented)
+                .frame(maxWidth: 360)
                 .accessibilityLabel("履歴表示")
 
-                modeContent
+                Spacer()
+
+                if selectedMode == .calendar {
+                    Picker("期間", selection: $selectedRange) {
+                        ForEach(HistoryCalendarRange.allCases) { range in
+                            Text(range.displayName).tag(range)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(width: 180)
+                    .accessibilityLabel("カレンダー期間")
+                }
             }
-            .frame(maxWidth: 980, alignment: .leading)
-            .padding(20)
+
+            modeContent
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .padding(20)
         .navigationTitle("履歴")
-        .sheet(item: $inspectedSession) { session in
-            FlowHistoryInspectorView(session: session)
-        }
     }
 
     private var header: some View {
@@ -101,7 +110,7 @@ struct DayHistoryView: View {
                 }
                 .help("前の日")
 
-                DatePicker("日付", selection: $selectedDate, in: ...Date.now, displayedComponents: .date)
+                DatePicker("日付", selection: $selectedDate, displayedComponents: .date)
                     .labelsHidden()
                     .accessibilityLabel("履歴の日付")
 
@@ -110,13 +119,11 @@ struct DayHistoryView: View {
                 } label: {
                     Image(systemName: "chevron.right")
                 }
-                .disabled(calendar.isDateInToday(selectedDate))
                 .help("次の日")
 
                 Button("今日") {
                     selectedDate = calendar.startOfDay(for: .now)
                 }
-                .disabled(calendar.isDateInToday(selectedDate))
             }
             .buttonStyle(.borderless)
         }
@@ -150,56 +157,28 @@ struct DayHistoryView: View {
     @ViewBuilder
     private var modeContent: some View {
         switch selectedMode {
-        case .timeline:
-            timelineContent
+        case .calendar:
+            HistoryCalendarView(
+                selectedDate: $selectedDate,
+                range: $selectedRange,
+                sessions: sessions,
+                breaks: breaks,
+                todos: todos
+            )
         case .tasks:
-            tasksContent
+            aggregateScroll { tasksContent }
         case .directions:
-            directionsContent
+            aggregateScroll { directionsContent }
         }
     }
 
-    private var timelineContent: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("1日の流れ")
-                .font(.headline)
-
-            if timelineItems.isEmpty && untimedTasks.isEmpty {
-                emptyState
-            } else {
-                ForEach(timelineItems) { item in
-                    switch item {
-                    case let .flow(flow):
-                        Button {
-                            guard activeFlowStore.activeSession?.id != flow.id else { return }
-                            inspectedSession = flow.session
-                        } label: {
-                            FlowHistoryRow(flow: flow)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityHint(
-                            activeFlowStore.activeSession?.id == flow.id
-                                ? "実行中のFlowは編集できません"
-                                : "Flowの詳細を編集"
-                        )
-                    case let .task(task):
-                        CompletedTaskHistoryRow(task: task)
-                    }
-                }
-
-                if !untimedTasks.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("完了時刻なし")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.secondary)
-
-                        ForEach(untimedTasks) { task in
-                            CompletedTaskHistoryRow(task: task)
-                        }
-                    }
-                    .padding(.top, 8)
-                }
+    private func aggregateScroll<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                summary
+                content()
             }
+            .frame(maxWidth: 980, alignment: .leading)
         }
     }
 
@@ -266,23 +245,20 @@ struct DayHistoryView: View {
         .padding(.vertical, 40)
     }
 
-    private var timelineItems: [DayTimelineItem] {
-        let flows = snapshot.flows.map(DayTimelineItem.flow)
-        let tasks = snapshot.completedTasks
-            .filter(\.hasExactCompletionTime)
-            .map(DayTimelineItem.task)
-        return (flows + tasks).sorted { $0.date < $1.date }
-    }
-
-    private var untimedTasks: [DayHistoryTask] {
-        snapshot.completedTasks.filter { !$0.hasExactCompletionTime }
-    }
-
     private var dateTitle: String {
-        if calendar.isDateInToday(selectedDate) {
-            return "今日 ・ \(fullDateFormatter.string(from: selectedDate))"
+        switch selectedRange {
+        case .day:
+            if calendar.isDateInToday(selectedDate) {
+                return "今日 ・ \(fullDateFormatter.string(from: selectedDate))"
+            }
+            return fullDateFormatter.string(from: selectedDate)
+        case .week:
+            let interval = selectedRange.interval(containing: selectedDate, calendar: calendar)
+            let end = interval.end.addingTimeInterval(-1)
+            return "\(shortDateFormatter.string(from: interval.start))–\(shortDateFormatter.string(from: end))"
+        case .month:
+            return selectedDate.formatted(.dateTime.locale(Locale(identifier: "ja_JP")).year().month(.wide))
         }
-        return fullDateFormatter.string(from: selectedDate)
     }
 
     private var fullDateFormatter: DateFormatter {
@@ -292,34 +268,21 @@ struct DayHistoryView: View {
         return formatter
     }
 
+    private var shortDateFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ja_JP")
+        formatter.dateFormat = "M月d日"
+        return formatter
+    }
+
     private func moveDay(by value: Int) {
-        guard let next = calendar.date(byAdding: .day, value: value, to: selectedDate) else { return }
-        selectedDate = min(calendar.startOfDay(for: next), calendar.startOfDay(for: .now))
+        selectedDate = calendar.startOfDay(for: selectedRange.moving(selectedDate, by: value, calendar: calendar))
     }
 
     private func durationText(_ seconds: Int) -> String {
         let minutes = max(0, seconds) / 60
         if minutes < 60 { return "\(minutes)分" }
         return "\(minutes / 60)時間\(minutes % 60)分"
-    }
-}
-
-private enum DayTimelineItem: Identifiable {
-    case flow(DayHistoryFlow)
-    case task(DayHistoryTask)
-
-    var id: String {
-        switch self {
-        case let .flow(flow): "flow-\(flow.id.uuidString)"
-        case let .task(task): "task-\(task.id.uuidString)"
-        }
-    }
-
-    var date: Date {
-        switch self {
-        case let .flow(flow): flow.startedAt
-        case let .task(task): task.completedAt ?? .distantFuture
-        }
     }
 }
 
@@ -349,67 +312,6 @@ private struct HistorySummaryTile: View {
         .padding(11)
         .background(Color.secondary.opacity(0.09))
         .clipShape(RoundedRectangle(cornerRadius: 8))
-    }
-}
-
-private struct FlowHistoryRow: View {
-    let flow: DayHistoryFlow
-
-    var body: some View {
-        HStack(spacing: 12) {
-            Text(timeFormatter.string(from: flow.startedAt))
-                .font(.callout.monospacedDigit())
-                .foregroundStyle(.secondary)
-                .frame(width: 46, alignment: .leading)
-
-            RoundedRectangle(cornerRadius: 2)
-                .fill(Color(hex: flow.directionColorHex))
-                .frame(width: 4, height: 42)
-
-            Text(flow.directionSymbol)
-                .font(.title2)
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text(flow.taskTitle)
-                    .font(.body.weight(.medium))
-                    .lineLimit(1)
-                HStack(spacing: 5) {
-                    Text(flow.directionName)
-                    if let memo = flow.memo, !memo.isEmpty {
-                        Text("・")
-                        Text(memo).lineLimit(1)
-                    }
-                }
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            }
-
-            Spacer(minLength: 12)
-
-            VStack(alignment: .trailing, spacing: 3) {
-                Text(durationText(flow.focusSeconds))
-                    .font(.callout.weight(.semibold).monospacedDigit())
-                Text("\(timeFormatter.string(from: flow.startedAt))–\(timeFormatter.string(from: flow.endedAt))")
-                    .font(.caption2.monospacedDigit())
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding(12)
-        .background(Color.secondary.opacity(0.07))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-        .contentShape(Rectangle())
-    }
-
-    private var timeFormatter: DateFormatter {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ja_JP")
-        formatter.dateFormat = "HH:mm"
-        return formatter
-    }
-
-    private func durationText(_ seconds: Int) -> String {
-        let minutes = max(0, seconds) / 60
-        return minutes < 60 ? "\(minutes)分" : "\(minutes / 60)時間\(minutes % 60)分"
     }
 }
 
