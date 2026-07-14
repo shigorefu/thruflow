@@ -47,32 +47,9 @@ struct DayHistoryView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            header
-
-            HStack {
-                Picker("表示", selection: $selectedMode) {
-                    ForEach(DayHistoryMode.allCases) { mode in
-                        Text(mode.displayName).tag(mode)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .frame(maxWidth: 360)
-                .accessibilityLabel("履歴表示")
-
-                Spacer()
-
-                if selectedMode == .calendar {
-                    Picker("期間", selection: $selectedRange) {
-                        ForEach(HistoryCalendarRange.allCases) { range in
-                            Text(range.displayName).tag(range)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .frame(width: 180)
-                    .accessibilityLabel("カレンダー期間")
-                }
-            }
+        VStack(alignment: .leading, spacing: 14) {
+            responsiveHeader
+            responsiveControls
 
             modeContent
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -81,7 +58,23 @@ struct DayHistoryView: View {
         .navigationTitle("履歴")
     }
 
-    private var header: some View {
+    private var responsiveHeader: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 20) {
+                historyIdentity
+                Spacer(minLength: 20)
+                dateNavigation
+            }
+
+            VStack(alignment: .leading, spacing: 10) {
+                historyIdentity
+                dateNavigation
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+        }
+    }
+
+    private var historyIdentity: some View {
         HStack(spacing: 10) {
             if let onClose {
                 Button(action: onClose) {
@@ -99,34 +92,75 @@ struct DayHistoryView: View {
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
+        }
+        .fixedSize(horizontal: true, vertical: false)
+    }
 
-            Spacer()
+    private var dateNavigation: some View {
+        HStack(spacing: 4) {
+            Button {
+                moveDay(by: -1)
+            } label: {
+                Image(systemName: "chevron.left")
+            }
+            .help("前の期間")
 
-            HStack(spacing: 4) {
-                Button {
-                    moveDay(by: -1)
-                } label: {
-                    Image(systemName: "chevron.left")
-                }
-                .help("前の日")
+            DatePicker("日付", selection: $selectedDate, displayedComponents: .date)
+                .labelsHidden()
+                .accessibilityLabel("履歴の日付")
 
-                DatePicker("日付", selection: $selectedDate, displayedComponents: .date)
-                    .labelsHidden()
-                    .accessibilityLabel("履歴の日付")
+            Button {
+                moveDay(by: 1)
+            } label: {
+                Image(systemName: "chevron.right")
+            }
+            .help("次の期間")
 
-                Button {
-                    moveDay(by: 1)
-                } label: {
-                    Image(systemName: "chevron.right")
-                }
-                .help("次の日")
+            Button("今日") {
+                selectedDate = calendar.startOfDay(for: .now)
+            }
+        }
+        .buttonStyle(.borderless)
+        .fixedSize(horizontal: true, vertical: false)
+    }
 
-                Button("今日") {
-                    selectedDate = calendar.startOfDay(for: .now)
+    private var responsiveControls: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 20) {
+                modePicker.frame(width: 360)
+                Spacer(minLength: 20)
+                if selectedMode == .calendar {
+                    rangePicker.frame(width: 180)
                 }
             }
-            .buttonStyle(.borderless)
+
+            VStack(alignment: .leading, spacing: 8) {
+                modePicker.frame(maxWidth: .infinity)
+                if selectedMode == .calendar {
+                    rangePicker.frame(maxWidth: .infinity)
+                }
+            }
         }
+    }
+
+    private var modePicker: some View {
+        Picker("表示", selection: $selectedMode) {
+            ForEach(DayHistoryMode.allCases) { mode in
+                Text(mode.displayName).tag(mode)
+            }
+        }
+        .pickerStyle(.segmented)
+        .accessibilityLabel("履歴表示")
+    }
+
+    private var rangePicker: some View {
+        Picker("期間", selection: $selectedRange) {
+            ForEach(HistoryCalendarRange.allCases) { range in
+                Text(range.displayName).tag(range)
+            }
+        }
+        .pickerStyle(.segmented)
+        .accessibilityLabel("カレンダー期間")
     }
 
     private var summary: some View {

@@ -49,7 +49,7 @@ enum HistoryCalendarItemKind: String, CaseIterable, Hashable {
     case flow
     case rest
     case completedTask
-    case scheduledTask
+    case untimedTask
 }
 
 struct HistoryCalendarItem: Identifiable {
@@ -216,17 +216,17 @@ struct HistoryCalendarBuilder {
             )
         }
 
-        guard let scheduledDate = todo.scheduledDate,
-              interval.contains(calendar.startOfDay(for: scheduledDate)) else { return nil }
-        guard !todo.isCompleted || todo.completedAt == nil else { return nil }
+        guard todo.isCompleted, todo.completedAt == nil else { return nil }
+        let legacyDate = calendar.startOfDay(for: todo.updatedAt)
+        guard interval.contains(legacyDate) else { return nil }
 
         return HistoryCalendarItem(
-            id: "scheduled-task-\(todo.id.uuidString)",
-            kind: .scheduledTask,
-            startedAt: calendar.startOfDay(for: scheduledDate),
-            endedAt: calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: scheduledDate))!,
+            id: "untimed-task-\(todo.id.uuidString)",
+            kind: .untimedTask,
+            startedAt: legacyDate,
+            endedAt: calendar.date(byAdding: .day, value: 1, to: legacyDate)!,
             title: TodoDisplay.title(for: todo),
-            subtitle: todo.isCompleted ? "\(directionName) ・ 完了時刻なし" : directionName,
+            subtitle: "\(directionName) ・ 完了時刻なし",
             symbol: symbol,
             colorHex: color,
             isAllDay: true,
@@ -259,8 +259,18 @@ struct HistoryOverlapPlacement: Identifiable, Equatable {
 }
 
 struct HistoryOverlapLayout {
-    func place(_ inputs: [HistoryOverlapInput]) -> [HistoryOverlapPlacement] {
-        let sorted = inputs.sorted {
+    func place(
+        _ inputs: [HistoryOverlapInput],
+        minimumDuration: TimeInterval = 0
+    ) -> [HistoryOverlapPlacement] {
+        let expanded = inputs.map { input in
+            HistoryOverlapInput(
+                id: input.id,
+                start: input.start,
+                end: max(input.end, input.start.addingTimeInterval(minimumDuration))
+            )
+        }
+        let sorted = expanded.sorted {
             if $0.start == $1.start { return $0.end < $1.end }
             return $0.start < $1.start
         }

@@ -31,7 +31,7 @@ struct HistoryCalendarTests {
         #expect(calendar.component(.month, from: month.start) == 7)
     }
 
-    @Test func builderProjectsFlowRestTimedCompletionAndScheduledTask() {
+    @Test func builderProjectsActualHistoryAndExcludesPendingScheduledTask() {
         let day = Date(timeIntervalSince1970: 1783987200)
         let direction = Direction(name: "仕事", type: .neutral, symbolName: "💻", colorHex: "#34C759")
         let flowTodo = Todo(title: "実装", direction: direction, scheduledDate: day)
@@ -43,6 +43,13 @@ struct HistoryCalendarTests {
             scheduledDate: day
         )
         let pendingTodo = Todo(title: "資料", direction: direction, scheduledDate: day)
+        let legacyTodo = Todo(
+            title: "旧タスク",
+            direction: direction,
+            status: .completed,
+            scheduledDate: day,
+            updatedAt: day.addingTimeInterval(16 * 3600)
+        )
         let session = FlowSession(
             direction: direction,
             todo: flowTodo,
@@ -69,14 +76,15 @@ struct HistoryCalendarTests {
             interval: interval,
             sessions: [session],
             breaks: [rest],
-            todos: [flowTodo, completedTodo, pendingTodo],
+            todos: [flowTodo, completedTodo, pendingTodo, legacyTodo],
             referenceDate: interval.end
         )
 
         #expect(snapshot.items.filter { $0.kind == .flow }.count == 1)
         #expect(snapshot.items.filter { $0.kind == .rest }.count == 1)
         #expect(snapshot.items.filter { $0.kind == .completedTask }.count == 1)
-        #expect(snapshot.items.filter { $0.kind == .scheduledTask }.count == 2)
+        #expect(snapshot.items.filter { $0.kind == .untimedTask }.count == 1)
+        #expect(snapshot.items.allSatisfy { $0.todo?.id != pendingTodo.id })
         #expect(snapshot.items.first { $0.kind == .rest }?.durationSeconds == 5 * 60)
     }
 
@@ -93,5 +101,17 @@ struct HistoryCalendarTests {
         #expect(byID["b"]?.lane == 1)
         #expect(byID["c"]?.lane == 0)
         #expect(byID["c"]?.laneCount == 1)
+    }
+
+    @Test func overlapLayoutUsesMinimumVisualDurationForShortEntries() {
+        let base = Date(timeIntervalSince1970: 10_000)
+        let placements = HistoryOverlapLayout().place([
+            HistoryOverlapInput(id: "short", start: base, end: base.addingTimeInterval(3 * 60)),
+            HistoryOverlapInput(id: "next", start: base.addingTimeInterval(8 * 60), end: base.addingTimeInterval(20 * 60))
+        ], minimumDuration: 15 * 60)
+        let byID = Dictionary(uniqueKeysWithValues: placements.map { ($0.id, $0) })
+
+        #expect(byID["short"]?.laneCount == 2)
+        #expect(byID["next"]?.lane == 1)
     }
 }

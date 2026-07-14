@@ -43,7 +43,7 @@ struct HistoryCalendarView: View {
     var body: some View {
         GeometryReader { geometry in
             HStack(spacing: 0) {
-                if geometry.size.width >= 1040 {
+                if geometry.size.width >= 1180 {
                     HistoryCalendarSidebar(
                         selectedDate: $selectedDate,
                         visibleKinds: $visibleKinds
@@ -93,7 +93,7 @@ struct HistoryCalendarView: View {
             inspectedSession = session
         case .rest:
             editedBreak = item.flowBreak
-        case .completedTask, .scheduledTask:
+        case .completedTask, .untimedTask:
             editedTodo = item.todo
         }
     }
@@ -167,7 +167,7 @@ private struct HistoryCalendarSidebar: View {
 
                 filterToggle("Flow", symbol: "waveform.path", kinds: [.flow])
                 filterToggle("休憩", symbol: "cup.and.saucer", kinds: [.rest])
-                filterToggle("タスク", symbol: "checkmark.circle", kinds: [.completedTask, .scheduledTask])
+                filterToggle("タスク", symbol: "checkmark.circle", kinds: [.completedTask, .untimedTask])
             }
 
             Spacer()
@@ -227,8 +227,9 @@ private struct HistoryTimeGrid: View {
 
     private let calendar = Calendar.current
     private let hourHeight: CGFloat = 64
-    private let timeAxisWidth: CGFloat = 56
+    private let timeAxisWidth: CGFloat = 72
     private let minimumDayWidth: CGFloat = 132
+    private let minimumItemHeight: CGFloat = 18
 
     private var days: [Date] {
         let interval = range.interval(containing: selectedDate, calendar: calendar)
@@ -247,7 +248,9 @@ private struct HistoryTimeGrid: View {
             ScrollView(.horizontal) {
                 VStack(spacing: 0) {
                     dayHeader(dayWidth: dayWidth)
-                    allDayRow(dayWidth: dayWidth)
+                    if hasUntimedItems {
+                        allDayRow(dayWidth: dayWidth)
+                    }
                     Divider()
                     hourScroll(dayWidth: dayWidth, contentWidth: contentWidth)
                 }
@@ -278,7 +281,7 @@ private struct HistoryTimeGrid: View {
 
     private func allDayRow(dayWidth: CGFloat) -> some View {
         HStack(alignment: .top, spacing: 0) {
-            Text("終日")
+            Text("完了時刻なし")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .frame(width: timeAxisWidth, height: 46, alignment: .topTrailing)
@@ -365,7 +368,10 @@ private struct HistoryTimeGrid: View {
                 let width = (dayWidth - 8) / CGFloat(placement.laneCount)
                 let frame = frame(for: item, on: day)
 
-                HistoryTimedItemView(item: item) { onSelect(item) }
+                HistoryTimedItemView(
+                    item: item,
+                    isCompact: item.durationSeconds < 15 * 60
+                ) { onSelect(item) }
                     .frame(width: max(32, width - 3), height: frame.height, alignment: .topLeading)
                     .offset(
                         x: timeAxisWidth + CGFloat(dayIndex) * dayWidth + 4 + CGFloat(placement.lane) * width,
@@ -397,6 +403,10 @@ private struct HistoryTimeGrid: View {
         items.filter { $0.isAllDay && calendar.isDate($0.startedAt, inSameDayAs: day) }
     }
 
+    private var hasUntimedItems: Bool {
+        items.contains(where: \.isAllDay)
+    }
+
     private func timedItems(on day: Date) -> [HistoryCalendarItem] {
         let start = calendar.startOfDay(for: day)
         let end = calendar.date(byAdding: .day, value: 1, to: start)!
@@ -409,7 +419,9 @@ private struct HistoryTimeGrid: View {
         let inputs = items.map {
             HistoryOverlapInput(id: $0.id, start: max($0.startedAt, start), end: min($0.endedAt, end))
         }
-        return Dictionary(uniqueKeysWithValues: HistoryOverlapLayout().place(inputs).map { ($0.id, $0) })
+        let minimumDuration = TimeInterval(minimumItemHeight / hourHeight * 3600)
+        let placements = HistoryOverlapLayout().place(inputs, minimumDuration: minimumDuration)
+        return Dictionary(uniqueKeysWithValues: placements.map { ($0.id, $0) })
     }
 
     private func frame(for item: HistoryCalendarItem, on day: Date) -> (y: CGFloat, height: CGFloat) {
@@ -421,7 +433,7 @@ private struct HistoryTimeGrid: View {
         let duration = max(0, end.timeIntervalSince(start))
         return (
             CGFloat(startSeconds / 3600) * hourHeight,
-            max(24, CGFloat(duration / 3600) * hourHeight)
+            max(minimumItemHeight, CGFloat(duration / 3600) * hourHeight)
         )
     }
 
@@ -446,30 +458,44 @@ private struct HistoryTimeGrid: View {
 
 private struct HistoryTimedItemView: View {
     let item: HistoryCalendarItem
+    let isCompact: Bool
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 4) {
-                    Text(item.symbol)
-                    Text(item.title)
-                        .fontWeight(.semibold)
-                        .lineLimit(1)
-                }
-                Text(timeText)
-                    .font(.caption2.monospacedDigit())
-                    .lineLimit(1)
-                if item.durationSeconds >= 35 * 60 {
-                    Text(item.subtitle)
-                        .font(.caption2)
-                        .lineLimit(1)
+            Group {
+                if isCompact {
+                    HStack(spacing: 3) {
+                        Text(item.symbol)
+                        Text(item.title)
+                            .fontWeight(.semibold)
+                            .lineLimit(1)
+                    }
+                    .font(.caption2)
+                } else {
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 4) {
+                            Text(item.symbol)
+                            Text(item.title)
+                                .fontWeight(.semibold)
+                                .lineLimit(1)
+                        }
+                        Text(timeText)
+                            .font(.caption2.monospacedDigit())
+                            .lineLimit(1)
+                        if item.durationSeconds >= 35 * 60 {
+                            Text(item.subtitle)
+                                .font(.caption2)
+                                .lineLimit(1)
+                        }
+                    }
+                    .font(.caption)
                 }
             }
-            .font(.caption)
             .foregroundStyle(item.kind == .rest ? Color.primary : Color.white)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .padding(5)
+            .padding(.horizontal, isCompact ? 4 : 5)
+            .padding(.vertical, isCompact ? 2 : 5)
             .background(background)
             .clipShape(RoundedRectangle(cornerRadius: 5))
             .overlay {
@@ -535,27 +561,34 @@ private struct HistoryMonthGrid: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            LazyVGrid(columns: columns, spacing: 0) {
-                ForEach(weekdaySymbols, id: \.self) { symbol in
-                    Text(symbol)
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
-                }
-            }
-
-            GeometryReader { geometry in
-                let cellHeight = max(76, geometry.size.height / 6)
-                ScrollView {
+        GeometryReader { geometry in
+            let contentWidth = max(700, geometry.size.width)
+            ScrollView(.horizontal) {
+                VStack(spacing: 0) {
                     LazyVGrid(columns: columns, spacing: 0) {
-                        ForEach(days, id: \.self) { day in
-                            monthCell(day, height: cellHeight)
+                        ForEach(weekdaySymbols, id: \.self) { symbol in
+                            Text(symbol)
+                                .font(.caption.weight(.medium))
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 8)
+                        }
+                    }
+
+                    GeometryReader { monthGeometry in
+                        let cellHeight = max(76, monthGeometry.size.height / 6)
+                        ScrollView(.vertical) {
+                            LazyVGrid(columns: columns, spacing: 0) {
+                                ForEach(days, id: \.self) { day in
+                                    monthCell(day, height: cellHeight)
+                                }
+                            }
                         }
                     }
                 }
+                .frame(width: contentWidth, height: geometry.size.height)
             }
+            .scrollIndicators(.automatic)
         }
     }
 
