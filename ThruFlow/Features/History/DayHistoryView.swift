@@ -196,8 +196,7 @@ struct DayHistoryView: View {
                 selectedDate: $selectedDate,
                 range: $selectedRange,
                 sessions: sessions,
-                breaks: breaks,
-                todos: todos
+                breaks: breaks
             )
         case .tasks:
             aggregateScroll { tasksContent }

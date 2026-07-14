@@ -16,11 +16,9 @@ struct HistoryCalendarView: View {
 
     let sessions: [FlowSession]
     let breaks: [FlowBreak]
-    let todos: [Todo]
 
     @State private var visibleKinds = Set(HistoryCalendarItemKind.allCases)
     @State private var inspectedSession: FlowSession?
-    @State private var editedTodo: Todo?
     @State private var editedBreak: FlowBreak?
     @State private var selectedDayItemID: String?
     @AppStorage("history.dayTimelineScale") private var dayScaleRawValue = HistoryDayTimelineScale.elastic.rawValue
@@ -33,8 +31,7 @@ struct HistoryCalendarView: View {
         return builder.build(
             interval: interval,
             sessions: sessions,
-            breaks: breaks,
-            todos: todos
+            breaks: breaks
         )
     }
 
@@ -96,9 +93,6 @@ struct HistoryCalendarView: View {
         .sheet(item: $inspectedSession) { session in
             FlowHistoryInspectorView(session: session)
         }
-        .sheet(item: $editedTodo) { todo in
-            TodoFormView(mode: .edit(todo))
-        }
         .sheet(item: $editedBreak) { flowBreak in
             HistoryBreakEditorView(flowBreak: flowBreak)
                 .environmentObject(activeFlowStore)
@@ -113,8 +107,6 @@ struct HistoryCalendarView: View {
             inspectedSession = session
         case .rest:
             editedBreak = item.flowBreak
-        case .completedTask, .untimedTask:
-            editedTodo = item.todo
         }
     }
 }
@@ -133,7 +125,6 @@ private struct HistoryCalendarSidebar: View {
 
                 filterToggle("Flow", symbol: "waveform.path", kinds: [.flow])
                 filterToggle("休憩", symbol: "cup.and.saucer", kinds: [.rest])
-                filterToggle("タスク", symbol: "checkmark.circle", kinds: [.completedTask, .untimedTask])
             }
 
             Spacer()
@@ -187,9 +178,6 @@ struct HistoryTimeGrid: View {
             ScrollView(.horizontal) {
                 VStack(spacing: 0) {
                     dayHeader(dayWidth: dayWidth)
-                    if hasUntimedItems {
-                        allDayRow(dayWidth: dayWidth)
-                    }
                     Divider()
                     hourScroll(dayWidth: dayWidth, contentWidth: contentWidth)
                 }
@@ -216,34 +204,6 @@ struct HistoryTimeGrid: View {
                 .overlay(alignment: .leading) { Divider() }
             }
         }
-    }
-
-    private func allDayRow(dayWidth: CGFloat) -> some View {
-        HStack(alignment: .top, spacing: 0) {
-            Text("完了時刻なし")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .frame(width: timeAxisWidth, height: 46, alignment: .topTrailing)
-                .padding(.top, 7)
-
-            ForEach(days, id: \.self) { day in
-                VStack(spacing: 3) {
-                    ForEach(allDayItems(on: day).prefix(2)) { item in
-                        HistoryAllDayChip(item: item) { onSelect(item) }
-                    }
-                    if allDayItems(on: day).count > 2 {
-                        Text("ほか\(allDayItems(on: day).count - 2)件")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .padding(4)
-                .frame(width: dayWidth, alignment: .top)
-                .frame(minHeight: 46, alignment: .top)
-                .overlay(alignment: .leading) { Divider() }
-            }
-        }
-        .frame(minHeight: 46)
     }
 
     private func hourScroll(dayWidth: CGFloat, contentWidth: CGFloat) -> some View {
@@ -341,19 +301,11 @@ struct HistoryTimeGrid: View {
         }
     }
 
-    private func allDayItems(on day: Date) -> [HistoryCalendarItem] {
-        items.filter { $0.isAllDay && calendar.isDate($0.startedAt, inSameDayAs: day) }
-    }
-
-    private var hasUntimedItems: Bool {
-        items.contains(where: \.isAllDay)
-    }
-
     private func timedItems(on day: Date) -> [HistoryCalendarItem] {
         let dayStart = calendar.startOfDay(for: day)
         let start = calendar.date(byAdding: .hour, value: hourRange.lowerBound, to: dayStart)!
         let end = calendar.date(byAdding: .hour, value: hourRange.upperBound, to: dayStart)!
-        return items.filter { !$0.isAllDay && $0.startedAt < end && $0.endedAt > start }
+        return items.filter { $0.startedAt < end && $0.endedAt > start }
     }
 
     private func placementMap(for items: [HistoryCalendarItem], day: Date) -> [String: HistoryOverlapPlacement] {
@@ -384,7 +336,7 @@ struct HistoryTimeGrid: View {
 
     private func scrollToRelevantHour(_ proxy: ScrollViewProxy) {
         let timed = items.filter { item in
-            !item.isAllDay && days.contains { day in
+            days.contains { day in
                 calendar.isDate(item.startedAt, inSameDayAs: day)
             }
         }
@@ -456,7 +408,7 @@ private struct HistoryTimedItemView: View {
 
     private var background: Color {
         if item.kind == .rest { return Color.secondary.opacity(0.15) }
-        return Color(hex: item.colorHex).opacity(item.kind == .completedTask ? 0.78 : 0.9)
+        return Color(hex: item.colorHex).opacity(0.9)
     }
 
     private var borderColor: Color {
@@ -465,30 +417,6 @@ private struct HistoryTimedItemView: View {
 
     private var timeText: String {
         "\(item.startedAt.formatted(date: .omitted, time: .shortened))–\(item.endedAt.formatted(date: .omitted, time: .shortened))"
-    }
-}
-
-private struct HistoryAllDayChip: View {
-    let item: HistoryCalendarItem
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 4) {
-                Circle()
-                    .fill(Color(hex: item.colorHex))
-                    .frame(width: 6, height: 6)
-                Text(item.title)
-                    .lineLimit(1)
-            }
-            .font(.caption)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 5)
-            .padding(.vertical, 3)
-            .background(Color(hex: item.colorHex).opacity(0.12))
-            .clipShape(RoundedRectangle(cornerRadius: 4))
-        }
-        .buttonStyle(.plain)
     }
 }
 

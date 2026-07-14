@@ -26,7 +26,7 @@ SwiftUI views should call domain logic instead of owning product rules directly.
 - `FlowBreak` stores explicit rest and UUID links between adjacent sessions in a Flow series; `FlowSeriesPolicy` owns continuation windows and Long Break thresholds.
 - `Todo.completedAt` stores the exact completion time for new completions.
 - `DayHistoryBuilder` creates daily Task/Direction aggregates and legacy day projections.
-- `HistoryCalendarBuilder` creates read-only day/week/month calendar projections from actual Flow, break, and completed Todo records; pending scheduled Tasks remain outside History.
+- `HistoryCalendarBuilder` creates read-only day/week/month calendar projections from actual Flow and break records; Todo completion never creates a calendar item.
 - `HistoryDayTimelineWindowBuilder` derives the testable Elastic/full-day hour range independently from SwiftUI, including records that cross midnight.
 - `HistoryOverlapLayout` assigns deterministic side-by-side lanes using actual and minimum visual duration so short records cannot overlap in rendering.
 - `FlowHistoryEditor` applies progress deltas when historical Flow records change.
