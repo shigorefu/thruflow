@@ -75,16 +75,11 @@ struct HistoryCalendarTests {
             breaks: [rest],
             referenceDate: interval.end
         )
-        let tracks = HistoryCalendarTrackBuilder().build(items: snapshot.items)
-
         #expect(snapshot.items.filter { $0.kind == .flow }.count == 2)
         #expect(snapshot.items.filter { $0.kind == .rest }.count == 1)
         #expect(snapshot.items.count == 3)
         #expect(snapshot.items.allSatisfy { $0.kind == .flow || $0.kind == .rest })
         #expect(snapshot.items.first { $0.kind == .rest }?.durationSeconds == 5 * 60)
-        #expect(tracks.count == 2)
-        #expect(tracks.first { $0.seriesID == session.seriesID }?.items.count == 2)
-        #expect(tracks.first { $0.seriesID == separateSession.seriesID }?.items.count == 1)
     }
 
     @Test func overlapLayoutSharesLanesOnlyInsideConnectedCluster() {

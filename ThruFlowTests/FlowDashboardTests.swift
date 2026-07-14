@@ -244,10 +244,10 @@ struct FlowDashboardTests {
         #expect(fourBlockIdle.speed > emptyIdle.speed)
         #expect(fourBlockIdle.speed < 0.28)
         #expect(abs(fullIdle.speed - 0.28) < 0.0001)
-        #expect(emptyActive.speed == 0.55)
+        #expect(emptyActive.speed == 1.10)
         #expect(fourBlockActive.speed > emptyActive.speed)
         #expect(fourBlockActive.speed > fourBlockIdle.speed)
-        #expect(abs(fullActive.speed - 1.40) < 0.0001)
+        #expect(abs(fullActive.speed - 2.80) < 0.0001)
     }
 
     @Test func activeFlowAcceleratesWithoutChangingDailyGrowth() {

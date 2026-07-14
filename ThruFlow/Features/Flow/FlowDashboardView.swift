@@ -239,13 +239,9 @@ struct FlowDashboardView: View {
                             minimumWidth: 12
                         )
 
-                        RoundedRectangle(cornerRadius: 9)
-                            .fill(Color.gray.opacity(0.12))
-                            .overlay {
-                                RoundedRectangle(cornerRadius: 9)
-                                    .stroke(Color.gray.opacity(0.55), lineWidth: 1.3)
-                            }
-                            .frame(width: width, height: 20)
+                        Capsule()
+                            .fill(Color.secondary.opacity(0.42))
+                            .frame(width: width, height: 12)
                             .position(
                                 x: intervalCenter(
                                     from: span.startedAt,
