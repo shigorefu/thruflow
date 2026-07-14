@@ -22,7 +22,7 @@ The product is not a Pomodoro clone, a standalone habit tracker, or a generic To
 - `Flow dashboard`: the first screen, with a large animated daily stream, separate circular player controls, a 24-hour timeline, today's work, and compact statistics.
 - `メモ`: stored on Todo.
 - `統計`: contribution-style grid for Tasks and Flow.
-- `履歴`: day timeline and Task/Direction summaries, available directly below `タスク` and from statistics cells.
+- `履歴`: `Flow | タスク | 方向` history with shared `日 | 週 | 月` navigation, available directly below `タスク` and from statistics cells.
 
 ## Platforms
 

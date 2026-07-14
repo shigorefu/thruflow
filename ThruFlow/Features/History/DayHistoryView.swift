@@ -17,7 +17,7 @@ enum DayHistoryMode: String, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .calendar: "カレンダー"
+        case .calendar: "Flow"
         case .tasks: "タスク"
         case .directions: "方向"
         }
@@ -25,6 +25,7 @@ enum DayHistoryMode: String, CaseIterable, Identifiable {
 }
 
 struct DayHistoryView: View {
+    @Environment(\.modelContext) private var modelContext
     @Query(sort: \FlowSession.startedAt, order: .reverse) private var sessions: [FlowSession]
     @Query(sort: \FlowBreak.startedAt, order: .reverse) private var breaks: [FlowBreak]
     @Query(sort: \Todo.updatedAt, order: .reverse) private var todos: [Todo]
@@ -32,6 +33,9 @@ struct DayHistoryView: View {
     @State private var selectedDate: Date
     @State private var selectedMode: DayHistoryMode = .calendar
     @State private var selectedRange: HistoryCalendarRange = .week
+    @State private var expandedTaskIDs: Set<String> = []
+    @State private var expandedDirectionIDs: Set<UUID> = []
+    @State private var editingTodo: Todo?
 
     private let onClose: (() -> Void)?
     private let calendar = Calendar.current
@@ -43,7 +47,11 @@ struct DayHistoryView: View {
     }
 
     private var snapshot: DayHistorySnapshot {
-        builder.build(date: selectedDate, sessions: sessions, todos: todos)
+        builder.build(
+            interval: selectedRange.interval(containing: selectedDate, calendar: calendar),
+            sessions: sessions,
+            todos: todos
+        )
     }
 
     var body: some View {
@@ -55,6 +63,10 @@ struct DayHistoryView: View {
         }
         .padding(20)
         .navigationTitle("履歴")
+        .popover(item: $editingTodo) { todo in
+            TodoFormView(mode: .edit(todo))
+                .frame(minWidth: 430, idealWidth: 470, minHeight: 580, idealHeight: 650)
+        }
     }
 
     private var historyToolbar: some View {
@@ -65,9 +77,7 @@ struct DayHistoryView: View {
                 modePicker.frame(width: 330)
                 Spacer(minLength: 12)
                 dateNavigation
-                if selectedMode == .calendar {
-                    rangePicker.frame(width: 150)
-                }
+                rangePicker.frame(width: 150)
             }
 
             VStack(alignment: .leading, spacing: 8) {
@@ -78,9 +88,7 @@ struct DayHistoryView: View {
                 }
                 HStack(spacing: 12) {
                     modePicker.frame(maxWidth: .infinity)
-                    if selectedMode == .calendar {
-                        rangePicker.frame(width: 150)
-                    }
+                    rangePicker.frame(width: 150)
                 }
             }
         }
@@ -131,8 +139,9 @@ struct DayHistoryView: View {
             Button("今日") {
                 selectedDate = calendar.startOfDay(for: .now)
             }
+            .buttonStyle(.bordered)
+            .tint(.accentColor)
         }
-        .buttonStyle(.borderless)
         .fixedSize(horizontal: true, vertical: false)
     }
 
@@ -153,7 +162,7 @@ struct DayHistoryView: View {
             }
         }
         .pickerStyle(.segmented)
-        .accessibilityLabel("カレンダー期間")
+        .accessibilityLabel("履歴の期間")
     }
 
     private var summary: some View {
@@ -175,11 +184,6 @@ struct DayHistoryView: View {
                 title: "Flow",
                 value: "\(snapshot.flowCount)",
                 systemImage: "waveform.path.ecg"
-            )
-            HistorySummaryTile(
-                title: "達成",
-                value: "\(snapshot.completedTaskCount)",
-                systemImage: "checkmark.circle"
             )
         }
     }
@@ -216,7 +220,7 @@ struct DayHistoryView: View {
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 18) {
-                        HistoryMiniCalendar(selectedDate: $selectedDate)
+                        aggregatePeriodPicker
                         summary
                         content()
                     }
@@ -236,13 +240,13 @@ struct DayHistoryView: View {
 
     private var aggregateInspector: some View {
         VStack(spacing: 0) {
-            HistoryMiniCalendar(selectedDate: $selectedDate)
+            aggregatePeriodPicker
                 .padding(16)
 
             Divider()
 
             VStack(alignment: .leading, spacing: 12) {
-                Text("この日の記録")
+                Text(periodSummaryTitle)
                     .font(.headline)
                 summary
             }
@@ -258,28 +262,18 @@ struct DayHistoryView: View {
             Text("タスク別")
                 .font(.headline)
 
-            if snapshot.taskSummaries.isEmpty && snapshot.completedTasks.isEmpty {
+            if snapshot.taskSummaries.isEmpty {
                 emptyState
             } else {
                 ForEach(snapshot.taskSummaries) { task in
-                    HistoryAggregateRow(
-                        symbol: task.directionSymbol,
-                        title: task.title,
-                        subtitle: "\(task.directionName) ・ \(task.flowCount) Flow",
-                        value: durationText(task.focusSeconds),
-                        colorHex: task.directionColorHex
+                    HistoryExpandableTaskRow(
+                        task: task,
+                        flows: flows(for: task),
+                        isExpanded: expandedTaskIDs.contains(task.id),
+                        onToggleExpansion: { toggleTaskExpansion(task.id) },
+                        onToggleCompletion: { todo in toggleTodo(todo) },
+                        onEdit: { todo in editingTodo = todo }
                     )
-                }
-
-                if !snapshot.completedTasks.isEmpty {
-                    Text("達成")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .padding(.top, 6)
-
-                    ForEach(snapshot.completedTasks) { task in
-                        CompletedTaskHistoryRow(task: task)
-                    }
                 }
             }
         }
@@ -294,12 +288,12 @@ struct DayHistoryView: View {
                 emptyState
             } else {
                 ForEach(snapshot.directionSummaries) { direction in
-                    HistoryAggregateRow(
-                        symbol: direction.symbol,
-                        title: direction.name,
-                        subtitle: "\(direction.flowCount) Flow ・ \(BlockUnit.displayText(forFocusedSeconds: direction.focusSeconds))",
-                        value: durationText(direction.focusSeconds),
-                        colorHex: direction.colorHex
+                    HistoryExpandableDirectionRow(
+                        direction: direction,
+                        tasks: tasks(for: direction),
+                        isExpanded: expandedDirectionIDs.contains(direction.id),
+                        onToggleExpansion: { toggleDirectionExpansion(direction.id) },
+                        onEditTask: { todo in editingTodo = todo }
                     )
                 }
             }
@@ -310,14 +304,14 @@ struct DayHistoryView: View {
         ContentUnavailableView(
             "記録なし",
             systemImage: "clock.arrow.circlepath",
-            description: Text("この日のFlowと達成タスクはありません。")
+            description: Text("この期間のFlowとタスクはありません。")
         )
         .frame(maxWidth: .infinity)
         .padding(.vertical, 40)
     }
 
     private var dateTitle: String {
-        switch effectiveRange {
+        switch selectedRange {
         case .day:
             if calendar.isDateInToday(selectedDate) {
                 return "今日 ・ \(fullDateFormatter.string(from: selectedDate))"
@@ -347,17 +341,61 @@ struct DayHistoryView: View {
     }
 
     private func moveDay(by value: Int) {
-        selectedDate = calendar.startOfDay(for: effectiveRange.moving(selectedDate, by: value, calendar: calendar))
-    }
-
-    private var effectiveRange: HistoryCalendarRange {
-        selectedMode == .calendar ? selectedRange : .day
+        selectedDate = calendar.startOfDay(for: selectedRange.moving(selectedDate, by: value, calendar: calendar))
     }
 
     private func durationText(_ seconds: Int) -> String {
         let minutes = max(0, seconds) / 60
         if minutes < 60 { return "\(minutes)分" }
         return "\(minutes / 60)時間\(minutes % 60)分"
+    }
+
+    @ViewBuilder
+    private var aggregatePeriodPicker: some View {
+        switch selectedRange {
+        case .day:
+            HistoryMiniCalendar(selectedDate: $selectedDate)
+        case .week:
+            HistoryMiniCalendar(selectedDate: $selectedDate, selectionMode: .week)
+        case .month:
+            HistoryYearMonthPicker(selectedDate: $selectedDate)
+        }
+    }
+
+    private var periodSummaryTitle: String {
+        switch selectedRange {
+        case .day: "この日の記録"
+        case .week: "この週の記録"
+        case .month: "この月の記録"
+        }
+    }
+
+    private func flows(for task: DayHistoryTaskSummary) -> [DayHistoryFlow] {
+        snapshot.flows.filter { flow in
+            if let todoID = task.todoID { return flow.todoID == todoID }
+            return flow.todoID == nil && flow.directionID == task.directionID
+        }
+    }
+
+    private func tasks(for direction: DayHistoryDirectionSummary) -> [DayHistoryTaskSummary] {
+        snapshot.taskSummaries.filter { $0.directionID == direction.directionID && $0.todo != nil }
+    }
+
+    private func toggleTaskExpansion(_ id: String) {
+        withAnimation(.snappy(duration: 0.2)) {
+            if expandedTaskIDs.remove(id) == nil { expandedTaskIDs.insert(id) }
+        }
+    }
+
+    private func toggleDirectionExpansion(_ id: UUID) {
+        withAnimation(.snappy(duration: 0.2)) {
+            if expandedDirectionIDs.remove(id) == nil { expandedDirectionIDs.insert(id) }
+        }
+    }
+
+    private func toggleTodo(_ todo: Todo) {
+        todo.setCompleted(!todo.isCompleted)
+        try? modelContext.save()
     }
 }
 
@@ -390,78 +428,208 @@ private struct HistorySummaryTile: View {
     }
 }
 
-private struct CompletedTaskHistoryRow: View {
-    let task: DayHistoryTask
+private struct HistoryExpandableTaskRow: View {
+    let task: DayHistoryTaskSummary
+    let flows: [DayHistoryFlow]
+    let isExpanded: Bool
+    let onToggleExpansion: () -> Void
+    let onToggleCompletion: (Todo) -> Void
+    let onEdit: (Todo) -> Void
 
     var body: some View {
-        HStack(spacing: 12) {
-            Text(task.completedAt.map(timeText) ?? "--:--")
-                .font(.callout.monospacedDigit())
-                .foregroundStyle(.secondary)
-                .frame(width: 46, alignment: .leading)
+        VStack(spacing: 0) {
+            HStack(spacing: 10) {
+                if let todo = task.todo {
+                    TodoProgressControl(todo: todo) {
+                        onToggleCompletion(todo)
+                    }
+                } else {
+                    Circle()
+                        .stroke(Color(hex: task.directionColorHex), lineWidth: 2)
+                        .frame(width: 20, height: 20)
+                        .frame(width: 34, height: 34)
+                }
 
-            Image(systemName: "checkmark.circle.fill")
-                .foregroundStyle(Color(hex: task.directionColorHex))
-                .font(.title3)
+                HStack(spacing: 10) {
+                    HStack(spacing: 10) {
+                        Text(task.directionSymbol)
+                            .font(.title3)
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(task.title)
-                    .strikethrough()
-                    .lineLimit(1)
-                Text("\(task.directionSymbol) \(task.directionName)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(task.title)
+                                .font(.body.weight(.medium))
+                                .strikethrough(task.todo?.isCompleted == true)
+                                .lineLimit(1)
+                            Text("\(task.directionName) ・ \(task.flowCount) Flow")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .contentShape(Rectangle())
+                    .onTapGesture(count: 2) {
+                        if let todo = task.todo { onEdit(todo) }
+                    }
+
+                    Spacer(minLength: 8)
+
+                    Text(durationText(task.focusSeconds))
+                        .font(.callout.weight(.semibold).monospacedDigit())
+
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                }
+                .contentShape(Rectangle())
+                .onTapGesture(perform: onToggleExpansion)
             }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
 
-            Spacer()
-
-            Text("達成")
-                .font(.caption.weight(.medium))
-                .foregroundStyle(.secondary)
+            if isExpanded {
+                Divider().padding(.leading, 54)
+                if flows.isEmpty {
+                    Text("この期間のFlowはありません")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.leading, 56)
+                        .padding(.vertical, 10)
+                } else {
+                    ForEach(flows) { flow in
+                        HistoryFlowDisclosureRow(flow: flow)
+                    }
+                }
+            }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
+        .background(Color.secondary.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: 7))
     }
 
-    private func timeText(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ja_JP")
-        formatter.dateFormat = "HH:mm"
-        return formatter.string(from: date)
+    private func durationText(_ seconds: Int) -> String {
+        let minutes = max(0, seconds) / 60
+        return minutes < 60 ? "\(minutes)分" : "\(minutes / 60)時間\(minutes % 60)分"
     }
 }
 
-private struct HistoryAggregateRow: View {
-    let symbol: String
-    let title: String
-    let subtitle: String
-    let value: String
-    let colorHex: String
+private struct HistoryExpandableDirectionRow: View {
+    let direction: DayHistoryDirectionSummary
+    let tasks: [DayHistoryTaskSummary]
+    let isExpanded: Bool
+    let onToggleExpansion: () -> Void
+    let onEditTask: (Todo) -> Void
 
     var body: some View {
-        HStack(spacing: 12) {
-            Text(symbol)
-                .font(.title2)
-                .frame(width: 34, height: 34)
-                .background(Color(hex: colorHex).opacity(0.14))
-                .clipShape(RoundedRectangle(cornerRadius: 7))
+        VStack(spacing: 0) {
+            HStack(spacing: 12) {
+                Text(direction.symbol)
+                    .font(.title2)
+                    .frame(width: 34, height: 34)
+                    .background(Color(hex: direction.colorHex).opacity(0.14))
+                    .clipShape(RoundedRectangle(cornerRadius: 7))
 
-            VStack(alignment: .leading, spacing: 3) {
-                Text(title)
-                    .font(.body.weight(.medium))
-                Text(subtitle)
-                    .font(.caption)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(direction.name)
+                        .font(.body.weight(.medium))
+                    Text("\(direction.taskCount) タスク ・ \(direction.flowCount) Flow")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Text(durationText(direction.focusSeconds))
+                    .font(.callout.weight(.semibold).monospacedDigit())
+
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .rotationEffect(.degrees(isExpanded ? 90 : 0))
+            }
+            .padding(12)
+            .contentShape(Rectangle())
+            .onTapGesture(perform: onToggleExpansion)
+
+            if isExpanded {
+                Divider().padding(.leading, 54)
+                if tasks.isEmpty {
+                    Text("この期間のタスクはありません")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.leading, 56)
+                        .padding(.vertical, 10)
+                } else {
+                    ForEach(tasks) { task in
+                        HStack(spacing: 10) {
+                            if let todo = task.todo {
+                                TodoProgressControl(todo: todo) {}
+                                    .allowsHitTesting(false)
+                            }
+                            Text(task.directionSymbol)
+                            Text(task.title)
+                                .strikethrough(task.todo?.isCompleted == true)
+                                .lineLimit(1)
+                                .contentShape(Rectangle())
+                                .onTapGesture(count: 2) {
+                                    if let todo = task.todo { onEditTask(todo) }
+                                }
+                            Spacer()
+                            Text(durationText(task.focusSeconds))
+                                .font(.caption.monospacedDigit())
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.trailing, 12)
+                        .padding(.vertical, 4)
+                    }
+                }
+            }
+        }
+        .background(Color.secondary.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: 7))
+    }
+
+    private func durationText(_ seconds: Int) -> String {
+        let minutes = max(0, seconds) / 60
+        return minutes < 60 ? "\(minutes)分" : "\(minutes / 60)時間\(minutes % 60)分"
+    }
+}
+
+private struct HistoryFlowDisclosureRow: View {
+    let flow: DayHistoryFlow
+
+    var body: some View {
+        HStack(spacing: 10) {
+            RoundedRectangle(cornerRadius: 2)
+                .fill(Color(hex: flow.directionColorHex))
+                .frame(width: 4, height: 26)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(flow.taskTitle)
+                    .font(.callout)
+                    .lineLimit(1)
+                Text("\(time(flow.startedAt))–\(time(flow.endedAt))")
+                    .font(.caption.monospacedDigit())
                     .foregroundStyle(.secondary)
             }
 
             Spacer()
 
-            Text(value)
-                .font(.callout.weight(.semibold).monospacedDigit())
+            Text(duration(flow.focusSeconds))
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(.secondary)
         }
-        .padding(12)
-        .background(Color.secondary.opacity(0.07))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .padding(.leading, 56)
+        .padding(.trailing, 12)
+        .padding(.vertical, 7)
+    }
+
+    private func time(_ date: Date) -> String {
+        date.formatted(.dateTime.locale(Locale(identifier: "ja_JP")).hour().minute())
+    }
+
+    private func duration(_ seconds: Int) -> String {
+        "\(max(0, seconds) / 60)分"
     }
 }
 
