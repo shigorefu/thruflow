@@ -21,6 +21,7 @@ struct HistoryCalendarView: View {
     @State private var inspectedSession: FlowSession?
     @State private var editedBreak: FlowBreak?
     @State private var selectedDayItemID: String?
+    @State private var manualFlowDraft: HistoryFlowCreationDraft?
     @AppStorage("history.dayTimelineScale") private var dayScaleRawValue = HistoryDayTimelineScale.elastic.rawValue
 
     private let calendar = Calendar.current
@@ -52,7 +53,8 @@ struct HistoryCalendarView: View {
                 if geometry.size.width >= 1180 {
                     HistoryCalendarSidebar(
                         selectedDate: $selectedDate,
-                        visibleKinds: $visibleKinds
+                        visibleKinds: $visibleKinds,
+                        showsCalendar: range != .day
                     )
                     .frame(width: 220)
 
@@ -67,6 +69,7 @@ struct HistoryCalendarView: View {
                             scale: dayScaleBinding,
                             items: filteredItems,
                             selectedItemID: $selectedDayItemID,
+                            manualFlowDraft: $manualFlowDraft,
                             onEdit: openEditor
                         )
                     case .week:
@@ -77,6 +80,7 @@ struct HistoryCalendarView: View {
                             hourRange: 0..<24,
                             hourHeight: 64,
                             selectedItemID: nil,
+                            manualFlowDraft: $manualFlowDraft,
                             onSelect: openEditor
                         )
                     case .month:
@@ -97,9 +101,26 @@ struct HistoryCalendarView: View {
             HistoryBreakEditorView(flowBreak: flowBreak)
                 .environmentObject(activeFlowStore)
         }
+        .sheet(
+            isPresented: Binding(
+                get: { range == .week && manualFlowDraft != nil },
+                set: { if !$0 { manualFlowDraft = nil } }
+            )
+        ) {
+            if let draft = manualFlowDraft {
+                ManualFlowCreationView(
+                    startedAt: draft.startedAt,
+                    onTimeChange: updateManualFlowDraft
+                ) {
+                    manualFlowDraft = nil
+                }
+                .id(draft.id)
+            }
+        }
     }
 
     private func openEditor(_ item: HistoryCalendarItem) {
+        manualFlowDraft = nil
         switch item.kind {
         case .flow:
             guard let session = item.session,
@@ -109,15 +130,23 @@ struct HistoryCalendarView: View {
             editedBreak = item.flowBreak
         }
     }
+
+    private func updateManualFlowDraft(startedAt: Date, endedAt: Date) {
+        manualFlowDraft?.startedAt = startedAt
+        manualFlowDraft?.endedAt = endedAt
+    }
 }
 
 private struct HistoryCalendarSidebar: View {
     @Binding var selectedDate: Date
     @Binding var visibleKinds: Set<HistoryCalendarItemKind>
+    let showsCalendar: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            HistoryMiniCalendar(selectedDate: $selectedDate)
+            if showsCalendar {
+                HistoryMiniCalendar(selectedDate: $selectedDate)
+            }
 
             VStack(alignment: .leading, spacing: 10) {
                 Text("表示")
@@ -154,9 +183,8 @@ struct HistoryTimeGrid: View {
     let hourRange: Range<Int>
     let hourHeight: CGFloat
     let selectedItemID: String?
+    @Binding var manualFlowDraft: HistoryFlowCreationDraft?
     let onSelect: (HistoryCalendarItem) -> Void
-
-    @State private var creationRequest: HistoryFlowCreationRequest?
 
     private let calendar = Calendar.current
     private let timeAxisWidth: CGFloat = 72
@@ -216,8 +244,8 @@ struct HistoryTimeGrid: View {
                         .allowsHitTesting(false)
                     emptyDoubleClickLayer(dayWidth: dayWidth)
                     timedItems(dayWidth: dayWidth)
+                    manualFlowDraftBlock(dayWidth: dayWidth)
                     currentTimeLine(dayWidth: dayWidth)
-                    creationPopoverAnchor
                 }
                 .frame(width: contentWidth, height: hourHeight * CGFloat(hourRange.count))
             }
@@ -276,7 +304,10 @@ struct HistoryTimeGrid: View {
                     item: item,
                     isCompact: item.durationSeconds < 15 * 60,
                     isSelected: selectedItemID == item.id
-                ) { onSelect(item) }
+                ) {
+                    manualFlowDraft = nil
+                    onSelect(item)
+                }
                     .frame(width: max(32, width - 3), height: frame.height, alignment: .topLeading)
                     .offset(
                         x: timeAxisWidth + CGFloat(dayIndex) * dayWidth + 4 + CGFloat(placement.lane) * width,
@@ -298,10 +329,10 @@ struct HistoryTimeGrid: View {
                     SpatialTapGesture(count: 2)
                         .onEnded { value in
                             let y = min(max(0, value.location.y), height)
-                            creationRequest = HistoryFlowCreationRequest(
-                                startedAt: date(on: day, y: y),
-                                x: timeAxisWidth + CGFloat(dayIndex) * dayWidth + value.location.x,
-                                y: y
+                            let startedAt = date(on: day, y: y)
+                            manualFlowDraft = HistoryFlowCreationDraft(
+                                startedAt: startedAt,
+                                endedAt: startedAt.addingTimeInterval(25 * 60)
                             )
                         }
                 )
@@ -309,23 +340,23 @@ struct HistoryTimeGrid: View {
     }
 
     @ViewBuilder
-    private var creationPopoverAnchor: some View {
-        if let request = creationRequest {
-            Color.primary
-                .opacity(0.001)
-                .frame(width: 2, height: 2)
-                .offset(x: request.x, y: request.y)
-                .popover(
-                    isPresented: Binding(
-                        get: { creationRequest != nil },
-                        set: { if !$0 { creationRequest = nil } }
-                    ),
-                    arrowEdge: .trailing
-                ) {
-                    ManualFlowCreationView(startedAt: request.startedAt) {
-                        creationRequest = nil
-                    }
-                }
+    private func manualFlowDraftBlock(dayWidth: CGFloat) -> some View {
+        if let draft = manualFlowDraft,
+           let dayIndex = days.firstIndex(where: { calendar.isDate($0, inSameDayAs: draft.startedAt) }) {
+            let day = days[dayIndex]
+            let interval = visibleInterval(on: day)
+            let start = max(draft.startedAt, interval.start)
+            let end = min(draft.endedAt, interval.end)
+
+            if end > start {
+                let y = CGFloat(start.timeIntervalSince(interval.start) / 3600) * hourHeight
+                let height = max(minimumItemHeight, CGFloat(end.timeIntervalSince(start) / 3600) * hourHeight)
+
+                HistoryManualFlowDraftView(startedAt: draft.startedAt, endedAt: draft.endedAt)
+                    .frame(width: dayWidth - 8, height: height, alignment: .topLeading)
+                    .offset(x: timeAxisWidth + CGFloat(dayIndex) * dayWidth + 4, y: y)
+                    .allowsHitTesting(false)
+            }
         }
     }
 
@@ -412,11 +443,35 @@ struct HistoryTimeGrid: View {
     }
 }
 
-private struct HistoryFlowCreationRequest: Identifiable {
+struct HistoryFlowCreationDraft: Identifiable {
     let id = UUID()
+    var startedAt: Date
+    var endedAt: Date
+}
+
+private struct HistoryManualFlowDraftView: View {
     let startedAt: Date
-    let x: CGFloat
-    let y: CGFloat
+    let endedAt: Date
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text("新しいFlow")
+                .font(.caption.weight(.semibold))
+            Text("\(startedAt.formatted(date: .omitted, time: .shortened))–\(endedAt.formatted(date: .omitted, time: .shortened))")
+                .font(.caption2.monospacedDigit())
+        }
+        .foregroundStyle(.white)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .padding(.horizontal, 6)
+        .padding(.vertical, 4)
+        .background(Color.accentColor.opacity(0.82))
+        .clipShape(RoundedRectangle(cornerRadius: 5))
+        .overlay {
+            RoundedRectangle(cornerRadius: 5)
+                .stroke(Color.white.opacity(0.75), lineWidth: 1.5)
+        }
+        .accessibilityLabel("新しいFlow、\(startedAt.formatted(date: .omitted, time: .shortened))から\(endedAt.formatted(date: .omitted, time: .shortened))")
+    }
 }
 
 private struct HistoryTimedItemView: View {

@@ -14,6 +14,7 @@ struct ManualFlowCreationView: View {
     @Query(sort: \Direction.sortIndex) private var directions: [Direction]
     @Query(sort: \Todo.updatedAt, order: .reverse) private var todos: [Todo]
 
+    let onTimeChange: (Date, Date) -> Void
     let onDismiss: () -> Void
 
     @State private var selectedTodoID: UUID?
@@ -24,7 +25,12 @@ struct ManualFlowCreationView: View {
 
     private let editor = FlowHistoryEditor()
 
-    init(startedAt: Date, onDismiss: @escaping () -> Void) {
+    init(
+        startedAt: Date,
+        onTimeChange: @escaping (Date, Date) -> Void = { _, _ in },
+        onDismiss: @escaping () -> Void
+    ) {
+        self.onTimeChange = onTimeChange
         self.onDismiss = onDismiss
         _timeDraft = State(initialValue: FlowHistoryTimeDraft(
             startedAt: startedAt,
@@ -168,7 +174,7 @@ struct ManualFlowCreationView: View {
             Divider()
             footer
         }
-        .frame(width: 440, height: 390)
+        .frame(minWidth: 300, idealWidth: 440, minHeight: 390)
         .onAppear {
             if selectedDirectionID == nil {
                 selectedDirectionID = availableDirections.first?.id
@@ -181,6 +187,9 @@ struct ManualFlowCreationView: View {
         }
         .onChange(of: mode) { _, newMode in
             timeDraft.setFocusMinutes(newMode.initialFocusDurationSeconds / 60)
+        }
+        .onChange(of: timeDraft) { _, newValue in
+            onTimeChange(newValue.startedAt, newValue.endedAt)
         }
     }
 
