@@ -579,6 +579,8 @@ private struct HistoryTodoProgressIndicator: View {
             if let onToggleCheckbox {
                 Button(action: onToggleCheckbox) {
                     checkbox
+                        .frame(width: 34, height: 34)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .frame(width: 34, height: 34)
