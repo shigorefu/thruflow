@@ -23,8 +23,9 @@ struct FlowVisualState: Equatable {
         let modeCharacter = Self.modeCharacter(for: mode)
 
         progress = linearProgress
-        let dailySpeed = 0.075 + easedProgress * 0.68
-        speed = dailySpeed + (isActive ? 0.58 : 0)
+        speed = isActive
+            ? 0.55 + easedProgress * 0.85
+            : 0.06 + easedProgress * 0.22
         volume = 0.42 + easedProgress * 0.58
         layerCount = min(10, max(7, 7 + min(flowCount / 2, 3)))
         waveFrequency = modeCharacter.frequency
