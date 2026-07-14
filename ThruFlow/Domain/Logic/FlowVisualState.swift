@@ -24,7 +24,7 @@ struct FlowVisualState: Equatable {
 
         progress = linearProgress
         speed = isActive
-            ? 0.55 + easedProgress * 0.85
+            ? 1.10 + easedProgress * 1.70
             : 0.06 + easedProgress * 0.22
         volume = 0.42 + easedProgress * 0.58
         layerCount = min(10, max(7, 7 + min(flowCount / 2, 3)))
