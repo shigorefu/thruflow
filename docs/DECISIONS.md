@@ -92,6 +92,12 @@ Reason: calendar planning must not silently invalidate historical completion or 
 
 Reason: starting focused work and seeing its accumulated shape should be the primary app experience, while Tasks, History, Directions, and Statistics remain dedicated supporting surfaces.
 
+## D-014: Day History Uses Timeline And Inspector
+
+The `日` History range uses a narrow Apple Calendar-style timeline with a persisted `Elastic | 24時間` scale. A right pane contains the date mini-calendar and properties for the selected actual record; compact windows present those properties in a sheet.
+
+Reason: day history needs enough vertical and horizontal space to inspect short Flow records without duplicating editors or compressing the timeline into an unreadable calendar column.
+
 ## Open Questions
 
 - What measurement and planned amount should be used for an auto-created Task when Flow starts with only a Direction or with neither Direction nor Task?

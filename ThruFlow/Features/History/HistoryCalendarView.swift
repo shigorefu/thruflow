@@ -22,6 +22,8 @@ struct HistoryCalendarView: View {
     @State private var inspectedSession: FlowSession?
     @State private var editedTodo: Todo?
     @State private var editedBreak: FlowBreak?
+    @State private var selectedDayItemID: String?
+    @AppStorage("history.dayTimelineScale") private var dayScaleRawValue = HistoryDayTimelineScale.elastic.rawValue
 
     private let calendar = Calendar.current
     private let builder = HistoryCalendarBuilder()
@@ -40,6 +42,13 @@ struct HistoryCalendarView: View {
         snapshot.items.filter { visibleKinds.contains($0.kind) }
     }
 
+    private var dayScaleBinding: Binding<HistoryDayTimelineScale> {
+        Binding(
+            get: { HistoryDayTimelineScale(rawValue: dayScaleRawValue) ?? .elastic },
+            set: { dayScaleRawValue = $0.rawValue }
+        )
+    }
+
     var body: some View {
         GeometryReader { geometry in
             HStack(spacing: 0) {
@@ -55,18 +64,29 @@ struct HistoryCalendarView: View {
 
                 Group {
                     switch range {
-                    case .day, .week:
+                    case .day:
+                        HistoryDayWorkspaceView(
+                            selectedDate: $selectedDate,
+                            scale: dayScaleBinding,
+                            items: filteredItems,
+                            selectedItemID: $selectedDayItemID,
+                            onEdit: openEditor
+                        )
+                    case .week:
                         HistoryTimeGrid(
                             selectedDate: selectedDate,
                             range: range,
                             items: filteredItems,
-                            onSelect: select
+                            hourRange: 0..<24,
+                            hourHeight: 64,
+                            selectedItemID: nil,
+                            onSelect: openEditor
                         )
                     case .month:
                         HistoryMonthGrid(
                             selectedDate: $selectedDate,
                             items: filteredItems,
-                            onSelect: select
+                            onSelect: openEditor
                         )
                     }
                 }
@@ -85,7 +105,7 @@ struct HistoryCalendarView: View {
         }
     }
 
-    private func select(_ item: HistoryCalendarItem) {
+    private func openEditor(_ item: HistoryCalendarItem) {
         switch item.kind {
         case .flow:
             guard let session = item.session,
@@ -103,63 +123,9 @@ private struct HistoryCalendarSidebar: View {
     @Binding var selectedDate: Date
     @Binding var visibleKinds: Set<HistoryCalendarItemKind>
 
-    private let calendar = Calendar.current
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 2), count: 7)
-
-    private var monthDays: [Date] {
-        guard let month = calendar.dateInterval(of: .month, for: selectedDate),
-              let firstWeek = calendar.dateInterval(of: .weekOfYear, for: month.start) else { return [] }
-        return (0..<42).compactMap { calendar.date(byAdding: .day, value: $0, to: firstWeek.start) }
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            VStack(spacing: 10) {
-                HStack {
-                    Button {
-                        selectedDate = calendar.date(byAdding: .month, value: -1, to: selectedDate) ?? selectedDate
-                    } label: {
-                        Image(systemName: "chevron.left")
-                    }
-
-                    Spacer()
-
-                    Text(monthTitle)
-                        .font(.headline)
-
-                    Spacer()
-
-                    Button {
-                        selectedDate = calendar.date(byAdding: .month, value: 1, to: selectedDate) ?? selectedDate
-                    } label: {
-                        Image(systemName: "chevron.right")
-                    }
-                }
-                .buttonStyle(.borderless)
-
-                LazyVGrid(columns: columns, spacing: 5) {
-                    ForEach(weekdaySymbols, id: \.self) { symbol in
-                        Text(symbol)
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    ForEach(monthDays, id: \.self) { date in
-                        Button {
-                            selectedDate = calendar.startOfDay(for: date)
-                        } label: {
-                            Text("\(calendar.component(.day, from: date))")
-                                .font(.caption)
-                                .frame(width: 24, height: 24)
-                                .foregroundStyle(dayForeground(date))
-                                .background(dayBackground(date))
-                                .clipShape(Circle())
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(accessibilityDate(date))
-                    }
-                }
-            }
+            HistoryMiniCalendar(selectedDate: $selectedDate)
 
             VStack(alignment: .leading, spacing: 10) {
                 Text("表示")
@@ -188,45 +154,18 @@ private struct HistoryCalendarSidebar: View {
         .toggleStyle(.checkbox)
     }
 
-    private var monthTitle: String {
-        selectedDate.formatted(.dateTime.locale(Locale(identifier: "ja_JP")).year().month(.wide))
-    }
-
-    private var weekdaySymbols: [String] {
-        let symbols = calendar.veryShortStandaloneWeekdaySymbols
-        let offset = max(0, calendar.firstWeekday - 1)
-        return Array(symbols[offset...]) + Array(symbols[..<offset])
-    }
-
-    private func dayForeground(_ date: Date) -> Color {
-        guard calendar.isDate(date, equalTo: selectedDate, toGranularity: .month) else { return .secondary }
-        return calendar.isDate(date, inSameDayAs: selectedDate) ? .white : .primary
-    }
-
-    @ViewBuilder
-    private func dayBackground(_ date: Date) -> some View {
-        if calendar.isDate(date, inSameDayAs: selectedDate) {
-            Color.accentColor
-        } else if calendar.isDateInToday(date) {
-            Color.accentColor.opacity(0.16)
-        } else {
-            Color.clear
-        }
-    }
-
-    private func accessibilityDate(_ date: Date) -> String {
-        date.formatted(.dateTime.locale(Locale(identifier: "ja_JP")).year().month().day().weekday())
-    }
 }
 
-private struct HistoryTimeGrid: View {
+struct HistoryTimeGrid: View {
     let selectedDate: Date
     let range: HistoryCalendarRange
     let items: [HistoryCalendarItem]
+    let hourRange: Range<Int>
+    let hourHeight: CGFloat
+    let selectedItemID: String?
     let onSelect: (HistoryCalendarItem) -> Void
 
     private let calendar = Calendar.current
-    private let hourHeight: CGFloat = 64
     private let timeAxisWidth: CGFloat = 72
     private let minimumDayWidth: CGFloat = 132
     private let minimumItemHeight: CGFloat = 18
@@ -315,7 +254,7 @@ private struct HistoryTimeGrid: View {
                     timedItems(dayWidth: dayWidth)
                     currentTimeLine(dayWidth: dayWidth)
                 }
-                .frame(width: contentWidth, height: hourHeight * 24)
+                .frame(width: contentWidth, height: hourHeight * CGFloat(hourRange.count))
             }
             .onAppear { scrollToRelevantHour(proxy) }
             .onChange(of: selectedDate) { _, _ in scrollToRelevantHour(proxy) }
@@ -326,7 +265,7 @@ private struct HistoryTimeGrid: View {
     private func hourGrid(dayWidth: CGFloat, contentWidth: CGFloat) -> some View {
         ZStack(alignment: .topLeading) {
             VStack(spacing: 0) {
-                ForEach(0..<24, id: \.self) { hour in
+                ForEach(Array(hourRange), id: \.self) { hour in
                     HStack(alignment: .top, spacing: 8) {
                         Text(String(format: "%d:00", hour))
                             .font(.caption2.monospacedDigit())
@@ -351,7 +290,7 @@ private struct HistoryTimeGrid: View {
             ForEach(0...days.count, id: \.self) { index in
                 Rectangle()
                     .fill(Color.secondary.opacity(0.12))
-                    .frame(width: 1, height: hourHeight * 24)
+                    .frame(width: 1, height: hourHeight * CGFloat(hourRange.count))
                     .offset(x: timeAxisWidth + CGFloat(index) * dayWidth)
             }
         }
@@ -370,7 +309,8 @@ private struct HistoryTimeGrid: View {
 
                 HistoryTimedItemView(
                     item: item,
-                    isCompact: item.durationSeconds < 15 * 60
+                    isCompact: item.durationSeconds < 15 * 60,
+                    isSelected: selectedItemID == item.id
                 ) { onSelect(item) }
                     .frame(width: max(32, width - 3), height: frame.height, alignment: .topLeading)
                     .offset(
@@ -383,12 +323,14 @@ private struct HistoryTimeGrid: View {
 
     @ViewBuilder
     private func currentTimeLine(dayWidth: CGFloat) -> some View {
-        if let todayIndex = days.firstIndex(where: calendar.isDateInToday) {
+        let currentHour = calendar.component(.hour, from: .now)
+        if let todayIndex = days.firstIndex(where: calendar.isDateInToday),
+           hourRange.contains(currentHour) {
             let components = calendar.dateComponents([.hour, .minute, .second], from: .now)
             let hourSeconds = (components.hour ?? 0) * 3600
             let minuteSeconds = (components.minute ?? 0) * 60
             let seconds = CGFloat(hourSeconds + minuteSeconds + (components.second ?? 0))
-            let y = seconds / 3600 * hourHeight
+            let y = (seconds / 3600 - CGFloat(hourRange.lowerBound)) * hourHeight
             HStack(spacing: 0) {
                 Circle().fill(Color.red).frame(width: 7, height: 7)
                 Rectangle().fill(Color.red).frame(height: 1)
@@ -408,14 +350,16 @@ private struct HistoryTimeGrid: View {
     }
 
     private func timedItems(on day: Date) -> [HistoryCalendarItem] {
-        let start = calendar.startOfDay(for: day)
-        let end = calendar.date(byAdding: .day, value: 1, to: start)!
+        let dayStart = calendar.startOfDay(for: day)
+        let start = calendar.date(byAdding: .hour, value: hourRange.lowerBound, to: dayStart)!
+        let end = calendar.date(byAdding: .hour, value: hourRange.upperBound, to: dayStart)!
         return items.filter { !$0.isAllDay && $0.startedAt < end && $0.endedAt > start }
     }
 
     private func placementMap(for items: [HistoryCalendarItem], day: Date) -> [String: HistoryOverlapPlacement] {
-        let start = calendar.startOfDay(for: day)
-        let end = calendar.date(byAdding: .day, value: 1, to: start)!
+        let dayStart = calendar.startOfDay(for: day)
+        let start = calendar.date(byAdding: .hour, value: hourRange.lowerBound, to: dayStart)!
+        let end = calendar.date(byAdding: .hour, value: hourRange.upperBound, to: dayStart)!
         let inputs = items.map {
             HistoryOverlapInput(id: $0.id, start: max($0.startedAt, start), end: min($0.endedAt, end))
         }
@@ -426,10 +370,11 @@ private struct HistoryTimeGrid: View {
 
     private func frame(for item: HistoryCalendarItem, on day: Date) -> (y: CGFloat, height: CGFloat) {
         let startOfDay = calendar.startOfDay(for: day)
-        let dayEnd = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
-        let start = max(item.startedAt, startOfDay)
-        let end = min(item.endedAt, dayEnd)
-        let startSeconds = max(0, start.timeIntervalSince(startOfDay))
+        let visibleStart = calendar.date(byAdding: .hour, value: hourRange.lowerBound, to: startOfDay)!
+        let visibleEnd = calendar.date(byAdding: .hour, value: hourRange.upperBound, to: startOfDay)!
+        let start = max(item.startedAt, visibleStart)
+        let end = min(item.endedAt, visibleEnd)
+        let startSeconds = max(0, start.timeIntervalSince(visibleStart))
         let duration = max(0, end.timeIntervalSince(start))
         return (
             CGFloat(startSeconds / 3600) * hourHeight,
@@ -449,7 +394,7 @@ private struct HistoryTimeGrid: View {
         } else {
             targetDate = timed.map(\.startedAt).min() ?? selectedDate.addingTimeInterval(8 * 3600)
         }
-        let hour = max(0, calendar.component(.hour, from: targetDate) - 1)
+        let hour = min(hourRange.upperBound - 1, max(hourRange.lowerBound, calendar.component(.hour, from: targetDate) - 1))
         DispatchQueue.main.async {
             proxy.scrollTo("history-hour-\(hour)", anchor: .top)
         }
@@ -459,6 +404,7 @@ private struct HistoryTimeGrid: View {
 private struct HistoryTimedItemView: View {
     let item: HistoryCalendarItem
     let isCompact: Bool
+    let isSelected: Bool
     let action: () -> Void
 
     var body: some View {
@@ -500,7 +446,7 @@ private struct HistoryTimedItemView: View {
             .clipShape(RoundedRectangle(cornerRadius: 5))
             .overlay {
                 RoundedRectangle(cornerRadius: 5)
-                    .stroke(borderColor, lineWidth: 1)
+                    .stroke(isSelected ? Color.accentColor : borderColor, lineWidth: isSelected ? 2 : 1)
             }
         }
         .buttonStyle(.plain)

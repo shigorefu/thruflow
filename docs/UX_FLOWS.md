@@ -130,11 +130,13 @@ Hovering a cell shows its date, completed Task count, Flow count, Blocks, and fo
 
 The primary `カレンダー` mode provides:
 
-- `日`: one vertically scrollable 24-hour column;
+- `日`: a narrow scrollable timeline with `Elastic | 24時間` scale and a right inspector;
 - `週`: seven synchronized day columns in one vertically scrollable 24-hour grid;
 - `月`: a seven-column month overview.
 
-Day and week keep date headers and the optional `完了時刻なし` row fixed while hours scroll. Opening the grid scrolls near the current time when today is visible, otherwise near the first Flow. A red line marks the current time. Wide layout adds a mini-calendar and independent Flow, rest, and Task filters. Medium/narrow headers wrap into two rows, the inner sidebar disappears, and stable-width week columns scroll horizontally. Month keeps a minimum full-grid width and scrolls horizontally rather than crushing cells.
+In `日`, the right pane keeps a mini-calendar above the selected record properties. Selecting a Flow, rest, or completed Task updates that pane; changing the day clears the selection. Elastic includes the day's timed records and current hour with one-hour context and a four-hour minimum. `24時間` shows the full day, and the preference persists locally. At compact widths, selection opens the same inspector as a sheet so the timeline retains useful width.
+
+Week keeps date headers and the optional `完了時刻なし` row fixed while hours scroll. Opening a day/week grid scrolls near the current time when today is visible, otherwise near the first Flow. A red line marks the current time. Medium/narrow headers wrap into two rows and stable-width week columns scroll horizontally. Month keeps a minimum full-grid width and scrolls horizontally rather than crushing cells.
 
 Flow and FlowSegment records are timed blocks colored by Direction. FlowBreak records are light-gray timed blocks. Exact Task completions appear at `completedAt`; legacy completions without exact time appear in `完了時刻なし`. Pending scheduled Tasks remain in `タスク` and are excluded from History Calendar.
 
