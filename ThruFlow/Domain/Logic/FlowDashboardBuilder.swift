@@ -69,12 +69,17 @@ struct FlowDashboardSegment: Identifiable {
 
 struct FlowDashboardBreak: Identifiable {
     let id: UUID
+    let storedBreak: FlowBreak
     let seriesID: UUID
     let startedAt: Date
     let endedAt: Date
     let plannedDurationSeconds: Int
     let isLongBreak: Bool
     let isActive: Bool
+
+    var durationSeconds: Int {
+        max(0, Int(endedAt.timeIntervalSince(startedAt)))
+    }
 }
 
 struct FlowDashboardSeriesSpan: Identifiable {
@@ -267,11 +272,12 @@ struct FlowDashboardBuilder {
                 return nil
             }
 
-            let end = flowBreak.connectedUntil ?? flowBreak.timerStoppedAt ?? date
+            let end = flowBreak.resolvedEndAt(referenceDate: date)
             guard end > flowBreak.startedAt else { return nil }
 
             return FlowDashboardBreak(
                 id: flowBreak.id,
+                storedBreak: flowBreak,
                 seriesID: flowBreak.seriesID,
                 startedAt: flowBreak.startedAt,
                 endedAt: min(end, nextDay),

@@ -22,8 +22,8 @@ struct FlowDashboardView: View {
     @AppStorage("flow.timelineMode") private var timelineModeRawValue = FlowTimelineMode.elastic.rawValue
 
     @State private var inspectedSession: FlowSession?
-    @State private var hoveredTimelineSegmentID: UUID?
-    @State private var selectedTimelineSegmentID: UUID?
+    @State private var hoveredTimelineItem: TimelineItem?
+    @State private var selectedTimelineItem: TimelineItem?
     @State private var editingTodo: Todo?
     @State private var showsQuickComposer = false
 
@@ -32,6 +32,7 @@ struct FlowDashboardView: View {
     private let requiredPlanner = RequiredTodoPlanner()
     private let progressCalculator = TodoProgressCalculator()
     private let historyEditor = FlowHistoryEditor()
+    private let breakEditor = FlowBreakEditor()
     private let todoSorter = FlowDashboardTodoSorter()
 
     var body: some View {
@@ -215,9 +216,11 @@ struct FlowDashboardView: View {
             }
 
             GeometryReader { proxy in
-                let selectedSegment = snapshot.segments.first { $0.id == selectedTimelineSegmentID }
+                let selectedSegment = snapshot.segments.first { selectedTimelineItem == .segment($0.id) }
+                let selectedBreak = snapshot.breaks.first { selectedTimelineItem == .flowBreak($0.id) }
                 let anchorPoint = timelineAnchorPoint(
-                    for: selectedSegment,
+                    from: selectedSegment?.startedAt ?? selectedBreak?.startedAt,
+                    to: selectedSegment?.endedAt ?? selectedBreak?.endedAt,
                     range: range,
                     totalWidth: proxy.size.width
                 )
@@ -237,10 +240,11 @@ struct FlowDashboardView: View {
                         )
 
                         RoundedRectangle(cornerRadius: 9)
-                            .stroke(
-                                Color.primary.opacity(0.34),
-                                style: StrokeStyle(lineWidth: 1.2, dash: [3, 2])
-                            )
+                            .fill(Color.gray.opacity(0.12))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 9)
+                                    .stroke(Color.gray.opacity(0.55), lineWidth: 1.3)
+                            }
                             .frame(width: width, height: 20)
                             .position(
                                 x: intervalCenter(
@@ -263,22 +267,25 @@ struct FlowDashboardView: View {
                             minimumWidth: 5
                         )
 
-                        ZStack {
-                            Capsule()
-                                .fill(
-                                    flowBreak.isLongBreak
-                                        ? Color.indigo.opacity(0.72)
-                                        : Color.primary.opacity(0.30)
-                                )
-                                .frame(width: width, height: flowBreak.isActive ? 14 : 10)
+                        Button {
+                            guard !flowBreak.isActive else { return }
+                            selectedTimelineItem = .flowBreak(flowBreak.id)
+                        } label: {
+                            ZStack {
+                                Capsule()
+                                    .fill(Color.gray.opacity(0.68))
+                                    .frame(width: width, height: flowBreak.isActive ? 14 : 12)
 
-                            if width >= 24 {
-                                Image(systemName: "cup.and.saucer.fill")
-                                    .font(.system(size: 7, weight: .semibold))
-                                    .foregroundStyle(.white.opacity(0.88))
+                                if width >= 24 {
+                                    Image(systemName: "cup.and.saucer.fill")
+                                        .font(.system(size: 7, weight: .semibold))
+                                        .foregroundStyle(.white.opacity(0.92))
+                                }
                             }
+                            .frame(width: max(width, 10), height: 20)
+                            .contentShape(Rectangle())
                         }
-                        .frame(width: max(width, 8), height: 18)
+                        .buttonStyle(.plain)
                         .position(
                             x: intervalCenter(
                                 from: flowBreak.startedAt,
@@ -288,16 +295,22 @@ struct FlowDashboardView: View {
                             ),
                             y: proxy.size.height / 2
                         )
+                        .zIndex(hoveredTimelineItem == .flowBreak(flowBreak.id) ? 2 : 1)
                         .help(breakHelpText(flowBreak))
                         .accessibilityLabel(breakHelpText(flowBreak))
                     }
 
                     ForEach(snapshot.segments) { segment in
                         let width = segmentWidth(segment, range: range, totalWidth: proxy.size.width)
-                        let centerX = proxy.size.width * range.fraction(for: segment.startedAt) + (width / 2)
+                        let centerX = intervalCenter(
+                            from: segment.startedAt,
+                            to: segment.endedAt,
+                            range: range,
+                            totalWidth: proxy.size.width
+                        )
 
                         Button {
-                            selectedTimelineSegmentID = segment.id
+                            selectedTimelineItem = .segment(segment.id)
                         } label: {
                             ZStack {
                                 Color.clear
@@ -314,16 +327,36 @@ struct FlowDashboardView: View {
                         }
                         .buttonStyle(.plain)
                         .position(x: centerX, y: proxy.size.height / 2)
-                        .zIndex(hoveredTimelineSegmentID == segment.id ? 2 : 1)
+                        .zIndex(hoveredTimelineItem == .segment(segment.id) ? 2 : 1)
                         .accessibilityLabel("\(segment.taskTitle)、\(focusText(segment.focusSeconds))")
                     }
 
-                    if let hoveredSegment = snapshot.segments.first(where: { $0.id == hoveredTimelineSegmentID }),
-                       selectedTimelineSegmentID == nil {
+                    if let hoveredSegment = snapshot.segments.first(where: {
+                        hoveredTimelineItem == .segment($0.id)
+                    }), selectedTimelineItem == nil {
                         TimelineSegmentHoverCard(segment: hoveredSegment)
                             .position(
                                 x: timelineCardX(
-                                    for: hoveredSegment,
+                                    from: hoveredSegment.startedAt,
+                                    to: hoveredSegment.endedAt,
+                                    range: range,
+                                    totalWidth: proxy.size.width
+                                ),
+                                y: -24
+                            )
+                            .allowsHitTesting(false)
+                            .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .bottom)))
+                            .zIndex(3)
+                    }
+
+                    if let hoveredBreak = snapshot.breaks.first(where: {
+                        hoveredTimelineItem == .flowBreak($0.id)
+                    }), selectedTimelineItem == nil {
+                        TimelineBreakHoverCard(flowBreak: hoveredBreak)
+                            .position(
+                                x: timelineCardX(
+                                    from: hoveredBreak.startedAt,
+                                    to: hoveredBreak.endedAt,
                                     range: range,
                                     totalWidth: proxy.size.width
                                 ),
@@ -339,14 +372,14 @@ struct FlowDashboardView: View {
                 .onContinuousHover { phase in
                     switch phase {
                     case .active(let location):
-                        hoveredTimelineSegmentID = timelineSegment(
+                        hoveredTimelineItem = timelineItem(
                             at: location.x,
-                            segments: snapshot.segments,
+                            snapshot: snapshot,
                             range: range,
                             totalWidth: proxy.size.width
-                        )?.id
+                        )
                     case .ended:
-                        hoveredTimelineSegmentID = nil
+                        hoveredTimelineItem = nil
                     }
                 }
                 .popover(
@@ -361,8 +394,22 @@ struct FlowDashboardView: View {
                                 deleteTimelineSegment(selectedSegment)
                             },
                             onOpenHistory: selectedSegment.isActive ? nil : {
-                                selectedTimelineSegmentID = nil
+                                selectedTimelineItem = nil
                                 inspectedSession = selectedSegment.session
+                            }
+                        )
+                    } else if let selectedBreak {
+                        TimelineBreakPopover(
+                            flowBreak: selectedBreak,
+                            onSave: { minutes in
+                                let result = try breakEditor.updateDuration(
+                                    of: selectedBreak.storedBreak,
+                                    minutes: minutes,
+                                    modelContext: modelContext,
+                                    protectedSessionID: activeFlowStore.activeSession?.id
+                                )
+                                selectedTimelineItem = nil
+                                return result
                             }
                         )
                     }
@@ -647,8 +694,8 @@ struct FlowDashboardView: View {
             get: { timelineMode },
             set: { mode in
                 timelineModeRawValue = mode.rawValue
-                hoveredTimelineSegmentID = nil
-                selectedTimelineSegmentID = nil
+                hoveredTimelineItem = nil
+                selectedTimelineItem = nil
             }
         )
     }
@@ -690,59 +737,83 @@ struct FlowDashboardView: View {
 
     private func breakHelpText(_ flowBreak: FlowDashboardBreak) -> String {
         let name = flowBreak.isLongBreak ? "Long Break" : "休憩"
-        return "☕️ \(name) \(TimelineSegmentFormat.duration(flowBreak.plannedDurationSeconds))"
+        return "☕️ \(name) \(TimelineSegmentFormat.duration(flowBreak.durationSeconds))"
     }
 
     private var timelinePopoverBinding: Binding<Bool> {
         Binding(
-            get: { selectedTimelineSegmentID != nil },
+            get: { selectedTimelineItem != nil },
             set: { isPresented in
                 if !isPresented {
-                    selectedTimelineSegmentID = nil
+                    selectedTimelineItem = nil
                 }
             }
         )
     }
 
     private func timelineCardX(
-        for segment: FlowDashboardSegment,
+        from start: Date,
+        to end: Date,
         range: FlowTimelineRange,
         totalWidth: CGFloat
     ) -> CGFloat {
-        let width = segmentWidth(segment, range: range, totalWidth: totalWidth)
-        let center = totalWidth * range.fraction(for: segment.startedAt) + (width / 2)
+        let center = intervalCenter(from: start, to: end, range: range, totalWidth: totalWidth)
         return min(max(center, 95), max(95, totalWidth - 95))
     }
 
     private func timelineAnchorPoint(
-        for segment: FlowDashboardSegment?,
+        from start: Date?,
+        to end: Date?,
         range: FlowTimelineRange,
         totalWidth: CGFloat
     ) -> UnitPoint {
-        guard let segment, totalWidth > 0 else { return .center }
-        let width = segmentWidth(segment, range: range, totalWidth: totalWidth)
-        let center = totalWidth * range.fraction(for: segment.startedAt) + (width / 2)
+        guard let start, let end, totalWidth > 0 else { return .center }
+        let center = intervalCenter(from: start, to: end, range: range, totalWidth: totalWidth)
         return UnitPoint(x: min(max(center / totalWidth, 0), 1), y: 0.5)
     }
 
-    private func timelineSegment(
+    private func timelineItem(
         at x: CGFloat,
-        segments: [FlowDashboardSegment],
+        snapshot: FlowDashboardSnapshot,
         range: FlowTimelineRange,
         totalWidth: CGFloat
-    ) -> FlowDashboardSegment? {
-        segments
-            .compactMap { segment -> (segment: FlowDashboardSegment, distance: CGFloat)? in
+    ) -> TimelineItem? {
+        let segmentCandidates = snapshot.segments.compactMap { segment -> (TimelineItem, CGFloat)? in
                 let segmentVisualWidth = segmentWidth(segment, range: range, totalWidth: totalWidth)
                 let width = max(segmentVisualWidth, 14)
-                let center = totalWidth * CGFloat(range.fraction(for: segment.startedAt))
-                    + (segmentVisualWidth / 2)
+                let center = intervalCenter(
+                    from: segment.startedAt,
+                    to: segment.endedAt,
+                    range: range,
+                    totalWidth: totalWidth
+                )
                 let distance = abs(x - center)
                 guard distance <= width / 2 else { return nil }
-                return (segment, distance)
+                return (.segment(segment.id), distance)
             }
-            .min { $0.distance < $1.distance }?
-            .segment
+        let breakCandidates = snapshot.breaks.compactMap { flowBreak -> (TimelineItem, CGFloat)? in
+            let visualWidth = intervalWidth(
+                from: flowBreak.startedAt,
+                to: flowBreak.endedAt,
+                range: range,
+                totalWidth: totalWidth,
+                minimumWidth: 10
+            )
+            let width = max(visualWidth, 14)
+            let center = intervalCenter(
+                from: flowBreak.startedAt,
+                to: flowBreak.endedAt,
+                range: range,
+                totalWidth: totalWidth
+            )
+            let distance = abs(x - center)
+            guard distance <= width / 2 else { return nil }
+            return (.flowBreak(flowBreak.id), distance)
+        }
+
+        return (segmentCandidates + breakCandidates)
+            .min { $0.1 < $1.1 }?
+            .0
     }
 
     private func timelineLabel(_ date: Date, index: Int, dates: [Date]) -> String {
@@ -753,7 +824,7 @@ struct FlowDashboardView: View {
     }
 
     private func deleteTimelineSegment(_ segment: FlowDashboardSegment) {
-        selectedTimelineSegmentID = nil
+        selectedTimelineItem = nil
 
         if let storedSegment = segment.storedSegment {
             historyEditor.delete(
@@ -784,6 +855,11 @@ struct FlowDashboardView: View {
     }
 }
 
+private enum TimelineItem: Equatable {
+    case segment(UUID)
+    case flowBreak(UUID)
+}
+
 private struct TimelineSegmentHoverCard: View {
     let segment: FlowDashboardSegment
 
@@ -808,6 +884,135 @@ private struct TimelineSegmentHoverCard: View {
                 .strokeBorder(Color.primary.opacity(0.12))
         }
         .shadow(color: .black.opacity(0.18), radius: 8, y: 3)
+    }
+}
+
+private struct TimelineBreakHoverCard: View {
+    let flowBreak: FlowDashboardBreak
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Label(flowBreak.isLongBreak ? "Long Break" : "休憩", systemImage: "cup.and.saucer.fill")
+                .font(.caption.weight(.semibold))
+
+            Text("\(TimelineSegmentFormat.interval(from: flowBreak.startedAt, to: flowBreak.endedAt)) · \(TimelineSegmentFormat.duration(flowBreak.durationSeconds))")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .frame(width: 190, alignment: .leading)
+        .background(.regularMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 7))
+        .overlay {
+            RoundedRectangle(cornerRadius: 7)
+                .strokeBorder(Color.primary.opacity(0.12))
+        }
+        .shadow(color: .black.opacity(0.18), radius: 8, y: 3)
+    }
+}
+
+private struct TimelineBreakPopover: View {
+    let flowBreak: FlowDashboardBreak
+    let onSave: (Int) throws -> FlowBreakEditResult
+
+    @State private var minutes: Int
+    @State private var errorText: String?
+
+    init(
+        flowBreak: FlowDashboardBreak,
+        onSave: @escaping (Int) throws -> FlowBreakEditResult
+    ) {
+        self.flowBreak = flowBreak
+        self.onSave = onSave
+        _minutes = State(initialValue: max(1, Int(ceil(Double(flowBreak.durationSeconds) / 60))))
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 12) {
+                Image(systemName: "cup.and.saucer.fill")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 42, height: 42)
+                    .background(Color.gray.opacity(0.18))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(flowBreak.isLongBreak ? "Long Break" : "休憩")
+                        .font(.headline)
+                    Text("開始時刻は固定されます")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Divider()
+
+            HStack {
+                Label("開始", systemImage: "clock")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Text(TimelineSegmentFormat.time(flowBreak.startedAt))
+                    .monospacedDigit()
+            }
+
+            HStack {
+                Label("終了", systemImage: "clock.badge.checkmark")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Text(TimelineSegmentFormat.time(adjustedEndAt))
+                    .monospacedDigit()
+            }
+
+            HStack(spacing: 8) {
+                Text("休憩時間")
+                    .font(.callout.weight(.medium))
+                Spacer()
+                TextField("分", value: $minutes, format: .number)
+                    .textFieldStyle(.roundedBorder)
+                    .multilineTextAlignment(.trailing)
+                    .monospacedDigit()
+                    .frame(width: 76)
+                    .onSubmit(save)
+                Text("分")
+                    .foregroundStyle(.secondary)
+            }
+
+            if let errorText {
+                Text(errorText)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Button(action: save) {
+                Text("保存")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(minutes < FlowBreakEditor.minimumDurationMinutes || minutes > FlowBreakEditor.maximumDurationMinutes)
+        }
+        .padding(16)
+        .frame(width: 290)
+    }
+
+    private var adjustedEndAt: Date {
+        flowBreak.startedAt.addingTimeInterval(TimeInterval(max(0, minutes) * 60))
+    }
+
+    private func save() {
+        do {
+            _ = try onSave(minutes)
+            errorText = nil
+        } catch FlowBreakEditorError.activeFlowWouldMove {
+            errorText = "実行中のFlowは移動できません。現在のFlowを終了してから編集してください。"
+        } catch {
+            errorText = "休憩時間を保存できませんでした。"
+        }
     }
 }
 
@@ -912,7 +1117,15 @@ private enum TimelineSegmentFormat {
     }()
 
     static func interval(_ segment: FlowDashboardSegment) -> String {
-        "\(timeFormatter.string(from: segment.startedAt))–\(timeFormatter.string(from: segment.endedAt))"
+        interval(from: segment.startedAt, to: segment.endedAt)
+    }
+
+    static func interval(from start: Date, to end: Date) -> String {
+        "\(time(start))–\(time(end))"
+    }
+
+    static func time(_ date: Date) -> String {
+        timeFormatter.string(from: date)
     }
 
     static func duration(_ seconds: Int) -> String {

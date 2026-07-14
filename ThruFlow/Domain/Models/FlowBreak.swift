@@ -17,6 +17,7 @@ final class FlowBreak {
     var startedAt: Date = Date.now
     var timerStoppedAt: Date?
     var connectedUntil: Date?
+    var adjustedEndAt: Date?
     var plannedDurationSeconds: Int = 0
     var isLongBreak: Bool = false
     var createdAt: Date = Date.now
@@ -31,6 +32,7 @@ final class FlowBreak {
         startedAt: Date,
         timerStoppedAt: Date? = nil,
         connectedUntil: Date? = nil,
+        adjustedEndAt: Date? = nil,
         plannedDurationSeconds: Int,
         isLongBreak: Bool = false,
         createdAt: Date? = nil,
@@ -44,6 +46,7 @@ final class FlowBreak {
         self.startedAt = startedAt
         self.timerStoppedAt = timerStoppedAt
         self.connectedUntil = connectedUntil
+        self.adjustedEndAt = adjustedEndAt
         self.plannedDurationSeconds = max(0, plannedDurationSeconds)
         self.isLongBreak = isLongBreak
         self.createdAt = createdAt ?? startedAt
@@ -59,6 +62,10 @@ final class FlowBreak {
 
     var isDeleted: Bool {
         deletedAt != nil
+    }
+
+    func resolvedEndAt(referenceDate: Date) -> Date {
+        max(adjustedEndAt ?? connectedUntil ?? timerStoppedAt ?? referenceDate, startedAt)
     }
 
     func stopTimer(at date: Date) {
