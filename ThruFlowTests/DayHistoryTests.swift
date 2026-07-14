@@ -154,7 +154,7 @@ struct DayHistoryTests {
     }
 
     @Test func deletingOneFlowSegmentRemovesOnlyItsProgress() throws {
-        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self])
+        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
@@ -197,5 +197,39 @@ struct DayHistoryTests {
         #expect(direction.recordedFocusSeconds == 15 * 60)
         #expect(todo.recordedFocusSeconds == 15 * 60)
         #expect(todo.actualProgress == 15)
+    }
+
+    @Test func deletingFlowSessionSoftDeletesRelatedBreaks() throws {
+        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let direction = Direction(name: "仕事", type: .neutral)
+        let start = Date(timeIntervalSince1970: 40_000)
+        let session = FlowSession(
+            direction: direction,
+            mode: .twentyFiveFive,
+            phase: .completed,
+            status: .completed,
+            startedAt: start,
+            plannedEndAt: start.addingTimeInterval(25 * 60),
+            endedAt: start.addingTimeInterval(25 * 60),
+            plannedFocusDurationSeconds: 25 * 60,
+            actualFocusDurationSeconds: 25 * 60,
+            plannedBreakDurationSeconds: 5 * 60
+        )
+        let flowBreak = FlowBreak(
+            seriesID: session.seriesID ?? session.id,
+            previousSessionID: session.id,
+            startedAt: session.endedAt!,
+            plannedDurationSeconds: 5 * 60
+        )
+        context.insert(direction)
+        context.insert(session)
+        context.insert(flowBreak)
+
+        FlowHistoryEditor().delete(session: session, modelContext: context, now: start.addingTimeInterval(40 * 60))
+
+        #expect(flowBreak.deletedAt == start.addingTimeInterval(40 * 60))
     }
 }

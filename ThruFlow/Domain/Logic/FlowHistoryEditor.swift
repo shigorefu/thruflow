@@ -95,6 +95,7 @@ struct FlowHistoryEditor {
 
     func delete(session: FlowSession, modelContext: ModelContext, now: Date = .now) {
         removeSessionProgress(session, now: now)
+        deleteRelatedBreaks(sessionID: session.id, modelContext: modelContext, now: now)
         modelContext.delete(session)
     }
 
@@ -106,6 +107,7 @@ struct FlowHistoryEditor {
         modelContext.delete(segment)
 
         guard !session.segments.isEmpty else {
+            deleteRelatedBreaks(sessionID: session.id, modelContext: modelContext, now: now)
             modelContext.delete(session)
             return
         }
@@ -160,6 +162,15 @@ struct FlowHistoryEditor {
             todo.setProgress(BlockUnit.wholeBlocks(forFocusedSeconds: todo.recordedFocusSeconds), now: now)
         case .minutes:
             todo.setProgress(todo.recordedFocusSeconds / 60, now: now)
+        }
+    }
+
+    private func deleteRelatedBreaks(sessionID: UUID, modelContext: ModelContext, now: Date) {
+        let breaks = (try? modelContext.fetch(FetchDescriptor<FlowBreak>())) ?? []
+        for flowBreak in breaks where
+            flowBreak.previousSessionID == sessionID || flowBreak.nextSessionID == sessionID {
+            flowBreak.deletedAt = now
+            flowBreak.updatedAt = now
         }
     }
 }

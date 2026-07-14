@@ -144,7 +144,7 @@ struct FlowMiniPlayerView: View {
                         .font(.system(.title, design: .rounded).weight(.bold))
                         .monospacedDigit()
 
-                    Text(activeFlowStore.selectedMode.displayName)
+                    Text(timerPhaseName)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -331,10 +331,16 @@ struct FlowMiniPlayerView: View {
         case .paused:
             "一時停止"
         case .breakTime:
-            "休憩"
+            activeFlowStore.timerState?.isLongBreak == true ? "Long Break" : "休憩"
         default:
             "待機中"
         }
+    }
+
+    private var timerPhaseName: String {
+        activeFlowStore.isBreakPhase && activeFlowStore.timerState?.isLongBreak == true
+            ? "Long Break"
+            : activeFlowStore.selectedMode.displayName
     }
 
     private var playerArtwork: some View {
@@ -1492,5 +1498,5 @@ private struct FlowModePickerView: View {
 #Preview {
     FlowMiniPlayerView()
         .environmentObject(ActiveFlowStore())
-        .modelContainer(for: [Direction.self, Todo.self, FlowSession.self, FlowSegment.self], inMemory: true)
+        .modelContainer(for: [Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self], inMemory: true)
 }

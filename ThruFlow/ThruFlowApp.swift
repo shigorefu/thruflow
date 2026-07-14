@@ -24,6 +24,7 @@ struct ThruFlowApp: App {
             Todo.self,
             FlowSession.self,
             FlowSegment.self,
+            FlowBreak.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: Self.isRunningTests)
 
@@ -77,7 +78,8 @@ private struct FlowMenuBarLabel: View {
         }
 
         if activeFlowStore.isBreakPhase {
-            return "☕️ 休憩 - \(activeFlowStore.remainingText(now: activeFlowStore.displayDate))"
+            let title = activeFlowStore.timerState?.isLongBreak == true ? "Long Break" : "休憩"
+            return "☕️ \(title) - \(activeFlowStore.remainingText(now: activeFlowStore.displayDate))"
         }
 
         let session = activeFlowStore.activeSession

@@ -4,7 +4,7 @@
 
 Keep separation between:
 
-- domain models: Direction, Todo, FlowSession, FlowSegment;
+- domain models: Direction, Todo, FlowSession, FlowSegment, FlowBreak;
 - domain logic: validation, filtering, planning, progress, timer, statistics;
 - services: notifications and platform bridges;
 - SwiftUI features.
@@ -23,6 +23,7 @@ SwiftUI views should call domain logic instead of owning product rules directly.
 - `Todo.notes` stores memo.
 - `FlowSession` stores timing/history.
 - `FlowSegment` stores Task/Direction intervals and cumulative focused-second boundaries within a FlowSession.
+- `FlowBreak` stores explicit rest and UUID links between adjacent sessions in a Flow series; `FlowSeriesPolicy` owns continuation windows and Long Break thresholds.
 - `Todo.completedAt` stores the exact completion time for new completions.
 - `DayHistoryBuilder` creates daily timeline and Task/Direction aggregates.
 - `FlowHistoryEditor` applies progress deltas when historical Flow records change.

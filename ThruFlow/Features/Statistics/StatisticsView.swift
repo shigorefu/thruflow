@@ -742,5 +742,5 @@ private struct ContributionHoverCard: View {
     NavigationStack {
         StatisticsView()
     }
-    .modelContainer(for: [Direction.self, Todo.self, FlowSession.self, FlowSegment.self], inMemory: true)
+    .modelContainer(for: [Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self], inMemory: true)
 }

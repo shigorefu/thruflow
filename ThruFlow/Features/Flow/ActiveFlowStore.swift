@@ -26,6 +26,7 @@ final class ActiveFlowStore: ObservableObject {
 
     private let engine = FlowTimerEngine()
     private let progress = FlowProgressCalculator()
+    private let seriesPolicy = FlowSeriesPolicy()
     private let notifications: FlowNotificationService
     private let defaults: UserDefaults
     private var didApplyProgress = false
@@ -80,7 +81,12 @@ final class ActiveFlowStore: ObservableObject {
 
     func start(direction: Direction, todo: Todo?, modelContext: ModelContext, now: Date = .now) {
         let state = engine.start(mode: selectedMode, now: now)
+        let sessionID = UUID()
+        let pendingBreak = eligiblePendingBreak(modelContext: modelContext, at: now)
+        let seriesID = pendingBreak?.seriesID ?? sessionID
         let session = FlowSession(
+            id: sessionID,
+            seriesID: seriesID,
             direction: direction,
             todo: todo,
             intent: intent.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -105,6 +111,7 @@ final class ActiveFlowStore: ObservableObject {
         if !session.segments.contains(where: { $0.id == segment.id }) {
             session.segments.append(segment)
         }
+        pendingBreak?.connect(to: sessionID, at: now)
         activeSession = session
         timerState = state
         didApplyProgress = false
@@ -115,6 +122,7 @@ final class ActiveFlowStore: ObservableObject {
             focusedSeconds: state.plannedFocusDurationSeconds,
             fireDate: state.plannedEndAt
         )
+        try? modelContext.save()
     }
 
     func selectContext(
@@ -221,8 +229,7 @@ final class ActiveFlowStore: ObservableObject {
         guard let timerState else { return }
         notifications.cancelPendingFlowNotifications()
         guard !discardShortFlowIfNeeded(timerState, modelContext: modelContext, now: now) else { return }
-        let next = engine.startBreak(timerState, now: now)
-        apply(next, modelContext: modelContext, now: now)
+        beginBreak(from: timerState, modelContext: modelContext, now: now)
     }
 
     func requestBreakMemo(modelContext: ModelContext, now: Date = .now) {
@@ -244,7 +251,7 @@ final class ActiveFlowStore: ObservableObject {
         activeSession?.todo?.setMemo(result, now: now)
         isAwaitingBreakMemo = false
         notifications.cancelPendingFlowNotifications()
-        apply(engine.startBreak(timerState, now: now), modelContext: modelContext, now: now)
+        beginBreak(from: timerState, modelContext: modelContext, now: now)
     }
 
     func cancelBreakMemo() {
@@ -313,6 +320,7 @@ final class ActiveFlowStore: ObservableObject {
         notifications.cancelPendingFlowNotifications()
 
         if let activeSession {
+            openBreak(for: activeSession.id, modelContext: modelContext)?.deletedAt = now
             modelContext.delete(activeSession)
         }
 
@@ -346,11 +354,81 @@ final class ActiveFlowStore: ObservableObject {
 
     private func completeBreak(modelContext: ModelContext, now: Date) {
         guard let timerState else { return }
+        if let activeSession {
+            openBreak(for: activeSession.id, modelContext: modelContext)?.stopTimer(at: now)
+        }
         apply(engine.skipBreak(timerState, now: now), modelContext: modelContext, now: now)
         activeSession = nil
         self.timerState = nil
         didApplyProgress = false
         isAwaitingBreakMemo = false
+        try? modelContext.save()
+    }
+
+    private func beginBreak(
+        from state: FlowTimerState,
+        modelContext: ModelContext,
+        now: Date
+    ) {
+        guard let activeSession else { return }
+
+        let focusedSeconds = engine.actualFocusDuration(for: state, now: now)
+        let seriesID = activeSession.seriesID ?? activeSession.id
+        let priorSeriesSeconds = sessions(modelContext: modelContext)
+            .filter { $0.id != activeSession.id && ($0.seriesID ?? $0.id) == seriesID }
+            .reduce(0) { $0 + $1.resolvedActualFocusDurationSeconds }
+        let completedLongBreaks = flowBreaks(modelContext: modelContext)
+            .filter { $0.seriesID == seriesID && $0.isLongBreak && !$0.isDeleted }
+            .count
+        let usesLongBreak = seriesPolicy.shouldUseLongBreak(
+            totalSeriesFocusSeconds: priorSeriesSeconds + focusedSeconds,
+            completedLongBreakCount: completedLongBreaks
+        )
+        let regularBreakState = engine.startBreak(state, now: now)
+        let plannedBreakSeconds = usesLongBreak
+            ? FlowSeriesPolicy.longBreakDurationSeconds
+            : regularBreakState.plannedBreakDurationSeconds
+        let next = engine.startBreak(
+            state,
+            now: now,
+            plannedBreakDurationSeconds: plannedBreakSeconds
+        )
+        let flowBreak = FlowBreak(
+            seriesID: seriesID,
+            previousSessionID: activeSession.id,
+            startedAt: now,
+            plannedDurationSeconds: plannedBreakSeconds,
+            isLongBreak: usesLongBreak
+        )
+
+        modelContext.insert(flowBreak)
+        apply(next, modelContext: modelContext, now: now)
+    }
+
+    private func eligiblePendingBreak(modelContext: ModelContext, at date: Date) -> FlowBreak? {
+        flowBreaks(modelContext: modelContext)
+            .filter { flowBreak in
+                flowBreak.timerStoppedAt != nil && seriesPolicy.canContinueSeries(after: flowBreak, at: date)
+            }
+            .max { $0.startedAt < $1.startedAt }
+    }
+
+    private func openBreak(for sessionID: UUID, modelContext: ModelContext) -> FlowBreak? {
+        flowBreaks(modelContext: modelContext)
+            .filter {
+                $0.previousSessionID == sessionID &&
+                    $0.timerStoppedAt == nil &&
+                    !$0.isDeleted
+            }
+            .max { $0.startedAt < $1.startedAt }
+    }
+
+    private func sessions(modelContext: ModelContext) -> [FlowSession] {
+        (try? modelContext.fetch(FetchDescriptor<FlowSession>())) ?? []
+    }
+
+    private func flowBreaks(modelContext: ModelContext) -> [FlowBreak] {
+        (try? modelContext.fetch(FetchDescriptor<FlowBreak>())) ?? []
     }
 
     func remainingText(now: Date = .now) -> String {

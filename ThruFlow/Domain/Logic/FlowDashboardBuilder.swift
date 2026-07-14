@@ -12,6 +12,8 @@ struct FlowDashboardSnapshot {
     let totalFocusSeconds: Int
     let flowCount: Int
     let segments: [FlowDashboardSegment]
+    let breaks: [FlowDashboardBreak]
+    let seriesSpans: [FlowDashboardSeriesSpan]
     let palette: [String]
 
     var blocks: Double {
@@ -50,6 +52,7 @@ struct FlowDashboardDirectionSummary: Identifiable {
 struct FlowDashboardSegment: Identifiable {
     let id: UUID
     let session: FlowSession
+    let seriesID: UUID
     let storedSegment: FlowSegment?
     let startedAt: Date
     let endedAt: Date
@@ -62,6 +65,22 @@ struct FlowDashboardSegment: Identifiable {
     let symbol: String
     let taskTitle: String
     let isActive: Bool
+}
+
+struct FlowDashboardBreak: Identifiable {
+    let id: UUID
+    let seriesID: UUID
+    let startedAt: Date
+    let endedAt: Date
+    let plannedDurationSeconds: Int
+    let isLongBreak: Bool
+    let isActive: Bool
+}
+
+struct FlowDashboardSeriesSpan: Identifiable {
+    let id: UUID
+    let startedAt: Date
+    let endedAt: Date
 }
 
 enum FlowTimelineMode: String, CaseIterable, Identifiable {
@@ -88,6 +107,7 @@ struct FlowTimelineRange: Equatable {
         mode: FlowTimelineMode,
         date: Date,
         segments: [FlowDashboardSegment],
+        breaks: [FlowDashboardBreak] = [],
         calendar: Calendar = .current
     ) {
         switch mode {
@@ -96,8 +116,8 @@ struct FlowTimelineRange: Equatable {
             end = calendar.date(byAdding: .day, value: 1, to: start)
                 ?? start.addingTimeInterval(86_400)
         case .elastic:
-            let firstDate = segments.map(\.startedAt).min() ?? date
-            let lastDate = segments.map(\.endedAt).max() ?? date
+            let firstDate = (segments.map(\.startedAt) + breaks.map(\.startedAt)).min() ?? date
+            let lastDate = (segments.map(\.endedAt) + breaks.map(\.endedAt)).max() ?? date
             let firstHour = calendar.dateInterval(of: .hour, for: firstDate)
             let lastHour = calendar.dateInterval(of: .hour, for: lastDate)
             let resolvedStart = firstHour?.start ?? firstDate
@@ -177,6 +197,7 @@ struct FlowDashboardBuilder {
     func build(
         date: Date,
         sessions: [FlowSession],
+        breaks storedBreaks: [FlowBreak] = [],
         activeSessionID: UUID? = nil,
         activeFocusSeconds: Int = 0
     ) -> FlowDashboardSnapshot {
@@ -238,6 +259,50 @@ struct FlowDashboardBuilder {
         }
         .sorted { $0.startFraction < $1.startFraction }
 
+        let sessionIDs = Set(segments.map { $0.session.id })
+        let breaks = storedBreaks.compactMap { flowBreak -> FlowDashboardBreak? in
+            guard !flowBreak.isDeleted,
+                  calendar.isDate(flowBreak.startedAt, inSameDayAs: day),
+                  sessionIDs.contains(flowBreak.previousSessionID) else {
+                return nil
+            }
+
+            let end = flowBreak.connectedUntil ?? flowBreak.timerStoppedAt ?? date
+            guard end > flowBreak.startedAt else { return nil }
+
+            return FlowDashboardBreak(
+                id: flowBreak.id,
+                seriesID: flowBreak.seriesID,
+                startedAt: flowBreak.startedAt,
+                endedAt: min(end, nextDay),
+                plannedDurationSeconds: flowBreak.plannedDurationSeconds,
+                isLongBreak: flowBreak.isLongBreak,
+                isActive: flowBreak.timerStoppedAt == nil
+            )
+        }
+        .sorted { $0.startedAt < $1.startedAt }
+
+        let connectedSeriesIDs = Set(storedBreaks.compactMap { flowBreak in
+            flowBreak.isDeleted || flowBreak.nextSessionID == nil ? nil : flowBreak.seriesID
+        })
+        let seriesSpans = Dictionary(grouping: segments, by: \.seriesID)
+            .compactMap { seriesID, values -> FlowDashboardSeriesSpan? in
+                guard connectedSeriesIDs.contains(seriesID),
+                      Set(values.map { $0.session.id }).count > 1,
+                      let first = values.map(\.startedAt).min(),
+                      let last = values.map(\.endedAt).max() else {
+                    return nil
+                }
+
+                let seriesBreaks = breaks.filter { $0.seriesID == seriesID }
+                return FlowDashboardSeriesSpan(
+                    id: seriesID,
+                    startedAt: min(first, seriesBreaks.map(\.startedAt).min() ?? first),
+                    endedAt: max(last, seriesBreaks.map(\.endedAt).max() ?? last)
+                )
+            }
+            .sorted { $0.startedAt < $1.startedAt }
+
         let totalFocusSeconds = segments.reduce(0) { $0 + $1.focusSeconds }
         let groupedColors = Dictionary(grouping: segments, by: \FlowDashboardSegment.colorHex)
             .map { colorHex, values in
@@ -250,6 +315,8 @@ struct FlowDashboardBuilder {
             totalFocusSeconds: totalFocusSeconds,
             flowCount: Set(segments.map { $0.session.id }).count,
             segments: segments,
+            breaks: breaks,
+            seriesSpans: seriesSpans,
             palette: groupedColors.map(\.colorHex)
         )
     }
@@ -274,6 +341,7 @@ struct FlowDashboardBuilder {
         return FlowDashboardSegment(
             id: id,
             session: session,
+            seriesID: session.seriesID ?? session.id,
             storedSegment: storedSegment,
             startedAt: startedAt,
             endedAt: resolvedEnd,
