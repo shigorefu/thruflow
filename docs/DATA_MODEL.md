@@ -106,4 +106,4 @@ The following are not separate database entities:
 
 The active timer is restored from absolute timestamps and persisted FlowSession fields where supported; decorative animation state is never persisted.
 
-`履歴` does not add a calendar table. `HistoryCalendarBuilder` projects `FlowSession`/`FlowSegment` as timed focus entries, `FlowBreak` as timed rest entries, and `Todo` as exact completion or all-day scheduled entries. Calendar range, filtering, scroll position, and overlap lanes are presentation state.
+`履歴` does not add a calendar table. `HistoryCalendarBuilder` projects `FlowSession`/`FlowSegment` as timed focus entries, `FlowBreak` as timed rest entries, and completed `Todo` as an exact or legacy untimed completion. Pending scheduled Todos are excluded and stay in the Tasks calendar. Calendar range, filtering, responsive breakpoints, scroll position, compact rendering, minimum visual duration, and overlap lanes are presentation state.

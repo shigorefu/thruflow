@@ -134,9 +134,11 @@ The primary `カレンダー` mode provides:
 - `週`: seven synchronized day columns in one vertically scrollable 24-hour grid;
 - `月`: a seven-column month overview.
 
-Day and week keep date headers and the `終日` row fixed while hours scroll. Opening the grid scrolls near the current time when today is visible, otherwise near the first Flow. A red line marks the current time. Narrow windows retain horizontal scrolling; the wide layout adds a mini-calendar and independent Flow, rest, and Task filters.
+Day and week keep date headers and the optional `完了時刻なし` row fixed while hours scroll. Opening the grid scrolls near the current time when today is visible, otherwise near the first Flow. A red line marks the current time. Wide layout adds a mini-calendar and independent Flow, rest, and Task filters. Medium/narrow headers wrap into two rows, the inner sidebar disappears, and stable-width week columns scroll horizontally. Month keeps a minimum full-grid width and scrolls horizontally rather than crushing cells.
 
-Flow and FlowSegment records are timed blocks colored by Direction. FlowBreak records are light-gray timed blocks. Exact Task completions appear at `completedAt`; pending scheduled Tasks and legacy completions without exact time appear in `終日`. Overlapping timed records are assigned side-by-side lanes.
+Flow and FlowSegment records are timed blocks colored by Direction. FlowBreak records are light-gray timed blocks. Exact Task completions appear at `completedAt`; legacy completions without exact time appear in `完了時刻なし`. Pending scheduled Tasks remain in `タスク` and are excluded from History Calendar.
+
+Timed records keep a small minimum clickable height. Entries below 15 minutes use compact title-only rendering and expose exact time through hover and accessibility. Lane assignment uses the minimum visual duration as well as actual overlap, preventing nearby short records from painting over one another.
 
 Selecting an entry reuses `FlowHistoryInspectorView`, `FlowBreakEditor`, or `TodoFormView`. The calendar is read-oriented in MVP 0.1: it does not provide direct drag/resize and does not persist a second calendar entity.
 
