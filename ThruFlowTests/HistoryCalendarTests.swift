@@ -114,4 +114,73 @@ struct HistoryCalendarTests {
         #expect(byID["short"]?.laneCount == 2)
         #expect(byID["next"]?.lane == 1)
     }
+
+    @Test func dayElasticWindowWrapsActivityAndKeepsFourHourMinimum() {
+        let day = Date(timeIntervalSince1970: 1783987200)
+        let direction = Direction(name: "仕事", type: .neutral)
+        let session = FlowSession(
+            direction: direction,
+            mode: .twentyFiveFive,
+            phase: .completed,
+            status: .completed,
+            startedAt: day.addingTimeInterval(10 * 3600 + 15 * 60),
+            plannedEndAt: day.addingTimeInterval(10 * 3600 + 40 * 60),
+            endedAt: day.addingTimeInterval(10 * 3600 + 40 * 60),
+            plannedFocusDurationSeconds: 25 * 60,
+            actualFocusDurationSeconds: 25 * 60,
+            plannedBreakDurationSeconds: 5 * 60
+        )
+        let interval = HistoryCalendarRange.day.interval(containing: day, calendar: calendar)
+        let item = HistoryCalendarBuilder(calendar: calendar).build(
+            interval: interval,
+            sessions: [session],
+            breaks: [],
+            todos: []
+        ).items[0]
+
+        let range = HistoryDayTimelineWindowBuilder().hourRange(
+            for: day,
+            items: [item],
+            scale: .elastic,
+            now: day.addingTimeInterval(36 * 3600),
+            calendar: calendar
+        )
+
+        #expect(range == 9..<13)
+        #expect(HistoryDayTimelineWindowBuilder().hourRange(
+            for: day,
+            items: [item],
+            scale: .fullDay,
+            now: day.addingTimeInterval(36 * 3600),
+            calendar: calendar
+        ) == 0..<24)
+    }
+
+    @Test func dayElasticWindowIncludesActivityCrossingMidnight() {
+        let day = Date(timeIntervalSince1970: 1783987200)
+        let item = HistoryCalendarItem(
+            id: "cross-midnight",
+            kind: .flow,
+            startedAt: day.addingTimeInterval(-15 * 60),
+            endedAt: day.addingTimeInterval(30 * 60),
+            title: "深夜 Flow",
+            subtitle: "仕事",
+            symbol: "🌙",
+            colorHex: "#007AFF",
+            isAllDay: false,
+            session: nil,
+            flowBreak: nil,
+            todo: nil
+        )
+
+        let range = HistoryDayTimelineWindowBuilder().hourRange(
+            for: day,
+            items: [item],
+            scale: .elastic,
+            now: day.addingTimeInterval(36 * 3600),
+            calendar: calendar
+        )
+
+        #expect(range == 0..<4)
+    }
 }

@@ -45,6 +45,76 @@ enum HistoryCalendarRange: String, CaseIterable, Identifiable {
     }
 }
 
+enum HistoryDayTimelineScale: String, CaseIterable, Identifiable {
+    case elastic
+    case fullDay
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .elastic: "Elastic"
+        case .fullDay: "24時間"
+        }
+    }
+}
+
+struct HistoryDayTimelineWindowBuilder {
+    private let minimumHours = 4
+
+    func hourRange(
+        for date: Date,
+        items: [HistoryCalendarItem],
+        scale: HistoryDayTimelineScale,
+        now: Date = .now,
+        calendar: Calendar = .current
+    ) -> Range<Int> {
+        guard scale == .elastic else { return 0..<24 }
+
+        let dayInterval = HistoryCalendarRange.day.interval(containing: date, calendar: calendar)
+        let timedItems = items.filter { item in
+            !item.isAllDay
+                && item.startedAt < dayInterval.end
+                && item.endedAt > dayInterval.start
+        }
+        var startHour = timedItems.map { item in
+            calendar.component(.hour, from: max(item.startedAt, dayInterval.start))
+        }.min()
+        var endHour = timedItems.map { item in
+            let end = min(max(item.endedAt, item.startedAt), dayInterval.end)
+            if end == dayInterval.end { return 24 }
+            let hour = calendar.component(.hour, from: end)
+            let hasPartialHour = calendar.component(.minute, from: end) > 0
+                || calendar.component(.second, from: end) > 0
+            return hour + (hasPartialHour ? 1 : 0)
+        }.max()
+
+        if calendar.isDate(date, inSameDayAs: now) {
+            let currentHour = calendar.component(.hour, from: now)
+            startHour = min(startHour ?? currentHour, currentHour)
+            endHour = max(endHour ?? currentHour + 1, currentHour + 1)
+        }
+
+        if startHour == nil || endHour == nil {
+            startHour = 10
+            endHour = 14
+        } else {
+            startHour = (startHour ?? 0) - 1
+            endHour = (endHour ?? 24) + 1
+        }
+
+        var lower = max(0, startHour ?? 0)
+        var upper = min(24, endHour ?? 24)
+        if upper - lower < minimumHours {
+            let missing = minimumHours - (upper - lower)
+            lower = max(0, lower - missing / 2)
+            upper = min(24, lower + minimumHours)
+            lower = max(0, upper - minimumHours)
+        }
+        return lower..<max(lower + 1, upper)
+    }
+}
+
 enum HistoryCalendarItemKind: String, CaseIterable, Hashable {
     case flow
     case rest
