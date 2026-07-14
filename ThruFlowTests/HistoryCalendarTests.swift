@@ -55,20 +55,36 @@ struct HistoryCalendarTests {
             timerStoppedAt: day.addingTimeInterval(10 * 3600 + 30 * 60),
             plannedDurationSeconds: 5 * 60
         )
+        let separateSession = FlowSession(
+            direction: direction,
+            mode: .twentyFiveFive,
+            phase: .completed,
+            status: .completed,
+            startedAt: day.addingTimeInterval(12 * 3600),
+            plannedEndAt: day.addingTimeInterval(12 * 3600 + 25 * 60),
+            endedAt: day.addingTimeInterval(12 * 3600 + 25 * 60),
+            plannedFocusDurationSeconds: 25 * 60,
+            actualFocusDurationSeconds: 25 * 60,
+            plannedBreakDurationSeconds: 5 * 60
+        )
         let interval = HistoryCalendarRange.day.interval(containing: day, calendar: calendar)
 
         let snapshot = HistoryCalendarBuilder(calendar: calendar).build(
             interval: interval,
-            sessions: [session],
+            sessions: [session, separateSession],
             breaks: [rest],
             referenceDate: interval.end
         )
+        let tracks = HistoryCalendarTrackBuilder().build(items: snapshot.items)
 
-        #expect(snapshot.items.filter { $0.kind == .flow }.count == 1)
+        #expect(snapshot.items.filter { $0.kind == .flow }.count == 2)
         #expect(snapshot.items.filter { $0.kind == .rest }.count == 1)
-        #expect(snapshot.items.count == 2)
+        #expect(snapshot.items.count == 3)
         #expect(snapshot.items.allSatisfy { $0.kind == .flow || $0.kind == .rest })
         #expect(snapshot.items.first { $0.kind == .rest }?.durationSeconds == 5 * 60)
+        #expect(tracks.count == 2)
+        #expect(tracks.first { $0.seriesID == session.seriesID }?.items.count == 2)
+        #expect(tracks.first { $0.seriesID == separateSession.seriesID }?.items.count == 1)
     }
 
     @Test func overlapLayoutSharesLanesOnlyInsideConnectedCluster() {

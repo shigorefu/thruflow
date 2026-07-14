@@ -54,6 +54,43 @@ struct DayHistoryTests {
         #expect(draft.endedAt == earlierStart.addingTimeInterval(9 * 60))
     }
 
+    @Test func creatingManualFlowCreatesIndependentSeriesAndAppliesProgress() throws {
+        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let direction = Direction(name: "仕事", type: .neutral)
+        let todo = Todo(
+            title: "実装",
+            direction: direction,
+            measurement: .minutes,
+            plannedAmount: 60
+        )
+        let start = Date(timeIntervalSince1970: 25_000)
+        context.insert(direction)
+        context.insert(todo)
+
+        let session = FlowHistoryEditor().createManual(
+            todo: todo,
+            direction: direction,
+            mode: .twentyFiveFive,
+            startedAt: start,
+            focusSeconds: 25 * 60,
+            modelContext: context,
+            now: start.addingTimeInterval(30 * 60)
+        )
+
+        #expect(session.seriesID == session.id)
+        #expect(session.status == .completed)
+        #expect(session.phase == .completed)
+        #expect(session.endedAt == start.addingTimeInterval(25 * 60))
+        #expect(session.segments.count == 1)
+        #expect(session.segments.first?.resolvedFocusSeconds == 25 * 60)
+        #expect(direction.recordedFocusSeconds == 25 * 60)
+        #expect(todo.recordedFocusSeconds == 25 * 60)
+        #expect(todo.actualProgress == 25)
+    }
+
     @Test func historyOrdersTimedEntriesAndSeparatesLegacyCompletions() {
         let day = Date(timeIntervalSince1970: 86_400)
         let direction = Direction(name: "読書", type: .habit, symbolName: "📚", colorHex: "#34C759")

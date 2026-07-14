@@ -53,6 +53,55 @@ struct FlowHistoryTimeDraft: Equatable {
 }
 
 struct FlowHistoryEditor {
+    @discardableResult
+    func createManual(
+        todo: Todo?,
+        direction: Direction,
+        mode: FlowMode,
+        startedAt: Date,
+        focusSeconds: Int,
+        modelContext: ModelContext,
+        now: Date = .now
+    ) -> FlowSession {
+        let adjustedSeconds = max(60, focusSeconds)
+        let resolvedDirection = todo?.direction ?? direction
+        let endedAt = startedAt.addingTimeInterval(TimeInterval(adjustedSeconds))
+        let session = FlowSession(
+            direction: resolvedDirection,
+            todo: todo,
+            mode: mode,
+            phase: .completed,
+            status: .completed,
+            startedAt: startedAt,
+            plannedEndAt: endedAt,
+            endedAt: endedAt,
+            plannedFocusDurationSeconds: adjustedSeconds,
+            actualFocusDurationSeconds: adjustedSeconds,
+            plannedBreakDurationSeconds: mode.breakDurationSeconds,
+            createdAt: now,
+            updatedAt: now
+        )
+        let segment = FlowSegment(
+            session: session,
+            direction: resolvedDirection,
+            todo: todo,
+            startedAt: startedAt,
+            startFocusSeconds: 0
+        )
+        segment.close(at: endedAt, totalFocusSeconds: adjustedSeconds)
+        session.segments = [segment]
+
+        modelContext.insert(session)
+        modelContext.insert(segment)
+        FlowProgressCalculator().applyFocusDuration(
+            seconds: adjustedSeconds,
+            direction: resolvedDirection,
+            todo: todo,
+            now: endedAt
+        )
+        return session
+    }
+
     func update(
         session: FlowSession,
         todo: Todo?,

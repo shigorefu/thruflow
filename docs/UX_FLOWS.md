@@ -138,11 +138,11 @@ In `日`, the right pane keeps a mini-calendar above the selected record propert
 
 Week keeps date headers fixed while hours scroll. Opening a day/week grid scrolls near the current time when today is visible, otherwise near the first Flow. A red line marks the current time. Medium/narrow headers wrap into two rows and stable-width week columns scroll horizontally. Month keeps a minimum full-grid width and scrolls horizontally rather than crushing cells.
 
-Flow and FlowSegment records are timed blocks colored by Direction. FlowBreak records are light-gray timed blocks. Todo completions and pending Tasks never become independent History Calendar blocks.
+Calendar tracks are grouped by `seriesID`. Flow and FlowSegment records from one series share one continuous track and keep their Direction colors; FlowBreak records occupy the same track as light-gray rest segments. A new series starts a separate track. Todo completions and pending Tasks never become independent History Calendar blocks.
 
 Timed records keep a small minimum clickable height. Entries below 15 minutes use compact title-only rendering and expose exact time through hover and accessibility. Lane assignment uses the minimum visual duration as well as actual overlap, preventing nearby short records from painting over one another.
 
-Selecting an entry reuses `FlowHistoryInspectorView` or `FlowBreakEditor`. The calendar is read-oriented in MVP 0.1: it does not provide direct drag/resize and does not persist a second calendar entity.
+Selecting an entry reuses `FlowHistoryInspectorView` or `FlowBreakEditor`. Double-clicking empty time opens `Flowを追加` with Task, Direction, Short/Focus/Deep, start, end, and minutes. The clicked time is rounded to five minutes, the default duration is 25 minutes, and end/minutes remain linked. Saving creates a completed independent Flow series and applies normal Direction/Todo progress; manual rest creation is intentionally unavailable. The calendar does not provide direct drag/resize and does not persist a second calendar entity.
 
 The Flow inspector limits its Task picker to Tasks scheduled on the Flow date plus the currently assigned Task. It edits time through linked `開始`, `終了`, and direct `分` fields: start/end changes recalculate minutes, and minute changes keep start fixed while moving end.
 
