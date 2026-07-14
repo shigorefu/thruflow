@@ -134,7 +134,7 @@ The primary `カレンダー` mode provides:
 - `週`: seven synchronized day columns in one vertically scrollable 24-hour grid;
 - `月`: a seven-column month overview.
 
-In `日`, the right pane keeps a mini-calendar above the selected record properties. Selecting a Flow or rest updates that pane; changing the day clears the selection. Elastic includes the day's timed records and current hour with one-hour context and a four-hour minimum. `24時間` shows the full day, and the preference persists locally. At compact widths, selection opens the same inspector as a sheet so the timeline retains useful width.
+In `日`, the right pane keeps the only wide-layout mini-calendar above the selected record properties. The optional left rail contains filters only and never duplicates the calendar. Selecting a Flow or rest updates the right pane; changing the day clears the selection. Elastic includes the day's timed records and current hour with one-hour context and a four-hour minimum. `24時間` shows the full day, and the preference persists locally. At compact widths, selection opens the same inspector as a sheet so the timeline retains useful width.
 
 Week keeps date headers fixed while hours scroll. Opening a day/week grid scrolls near the current time when today is visible, otherwise near the first Flow. A red line marks the current time. Medium/narrow headers wrap into two rows and stable-width week columns scroll horizontally. Month keeps a minimum full-grid width and scrolls horizontally rather than crushing cells.
 
@@ -142,7 +142,7 @@ Flow and FlowSegment records remain separate calendar blocks colored by Directio
 
 Timed records keep a small minimum clickable height. Entries below 15 minutes use compact title-only rendering and expose exact time through hover and accessibility. Lane assignment uses the minimum visual duration as well as actual overlap, preventing nearby short records from painting over one another.
 
-Selecting an entry reuses `FlowHistoryInspectorView` or `FlowBreakEditor`. Double-clicking empty time opens `Flowを追加` with Task, Direction, Short/Focus/Deep, start, end, and minutes. The clicked time is rounded to five minutes, the default duration is 25 minutes, and end/minutes remain linked. Saving creates a completed independent Flow series and applies normal Direction/Todo progress; manual rest creation is intentionally unavailable. The calendar does not provide direct drag/resize and does not persist a second calendar entity.
+Selecting an entry reuses `FlowHistoryInspectorView` or `FlowBreakEditor`. Double-clicking empty time inserts a selected `新しいFlow` draft block directly into the calendar. The clicked time is rounded to five minutes and the default duration is 25 minutes. In wide day view, `Flowを追加` occupies the right inspector; Task, Direction, Short/Focus/Deep, linked start/end, and minutes update the visible draft block immediately. Compact day and week use a sheet while retaining the draft block in the grid. Saving creates a completed independent Flow series and applies normal Direction/Todo progress; manual rest creation is intentionally unavailable. The calendar does not provide direct drag/resize and does not persist a second calendar entity.
 
 The Flow inspector limits its Task picker to Tasks scheduled on the Flow date plus the currently assigned Task. It edits time through linked `開始`, `終了`, and direct `分` fields: start/end changes recalculate minutes, and minute changes keep start fixed while moving end.
 

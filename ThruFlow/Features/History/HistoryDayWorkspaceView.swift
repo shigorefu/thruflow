@@ -12,6 +12,7 @@ struct HistoryDayWorkspaceView: View {
     @Binding var scale: HistoryDayTimelineScale
     let items: [HistoryCalendarItem]
     @Binding var selectedItemID: String?
+    @Binding var manualFlowDraft: HistoryFlowCreationDraft?
     let onEdit: (HistoryCalendarItem) -> Void
 
     @State private var compactInspectorItem: HistoryCalendarItem?
@@ -45,6 +46,7 @@ struct HistoryDayWorkspaceView: View {
                     HistoryDayInspectorPane(
                         selectedDate: $selectedDate,
                         selectedItem: selectedItem,
+                        manualFlowDraft: $manualFlowDraft,
                         onEdit: onEdit
                     )
                     .frame(width: min(390, max(310, geometry.size.width * 0.34)))
@@ -55,15 +57,33 @@ struct HistoryDayWorkspaceView: View {
                         HistoryDayInspectorPane(
                             selectedDate: $selectedDate,
                             selectedItem: item,
+                            manualFlowDraft: $manualFlowDraft,
                             onEdit: onEdit
                         )
                         .frame(minWidth: 340, idealWidth: 380, minHeight: 560)
+                    }
+                    .sheet(
+                        isPresented: Binding(
+                            get: { manualFlowDraft != nil },
+                            set: { if !$0 { manualFlowDraft = nil } }
+                        )
+                    ) {
+                        if let draft = manualFlowDraft {
+                            ManualFlowCreationView(
+                                startedAt: draft.startedAt,
+                                onTimeChange: updateManualFlowDraft
+                            ) {
+                                manualFlowDraft = nil
+                            }
+                            .id(draft.id)
+                        }
                     }
             }
         }
         .onChange(of: selectedDate) { _, _ in
             selectedItemID = nil
             compactInspectorItem = nil
+            manualFlowDraft = nil
         }
     }
 
@@ -97,14 +117,21 @@ struct HistoryDayWorkspaceView: View {
                 items: items,
                 hourRange: hourRange,
                 hourHeight: scale == .elastic ? 82 : 64,
-                selectedItemID: selectedItemID
+                selectedItemID: selectedItemID,
+                manualFlowDraft: $manualFlowDraft
             ) { item in
+                manualFlowDraft = nil
                 selectedItemID = item.id
                 if isCompact {
                     compactInspectorItem = item
                 }
             }
         }
+    }
+
+    private func updateManualFlowDraft(startedAt: Date, endedAt: Date) {
+        manualFlowDraft?.startedAt = startedAt
+        manualFlowDraft?.endedAt = endedAt
     }
 }
 
@@ -203,6 +230,7 @@ struct HistoryMiniCalendar: View {
 private struct HistoryDayInspectorPane: View {
     @Binding var selectedDate: Date
     let selectedItem: HistoryCalendarItem?
+    @Binding var manualFlowDraft: HistoryFlowCreationDraft?
     let onEdit: (HistoryCalendarItem) -> Void
 
     var body: some View {
@@ -212,23 +240,39 @@ private struct HistoryDayInspectorPane: View {
 
             Divider()
 
-            ScrollView {
-                if let selectedItem {
-                    properties(selectedItem)
-                        .padding(18)
-                } else {
-                    ContentUnavailableView(
-                        "記録を選択",
-                        systemImage: "cursorarrow.click",
-                        description: Text("Flowまたは休憩の詳細をここに表示します。")
-                    )
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 44)
+            if let draft = manualFlowDraft {
+                ManualFlowCreationView(
+                    startedAt: draft.startedAt,
+                    onTimeChange: updateManualFlowDraft
+                ) {
+                    manualFlowDraft = nil
                 }
+                .id(draft.id)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ScrollView {
+                    if let selectedItem {
+                        properties(selectedItem)
+                            .padding(18)
+                    } else {
+                        ContentUnavailableView(
+                            "記録を選択",
+                            systemImage: "cursorarrow.click",
+                            description: Text("Flowまたは休憩の詳細をここに表示します。")
+                        )
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 44)
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .background(Color.secondary.opacity(0.035))
+    }
+
+    private func updateManualFlowDraft(startedAt: Date, endedAt: Date) {
+        manualFlowDraft?.startedAt = startedAt
+        manualFlowDraft?.endedAt = endedAt
     }
 
     private func properties(_ item: HistoryCalendarItem) -> some View {

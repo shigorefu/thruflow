@@ -94,7 +94,7 @@ Reason: starting focused work and seeing its accumulated shape should be the pri
 
 ## D-014: Day History Uses Timeline And Inspector
 
-The `日` History range uses a narrow Apple Calendar-style timeline with a persisted `Elastic | 24時間` scale. A right pane contains the date mini-calendar and properties for the selected actual record; compact windows present those properties in a sheet.
+The `日` History range uses a narrow Apple Calendar-style timeline with a persisted `Elastic | 24時間` scale. A right pane contains the only wide-layout date mini-calendar and properties for the selected actual record or manual Flow draft; the wide left rail contains filters only. Compact windows present those properties in a sheet.
 
 Reason: day history needs enough vertical and horizontal space to inspect short Flow records without duplicating editors or compressing the timeline into an unreadable calendar column.
 
@@ -102,7 +102,7 @@ Reason: day history needs enough vertical and horizontal space to inspect short 
 
 The Flow dashboard groups connected Flow and rest entries by `seriesID`. One series has one continuous light-gray base line beneath its Direction-colored work and gray rest segments. A different series starts a separate line. History Calendar keeps every Flow and rest as an independent block.
 
-Double-clicking empty calendar time may create a completed FlowSession and FlowSegment with a new independent series. It uses the normal progress calculation and does not support manual rest creation.
+Double-clicking empty calendar time first creates an in-grid 25-minute draft block. Wide day editing occurs in the right inspector; compact day and week use a sheet. Saving creates a completed FlowSession and FlowSegment with a new independent series, uses the normal progress calculation, and does not support manual rest creation.
 
 Reason: the calendar should communicate uninterrupted Flow rhythm without destroying the exact session and rest records required for editing and statistics.
 
