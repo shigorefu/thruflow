@@ -94,9 +94,11 @@ Reason: starting focused work and seeing its accumulated shape should be the pri
 
 ## D-014: Day History Uses Timeline And Inspector
 
-The `日` History range uses a narrow Apple Calendar-style timeline with a persisted `Elastic | 24時間` scale. A right pane contains the only wide-layout date mini-calendar and properties for the selected actual record or manual Flow draft; the wide left rail contains filters only. Compact windows present those properties in a sheet.
+The `日` History range uses a narrow Apple Calendar-style timeline with a persisted `Elastic | 24時間` scale. A right pane contains the only wide-layout date mini-calendar and properties for the selected actual record or manual Flow draft. Flow/rest filters live in a compact `表示` menu instead of a separate rail. Compact windows present those properties in a sheet.
 
 Reason: day history needs enough vertical and horizontal space to inspect short Flow records without duplicating editors or compressing the timeline into an unreadable calendar column.
+
+`タスク` and `方向` reuse the two-column History workspace: aggregates on the left, mini-calendar and daily totals on the right. This keeps date navigation and visual hierarchy stable when switching modes.
 
 ## D-015: Dashboard Timeline Shows Flow Series
 

@@ -134,7 +134,9 @@ The primary `カレンダー` mode provides:
 - `週`: seven synchronized day columns in one vertically scrollable 24-hour grid;
 - `月`: a seven-column month overview.
 
-In `日`, the right pane keeps the only wide-layout mini-calendar above the selected record properties. The optional left rail contains filters only and never duplicates the calendar. Selecting a Flow or rest updates the right pane; changing the day clears the selection. Elastic includes the day's timed records and current hour with one-hour context and a four-hour minimum. `24時間` shows the full day, and the preference persists locally. At compact widths, selection opens the same inspector as a sheet so the timeline retains useful width.
+History has one responsive toolbar for mode, date navigation, and Calendar range. `タスク` and `方向` use a wide two-column layout with aggregates on the left and a mini-calendar plus a 2x2 daily summary on the right. Their previous/next controls move by one day even if Calendar was last viewed as a week or month. At compact widths, the calendar and summary stack above the aggregate list.
+
+In `日`, the right pane keeps the only wide-layout mini-calendar above the selected record properties. Flow/rest visibility is exposed by a compact `表示` menu in the timeline header; there is no separate filter rail. Selecting a Flow or rest updates the right pane; changing the day clears the selection. Elastic includes the day's timed records and current hour with one-hour context and a four-hour minimum. `24時間` shows the full day, and the preference persists locally. At compact widths, selection opens the same inspector as a sheet so the timeline retains useful width.
 
 Week keeps date headers fixed while hours scroll. Opening a day/week grid scrolls near the current time when today is visible, otherwise near the first Flow. A red line marks the current time. Medium/narrow headers wrap into two rows and stable-width week columns scroll horizontally. Month keeps a minimum full-grid width and scrolls horizontally rather than crushing cells.
 

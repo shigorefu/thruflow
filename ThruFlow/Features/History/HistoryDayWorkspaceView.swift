@@ -13,6 +13,7 @@ struct HistoryDayWorkspaceView: View {
     let items: [HistoryCalendarItem]
     @Binding var selectedItemID: String?
     @Binding var manualFlowDraft: HistoryFlowCreationDraft?
+    @Binding var visibleKinds: Set<HistoryCalendarItemKind>
     let onEdit: (HistoryCalendarItem) -> Void
 
     @State private var compactInspectorItem: HistoryCalendarItem?
@@ -99,6 +100,8 @@ struct HistoryDayWorkspaceView: View {
                 }
 
                 Spacer()
+
+                HistoryVisibilityMenu(visibleKinds: $visibleKinds)
 
                 Picker("時間軸", selection: $scale) {
                     ForEach(HistoryDayTimelineScale.allCases) { option in

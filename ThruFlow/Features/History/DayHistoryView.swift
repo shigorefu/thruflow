@@ -47,9 +47,8 @@ struct DayHistoryView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            responsiveHeader
-            responsiveControls
+        VStack(alignment: .leading, spacing: 12) {
+            historyToolbar
 
             modeContent
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -58,18 +57,31 @@ struct DayHistoryView: View {
         .navigationTitle("履歴")
     }
 
-    private var responsiveHeader: some View {
+    private var historyToolbar: some View {
         ViewThatFits(in: .horizontal) {
-            HStack(spacing: 20) {
+            HStack(spacing: 16) {
                 historyIdentity
-                Spacer(minLength: 20)
+                Spacer(minLength: 12)
+                modePicker.frame(width: 330)
+                Spacer(minLength: 12)
                 dateNavigation
+                if selectedMode == .calendar {
+                    rangePicker.frame(width: 150)
+                }
             }
 
-            VStack(alignment: .leading, spacing: 10) {
-                historyIdentity
-                dateNavigation
-                    .frame(maxWidth: .infinity, alignment: .trailing)
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 12) {
+                    historyIdentity
+                    Spacer()
+                    dateNavigation
+                }
+                HStack(spacing: 12) {
+                    modePicker.frame(maxWidth: .infinity)
+                    if selectedMode == .calendar {
+                        rangePicker.frame(width: 150)
+                    }
+                }
             }
         }
     }
@@ -124,25 +136,6 @@ struct DayHistoryView: View {
         .fixedSize(horizontal: true, vertical: false)
     }
 
-    private var responsiveControls: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: 20) {
-                modePicker.frame(width: 360)
-                Spacer(minLength: 20)
-                if selectedMode == .calendar {
-                    rangePicker.frame(width: 180)
-                }
-            }
-
-            VStack(alignment: .leading, spacing: 8) {
-                modePicker.frame(maxWidth: .infinity)
-                if selectedMode == .calendar {
-                    rangePicker.frame(maxWidth: .infinity)
-                }
-            }
-        }
-    }
-
     private var modePicker: some View {
         Picker("表示", selection: $selectedMode) {
             ForEach(DayHistoryMode.allCases) { mode in
@@ -164,7 +157,10 @@ struct DayHistoryView: View {
     }
 
     private var summary: some View {
-        HStack(spacing: 10) {
+        LazyVGrid(columns: [
+            GridItem(.flexible(), spacing: 10),
+            GridItem(.flexible(), spacing: 10)
+        ], spacing: 10) {
             HistorySummaryTile(
                 title: "集中",
                 value: durationText(snapshot.totalFocusSeconds),
@@ -199,20 +195,62 @@ struct DayHistoryView: View {
                 breaks: breaks
             )
         case .tasks:
-            aggregateScroll { tasksContent }
+            aggregateWorkspace { tasksContent }
         case .directions:
-            aggregateScroll { directionsContent }
+            aggregateWorkspace { directionsContent }
         }
     }
 
-    private func aggregateScroll<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                summary
-                content()
+    private func aggregateWorkspace<Content: View>(@ViewBuilder content: @escaping () -> Content) -> some View {
+        GeometryReader { geometry in
+            if geometry.size.width >= 900 {
+                HStack(spacing: 0) {
+                    aggregateList(content: content)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                    Divider()
+
+                    aggregateInspector
+                        .frame(width: min(390, max(310, geometry.size.width * 0.30)))
+                }
+            } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 18) {
+                        HistoryMiniCalendar(selectedDate: $selectedDate)
+                        summary
+                        content()
+                    }
+                    .padding(16)
+                }
             }
-            .frame(maxWidth: 980, alignment: .leading)
         }
+    }
+
+    private func aggregateList<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        ScrollView {
+            content()
+                .frame(maxWidth: 920, alignment: .leading)
+                .padding(16)
+        }
+    }
+
+    private var aggregateInspector: some View {
+        VStack(spacing: 0) {
+            HistoryMiniCalendar(selectedDate: $selectedDate)
+                .padding(16)
+
+            Divider()
+
+            VStack(alignment: .leading, spacing: 12) {
+                Text("この日の記録")
+                    .font(.headline)
+                summary
+            }
+            .padding(16)
+
+            Spacer(minLength: 0)
+        }
+        .background(Color.secondary.opacity(0.035))
     }
 
     private var tasksContent: some View {
@@ -279,7 +317,7 @@ struct DayHistoryView: View {
     }
 
     private var dateTitle: String {
-        switch selectedRange {
+        switch effectiveRange {
         case .day:
             if calendar.isDateInToday(selectedDate) {
                 return "今日 ・ \(fullDateFormatter.string(from: selectedDate))"
@@ -309,7 +347,11 @@ struct DayHistoryView: View {
     }
 
     private func moveDay(by value: Int) {
-        selectedDate = calendar.startOfDay(for: selectedRange.moving(selectedDate, by: value, calendar: calendar))
+        selectedDate = calendar.startOfDay(for: effectiveRange.moving(selectedDate, by: value, calendar: calendar))
+    }
+
+    private var effectiveRange: HistoryCalendarRange {
+        selectedMode == .calendar ? selectedRange : .day
     }
 
     private func durationText(_ seconds: Int) -> String {

@@ -48,51 +48,47 @@ struct HistoryCalendarView: View {
     }
 
     var body: some View {
-        GeometryReader { geometry in
-            HStack(spacing: 0) {
-                if geometry.size.width >= 1180 {
-                    HistoryCalendarSidebar(
-                        selectedDate: $selectedDate,
-                        visibleKinds: $visibleKinds,
-                        showsCalendar: range != .day
-                    )
-                    .frame(width: 220)
-
-                    Divider()
+        VStack(spacing: 8) {
+            if range != .day {
+                HStack {
+                    Spacer()
+                    HistoryVisibilityMenu(visibleKinds: $visibleKinds)
                 }
-
-                Group {
-                    switch range {
-                    case .day:
-                        HistoryDayWorkspaceView(
-                            selectedDate: $selectedDate,
-                            scale: dayScaleBinding,
-                            items: filteredItems,
-                            selectedItemID: $selectedDayItemID,
-                            manualFlowDraft: $manualFlowDraft,
-                            onEdit: openEditor
-                        )
-                    case .week:
-                        HistoryTimeGrid(
-                            selectedDate: selectedDate,
-                            range: range,
-                            items: filteredItems,
-                            hourRange: 0..<24,
-                            hourHeight: 64,
-                            selectedItemID: nil,
-                            manualFlowDraft: $manualFlowDraft,
-                            onSelect: openEditor
-                        )
-                    case .month:
-                        HistoryMonthGrid(
-                            selectedDate: $selectedDate,
-                            items: filteredItems,
-                            onSelect: openEditor
-                        )
-                    }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(.horizontal, 10)
             }
+
+            Group {
+                switch range {
+                case .day:
+                    HistoryDayWorkspaceView(
+                        selectedDate: $selectedDate,
+                        scale: dayScaleBinding,
+                        items: filteredItems,
+                        selectedItemID: $selectedDayItemID,
+                        manualFlowDraft: $manualFlowDraft,
+                        visibleKinds: $visibleKinds,
+                        onEdit: openEditor
+                    )
+                case .week:
+                    HistoryTimeGrid(
+                        selectedDate: selectedDate,
+                        range: range,
+                        items: filteredItems,
+                        hourRange: 0..<24,
+                        hourHeight: 64,
+                        selectedItemID: nil,
+                        manualFlowDraft: $manualFlowDraft,
+                        onSelect: openEditor
+                    )
+                case .month:
+                    HistoryMonthGrid(
+                        selectedDate: $selectedDate,
+                        items: filteredItems,
+                        onSelect: openEditor
+                    )
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .sheet(item: $inspectedSession) { session in
             FlowHistoryInspectorView(session: session)
@@ -137,29 +133,19 @@ struct HistoryCalendarView: View {
     }
 }
 
-private struct HistoryCalendarSidebar: View {
-    @Binding var selectedDate: Date
+struct HistoryVisibilityMenu: View {
     @Binding var visibleKinds: Set<HistoryCalendarItemKind>
-    let showsCalendar: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            if showsCalendar {
-                HistoryMiniCalendar(selectedDate: $selectedDate)
-            }
-
-            VStack(alignment: .leading, spacing: 10) {
-                Text("表示")
-                    .font(.headline)
-
-                filterToggle("Flow", symbol: "waveform.path", kinds: [.flow])
-                filterToggle("休憩", symbol: "cup.and.saucer", kinds: [.rest])
-            }
-
-            Spacer()
+        Menu {
+            filterToggle("Flow", symbol: "waveform.path", kinds: [.flow])
+            filterToggle("休憩", symbol: "cup.and.saucer", kinds: [.rest])
+        } label: {
+            Label("表示", systemImage: "line.3.horizontal.decrease.circle")
         }
-        .padding(16)
-        .background(Color.secondary.opacity(0.035))
+        .menuStyle(.borderlessButton)
+        .fixedSize()
+        .accessibilityLabel("表示内容")
     }
 
     private func filterToggle(_ title: String, symbol: String, kinds: Set<HistoryCalendarItemKind>) -> some View {
