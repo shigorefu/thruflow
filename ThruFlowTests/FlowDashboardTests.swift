@@ -118,6 +118,24 @@ struct FlowDashboardTests {
         #expect(full.layerCount <= 10)
     }
 
+    @Test func completedBlocksKeepIdleCalmAndAmplifyActiveFlow() {
+        let emptyIdle = FlowVisualState(blocks: 0, flowCount: 0, isActive: false, mode: .twentyFiveFive)
+        let fourBlockIdle = FlowVisualState(blocks: 4, flowCount: 4, isActive: false, mode: .twentyFiveFive)
+        let fullIdle = FlowVisualState(blocks: 6, flowCount: 6, isActive: false, mode: .twentyFiveFive)
+        let emptyActive = FlowVisualState(blocks: 0, flowCount: 0, isActive: true, mode: .twentyFiveFive)
+        let fourBlockActive = FlowVisualState(blocks: 4, flowCount: 4, isActive: true, mode: .twentyFiveFive)
+        let fullActive = FlowVisualState(blocks: 6, flowCount: 6, isActive: true, mode: .twentyFiveFive)
+
+        #expect(emptyIdle.speed == 0.06)
+        #expect(fourBlockIdle.speed > emptyIdle.speed)
+        #expect(fourBlockIdle.speed < 0.28)
+        #expect(abs(fullIdle.speed - 0.28) < 0.0001)
+        #expect(emptyActive.speed == 0.55)
+        #expect(fourBlockActive.speed > emptyActive.speed)
+        #expect(fourBlockActive.speed > fourBlockIdle.speed)
+        #expect(abs(fullActive.speed - 1.40) < 0.0001)
+    }
+
     @Test func activeFlowAcceleratesWithoutChangingDailyGrowth() {
         let idle = FlowVisualState(blocks: 2, flowCount: 2, isActive: false, mode: .twentyFiveFive)
         let active = FlowVisualState(blocks: 2, flowCount: 2, isActive: true, mode: .twentyFiveFive)
