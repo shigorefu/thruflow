@@ -70,22 +70,30 @@ struct HistoryCalendarView: View {
                         onEdit: openEditor
                     )
                 case .week:
-                    HistoryTimeGrid(
-                        selectedDate: selectedDate,
-                        range: range,
-                        items: filteredItems,
-                        hourRange: 0..<24,
-                        hourHeight: 64,
-                        selectedItemID: nil,
-                        manualFlowDraft: $manualFlowDraft,
-                        onSelect: openEditor
-                    )
+                    HistoryCalendarPeriodWorkspace {
+                        HistoryTimeGrid(
+                            selectedDate: selectedDate,
+                            range: range,
+                            items: filteredItems,
+                            hourRange: 0..<24,
+                            hourHeight: 64,
+                            selectedItemID: nil,
+                            manualFlowDraft: $manualFlowDraft,
+                            onSelect: openEditor
+                        )
+                    } inspector: {
+                        HistoryMiniCalendar(selectedDate: $selectedDate, selectionMode: .week)
+                    }
                 case .month:
-                    HistoryMonthGrid(
-                        selectedDate: $selectedDate,
-                        items: filteredItems,
-                        onSelect: openEditor
-                    )
+                    HistoryCalendarPeriodWorkspace {
+                        HistoryMonthGrid(
+                            selectedDate: $selectedDate,
+                            items: filteredItems,
+                            onSelect: openEditor
+                        )
+                    } inspector: {
+                        HistoryYearMonthPicker(selectedDate: $selectedDate)
+                    }
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -133,6 +141,34 @@ struct HistoryCalendarView: View {
     }
 }
 
+private struct HistoryCalendarPeriodWorkspace<Content: View, Inspector: View>: View {
+    @ViewBuilder let content: Content
+    @ViewBuilder let inspector: Inspector
+
+    var body: some View {
+        GeometryReader { geometry in
+            if geometry.size.width >= 900 {
+                HStack(spacing: 0) {
+                    content
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                    Divider()
+
+                    VStack(spacing: 0) {
+                        inspector
+                            .padding(16)
+                        Spacer(minLength: 0)
+                    }
+                    .frame(width: min(390, max(310, geometry.size.width * 0.30)))
+                    .background(Color.secondary.opacity(0.035))
+                }
+            } else {
+                content
+            }
+        }
+    }
+}
+
 struct HistoryVisibilityMenu: View {
     @Binding var visibleKinds: Set<HistoryCalendarItemKind>
 
@@ -175,7 +211,7 @@ struct HistoryTimeGrid: View {
     private let calendar = Calendar.current
     private let timeAxisWidth: CGFloat = 72
     private let minimumDayWidth: CGFloat = 132
-    private let minimumItemHeight: CGFloat = 18
+    private let minimumVisibleItemHeight: CGFloat = 3
 
     private var days: [Date] {
         let interval = range.interval(containing: selectedDate, calendar: calendar)
@@ -295,6 +331,7 @@ struct HistoryTimeGrid: View {
                     onSelect(item)
                 }
                     .frame(width: max(32, width - 3), height: frame.height, alignment: .topLeading)
+                    .clipped()
                     .offset(
                         x: timeAxisWidth + CGFloat(dayIndex) * dayWidth + 4 + CGFloat(placement.lane) * width,
                         y: frame.y
@@ -336,7 +373,7 @@ struct HistoryTimeGrid: View {
 
             if end > start {
                 let y = CGFloat(start.timeIntervalSince(interval.start) / 3600) * hourHeight
-                let height = max(minimumItemHeight, CGFloat(end.timeIntervalSince(start) / 3600) * hourHeight)
+                let height = max(minimumVisibleItemHeight, CGFloat(end.timeIntervalSince(start) / 3600) * hourHeight)
 
                 HistoryManualFlowDraftView(startedAt: draft.startedAt, endedAt: draft.endedAt)
                     .frame(width: dayWidth - 8, height: height, alignment: .topLeading)
@@ -378,8 +415,7 @@ struct HistoryTimeGrid: View {
         let inputs = items.map {
             HistoryOverlapInput(id: $0.id, start: max($0.startedAt, interval.start), end: min($0.endedAt, interval.end))
         }
-        let minimumDuration = TimeInterval(minimumItemHeight / hourHeight * 3600)
-        let placements = HistoryOverlapLayout().place(inputs, minimumDuration: minimumDuration)
+        let placements = HistoryOverlapLayout().place(inputs)
         return Dictionary(uniqueKeysWithValues: placements.map { ($0.id, $0) })
     }
 
@@ -391,7 +427,7 @@ struct HistoryTimeGrid: View {
         let duration = max(0, end.timeIntervalSince(start))
         return (
             CGFloat(startSeconds / 3600) * hourHeight,
-            max(minimumItemHeight, CGFloat(duration / 3600) * hourHeight)
+            max(minimumVisibleItemHeight, CGFloat(duration / 3600) * hourHeight)
         )
     }
 
