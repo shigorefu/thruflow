@@ -107,6 +107,7 @@ struct FlowTimerEngine {
     func skipBreak(_ state: FlowTimerState, now: Date) -> FlowTimerState {
         var next = state
         next.phase = .completed
+        next.endedAt = now
         next.completedAt = now
         return next
     }

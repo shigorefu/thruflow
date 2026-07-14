@@ -330,6 +330,20 @@ final class ActiveFlowStore: ObservableObject {
         completeBreak(modelContext: modelContext, now: now)
     }
 
+    func startNextFlow(
+        direction: Direction,
+        todo: Todo?,
+        modelContext: ModelContext,
+        now: Date = .now
+    ) {
+        guard timerState?.phase == .breakTime else { return }
+
+        notifications.cancelPendingFlowNotifications()
+        completeBreak(modelContext: modelContext, now: now)
+        configure(direction: direction, todo: todo)
+        start(direction: direction, todo: todo, modelContext: modelContext, now: now)
+    }
+
     private func completeBreak(modelContext: ModelContext, now: Date) {
         guard let timerState else { return }
         apply(engine.skipBreak(timerState, now: now), modelContext: modelContext, now: now)
@@ -343,7 +357,7 @@ final class ActiveFlowStore: ObservableObject {
         guard let timerState else { return "--:--" }
         let seconds = engine.remainingSeconds(for: timerState, now: now)
         if isBreakPhase {
-            return Self.timeText(seconds: seconds, allowsOvertime: true, overtimePrefix: "-")
+            return Self.timeText(seconds: seconds, allowsOvertime: true)
         }
         return Self.timeText(seconds: seconds, allowsOvertime: timerState.phase == .focusing)
     }
@@ -356,16 +370,17 @@ final class ActiveFlowStore: ObservableObject {
     func phaseProgress(now: Date = .now) -> Double {
         guard let timerState else { return 0 }
 
-        let duration: Int
-        switch timerState.phase {
-        case .breakTime:
-            duration = timerState.plannedBreakDurationSeconds
-        default:
-            duration = timerState.plannedFocusDurationSeconds
-        }
+        let duration = isBreakPhase
+            ? timerState.plannedBreakDurationSeconds
+            : timerState.plannedFocusDurationSeconds
 
         guard duration > 0 else { return 0 }
         let remaining = engine.remainingSeconds(for: timerState, now: now)
+
+        if isBreakPhase {
+            return min(max(Double(remaining) / Double(duration), 0), 1)
+        }
+
         return min(max(1 - (Double(remaining) / Double(duration)), 0), 1)
     }
 
