@@ -7,6 +7,7 @@
 
 import Foundation
 
+@MainActor
 struct DayHistorySnapshot {
     let date: Date
     let interval: DateInterval
@@ -45,7 +46,7 @@ struct DayHistorySnapshot {
                     colorHex: direction.colorHex,
                     focusSeconds: 0,
                     flowCount: 0,
-                    taskCount: directionTodos.count
+                    taskCount: Set(directionTodos.map(DayHistoryTaskGroupKey.init)).count
                 )
             }
             return DayHistoryDirectionSummary(
@@ -55,7 +56,7 @@ struct DayHistorySnapshot {
                 colorHex: firstFlow.directionColorHex,
                 focusSeconds: directionFlows.reduce(0) { $0 + $1.focusSeconds },
                 flowCount: Set(directionFlows.map(\.sessionID)).count,
-                taskCount: directionTodos.count
+                taskCount: Set(directionTodos.map(DayHistoryTaskGroupKey.init)).count
             )
         }
         .sorted {
@@ -71,14 +72,28 @@ struct DayHistorySnapshot {
             flow.todoID == nil ? nil : flow
         }, by: { $0.todoID! })
 
-        var summaries = relevantTodos.map { todo in
-            let todoFlows = flowsByTodo[todo.id] ?? []
-            let direction = todo.direction
+        let groupedTodos = Dictionary(grouping: relevantTodos, by: DayHistoryTaskGroupKey.init)
+        var summaries = groupedTodos.values.compactMap { groupedTodos -> DayHistoryTaskSummary? in
+            let scheduledTodos = groupedTodos.filter { todo in
+                guard let scheduledDate = todo.scheduledDate else { return false }
+                return interval.contains(scheduledDate)
+            }
+            let displayedTodos = scheduledTodos.isEmpty ? groupedTodos : scheduledTodos
+            guard let representative = displayedTodos.sorted(by: { left, right in
+                if left.isCompleted != right.isCompleted {
+                    return !left.isCompleted
+                }
+                return (left.scheduledDate ?? left.createdAt) > (right.scheduledDate ?? right.createdAt)
+            }).first else { return nil }
+            let todoIDs = Set(groupedTodos.map(\.id))
+            let todoFlows = todoIDs.flatMap { flowsByTodo[$0] ?? [] }
+            let direction = representative.direction
             return DayHistoryTaskSummary(
-                todoID: todo.id,
-                todo: todo,
+                todoID: representative.id,
+                todos: [representative] + displayedTodos.filter { $0.id != representative.id },
+                linkedTodoIDs: todoIDs,
                 directionID: direction?.id,
-                title: TodoDisplay.title(for: todo),
+                title: TodoDisplay.title(for: representative),
                 directionSymbol: direction?.symbolName ?? "📥",
                 directionName: direction?.name ?? "その他",
                 directionColorHex: direction?.colorHex ?? "#8E8E93",
@@ -94,7 +109,8 @@ struct DayHistorySnapshot {
             let first = flows[0]
             return DayHistoryTaskSummary(
                 todoID: first.todoID,
-                todo: nil,
+                todos: [],
+                linkedTodoIDs: [],
                 directionID: first.directionID,
                 title: first.taskTitle,
                 directionSymbol: first.directionSymbol,
@@ -145,9 +161,11 @@ struct DayHistoryTask: Identifiable {
     }
 }
 
+@MainActor
 struct DayHistoryTaskSummary: Identifiable {
     let todoID: UUID?
-    let todo: Todo?
+    let todos: [Todo]
+    let linkedTodoIDs: Set<UUID>
     let directionID: UUID?
     let title: String
     let directionSymbol: String
@@ -156,8 +174,17 @@ struct DayHistoryTaskSummary: Identifiable {
     let focusSeconds: Int
     let flowCount: Int
 
+    var todo: Todo? { todos.first }
+
+    var isHabit: Bool {
+        todo?.direction?.type == .habit
+    }
+
     var id: String {
-        todoID?.uuidString ?? "direction-only-\(directionName)"
+        if isHabit, let directionID {
+            return "habit-\(directionID.uuidString)"
+        }
+        return todoID?.uuidString ?? "direction-only-\(directionName)"
     }
 }
 
@@ -171,6 +198,19 @@ struct DayHistoryDirectionSummary: Identifiable {
     let taskCount: Int
 
     var id: UUID { directionID }
+}
+
+@MainActor
+private struct DayHistoryTaskGroupKey: Hashable {
+    let value: String
+
+    init(todo: Todo) {
+        if todo.direction?.type == .habit, let directionID = todo.direction?.id {
+            value = "habit-\(directionID.uuidString)"
+        } else {
+            value = "todo-\(todo.id.uuidString)"
+        }
+    }
 }
 
 @MainActor

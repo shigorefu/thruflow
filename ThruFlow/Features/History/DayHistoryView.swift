@@ -25,7 +25,6 @@ enum DayHistoryMode: String, CaseIterable, Identifiable {
 }
 
 struct DayHistoryView: View {
-    @Environment(\.modelContext) private var modelContext
     @Query(sort: \FlowSession.startedAt, order: .reverse) private var sessions: [FlowSession]
     @Query(sort: \FlowBreak.startedAt, order: .reverse) private var breaks: [FlowBreak]
     @Query(sort: \Todo.updatedAt, order: .reverse) private var todos: [Todo]
@@ -63,9 +62,9 @@ struct DayHistoryView: View {
         }
         .padding(20)
         .navigationTitle("履歴")
-        .popover(item: $editingTodo) { todo in
+        .sheet(item: $editingTodo) { todo in
             TodoFormView(mode: .edit(todo))
-                .frame(minWidth: 430, idealWidth: 470, minHeight: 580, idealHeight: 650)
+                .frame(minWidth: 480, idealWidth: 540, minHeight: 620, idealHeight: 700)
         }
     }
 
@@ -262,19 +261,25 @@ struct DayHistoryView: View {
             Text("タスク別")
                 .font(.headline)
 
-            if snapshot.taskSummaries.isEmpty {
+            if selectedRange == .week, !weeklyTaskSections.isEmpty {
+                ForEach(weeklyTaskSections) { section in
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(taskSectionTitle(section.date))
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(calendar.isDateInToday(section.date) ? Color.accentColor : Color.secondary)
+                            .padding(.top, 6)
+
+                        taskRows(
+                            section.snapshot.taskSummaries,
+                            snapshot: section.snapshot,
+                            expansionPrefix: section.id
+                        )
+                    }
+                }
+            } else if snapshot.taskSummaries.isEmpty {
                 emptyState
             } else {
-                ForEach(snapshot.taskSummaries) { task in
-                    HistoryExpandableTaskRow(
-                        task: task,
-                        flows: flows(for: task),
-                        isExpanded: expandedTaskIDs.contains(task.id),
-                        onToggleExpansion: { toggleTaskExpansion(task.id) },
-                        onToggleCompletion: { todo in toggleTodo(todo) },
-                        onEdit: { todo in editingTodo = todo }
-                    )
-                }
+                taskRows(snapshot.taskSummaries, snapshot: snapshot, expansionPrefix: "range")
             }
         }
     }
@@ -370,9 +375,40 @@ struct DayHistoryView: View {
         }
     }
 
-    private func flows(for task: DayHistoryTaskSummary) -> [DayHistoryFlow] {
-        snapshot.flows.filter { flow in
-            if let todoID = task.todoID { return flow.todoID == todoID }
+    private var weeklyTaskSections: [HistoryTaskDaySection] {
+        guard selectedRange == .week else { return [] }
+        let interval = selectedRange.interval(containing: selectedDate, calendar: calendar)
+        return (0..<7).compactMap { offset in
+            guard let date = calendar.date(byAdding: .day, value: offset, to: interval.start) else { return nil }
+            let daySnapshot = builder.build(date: date, sessions: sessions, todos: todos)
+            guard !daySnapshot.taskSummaries.isEmpty else { return nil }
+            return HistoryTaskDaySection(date: date, snapshot: daySnapshot)
+        }
+    }
+
+    @ViewBuilder
+    private func taskRows(
+        _ tasks: [DayHistoryTaskSummary],
+        snapshot: DayHistorySnapshot,
+        expansionPrefix: String
+    ) -> some View {
+        ForEach(tasks) { task in
+            let expansionID = "\(expansionPrefix)-\(task.id)"
+            HistoryExpandableTaskRow(
+                task: task,
+                flows: flows(for: task, in: snapshot),
+                isExpanded: expandedTaskIDs.contains(expansionID),
+                onToggleExpansion: { toggleTaskExpansion(expansionID) },
+                onEdit: { todo in editingTodo = todo }
+            )
+        }
+    }
+
+    private func flows(for task: DayHistoryTaskSummary, in snapshot: DayHistorySnapshot) -> [DayHistoryFlow] {
+        return snapshot.flows.filter { flow in
+            if let todoID = flow.todoID, !task.linkedTodoIDs.isEmpty {
+                return task.linkedTodoIDs.contains(todoID)
+            }
             return flow.todoID == nil && flow.directionID == task.directionID
         }
     }
@@ -393,10 +429,16 @@ struct DayHistoryView: View {
         }
     }
 
-    private func toggleTodo(_ todo: Todo) {
-        todo.setCompleted(!todo.isCompleted)
-        try? modelContext.save()
+    private func taskSectionTitle(_ date: Date) -> String {
+        date.formatted(.dateTime.locale(Locale(identifier: "ja_JP")).month().day().weekday(.wide))
     }
+}
+
+private struct HistoryTaskDaySection: Identifiable {
+    let date: Date
+    let snapshot: DayHistorySnapshot
+
+    var id: String { date.ISO8601Format() }
 }
 
 private struct HistorySummaryTile: View {
@@ -433,22 +475,12 @@ private struct HistoryExpandableTaskRow: View {
     let flows: [DayHistoryFlow]
     let isExpanded: Bool
     let onToggleExpansion: () -> Void
-    let onToggleCompletion: (Todo) -> Void
     let onEdit: (Todo) -> Void
 
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 10) {
-                if let todo = task.todo {
-                    TodoProgressControl(todo: todo) {
-                        onToggleCompletion(todo)
-                    }
-                } else {
-                    Circle()
-                        .stroke(Color(hex: task.directionColorHex), lineWidth: 2)
-                        .frame(width: 20, height: 20)
-                        .frame(width: 34, height: 34)
-                }
+                HistoryTodoProgressIndicator(task: task)
 
                 HStack(spacing: 10) {
                     HStack(spacing: 10) {
@@ -512,6 +544,87 @@ private struct HistoryExpandableTaskRow: View {
     }
 }
 
+private struct HistoryTodoProgressIndicator: View {
+    let task: DayHistoryTaskSummary
+
+    var body: some View {
+        Group {
+            switch measurement {
+            case .checkbox:
+                RoundedRectangle(cornerRadius: 5)
+                    .strokeBorder(tint, lineWidth: 1.6)
+                    .background {
+                        RoundedRectangle(cornerRadius: 5)
+                            .fill(isCompleted ? tint : Color.clear)
+                    }
+                    .overlay {
+                        if isCompleted {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(.white)
+                        }
+                    }
+                    .frame(width: 20, height: 20)
+            case .focusBlocks, .minutes:
+                ZStack {
+                    Circle()
+                        .stroke(tint.opacity(0.22), lineWidth: 3)
+                    Circle()
+                        .trim(from: 0, to: progress)
+                        .stroke(tint, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+
+                    if measurement == .minutes {
+                        Image(systemName: "timer")
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundStyle(tint)
+                    } else if isCompleted {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(tint)
+                    }
+                }
+                .frame(width: 22, height: 22)
+            }
+        }
+        .frame(width: 34, height: 34)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("タスク進捗")
+        .accessibilityValue(progressDescription)
+    }
+
+    private var measurement: TodoMeasurement {
+        task.todo?.measurement ?? .checkbox
+    }
+
+    private var isCompleted: Bool {
+        !task.todos.isEmpty && task.todos.allSatisfy(\.isCompleted)
+    }
+
+    private var progress: Double {
+        guard !task.todos.isEmpty else { return 0 }
+        switch measurement {
+        case .checkbox:
+            return Double(task.todos.filter(\.isCompleted).count) / Double(task.todos.count)
+        case .focusBlocks:
+            let target = task.todos.reduce(0) { $0 + max(1, $1.plannedAmount ?? 1) }
+            return min(BlockUnit.blocks(forFocusedSeconds: task.focusSeconds) / Double(target), 1)
+        case .minutes:
+            let target = task.todos.reduce(0) { $0 + max(1, $1.plannedAmount ?? 1) }
+            return min(Double(task.focusSeconds) / 60 / Double(target), 1)
+        }
+    }
+
+    private var tint: Color {
+        Color(hex: task.directionColorHex)
+    }
+
+    private var progressDescription: String {
+        if isCompleted { return "完了" }
+        return "\(Int((progress * 100).rounded()))%"
+    }
+}
+
 private struct HistoryExpandableDirectionRow: View {
     let direction: DayHistoryDirectionSummary
     let tasks: [DayHistoryTaskSummary]
@@ -562,9 +675,8 @@ private struct HistoryExpandableDirectionRow: View {
                 } else {
                     ForEach(tasks) { task in
                         HStack(spacing: 10) {
-                            if let todo = task.todo {
-                                TodoProgressControl(todo: todo) {}
-                                    .allowsHitTesting(false)
+                            if task.todo != nil {
+                                HistoryTodoProgressIndicator(task: task)
                             }
                             Text(task.directionSymbol)
                             Text(task.title)

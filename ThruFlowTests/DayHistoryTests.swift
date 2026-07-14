@@ -180,6 +180,87 @@ struct DayHistoryTests {
         #expect(snapshot.directionSummaries.first?.flowCount == 2)
     }
 
+    @Test func historyCombinesDailyHabitOccurrencesButKeepsNormalTodosSeparate() {
+        let day = Date(timeIntervalSince1970: 20 * 86_400)
+        let habit = Direction(name: "AWS", type: .habit, symbolName: "☁️", colorHex: "#FFD60A")
+        let normal = Direction(name: "仕事", type: .neutral)
+        let firstHabit = Todo(
+            title: "",
+            direction: habit,
+            measurement: .focusBlocks,
+            plannedAmount: 2,
+            scheduledDate: day
+        )
+        let secondHabit = Todo(
+            title: "",
+            direction: habit,
+            measurement: .focusBlocks,
+            plannedAmount: 2,
+            scheduledDate: day.addingTimeInterval(86_400)
+        )
+        let firstNormal = Todo(title: "レビュー", direction: normal, scheduledDate: day)
+        let secondNormal = Todo(title: "レビュー", direction: normal, scheduledDate: day.addingTimeInterval(86_400))
+        let interval = DateInterval(start: day, end: day.addingTimeInterval(2 * 86_400))
+
+        let snapshot = DayHistoryBuilder(calendar: calendar).build(
+            interval: interval,
+            sessions: [],
+            todos: [firstHabit, secondHabit, firstNormal, secondNormal]
+        )
+
+        let habitSummaries = snapshot.taskSummaries.filter { $0.directionID == habit.id }
+        let normalSummaries = snapshot.taskSummaries.filter { $0.directionID == normal.id }
+        #expect(habitSummaries.count == 1)
+        #expect(habitSummaries.first?.todos.count == 2)
+        #expect(normalSummaries.count == 2)
+        #expect(snapshot.directionSummaries.first(where: { $0.directionID == habit.id })?.taskCount == 1)
+    }
+
+    @Test func dailyHabitUsesScheduledOccurrenceWhileKeepingFlowFromAnotherOccurrence() {
+        let calendar = Calendar(identifier: .gregorian)
+        let day = calendar.startOfDay(for: Date(timeIntervalSince1970: 30 * 86_400))
+        let habit = Direction(name: "AWS", type: .habit, symbolName: "☁️", colorHex: "#FFD60A")
+        let previousHabit = Todo(
+            title: "",
+            direction: habit,
+            measurement: .focusBlocks,
+            plannedAmount: 2,
+            scheduledDate: day.addingTimeInterval(-86_400)
+        )
+        let currentHabit = Todo(
+            title: "",
+            direction: habit,
+            measurement: .focusBlocks,
+            plannedAmount: 2,
+            scheduledDate: day
+        )
+        let session = FlowSession(
+            direction: habit,
+            todo: previousHabit,
+            mode: .twentyFiveFive,
+            phase: .completed,
+            status: .completed,
+            startedAt: day.addingTimeInterval(10 * 3_600),
+            plannedEndAt: day.addingTimeInterval(10 * 3_600 + 25 * 60),
+            endedAt: day.addingTimeInterval(10 * 3_600 + 25 * 60),
+            plannedFocusDurationSeconds: 25 * 60,
+            actualFocusDurationSeconds: 25 * 60,
+            plannedBreakDurationSeconds: 5 * 60
+        )
+
+        let snapshot = DayHistoryBuilder(calendar: calendar).build(
+            date: day,
+            sessions: [session],
+            todos: [previousHabit, currentHabit]
+        )
+
+        let summary = snapshot.taskSummaries.first
+        #expect(snapshot.taskSummaries.count == 1)
+        #expect(summary?.todos.map(\.id) == [currentHabit.id])
+        #expect(summary?.linkedTodoIDs == [previousHabit.id, currentHabit.id])
+        #expect(summary?.focusSeconds == 25 * 60)
+    }
+
     @Test func editingFlowMovesOnlyItsProgressToTheNewTaskAndDirection() {
         let originalDirection = Direction(name: "仕事", type: .neutral, focusDurationSeconds: 50 * 60)
         let newDirection = Direction(name: "学習", type: .neutral, focusDurationSeconds: 0)
