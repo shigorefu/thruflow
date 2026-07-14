@@ -328,9 +328,21 @@ struct FlowTests {
         #expect(engine.changeMode(.fiftyTen, for: pausedRest) == pausedRest)
     }
 
-    @Test func breakOvertimeIsFormattedAsADecreasingCountdown() {
+    @Test @MainActor func breakProgressDrainsAndOvertimeUsesPlusPrefix() {
+        let engine = FlowTimerEngine()
+        let start = Date(timeIntervalSince1970: 6_700)
+        let focus = engine.start(mode: .twentyFiveFive, now: start)
+        let breakStartedAt = start.addingTimeInterval(25 * 60)
+        let resting = engine.startBreak(focus, now: breakStartedAt)
+        let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
+        let store = ActiveFlowStore(defaults: defaults, notifications: TestFlowNotificationService())
+        store.timerState = resting
+
+        #expect(store.phaseProgress(now: breakStartedAt) == 1)
+        #expect(store.phaseProgress(now: breakStartedAt.addingTimeInterval(150)) == 0.5)
+        #expect(store.phaseProgress(now: breakStartedAt.addingTimeInterval(5 * 60 + 1)) == 0)
         #expect(ActiveFlowStore.timeText(seconds: 3 * 60) == "03:00")
-        #expect(ActiveFlowStore.timeText(seconds: -1, allowsOvertime: true, overtimePrefix: "-") == "-00:01")
+        #expect(store.remainingText(now: breakStartedAt.addingTimeInterval(5 * 60 + 1)) == "+00:01")
     }
 
     @Test func segmentedFlowCreditsEachTaskOnlyForItsOwnFocusTime() {
@@ -414,6 +426,40 @@ struct FlowTests {
         #expect(segments.map(\.resolvedFocusSeconds) == [16 * 60, 9 * 60])
         #expect(firstTodo.recordedFocusSeconds == 16 * 60)
         #expect(secondTodo.recordedFocusSeconds == 9 * 60)
+    }
+
+    @Test @MainActor func startingWorkDuringBreakImmediatelyCreatesNextFlow() throws {
+        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let start = Date(timeIntervalSince1970: 9_000)
+        let breakStartedAt = start.addingTimeInterval(25 * 60)
+        let restartedAt = breakStartedAt.addingTimeInterval(2 * 60)
+        let direction = Direction(name: "仕事", type: .neutral)
+        let todo = Todo(title: "実装", direction: direction)
+        context.insert(direction)
+        context.insert(todo)
+
+        let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
+        let store = ActiveFlowStore(defaults: defaults, notifications: TestFlowNotificationService())
+        store.configure(direction: direction, todo: todo, mode: .twentyFiveFive)
+        store.start(direction: direction, todo: todo, modelContext: context, now: start)
+        let firstSession = try #require(store.activeSession)
+        store.startBreak(modelContext: context, now: breakStartedAt)
+
+        store.startNextFlow(
+            direction: direction,
+            todo: todo,
+            modelContext: context,
+            now: restartedAt
+        )
+
+        #expect(firstSession.status == .completed)
+        #expect(firstSession.endedAt == restartedAt)
+        #expect(store.phase == .focusing)
+        #expect(store.timerState?.startedAt == restartedAt)
+        #expect(store.activeSession?.id != firstSession.id)
     }
 }
 

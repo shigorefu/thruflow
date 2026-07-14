@@ -715,7 +715,7 @@ struct FlowMiniPlayerView: View {
         case .paused:
             "再開"
         case .breakTime:
-            "スキップ"
+            "Flowを開始"
         case .awaitingExtensionDecision:
             "完了"
         case .awaitingResult:
@@ -729,8 +729,6 @@ struct FlowMiniPlayerView: View {
         switch activeFlowStore.phase {
         case .focusing:
             activeFlowStore.isFocusOvertime(now: activeFlowStore.displayDate) ? "cup.and.saucer.fill" : "pause.fill"
-        case .breakTime:
-            "forward.fill"
         case .awaitingResult:
             "checkmark"
         default:
@@ -879,7 +877,11 @@ struct FlowMiniPlayerView: View {
         case .paused:
             activeFlowStore.resume(modelContext: modelContext)
         case .breakTime:
-            activeFlowStore.skipBreak(modelContext: modelContext)
+            activeFlowStore.startNextFlow(
+                direction: resolvedStartDirection(),
+                todo: selectedTodo,
+                modelContext: modelContext
+            )
         case .awaitingExtensionDecision:
             activeFlowStore.finish(modelContext: modelContext)
         case .awaitingResult:
