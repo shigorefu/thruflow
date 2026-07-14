@@ -47,6 +47,79 @@ struct FlowDashboardTests {
         #expect(abs(snapshot.segments[1].startFraction - 0.75) < 0.0001)
     }
 
+    @Test func elasticTimelineUsesCurrentAndFollowingHourWhenEmpty() {
+        let now = Date(timeIntervalSince1970: 14 * 3_600 + 37 * 60)
+        let range = FlowTimelineRange(
+            mode: .elastic,
+            date: now,
+            segments: [],
+            calendar: calendar
+        )
+
+        #expect(range.start == Date(timeIntervalSince1970: 14 * 3_600))
+        #expect(range.end == Date(timeIntervalSince1970: 16 * 3_600))
+        #expect(range.duration == 2 * 3_600)
+    }
+
+    @Test func elasticTimelineGrowsFromFirstFlowHourThroughLastFlowHour() {
+        let day = Date(timeIntervalSince1970: 86_400)
+        let direction = Direction(name: "仕事", type: .neutral)
+        let morning = makeSession(
+            direction: direction,
+            start: day.addingTimeInterval(10 * 3_600 + 15 * 60),
+            duration: 25 * 60
+        )
+        let afternoon = makeSession(
+            direction: direction,
+            start: day.addingTimeInterval(16 * 3_600 + 10 * 60),
+            duration: 25 * 60
+        )
+        let snapshot = FlowDashboardBuilder(calendar: calendar).build(
+            date: day.addingTimeInterval(17 * 3_600),
+            sessions: [morning, afternoon]
+        )
+        let range = FlowTimelineRange(
+            mode: .elastic,
+            date: day,
+            segments: snapshot.segments,
+            calendar: calendar
+        )
+
+        #expect(range.start == day.addingTimeInterval(10 * 3_600))
+        #expect(range.end == day.addingTimeInterval(17 * 3_600))
+        #expect(range.labelDates(calendar: calendar) == [
+            day.addingTimeInterval(10 * 3_600),
+            day.addingTimeInterval(12 * 3_600),
+            day.addingTimeInterval(14 * 3_600),
+            day.addingTimeInterval(16 * 3_600),
+            day.addingTimeInterval(17 * 3_600),
+        ])
+        #expect(abs(range.fraction(for: snapshot.segments[0].startedAt) - (15.0 / 420.0)) < 0.0001)
+    }
+
+    @Test func elasticTimelineKeepsTwoHourMinimumForOneFlow() {
+        let day = Date(timeIntervalSince1970: 86_400)
+        let direction = Direction(name: "仕事", type: .neutral)
+        let session = makeSession(
+            direction: direction,
+            start: day.addingTimeInterval(10 * 3_600 + 15 * 60),
+            duration: 25 * 60
+        )
+        let snapshot = FlowDashboardBuilder(calendar: calendar).build(
+            date: day.addingTimeInterval(11 * 3_600),
+            sessions: [session]
+        )
+        let range = FlowTimelineRange(
+            mode: .elastic,
+            date: day,
+            segments: snapshot.segments,
+            calendar: calendar
+        )
+
+        #expect(range.start == day.addingTimeInterval(10 * 3_600))
+        #expect(range.end == day.addingTimeInterval(12 * 3_600))
+    }
+
     @Test func liveFlowAppearsOnlyAfterCreditableMinuteAndUsesCurrentEndTime() {
         let day = Date(timeIntervalSince1970: 172_800)
         let direction = Direction(name: "仕事", type: .neutral, colorHex: "#FF9F0A")
