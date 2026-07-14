@@ -120,6 +120,47 @@ struct FlowDashboardTests {
         #expect(range.end == day.addingTimeInterval(12 * 3_600))
     }
 
+    @Test func dashboardBuildsPersistedBreakAndConnectedSeriesSpan() {
+        let day = Date(timeIntervalSince1970: 86_400)
+        let direction = Direction(name: "仕事", type: .neutral)
+        let seriesID = UUID()
+        let first = makeSession(
+            direction: direction,
+            start: day.addingTimeInterval(10 * 3_600),
+            duration: 25 * 60,
+            seriesID: seriesID
+        )
+        let secondStart = day.addingTimeInterval(10 * 3_600 + 30 * 60)
+        let second = makeSession(
+            direction: direction,
+            start: secondStart,
+            duration: 25 * 60,
+            seriesID: seriesID
+        )
+        let flowBreak = FlowBreak(
+            seriesID: seriesID,
+            previousSessionID: first.id,
+            nextSessionID: second.id,
+            startedAt: first.endedAt!,
+            timerStoppedAt: secondStart,
+            connectedUntil: secondStart,
+            plannedDurationSeconds: 5 * 60
+        )
+
+        let snapshot = FlowDashboardBuilder(calendar: calendar).build(
+            date: day.addingTimeInterval(12 * 3_600),
+            sessions: [first, second],
+            breaks: [flowBreak]
+        )
+
+        #expect(snapshot.breaks.count == 1)
+        #expect(snapshot.breaks[0].startedAt == first.endedAt)
+        #expect(snapshot.breaks[0].endedAt == secondStart)
+        #expect(snapshot.seriesSpans.count == 1)
+        #expect(snapshot.seriesSpans[0].startedAt == first.startedAt)
+        #expect(snapshot.seriesSpans[0].endedAt == second.endedAt)
+    }
+
     @Test func liveFlowAppearsOnlyAfterCreditableMinuteAndUsesCurrentEndTime() {
         let day = Date(timeIntervalSince1970: 172_800)
         let direction = Direction(name: "仕事", type: .neutral, colorHex: "#FF9F0A")
@@ -320,9 +361,11 @@ struct FlowDashboardTests {
         direction: Direction,
         start: Date,
         duration: Int,
-        status: FlowSessionStatus = .completed
+        status: FlowSessionStatus = .completed,
+        seriesID: UUID? = nil
     ) -> FlowSession {
         FlowSession(
+            seriesID: seriesID,
             direction: direction,
             mode: .twentyFiveFive,
             phase: status == .completed ? .completed : .focusing,

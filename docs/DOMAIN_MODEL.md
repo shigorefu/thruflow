@@ -69,7 +69,11 @@ Todo memo is not stored in FlowSession. The current model may keep legacy `resul
 
 `FlowSegment` records a Task/Direction interval inside one `FlowSession`. It stores wall-clock start/end dates and cumulative focused-second offsets at both boundaries, so pauses are excluded deterministically. Switching Task while focusing or paused closes the current segment and opens another without resetting the timer. Progress is credited from segment durations; legacy FlowSession records without segments keep the previous session-level fallback.
 
-The Flow dashboard is a projection, not a persisted model. `FlowDashboardBuilder` derives today's totals, Direction color palette, and timeline segments from `FlowSession`; the active session contributes a live overlay only after the one-minute credit threshold.
+## FlowBreak
+
+`FlowBreak` persists explicit rest between Flow sessions using stable session UUID references. It stores the series ID, previous/next session IDs, rest start, timer-stop and connection timestamps, planned duration, and Long Break state. Sessions started within planned rest × 1.5 share the same series ID. A Long Break lasts 20 minutes after every 4 accumulated Blocks in a series and permits continuation for 30 minutes from rest start.
+
+The Flow dashboard is a projection, not a persisted model. `FlowDashboardBuilder` derives today's totals, Direction color palette, timeline segments, breaks, and connected series spans from `FlowSession` and `FlowBreak`; the active session contributes a live overlay only after the one-minute credit threshold. See `DATA_MODEL.md` for the complete persistence inventory.
 
 ## Block
 

@@ -135,6 +135,7 @@ enum FlowSessionStatus: String, CaseIterable, Codable, Identifiable {
 @Model
 final class FlowSession {
     var id: UUID
+    var seriesID: UUID?
     var direction: Direction?
     var todo: Todo?
     var intent: String
@@ -158,6 +159,7 @@ final class FlowSession {
 
     init(
         id: UUID = UUID(),
+        seriesID: UUID? = nil,
         direction: Direction,
         todo: Todo? = nil,
         intent: String = "",
@@ -178,6 +180,7 @@ final class FlowSession {
         updatedAt: Date = .now
     ) {
         self.id = id
+        self.seriesID = seriesID ?? id
         self.direction = direction
         self.todo = todo
         self.intent = intent

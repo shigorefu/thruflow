@@ -28,6 +28,22 @@ struct FlowTests {
         #expect(BlockUnit.blocks(forFocusedSeconds: focusSeconds + breakSeconds) == 1)
     }
 
+    @Test func seriesContinuationWindowIsOneAndAHalfTimesThePlannedBreak() {
+        #expect(FlowSeriesPolicy.continuationWindow(forPlannedBreakSeconds: 3 * 60) == 4 * 60 + 30)
+        #expect(FlowSeriesPolicy.continuationWindow(forPlannedBreakSeconds: 5 * 60) == 7 * 60 + 30)
+        #expect(FlowSeriesPolicy.continuationWindow(forPlannedBreakSeconds: 10 * 60) == 15 * 60)
+        #expect(FlowSeriesPolicy.continuationWindow(forPlannedBreakSeconds: 20 * 60) == 30 * 60)
+    }
+
+    @Test func longBreakIsDueAfterEveryFourAccumulatedBlocks() {
+        let policy = FlowSeriesPolicy()
+
+        #expect(!policy.shouldUseLongBreak(totalSeriesFocusSeconds: 95 * 60, completedLongBreakCount: 0))
+        #expect(policy.shouldUseLongBreak(totalSeriesFocusSeconds: 96 * 60, completedLongBreakCount: 0))
+        #expect(!policy.shouldUseLongBreak(totalSeriesFocusSeconds: 96 * 60, completedLongBreakCount: 1))
+        #expect(policy.shouldUseLongBreak(totalSeriesFocusSeconds: 192 * 60, completedLongBreakCount: 1))
+    }
+
     @Test func timerStartPauseResumeAndFinishUseAbsoluteDates() {
         let engine = FlowTimerEngine()
         let start = Date(timeIntervalSince1970: 1_000)
@@ -391,7 +407,7 @@ struct FlowTests {
     }
 
     @Test @MainActor func activeFlowSwitchesTaskWithoutResettingTimer() throws {
-        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self])
+        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
@@ -429,7 +445,7 @@ struct FlowTests {
     }
 
     @Test @MainActor func startingWorkDuringBreakImmediatelyCreatesNextFlow() throws {
-        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self])
+        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
@@ -460,6 +476,75 @@ struct FlowTests {
         #expect(store.phase == .focusing)
         #expect(store.timerState?.startedAt == restartedAt)
         #expect(store.activeSession?.id != firstSession.id)
+        #expect(store.activeSession?.seriesID == firstSession.seriesID)
+
+        let breaks = try context.fetch(FetchDescriptor<FlowBreak>())
+        #expect(breaks.count == 1)
+        #expect(breaks[0].previousSessionID == firstSession.id)
+        #expect(breaks[0].nextSessionID == store.activeSession?.id)
+        #expect(breaks[0].connectedUntil == restartedAt)
+    }
+
+    @Test @MainActor func startingAfterContinuationWindowCreatesNewSeries() throws {
+        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let start = Date(timeIntervalSince1970: 12_000)
+        let breakStartedAt = start.addingTimeInterval(25 * 60)
+        let restartedAt = breakStartedAt.addingTimeInterval(7 * 60 + 31)
+        let direction = Direction(name: "仕事", type: .neutral)
+        context.insert(direction)
+
+        let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
+        let store = ActiveFlowStore(defaults: defaults, notifications: TestFlowNotificationService())
+        store.configure(direction: direction, todo: nil, mode: .twentyFiveFive)
+        store.start(direction: direction, todo: nil, modelContext: context, now: start)
+        let firstSeriesID = try #require(store.activeSession?.seriesID)
+        store.startBreak(modelContext: context, now: breakStartedAt)
+        store.startNextFlow(direction: direction, todo: nil, modelContext: context, now: restartedAt)
+
+        #expect(store.activeSession?.seriesID != firstSeriesID)
+        let flowBreak = try #require(context.fetch(FetchDescriptor<FlowBreak>()).first)
+        #expect(flowBreak.nextSessionID == nil)
+    }
+
+    @Test @MainActor func fourthAccumulatedBlockStartsLongBreak() throws {
+        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let start = Date(timeIntervalSince1970: 20_000)
+        let direction = Direction(name: "仕事", type: .neutral)
+        context.insert(direction)
+
+        let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
+        let store = ActiveFlowStore(defaults: defaults, notifications: TestFlowNotificationService())
+        store.configure(direction: direction, todo: nil, mode: .twentyFiveFive)
+        store.start(direction: direction, todo: nil, modelContext: context, now: start)
+        let seriesID = try #require(store.activeSession?.seriesID)
+        let prior = FlowSession(
+            seriesID: seriesID,
+            direction: direction,
+            mode: .twentyFiveFive,
+            phase: .completed,
+            status: .completed,
+            startedAt: start.addingTimeInterval(-75 * 60),
+            plannedEndAt: start,
+            endedAt: start,
+            plannedFocusDurationSeconds: 75 * 60,
+            actualFocusDurationSeconds: 75 * 60,
+            plannedBreakDurationSeconds: 5 * 60
+        )
+        context.insert(prior)
+
+        store.startBreak(modelContext: context, now: start.addingTimeInterval(25 * 60))
+
+        #expect(store.timerState?.plannedBreakDurationSeconds == 20 * 60)
+        #expect(store.timerState?.isLongBreak == true)
+        let flowBreak = try #require(context.fetch(FetchDescriptor<FlowBreak>()).first)
+        #expect(flowBreak.isLongBreak)
+        #expect(flowBreak.continuationDeadline == start.addingTimeInterval(25 * 60 + 30 * 60))
     }
 }
 

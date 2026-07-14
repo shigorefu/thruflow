@@ -17,6 +17,7 @@ struct FlowDashboardView: View {
     @Query(sort: \Direction.name, order: .forward) private var directions: [Direction]
     @Query(sort: \Todo.sortIndex, order: .forward) private var todos: [Todo]
     @Query(sort: \FlowSession.startedAt, order: .forward) private var sessions: [FlowSession]
+    @Query(sort: \FlowBreak.startedAt, order: .forward) private var flowBreaks: [FlowBreak]
 
     @AppStorage("flow.timelineMode") private var timelineModeRawValue = FlowTimelineMode.elastic.rawValue
 
@@ -73,6 +74,7 @@ struct FlowDashboardView: View {
         builder.build(
             date: now,
             sessions: sessions,
+            breaks: flowBreaks,
             activeSessionID: activeFlowStore.activeSession?.id,
             activeFocusSeconds: activeFlowStore.actualFocusSeconds(now: now)
         )
@@ -186,7 +188,12 @@ struct FlowDashboardView: View {
     }
 
     private func timelineSurface(snapshot: FlowDashboardSnapshot, now: Date) -> some View {
-        let range = FlowTimelineRange(mode: timelineMode, date: now, segments: snapshot.segments)
+        let range = FlowTimelineRange(
+            mode: timelineMode,
+            date: now,
+            segments: snapshot.segments,
+            breaks: snapshot.breaks
+        )
 
         return VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
@@ -219,6 +226,71 @@ struct FlowDashboardView: View {
                     Capsule()
                         .fill(Color.primary.opacity(0.07))
                         .frame(height: 16)
+
+                    ForEach(snapshot.seriesSpans) { span in
+                        let width = intervalWidth(
+                            from: span.startedAt,
+                            to: span.endedAt,
+                            range: range,
+                            totalWidth: proxy.size.width,
+                            minimumWidth: 12
+                        )
+
+                        RoundedRectangle(cornerRadius: 9)
+                            .stroke(
+                                Color.primary.opacity(0.34),
+                                style: StrokeStyle(lineWidth: 1.2, dash: [3, 2])
+                            )
+                            .frame(width: width, height: 20)
+                            .position(
+                                x: intervalCenter(
+                                    from: span.startedAt,
+                                    to: span.endedAt,
+                                    range: range,
+                                    totalWidth: proxy.size.width
+                                ),
+                                y: proxy.size.height / 2
+                            )
+                            .allowsHitTesting(false)
+                    }
+
+                    ForEach(snapshot.breaks) { flowBreak in
+                        let width = intervalWidth(
+                            from: flowBreak.startedAt,
+                            to: flowBreak.endedAt,
+                            range: range,
+                            totalWidth: proxy.size.width,
+                            minimumWidth: 5
+                        )
+
+                        ZStack {
+                            Capsule()
+                                .fill(
+                                    flowBreak.isLongBreak
+                                        ? Color.indigo.opacity(0.72)
+                                        : Color.primary.opacity(0.30)
+                                )
+                                .frame(width: width, height: flowBreak.isActive ? 14 : 10)
+
+                            if width >= 24 {
+                                Image(systemName: "cup.and.saucer.fill")
+                                    .font(.system(size: 7, weight: .semibold))
+                                    .foregroundStyle(.white.opacity(0.88))
+                            }
+                        }
+                        .frame(width: max(width, 8), height: 18)
+                        .position(
+                            x: intervalCenter(
+                                from: flowBreak.startedAt,
+                                to: flowBreak.endedAt,
+                                range: range,
+                                totalWidth: proxy.size.width
+                            ),
+                            y: proxy.size.height / 2
+                        )
+                        .help(breakHelpText(flowBreak))
+                        .accessibilityLabel(breakHelpText(flowBreak))
+                    }
 
                     ForEach(snapshot.segments) { segment in
                         let width = segmentWidth(segment, range: range, totalWidth: proxy.size.width)
@@ -296,7 +368,7 @@ struct FlowDashboardView: View {
                     }
                 }
             }
-            .frame(height: 20)
+            .frame(height: 24)
 
             HStack {
                 let dates = range.labelDates()
@@ -586,7 +658,39 @@ struct FlowDashboardView: View {
         range: FlowTimelineRange,
         totalWidth: CGFloat
     ) -> CGFloat {
-        max(6, totalWidth * (range.fraction(for: segment.endedAt) - range.fraction(for: segment.startedAt)))
+        intervalWidth(
+            from: segment.startedAt,
+            to: segment.endedAt,
+            range: range,
+            totalWidth: totalWidth,
+            minimumWidth: 6
+        )
+    }
+
+    private func intervalWidth(
+        from start: Date,
+        to end: Date,
+        range: FlowTimelineRange,
+        totalWidth: CGFloat,
+        minimumWidth: CGFloat
+    ) -> CGFloat {
+        max(minimumWidth, totalWidth * (range.fraction(for: end) - range.fraction(for: start)))
+    }
+
+    private func intervalCenter(
+        from start: Date,
+        to end: Date,
+        range: FlowTimelineRange,
+        totalWidth: CGFloat
+    ) -> CGFloat {
+        let visibleStart = totalWidth * range.fraction(for: start)
+        let visibleEnd = totalWidth * range.fraction(for: end)
+        return visibleStart + ((visibleEnd - visibleStart) / 2)
+    }
+
+    private func breakHelpText(_ flowBreak: FlowDashboardBreak) -> String {
+        let name = flowBreak.isLongBreak ? "Long Break" : "休憩"
+        return "☕️ \(name) \(TimelineSegmentFormat.duration(flowBreak.plannedDurationSeconds))"
     }
 
     private var timelinePopoverBinding: Binding<Bool> {
@@ -946,5 +1050,5 @@ private struct DashboardTodoColumn: View {
 #Preview {
     FlowDashboardView()
         .environmentObject(ActiveFlowStore())
-        .modelContainer(for: [Direction.self, Todo.self, FlowSession.self, FlowSegment.self], inMemory: true)
+        .modelContainer(for: [Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self], inMemory: true)
 }

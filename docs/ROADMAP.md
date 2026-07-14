@@ -15,7 +15,6 @@
 ## Next
 
 - Define auto-created Task defaults for Flow without selected Task.
-- Define long-break Flow series model.
 - Define Flow-series deletion behavior.
 - Add day-detail view from statistics cells.
 - Add manual correction UI for historical task progress/time.
