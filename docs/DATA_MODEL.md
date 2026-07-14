@@ -100,8 +100,10 @@ The following are not separate database entities:
 
 - `FlowTimerState`: in-memory active timer state;
 - dashboard stream shape, speed, palette, totals, and timeline geometry;
-- contribution-grid cells and day-history sections;
+- contribution-grid cells, calendar items, overlap lanes, and history sections;
 - Block display values derived from exact focused seconds;
 - the Flow series itself, which is reconstructed from `seriesID`, `FlowSession`, and `FlowBreak` records.
 
 The active timer is restored from absolute timestamps and persisted FlowSession fields where supported; decorative animation state is never persisted.
+
+`履歴` does not add a calendar table. `HistoryCalendarBuilder` projects `FlowSession`/`FlowSegment` as timed focus entries, `FlowBreak` as timed rest entries, and `Todo` as exact completion or all-day scheduled entries. Calendar range, filtering, scroll position, and overlap lanes are presentation state.

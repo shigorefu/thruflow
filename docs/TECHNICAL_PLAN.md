@@ -25,7 +25,9 @@ SwiftUI views should call domain logic instead of owning product rules directly.
 - `FlowSegment` stores Task/Direction intervals and cumulative focused-second boundaries within a FlowSession.
 - `FlowBreak` stores explicit rest and UUID links between adjacent sessions in a Flow series; `FlowSeriesPolicy` owns continuation windows and Long Break thresholds.
 - `Todo.completedAt` stores the exact completion time for new completions.
-- `DayHistoryBuilder` creates daily timeline and Task/Direction aggregates.
+- `DayHistoryBuilder` creates daily Task/Direction aggregates and legacy day projections.
+- `HistoryCalendarBuilder` creates read-only day/week/month calendar projections from existing Flow, break, and Todo records.
+- `HistoryOverlapLayout` assigns deterministic side-by-side lanes to overlapping timed records.
 - `FlowHistoryEditor` applies progress deltas when historical Flow records change.
 - `FlowDashboardBuilder` derives today's totals, Direction palette, and normalized 24-hour segments from `FlowSession`, with a live overlay for the active creditable Flow.
 - `FlowVisualState` converts 0...6 daily Blocks into clamped speed, volume, layer count, and mode-specific wave character without placing those rules in SwiftUI.

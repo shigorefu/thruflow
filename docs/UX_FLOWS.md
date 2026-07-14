@@ -120,17 +120,29 @@ Ranges:
 
 The `その他` Direction may appear in statistics and filters because it represents real captured work.
 
-Selecting any contribution cell switches the app navigation to the single canonical `履歴` section for that day. Statistics never embeds a duplicate Day History view.
+Selecting any contribution cell switches the app navigation to the single canonical `履歴` section for that day. Statistics never embeds a duplicate History view.
 
 Hovering a cell shows its date, completed Task count, Flow count, Blocks, and focused duration. `今月` is arranged as a seven-column month calendar; `180日` uses larger contribution cells than the year view.
 
-## Day History
+## History Calendar
 
-`履歴` is available directly below `タスク`, owns Day History presentation, and initially opens today. It preserves the date selected from Statistics. The user can move one day backward or forward or choose a date.
+`履歴` is available directly below `タスク`, owns the canonical History presentation, and initially opens today. It preserves the date selected from Statistics. The user can move backward or forward by the selected range, choose a date, or use the mini-calendar on wide macOS windows.
+
+The primary `カレンダー` mode provides:
+
+- `日`: one vertically scrollable 24-hour column;
+- `週`: seven synchronized day columns in one vertically scrollable 24-hour grid;
+- `月`: a seven-column month overview.
+
+Day and week keep date headers and the `終日` row fixed while hours scroll. Opening the grid scrolls near the current time when today is visible, otherwise near the first Flow. A red line marks the current time. Narrow windows retain horizontal scrolling; the wide layout adds a mini-calendar and independent Flow, rest, and Task filters.
+
+Flow and FlowSegment records are timed blocks colored by Direction. FlowBreak records are light-gray timed blocks. Exact Task completions appear at `completedAt`; pending scheduled Tasks and legacy completions without exact time appear in `終日`. Overlapping timed records are assigned side-by-side lanes.
+
+Selecting an entry reuses `FlowHistoryInspectorView`, `FlowBreakEditor`, or `TodoFormView`. The calendar is read-oriented in MVP 0.1: it does not provide direct drag/resize and does not persist a second calendar entity.
 
 The Flow inspector limits its Task picker to Tasks scheduled on the Flow date plus the currently assigned Task. It edits time through linked `開始`, `終了`, and direct `分` fields: start/end changes recalculate minutes, and minute changes keep start fixed while moving end.
 
-- `タイムライン`: chronological Flow sessions and completed Tasks.
+- `カレンダー`: day, week, and month calendar history.
 - `タスク`: focus totals grouped by Task.
 - `方向`: focus totals grouped by Direction.
 

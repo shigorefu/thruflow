@@ -102,4 +102,4 @@ Normal active Tasks may change `scheduledDate`. Completed Tasks and fixed daily/
 
 Flow statistics and day history are derived from FlowSession actual focus seconds. Task statistics use `Todo.completedAt`, with `updatedAt` as a legacy date fallback. Legacy completed Todos without `completedAt` are displayed without an invented clock time.
 
-`DayHistoryBuilder` produces the daily timeline and Task/Direction aggregates. `FlowHistoryEditor` corrects Direction and measured Todo totals when a historical Flow is changed or deleted.
+`DayHistoryBuilder` produces daily Task/Direction aggregates. `HistoryCalendarBuilder` projects FlowSession, FlowSegment, FlowBreak, and Todo into date-range calendar items without persistence. `HistoryOverlapLayout` assigns lanes to colliding timed entries independently from SwiftUI. `FlowHistoryEditor` corrects Direction and measured Todo totals when a historical Flow is changed or deleted.
