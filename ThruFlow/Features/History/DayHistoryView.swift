@@ -25,6 +25,7 @@ enum DayHistoryMode: String, CaseIterable, Identifiable {
 }
 
 struct DayHistoryView: View {
+    @Environment(\.modelContext) private var modelContext
     @Query(sort: \FlowSession.startedAt, order: .reverse) private var sessions: [FlowSession]
     @Query(sort: \FlowBreak.startedAt, order: .reverse) private var breaks: [FlowBreak]
     @Query(sort: \Todo.updatedAt, order: .reverse) private var todos: [Todo]
@@ -272,14 +273,20 @@ struct DayHistoryView: View {
                         taskRows(
                             section.snapshot.taskSummaries,
                             snapshot: section.snapshot,
-                            expansionPrefix: section.id
+                            expansionPrefix: section.id,
+                            allowsGroupedCheckboxToggle: true
                         )
                     }
                 }
             } else if snapshot.taskSummaries.isEmpty {
                 emptyState
             } else {
-                taskRows(snapshot.taskSummaries, snapshot: snapshot, expansionPrefix: "range")
+                taskRows(
+                    snapshot.taskSummaries,
+                    snapshot: snapshot,
+                    expansionPrefix: "range",
+                    allowsGroupedCheckboxToggle: selectedRange == .day
+                )
             }
         }
     }
@@ -298,6 +305,7 @@ struct DayHistoryView: View {
                         tasks: tasks(for: direction),
                         isExpanded: expandedDirectionIDs.contains(direction.id),
                         onToggleExpansion: { toggleDirectionExpansion(direction.id) },
+                        onToggleCheckbox: toggleCheckbox,
                         onEditTask: { todo in editingTodo = todo }
                     )
                 }
@@ -390,7 +398,8 @@ struct DayHistoryView: View {
     private func taskRows(
         _ tasks: [DayHistoryTaskSummary],
         snapshot: DayHistorySnapshot,
-        expansionPrefix: String
+        expansionPrefix: String,
+        allowsGroupedCheckboxToggle: Bool
     ) -> some View {
         ForEach(tasks) { task in
             let expansionID = "\(expansionPrefix)-\(task.id)"
@@ -399,6 +408,9 @@ struct DayHistoryView: View {
                 flows: flows(for: task, in: snapshot),
                 isExpanded: expandedTaskIDs.contains(expansionID),
                 onToggleExpansion: { toggleTaskExpansion(expansionID) },
+                onToggleCheckbox: task.todos.count == 1 || allowsGroupedCheckboxToggle
+                    ? { toggleCheckbox(task) }
+                    : nil,
                 onEdit: { todo in editingTodo = todo }
             )
         }
@@ -431,6 +443,14 @@ struct DayHistoryView: View {
 
     private func taskSectionTitle(_ date: Date) -> String {
         date.formatted(.dateTime.locale(Locale(identifier: "ja_JP")).month().day().weekday(.wide))
+    }
+
+    private func toggleCheckbox(_ task: DayHistoryTaskSummary) {
+        guard !task.todos.isEmpty,
+              task.todos.allSatisfy({ $0.measurement == .checkbox }) else { return }
+        let shouldComplete = !task.todos.allSatisfy(\.isCompleted)
+        task.todos.forEach { $0.setCompleted(shouldComplete) }
+        try? modelContext.save()
     }
 }
 
@@ -475,12 +495,16 @@ private struct HistoryExpandableTaskRow: View {
     let flows: [DayHistoryFlow]
     let isExpanded: Bool
     let onToggleExpansion: () -> Void
+    let onToggleCheckbox: (() -> Void)?
     let onEdit: (Todo) -> Void
 
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 10) {
-                HistoryTodoProgressIndicator(task: task)
+                HistoryTodoProgressIndicator(
+                    task: task,
+                    onToggleCheckbox: onToggleCheckbox
+                )
 
                 HStack(spacing: 10) {
                     HStack(spacing: 10) {
@@ -546,51 +570,73 @@ private struct HistoryExpandableTaskRow: View {
 
 private struct HistoryTodoProgressIndicator: View {
     let task: DayHistoryTaskSummary
+    let onToggleCheckbox: (() -> Void)?
 
+    @ViewBuilder
     var body: some View {
-        Group {
-            switch measurement {
-            case .checkbox:
-                RoundedRectangle(cornerRadius: 5)
-                    .strokeBorder(tint, lineWidth: 1.6)
-                    .background {
-                        RoundedRectangle(cornerRadius: 5)
-                            .fill(isCompleted ? tint : Color.clear)
-                    }
-                    .overlay {
-                        if isCompleted {
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundStyle(.white)
-                        }
-                    }
-                    .frame(width: 20, height: 20)
-            case .focusBlocks, .minutes:
-                ZStack {
-                    Circle()
-                        .stroke(tint.opacity(0.22), lineWidth: 3)
-                    Circle()
-                        .trim(from: 0, to: progress)
-                        .stroke(tint, style: StrokeStyle(lineWidth: 3, lineCap: .round))
-                        .rotationEffect(.degrees(-90))
-
-                    if measurement == .minutes {
-                        Image(systemName: "timer")
-                            .font(.system(size: 9, weight: .semibold))
-                            .foregroundStyle(tint)
-                    } else if isCompleted {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundStyle(tint)
-                    }
+        switch measurement {
+        case .checkbox:
+            if let onToggleCheckbox {
+                Button(action: onToggleCheckbox) {
+                    checkbox
                 }
-                .frame(width: 22, height: 22)
+                .buttonStyle(.plain)
+                .frame(width: 34, height: 34)
+                .accessibilityLabel(isCompleted ? "未完了に戻す" : "完了にする")
+                .accessibilityValue(progressDescription)
+            } else {
+                checkbox
+                    .frame(width: 34, height: 34)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("タスク進捗")
+                    .accessibilityValue(progressDescription)
+            }
+        case .focusBlocks, .minutes:
+            progressRing
+                .frame(width: 34, height: 34)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("タスク進捗")
+                .accessibilityValue(progressDescription)
+        }
+    }
+
+    private var checkbox: some View {
+        RoundedRectangle(cornerRadius: 5)
+            .strokeBorder(tint, lineWidth: 1.6)
+            .background {
+                RoundedRectangle(cornerRadius: 5)
+                    .fill(isCompleted ? tint : Color.clear)
+            }
+            .overlay {
+                if isCompleted {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(.white)
+                }
+            }
+            .frame(width: 20, height: 20)
+    }
+
+    private var progressRing: some View {
+        ZStack {
+            Circle()
+                .stroke(tint.opacity(0.22), lineWidth: 3)
+            Circle()
+                .trim(from: 0, to: progress)
+                .stroke(tint, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+
+            if measurement == .minutes {
+                Image(systemName: "timer")
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(tint)
+            } else if isCompleted {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(tint)
             }
         }
-        .frame(width: 34, height: 34)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("タスク進捗")
-        .accessibilityValue(progressDescription)
+        .frame(width: 22, height: 22)
     }
 
     private var measurement: TodoMeasurement {
@@ -630,6 +676,7 @@ private struct HistoryExpandableDirectionRow: View {
     let tasks: [DayHistoryTaskSummary]
     let isExpanded: Bool
     let onToggleExpansion: () -> Void
+    let onToggleCheckbox: (DayHistoryTaskSummary) -> Void
     let onEditTask: (Todo) -> Void
 
     var body: some View {
@@ -676,7 +723,10 @@ private struct HistoryExpandableDirectionRow: View {
                     ForEach(tasks) { task in
                         HStack(spacing: 10) {
                             if task.todo != nil {
-                                HistoryTodoProgressIndicator(task: task)
+                                HistoryTodoProgressIndicator(
+                                    task: task,
+                                    onToggleCheckbox: task.todos.count == 1 ? { onToggleCheckbox(task) } : nil
+                                )
                             }
                             Text(task.directionSymbol)
                             Text(task.title)
