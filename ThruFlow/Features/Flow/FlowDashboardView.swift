@@ -18,6 +18,8 @@ struct FlowDashboardView: View {
     @Query(sort: \Todo.sortIndex, order: .forward) private var todos: [Todo]
     @Query(sort: \FlowSession.startedAt, order: .forward) private var sessions: [FlowSession]
 
+    @AppStorage("flow.timelineMode") private var timelineModeRawValue = FlowTimelineMode.elastic.rawValue
+
     @State private var inspectedSession: FlowSession?
     @State private var hoveredTimelineSegmentID: UUID?
     @State private var selectedTimelineSegmentID: UUID?
@@ -39,7 +41,8 @@ struct FlowDashboardView: View {
                 ScrollView {
                     dashboardLayout(
                         snapshot: snapshot,
-                        availableHeight: max(0, viewport.size.height - 40)
+                        availableHeight: max(0, viewport.size.height - 40),
+                        now: timeline.date
                     )
                     .frame(maxWidth: 1320)
                     .padding(20)
@@ -77,14 +80,15 @@ struct FlowDashboardView: View {
 
     private func dashboardLayout(
         snapshot: FlowDashboardSnapshot,
-        availableHeight: CGFloat
+        availableHeight: CGFloat,
+        now: Date
     ) -> some View {
         let lowerPanelHeight = max(280, availableHeight - Self.topPanelHeight - 16)
 
         return ViewThatFits(in: .horizontal) {
             Grid(horizontalSpacing: 16, verticalSpacing: 16) {
                 GridRow(alignment: .top) {
-                    flowStage(snapshot: snapshot)
+                    flowStage(snapshot: snapshot, now: now)
                         .frame(minWidth: 560, maxWidth: .infinity)
                         .frame(height: Self.topPanelHeight)
 
@@ -107,7 +111,7 @@ struct FlowDashboardView: View {
                     .frame(maxWidth: .infinity)
                     .frame(height: 360)
 
-                flowStage(snapshot: snapshot)
+                flowStage(snapshot: snapshot, now: now)
                     .frame(height: 340)
 
                 taskColumns
@@ -116,7 +120,7 @@ struct FlowDashboardView: View {
         }
     }
 
-    private func flowStage(snapshot: FlowDashboardSnapshot) -> some View {
+    private func flowStage(snapshot: FlowDashboardSnapshot, now: Date) -> some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .firstTextBaseline, spacing: 16) {
                 VStack(alignment: .leading, spacing: 3) {
@@ -135,7 +139,7 @@ struct FlowDashboardView: View {
             }
 
             streamSurface(snapshot: snapshot)
-            timelineSurface(snapshot: snapshot)
+            timelineSurface(snapshot: snapshot, now: now)
         }
         .padding(18)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -181,15 +185,35 @@ struct FlowDashboardView: View {
         .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 
-    private func timelineSurface(snapshot: FlowDashboardSnapshot) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("今日のタイムライン")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
+    private func timelineSurface(snapshot: FlowDashboardSnapshot, now: Date) -> some View {
+        let range = FlowTimelineRange(mode: timelineMode, date: now, segments: snapshot.segments)
+
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 10) {
+                Text("今日のタイムライン")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+
+                Spacer()
+
+                Picker("タイムライン表示", selection: timelineModeBinding) {
+                    ForEach(FlowTimelineMode.allCases) { mode in
+                        Text(mode.displayName).tag(mode)
+                    }
+                }
+                .labelsHidden()
+                .pickerStyle(.segmented)
+                .frame(width: 150)
+                .controlSize(.small)
+            }
 
             GeometryReader { proxy in
                 let selectedSegment = snapshot.segments.first { $0.id == selectedTimelineSegmentID }
-                let anchorPoint = timelineAnchorPoint(for: selectedSegment, totalWidth: proxy.size.width)
+                let anchorPoint = timelineAnchorPoint(
+                    for: selectedSegment,
+                    range: range,
+                    totalWidth: proxy.size.width
+                )
 
                 ZStack(alignment: .leading) {
                     Capsule()
@@ -197,8 +221,8 @@ struct FlowDashboardView: View {
                         .frame(height: 16)
 
                     ForEach(snapshot.segments) { segment in
-                        let width = segmentWidth(segment, totalWidth: proxy.size.width)
-                        let centerX = proxy.size.width * segment.startFraction + (width / 2)
+                        let width = segmentWidth(segment, range: range, totalWidth: proxy.size.width)
+                        let centerX = proxy.size.width * range.fraction(for: segment.startedAt) + (width / 2)
 
                         Button {
                             selectedTimelineSegmentID = segment.id
@@ -226,7 +250,11 @@ struct FlowDashboardView: View {
                        selectedTimelineSegmentID == nil {
                         TimelineSegmentHoverCard(segment: hoveredSegment)
                             .position(
-                                x: timelineCardX(for: hoveredSegment, totalWidth: proxy.size.width),
+                                x: timelineCardX(
+                                    for: hoveredSegment,
+                                    range: range,
+                                    totalWidth: proxy.size.width
+                                ),
                                 y: -24
                             )
                             .allowsHitTesting(false)
@@ -242,6 +270,7 @@ struct FlowDashboardView: View {
                         hoveredTimelineSegmentID = timelineSegment(
                             at: location.x,
                             segments: snapshot.segments,
+                            range: range,
                             totalWidth: proxy.size.width
                         )?.id
                     case .ended:
@@ -270,11 +299,12 @@ struct FlowDashboardView: View {
             .frame(height: 20)
 
             HStack {
-                ForEach(["0:00", "6:00", "12:00", "18:00", "24:00"], id: \.self) { label in
-                    Text(label)
+                let dates = range.labelDates()
+                ForEach(Array(dates.enumerated()), id: \.offset) { index, date in
+                    Text(timelineLabel(date, index: index, dates: dates))
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
-                    if label != "24:00" { Spacer() }
+                    if index != dates.indices.last { Spacer() }
                 }
             }
         }
@@ -536,8 +566,27 @@ struct FlowDashboardView: View {
         return Double(summary.focusSeconds) / Double(maximum)
     }
 
-    private func segmentWidth(_ segment: FlowDashboardSegment, totalWidth: CGFloat) -> CGFloat {
-        max(6, totalWidth * (segment.endFraction - segment.startFraction))
+    private var timelineMode: FlowTimelineMode {
+        FlowTimelineMode(rawValue: timelineModeRawValue) ?? .elastic
+    }
+
+    private var timelineModeBinding: Binding<FlowTimelineMode> {
+        Binding(
+            get: { timelineMode },
+            set: { mode in
+                timelineModeRawValue = mode.rawValue
+                hoveredTimelineSegmentID = nil
+                selectedTimelineSegmentID = nil
+            }
+        )
+    }
+
+    private func segmentWidth(
+        _ segment: FlowDashboardSegment,
+        range: FlowTimelineRange,
+        totalWidth: CGFloat
+    ) -> CGFloat {
+        max(6, totalWidth * (range.fraction(for: segment.endedAt) - range.fraction(for: segment.startedAt)))
     }
 
     private var timelinePopoverBinding: Binding<Bool> {
@@ -551,38 +600,52 @@ struct FlowDashboardView: View {
         )
     }
 
-    private func timelineCardX(for segment: FlowDashboardSegment, totalWidth: CGFloat) -> CGFloat {
-        let width = segmentWidth(segment, totalWidth: totalWidth)
-        let center = totalWidth * segment.startFraction + (width / 2)
+    private func timelineCardX(
+        for segment: FlowDashboardSegment,
+        range: FlowTimelineRange,
+        totalWidth: CGFloat
+    ) -> CGFloat {
+        let width = segmentWidth(segment, range: range, totalWidth: totalWidth)
+        let center = totalWidth * range.fraction(for: segment.startedAt) + (width / 2)
         return min(max(center, 95), max(95, totalWidth - 95))
     }
 
     private func timelineAnchorPoint(
         for segment: FlowDashboardSegment?,
+        range: FlowTimelineRange,
         totalWidth: CGFloat
     ) -> UnitPoint {
         guard let segment, totalWidth > 0 else { return .center }
-        let width = segmentWidth(segment, totalWidth: totalWidth)
-        let center = totalWidth * segment.startFraction + (width / 2)
+        let width = segmentWidth(segment, range: range, totalWidth: totalWidth)
+        let center = totalWidth * range.fraction(for: segment.startedAt) + (width / 2)
         return UnitPoint(x: min(max(center / totalWidth, 0), 1), y: 0.5)
     }
 
     private func timelineSegment(
         at x: CGFloat,
         segments: [FlowDashboardSegment],
+        range: FlowTimelineRange,
         totalWidth: CGFloat
     ) -> FlowDashboardSegment? {
         segments
             .compactMap { segment -> (segment: FlowDashboardSegment, distance: CGFloat)? in
-                let width = max(segmentWidth(segment, totalWidth: totalWidth), 14)
-                let center = totalWidth * CGFloat(segment.startFraction)
-                    + (segmentWidth(segment, totalWidth: totalWidth) / 2)
+                let segmentVisualWidth = segmentWidth(segment, range: range, totalWidth: totalWidth)
+                let width = max(segmentVisualWidth, 14)
+                let center = totalWidth * CGFloat(range.fraction(for: segment.startedAt))
+                    + (segmentVisualWidth / 2)
                 let distance = abs(x - center)
                 guard distance <= width / 2 else { return nil }
                 return (segment, distance)
             }
             .min { $0.distance < $1.distance }?
             .segment
+    }
+
+    private func timelineLabel(_ date: Date, index: Int, dates: [Date]) -> String {
+        if timelineMode == .fullDay, index == dates.indices.last {
+            return "24:00"
+        }
+        return date.formatted(.dateTime.hour().minute())
     }
 
     private func deleteTimelineSegment(_ segment: FlowDashboardSegment) {

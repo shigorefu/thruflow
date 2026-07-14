@@ -64,6 +64,74 @@ struct FlowDashboardSegment: Identifiable {
     let isActive: Bool
 }
 
+enum FlowTimelineMode: String, CaseIterable, Identifiable {
+    case elastic
+    case fullDay
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .elastic:
+            "Elastic"
+        case .fullDay:
+            "24時間"
+        }
+    }
+}
+
+struct FlowTimelineRange: Equatable {
+    let start: Date
+    let end: Date
+
+    init(
+        mode: FlowTimelineMode,
+        date: Date,
+        segments: [FlowDashboardSegment],
+        calendar: Calendar = .current
+    ) {
+        switch mode {
+        case .fullDay:
+            start = calendar.startOfDay(for: date)
+            end = calendar.date(byAdding: .day, value: 1, to: start)
+                ?? start.addingTimeInterval(86_400)
+        case .elastic:
+            let firstDate = segments.map(\.startedAt).min() ?? date
+            let lastDate = segments.map(\.endedAt).max() ?? date
+            let firstHour = calendar.dateInterval(of: .hour, for: firstDate)
+            let lastHour = calendar.dateInterval(of: .hour, for: lastDate)
+            let resolvedStart = firstHour?.start ?? firstDate
+            let minimumEnd = calendar.date(byAdding: .hour, value: 2, to: resolvedStart)
+                ?? resolvedStart.addingTimeInterval(7_200)
+            let resolvedEnd = lastHour?.end ?? lastDate
+
+            start = resolvedStart
+            end = max(resolvedEnd, minimumEnd)
+        }
+    }
+
+    var duration: TimeInterval {
+        max(end.timeIntervalSince(start), 1)
+    }
+
+    func fraction(for date: Date) -> Double {
+        min(max(date.timeIntervalSince(start) / duration, 0), 1)
+    }
+
+    func labelDates(calendar: Calendar = .current) -> [Date] {
+        let hours = max(1, Int(ceil(duration / 3_600)))
+        let step = max(1, Int(ceil(Double(hours) / 4)))
+        var labels = stride(from: 0, to: hours, by: step).compactMap {
+            calendar.date(byAdding: .hour, value: $0, to: start)
+        }
+
+        if labels.last != end {
+            labels.append(end)
+        }
+        return labels
+    }
+}
+
 @MainActor
 struct FlowDashboardTodoSorter {
     func sorted(_ todos: [Todo]) -> [Todo] {
