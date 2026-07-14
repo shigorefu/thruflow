@@ -134,6 +134,52 @@ struct DayHistoryTests {
         #expect(snapshot.completedTasks.last?.completedAt == nil)
     }
 
+    @Test func historyIntervalAggregatesFlowsAndScheduledTasksAcrossTheSelectedRange() {
+        let day = Date(timeIntervalSince1970: 10 * 86_400)
+        let direction = Direction(name: "仕事", type: .neutral, symbolName: "💻", colorHex: "#0A84FF")
+        let firstTodo = Todo(title: "設計", direction: direction, scheduledDate: day)
+        let secondTodo = Todo(title: "実装", direction: direction, scheduledDate: day.addingTimeInterval(86_400))
+        let firstSession = FlowSession(
+            direction: direction,
+            todo: firstTodo,
+            mode: .twentyFiveFive,
+            phase: .completed,
+            status: .completed,
+            startedAt: day.addingTimeInterval(10 * 3_600),
+            plannedEndAt: day.addingTimeInterval(10 * 3_600 + 25 * 60),
+            endedAt: day.addingTimeInterval(10 * 3_600 + 25 * 60),
+            plannedFocusDurationSeconds: 25 * 60,
+            actualFocusDurationSeconds: 25 * 60,
+            plannedBreakDurationSeconds: 5 * 60
+        )
+        let secondSession = FlowSession(
+            direction: direction,
+            todo: secondTodo,
+            mode: .twentyFiveFive,
+            phase: .completed,
+            status: .completed,
+            startedAt: day.addingTimeInterval(86_400 + 11 * 3_600),
+            plannedEndAt: day.addingTimeInterval(86_400 + 11 * 3_600 + 12 * 60),
+            endedAt: day.addingTimeInterval(86_400 + 11 * 3_600 + 12 * 60),
+            plannedFocusDurationSeconds: 12 * 60,
+            actualFocusDurationSeconds: 12 * 60,
+            plannedBreakDurationSeconds: 3 * 60
+        )
+        let interval = DateInterval(start: day, end: day.addingTimeInterval(2 * 86_400))
+
+        let snapshot = DayHistoryBuilder(calendar: calendar).build(
+            interval: interval,
+            sessions: [firstSession, secondSession],
+            todos: [firstTodo, secondTodo]
+        )
+
+        #expect(snapshot.interval == interval)
+        #expect(snapshot.totalFocusSeconds == 37 * 60)
+        #expect(snapshot.taskSummaries.count == 2)
+        #expect(snapshot.directionSummaries.first?.taskCount == 2)
+        #expect(snapshot.directionSummaries.first?.flowCount == 2)
+    }
+
     @Test func editingFlowMovesOnlyItsProgressToTheNewTaskAndDirection() {
         let originalDirection = Direction(name: "仕事", type: .neutral, focusDurationSeconds: 50 * 60)
         let newDirection = Direction(name: "学習", type: .neutral, focusDurationSeconds: 0)

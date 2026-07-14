@@ -143,7 +143,9 @@ struct HistoryMiniCalendar: View {
     var selectionMode: HistoryMiniCalendarSelectionMode = .day
 
     private let calendar = Calendar.current
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 2), count: 7)
+    private var columns: [GridItem] {
+        Array(repeating: GridItem(.flexible(), spacing: selectionMode == .week ? 0 : 2), count: 7)
+    }
 
     private var monthDays: [Date] {
         guard let month = calendar.dateInterval(of: .month, for: selectedDate),
@@ -188,10 +190,11 @@ struct HistoryMiniCalendar: View {
                     } label: {
                         Text("\(calendar.component(.day, from: date))")
                             .font(.caption)
-                            .frame(width: 24, height: 24)
+                            .frame(width: selectionMode == .week ? nil : 24, height: 24)
+                            .frame(maxWidth: selectionMode == .week ? .infinity : nil)
                             .foregroundStyle(dayForeground(date))
                             .background(dayBackground(date))
-                            .clipShape(RoundedRectangle(cornerRadius: selectionMode == .week ? 6 : 12))
+                            .clipShape(dayShape(date))
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(accessibilityDate(date))
@@ -212,15 +215,16 @@ struct HistoryMiniCalendar: View {
 
     private func dayForeground(_ date: Date) -> Color {
         guard calendar.isDate(date, equalTo: selectedDate, toGranularity: .month) else { return .secondary }
+        if selectionMode == .week, isInSelectedWeek(date) { return .primary }
         return calendar.isDate(date, inSameDayAs: selectedDate) ? .white : .primary
     }
 
     @ViewBuilder
     private func dayBackground(_ date: Date) -> some View {
-        if calendar.isDate(date, inSameDayAs: selectedDate) {
+        if selectionMode == .week, isInSelectedWeek(date) {
+            Color.accentColor.opacity(0.22)
+        } else if calendar.isDate(date, inSameDayAs: selectedDate) {
             Color.accentColor
-        } else if selectionMode == .week, isInSelectedWeek(date) {
-            Color.accentColor.opacity(0.16)
         } else if calendar.isDateInToday(date) {
             Color.accentColor.opacity(0.16)
         } else {
@@ -234,7 +238,31 @@ struct HistoryMiniCalendar: View {
 
     private func isInSelectedWeek(_ date: Date) -> Bool {
         guard let interval = calendar.dateInterval(of: .weekOfYear, for: selectedDate) else { return false }
-        return interval.contains(date)
+        let offset = calendar.dateComponents(
+            [.day],
+            from: calendar.startOfDay(for: interval.start),
+            to: calendar.startOfDay(for: date)
+        ).day
+        return offset.map { (0..<7).contains($0) } ?? false
+    }
+
+    private func dayShape(_ date: Date) -> UnevenRoundedRectangle {
+        guard selectionMode == .week, isInSelectedWeek(date),
+              let interval = calendar.dateInterval(of: .weekOfYear, for: selectedDate) else {
+            return UnevenRoundedRectangle(cornerRadii: .init(topLeading: 12, bottomLeading: 12, bottomTrailing: 12, topTrailing: 12))
+        }
+
+        let isStart = calendar.isDate(date, inSameDayAs: interval.start)
+        let lastDate = calendar.date(byAdding: .day, value: 6, to: interval.start) ?? interval.start
+        let isEnd = calendar.isDate(date, inSameDayAs: lastDate)
+        return UnevenRoundedRectangle(
+            cornerRadii: .init(
+                topLeading: isStart ? 6 : 0,
+                bottomLeading: isStart ? 6 : 0,
+                bottomTrailing: isEnd ? 6 : 0,
+                topTrailing: isEnd ? 6 : 0
+            )
+        )
     }
 }
 

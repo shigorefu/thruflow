@@ -239,9 +239,9 @@ struct FlowDashboardView: View {
                             minimumWidth: 12
                         )
 
-                        Capsule()
-                            .fill(Color.secondary.opacity(0.42))
-                            .frame(width: width, height: 12)
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.secondary.opacity(0.28))
+                            .frame(width: width, height: 10)
                             .position(
                                 x: intervalCenter(
                                     from: span.startedAt,
@@ -252,6 +252,49 @@ struct FlowDashboardView: View {
                                 y: proxy.size.height / 2
                             )
                             .allowsHitTesting(false)
+                    }
+
+                    ForEach(timelineSessionGroups(snapshot.segments)) { group in
+                        let width = intervalWidth(
+                            from: group.startedAt,
+                            to: group.endedAt,
+                            range: range,
+                            totalWidth: proxy.size.width,
+                            minimumWidth: 5
+                        )
+                        let height: CGFloat = group.isActive ? 18 : 12
+
+                        ZStack(alignment: .leading) {
+                            ForEach(group.segments) { segment in
+                                let segmentStart = max(0, segment.startedAt.timeIntervalSince(group.startedAt))
+                                let segmentDuration = max(1, segment.endedAt.timeIntervalSince(segment.startedAt))
+                                let groupDuration = max(1, group.endedAt.timeIntervalSince(group.startedAt))
+
+                                Rectangle()
+                                    .fill(Color(hex: segment.colorHex))
+                                    .frame(
+                                        width: max(1, width * segmentDuration / groupDuration),
+                                        height: height
+                                    )
+                                    .offset(x: width * segmentStart / groupDuration)
+                            }
+                        }
+                        .frame(width: width, height: height, alignment: .leading)
+                        .clipShape(RoundedRectangle(cornerRadius: height / 2))
+                        .shadow(
+                            color: Color(hex: group.segments.first?.colorHex ?? "#8E8E93").opacity(0.34),
+                            radius: 3
+                        )
+                        .position(
+                            x: intervalCenter(
+                                from: group.startedAt,
+                                to: group.endedAt,
+                                range: range,
+                                totalWidth: proxy.size.width
+                            ),
+                            y: proxy.size.height / 2
+                        )
+                        .allowsHitTesting(false)
                     }
 
                     ForEach(snapshot.breaks) { flowBreak in
@@ -268,9 +311,9 @@ struct FlowDashboardView: View {
                             selectedTimelineItem = .flowBreak(flowBreak.id)
                         } label: {
                             ZStack {
-                                Capsule()
-                                    .fill(Color.gray.opacity(0.68))
-                                    .frame(width: width, height: flowBreak.isActive ? 14 : 12)
+                                RoundedRectangle(cornerRadius: 2)
+                                    .fill(Color.gray.opacity(flowBreak.isActive ? 0.64 : 0.46))
+                                    .frame(width: width, height: flowBreak.isActive ? 14 : 10)
 
                                 if width >= 24 {
                                     Image(systemName: "cup.and.saucer.fill")
@@ -308,16 +351,7 @@ struct FlowDashboardView: View {
                         Button {
                             selectedTimelineItem = .segment(segment.id)
                         } label: {
-                            ZStack {
-                                Color.clear
-
-                                Capsule()
-                                    .fill(Color(hex: segment.colorHex))
-                                    .frame(
-                                        width: width,
-                                        height: segment.isActive ? 18 : 12
-                                    )
-                            }
+                            Color.clear
                             .frame(width: max(width, 14), height: 20)
                             .contentShape(Rectangle())
                         }
@@ -696,6 +730,25 @@ struct FlowDashboardView: View {
         )
     }
 
+    private func timelineSessionGroups(_ segments: [FlowDashboardSegment]) -> [TimelineSessionGroup] {
+        Dictionary(grouping: segments, by: { $0.session.id })
+            .values
+            .compactMap { values in
+                guard let first = values.min(by: { $0.startedAt < $1.startedAt }),
+                      let last = values.max(by: { $0.endedAt < $1.endedAt }) else {
+                    return nil
+                }
+                return TimelineSessionGroup(
+                    id: first.session.id,
+                    startedAt: first.startedAt,
+                    endedAt: last.endedAt,
+                    segments: values.sorted { $0.startedAt < $1.startedAt },
+                    isActive: values.contains(where: \.isActive)
+                )
+            }
+            .sorted { $0.startedAt < $1.startedAt }
+    }
+
     private func segmentWidth(
         _ segment: FlowDashboardSegment,
         range: FlowTimelineRange,
@@ -854,6 +907,14 @@ struct FlowDashboardView: View {
 private enum TimelineItem: Equatable {
     case segment(UUID)
     case flowBreak(UUID)
+}
+
+private struct TimelineSessionGroup: Identifiable {
+    let id: UUID
+    let startedAt: Date
+    let endedAt: Date
+    let segments: [FlowDashboardSegment]
+    let isActive: Bool
 }
 
 private struct TimelineSegmentHoverCard: View {
