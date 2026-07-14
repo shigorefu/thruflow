@@ -75,11 +75,13 @@ Persisted data includes:
 
 - identity and `seriesID`;
 - previous FlowSession ID and optional next FlowSession ID;
-- rest start, timer-stop, and series-connection timestamps;
+- rest start, timer-stop, series-connection, and optional manually adjusted end timestamps;
 - planned rest duration and Long Break flag;
 - creation/update timestamps and soft-delete timestamp.
 
-The continuation deadline is derived as `startedAt + plannedDurationSeconds × 1.5`. A next Flow started on or before that deadline receives the same `seriesID`; a later Flow starts a new series. The stored `connectedUntil` lets the timeline render the complete rest/gap that actually connected two sessions.
+The continuation deadline is derived as `startedAt + plannedDurationSeconds × 1.5`. A next Flow started on or before that deadline receives the same `seriesID`; a later Flow starts a new series. `connectedUntil` stores the original series connection point. Optional `adjustedEndAt` stores a historical duration correction without rewriting the planned break used by product policy.
+
+When an adjusted end overlaps the next session, `FlowBreakEditor` shifts that session and every later FlowSession, FlowSegment, and FlowBreak in the same series by the overlap. Other series are never shifted. A shorter duration leaves a gap rather than pulling later history backward.
 
 Normal continuation windows are:
 

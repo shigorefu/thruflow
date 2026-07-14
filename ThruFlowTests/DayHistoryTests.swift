@@ -232,4 +232,131 @@ struct DayHistoryTests {
 
         #expect(flowBreak.deletedAt == start.addingTimeInterval(40 * 60))
     }
+
+    @Test func editingBreakPushesOnlyOverlappingSessionsInTheSameSeries() throws {
+        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let direction = Direction(name: "仕事", type: .neutral)
+        let seriesID = UUID()
+        let start = Date(timeIntervalSince1970: 100_000)
+
+        let first = FlowSession(
+            seriesID: seriesID,
+            direction: direction,
+            mode: .twentyFiveFive,
+            phase: .completed,
+            status: .completed,
+            startedAt: start,
+            plannedEndAt: start.addingTimeInterval(25 * 60),
+            endedAt: start.addingTimeInterval(25 * 60),
+            plannedFocusDurationSeconds: 25 * 60,
+            actualFocusDurationSeconds: 25 * 60,
+            plannedBreakDurationSeconds: 5 * 60
+        )
+        let secondStart = start.addingTimeInterval(30 * 60)
+        let second = FlowSession(
+            seriesID: seriesID,
+            direction: direction,
+            mode: .twentyFiveFive,
+            phase: .completed,
+            status: .completed,
+            startedAt: secondStart,
+            plannedEndAt: secondStart.addingTimeInterval(25 * 60),
+            endedAt: secondStart.addingTimeInterval(25 * 60),
+            plannedFocusDurationSeconds: 25 * 60,
+            actualFocusDurationSeconds: 25 * 60,
+            plannedBreakDurationSeconds: 5 * 60
+        )
+        let secondSegment = FlowSegment(
+            session: second,
+            direction: direction,
+            todo: nil,
+            startedAt: secondStart,
+            startFocusSeconds: 0
+        )
+        secondSegment.close(at: secondStart.addingTimeInterval(25 * 60), totalFocusSeconds: 25 * 60)
+        second.segments = [secondSegment]
+        let thirdStart = start.addingTimeInterval(60 * 60)
+        let third = FlowSession(
+            seriesID: seriesID,
+            direction: direction,
+            mode: .twentyFiveFive,
+            phase: .completed,
+            status: .completed,
+            startedAt: thirdStart,
+            plannedEndAt: thirdStart.addingTimeInterval(25 * 60),
+            endedAt: thirdStart.addingTimeInterval(25 * 60),
+            plannedFocusDurationSeconds: 25 * 60,
+            actualFocusDurationSeconds: 25 * 60,
+            plannedBreakDurationSeconds: 5 * 60
+        )
+        let unrelated = FlowSession(
+            direction: direction,
+            mode: .twentyFiveFive,
+            phase: .completed,
+            status: .completed,
+            startedAt: start.addingTimeInterval(50 * 60),
+            plannedEndAt: start.addingTimeInterval(75 * 60),
+            endedAt: start.addingTimeInterval(75 * 60),
+            plannedFocusDurationSeconds: 25 * 60,
+            actualFocusDurationSeconds: 25 * 60,
+            plannedBreakDurationSeconds: 5 * 60
+        )
+        let editedBreak = FlowBreak(
+            seriesID: seriesID,
+            previousSessionID: first.id,
+            nextSessionID: second.id,
+            startedAt: first.endedAt!,
+            timerStoppedAt: secondStart,
+            connectedUntil: secondStart,
+            plannedDurationSeconds: 5 * 60
+        )
+        let laterBreak = FlowBreak(
+            seriesID: seriesID,
+            previousSessionID: second.id,
+            nextSessionID: third.id,
+            startedAt: second.endedAt!,
+            timerStoppedAt: thirdStart,
+            connectedUntil: thirdStart,
+            plannedDurationSeconds: 5 * 60
+        )
+
+        context.insert(direction)
+        context.insert(first)
+        context.insert(second)
+        context.insert(third)
+        context.insert(unrelated)
+        context.insert(editedBreak)
+        context.insert(laterBreak)
+
+        let result = try FlowBreakEditor().updateDuration(
+            of: editedBreak,
+            minutes: 10,
+            modelContext: context,
+            now: start.addingTimeInterval(2 * 3_600)
+        )
+
+        #expect(result.shiftedSeconds == 5 * 60)
+        #expect(editedBreak.adjustedEndAt == start.addingTimeInterval(35 * 60))
+        #expect(second.startedAt == start.addingTimeInterval(35 * 60))
+        #expect(second.endedAt == start.addingTimeInterval(60 * 60))
+        #expect(secondSegment.startedAt == second.startedAt)
+        #expect(secondSegment.endedAt == second.endedAt)
+        #expect(laterBreak.startedAt == start.addingTimeInterval(60 * 60))
+        #expect(third.startedAt == start.addingTimeInterval(65 * 60))
+        #expect(unrelated.startedAt == start.addingTimeInterval(50 * 60))
+
+        let shortened = try FlowBreakEditor().updateDuration(
+            of: editedBreak,
+            minutes: 2,
+            modelContext: context,
+            now: start.addingTimeInterval(3 * 3_600)
+        )
+
+        #expect(shortened.shiftedSeconds == 0)
+        #expect(editedBreak.adjustedEndAt == start.addingTimeInterval(27 * 60))
+        #expect(second.startedAt == start.addingTimeInterval(35 * 60))
+    }
 }
