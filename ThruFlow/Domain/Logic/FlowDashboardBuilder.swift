@@ -65,6 +65,40 @@ struct FlowDashboardSegment: Identifiable {
 }
 
 @MainActor
+struct FlowDashboardTodoSorter {
+    func sorted(_ todos: [Todo]) -> [Todo] {
+        todos.sorted { lhs, rhs in
+            if lhs.isCompleted != rhs.isCompleted {
+                return !lhs.isCompleted
+            }
+
+            let lhsPriority = priorityRank(lhs)
+            let rhsPriority = priorityRank(rhs)
+            if lhsPriority != rhsPriority {
+                return lhsPriority < rhsPriority
+            }
+
+            if lhs.sortIndex != rhs.sortIndex {
+                return lhs.sortIndex < rhs.sortIndex
+            }
+
+            return lhs.createdAt < rhs.createdAt
+        }
+    }
+
+    private func priorityRank(_ todo: Todo) -> Int {
+        switch todo.priority {
+        case .high:
+            0
+        case .medium:
+            1
+        case .low:
+            todo.isRoomIfPossible ? 3 : 2
+        }
+    }
+}
+
+@MainActor
 struct FlowDashboardBuilder {
     private let calendar: Calendar
 

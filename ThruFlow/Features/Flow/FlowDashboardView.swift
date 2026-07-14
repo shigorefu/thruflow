@@ -29,6 +29,7 @@ struct FlowDashboardView: View {
     private let requiredPlanner = RequiredTodoPlanner()
     private let progressCalculator = TodoProgressCalculator()
     private let historyEditor = FlowHistoryEditor()
+    private let todoSorter = FlowDashboardTodoSorter()
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { timeline in
@@ -397,12 +398,7 @@ struct FlowDashboardView: View {
     }
 
     private var todayTodos: [Todo] {
-        todos
-            .filter { todayFilter.includes($0) }
-            .sorted {
-                if $0.isCompleted != $1.isCompleted { return !$0.isCompleted }
-                return $0.sortIndex < $1.sortIndex
-            }
+        todoSorter.sorted(todos.filter { todayFilter.includes($0) })
     }
 
     private var standardTodos: [Todo] {

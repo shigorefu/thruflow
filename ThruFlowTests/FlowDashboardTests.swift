@@ -192,6 +192,39 @@ struct FlowDashboardTests {
         #expect(snapshot.segments.map(\.focusSeconds) == [16 * 60, 9 * 60])
     }
 
+    @Test func dashboardTodosSortByCompletionThenPriority() {
+        let direction = Direction(name: "仕事", type: .neutral)
+        let completedHigh = Todo(
+            title: "完了済み",
+            direction: direction,
+            priority: .high,
+            status: .completed,
+            sortIndex: 0
+        )
+        let roomIfPossible = Todo(
+            title: "余裕",
+            direction: direction,
+            priority: .low,
+            isRoomIfPossible: true,
+            sortIndex: 1
+        )
+        let low = Todo(title: "低", direction: direction, priority: .low, sortIndex: 2)
+        let medium = Todo(title: "中", direction: direction, priority: .medium, sortIndex: 3)
+        let highLater = Todo(title: "高2", direction: direction, priority: .high, sortIndex: 5)
+        let highEarlier = Todo(title: "高1", direction: direction, priority: .high, sortIndex: 4)
+
+        let sorted = FlowDashboardTodoSorter().sorted([
+            completedHigh,
+            roomIfPossible,
+            low,
+            medium,
+            highLater,
+            highEarlier,
+        ])
+
+        #expect(sorted.map(\.title) == ["高1", "高2", "中", "低", "余裕", "完了済み"])
+    }
+
     private func makeSession(
         direction: Direction,
         start: Date,
