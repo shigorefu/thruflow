@@ -140,6 +140,7 @@ struct HistoryDayWorkspaceView: View {
 
 struct HistoryMiniCalendar: View {
     @Binding var selectedDate: Date
+    var selectionMode: HistoryMiniCalendarSelectionMode = .day
 
     private let calendar = Calendar.current
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 2), count: 7)
@@ -190,7 +191,7 @@ struct HistoryMiniCalendar: View {
                             .frame(width: 24, height: 24)
                             .foregroundStyle(dayForeground(date))
                             .background(dayBackground(date))
-                            .clipShape(Circle())
+                            .clipShape(RoundedRectangle(cornerRadius: selectionMode == .week ? 6 : 12))
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(accessibilityDate(date))
@@ -218,6 +219,8 @@ struct HistoryMiniCalendar: View {
     private func dayBackground(_ date: Date) -> some View {
         if calendar.isDate(date, inSameDayAs: selectedDate) {
             Color.accentColor
+        } else if selectionMode == .week, isInSelectedWeek(date) {
+            Color.accentColor.opacity(0.16)
         } else if calendar.isDateInToday(date) {
             Color.accentColor.opacity(0.16)
         } else {
@@ -227,6 +230,91 @@ struct HistoryMiniCalendar: View {
 
     private func accessibilityDate(_ date: Date) -> String {
         date.formatted(.dateTime.locale(Locale(identifier: "ja_JP")).year().month().day().weekday())
+    }
+
+    private func isInSelectedWeek(_ date: Date) -> Bool {
+        guard let interval = calendar.dateInterval(of: .weekOfYear, for: selectedDate) else { return false }
+        return interval.contains(date)
+    }
+}
+
+enum HistoryMiniCalendarSelectionMode {
+    case day
+    case week
+}
+
+struct HistoryYearMonthPicker: View {
+    @Binding var selectedDate: Date
+
+    private let calendar = Calendar.current
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 3)
+
+    var body: some View {
+        VStack(spacing: 14) {
+            HStack {
+                Button {
+                    moveYear(by: -1)
+                } label: {
+                    Image(systemName: "chevron.left")
+                }
+
+                Spacer()
+
+                Text(verbatim: "\(selectedYear)年")
+                    .font(.headline)
+
+                Spacer()
+
+                Button {
+                    moveYear(by: 1)
+                } label: {
+                    Image(systemName: "chevron.right")
+                }
+            }
+            .buttonStyle(.borderless)
+
+            LazyVGrid(columns: columns, spacing: 8) {
+                ForEach(1...12, id: \.self) { month in
+                    Button {
+                        select(month: month)
+                    } label: {
+                        Text("\(month)月")
+                            .font(.callout.weight(month == selectedMonth ? .semibold : .regular))
+                            .frame(maxWidth: .infinity, minHeight: 34)
+                            .foregroundStyle(month == selectedMonth ? Color.white : Color.primary)
+                            .background(month == selectedMonth ? Color.accentColor : Color.secondary.opacity(0.08))
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text(verbatim: "\(selectedYear)年\(month)月"))
+                    .accessibilityAddTraits(month == selectedMonth ? .isSelected : [])
+                }
+            }
+        }
+    }
+
+    private var selectedYear: Int {
+        calendar.component(.year, from: selectedDate)
+    }
+
+    private var selectedMonth: Int {
+        calendar.component(.month, from: selectedDate)
+    }
+
+    private func moveYear(by value: Int) {
+        selectedDate = calendar.date(byAdding: .year, value: value, to: selectedDate) ?? selectedDate
+    }
+
+    private func select(month: Int) {
+        var components = DateComponents()
+        components.calendar = calendar
+        components.timeZone = calendar.timeZone
+        components.year = selectedYear
+        components.month = month
+        components.day = 1
+        if let date = components.date {
+            selectedDate = calendar.startOfDay(for: date)
+        }
     }
 }
 

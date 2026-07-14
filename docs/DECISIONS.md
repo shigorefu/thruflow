@@ -100,6 +100,8 @@ Reason: day history needs enough vertical and horizontal space to inspect short 
 
 `タスク` and `方向` reuse the two-column History workspace: aggregates on the left, mini-calendar and daily totals on the right. This keeps date navigation and visual hierarchy stable when switching modes.
 
+Wide `週` keeps a week-selecting mini-calendar on the right; wide `月` replaces it with a twelve-month year picker. Calendar lanes use exact stored intervals rather than minimum visual height, so contiguous Flow and rest records stay in one lane while true overlaps remain side by side.
+
 ## D-015: Dashboard Timeline Shows Flow Series
 
 The Flow dashboard groups connected Flow and rest entries by `seriesID`. One series has one continuous light-gray base line beneath its Direction-colored work and gray rest segments. A different series starts a separate line. History Calendar keeps every Flow and rest as an independent block.

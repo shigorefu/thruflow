@@ -109,6 +109,20 @@ struct HistoryCalendarTests {
         #expect(byID["next"]?.lane == 1)
     }
 
+    @Test func contiguousFlowAndBreaksStayInOneLaneUsingActualTime() {
+        let base = Date(timeIntervalSince1970: 10_000)
+        let firstEnd = base.addingTimeInterval(12 * 60)
+        let breakEnd = firstEnd.addingTimeInterval(3 * 60)
+        let secondEnd = breakEnd.addingTimeInterval(12 * 60)
+        let placements = HistoryOverlapLayout().place([
+            HistoryOverlapInput(id: "flow-1", start: base, end: firstEnd),
+            HistoryOverlapInput(id: "rest", start: firstEnd, end: breakEnd),
+            HistoryOverlapInput(id: "flow-2", start: breakEnd, end: secondEnd)
+        ])
+
+        #expect(placements.allSatisfy { $0.lane == 0 && $0.laneCount == 1 })
+    }
+
     @Test func dayElasticWindowWrapsActivityAndKeepsFourHourMinimum() {
         let day = Date(timeIntervalSince1970: 1783987200)
         let direction = Direction(name: "仕事", type: .neutral)
