@@ -88,51 +88,27 @@ struct FlowDashboardSeriesSpan: Identifiable {
     let endedAt: Date
 }
 
-enum FlowTimelineMode: String, CaseIterable, Identifiable {
-    case elastic
-    case fullDay
-
-    var id: String { rawValue }
-
-    var displayName: String {
-        switch self {
-        case .elastic:
-            "Elastic"
-        case .fullDay:
-            "24時間"
-        }
-    }
-}
-
 struct FlowTimelineRange: Equatable {
     let start: Date
     let end: Date
 
     init(
-        mode: FlowTimelineMode,
         date: Date,
         segments: [FlowDashboardSegment],
         breaks: [FlowDashboardBreak] = [],
         calendar: Calendar = .current
     ) {
-        switch mode {
-        case .fullDay:
-            start = calendar.startOfDay(for: date)
-            end = calendar.date(byAdding: .day, value: 1, to: start)
-                ?? start.addingTimeInterval(86_400)
-        case .elastic:
-            let firstDate = (segments.map(\.startedAt) + breaks.map(\.startedAt)).min() ?? date
-            let lastDate = (segments.map(\.endedAt) + breaks.map(\.endedAt)).max() ?? date
-            let firstHour = calendar.dateInterval(of: .hour, for: firstDate)
-            let lastHour = calendar.dateInterval(of: .hour, for: lastDate)
-            let resolvedStart = firstHour?.start ?? firstDate
-            let minimumEnd = calendar.date(byAdding: .hour, value: 2, to: resolvedStart)
-                ?? resolvedStart.addingTimeInterval(7_200)
-            let resolvedEnd = lastHour?.end ?? lastDate
+        let firstDate = (segments.map(\.startedAt) + breaks.map(\.startedAt)).min() ?? date
+        let lastDate = (segments.map(\.endedAt) + breaks.map(\.endedAt)).max() ?? date
+        let firstHour = calendar.dateInterval(of: .hour, for: firstDate)
+        let lastHour = calendar.dateInterval(of: .hour, for: lastDate)
+        let resolvedStart = firstHour?.start ?? firstDate
+        let minimumEnd = calendar.date(byAdding: .hour, value: 2, to: resolvedStart)
+            ?? resolvedStart.addingTimeInterval(7_200)
+        let resolvedEnd = lastHour?.end ?? lastDate
 
-            start = resolvedStart
-            end = max(resolvedEnd, minimumEnd)
-        }
+        start = resolvedStart
+        end = max(resolvedEnd, minimumEnd)
     }
 
     var duration: TimeInterval {

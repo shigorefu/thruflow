@@ -50,7 +50,6 @@ struct FlowDashboardTests {
     @Test func elasticTimelineUsesCurrentAndFollowingHourWhenEmpty() {
         let now = Date(timeIntervalSince1970: 14 * 3_600 + 37 * 60)
         let range = FlowTimelineRange(
-            mode: .elastic,
             date: now,
             segments: [],
             calendar: calendar
@@ -79,7 +78,6 @@ struct FlowDashboardTests {
             sessions: [morning, afternoon]
         )
         let range = FlowTimelineRange(
-            mode: .elastic,
             date: day,
             segments: snapshot.segments,
             calendar: calendar
@@ -110,7 +108,6 @@ struct FlowDashboardTests {
             sessions: [session]
         )
         let range = FlowTimelineRange(
-            mode: .elastic,
             date: day,
             segments: snapshot.segments,
             calendar: calendar
