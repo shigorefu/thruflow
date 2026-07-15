@@ -683,12 +683,25 @@ struct FlowDashboardView: View {
         let activeDirections = directions.filter { !$0.isArchived }
         var knownTodos = todos
         let minimumSortIndex = todos.map(\.sortIndex).min() ?? 0
-        var inserted = false
+        var hasChanges = false
 
         for (offset, direction) in activeDirections.enumerated() {
             guard direction.type == .habit,
-                  requiredPlanner.shouldAppearToday(direction, on: now),
-                  let todo = requiredPlanner.makeRequiredTodo(
+                  requiredPlanner.shouldAppearToday(direction, on: now) else {
+                continue
+            }
+
+            if let pendingTodo = requiredPlanner.pendingWeeklyTodoToRollForward(
+                for: direction,
+                in: knownTodos,
+                on: now
+            ) {
+                pendingTodo.reschedule(to: Calendar.current.startOfDay(for: now), now: now)
+                hasChanges = true
+                continue
+            }
+
+            guard let todo = requiredPlanner.makeRequiredTodo(
                     for: direction,
                     existingTodos: knownTodos,
                     on: now,
@@ -699,10 +712,10 @@ struct FlowDashboardView: View {
 
             modelContext.insert(todo)
             knownTodos.append(todo)
-            inserted = true
+            hasChanges = true
         }
 
-        if inserted {
+        if hasChanges {
             try? modelContext.save()
         }
     }

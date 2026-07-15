@@ -74,6 +74,29 @@ struct RequiredTodoPlanner {
         }
     }
 
+    func pendingWeeklyTodoToRollForward(
+        for direction: Direction,
+        in todos: [Todo],
+        on date: Date = .now
+    ) -> Todo? {
+        guard direction.type == .habit,
+              direction.goalSchedule == .weeklyCount,
+              shouldAppearToday(direction, on: date) else {
+            return nil
+        }
+
+        let targetDay = calendar.startOfDay(for: date)
+        return todosForCurrentWeek(direction: direction, in: todos, containing: date)
+            .filter { todo in
+                guard !todo.isCompleted,
+                      let scheduledDate = todo.scheduledDate else { return false }
+                return calendar.startOfDay(for: scheduledDate) < targetDay
+            }
+            .max { left, right in
+                (left.scheduledDate ?? .distantPast) < (right.scheduledDate ?? .distantPast)
+            }
+    }
+
     func makeRequiredTodo(
         for direction: Direction,
         existingTodos: [Todo] = [],
