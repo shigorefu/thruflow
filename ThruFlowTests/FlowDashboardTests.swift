@@ -356,6 +356,36 @@ struct FlowDashboardTests {
         #expect(snapshot.totalFocusSeconds == 25 * 60)
         #expect(snapshot.segments.map(\.taskTitle) == ["本文", "確認"])
         #expect(snapshot.segments.map(\.focusSeconds) == [16 * 60, 9 * 60])
+        #expect(snapshot.taskSummaries.map(\.title) == ["本文", "確認"])
+        #expect(snapshot.taskSummaries.map(\.focusSeconds) == [16 * 60, 9 * 60])
+    }
+
+    @Test func dashboardTaskSummaryCombinesFocusFromRepeatedFlows() {
+        let day = Date(timeIntervalSince1970: 604_800)
+        let direction = Direction(name: "開発", type: .neutral, colorHex: "#BF5AF2")
+        let todo = Todo(title: "実装", direction: direction)
+        let morning = makeSession(
+            direction: direction,
+            start: day.addingTimeInterval(9 * 3_600),
+            duration: 25 * 60
+        )
+        let afternoon = makeSession(
+            direction: direction,
+            start: day.addingTimeInterval(14 * 3_600),
+            duration: 50 * 60
+        )
+        morning.todo = todo
+        afternoon.todo = todo
+
+        let snapshot = FlowDashboardBuilder(calendar: calendar).build(
+            date: day.addingTimeInterval(16 * 3_600),
+            sessions: [morning, afternoon]
+        )
+
+        #expect(snapshot.taskSummaries.count == 1)
+        #expect(snapshot.taskSummaries[0].title == "実装")
+        #expect(snapshot.taskSummaries[0].focusSeconds == 75 * 60)
+        #expect(snapshot.taskSummaries[0].colorHex == "#BF5AF2")
     }
 
     @Test func dashboardTodosSortByCompletionThenPriority() {

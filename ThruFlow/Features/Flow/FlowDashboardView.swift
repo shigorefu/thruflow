@@ -489,7 +489,7 @@ struct FlowDashboardView: View {
                     Circle()
                         .stroke(Color.primary.opacity(0.08), lineWidth: 12)
 
-                    ForEach(completionSlices) { slice in
+                    ForEach(flowTaskSlices(snapshot: snapshot)) { slice in
                         Circle()
                             .trim(from: slice.start, to: slice.end)
                             .stroke(
@@ -499,14 +499,23 @@ struct FlowDashboardView: View {
                             .rotationEffect(.degrees(-90))
                     }
 
-                    Text("\(Int((completionRate * 100).rounded()))%")
-                        .font(.title3.weight(.bold))
-                        .monospacedDigit()
+                    VStack(spacing: 1) {
+                        Text(focusText(snapshot.totalFocusSeconds))
+                            .font(.callout.weight(.bold))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                            .monospacedDigit()
+
+                        Text("今日の集中")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.horizontal, 8)
                 }
                 .frame(width: 112, height: 112)
-                .animation(.easeInOut(duration: 0.25), value: completedTodoCount)
+                .animation(.easeInOut(duration: 0.25), value: snapshot.totalFocusSeconds)
 
-                Text("今日の達成  \(completedTodoCount) / \(todayTodos.count)")
+                Text("\(snapshot.flowCount) Flow ・ \(snapshot.taskSummaries.count) タスク")
                     .font(.caption.weight(.medium))
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
@@ -516,10 +525,10 @@ struct FlowDashboardView: View {
             Divider()
 
             VStack(alignment: .leading, spacing: 10) {
-                ForEach(snapshot.directionSummaries.prefix(4)) { summary in
+                ForEach(snapshot.taskSummaries.prefix(4)) { summary in
                     VStack(alignment: .leading, spacing: 5) {
                         HStack {
-                            Text("\(summary.symbol) \(summary.name)")
+                            Text("\(summary.symbol) \(summary.title)")
                                 .font(.caption)
                                 .lineLimit(1)
                             Spacer()
@@ -535,15 +544,15 @@ struct FlowDashboardView: View {
                                 .overlay(alignment: .leading) {
                                     Capsule()
                                         .fill(Color(hex: summary.colorHex))
-                                        .frame(width: proxy.size.width * directionRatio(summary, snapshot: snapshot))
+                                        .frame(width: proxy.size.width * taskRatio(summary, snapshot: snapshot))
                                 }
                         }
                         .frame(height: 6)
                     }
                 }
 
-                if snapshot.directionSummaries.isEmpty {
-                    Text("Flowを記録すると方向別の時間が表示されます")
+                if snapshot.taskSummaries.isEmpty {
+                    Text("Flowを記録するとタスク別の時間が表示されます")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -576,10 +585,6 @@ struct FlowDashboardView: View {
         todayTodos.filter { $0.direction?.type == .nice }
     }
 
-    private var completedTodoCount: Int {
-        todayTodos.filter(\.isCompleted).count
-    }
-
     private var activeDirections: [Direction] {
         directions.filter { !$0.isArchived }
     }
@@ -598,29 +603,19 @@ struct FlowDashboardView: View {
         }
     }
 
-    private var completionRate: Double {
-        guard !todayTodos.isEmpty else { return 0 }
-        return Double(completedTodoCount) / Double(todayTodos.count)
-    }
-
-    private var completionSlices: [DashboardCompletionSlice] {
-        guard !todayTodos.isEmpty else { return [] }
-
-        let completedGroups = Dictionary(
-            grouping: todayTodos.filter(\.isCompleted)
-        ) { todo in
-            todo.direction?.id.uuidString ?? "other"
-        }
-        .sorted { $0.key < $1.key }
+    private func flowTaskSlices(snapshot: FlowDashboardSnapshot) -> [DashboardFlowTaskSlice] {
+        guard snapshot.totalFocusSeconds > 0 else { return [] }
 
         var cursor = 0.0
-        return completedGroups.map { key, todos in
-            let fraction = Double(todos.count) / Double(todayTodos.count)
-            let slice = DashboardCompletionSlice(
-                id: key,
-                start: cursor,
-                end: cursor + fraction,
-                colorHex: todos.first?.direction?.colorHex ?? "#8E8E93"
+        let summaries = snapshot.taskSummaries
+        return summaries.map { summary in
+            let fraction = Double(summary.focusSeconds) / Double(snapshot.totalFocusSeconds)
+            let gap = summaries.count > 1 ? min(0.004, fraction * 0.18) : 0
+            let slice = DashboardFlowTaskSlice(
+                id: summary.id,
+                start: cursor + (gap / 2),
+                end: cursor + fraction - (gap / 2),
+                colorHex: summary.colorHex
             )
             cursor += fraction
             return slice
@@ -704,11 +699,11 @@ struct FlowDashboardView: View {
         }
     }
 
-    private func directionRatio(
-        _ summary: FlowDashboardDirectionSummary,
+    private func taskRatio(
+        _ summary: FlowDashboardTaskSummary,
         snapshot: FlowDashboardSnapshot
     ) -> Double {
-        guard let maximum = snapshot.directionSummaries.map(\.focusSeconds).max(), maximum > 0 else { return 0 }
+        guard let maximum = snapshot.taskSummaries.map(\.focusSeconds).max(), maximum > 0 else { return 0 }
         return Double(summary.focusSeconds) / Double(maximum)
     }
 
@@ -1175,7 +1170,7 @@ private enum TimelineSegmentFormat {
     }
 }
 
-private struct DashboardCompletionSlice: Identifiable {
+private struct DashboardFlowTaskSlice: Identifiable {
     let id: String
     let start: Double
     let end: Double
