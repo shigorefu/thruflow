@@ -112,7 +112,7 @@ Reason: the dashboard should communicate uninterrupted Flow rhythm without destr
 
 ## D-016: Dashboard Statistics Are A Derived Carousel
 
-The compact Dashboard Statistics card cycles between Flow-time distribution, a 3/7-day Flow trend with previous-day comparisons, and today's completion status. Distribution switches between Task and Direction without changing persistence. `DashboardStatisticsBuilder` owns historical calculations so SwiftUI only renders derived values.
+The fixed-height compact Dashboard Statistics card cycles between Flow-time distribution, a 7-day Flow trend with previous-day comparisons, and today's completion status. Distribution switches between Task and Direction without changing persistence. `DashboardStatisticsBuilder` owns historical calculations so SwiftUI only renders derived values.
 
 Reason: the first screen should answer where time went, how the recent rhythm changed, and what remains today without duplicating the full Statistics screen.
 

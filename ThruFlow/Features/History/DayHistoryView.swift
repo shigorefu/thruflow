@@ -91,33 +91,33 @@ struct DayHistoryView: View {
 
     private var historyToolbar: some View {
         ViewThatFits(in: .horizontal) {
-            ZStack {
-                HStack(spacing: 16) {
-                    historyIdentity
-                    Spacer(minLength: 12)
-                    Button("今日") {
-                        selectedDate = calendar.startOfDay(for: .now)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    rangePicker.frame(width: 150)
-                }
-
+            HStack(spacing: 16) {
+                historyIdentity
+                Spacer(minLength: 12)
                 modePicker.frame(width: 330)
+                Spacer(minLength: 12)
+                todayButton
+                rangePicker.frame(width: 150)
             }
 
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 12) {
                     historyIdentity
-                    Spacer()
-                    Button("今日") {
-                        selectedDate = calendar.startOfDay(for: .now)
-                    }
-                    .buttonStyle(.borderedProminent)
+                    Spacer(minLength: 8)
+                    todayButton
                     rangePicker.frame(width: 150)
                 }
                 modePicker.frame(maxWidth: .infinity)
             }
         }
+    }
+
+    private var todayButton: some View {
+        Button("今日") {
+            selectedDate = calendar.startOfDay(for: .now)
+        }
+        .buttonStyle(.borderedProminent)
+        .fixedSize()
     }
 
     private var historyIdentity: some View {

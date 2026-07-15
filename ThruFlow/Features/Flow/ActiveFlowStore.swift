@@ -26,6 +26,7 @@ final class ActiveFlowStore: ObservableObject {
 
     private let engine = FlowTimerEngine()
     private let progress = FlowProgressCalculator()
+    private let historyEditor = FlowHistoryEditor()
     private let seriesPolicy = FlowSeriesPolicy()
     private let notifications: FlowNotificationService
     private let defaults: UserDefaults
@@ -319,9 +320,20 @@ final class ActiveFlowStore: ObservableObject {
     func destroy(modelContext: ModelContext, now: Date = .now) {
         notifications.cancelPendingFlowNotifications()
 
-        if let activeSession {
-            openBreak(for: activeSession.id, modelContext: modelContext)?.deletedAt = now
-            modelContext.delete(activeSession)
+        if isBreakPhase {
+            if let activeSession {
+                if let flowBreak = openBreak(for: activeSession.id, modelContext: modelContext) {
+                    flowBreak.deletedAt = now
+                    flowBreak.updatedAt = now
+                }
+                activeSession.complete(now: now)
+            }
+        } else if let activeSession {
+            if didApplyProgress {
+                historyEditor.delete(session: activeSession, modelContext: modelContext, now: now)
+            } else {
+                modelContext.delete(activeSession)
+            }
         }
 
         activeSession = nil

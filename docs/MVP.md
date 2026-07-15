@@ -26,7 +26,7 @@ Current MVP goal:
 - Todo memo storage.
 - Canonical `履歴` with Flow calendar and Task/Direction aggregates for `日`, `週`, and `月`.
 - Manual historical Flow creation and correction without automatically completing a linked Task.
-- Dashboard statistics carousel for time distribution, 3/7-day Flow trend, and completion status.
+- Dashboard statistics carousel for time distribution, a 7-day Flow trend, and completion status.
 - Flow and Tasks contribution-style statistics.
 
 ## Not Included
