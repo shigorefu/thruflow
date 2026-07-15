@@ -126,6 +126,8 @@ Reason: correction workflows must use the same accounting path as timer-created 
 
 Only `チェック` indicators are directly interactive. `集中ブロック` and `分` indicators are read-only in Tasks, History, the dashboard, and the player because persisted Flow time owns their progress.
 
+Measured Todo progress is reconciled from credited Flow history after every FlowSession/FlowSegment creation, edit, or deletion. The same idempotent reconciliation runs once at app launch to repair legacy drift. Relative progress deltas are not authoritative because deleting or reassigning old history must also recompute completion state.
+
 Reason: one source of truth prevents UI taps from disagreeing with recorded focus history.
 
 ## Open Questions

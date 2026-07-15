@@ -19,7 +19,8 @@ SwiftUI views should call domain logic instead of owning product rules directly.
 - `TaskRescheduleService` validates kanban and month-grid drag-and-drop.
 - Date-less Task presentation is deferred; no Inbox navigation is exposed.
 - `RequiredTodoPlanner` creates scheduled habit tasks.
-- `FlowProgressCalculator` writes focused time to Direction and Todo.
+- `FlowProgressCalculator` defines focused-time conversion for isolated calculations.
+- `FlowProgressReconciler` rebuilds measured Todo progress/completion and Direction focus totals from credited Flow history after every history mutation and once at app launch.
 - `Todo.notes` stores memo.
 - `FlowSession` stores timing/history.
 - `FlowSegment` stores Task/Direction intervals and cumulative focused-second boundaries within a FlowSession.
@@ -30,7 +31,7 @@ SwiftUI views should call domain logic instead of owning product rules directly.
 - `FlowDashboardBuilder` groups connected records by `seriesID` into continuous dashboard series spans without mutating calendar history.
 - `HistoryDayTimelineWindowBuilder` derives the testable Elastic/full-day hour range independently from SwiftUI, including records that cross midnight.
 - `HistoryOverlapLayout` assigns deterministic side-by-side lanes using actual and minimum visual duration so short records cannot overlap in rendering.
-- `FlowHistoryEditor` creates independent completed manual Flow records and applies progress deltas when historical Flow records change.
+- `FlowHistoryEditor` creates independent completed manual Flow records and delegates affected progress rebuilding to `FlowProgressReconciler` when history changes.
 - `FlowDashboardBuilder` derives today's totals, Direction palette, and timeline segments from `FlowSession`, with a live overlay for the active creditable Flow.
 - `DashboardStatisticsBuilder` derives seven-day bars, previous-day deltas, and the most-grown Direction outside SwiftUI.
 - `FlowVisualState` converts 0...6 daily Blocks into clamped speed, volume, layer count, and mode-specific wave character without placing those rules in SwiftUI.
@@ -50,7 +51,7 @@ Cover:
 - Block conversion and progress.
 - Flow timer transitions.
 - Statistics range construction and filters.
-- Day-history grouping, legacy untimed completions, and Flow correction deltas.
+- Day-history grouping, legacy untimed completions, and deterministic Flow progress reconciliation after create/edit/delete.
 - Manual Flow creation, linked Task progress without implicit completion, and fixed-Direction Task creation.
 - Flow series continuation, Long Break thresholds, rest correction, and same-series downstream shifting.
 - Flow dashboard totals, palette ordering, day filtering, live minimum-credit behavior, and timeline normalization.

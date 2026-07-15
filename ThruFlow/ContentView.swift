@@ -9,70 +9,81 @@ import SwiftUI
 import SwiftData
 
 struct ContentView: View {
+    @Environment(\.modelContext) private var modelContext
+
     @State private var selection: AppSection? = .flow
     @State private var tabSelection: AppSection = .flow
     @State private var historyDate = Calendar.current.startOfDay(for: .now)
+    @State private var didReconcileFlowProgress = false
 
     var body: some View {
+        Group {
 #if os(macOS)
-        NavigationSplitView {
-            List(selection: $selection) {
-                Label("Flow", systemImage: "waveform.path")
+            NavigationSplitView {
+                List(selection: $selection) {
+                    Label("Flow", systemImage: "waveform.path")
+                        .tag(AppSection.flow)
+
+                    Label("タスク", systemImage: "checklist")
+                        .tag(AppSection.tasks)
+
+                    Label("履歴", systemImage: "clock.arrow.circlepath")
+                        .tag(AppSection.history)
+
+                    Label("方向", systemImage: "point.3.connected.trianglepath.dotted")
+                        .tag(AppSection.directions)
+
+                    Label("統計", systemImage: "square.grid.3x3")
+                        .tag(AppSection.statistics)
+                }
+                .navigationTitle("スルフロ")
+            } detail: {
+                detailContent
+            }
+#else
+            TabView(selection: $tabSelection) {
+                FlowDashboardView()
+                    .tabItem {
+                        Label("Flow", systemImage: "waveform.path")
+                    }
                     .tag(AppSection.flow)
 
-                Label("タスク", systemImage: "checklist")
+                TasksView()
+                    .tabItem {
+                        Label("タスク", systemImage: "checklist")
+                    }
                     .tag(AppSection.tasks)
 
-                Label("履歴", systemImage: "clock.arrow.circlepath")
+                DayHistoryView(initialDate: historyDate)
+                    .id(historyDate)
+                    .tabItem {
+                        Label("履歴", systemImage: "clock.arrow.circlepath")
+                    }
                     .tag(AppSection.history)
 
-                Label("方向", systemImage: "point.3.connected.trianglepath.dotted")
+                DirectionListView()
+                    .tabItem {
+                        Label("方向", systemImage: "point.3.connected.trianglepath.dotted")
+                    }
                     .tag(AppSection.directions)
 
-                Label("統計", systemImage: "square.grid.3x3")
+                StatisticsView { date in
+                    historyDate = Calendar.current.startOfDay(for: date)
+                    tabSelection = .history
+                }
+                    .tabItem {
+                        Label("統計", systemImage: "square.grid.3x3")
+                    }
                     .tag(AppSection.statistics)
             }
-            .navigationTitle("スルフロ")
-        } detail: {
-            detailContent
-        }
-#else
-        TabView(selection: $tabSelection) {
-            FlowDashboardView()
-                .tabItem {
-                    Label("Flow", systemImage: "waveform.path")
-                }
-                .tag(AppSection.flow)
-
-            TasksView()
-                .tabItem {
-                    Label("タスク", systemImage: "checklist")
-                }
-                .tag(AppSection.tasks)
-
-            DayHistoryView(initialDate: historyDate)
-                .id(historyDate)
-                .tabItem {
-                    Label("履歴", systemImage: "clock.arrow.circlepath")
-                }
-                .tag(AppSection.history)
-
-            DirectionListView()
-                .tabItem {
-                    Label("方向", systemImage: "point.3.connected.trianglepath.dotted")
-                }
-                .tag(AppSection.directions)
-
-            StatisticsView { date in
-                historyDate = Calendar.current.startOfDay(for: date)
-                tabSelection = .history
-            }
-                .tabItem {
-                    Label("統計", systemImage: "square.grid.3x3")
-                }
-                .tag(AppSection.statistics)
-        }
 #endif
+        }
+        .task {
+            guard !didReconcileFlowProgress else { return }
+            didReconcileFlowProgress = true
+            FlowProgressReconciler().reconcileAll(modelContext: modelContext)
+            try? modelContext.save()
+        }
     }
 
 #if os(macOS)
