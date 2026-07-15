@@ -94,7 +94,7 @@ Weekly-count Habit Directions create one pending Todo at a time. A completed Tod
 
 ## Task Calendar
 
-`TaskCalendarBuilder` creates deterministic one-day, three-day, seven-day, and full-week month-grid date ranges. `TaskRescheduleService` validates calendar drag-and-drop independently from SwiftUI.
+`TaskCalendarBuilder` creates deterministic day, seven-day week, and month-grid date ranges. `TaskRescheduleService` validates calendar drag-and-drop independently from SwiftUI.
 
 Normal active Tasks may change `scheduledDate`. Completed Tasks and fixed daily/weekday Habit instances cannot move. Weekly-count Habit movement delegates to `RequiredTodoPlanner` feasibility rules.
 
@@ -102,4 +102,4 @@ Normal active Tasks may change `scheduledDate`. Completed Tasks and fixed daily/
 
 Flow statistics and day history are derived from FlowSession actual focus seconds. Task statistics use `Todo.completedAt`, with `updatedAt` as a legacy date fallback. Legacy completed Todos without `completedAt` are displayed without an invented clock time.
 
-`DayHistoryBuilder` produces daily Task/Direction aggregates. `HistoryCalendarBuilder` projects actual FlowSession, FlowSegment, and FlowBreak records into separate date-range calendar items without persistence; Todo completion remains aggregate data rather than a calendar item. `FlowDashboardBuilder` derives connected `seriesSpans` from `seriesID` for the dashboard's continuous line without changing calendar records. `HistoryDayTimelineWindowBuilder` derives the day view's Elastic/full-day hour range, while `HistoryOverlapLayout` assigns lanes to colliding actual or minimum-visual intervals independently from SwiftUI. `FlowHistoryEditor` creates independent manual Flow records and corrects Direction and measured Todo totals when a historical Flow is changed or deleted.
+`DayHistoryBuilder` produces daily Task/Direction aggregates. `HistoryCalendarBuilder` projects actual FlowSession, FlowSegment, and FlowBreak records into separate date-range calendar items without persistence; Todo completion remains aggregate data rather than a calendar item. `FlowDashboardBuilder` derives connected `seriesSpans` from `seriesID` for the dashboard's continuous line without changing calendar records. `DashboardStatisticsBuilder` derives 3/7-day Flow values, previous-day deltas, and Direction growth without persistence. `HistoryDayTimelineWindowBuilder` derives the day view's Elastic/full-day hour range, while `HistoryOverlapLayout` assigns lanes to colliding actual or minimum-visual intervals independently from SwiftUI. `FlowHistoryEditor` creates independent manual Flow records and corrects Direction and measured Todo totals when a historical Flow is changed or deleted.

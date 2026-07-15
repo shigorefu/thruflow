@@ -25,6 +25,9 @@ struct FlowDashboardView: View {
     @State private var selectedTimelineItem: TimelineItem?
     @State private var editingTodo: Todo?
     @State private var showsQuickComposer = false
+    @State private var statisticsPage = DashboardStatisticsPage.distribution
+    @State private var distributionMode = DashboardDistributionMode.task
+    @State private var trendRange = DashboardTrendRange.sevenDays
 
     private let builder = FlowDashboardBuilder()
     private let todayFilter = TodayTodoFilter()
@@ -33,6 +36,7 @@ struct FlowDashboardView: View {
     private let historyEditor = FlowHistoryEditor()
     private let breakEditor = FlowBreakEditor()
     private let todoSorter = FlowDashboardTodoSorter()
+    private let statisticsBuilder = DashboardStatisticsBuilder()
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { timeline in
@@ -480,84 +484,45 @@ struct FlowDashboardView: View {
     }
 
     private func statisticsPanel(snapshot: FlowDashboardSnapshot) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Label("統計", systemImage: "chart.bar.xaxis")
-                .font(.headline)
-
-            VStack(spacing: 10) {
-                ZStack {
-                    Circle()
-                        .stroke(Color.primary.opacity(0.08), lineWidth: 12)
-
-                    ForEach(flowTaskSlices(snapshot: snapshot)) { slice in
-                        Circle()
-                            .trim(from: slice.start, to: slice.end)
-                            .stroke(
-                                Color(hex: slice.colorHex),
-                                style: StrokeStyle(lineWidth: 12, lineCap: .butt)
-                            )
-                            .rotationEffect(.degrees(-90))
-                    }
-
-                    VStack(spacing: 1) {
-                        Text(focusText(snapshot.totalFocusSeconds))
-                            .font(.callout.weight(.bold))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
-                            .monospacedDigit()
-
-                        Text("今日の集中")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.horizontal, 8)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 8) {
+                Label("統計", systemImage: "chart.bar.xaxis")
+                    .font(.headline)
+                Spacer()
+                Button { moveStatisticsPage(-1) } label: {
+                    Image(systemName: "chevron.left")
                 }
-                .frame(width: 112, height: 112)
-                .animation(.easeInOut(duration: 0.25), value: snapshot.totalFocusSeconds)
+                Button { moveStatisticsPage(1) } label: {
+                    Image(systemName: "chevron.right")
+                }
+            }
+            .buttonStyle(.plain)
 
-                Text("\(snapshot.flowCount) Flow ・ \(snapshot.taskSummaries.count) タスク")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.secondary)
-                    .monospacedDigit()
+            Text(statisticsPage.title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            Group {
+                switch statisticsPage {
+                case .distribution:
+                    statisticsDistributionPage(snapshot: snapshot)
+                case .trend:
+                    statisticsTrendPage(snapshot: snapshot)
+                case .achievement:
+                    statisticsAchievementPage
+                }
+            }
+            .id(statisticsPage)
+            .transition(.opacity.combined(with: .scale(scale: 0.98)))
+
+            HStack(spacing: 5) {
+                ForEach(DashboardStatisticsPage.allCases) { page in
+                    Circle()
+                        .fill(page == statisticsPage ? Color.accentColor : Color.secondary.opacity(0.25))
+                        .frame(width: 5, height: 5)
+                }
             }
             .frame(maxWidth: .infinity)
-
-            Divider()
-
-            VStack(alignment: .leading, spacing: 10) {
-                ForEach(snapshot.taskSummaries.prefix(4)) { summary in
-                    VStack(alignment: .leading, spacing: 5) {
-                        HStack {
-                            Text("\(summary.symbol) \(summary.title)")
-                                .font(.caption)
-                                .lineLimit(1)
-                            Spacer()
-                            Text(focusText(summary.focusSeconds))
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                                .monospacedDigit()
-                        }
-
-                        GeometryReader { proxy in
-                            Capsule()
-                                .fill(Color.primary.opacity(0.07))
-                                .overlay(alignment: .leading) {
-                                    Capsule()
-                                        .fill(Color(hex: summary.colorHex))
-                                        .frame(width: proxy.size.width * taskRatio(summary, snapshot: snapshot))
-                                }
-                        }
-                        .frame(height: 6)
-                    }
-                }
-
-                if snapshot.taskSummaries.isEmpty {
-                    Text("Flowを記録するとタスク別の時間が表示されます")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(16)
@@ -567,6 +532,154 @@ struct FlowDashboardView: View {
             RoundedRectangle(cornerRadius: 8)
                 .strokeBorder(Color.primary.opacity(0.08))
         }
+    }
+
+    private func statisticsDistributionPage(snapshot: FlowDashboardSnapshot) -> some View {
+        VStack(spacing: 12) {
+            Picker("集計単位", selection: $distributionMode) {
+                ForEach(DashboardDistributionMode.allCases) { mode in
+                    Text(mode.title).tag(mode)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+
+            statisticsDonut(snapshot: snapshot)
+
+            VStack(alignment: .leading, spacing: 9) {
+                ForEach(distributionRows(snapshot: snapshot).prefix(4)) { row in
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text("\(row.symbol) \(row.title)")
+                                .font(.caption)
+                                .lineLimit(1)
+                            Spacer()
+                            Text(focusText(row.focusSeconds))
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .monospacedDigit()
+                        }
+                        GeometryReader { proxy in
+                            Capsule()
+                                .fill(Color.primary.opacity(0.07))
+                                .overlay(alignment: .leading) {
+                                    Capsule()
+                                        .fill(Color(hex: row.colorHex))
+                                        .frame(width: proxy.size.width * distributionRatio(row, snapshot: snapshot))
+                                }
+                        }
+                        .frame(height: 5)
+                    }
+                }
+            }
+
+            if distributionRows(snapshot: snapshot).isEmpty {
+                Text("Flowを記録すると時間配分が表示されます")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+        }
+    }
+
+    private func statisticsDonut(snapshot: FlowDashboardSnapshot) -> some View {
+        ZStack {
+            Circle()
+                .stroke(Color.primary.opacity(0.08), lineWidth: 12)
+            ForEach(distributionSlices(snapshot: snapshot)) { slice in
+                Circle()
+                    .trim(from: slice.start, to: slice.end)
+                    .stroke(Color(hex: slice.colorHex), style: StrokeStyle(lineWidth: 12, lineCap: .butt))
+                    .rotationEffect(.degrees(-90))
+            }
+            VStack(spacing: 1) {
+                Text(focusText(snapshot.totalFocusSeconds))
+                    .font(.callout.weight(.bold))
+                    .minimumScaleFactor(0.7)
+                    .monospacedDigit()
+                Text("今日の集中")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(width: 108, height: 108)
+        .frame(maxWidth: .infinity)
+        .animation(.easeInOut(duration: 0.25), value: snapshot.totalFocusSeconds)
+    }
+
+    private func statisticsTrendPage(snapshot: FlowDashboardSnapshot) -> some View {
+        let days = statisticsBuilder.days(
+            count: trendRange.dayCount,
+            endingOn: snapshot.date,
+            sessions: sessions,
+            breaks: flowBreaks
+        )
+        let comparison = statisticsBuilder.comparison(
+            on: snapshot.date,
+            sessions: sessions,
+            breaks: flowBreaks,
+            todos: todos
+        )
+
+        return VStack(alignment: .leading, spacing: 12) {
+            Picker("期間", selection: $trendRange) {
+                ForEach(DashboardTrendRange.allCases) { range in
+                    Text(range.title).tag(range)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+
+            DashboardStatisticsBars(days: days)
+                .frame(height: 112)
+
+            Divider()
+
+            comparisonRow("集中時間", value: signedMinutes(comparison.focusSecondsDelta), systemImage: "timer")
+            comparisonRow("完了タスク", value: signedCount(comparison.completedTaskDelta), systemImage: "checkmark.circle")
+            comparisonRow("ブロック", value: signedBlocks(comparison.blocksDelta), systemImage: "square.stack.3d.up")
+            comparisonRow(
+                "伸びた方向",
+                value: growthText(comparison.growingDirection),
+                systemImage: "arrow.up.right"
+            )
+        }
+    }
+
+    private var statisticsAchievementPage: some View {
+        let standard = standardTodos
+        let habits = habitTodos
+        let nice = niceTodos
+        let required = standard + habits
+        let completed = required.filter(\.isCompleted).count
+        let ratio = required.isEmpty ? 0 : Double(completed) / Double(required.count)
+
+        return VStack(spacing: 16) {
+            ZStack {
+                Circle()
+                    .stroke(Color.primary.opacity(0.08), lineWidth: 12)
+                Circle()
+                    .trim(from: 0, to: ratio)
+                    .stroke(Color.accentColor, style: StrokeStyle(lineWidth: 12, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                Text("\(Int((ratio * 100).rounded()))%")
+                    .font(.title3.bold())
+                    .monospacedDigit()
+            }
+            .frame(width: 112, height: 112)
+
+            achievementRow("タスク", completed: standard.filter(\.isCompleted).count, total: standard.count)
+            achievementRow("習慣", completed: habits.filter(\.isCompleted).count, total: habits.count)
+            if !nice.isEmpty {
+                achievementRow("ナイス", completed: nice.filter(\.isCompleted).count, total: nice.count)
+            }
+
+            Text("今日の達成 \(completed) / \(required.count)")
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
+        }
+        .frame(maxWidth: .infinity)
     }
 
     private var todayTodos: [Todo] {
@@ -603,23 +716,117 @@ struct FlowDashboardView: View {
         }
     }
 
-    private func flowTaskSlices(snapshot: FlowDashboardSnapshot) -> [DashboardFlowTaskSlice] {
+    private func moveStatisticsPage(_ offset: Int) {
+        let pages = DashboardStatisticsPage.allCases
+        guard let current = pages.firstIndex(of: statisticsPage) else { return }
+        let next = (current + offset + pages.count) % pages.count
+        withAnimation(.easeInOut(duration: 0.2)) {
+            statisticsPage = pages[next]
+        }
+    }
+
+    private func distributionRows(snapshot: FlowDashboardSnapshot) -> [DashboardDistributionRow] {
+        switch distributionMode {
+        case .task:
+            snapshot.taskSummaries.map {
+                DashboardDistributionRow(
+                    id: $0.id,
+                    symbol: $0.symbol,
+                    title: $0.title,
+                    colorHex: $0.colorHex,
+                    focusSeconds: $0.focusSeconds
+                )
+            }
+        case .direction:
+            snapshot.directionSummaries.map {
+                DashboardDistributionRow(
+                    id: $0.id.uuidString,
+                    symbol: $0.symbol,
+                    title: $0.name,
+                    colorHex: $0.colorHex,
+                    focusSeconds: $0.focusSeconds
+                )
+            }
+        }
+    }
+
+    private func distributionSlices(snapshot: FlowDashboardSnapshot) -> [DashboardFlowTaskSlice] {
         guard snapshot.totalFocusSeconds > 0 else { return [] }
 
         var cursor = 0.0
-        let summaries = snapshot.taskSummaries
-        return summaries.map { summary in
-            let fraction = Double(summary.focusSeconds) / Double(snapshot.totalFocusSeconds)
-            let gap = summaries.count > 1 ? min(0.004, fraction * 0.18) : 0
+        let rows = distributionRows(snapshot: snapshot)
+        return rows.map { row in
+            let fraction = Double(row.focusSeconds) / Double(snapshot.totalFocusSeconds)
+            let gap = rows.count > 1 ? min(0.004, fraction * 0.18) : 0
             let slice = DashboardFlowTaskSlice(
-                id: summary.id,
+                id: row.id,
                 start: cursor + (gap / 2),
                 end: cursor + fraction - (gap / 2),
-                colorHex: summary.colorHex
+                colorHex: row.colorHex
             )
             cursor += fraction
             return slice
         }
+    }
+
+    private func distributionRatio(
+        _ row: DashboardDistributionRow,
+        snapshot: FlowDashboardSnapshot
+    ) -> Double {
+        let maximum = distributionRows(snapshot: snapshot).map(\.focusSeconds).max() ?? 0
+        guard maximum > 0 else { return 0 }
+        return Double(row.focusSeconds) / Double(maximum)
+    }
+
+    private func comparisonRow(_ title: String, value: String, systemImage: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: systemImage)
+                .foregroundStyle(.secondary)
+                .frame(width: 18)
+            Text(title)
+                .font(.caption)
+            Spacer()
+            Text(value)
+                .font(.caption.weight(.semibold))
+                .monospacedDigit()
+                .lineLimit(1)
+        }
+    }
+
+    private func achievementRow(_ title: String, completed: Int, total: Int) -> some View {
+        HStack {
+            Text(title)
+                .font(.caption)
+            Spacer()
+            Text("\(completed) / \(total)")
+                .font(.caption.weight(.semibold))
+                .monospacedDigit()
+        }
+    }
+
+    private func signedMinutes(_ seconds: Int) -> String {
+        signedValue(Int((Double(seconds) / 60).rounded()), suffix: "分")
+    }
+
+    private func signedCount(_ count: Int) -> String {
+        signedValue(count, suffix: "")
+    }
+
+    private func signedBlocks(_ blocks: Double) -> String {
+        let sign = blocks > 0 ? "+" : ""
+        let value = abs(blocks) < 0.001 ? 0 : blocks
+        let text = value.rounded() == value ? String(Int(value)) : String(format: "%.1f", value)
+        return "\(sign)\(text)"
+    }
+
+    private func signedValue(_ value: Int, suffix: String) -> String {
+        let sign = value > 0 ? "+" : ""
+        return "\(sign)\(value)\(suffix)"
+    }
+
+    private func growthText(_ growth: DashboardStatisticsDirectionGrowth?) -> String {
+        guard let growth else { return "変化なし" }
+        return "\(growth.symbol) \(growth.name) +\(max(1, growth.focusSecondsDelta / 60))分"
     }
 
     private var modeBackgroundTint: Color {
@@ -697,14 +904,6 @@ struct FlowDashboardView: View {
         if hasChanges {
             try? modelContext.save()
         }
-    }
-
-    private func taskRatio(
-        _ summary: FlowDashboardTaskSummary,
-        snapshot: FlowDashboardSnapshot
-    ) -> Double {
-        guard let maximum = snapshot.taskSummaries.map(\.focusSeconds).max(), maximum > 0 else { return 0 }
-        return Double(summary.focusSeconds) / Double(maximum)
     }
 
     private var timelineTrackColor: Color {
@@ -1167,6 +1366,90 @@ private enum TimelineSegmentFormat {
         let minutes = seconds / 60
         let remainingSeconds = seconds % 60
         return remainingSeconds == 0 ? "\(minutes)分" : "\(minutes)分\(remainingSeconds)秒"
+    }
+}
+
+private enum DashboardStatisticsPage: Int, CaseIterable, Identifiable {
+    case distribution
+    case trend
+    case achievement
+
+    var id: Int { rawValue }
+
+    var title: String {
+        switch self {
+        case .distribution: "時間配分"
+        case .trend: "Flow推移"
+        case .achievement: "達成状況"
+        }
+    }
+}
+
+private enum DashboardDistributionMode: String, CaseIterable, Identifiable {
+    case task
+    case direction
+
+    var id: String { rawValue }
+    var title: String { self == .task ? "タスク別" : "方向別" }
+}
+
+private enum DashboardTrendRange: Int, CaseIterable, Identifiable {
+    case threeDays = 3
+    case sevenDays = 7
+
+    var id: Int { rawValue }
+    var dayCount: Int { rawValue }
+    var title: String { "\(rawValue)日" }
+}
+
+private struct DashboardDistributionRow: Identifiable {
+    let id: String
+    let symbol: String
+    let title: String
+    let colorHex: String
+    let focusSeconds: Int
+}
+
+private struct DashboardStatisticsBars: View {
+    let days: [DashboardStatisticsDay]
+
+    var body: some View {
+        GeometryReader { proxy in
+            let maximum = max(days.map(\.focusSeconds).max() ?? 0, 1)
+
+            HStack(alignment: .bottom, spacing: 7) {
+                ForEach(days) { day in
+                    VStack(spacing: 5) {
+                        Spacer(minLength: 0)
+                        Capsule()
+                            .fill(Color(hex: day.colorHex))
+                            .frame(
+                                maxWidth: .infinity,
+                                minHeight: day.focusSeconds > 0 ? 4 : 2,
+                                maxHeight: max(
+                                    day.focusSeconds > 0 ? 4 : 2,
+                                    (proxy.size.height - 23) * CGFloat(day.focusSeconds) / CGFloat(maximum)
+                                )
+                            )
+                        Text(dayLabel(day.date))
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                    }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(dayAccessibilityLabel(day))
+                }
+            }
+        }
+    }
+
+    private func dayLabel(_ date: Date) -> String {
+        date.formatted(.dateTime.day())
+    }
+
+    private func dayAccessibilityLabel(_ day: DashboardStatisticsDay) -> String {
+        let minutes = day.focusSeconds / 60
+        return "\(day.date.formatted(date: .abbreviated, time: .omitted))、\(minutes)分"
     }
 }
 

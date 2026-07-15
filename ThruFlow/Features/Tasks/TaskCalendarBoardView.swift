@@ -11,43 +11,11 @@ struct TaskCalendarToolbar: View {
     @Binding var range: TaskCalendarRange
     @Binding var filter: TaskCalendarFilter
 
-    let anchorDate: Date
-    let onPrevious: () -> Void
-    let onNext: () -> Void
     let onToday: () -> Void
 
     var body: some View {
-        VStack(spacing: 10) {
-            HStack(spacing: 10) {
-                Button(action: onPrevious) {
-                    Image(systemName: "chevron.left")
-                }
-                .accessibilityLabel("前の期間")
-
-                Text(title)
-                    .font(.headline.weight(.semibold))
-                    .frame(minWidth: 150)
-
-                Button(action: onNext) {
-                    Image(systemName: "chevron.right")
-                }
-                .accessibilityLabel("次の期間")
-
-                Button("今日", action: onToday)
-                    .buttonStyle(.bordered)
-
-                Spacer(minLength: 12)
-
-                Picker("表示範囲", selection: $range) {
-                    ForEach(TaskCalendarRange.allCases) { option in
-                        Text(option.displayName).tag(option)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .frame(width: 250)
-            }
-
-            HStack {
+        ViewThatFits(in: .horizontal) {
+            ZStack {
                 Picker("フィルター", selection: $filter) {
                     ForEach(TaskCalendarFilter.allCases) { option in
                         Text(option.displayName).tag(option)
@@ -56,7 +24,30 @@ struct TaskCalendarToolbar: View {
                 .pickerStyle(.segmented)
                 .frame(width: 260)
 
-                Spacer(minLength: 0)
+                HStack(spacing: 10) {
+                    Spacer()
+                    Button("今日", action: onToday)
+                        .buttonStyle(.borderedProminent)
+
+                    rangePicker
+                        .frame(width: 150)
+                }
+            }
+
+            VStack(spacing: 8) {
+                HStack {
+                    Spacer()
+                    Button("今日", action: onToday)
+                        .buttonStyle(.borderedProminent)
+                    rangePicker.frame(width: 150)
+                }
+
+                Picker("フィルター", selection: $filter) {
+                    ForEach(TaskCalendarFilter.allCases) { option in
+                        Text(option.displayName).tag(option)
+                    }
+                }
+                .pickerStyle(.segmented)
             }
         }
         .padding(.horizontal, 16)
@@ -64,28 +55,13 @@ struct TaskCalendarToolbar: View {
         .background(.bar)
     }
 
-    private var title: String {
-        switch range {
-        case .oneDay:
-            return Self.dayFormatter.string(from: anchorDate)
-        case .threeDays, .sevenDays:
-            let dates = TaskCalendarBuilder().dates(for: range, anchoredAt: anchorDate)
-            guard let lastDate = dates.last else { return Self.dayFormatter.string(from: anchorDate) }
-            return "\(Self.shortFormatter.string(from: anchorDate)) – \(Self.shortFormatter.string(from: lastDate))"
-        case .month:
-            return Self.monthFormatter.string(from: anchorDate)
+    private var rangePicker: some View {
+        Picker("表示範囲", selection: $range) {
+            ForEach(TaskCalendarRange.allCases) { option in
+                Text(option.displayName).tag(option)
+            }
         }
-    }
-
-    private static let dayFormatter = makeFormatter("M月d日（E）")
-    private static let shortFormatter = makeFormatter("M/d")
-    private static let monthFormatter = makeFormatter("yyyy年M月")
-
-    private static func makeFormatter(_ format: String) -> DateFormatter {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ja_JP")
-        formatter.dateFormat = format
-        return formatter
+        .pickerStyle(.segmented)
     }
 }
 

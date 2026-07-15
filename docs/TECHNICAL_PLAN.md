@@ -31,7 +31,8 @@ SwiftUI views should call domain logic instead of owning product rules directly.
 - `HistoryDayTimelineWindowBuilder` derives the testable Elastic/full-day hour range independently from SwiftUI, including records that cross midnight.
 - `HistoryOverlapLayout` assigns deterministic side-by-side lanes using actual and minimum visual duration so short records cannot overlap in rendering.
 - `FlowHistoryEditor` creates independent completed manual Flow records and applies progress deltas when historical Flow records change.
-- `FlowDashboardBuilder` derives today's totals, Direction palette, and normalized 24-hour segments from `FlowSession`, with a live overlay for the active creditable Flow.
+- `FlowDashboardBuilder` derives today's totals, Direction palette, and timeline segments from `FlowSession`, with a live overlay for the active creditable Flow.
+- `DashboardStatisticsBuilder` derives 3/7-day bars, previous-day deltas, and the most-grown Direction outside SwiftUI.
 - `FlowVisualState` converts 0...6 daily Blocks into clamped speed, volume, layer count, and mode-specific wave character without placing those rules in SwiftUI.
 - `FlowStream.metal` renders the broad multi-color stream as one GPU effect. The SwiftUI host supplies only accumulated phase and visual-state uniforms, uses 30 FPS while idle and 60 FPS while active, and pauses when its window is not key, the scene is inactive, or Reduce Motion is enabled. `FlowAnimationClock` preserves phase when speed changes or rendering pauses, so starting Flow and returning to the window never replace the current stream frame.
 - The dashboard reuses `FlowMiniPlayerView` behavior through its dedicated dashboard layout instead of creating a second timer controller. `ActiveFlowStore.phaseProgress` provides the circular timer progress.

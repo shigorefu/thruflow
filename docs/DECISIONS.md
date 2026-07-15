@@ -76,7 +76,7 @@ Reason: the daily surface stays focused while the weekly commitment remains achi
 
 ## D-011: Tasks Use A Calendar Kanban
 
-The `タスク` screen combines `1日`, `3日`, `7日`, and `月` ranges. Habit instances remain on the same calendar as normal Tasks and can be isolated with a filter instead of a separate navigation destination.
+The `タスク` screen combines `日`, `週`, and `月` ranges. Week replaces the overlapping 3-day/7-day concepts with one predictable seven-column board. Habit instances remain on the same calendar as normal Tasks and can be isolated with a filter instead of a separate navigation destination.
 
 Reason: users plan work by date and should not need to check separate screens for Tasks and Habits.
 
@@ -107,6 +107,10 @@ Wide `週` keeps a week-selecting mini-calendar on the right; wide `月` replace
 The Flow dashboard groups connected Flow and rest entries by `seriesID`. One series has one continuous light-gray base line beneath its Direction-colored work and gray rest segments. A different series starts a separate line. History Calendar keeps every Flow and rest as an independent block.
 
 Double-clicking empty calendar time first creates an in-grid 25-minute draft block. Wide day editing occurs in the right inspector; compact day and week use a sheet. Saving creates a completed FlowSession and FlowSegment with a new independent series, uses the normal progress calculation, and does not support manual rest creation.
+
+## D-016: Dashboard Statistics Are A Derived Carousel
+
+The compact Dashboard Statistics card cycles between Flow-time distribution, a 3/7-day Flow trend with previous-day comparisons, and today's completion status. Distribution switches between Task and Direction without changing persistence. `DashboardStatisticsBuilder` owns historical calculations so SwiftUI only renders derived values.
 
 Reason: the calendar should communicate uninterrupted Flow rhythm without destroying the exact session and rest records required for editing and statistics.
 

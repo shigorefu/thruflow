@@ -9,7 +9,6 @@ import Foundation
 
 enum TaskCalendarRange: String, CaseIterable, Identifiable {
     case oneDay
-    case threeDays
     case sevenDays
     case month
 
@@ -18,11 +17,9 @@ enum TaskCalendarRange: String, CaseIterable, Identifiable {
     var displayName: String {
         switch self {
         case .oneDay:
-            "1日"
-        case .threeDays:
-            "3日"
+            "日"
         case .sevenDays:
-            "7日"
+            "週"
         case .month:
             "月"
         }
@@ -68,10 +65,9 @@ struct TaskCalendarBuilder {
         switch range {
         case .oneDay:
             return [anchor]
-        case .threeDays:
-            return consecutiveDates(count: 3, from: anchor)
         case .sevenDays:
-            return consecutiveDates(count: 7, from: anchor)
+            let weekStart = calendar.dateInterval(of: .weekOfYear, for: anchor)?.start ?? anchor
+            return consecutiveDates(count: 7, from: calendar.startOfDay(for: weekStart))
         case .month:
             return monthGridDates(containing: anchor)
         }
@@ -83,10 +79,8 @@ struct TaskCalendarBuilder {
         switch range {
         case .oneDay:
             return calendar.date(byAdding: .day, value: value, to: date) ?? date
-        case .threeDays:
-            return calendar.date(byAdding: .day, value: value * 3, to: date) ?? date
         case .sevenDays:
-            return calendar.date(byAdding: .day, value: value * 7, to: date) ?? date
+            return calendar.date(byAdding: .weekOfYear, value: value, to: date) ?? date
         case .month:
             return calendar.date(byAdding: .month, value: value, to: date) ?? date
         }

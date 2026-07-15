@@ -16,9 +16,10 @@ struct TaskCalendarTests {
         let anchor = date(2026, 7, 10, calendar: calendar)
 
         #expect(builder.dates(for: .oneDay, anchoredAt: anchor).count == 1)
-        #expect(builder.dates(for: .threeDays, anchoredAt: anchor).count == 3)
-        #expect(builder.dates(for: .sevenDays, anchoredAt: anchor).count == 7)
-        #expect(builder.dates(for: .sevenDays, anchoredAt: anchor).last == date(2026, 7, 16, calendar: calendar))
+        let weekDates = builder.dates(for: .sevenDays, anchoredAt: anchor)
+        #expect(weekDates.count == 7)
+        #expect(weekDates.first == calendar.dateInterval(of: .weekOfYear, for: anchor)?.start)
+        #expect(weekDates.last == calendar.date(byAdding: .day, value: 6, to: weekDates[0]))
     }
 
     @Test func rangeNavigationUsesVisibleRangeSize() {
@@ -27,7 +28,6 @@ struct TaskCalendarTests {
         let anchor = date(2026, 7, 10, calendar: calendar)
 
         #expect(builder.advancedDate(from: anchor, range: .oneDay, direction: 1) == date(2026, 7, 11, calendar: calendar))
-        #expect(builder.advancedDate(from: anchor, range: .threeDays, direction: 1) == date(2026, 7, 13, calendar: calendar))
         #expect(builder.advancedDate(from: anchor, range: .sevenDays, direction: -1) == date(2026, 7, 3, calendar: calendar))
         #expect(builder.advancedDate(from: anchor, range: .month, direction: 1) == date(2026, 8, 10, calendar: calendar))
     }
