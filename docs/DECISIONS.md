@@ -28,7 +28,7 @@ Reason: the app needs a stable Direction relationship without forcing the user t
 
 Todo title may be empty. UI displays `(Direction name)` when title is empty.
 
-Reason: habit tasks and auto-created Flow tasks should start as lightweight templates.
+Reason: generated Habit tasks should start as lightweight templates, and the same display rule remains available if automatic Flow Task creation is defined later.
 
 ## D-005: Date-less Task Behavior Is Deferred
 
@@ -108,11 +108,25 @@ The Flow dashboard groups connected Flow and rest entries by `seriesID`. One ser
 
 Double-clicking empty calendar time first creates an in-grid 25-minute draft block. Wide day editing occurs in the right inspector; compact day and week use a sheet. Saving creates a completed FlowSession and FlowSegment with a new independent series, uses the normal progress calculation, and does not support manual rest creation.
 
+Reason: the dashboard should communicate uninterrupted Flow rhythm without destroying the exact session and rest records required for editing and statistics.
+
 ## D-016: Dashboard Statistics Are A Derived Carousel
 
 The compact Dashboard Statistics card cycles between Flow-time distribution, a 3/7-day Flow trend with previous-day comparisons, and today's completion status. Distribution switches between Task and Direction without changing persistence. `DashboardStatisticsBuilder` owns historical calculations so SwiftUI only renders derived values.
 
-Reason: the calendar should communicate uninterrupted Flow rhythm without destroying the exact session and rest records required for editing and statistics.
+Reason: the first screen should answer where time went, how the recent rhythm changed, and what remains today without duplicating the full Statistics screen.
+
+## D-017: Manual History Reuses Domain Records
+
+Manual History entry creates a completed independent `FlowSession` and `FlowSegment`. A fixed linked Task receives measured progress but is never automatically completed. The Direction aggregate action creates a new Task with that Direction fixed and does not create Flow.
+
+Reason: correction workflows must use the same accounting path as timer-created work while keeping Task completion an explicit or measurement-driven action.
+
+## D-018: Measured Progress Is Read-Only
+
+Only `チェック` indicators are directly interactive. `集中ブロック` and `分` indicators are read-only in Tasks, History, the dashboard, and the player because persisted Flow time owns their progress.
+
+Reason: one source of truth prevents UI taps from disagreeing with recorded focus history.
 
 ## Open Questions
 
@@ -120,4 +134,3 @@ Reason: the calendar should communicate uninterrupted Flow rhythm without destro
 - Should Adaptive/Auto Flow remain, or should MVP expose only Short, Focus, and Deep?
 - How exactly should the “continue for longer break” prompt behave when less than 5 minutes remain to the next threshold?
 - What is the exact meaning of deleting the “last 1 Block” from a Flow series?
-- How should the 4-Block long-break series counter be represented and reset?

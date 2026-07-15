@@ -19,8 +19,14 @@ Current MVP goal:
 - Task measurements: `チェック`, `集中ブロック`, `分`.
 - Flow player with Short, Focus, and Deep modes.
 - First/default `Flow` dashboard with expanded player, animated daily stream, totals, and Elastic Flow timeline.
+- Task switching inside an active Flow through persisted Flow segments.
+- Persisted Flow series, editable rests, continuation windows, and a 20-minute Long Break after every 4 Blocks in a series.
 - Manual break start with memo before break begins.
+- Shared square memo panel in the dashboard and macOS menu bar player.
 - Todo memo storage.
+- Canonical `履歴` with Flow calendar and Task/Direction aggregates for `日`, `週`, and `月`.
+- Manual historical Flow creation and correction without automatically completing a linked Task.
+- Dashboard statistics carousel for time distribution, 3/7-day Flow trend, and completion status.
 - Flow and Tasks contribution-style statistics.
 
 ## Not Included
@@ -38,6 +44,5 @@ Current MVP goal:
 
 ## Known Product Gaps
 
-- Auto-created Task measurement for Flow without selected Task needs final product rule.
-- Long break after 4 Blocks needs a defined series model.
-- Flow-series delete semantics need clarification.
+- Automatic Task creation for Flow without a selected Task needs measurement and planned-amount defaults.
+- Product-level deletion of an arbitrary amount from a complete Flow series needs clarification; exact sessions and segments can already be corrected or deleted in History.

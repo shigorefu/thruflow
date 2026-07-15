@@ -51,7 +51,7 @@ Daily and selected-weekday Habit instances are generated for visible current/fut
 
 ## Flow Player
 
-`Flow` is the first/default navigation item. In a wide window, its dashboard uses one aligned two-column grid: the animated daily stream and 0:00–24:00 timeline sit above today's Tasks on the left, while the equally tall square player sits above compact Statistics on the right. All lower Task, Habit, optional Nice, and Statistics panels share one height and stretch to the bottom of the viewport; short windows retain a minimum lower-row height and scroll vertically. The left side occupies roughly three quarters of the content. Other app sections do not repeat the player as a top header; the macOS menu bar opens this same square player. A horizontal compact menu-bar layout is retained in product documentation as a deferred design only and is not part of the current UI.
+`Flow` is the first/default navigation item. In a wide window, its dashboard uses one aligned two-column grid: the animated daily stream and Elastic series timeline sit above today's Tasks on the left, while the equally tall square player sits above compact Statistics on the right. All lower Task, Habit, optional Nice, and Statistics panels share one height and stretch to the bottom of the viewport; short windows retain a minimum lower-row height and scroll vertically. The left side occupies roughly three quarters of the content. Other app sections do not repeat the player as a top header; the macOS menu bar opens this same square player. A horizontal compact menu-bar layout is retained in product documentation as a deferred design only and is not part of the current UI.
 
 The player layout is:
 
@@ -64,7 +64,7 @@ In the narrow vertical dashboard layout, the player comes first, followed by the
 - Direction icon color follows the selected Task Direction;
 - compact Focus selector opens a separate picker for `Short`, `Focus`, and `Deep`;
 - selecting another Focus mode during focus or pause preserves elapsed time and only moves the planned end, matching the seek controls;
-- break time counts down past zero with a positive overtime sign; its progress ring drains while the focus ring fills. Starting work during rest completes the previous Flow and immediately starts the next one, while menu bar status becomes `☕️ 休憩 - time` or `☕️ Long Break - time`;
+- break time counts down past zero with a positive overtime sign; its neutral-gray progress ring drains while the Direction-colored focus ring fills. Starting work during rest completes the previous Flow and immediately starts the next one, while menu bar status becomes `☕️ 休憩 - time` or `☕️ Long Break - time`;
 - choosing another Task during focus or pause keeps the current Flow running and starts a new history segment; no memo prompt is shown for this switch;
 - the Task card reuses the canonical completion/progress control; only Check is interactive, while Block and Minute rings are read-only and show progress and the remaining amount;
 - generated titles for empty Tasks and Habits are consistently italic and visually muted in the player, picker, Tasks screen, and dashboard panels;
@@ -80,7 +80,7 @@ Mode labels:
 - `Focus 25/5`;
 - `Deep 50/10`.
 
-Flow can be started with a selected Task, with only a Direction, or with neither. If no Direction is chosen, the resolved Direction is `その他`.
+Flow can be started with a selected Task, with only a Direction, or with neither. Direction-only work does not create an implicit Todo. If no Direction is chosen, the resolved Direction is `その他`. Automatic Task creation is deferred until its measurement and planned amount are defined.
 
 At the planned focus end, Flow does not auto-switch. The timer continues. The user chooses:
 
@@ -88,7 +88,7 @@ At the planned focus end, Flow does not auto-switch. The timer continues. The us
 - start break;
 - stop.
 
-Start break opens a memo prompt. Focus time keeps counting until memo is saved. The memo writes to the Todo.
+Stopping focus or starting break opens the same square memo panel in the dashboard and macOS menu bar player. It shows `お疲れ様です。メモを追加しますか？`, a large editor, and `キャンセル`, `メモなし`, and `保存`. Focus keeps counting while the panel is open. Saving writes to Todo; `メモなし` continues without changing it. Cancelling a pending break returns to focus and does not start rest. Stopping or skipping an existing rest never asks for memo again.
 
 The daily stream is formed by broad, bright, softly glowing translucent ribbons following one shared S-shaped channel. Back, middle, and foreground ribbons move at different speeds to create depth, while moving negative channels preserve dark water between them. Today's focused Blocks permanently amplify movement until the day changes, reaching their visual maximum at 6 Blocks. Occupancy stops growing at 4 Blocks; later progress adds detail, parallax, color, and motion rather than filling the stage. Every completed half-Block sends a restrained light pulse through the channel. Idle stays in a calm `0.06...0.28` speed range, while an active Flow uses a separate `1.10...2.80` range. Short uses energetic waves, Focus balanced waves, and Deep broad slow bends; the background tint follows the selected mode. The current Flow appears live after its first creditable minute. Reduce Motion keeps the visualization static. Selecting a completed timeline segment opens the existing Flow history inspector.
 
@@ -98,7 +98,7 @@ The dashboard timeline uses a neutral dark rail for time without Flow. Every ser
 
 Hovering a rest shows its type, interval, and duration above the timeline. Clicking a completed rest opens a duration editor anchored to that rest. Start time is fixed. If the new end overlaps the next Flow, that Flow and all later Flow/rest records in the same series move forward by the overlap. Free space absorbs an extension without shifting, shortening does not pull history backward, and unrelated series never move.
 
-Below the Flow stage are today's `タスク` and `習慣` columns. `ナイス` is omitted when empty. Rows use the same square Check and circular Block/Minute progress controls as the Tasks screen. Check can be completed manually; Block and Minute rings are read-only because recorded Flow owns their progress. Rows can be opened for editing. A compact `統計` panel shows today's total focused time and its Task-level distribution. The legend is ordered by focused duration and shows each Task with its accumulated time.
+Below the Flow stage are today's `タスク` and `習慣` columns. `ナイス` is omitted when empty. Rows use the same square Check and circular Block/Minute progress controls as the Tasks screen. Check can be completed manually; Block and Minute rings are read-only because recorded Flow owns their progress. Rows can be opened for editing. The compact `統計` carousel provides Task/Direction focused-time distribution, 3/7-day Flow trends with previous-day comparisons, and today's completion status.
 
 The Dashboard Task header `+` opens the shared messenger-style composer in a separate popover. The Flow Task picker's `タスク` tab also ends with an add row that opens the same popover; a Task created there is immediately selected for Flow. Direction, measurement, and priority remain editable, while the date is fixed to `今日`. The composer has an explicit close button that discards the unfinished action. Habit has no manual add action.
 

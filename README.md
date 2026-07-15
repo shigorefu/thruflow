@@ -17,9 +17,9 @@ The product is not a Pomodoro clone, a standalone habit tracker, or a generic To
 - `習慣`: scheduled recurring requirement.
 - `ナイス`: optional positive activity.
 - `その他`: system Direction for work without a chosen Direction. It is hidden from Direction editing but can appear in task context and statistics.
-- `Task`: daily or Inbox item.
+- `Task`: dated Todo item shown in the `タスク` calendar; date-less behavior is deferred.
 - `Flow`: media-player-like focused-work recorder.
-- `Flow dashboard`: the first screen, with a large animated daily stream, separate circular player controls, a 24-hour timeline, today's work, and compact statistics.
+- `Flow dashboard`: the first screen, with a large animated daily stream, separate circular player controls, an Elastic series timeline, today's work, and a three-page statistics carousel.
 - `メモ`: stored on Todo.
 - `統計`: contribution-style grid for Tasks and Flow.
 - `履歴`: `Flow | タスク | 方向` history with shared `日 | 週 | 月` navigation; Habit summaries are grouped by Direction and weekly Tasks are divided by weekday.
@@ -46,6 +46,7 @@ No third-party dependencies are used in the MVP.
 - [Concept](CONCEPT.md)
 - [Product](docs/PRODUCT.md)
 - [Domain Model](docs/DOMAIN_MODEL.md)
+- [Data Model](docs/DATA_MODEL.md)
 - [UX Flows](docs/UX_FLOWS.md)
 - [Technical Plan](docs/TECHNICAL_PLAN.md)
 - [MVP](docs/MVP.md)
