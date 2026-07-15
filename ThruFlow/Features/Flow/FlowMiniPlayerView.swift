@@ -27,6 +27,7 @@ struct FlowMiniPlayerView: View {
     @State private var taskTitleDraft = ""
     @State private var taskCardIsPressed = false
     @FocusState private var isTaskTitleFocused: Bool
+    @FocusState private var isMemoFocused: Bool
 
     private let style: Style
     private let todayFilter = TodayTodoFilter()
@@ -130,7 +131,7 @@ struct FlowMiniPlayerView: View {
                 Circle()
                     .trim(from: 0, to: dashboardTimerProgress(now: now))
                     .stroke(
-                        primaryButtonColor,
+                        timerRingColor,
                         style: StrokeStyle(lineWidth: 10, lineCap: .round)
                     )
                     .rotationEffect(.degrees(-90))
@@ -755,6 +756,10 @@ struct FlowMiniPlayerView: View {
         }
     }
 
+    private var timerRingColor: Color {
+        activeFlowStore.isBreakPhase ? Color.secondary.opacity(0.72) : primaryButtonColor
+    }
+
     private var adaptiveDecisionBar: some View {
         HStack(spacing: 10) {
             Text("次を選択")
@@ -783,74 +788,99 @@ struct FlowMiniPlayerView: View {
     }
 
     private var resultBar: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            TextField("何をしましたか", text: $resultText, axis: .vertical)
-                .textFieldStyle(.plain)
-                .font(.body)
-                .lineLimit(2...5)
+        VStack(alignment: .leading, spacing: 18) {
+            Label("お疲れ様です。メモを追加しますか？", systemImage: "note.text")
+                .font(.headline)
+
+            ZStack(alignment: .topLeading) {
+                if resultText.isEmpty {
+                    Text("何をしましたか？")
+                        .font(.body)
+                        .foregroundStyle(.tertiary)
+                        .padding(.horizontal, 15)
+                        .padding(.vertical, 14)
+                        .allowsHitTesting(false)
+                }
+
+                TextEditor(text: $resultText)
+                    .font(.body)
+                    .scrollContentBackground(.hidden)
+                    .padding(10)
+                    .focused($isMemoFocused)
+                    .accessibilityLabel("Flowメモ")
+            }
+            .frame(maxWidth: .infinity, minHeight: 150, maxHeight: .infinity)
+            .background(Color.primary.opacity(0.055))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .overlay {
+                RoundedRectangle(cornerRadius: 12)
+                    .strokeBorder(Color.primary.opacity(0.10))
+            }
 
             HStack(spacing: 10) {
-                HStack(spacing: 5) {
-                    Image(systemName: "note.text")
-                        .imageScale(.small)
-                    Text("メモ")
-                }
-                .font(.caption.weight(.medium))
-                .foregroundStyle(.secondary)
-
-                Spacer(minLength: 0)
-
-                Text(activeFlowStore.remainingText(now: activeFlowStore.displayDate))
-                    .font(.system(.caption, design: .monospaced).weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .monospacedDigit()
-
                 if activeFlowStore.isAwaitingBreakMemo {
-                    Button("キャンセル") {
+                    memoActionButton("キャンセル", systemImage: "xmark") {
                         cancelBreakMemo()
                     }
-                    .font(.caption.weight(.semibold))
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.secondary)
                     .accessibilityLabel("メモ入力をキャンセル")
                 }
 
-                Button("メモなし") {
+                Spacer(minLength: 0)
+
+                memoActionButton("メモなし", systemImage: "forward.fill") {
                     submitWithoutResult()
                 }
-                .font(.caption.weight(.semibold))
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
                 .accessibilityLabel("メモなしで続ける")
 
                 Button {
                     submitResult()
                 } label: {
-                    Image(systemName: "arrow.up")
-                        .font(.headline.weight(.semibold))
-                        .frame(width: 38, height: 38)
-                        .background(resultText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.secondary.opacity(0.35) : Color.accentColor)
+                    Label("保存", systemImage: "arrow.up")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(minWidth: 76, minHeight: 38)
+                        .padding(.horizontal, 4)
+                        .background(hasMemoText ? Color.accentColor : Color.secondary.opacity(0.35))
                         .foregroundStyle(.white)
-                        .clipShape(Circle())
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
                 }
                 .buttonStyle(.plain)
+                .disabled(!hasMemoText)
                 .accessibilityLabel("メモを保存")
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 14)
-        .padding(.bottom, 10)
-        .background(
-            RoundedRectangle(cornerRadius: 22)
-                .fill(Color.primary.opacity(0.08))
-        )
+        .padding(18)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 8))
         .overlay {
-            RoundedRectangle(cornerRadius: 22)
-                .strokeBorder(Color.primary.opacity(0.12))
+            RoundedRectangle(cornerRadius: 8)
+                .strokeBorder(Color.primary.opacity(0.08))
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(.bar)
+        .onAppear {
+            Task { @MainActor in
+                isMemoFocused = true
+            }
+        }
+    }
+
+    private func memoActionButton(
+        _ title: String,
+        systemImage: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Label(title, systemImage: systemImage)
+                .font(.subheadline.weight(.semibold))
+                .frame(minHeight: 38)
+                .padding(.horizontal, 12)
+                .background(Color.primary.opacity(0.07))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var hasMemoText: Bool {
+        !resultText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     private var adaptiveExtensionMinutes: Int {
