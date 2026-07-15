@@ -288,19 +288,15 @@ struct FlowDashboardBuilder {
         }
         .sorted { $0.startedAt < $1.startedAt }
 
-        let connectedSeriesIDs = Set(storedBreaks.compactMap { flowBreak in
-            flowBreak.isDeleted || flowBreak.nextSessionID == nil ? nil : flowBreak.seriesID
-        })
         let seriesSpans = Dictionary(grouping: segments, by: \.seriesID)
             .compactMap { seriesID, values -> FlowDashboardSeriesSpan? in
-                guard connectedSeriesIDs.contains(seriesID),
-                      Set(values.map { $0.session.id }).count > 1,
+                let seriesBreaks = breaks.filter { $0.seriesID == seriesID }
+                guard !seriesBreaks.isEmpty,
                       let first = values.map(\.startedAt).min(),
                       let last = values.map(\.endedAt).max() else {
                     return nil
                 }
 
-                let seriesBreaks = breaks.filter { $0.seriesID == seriesID }
                 return FlowDashboardSeriesSpan(
                     id: seriesID,
                     startedAt: min(first, seriesBreaks.map(\.startedAt).min() ?? first),

@@ -161,6 +161,43 @@ struct FlowDashboardTests {
         #expect(snapshot.seriesSpans[0].endedAt == second.endedAt)
     }
 
+    @Test func dashboardSeriesSpanIncludesTrailingBreakWithoutConnectingNextSeries() {
+        let day = Date(timeIntervalSince1970: 86_400)
+        let direction = Direction(name: "仕事", type: .neutral)
+        let firstSeriesID = UUID()
+        let first = makeSession(
+            direction: direction,
+            start: day.addingTimeInterval(10 * 3_600),
+            duration: 25 * 60,
+            seriesID: firstSeriesID
+        )
+        let breakEnd = first.endedAt!.addingTimeInterval(5 * 60)
+        let trailingBreak = FlowBreak(
+            seriesID: firstSeriesID,
+            previousSessionID: first.id,
+            startedAt: first.endedAt!,
+            timerStoppedAt: breakEnd,
+            plannedDurationSeconds: 5 * 60
+        )
+        let second = makeSession(
+            direction: direction,
+            start: breakEnd.addingTimeInterval(30 * 60),
+            duration: 25 * 60,
+            seriesID: UUID()
+        )
+
+        let snapshot = FlowDashboardBuilder(calendar: calendar).build(
+            date: day.addingTimeInterval(12 * 3_600),
+            sessions: [first, second],
+            breaks: [trailingBreak]
+        )
+
+        #expect(snapshot.seriesSpans.count == 1)
+        #expect(snapshot.seriesSpans[0].id == firstSeriesID)
+        #expect(snapshot.seriesSpans[0].startedAt == first.startedAt)
+        #expect(snapshot.seriesSpans[0].endedAt == breakEnd)
+    }
+
     @Test func liveFlowAppearsOnlyAfterCreditableMinuteAndUsesCurrentEndTime() {
         let day = Date(timeIntervalSince1970: 172_800)
         let direction = Direction(name: "仕事", type: .neutral, colorHex: "#FF9F0A")
