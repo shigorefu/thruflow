@@ -82,7 +82,7 @@ Reason: users plan work by date and should not need to check separate screens fo
 
 ## D-012: Calendar Moves Preserve Habit Rules
 
-Drag-and-drop between kanban day columns changes `scheduledDate` only for active normal Tasks and feasible weekly-count Habit Tasks. Month remains an overview. Completed Tasks and fixed-schedule Habit instances remain on their original date.
+Drag-and-drop in day, week, and month changes `scheduledDate` only for active normal Tasks and feasible weekly-count Habit Tasks. Completed Tasks and fixed-schedule Habit instances remain on their original date.
 
 Reason: calendar planning must not silently invalidate historical completion or recurring commitments.
 

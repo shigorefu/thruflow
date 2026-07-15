@@ -183,7 +183,7 @@ private struct TaskDayColumn: View {
         }
         .dropDestination(for: String.self) { ids, _ in
             guard let id = ids.first,
-                  let uuid = UUID(uuidString: id) else {
+                  let uuid = taskID(from: id) else {
                 return false
             }
             onMove(uuid)
@@ -202,7 +202,7 @@ private struct TaskDayColumn: View {
         )
 
         if canDrag(todo) {
-            card.draggable(todo.id.uuidString)
+            card.draggable("task:\(todo.id.uuidString)")
         } else {
             card
         }
@@ -212,6 +212,11 @@ private struct TaskDayColumn: View {
         guard !todo.isCompleted else { return false }
         guard todo.direction?.type == .habit else { return true }
         return todo.direction?.goalSchedule == .weeklyCount
+    }
+
+    private func taskID(from payload: String) -> UUID? {
+        guard payload.hasPrefix("task:") else { return nil }
+        return UUID(uuidString: String(payload.dropFirst("task:".count)))
     }
 
     private static let weekdayFormatter = makeFormatter("EEEE")
@@ -232,6 +237,7 @@ struct TaskMonthGrid: View {
     let todos: [Todo]
     let filter: TaskCalendarFilter
     let onSelectDate: (Date) -> Void
+    let onMove: (Todo, Date) -> Bool
 
     private let columns = Array(repeating: GridItem(.flexible(minimum: 72), spacing: 6), count: 7)
 
@@ -258,17 +264,19 @@ struct TaskMonthGrid: View {
         let isSelected = Calendar.current.isDate(date, inSameDayAs: selectedDate)
         let isCurrentMonth = Calendar.current.isDate(date, equalTo: anchorDate, toGranularity: .month)
 
-        return Button {
-            onSelectDate(date)
-        } label: {
-            VStack(alignment: .leading, spacing: 7) {
+        return VStack(alignment: .leading, spacing: 7) {
                 HStack {
+                    Button {
+                        onSelectDate(date)
+                    } label: {
                     Text(Self.dayFormatter.string(from: date))
                         .font(.caption.weight(isSelected ? .bold : .medium))
                         .foregroundStyle(isSelected ? Color.white : isCurrentMonth ? Color.primary : Color.secondary)
                         .frame(width: 24, height: 24)
                         .background(isSelected ? Color.accentColor : Color.clear)
                         .clipShape(Circle())
+                    }
+                    .buttonStyle(.plain)
 
                     Spacer(minLength: 0)
 
@@ -279,14 +287,23 @@ struct TaskMonthGrid: View {
                     }
                 }
 
-                HStack(spacing: 4) {
-                    ForEach(directionDots(dayTodos), id: \.id) { direction in
+                ForEach(dayTodos.prefix(2)) { todo in
+                    let label = HStack(spacing: 4) {
                         Circle()
-                            .fill(Color(hex: direction.colorHex))
-                            .frame(width: 6, height: 6)
+                            .fill(todo.direction.map { Color(hex: $0.colorHex) } ?? .secondary)
+                            .frame(width: 5, height: 5)
+                        Text(TodoDisplay.title(for: todo))
+                            .lineLimit(1)
+                    }
+                    .font(.caption2)
+                    .foregroundStyle(todo.isCompleted ? .secondary : .primary)
+
+                    if canDrag(todo) {
+                        label.draggable("task:\(todo.id.uuidString)")
+                    } else {
+                        label
                     }
                 }
-                .frame(height: 8)
 
                 if dayTodos.contains(where: { $0.direction?.type == .habit && !$0.isCompleted }) {
                     Label("習慣", systemImage: "exclamationmark.circle.fill")
@@ -309,8 +326,17 @@ struct TaskMonthGrid: View {
                     .strokeBorder(isSelected ? Color.accentColor.opacity(0.5) : Color.primary.opacity(0.07))
             }
             .opacity(isCurrentMonth ? 1 : 0.55)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            onSelectDate(date)
         }
-        .buttonStyle(.plain)
+        .dropDestination(for: String.self) { payloads, _ in
+            guard let payload = payloads.first,
+                  payload.hasPrefix("task:"),
+                  let id = UUID(uuidString: String(payload.dropFirst("task:".count))),
+                  let todo = todos.first(where: { $0.id == id }) else { return false }
+            return onMove(todo, date)
+        }
     }
 
     private func todosForDate(_ date: Date) -> [Todo] {
@@ -320,11 +346,10 @@ struct TaskMonthGrid: View {
         }
     }
 
-    private func directionDots(_ todos: [Todo]) -> [Direction] {
-        var seen = Set<UUID>()
-        return todos.compactMap(\.direction).filter { direction in
-            !DefaultDirections.isTaskInbox(direction) && seen.insert(direction.id).inserted
-        }.prefix(5).map { $0 }
+    private func canDrag(_ todo: Todo) -> Bool {
+        guard !todo.isCompleted else { return false }
+        guard todo.direction?.type == .habit else { return true }
+        return todo.direction?.goalSchedule == .weeklyCount
     }
 
     private var weekdaySymbols: [String] {
