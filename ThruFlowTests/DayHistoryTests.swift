@@ -263,7 +263,11 @@ struct DayHistoryTests {
         #expect(summary?.focusSeconds == 25 * 60)
     }
 
-    @Test func editingFlowMovesOnlyItsProgressToTheNewTaskAndDirection() {
+    @Test func editingFlowMovesOnlyItsProgressToTheNewTaskAndDirection() throws {
+        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
         let originalDirection = Direction(name: "仕事", type: .neutral, focusDurationSeconds: 50 * 60)
         let newDirection = Direction(name: "学習", type: .neutral, focusDurationSeconds: 0)
         let originalTodo = Todo(
@@ -281,6 +285,19 @@ struct DayHistoryTests {
             plannedAmount: 30
         )
         let start = Date(timeIntervalSince1970: 20_000)
+        let priorSession = FlowSession(
+            direction: originalDirection,
+            todo: originalTodo,
+            mode: .twentyFiveFive,
+            phase: .completed,
+            status: .completed,
+            startedAt: start.addingTimeInterval(-30 * 60),
+            plannedEndAt: start.addingTimeInterval(-5 * 60),
+            endedAt: start.addingTimeInterval(-5 * 60),
+            plannedFocusDurationSeconds: 25 * 60,
+            actualFocusDurationSeconds: 25 * 60,
+            plannedBreakDurationSeconds: 5 * 60
+        )
         let session = FlowSession(
             direction: originalDirection,
             todo: originalTodo,
@@ -294,6 +311,12 @@ struct DayHistoryTests {
             actualFocusDurationSeconds: 25 * 60,
             plannedBreakDurationSeconds: 5 * 60
         )
+        context.insert(originalDirection)
+        context.insert(newDirection)
+        context.insert(originalTodo)
+        context.insert(newTodo)
+        context.insert(priorSession)
+        context.insert(session)
 
         let adjustedStart = start.addingTimeInterval(60 * 60)
         FlowHistoryEditor().update(
@@ -302,7 +325,8 @@ struct DayHistoryTests {
             direction: newDirection,
             startedAt: adjustedStart,
             focusSeconds: 12 * 60,
-            memo: "型を復習"
+            memo: "型を復習",
+            modelContext: context
         )
 
         #expect(originalDirection.recordedFocusSeconds == 25 * 60)
@@ -317,6 +341,61 @@ struct DayHistoryTests {
         #expect(session.startedAt == adjustedStart)
         #expect(session.endedAt == adjustedStart.addingTimeInterval(12 * 60))
         #expect(session.plannedEndAt == session.endedAt)
+    }
+
+    @Test func deletingFlowRebuildsStaleBlockProgressFromRemainingHistory() throws {
+        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let direction = Direction(name: "学習", type: .habit, focusDurationSeconds: 55 * 60)
+        let todo = Todo(
+            title: "AWS",
+            direction: direction,
+            measurement: .focusBlocks,
+            plannedAmount: 2,
+            actualProgress: 2,
+            focusDurationSeconds: 55 * 60,
+            status: .completed
+        )
+        let start = Date(timeIntervalSince1970: 25_000)
+        let deletedSession = FlowSession(
+            direction: direction,
+            todo: todo,
+            mode: .twentyFiveFive,
+            phase: .completed,
+            status: .completed,
+            startedAt: start,
+            plannedEndAt: start.addingTimeInterval(25 * 60),
+            endedAt: start.addingTimeInterval(25 * 60),
+            plannedFocusDurationSeconds: 25 * 60,
+            actualFocusDurationSeconds: 25 * 60,
+            plannedBreakDurationSeconds: 5 * 60
+        )
+        let remainingSession = FlowSession(
+            direction: direction,
+            todo: todo,
+            mode: .twentyFiveFive,
+            phase: .completed,
+            status: .completed,
+            startedAt: start.addingTimeInterval(30 * 60),
+            plannedEndAt: start.addingTimeInterval(60 * 60),
+            endedAt: start.addingTimeInterval(60 * 60),
+            plannedFocusDurationSeconds: 30 * 60,
+            actualFocusDurationSeconds: 30 * 60,
+            plannedBreakDurationSeconds: 5 * 60
+        )
+        context.insert(direction)
+        context.insert(todo)
+        context.insert(deletedSession)
+        context.insert(remainingSession)
+
+        FlowHistoryEditor().delete(session: deletedSession, modelContext: context)
+
+        #expect(todo.recordedFocusSeconds == 30 * 60)
+        #expect(todo.actualProgress == 1)
+        #expect(!todo.isCompleted)
+        #expect(direction.recordedFocusSeconds == 30 * 60)
     }
 
     @Test func deletingOneFlowSegmentRemovesOnlyItsProgress() throws {

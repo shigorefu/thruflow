@@ -25,7 +25,7 @@ final class ActiveFlowStore: ObservableObject {
     @Published private(set) var isAwaitingBreakMemo = false
 
     private let engine = FlowTimerEngine()
-    private let progress = FlowProgressCalculator()
+    private let progressReconciler = FlowProgressReconciler()
     private let historyEditor = FlowHistoryEditor()
     private let seriesPolicy = FlowSeriesPolicy()
     private let notifications: FlowNotificationService
@@ -489,7 +489,7 @@ final class ActiveFlowStore: ObservableObject {
         if state.phase == .breakTime || state.phase == .awaitingResult || state.phase == .completed {
             let focusedSeconds = state.actualFocusDurationSeconds ?? engine.actualFocusDuration(for: state, now: now)
             closeCurrentSegment(at: now, totalFocusSeconds: focusedSeconds)
-            applyProgressIfNeeded(seconds: focusedSeconds, now: now)
+            applyProgressIfNeeded(modelContext: modelContext, now: now)
         }
 
         if state.phase == .breakTime && previousPhase != .breakTime {
@@ -517,11 +517,15 @@ final class ActiveFlowStore: ObservableObject {
             }
     }
 
-    private func applyProgressIfNeeded(seconds: Int, now: Date) {
+    private func applyProgressIfNeeded(modelContext: ModelContext, now: Date) {
         guard !didApplyProgress else { return }
 
         if let activeSession {
-            progress.applySession(activeSession, fallbackSeconds: seconds, now: now)
+            progressReconciler.reconcile(
+                session: activeSession,
+                modelContext: modelContext,
+                now: now
+            )
         }
         didApplyProgress = true
     }
