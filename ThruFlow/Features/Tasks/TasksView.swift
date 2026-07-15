@@ -442,7 +442,7 @@ struct TasksView: View {
         guard !dates.isEmpty else { return }
 
         var knownTodos = todos
-        var inserted = false
+        var hasChanges = false
         let minimumSortIndex = todos.map(\.sortIndex).min() ?? 0
 
         for (dateOffset, date) in dates.enumerated() {
@@ -455,6 +455,16 @@ struct TasksView: View {
             }
 
             for (directionOffset, direction) in requiredDirections.enumerated() {
+                if let pendingTodo = requiredPlanner.pendingWeeklyTodoToRollForward(
+                    for: direction,
+                    in: knownTodos,
+                    on: date
+                ) {
+                    pendingTodo.reschedule(to: date, now: now)
+                    hasChanges = true
+                    continue
+                }
+
                 guard let todo = requiredPlanner.makeRequiredTodo(
                     for: direction,
                     existingTodos: knownTodos,
@@ -466,11 +476,11 @@ struct TasksView: View {
 
                 modelContext.insert(todo)
                 knownTodos.append(todo)
-                inserted = true
+                hasChanges = true
             }
         }
 
-        if inserted {
+        if hasChanges {
             try? modelContext.save()
         }
     }

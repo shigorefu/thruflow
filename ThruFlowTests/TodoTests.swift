@@ -165,6 +165,48 @@ struct TodoTests {
         #expect(planner.shouldCreateRequiredTodo(for: direction, in: [completedTodo], on: tuesday))
     }
 
+    @Test func pendingWeeklyHabitRollsForwardWithinCurrentWeek() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        calendar.firstWeekday = 1
+
+        let direction = weeklyHabitDirection()
+        let planner = RequiredTodoPlanner(calendar: calendar)
+        let sunday = date(2026, 7, 12, calendar: calendar)
+        let wednesday = date(2026, 7, 15, calendar: calendar)
+        let pendingTodo = Todo(title: "", direction: direction, scheduledDate: sunday)
+
+        #expect(
+            planner.pendingWeeklyTodoToRollForward(
+                for: direction,
+                in: [pendingTodo],
+                on: wednesday
+            )?.id == pendingTodo.id
+        )
+    }
+
+    @Test func pendingWeeklyHabitDoesNotRollBackwardOrAcrossWeeks() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        calendar.firstWeekday = 1
+
+        let direction = weeklyHabitDirection()
+        let planner = RequiredTodoPlanner(calendar: calendar)
+        let saturday = date(2026, 7, 11, calendar: calendar)
+        let wednesday = date(2026, 7, 15, calendar: calendar)
+        let friday = date(2026, 7, 17, calendar: calendar)
+        let previousWeekTodo = Todo(title: "", direction: direction, scheduledDate: saturday)
+        let futureTodo = Todo(title: "", direction: direction, scheduledDate: friday)
+
+        #expect(
+            planner.pendingWeeklyTodoToRollForward(
+                for: direction,
+                in: [previousWeekTodo, futureTodo],
+                on: wednesday
+            ) == nil
+        )
+    }
+
     @Test func weeklyHabitCannotMovePastAchievableDate() {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
