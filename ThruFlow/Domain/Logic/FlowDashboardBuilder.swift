@@ -39,12 +39,42 @@ struct FlowDashboardSnapshot {
             }
             .sorted { $0.focusSeconds > $1.focusSeconds }
     }
+
+    var taskSummaries: [FlowDashboardTaskSummary] {
+        Dictionary(grouping: segments) { segment in
+            segment.taskID?.uuidString ?? "direction-\(segment.directionID.uuidString)"
+        }
+        .map { id, values in
+            let first = values[0]
+            return FlowDashboardTaskSummary(
+                id: id,
+                title: first.taskTitle,
+                symbol: first.symbol,
+                colorHex: first.colorHex,
+                focusSeconds: values.reduce(0) { $0 + $1.focusSeconds }
+            )
+        }
+        .sorted {
+            if $0.focusSeconds != $1.focusSeconds {
+                return $0.focusSeconds > $1.focusSeconds
+            }
+            return $0.title.localizedStandardCompare($1.title) == .orderedAscending
+        }
+    }
 }
 
 struct FlowDashboardDirectionSummary: Identifiable {
     let id: UUID
     let symbol: String
     let name: String
+    let colorHex: String
+    let focusSeconds: Int
+}
+
+struct FlowDashboardTaskSummary: Identifiable {
+    let id: String
+    let title: String
+    let symbol: String
     let colorHex: String
     let focusSeconds: Int
 }
@@ -59,6 +89,7 @@ struct FlowDashboardSegment: Identifiable {
     let startFraction: Double
     let endFraction: Double
     let focusSeconds: Int
+    let taskID: UUID?
     let directionID: UUID
     let directionName: String
     let colorHex: String
@@ -326,6 +357,7 @@ struct FlowDashboardBuilder {
             startFraction: start,
             endFraction: min(1, max(end, start + (1 / dayDuration))),
             focusSeconds: focusSeconds,
+            taskID: todo?.id,
             directionID: direction?.id ?? id,
             directionName: direction?.name ?? "その他",
             colorHex: direction?.colorHex ?? "#8E8E93",
