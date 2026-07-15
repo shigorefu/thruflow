@@ -27,7 +27,7 @@ SwiftUI views should call domain logic instead of owning product rules directly.
 - `FlowBreak` stores explicit rest and UUID links between adjacent sessions in a Flow series; `FlowSeriesPolicy` owns continuation windows and Long Break thresholds.
 - `Todo.completedAt` stores the exact completion time for new completions.
 - `DayHistoryBuilder` creates daily Task/Direction aggregates and legacy day projections.
-- `HistoryCalendarBuilder` creates read-only day/week/month calendar projections from actual Flow and break records; Todo completion never creates a calendar item.
+- `HistoryCalendarBuilder` creates day/week/month calendar projections from actual Flow and break records; Todo completion never creates a calendar item. `FlowHistoryEditor` moves a completed FlowSession and all of its segments by one shared time offset for calendar drag-and-drop.
 - `FlowDashboardBuilder` groups connected records by `seriesID` into continuous dashboard series spans without mutating calendar history.
 - `HistoryDayTimelineWindowBuilder` derives the testable Elastic/full-day hour range independently from SwiftUI, including records that cross midnight.
 - `HistoryOverlapLayout` assigns deterministic side-by-side lanes using actual and minimum visual duration so short records cannot overlap in rendering.
@@ -51,7 +51,7 @@ Cover:
 - Block conversion and progress.
 - Flow timer transitions.
 - Statistics range construction and filters.
-- Day-history grouping, legacy untimed completions, and deterministic Flow progress reconciliation after create/edit/delete.
+- Day-history grouping, legacy untimed completions, deterministic Flow progress reconciliation after create/edit/delete, and duration-preserving Flow moves.
 - Manual Flow creation, linked Task progress without implicit completion, and fixed-Direction Task creation.
 - Flow series continuation, Long Break thresholds, rest correction, and same-series downstream shifting.
 - Flow dashboard totals, palette ordering, day filtering, live minimum-credit behavior, and timeline normalization.

@@ -93,6 +93,56 @@ struct DayHistoryTests {
         #expect(todo.completedAt == nil)
     }
 
+    @Test func movingFlowShiftsSessionAndSegmentsWithoutChangingProgress() throws {
+        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let direction = Direction(name: "仕事", type: .neutral)
+        let todo = Todo(
+            title: "実装",
+            direction: direction,
+            measurement: .minutes,
+            plannedAmount: 60
+        )
+        let start = Date(timeIntervalSince1970: 20 * 60 * 60)
+        context.insert(direction)
+        context.insert(todo)
+
+        let editor = FlowHistoryEditor()
+        let session = editor.createManual(
+            todo: todo,
+            direction: direction,
+            mode: .twentyFiveFive,
+            startedAt: start,
+            focusSeconds: 25 * 60,
+            modelContext: context,
+            now: start.addingTimeInterval(25 * 60)
+        )
+        let originalCreatedAt = session.createdAt
+        let originalSegmentCreatedAt = try #require(session.segments.first?.createdAt)
+        let target = start.addingTimeInterval(24 * 60 * 60 + 90 * 60)
+
+        editor.move(
+            session: session,
+            itemStartedAt: start,
+            to: target,
+            modelContext: context,
+            now: target
+        )
+
+        #expect(session.startedAt == target)
+        #expect(session.plannedEndAt == target.addingTimeInterval(25 * 60))
+        #expect(session.endedAt == target.addingTimeInterval(25 * 60))
+        #expect(session.segments.first?.startedAt == target)
+        #expect(session.segments.first?.endedAt == target.addingTimeInterval(25 * 60))
+        #expect(session.createdAt == originalCreatedAt)
+        #expect(session.segments.first?.createdAt == originalSegmentCreatedAt)
+        #expect(todo.recordedFocusSeconds == 25 * 60)
+        #expect(todo.actualProgress == 25)
+        #expect(direction.recordedFocusSeconds == 25 * 60)
+    }
+
     @Test func historyOrdersTimedEntriesAndSeparatesLegacyCompletions() {
         let day = Date(timeIntervalSince1970: 86_400)
         let direction = Direction(name: "読書", type: .habit, symbolName: "📚", colorHex: "#34C759")

@@ -9,6 +9,7 @@ import SwiftData
 import SwiftUI
 
 struct HistoryCalendarView: View {
+    @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
 
     @Binding var selectedDate: Date
@@ -26,6 +27,7 @@ struct HistoryCalendarView: View {
 
     private let calendar = Calendar.current
     private let builder = HistoryCalendarBuilder()
+    private let historyEditor = FlowHistoryEditor()
 
     private var snapshot: HistoryCalendarSnapshot {
         let interval = range.interval(containing: selectedDate, calendar: calendar)
@@ -67,7 +69,9 @@ struct HistoryCalendarView: View {
                         selectedItemID: $selectedDayItemID,
                         manualFlowDraft: $manualFlowDraft,
                         visibleKinds: $visibleKinds,
-                        onEdit: openEditor
+                        onEdit: openEditor,
+                        onMove: moveHistoryItem,
+                        onDropOnDay: moveHistoryPayload
                     )
                 case .week:
                     HistoryCalendarPeriodWorkspace {
@@ -79,17 +83,23 @@ struct HistoryCalendarView: View {
                             hourHeight: 64,
                             selectedItemID: nil,
                             manualFlowDraft: $manualFlowDraft,
-                            onSelect: openEditor
+                            onSelect: openEditor,
+                            onMove: moveHistoryItem
                         )
                     } inspector: {
-                        HistoryMiniCalendar(selectedDate: $selectedDate, selectionMode: .week)
+                        HistoryMiniCalendar(
+                            selectedDate: $selectedDate,
+                            selectionMode: .week,
+                            onDropPayload: moveHistoryPayload
+                        )
                     }
                 case .month:
                     HistoryCalendarPeriodWorkspace {
                         HistoryMonthGrid(
                             selectedDate: $selectedDate,
                             items: filteredItems,
-                            onSelect: openEditor
+                            onSelect: openEditor,
+                            onMove: moveHistoryItem
                         )
                     } inspector: {
                         HistoryYearMonthPicker(selectedDate: $selectedDate)
@@ -138,6 +148,45 @@ struct HistoryCalendarView: View {
     private func updateManualFlowDraft(startedAt: Date, endedAt: Date) {
         manualFlowDraft?.startedAt = startedAt
         manualFlowDraft?.endedAt = endedAt
+    }
+
+    private func moveHistoryPayload(_ payload: String, to day: Date) -> Bool {
+        guard let item = historyItem(for: payload) else { return false }
+        let components = calendar.dateComponents([.hour, .minute, .second], from: item.startedAt)
+        guard let target = calendar.date(
+            bySettingHour: components.hour ?? 0,
+            minute: components.minute ?? 0,
+            second: components.second ?? 0,
+            of: day
+        ) else { return false }
+        return moveHistoryItem(item, target)
+    }
+
+    private func moveHistoryItem(_ item: HistoryCalendarItem, _ targetDate: Date) -> Bool {
+        guard item.kind == .flow,
+              let session = item.session,
+              activeFlowStore.activeSession?.id != session.id else { return false }
+
+        historyEditor.move(
+            session: session,
+            itemStartedAt: item.startedAt,
+            to: targetDate,
+            modelContext: modelContext
+        )
+        do {
+            try modelContext.save()
+            selectedDate = calendar.startOfDay(for: targetDate)
+            selectedDayItemID = item.id
+            return true
+        } catch {
+            modelContext.rollback()
+            return false
+        }
+    }
+
+    private func historyItem(for payload: String) -> HistoryCalendarItem? {
+        guard payload.hasPrefix("history-flow:") else { return nil }
+        return filteredItems.first { "history-flow:\($0.id)" == payload }
     }
 }
 
@@ -207,6 +256,7 @@ struct HistoryTimeGrid: View {
     let selectedItemID: String?
     @Binding var manualFlowDraft: HistoryFlowCreationDraft?
     let onSelect: (HistoryCalendarItem) -> Void
+    let onMove: (HistoryCalendarItem, Date) -> Bool
 
     private let calendar = Calendar.current
     private let timeAxisWidth: CGFloat = 72
@@ -325,7 +375,8 @@ struct HistoryTimeGrid: View {
                 HistoryTimedItemView(
                     item: item,
                     isCompact: item.durationSeconds < 15 * 60,
-                    isSelected: selectedItemID == item.id
+                    isSelected: selectedItemID == item.id,
+                    dragPayload: item.kind == .flow ? "history-flow:\(item.id)" : nil
                 ) {
                     manualFlowDraft = nil
                     onSelect(item)
@@ -359,6 +410,15 @@ struct HistoryTimeGrid: View {
                             )
                         }
                 )
+                .dropDestination(for: String.self) { payloads, location in
+                    guard let payload = payloads.first,
+                          payload.hasPrefix("history-flow:"),
+                          let item = items.first(where: { "history-flow:\($0.id)" == payload }) else {
+                        return false
+                    }
+                    let y = min(max(0, location.y), height)
+                    return onMove(item, date(on: day, y: y))
+                }
         }
     }
 
@@ -500,9 +560,19 @@ private struct HistoryTimedItemView: View {
     let item: HistoryCalendarItem
     let isCompact: Bool
     let isSelected: Bool
+    let dragPayload: String?
     let action: () -> Void
 
+    @ViewBuilder
     var body: some View {
+        if let dragPayload {
+            itemButton.draggable(dragPayload)
+        } else {
+            itemButton
+        }
+    }
+
+    private var itemButton: some View {
         Button(action: action) {
             Group {
                 if isCompact {
@@ -567,6 +637,7 @@ private struct HistoryMonthGrid: View {
     @Binding var selectedDate: Date
     let items: [HistoryCalendarItem]
     let onSelect: (HistoryCalendarItem) -> Void
+    let onMove: (HistoryCalendarItem, Date) -> Bool
 
     private let calendar = Calendar.current
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 0), count: 7)
@@ -627,7 +698,7 @@ private struct HistoryMonthGrid: View {
             .buttonStyle(.plain)
 
             ForEach(dayItems.prefix(3)) { item in
-                Button { onSelect(item) } label: {
+                let button = Button { onSelect(item) } label: {
                     HStack(spacing: 3) {
                         Circle().fill(item.kind == .rest ? Color.secondary : Color(hex: item.colorHex)).frame(width: 5, height: 5)
                         Text(item.title).lineLimit(1)
@@ -636,6 +707,12 @@ private struct HistoryMonthGrid: View {
                     .foregroundStyle(.primary)
                 }
                 .buttonStyle(.plain)
+
+                if item.kind == .flow {
+                    button.draggable("history-flow:\(item.id)")
+                } else {
+                    button
+                }
             }
 
             if dayItems.count > 3 {
@@ -649,6 +726,21 @@ private struct HistoryMonthGrid: View {
         .frame(maxWidth: .infinity, minHeight: height, maxHeight: height, alignment: .topLeading)
         .background(calendar.isDate(day, inSameDayAs: selectedDate) ? Color.accentColor.opacity(0.05) : .clear)
         .overlay { Rectangle().stroke(Color.secondary.opacity(0.13), lineWidth: 0.5) }
+        .dropDestination(for: String.self) { payloads, _ in
+            guard let payload = payloads.first,
+                  payload.hasPrefix("history-flow:"),
+                  let item = items.first(where: { "history-flow:\($0.id)" == payload }) else {
+                return false
+            }
+            let components = calendar.dateComponents([.hour, .minute, .second], from: item.startedAt)
+            guard let target = calendar.date(
+                bySettingHour: components.hour ?? 0,
+                minute: components.minute ?? 0,
+                second: components.second ?? 0,
+                of: day
+            ) else { return false }
+            return onMove(item, target)
+        }
     }
 
     private var weekdaySymbols: [String] {

@@ -77,12 +77,15 @@ static float hash21(float2 value) {
         accumulatedWeight += contribution;
     }
 
-    // Moving negative channels preserve dark water between the broad ribbons.
-    float channelField = sin((uv.y - spine) * 35.0 + sin(uv.x * 8.0 - time * 0.18) * 1.15);
-    float channel = smoothstep(0.70, 0.98, channelField);
-    float negativeSpace = 1.0 - channel * mix(0.42, 0.30, detail);
+    float ambientBlend = 0.5 + sin(uv.x * 3.4 - time * 0.045) * 0.5;
+    half4 ambientPair = mix(color0, color2, half(ambientBlend));
+    half4 ambientAccent = mix(color1, color3, half(1.0 - ambientBlend));
+    float3 ambientColor = float3(mix(ambientPair, ambientAccent, half(0.34)).rgb);
+    float ambientStrength = mix(0.090, 0.145, progress);
+    float ambientField = mix(0.72, 1.0, envelope);
+
     float shimmer = 0.96 + sin((uv.x + uv.y) * 10.0 - time * 0.42) * 0.04 * detail;
-    float3 rendered = accumulated * envelope * negativeSpace * shimmer;
+    float3 rendered = (accumulated * envelope + ambientColor * ambientStrength * ambientField) * shimmer;
 
     // A completed half Block sends one restrained energy pulse through the channel.
     if (impulse >= 0.0 && impulse <= 1.0) {
@@ -100,6 +103,6 @@ static float hash21(float2 value) {
         rendered *= compressedPeak / peak;
     }
 
-    float alpha = clamp(accumulatedWeight * envelope * negativeSpace, 0.18, 1.0);
+    float alpha = clamp(accumulatedWeight * envelope + 0.64, 0.64, 1.0);
     return half4(half3(rendered), half(alpha));
 }

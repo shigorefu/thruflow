@@ -198,6 +198,29 @@ struct FlowHistoryEditor {
         )
     }
 
+    func move(
+        session: FlowSession,
+        itemStartedAt: Date,
+        to targetDate: Date,
+        modelContext: ModelContext,
+        now: Date = .now
+    ) {
+        let offset = targetDate.timeIntervalSince(itemStartedAt)
+        guard abs(offset) >= 1 else { return }
+
+        session.startedAt = session.startedAt.addingTimeInterval(offset)
+        session.plannedEndAt = session.plannedEndAt.addingTimeInterval(offset)
+        session.endedAt = session.endedAt?.addingTimeInterval(offset)
+        session.updatedAt = now
+
+        for segment in session.segments {
+            segment.startedAt = segment.startedAt.addingTimeInterval(offset)
+            segment.endedAt = segment.endedAt?.addingTimeInterval(offset)
+        }
+
+        reconciler.reconcile(session: session, modelContext: modelContext, now: now)
+    }
+
     private func deleteRelatedBreaks(sessionID: UUID, modelContext: ModelContext, now: Date) {
         let breaks = (try? modelContext.fetch(FetchDescriptor<FlowBreak>())) ?? []
         for flowBreak in breaks where

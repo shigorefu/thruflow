@@ -157,9 +157,16 @@ struct TasksView: View {
     private var taskPeriodPicker: some View {
         switch calendarRange {
         case .oneDay:
-            HistoryMiniCalendar(selectedDate: selectedDateBinding)
+            HistoryMiniCalendar(
+                selectedDate: selectedDateBinding,
+                onDropPayload: moveTaskPayload
+            )
         case .sevenDays:
-            HistoryMiniCalendar(selectedDate: selectedDateBinding, selectionMode: .week)
+            HistoryMiniCalendar(
+                selectedDate: selectedDateBinding,
+                selectionMode: .week,
+                onDropPayload: moveTaskPayload
+            )
         case .month:
             HistoryYearMonthPicker(selectedDate: selectedDateBinding)
         }
@@ -193,7 +200,9 @@ struct TasksView: View {
                 onEdit: { editingTodo = $0 },
                 onStartFlow: startFlow,
                 onDelete: deleteTodo,
-                onMove: moveTodo
+                onMove: { todo, date in
+                    _ = moveTodo(todo, to: date)
+                }
             )
         case .month:
             TaskMonthGrid(
@@ -202,7 +211,8 @@ struct TasksView: View {
                 selectedDate: selectedDate,
                 todos: todos.filter { !$0.isArchived && !$0.isDeleted },
                 filter: taskFilter,
-                onSelectDate: openDay
+                onSelectDate: openDay,
+                onMove: moveTodo
             )
         }
     }
@@ -216,7 +226,7 @@ struct TasksView: View {
                 ForEach(selectedDateGroups) { group in
                     Section {
                         ForEach(group.todos) { todo in
-                            todoRow(todo)
+                            draggableTodoRow(todo)
                         }
                         .onMove { source, destination in
                             moveTodos(in: group.type, from: source, to: destination)
@@ -287,15 +297,46 @@ struct TasksView: View {
         try? modelContext.save()
     }
 
-    private func moveTodo(_ todo: Todo, to date: Date) {
+    @discardableResult
+    private func moveTodo(_ todo: Todo, to date: Date) -> Bool {
         switch rescheduleService.validate(todo, movingTo: date, among: todos) {
         case .success:
             todo.reschedule(to: Calendar.current.startOfDay(for: date))
             todo.setSortIndex((todos.map(\.sortIndex).min() ?? 0) - 1)
-            try? modelContext.save()
+            do {
+                try modelContext.save()
+                return true
+            } catch {
+                modelContext.rollback()
+                moveError = "タスクを移動できませんでした。"
+                return false
+            }
         case .failure(let failure):
             moveError = failure.message
+            return false
         }
+    }
+
+    private func moveTaskPayload(_ payload: String, to date: Date) -> Bool {
+        guard payload.hasPrefix("task:"),
+              let id = UUID(uuidString: String(payload.dropFirst("task:".count))),
+              let todo = todos.first(where: { $0.id == id }) else { return false }
+        return moveTodo(todo, to: date)
+    }
+
+    @ViewBuilder
+    private func draggableTodoRow(_ todo: Todo) -> some View {
+        if canDrag(todo) {
+            todoRow(todo).draggable("task:\(todo.id.uuidString)")
+        } else {
+            todoRow(todo)
+        }
+    }
+
+    private func canDrag(_ todo: Todo) -> Bool {
+        guard !todo.isCompleted else { return false }
+        guard todo.direction?.type == .habit else { return true }
+        return todo.direction?.goalSchedule == .weeklyCount
     }
 
     private func todoRow(_ todo: Todo) -> some View {

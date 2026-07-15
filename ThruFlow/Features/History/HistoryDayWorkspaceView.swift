@@ -15,6 +15,8 @@ struct HistoryDayWorkspaceView: View {
     @Binding var manualFlowDraft: HistoryFlowCreationDraft?
     @Binding var visibleKinds: Set<HistoryCalendarItemKind>
     let onEdit: (HistoryCalendarItem) -> Void
+    let onMove: (HistoryCalendarItem, Date) -> Bool
+    let onDropOnDay: (String, Date) -> Bool
 
     @State private var compactInspectorItem: HistoryCalendarItem?
 
@@ -48,7 +50,8 @@ struct HistoryDayWorkspaceView: View {
                         selectedDate: $selectedDate,
                         selectedItem: selectedItem,
                         manualFlowDraft: $manualFlowDraft,
-                        onEdit: onEdit
+                        onEdit: onEdit,
+                        onDropOnDay: onDropOnDay
                     )
                     .frame(width: min(390, max(310, geometry.size.width * 0.34)))
                 }
@@ -59,7 +62,8 @@ struct HistoryDayWorkspaceView: View {
                             selectedDate: $selectedDate,
                             selectedItem: item,
                             manualFlowDraft: $manualFlowDraft,
-                            onEdit: onEdit
+                            onEdit: onEdit,
+                            onDropOnDay: onDropOnDay
                         )
                         .frame(minWidth: 340, idealWidth: 380, minHeight: 560)
                     }
@@ -128,6 +132,8 @@ struct HistoryDayWorkspaceView: View {
                 if isCompact {
                     compactInspectorItem = item
                 }
+            } onMove: { item, date in
+                onMove(item, date)
             }
         }
     }
@@ -141,6 +147,7 @@ struct HistoryDayWorkspaceView: View {
 struct HistoryMiniCalendar: View {
     @Binding var selectedDate: Date
     var selectionMode: HistoryMiniCalendarSelectionMode = .day
+    var onDropPayload: ((String, Date) -> Bool)?
 
     private let calendar = Calendar.current
     private var columns: [GridItem] {
@@ -198,6 +205,10 @@ struct HistoryMiniCalendar: View {
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(accessibilityDate(date))
+                    .dropDestination(for: String.self) { payloads, _ in
+                        guard let payload = payloads.first else { return false }
+                        return onDropPayload?(payload, date) ?? false
+                    }
                 }
             }
         }
@@ -351,10 +362,11 @@ private struct HistoryDayInspectorPane: View {
     let selectedItem: HistoryCalendarItem?
     @Binding var manualFlowDraft: HistoryFlowCreationDraft?
     let onEdit: (HistoryCalendarItem) -> Void
+    let onDropOnDay: (String, Date) -> Bool
 
     var body: some View {
         VStack(spacing: 0) {
-            HistoryMiniCalendar(selectedDate: $selectedDate)
+            HistoryMiniCalendar(selectedDate: $selectedDate, onDropPayload: onDropOnDay)
                 .padding(16)
 
             Divider()
