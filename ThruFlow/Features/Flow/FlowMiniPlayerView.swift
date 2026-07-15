@@ -687,7 +687,7 @@ struct FlowMiniPlayerView: View {
         }
         .buttonStyle(.plain)
         .foregroundStyle(.red)
-        .accessibilityLabel("Flowを破壊")
+        .accessibilityLabel(activeFlowStore.isBreakPhase ? "休憩を削除" : "Flowを破壊")
     }
 
     private var primaryButton: some View {

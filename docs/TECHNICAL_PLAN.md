@@ -32,7 +32,7 @@ SwiftUI views should call domain logic instead of owning product rules directly.
 - `HistoryOverlapLayout` assigns deterministic side-by-side lanes using actual and minimum visual duration so short records cannot overlap in rendering.
 - `FlowHistoryEditor` creates independent completed manual Flow records and applies progress deltas when historical Flow records change.
 - `FlowDashboardBuilder` derives today's totals, Direction palette, and timeline segments from `FlowSession`, with a live overlay for the active creditable Flow.
-- `DashboardStatisticsBuilder` derives 3/7-day bars, previous-day deltas, and the most-grown Direction outside SwiftUI.
+- `DashboardStatisticsBuilder` derives seven-day bars, previous-day deltas, and the most-grown Direction outside SwiftUI.
 - `FlowVisualState` converts 0...6 daily Blocks into clamped speed, volume, layer count, and mode-specific wave character without placing those rules in SwiftUI.
 - `FlowStream.metal` renders the broad multi-color stream as one GPU effect. The SwiftUI host supplies only accumulated phase and visual-state uniforms, uses 30 FPS while idle and 60 FPS while active, and pauses when its window is not key, the scene is inactive, or Reduce Motion is enabled. `FlowAnimationClock` preserves phase when speed changes or rendering pauses, so starting Flow and returning to the window never replace the current stream frame.
 - The dashboard reuses `FlowMiniPlayerView` behavior through its dedicated dashboard layout instead of creating a second timer controller. `ActiveFlowStore.phaseProgress` provides the circular timer progress.
@@ -54,7 +54,7 @@ Cover:
 - Manual Flow creation, linked Task progress without implicit completion, and fixed-Direction Task creation.
 - Flow series continuation, Long Break thresholds, rest correction, and same-series downstream shifting.
 - Flow dashboard totals, palette ordering, day filtering, live minimum-credit behavior, and timeline normalization.
-- Dashboard statistics distribution, 3/7-day trend comparisons, and completion projection.
+- Dashboard statistics distribution, seven-day trend comparisons, and completion projection.
 
 ## Migration Caution
 

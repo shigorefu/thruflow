@@ -27,7 +27,6 @@ struct FlowDashboardView: View {
     @State private var showsQuickComposer = false
     @State private var statisticsPage = DashboardStatisticsPage.distribution
     @State private var distributionMode = DashboardDistributionMode.task
-    @State private var trendRange = DashboardTrendRange.sevenDays
 
     private let builder = FlowDashboardBuilder()
     private let todayFilter = TodayTodoFilter()
@@ -89,7 +88,7 @@ struct FlowDashboardView: View {
         availableHeight: CGFloat,
         now: Date
     ) -> some View {
-        let lowerPanelHeight = max(280, availableHeight - Self.topPanelHeight - 16)
+        let lowerPanelHeight = max(340, availableHeight - Self.topPanelHeight - 16)
 
         return ViewThatFits(in: .horizontal) {
             Grid(horizontalSpacing: 16, verticalSpacing: 16) {
@@ -122,6 +121,7 @@ struct FlowDashboardView: View {
 
                 taskColumns
                 statisticsPanel(snapshot: snapshot)
+                    .frame(height: 340)
             }
         }
     }
@@ -609,7 +609,7 @@ struct FlowDashboardView: View {
 
     private func statisticsTrendPage(snapshot: FlowDashboardSnapshot) -> some View {
         let days = statisticsBuilder.days(
-            count: trendRange.dayCount,
+            count: 7,
             endingOn: snapshot.date,
             sessions: sessions,
             breaks: flowBreaks
@@ -622,13 +622,9 @@ struct FlowDashboardView: View {
         )
 
         return VStack(alignment: .leading, spacing: 12) {
-            Picker("期間", selection: $trendRange) {
-                ForEach(DashboardTrendRange.allCases) { range in
-                    Text(range.title).tag(range)
-                }
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
+            Text("7日")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
 
             DashboardStatisticsBars(days: days)
                 .frame(height: 112)
@@ -1391,15 +1387,6 @@ private enum DashboardDistributionMode: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
     var title: String { self == .task ? "タスク別" : "方向別" }
-}
-
-private enum DashboardTrendRange: Int, CaseIterable, Identifiable {
-    case threeDays = 3
-    case sevenDays = 7
-
-    var id: Int { rawValue }
-    var dayCount: Int { rawValue }
-    var title: String { "\(rawValue)日" }
 }
 
 private struct DashboardDistributionRow: Identifiable {
