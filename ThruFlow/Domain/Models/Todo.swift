@@ -218,6 +218,13 @@ final class Todo {
         updatedAt = now
     }
 
+    @discardableResult
+    func setManuallyCompleted(_ completed: Bool, now: Date = .now) -> Bool {
+        guard measurement == .checkbox else { return false }
+        setCompleted(completed, now: now)
+        return true
+    }
+
     func setProgress(_ value: Int, now: Date = .now) {
         actualProgress = max(0, value)
         let nextStatus = TodoProgressCalculator().status(

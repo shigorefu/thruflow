@@ -67,7 +67,7 @@ In the narrow vertical dashboard layout, the player comes first, followed by the
 - selecting another Focus mode during focus or pause preserves elapsed time and only moves the planned end, matching the seek controls;
 - break time counts down past zero with a positive overtime sign; its progress ring drains while the focus ring fills. Starting work during rest completes the previous Flow and immediately starts the next one, while menu bar status becomes `☕️ 休憩 - time` or `☕️ Long Break - time`;
 - choosing another Task during focus or pause keeps the current Flow running and starts a new history segment; no memo prompt is shown for this switch;
-- the Task card reuses the canonical completion/progress control and shows remaining Blocks or Minutes;
+- the Task card reuses the canonical completion/progress control; only Check is interactive, while Block and Minute rings are read-only and show progress and the remaining amount;
 - generated titles for empty Tasks and Habits are consistently italic and visually muted in the player, picker, Tasks screen, and dashboard panels;
 - dashboard `タスク` rows show priority before progress, including `余裕があれば` for low-priority optional work; fixed Habit priority is not displayed;
 - the centered dashboard donut uses one Direction-colored sector per Task, sized by that Task's share of today's recorded focused Flow seconds; small gaps distinguish Tasks that share a Direction color;
@@ -99,7 +99,7 @@ The dashboard timeline uses a neutral dark rail for time without Flow. Every ser
 
 Hovering a rest shows its type, interval, and duration above the timeline. Clicking a completed rest opens a duration editor anchored to that rest. Start time is fixed. If the new end overlaps the next Flow, that Flow and all later Flow/rest records in the same series move forward by the overlap. Free space absorbs an extension without shifting, shortening does not pull history backward, and unrelated series never move.
 
-Below the Flow stage are today's `タスク` and `習慣` columns. `ナイス` is omitted when empty. Rows use the same square Check and circular Block/Minute progress controls as the Tasks screen, and can be completed or opened for editing. A compact `統計` panel shows today's total focused time and its Task-level distribution. The legend is ordered by focused duration and shows each Task with its accumulated time.
+Below the Flow stage are today's `タスク` and `習慣` columns. `ナイス` is omitted when empty. Rows use the same square Check and circular Block/Minute progress controls as the Tasks screen. Check can be completed manually; Block and Minute rings are read-only because recorded Flow owns their progress. Rows can be opened for editing. A compact `統計` panel shows today's total focused time and its Task-level distribution. The legend is ordered by focused duration and shows each Task with its accumulated time.
 
 The Dashboard Task header `+` opens the shared messenger-style composer in a separate popover. The Flow Task picker's `タスク` tab also ends with an add row that opens the same popover; a Task created there is immediately selected for Flow. Direction, measurement, and priority remain editable, while the date is fixed to `今日`. The composer has an explicit close button that discards the unfinished action. Habit has no manual add action.
 

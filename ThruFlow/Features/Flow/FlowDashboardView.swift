@@ -654,7 +654,7 @@ struct FlowDashboardView: View {
     }
 
     private func toggleTodo(_ todo: Todo) {
-        todo.setCompleted(!todo.isCompleted)
+        guard todo.setManuallyCompleted(!todo.isCompleted) else { return }
         try? modelContext.save()
     }
 

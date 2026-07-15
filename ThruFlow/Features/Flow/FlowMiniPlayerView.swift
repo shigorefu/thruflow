@@ -184,8 +184,9 @@ struct FlowMiniPlayerView: View {
                     todo: selectedTodo,
                     additionalFocusSeconds: liveSelectedTaskFocusSeconds(now: now)
                 ) {
-                    selectedTodo.setCompleted(!selectedTodo.isCompleted)
-                    try? modelContext.save()
+                    if selectedTodo.setManuallyCompleted(!selectedTodo.isCompleted) {
+                        try? modelContext.save()
+                    }
                 }
             }
 
