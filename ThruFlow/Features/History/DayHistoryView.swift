@@ -29,6 +29,7 @@ struct DayHistoryView: View {
     @Query(sort: \FlowSession.startedAt, order: .reverse) private var sessions: [FlowSession]
     @Query(sort: \FlowBreak.startedAt, order: .reverse) private var breaks: [FlowBreak]
     @Query(sort: \Todo.updatedAt, order: .reverse) private var todos: [Todo]
+    @Query(sort: \Direction.sortIndex) private var directions: [Direction]
 
     @State private var selectedDate: Date
     @State private var selectedMode: DayHistoryMode = .calendar
@@ -36,6 +37,8 @@ struct DayHistoryView: View {
     @State private var expandedTaskIDs: Set<String> = []
     @State private var expandedDirectionIDs: Set<UUID> = []
     @State private var editingTodo: Todo?
+    @State private var manualFlowRequest: HistoryManualFlowRequest?
+    @State private var taskDirection: Direction?
 
     private let onClose: (() -> Void)?
     private let calendar = Calendar.current
@@ -67,29 +70,52 @@ struct DayHistoryView: View {
             TodoFormView(mode: .edit(todo))
                 .frame(minWidth: 480, idealWidth: 540, minHeight: 620, idealHeight: 700)
         }
+        .sheet(item: $manualFlowRequest) { request in
+            ManualFlowCreationView(
+                startedAt: request.startedAt,
+                todo: request.todo,
+                locksTodo: true,
+                onDismiss: { manualFlowRequest = nil }
+            )
+            .frame(minWidth: 420, idealWidth: 480, minHeight: 430, idealHeight: 500)
+        }
+        .sheet(item: $taskDirection) { direction in
+            TodoFormView(
+                mode: .create,
+                fixedDirection: direction,
+                scheduledDate: selectedDate
+            )
+            .frame(minWidth: 480, idealWidth: 540, minHeight: 620, idealHeight: 700)
+        }
     }
 
     private var historyToolbar: some View {
         ViewThatFits(in: .horizontal) {
-            HStack(spacing: 16) {
-                historyIdentity
-                Spacer(minLength: 12)
+            ZStack {
+                HStack(spacing: 16) {
+                    historyIdentity
+                    Spacer(minLength: 12)
+                    Button("今日") {
+                        selectedDate = calendar.startOfDay(for: .now)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    rangePicker.frame(width: 150)
+                }
+
                 modePicker.frame(width: 330)
-                Spacer(minLength: 12)
-                dateNavigation
-                rangePicker.frame(width: 150)
             }
 
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 12) {
                     historyIdentity
                     Spacer()
-                    dateNavigation
-                }
-                HStack(spacing: 12) {
-                    modePicker.frame(maxWidth: .infinity)
+                    Button("今日") {
+                        selectedDate = calendar.startOfDay(for: .now)
+                    }
+                    .buttonStyle(.borderedProminent)
                     rangePicker.frame(width: 150)
                 }
+                modePicker.frame(maxWidth: .infinity)
             }
         }
     }
@@ -112,35 +138,6 @@ struct DayHistoryView: View {
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
-        }
-        .fixedSize(horizontal: true, vertical: false)
-    }
-
-    private var dateNavigation: some View {
-        HStack(spacing: 4) {
-            Button {
-                moveDay(by: -1)
-            } label: {
-                Image(systemName: "chevron.left")
-            }
-            .help("前の期間")
-
-            DatePicker("日付", selection: $selectedDate, displayedComponents: .date)
-                .labelsHidden()
-                .accessibilityLabel("履歴の日付")
-
-            Button {
-                moveDay(by: 1)
-            } label: {
-                Image(systemName: "chevron.right")
-            }
-            .help("次の期間")
-
-            Button("今日") {
-                selectedDate = calendar.startOfDay(for: .now)
-            }
-            .buttonStyle(.bordered)
-            .tint(.accentColor)
         }
         .fixedSize(horizontal: true, vertical: false)
     }
@@ -306,7 +303,8 @@ struct DayHistoryView: View {
                         isExpanded: expandedDirectionIDs.contains(direction.id),
                         onToggleExpansion: { toggleDirectionExpansion(direction.id) },
                         onToggleCheckbox: toggleCheckbox,
-                        onEditTask: { todo in editingTodo = todo }
+                        onEditTask: { todo in editingTodo = todo },
+                        onAddTask: { taskDirection = self.direction(withID: direction.directionID) }
                     )
                 }
             }
@@ -351,10 +349,6 @@ struct DayHistoryView: View {
         formatter.locale = Locale(identifier: "ja_JP")
         formatter.dateFormat = "M月d日"
         return formatter
-    }
-
-    private func moveDay(by value: Int) {
-        selectedDate = calendar.startOfDay(for: selectedRange.moving(selectedDate, by: value, calendar: calendar))
     }
 
     private func durationText(_ seconds: Int) -> String {
@@ -411,7 +405,8 @@ struct DayHistoryView: View {
                 onToggleCheckbox: task.todos.count == 1 || allowsGroupedCheckboxToggle
                     ? { toggleCheckbox(task) }
                     : nil,
-                onEdit: { todo in editingTodo = todo }
+                onEdit: { todo in editingTodo = todo },
+                onAddFlow: { todo in presentManualFlow(for: todo) }
             )
         }
     }
@@ -452,6 +447,30 @@ struct DayHistoryView: View {
         task.todos.forEach { $0.setManuallyCompleted(shouldComplete) }
         try? modelContext.save()
     }
+
+    private func direction(withID id: UUID) -> Direction? {
+        directions.first { $0.id == id }
+    }
+
+    private func presentManualFlow(for todo: Todo) {
+        manualFlowRequest = HistoryManualFlowRequest(
+            todo: todo,
+            startedAt: defaultManualFlowStart(on: todo.scheduledDate ?? selectedDate)
+        )
+    }
+
+    private func defaultManualFlowStart(on date: Date) -> Date {
+        if calendar.isDateInToday(date) {
+            return Date().addingTimeInterval(-25 * 60)
+        }
+        return calendar.date(bySettingHour: 9, minute: 0, second: 0, of: date) ?? date
+    }
+}
+
+private struct HistoryManualFlowRequest: Identifiable {
+    let id = UUID()
+    let todo: Todo
+    let startedAt: Date
 }
 
 private struct HistoryTaskDaySection: Identifiable {
@@ -497,6 +516,7 @@ private struct HistoryExpandableTaskRow: View {
     let onToggleExpansion: () -> Void
     let onToggleCheckbox: (() -> Void)?
     let onEdit: (Todo) -> Void
+    let onAddFlow: (Todo) -> Void
 
     var body: some View {
         VStack(spacing: 0) {
@@ -530,6 +550,18 @@ private struct HistoryExpandableTaskRow: View {
 
                     Text(durationText(task.focusSeconds))
                         .font(.callout.weight(.semibold).monospacedDigit())
+
+                    if let todo = task.todo {
+                        Button {
+                            onAddFlow(todo)
+                        } label: {
+                            Image(systemName: "plus")
+                                .frame(width: 24, height: 24)
+                        }
+                        .buttonStyle(.plain)
+                        .help("このタスクにFlowを追加")
+                        .accessibilityLabel("このタスクにFlowを追加")
+                    }
 
                     Image(systemName: "chevron.right")
                         .font(.caption.weight(.semibold))
@@ -680,6 +712,7 @@ private struct HistoryExpandableDirectionRow: View {
     let onToggleExpansion: () -> Void
     let onToggleCheckbox: (DayHistoryTaskSummary) -> Void
     let onEditTask: (Todo) -> Void
+    let onAddTask: () -> Void
 
     var body: some View {
         VStack(spacing: 0) {
@@ -747,6 +780,16 @@ private struct HistoryExpandableDirectionRow: View {
                         .padding(.vertical, 4)
                     }
                 }
+
+                Button(action: onAddTask) {
+                    Label("タスクを追加", systemImage: "plus")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.leading, 46)
+                        .padding(.vertical, 7)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Color.accentColor)
+                .accessibilityLabel("\(direction.name)にタスクを追加")
             }
         }
         .background(Color.secondary.opacity(0.055))

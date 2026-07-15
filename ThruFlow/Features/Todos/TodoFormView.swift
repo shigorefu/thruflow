@@ -29,6 +29,7 @@ struct TodoFormView: View {
     @Query(sort: \Direction.name, order: .forward) private var directions: [Direction]
 
     let mode: Mode
+    private let fixedDirection: Direction?
 
     @State private var draft: TodoDraft
     @State private var selectedDirectionID: UUID?
@@ -58,14 +59,17 @@ struct TodoFormView: View {
         editedTodo?.direction?.type == .habit
     }
 
-    init(mode: Mode) {
+    init(mode: Mode, fixedDirection: Direction? = nil, scheduledDate: Date? = nil) {
         self.mode = mode
+        self.fixedDirection = fixedDirection
 
         switch mode {
         case .create:
-            let draft = TodoDraft()
+            var draft = TodoDraft()
+            draft.direction = fixedDirection
+            draft.scheduledDate = scheduledDate ?? .now
             _draft = State(initialValue: draft)
-            _selectedDirectionID = State(initialValue: nil)
+            _selectedDirectionID = State(initialValue: fixedDirection?.id)
             _usesScheduledDate = State(initialValue: true)
             _usesDeadline = State(initialValue: false)
         case .edit(let todo):
@@ -86,7 +90,12 @@ struct TodoFormView: View {
                     TextField("メモ", text: $draft.notes, axis: .vertical)
                         .lineLimit(2...5)
 
-                    if !isHabitTodoEdit {
+                    if let fixedDirection {
+                        LabeledContent("方向") {
+                            Text("\(fixedDirection.symbolName) \(fixedDirection.name)")
+                                .foregroundStyle(.secondary)
+                        }
+                    } else if !isHabitTodoEdit {
                         Picker("方向", selection: selectedDirectionBinding) {
                             Text("未選択").tag(UUID?.none)
 
@@ -213,7 +222,10 @@ struct TodoFormView: View {
     }
 
     private func selectInitialDirectionIfNeeded() {
-        if draft.direction == nil {
+        if let fixedDirection {
+            selectedDirectionID = fixedDirection.id
+            draft.direction = fixedDirection
+        } else if draft.direction == nil {
             draft.direction = direction(for: selectedDirectionID)
         }
     }
@@ -225,7 +237,7 @@ struct TodoFormView: View {
 
     private func save() {
         if !isHabitTodoEdit {
-            draft.direction = direction(for: selectedDirectionID)
+            draft.direction = fixedDirection ?? direction(for: selectedDirectionID)
             draft.scheduledDate = usesScheduledDate ? draft.scheduledDate ?? .now : nil
             draft.deadline = usesDeadline ? draft.deadline ?? .now : nil
         }
@@ -233,7 +245,7 @@ struct TodoFormView: View {
         validationErrors = validator.validate(draft)
         guard validationErrors.isEmpty else { return }
 
-        let direction = isHabitTodoEdit ? editedTodo?.direction ?? resolvedDirection(for: selectedDirectionID) : resolvedDirection(for: selectedDirectionID)
+        let direction = fixedDirection ?? (isHabitTodoEdit ? editedTodo?.direction ?? resolvedDirection(for: selectedDirectionID) : resolvedDirection(for: selectedDirectionID))
         let measurement = isHabitTodoEdit ? editedTodo?.measurement ?? draft.measurement : draft.measurement
         let priority = isHabitTodoEdit ? editedTodo?.priority ?? draft.priority : draft.priority
         let isRoomIfPossible = isHabitTodoEdit ? editedTodo?.isRoomIfPossible ?? false : draft.priority == .low && draft.isRoomIfPossible

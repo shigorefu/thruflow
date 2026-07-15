@@ -25,7 +25,7 @@ Task title may be empty. When empty, UI displays `(方向)`, for example `(読�
 
 The screen is named `タスク`. There is no separate Inbox navigation item; date-less Task behavior is deferred.
 
-`タスク` supports `1日`, `3日`, `7日`, and `月` calendar ranges. The multi-day modes are kanban boards, while the month mode is a calendar overview. Filters show all work, normal Tasks, or Habit instances. Active Tasks can be moved between dates subject to Habit rules.
+`タスク` supports `日`, `週`, and `月` calendar ranges. Week is a seven-column kanban, while month is a calendar overview. Filters stay centered; `今日` and the History-style period picker own date navigation. Active Tasks can be moved between dates subject to Habit rules.
 
 Weekly-count Habits create one pending Task at a time. Completion allows the next instance on a later day, while moving the pending Task never creates a duplicate or makes the weekly goal impossible.
 
@@ -41,7 +41,7 @@ Flow is a media-player-like recorder.
 
 `Flow` is the first/default navigation section and today's primary dashboard. In wide layout, one grid aligns the stream/timeline above Tasks on the left and the square player above Statistics on the right. The left column occupies roughly three quarters of the content. Direction colors compose the stream palette, while focus duration and session count control its visual volume.
 
-The stream is a field of broad, bright, softly glowing translucent ribbons rendered on the GPU around one shared S-shaped channel with three levels of depth. It remains smooth while idle and immediately accelerates when Flow starts. Its occupied area stops growing at 4 Blocks so dark moving channels preserve the silhouette; progress through 6 Blocks instead adds internal detail, parallax, saturation, and motion. A restrained light pulse crosses the stream at each completed half-Block. Short, Focus, and Deep change the wave character, while a subtle mode-specific tint is applied to the dashboard. Below it, today's normal Tasks and Habits remain actionable with the same Check, Block, and Minute indicators as Tasks; Nice appears only when present, and compact Statistics show total focused time distributed across Tasks.
+The stream is a field of broad, bright, softly glowing translucent ribbons rendered on the GPU around one shared S-shaped channel with three levels of depth. It remains smooth while idle and immediately accelerates when Flow starts. Its occupied area stops growing at 4 Blocks so dark moving channels preserve the silhouette; progress through 6 Blocks instead adds internal detail, parallax, saturation, and motion. A restrained light pulse crosses the stream at each completed half-Block. Short, Focus, and Deep change the wave character, while a subtle mode-specific tint is applied to the dashboard. Below it, today's normal Tasks and Habits remain actionable with the same Check, Block, and Minute indicators as Tasks; Nice appears only when present. Compact Statistics form a three-page carousel for Task/Direction time distribution, 3/7-day Flow trends with day-over-day deltas, and today's completion status.
 
 Modes:
 

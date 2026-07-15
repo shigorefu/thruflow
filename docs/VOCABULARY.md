@@ -11,9 +11,8 @@
 | Task / Todo | タスク |
 | Daily task screen | タスク |
 | All task filter | すべて |
-| One-day range | 1日 |
-| Three-day range | 3日 |
-| Seven-day range | 7日 |
+| Day range | 日 |
+| Week range | 週 |
 | Month range | 月 |
 | Memo | メモ |
 | Check | チェック |

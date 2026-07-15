@@ -66,15 +66,12 @@ struct TasksView: View {
             TaskCalendarToolbar(
                 range: $calendarRange,
                 filter: $taskFilter,
-                anchorDate: anchorDate,
-                onPrevious: { moveRange(-1) },
-                onNext: { moveRange(1) },
                 onToday: moveToToday
             )
 
             Divider()
 
-            boardContent
+            tasksWorkspace
         }
         .navigationTitle("タスク")
         .safeAreaInset(edge: .bottom) {
@@ -128,17 +125,69 @@ struct TasksView: View {
     }
 
     @ViewBuilder
+    private var tasksWorkspace: some View {
+        GeometryReader { geometry in
+            if geometry.size.width >= 900 {
+                HStack(spacing: 0) {
+                    boardContent
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                    Divider()
+
+                    VStack(spacing: 0) {
+                        taskPeriodPicker
+                            .padding(16)
+                        Spacer(minLength: 0)
+                    }
+                    .frame(width: min(390, max(310, geometry.size.width * 0.30)))
+                    .background(Color.secondary.opacity(0.035))
+                }
+            } else {
+                VStack(spacing: 0) {
+                    taskPeriodPicker
+                        .padding(12)
+                    Divider()
+                    boardContent
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var taskPeriodPicker: some View {
+        switch calendarRange {
+        case .oneDay:
+            HistoryMiniCalendar(selectedDate: selectedDateBinding)
+        case .sevenDays:
+            HistoryMiniCalendar(selectedDate: selectedDateBinding, selectionMode: .week)
+        case .month:
+            HistoryYearMonthPicker(selectedDate: selectedDateBinding)
+        }
+    }
+
+    private var selectedDateBinding: Binding<Date> {
+        Binding(
+            get: { selectedDate },
+            set: { date in
+                let day = Calendar.current.startOfDay(for: date)
+                selectedDate = day
+                anchorDate = day
+            }
+        )
+    }
+
+    @ViewBuilder
     private var boardContent: some View {
         switch calendarRange {
         case .oneDay:
             oneDayList
-        case .threeDays, .sevenDays:
+        case .sevenDays:
             TaskMultiDayBoard(
                 dates: visibleDates,
                 selectedDate: selectedDate,
                 todos: todos.filter { !$0.isArchived && !$0.isDeleted },
                 filter: taskFilter,
-                columnWidth: calendarRange == .threeDays ? 320 : 238,
+                columnWidth: 238,
                 onSelectDate: selectDate,
                 onToggle: toggleTodo,
                 onEdit: { editingTodo = $0 },
@@ -194,16 +243,6 @@ struct TasksView: View {
                 }
             }
         )
-    }
-
-    private func moveRange(_ direction: Int) {
-        let nextDate = calendarBuilder.advancedDate(
-            from: anchorDate,
-            range: calendarRange,
-            direction: direction
-        )
-        anchorDate = Calendar.current.startOfDay(for: nextDate)
-        selectedDate = anchorDate
     }
 
     private func moveToToday() {

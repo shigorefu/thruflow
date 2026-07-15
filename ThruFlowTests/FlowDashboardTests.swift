@@ -431,6 +431,78 @@ struct FlowDashboardTests {
         #expect(sorted.map(\.title) == ["高1", "高2", "中", "低", "余裕", "完了済み"])
     }
 
+    @Test func dashboardStatisticsBuildsRequestedDayRange() {
+        let day = Date(timeIntervalSince1970: 10 * 86_400)
+        let direction = Direction(name: "開発", type: .neutral, colorHex: "#0A84FF")
+        let earlier = makeSession(
+            direction: direction,
+            start: day.addingTimeInterval(-2 * 86_400 + 9 * 3_600),
+            duration: 25 * 60
+        )
+        let current = makeSession(
+            direction: direction,
+            start: day.addingTimeInterval(9 * 3_600),
+            duration: 50 * 60
+        )
+
+        let days = DashboardStatisticsBuilder(calendar: calendar).days(
+            count: 3,
+            endingOn: day,
+            sessions: [earlier, current],
+            breaks: []
+        )
+
+        #expect(days.count == 3)
+        #expect(days.map(\.focusSeconds) == [25 * 60, 0, 50 * 60])
+        #expect(days.last?.colorHex == "#0A84FF")
+    }
+
+    @Test func dashboardStatisticsComparesPreviousDayAndFindsGrowingDirection() {
+        let day = Date(timeIntervalSince1970: 12 * 86_400)
+        let direction = Direction(name: "開発", type: .neutral, symbolName: "💻")
+        let previous = makeSession(
+            direction: direction,
+            start: day.addingTimeInterval(-86_400 + 9 * 3_600),
+            duration: 25 * 60
+        )
+        let current = makeSession(
+            direction: direction,
+            start: day.addingTimeInterval(9 * 3_600),
+            duration: 50 * 60
+        )
+        let previousTodo = Todo(
+            title: "昨日",
+            direction: direction,
+            status: .completed,
+            completedAt: day.addingTimeInterval(-86_400 + 12 * 3_600)
+        )
+        let firstTodayTodo = Todo(
+            title: "今日1",
+            direction: direction,
+            status: .completed,
+            completedAt: day.addingTimeInterval(12 * 3_600)
+        )
+        let secondTodayTodo = Todo(
+            title: "今日2",
+            direction: direction,
+            status: .completed,
+            completedAt: day.addingTimeInterval(13 * 3_600)
+        )
+
+        let comparison = DashboardStatisticsBuilder(calendar: calendar).comparison(
+            on: day,
+            sessions: [previous, current],
+            breaks: [],
+            todos: [previousTodo, firstTodayTodo, secondTodayTodo]
+        )
+
+        #expect(comparison.focusSecondsDelta == 25 * 60)
+        #expect(comparison.completedTaskDelta == 1)
+        #expect(comparison.blocksDelta == 1)
+        #expect(comparison.growingDirection?.name == "開発")
+        #expect(comparison.growingDirection?.focusSecondsDelta == 25 * 60)
+    }
+
     private func makeSession(
         direction: Direction,
         start: Date,

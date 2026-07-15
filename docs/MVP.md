@@ -11,14 +11,14 @@ Current MVP goal:
 - Direction management for `通常`, `習慣`, and `ナイス`.
 - System Direction `その他`, hidden only from Direction management so it cannot be edited.
 - Daily `タスク` list.
-- Calendar kanban ranges: `1日`, `3日`, `7日`, and `月`.
+- Calendar kanban ranges: `日`, `週`, and `月`.
 - Task/Habit filters and validated drag-and-drop between dates.
 - Automatic habit tasks.
 - Sequential weekly-count Habit generation and safe rescheduling.
 - Quick task capture.
 - Task measurements: `チェック`, `集中ブロック`, `分`.
 - Flow player with Short, Focus, and Deep modes.
-- First/default `Flow` dashboard with expanded player, animated daily stream, totals, and 24-hour Flow timeline.
+- First/default `Flow` dashboard with expanded player, animated daily stream, totals, and Elastic Flow timeline.
 - Manual break start with memo before break begins.
 - Todo memo storage.
 - Flow and Tasks contribution-style statistics.

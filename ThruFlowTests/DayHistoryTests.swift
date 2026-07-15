@@ -89,6 +89,8 @@ struct DayHistoryTests {
         #expect(direction.recordedFocusSeconds == 25 * 60)
         #expect(todo.recordedFocusSeconds == 25 * 60)
         #expect(todo.actualProgress == 25)
+        #expect(todo.status == .active)
+        #expect(todo.completedAt == nil)
     }
 
     @Test func historyOrdersTimedEntriesAndSeparatesLegacyCompletions() {

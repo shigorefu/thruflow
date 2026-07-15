@@ -24,14 +24,20 @@ struct ManualFlowCreationView: View {
     @State private var errorMessage: String?
 
     private let editor = FlowHistoryEditor()
+    private let lockedTodoID: UUID?
 
     init(
         startedAt: Date,
+        todo: Todo? = nil,
+        locksTodo: Bool = false,
         onTimeChange: @escaping (Date, Date) -> Void = { _, _ in },
         onDismiss: @escaping () -> Void
     ) {
         self.onTimeChange = onTimeChange
         self.onDismiss = onDismiss
+        lockedTodoID = locksTodo ? todo?.id : nil
+        _selectedTodoID = State(initialValue: todo?.id)
+        _selectedDirectionID = State(initialValue: todo?.direction?.id)
         _timeDraft = State(initialValue: FlowHistoryTimeDraft(
             startedAt: startedAt,
             endedAt: startedAt.addingTimeInterval(25 * 60),
@@ -77,14 +83,24 @@ struct ManualFlowCreationView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     field("タスク") {
-                        Picker("タスク", selection: $selectedTodoID) {
-                            Text("タスクなし").tag(UUID?.none)
-                            ForEach(availableTodos) { todo in
-                                Text("\(todo.direction?.symbolName ?? "📥") \(TodoDisplay.title(for: todo))")
-                                    .tag(Optional(todo.id))
+                        if let selectedTodo, lockedTodoID != nil {
+                            Label {
+                                Text(TodoDisplay.title(for: selectedTodo))
+                            } icon: {
+                                Text(selectedTodo.direction?.symbolName ?? "📥")
                             }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.vertical, 6)
+                        } else {
+                            Picker("タスク", selection: $selectedTodoID) {
+                                Text("タスクなし").tag(UUID?.none)
+                                ForEach(availableTodos) { todo in
+                                    Text("\(todo.direction?.symbolName ?? "📥") \(TodoDisplay.title(for: todo))")
+                                        .tag(Optional(todo.id))
+                                }
+                            }
+                            .labelsHidden()
                         }
-                        .labelsHidden()
                     }
 
                     field("方向") {
@@ -95,7 +111,7 @@ struct ManualFlowCreationView: View {
                             }
                         }
                         .labelsHidden()
-                        .disabled(selectedTodo != nil)
+                        .disabled(selectedTodo != nil || lockedTodoID != nil)
                     }
 
                     field("Flow") {
@@ -176,7 +192,9 @@ struct ManualFlowCreationView: View {
         }
         .frame(minWidth: 300, idealWidth: 440, minHeight: 390)
         .onAppear {
-            if selectedDirectionID == nil {
+            if let directionID = selectedTodo?.direction?.id {
+                selectedDirectionID = directionID
+            } else if selectedDirectionID == nil {
                 selectedDirectionID = availableDirections.first?.id
             }
         }

@@ -16,16 +16,15 @@ The system Direction `その他` is not shown here and cannot be edited from thi
 
 Calendar ranges:
 
-- `1日`: detailed list for the selected date;
-- `3日`: three kanban columns;
-- `7日`: seven horizontally scrollable kanban columns;
+- `日`: detailed list for the selected date;
+- `週`: seven horizontally scrollable kanban columns;
 - `月`: month grid with completion counts, Direction dots, and incomplete Habit markers.
 
 Filters are `すべて`, `タスク`, and `習慣`. Habit instances stay in the same calendar as normal Tasks but remain visually separated.
 
 Active normal Tasks can be dragged between day columns. Month remains an overview and opens a day for detailed actions. Completed Tasks and fixed daily/weekday Habit Tasks stay on their original date. Weekly-count Habit moves are validated against the remaining weekly target.
 
-Clicking a month cell opens that date in `1日`. The quick composer follows the selected date or kanban column.
+Clicking a month cell opens that date in `日`. The centered filter remains stable across ranges; `今日` and the right period picker navigate dates. The quick composer follows the selected date or kanban column.
 
 Sections:
 
@@ -70,7 +69,7 @@ In the narrow vertical dashboard layout, the player comes first, followed by the
 - the Task card reuses the canonical completion/progress control; only Check is interactive, while Block and Minute rings are read-only and show progress and the remaining amount;
 - generated titles for empty Tasks and Habits are consistently italic and visually muted in the player, picker, Tasks screen, and dashboard panels;
 - dashboard `タスク` rows show priority before progress, including `余裕があれば` for low-priority optional work; fixed Habit priority is not displayed;
-- the centered dashboard donut uses one Direction-colored sector per Task, sized by that Task's share of today's recorded focused Flow seconds; small gaps distinguish Tasks that share a Direction color;
+- the dashboard Statistics carousel opens with a centered donut and `タスク別 | 方向別`; its other pages show a `3日 | 7日` Flow-minute bar chart with previous-day deltas and today's `達成状況`;
 - double-clicking the selected Task title edits it inline; Enter or focus loss saves and Escape cancels. Double-click recognition is limited to the visible title bounds so the rest of the Task card opens the picker immediately;
 - the Task card provides the same short pressed-state feedback as the Focus selector without changing its single/double-click actions;
 - timer and transport controls on the right.
@@ -134,7 +133,7 @@ The primary `カレンダー` mode provides:
 - `週`: seven synchronized day columns in one vertically scrollable 24-hour grid;
 - `月`: a seven-column month overview.
 
-History has one responsive toolbar for mode, date navigation, and Calendar range. `タスク` and `方向` use a wide two-column layout with aggregates on the left and a mini-calendar plus a 2x2 daily summary on the right. Their previous/next controls move by one day even if Calendar was last viewed as a week or month. At compact widths, the calendar and summary stack above the aggregate list.
+History has one responsive toolbar with the centered mode switch, prominent `今日`, and Calendar range. Duplicate top date controls are removed because the right period picker owns navigation. `タスク` and `方向` use a wide two-column layout with aggregates on the left and a mini-calendar plus range summary on the right. At compact widths, the calendar and summary stack above the aggregate list.
 
 In `日`, the right pane keeps the only wide-layout mini-calendar above the selected record properties. Flow/rest visibility is exposed by a compact `表示` menu in the timeline header; there is no separate filter rail. Selecting a Flow or rest updates the right pane; changing the day clears the selection. Elastic includes the day's timed records and current hour with one-hour context and a four-hour minimum. `24時間` shows the full day, and the preference persists locally. At compact widths, selection opens the same inspector as a sheet so the timeline retains useful width.
 
@@ -144,7 +143,7 @@ Flow and FlowSegment records remain separate calendar blocks colored by Directio
 
 Lane assignment uses exact stored start/end intervals. Contiguous Flow and rest records stay in one vertical lane, and only actual time overlap creates side-by-side lanes. Entries below 15 minutes use compact title-only rendering; short rests become thin gray bars and expose exact time through hover and accessibility.
 
-Selecting an entry reuses `FlowHistoryInspectorView` or `FlowBreakEditor`. Double-clicking empty time inserts a selected `新しいFlow` draft block directly into the calendar. The clicked time is rounded to five minutes and the default duration is 25 minutes. In wide day view, `Flowを追加` occupies the right inspector; Task, Direction, Short/Focus/Deep, linked start/end, and minutes update the visible draft block immediately. Compact day and week use a sheet while retaining the draft block in the grid. Saving creates a completed independent Flow series and applies normal Direction/Todo progress; manual rest creation is intentionally unavailable. The calendar does not provide direct drag/resize and does not persist a second calendar entity.
+Selecting an entry reuses `FlowHistoryInspectorView` or `FlowBreakEditor`. Double-clicking empty time inserts a selected `新しいFlow` draft block directly into the calendar. The clicked time is rounded to five minutes and the default duration is 25 minutes. In wide day view, `Flowを追加` occupies the right inspector; Task, Direction, Short/Focus/Deep, linked start/end, and minutes update the visible draft block immediately. Compact day and week use a sheet while retaining the draft block in the grid. Saving creates a completed independent Flow series and applies normal Direction/Todo progress without completing the Task; manual rest creation is intentionally unavailable. `履歴 > タスク` exposes the same action with the chosen Task fixed. Expanded `履歴 > 方向` ends with `タスクを追加`, which creates a Task with fixed Direction but no Flow. The calendar does not provide direct drag/resize and does not persist a second calendar entity.
 
 The Flow inspector limits its Task picker to Tasks scheduled on the Flow date plus the currently assigned Task. It edits time through linked `開始`, `終了`, and direct `分` fields: start/end changes recalculate minutes, and minute changes keep start fixed while moving end.
 
