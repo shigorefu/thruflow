@@ -20,8 +20,6 @@ struct FlowDashboardView: View {
     @Query(sort: \FlowSession.startedAt, order: .forward) private var sessions: [FlowSession]
     @Query(sort: \FlowBreak.startedAt, order: .forward) private var flowBreaks: [FlowBreak]
 
-    @AppStorage("flow.timelineMode") private var timelineModeRawValue = FlowTimelineMode.elastic.rawValue
-
     @State private var inspectedSession: FlowSession?
     @State private var hoveredTimelineItem: TimelineItem?
     @State private var selectedTimelineItem: TimelineItem?
@@ -191,30 +189,15 @@ struct FlowDashboardView: View {
 
     private func timelineSurface(snapshot: FlowDashboardSnapshot, now: Date) -> some View {
         let range = FlowTimelineRange(
-            mode: timelineMode,
             date: now,
             segments: snapshot.segments,
             breaks: snapshot.breaks
         )
 
         return VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 10) {
-                Text("今日のタイムライン")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-
-                Spacer()
-
-                Picker("タイムライン表示", selection: timelineModeBinding) {
-                    ForEach(FlowTimelineMode.allCases) { mode in
-                        Text(mode.displayName).tag(mode)
-                    }
-                }
-                .labelsHidden()
-                .pickerStyle(.segmented)
-                .frame(width: 150)
-                .controlSize(.small)
-            }
+            Text("今日のタイムライン")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
 
             GeometryReader { proxy in
                 let selectedSegment = snapshot.segments.first { selectedTimelineItem == .segment($0.id) }
@@ -246,7 +229,7 @@ struct FlowDashboardView: View {
 
                         Capsule()
                             .fill(Color.secondary.opacity(0.42))
-                            .frame(width: width, height: 14)
+                            .frame(width: width, height: 18)
                             .position(
                                 x: intervalCenter(
                                     from: span.startedAt,
@@ -451,7 +434,7 @@ struct FlowDashboardView: View {
             HStack {
                 let dates = range.labelDates()
                 ForEach(Array(dates.enumerated()), id: \.offset) { index, date in
-                    Text(timelineLabel(date, index: index, dates: dates))
+                    Text(timelineLabel(date))
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
                     if index != dates.indices.last { Spacer() }
@@ -733,21 +716,6 @@ struct FlowDashboardView: View {
         Color.black.opacity(colorScheme == .dark ? 0.46 : 0.12)
     }
 
-    private var timelineMode: FlowTimelineMode {
-        FlowTimelineMode(rawValue: timelineModeRawValue) ?? .elastic
-    }
-
-    private var timelineModeBinding: Binding<FlowTimelineMode> {
-        Binding(
-            get: { timelineMode },
-            set: { mode in
-                timelineModeRawValue = mode.rawValue
-                hoveredTimelineItem = nil
-                selectedTimelineItem = nil
-            }
-        )
-    }
-
     private func timelineSessionGroups(_ segments: [FlowDashboardSegment]) -> [TimelineSessionGroup] {
         Dictionary(grouping: segments, by: { $0.session.id })
             .values
@@ -883,10 +851,7 @@ struct FlowDashboardView: View {
             .0
     }
 
-    private func timelineLabel(_ date: Date, index: Int, dates: [Date]) -> String {
-        if timelineMode == .fullDay, index == dates.indices.last {
-            return "24:00"
-        }
+    private func timelineLabel(_ date: Date) -> String {
         return date.formatted(.dateTime.hour().minute())
     }
 
