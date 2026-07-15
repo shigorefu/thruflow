@@ -2,23 +2,18 @@
 
 ## Now
 
-- Align code with `CONCEPT.md`.
-- Keep `その他` system Direction hidden from Direction editing.
-- Use `タスク` as the daily task surface without a separate Inbox tab.
-- Provide `日`, `週`, and `月` calendar kanban ranges with Task/Habit filters and shared period pickers.
-- Validate drag-and-drop rescheduling against Habit rules.
-- Generate weekly-count Habit Tasks sequentially without duplicates.
-- Store Flow memo on Todo.
-- Keep Flow progress deterministic and testable.
-- Keep statistics focused on Flow Blocks and completed Tasks.
+- Use the app daily and harden the current `方向 -> Task -> Flow -> progress -> statistics` loop.
+- Keep the Flow dashboard, Tasks calendar, canonical History, Direction management, and contribution statistics consistent.
+- Preserve exact Flow/segment/rest history while presenting connected series on the dashboard.
+- Keep historical correction, Habit generation, progress attribution, and dashboard statistics deterministic and testable.
+- Keep documentation synchronized with shipped behavior.
 
 ## Next
 
-- Define auto-created Task defaults for Flow without selected Task.
-- Define Flow-series deletion behavior.
-- Add day-detail view from statistics cells.
-- Add manual correction UI for historical task progress/time.
+- Define whether Flow without a selected Task should create one, including measurement and planned-amount defaults.
+- Define product-level Flow-series deletion by Block amount in addition to exact record deletion.
 - Define the replacement workflow for date-less Tasks.
+- Add CloudKit only after local data migration and conflict rules are specified and tested.
 
 ## Later
 

@@ -49,9 +49,13 @@ Modes:
 - `Focus`: 25 focus / 5 break = 1 Block.
 - `Deep`: 50 focus / 10 break = 2 Blocks.
 
-Focus does not auto-stop or auto-switch to break. Break starts only after the user confirms memo. Memo is stored on Todo, not FlowSession.
+Focus does not auto-stop or auto-switch to break. Break starts only after the user confirms memo. The dashboard and menu bar use the same square memo panel with cancel, no-memo, and save actions. Memo is stored on Todo, not FlowSession, and rest completion never prompts again. The rest timer ring is neutral gray and drains while the focus ring fills with the selected Direction color.
+
+Flow sessions may share a stable series ID when the next session starts within 1.5 times the planned rest. The next rest after each 4 accumulated Blocks is a 20-minute Long Break with a 30-minute continuation window. History preserves separate Flow and rest records; only the dashboard renders their series as one continuous rail.
 
 The active creditable Flow updates the dashboard live. Completed timeline segments open the existing historical Flow inspector.
+
+Flow may start with a Task, only a Direction, or neither. Direction-only work is persisted without an implicit Todo; work without either resolves to system `その他`. Automatic Task creation is deferred until its measurement and planned amount have explicit defaults.
 
 ## Statistics
 
@@ -72,4 +76,4 @@ Cell brightness is relative to the maximum day in the selected range.
 
 `履歴` is the single canonical History surface and a dedicated navigation item below `タスク`. Clicking a statistics cell switches navigation to this section on that date; Statistics does not embed another history view.
 
-It provides a primary `カレンダー` mode with `日・週・月`, plus `タスク` and `方向` aggregates. Day uses a narrow Apple Calendar-style timeline with a persisted `Elastic | 24時間` scale and a right mini-calendar/properties inspector. Week uses a vertically scrolling 24-hour grid with fixed headers; month is an overview. Calendar blocks represent separate actual Flow and rest records; the continuous series line belongs only to the Flow dashboard timeline. Todo completion remains in Task summaries and Statistics. Historical Flow and rest entries open their canonical editors. Double-clicking empty time creates a manual independent Flow, never a manual rest. Historical Flow changes must adjust Direction totals and measured Todo progress by the same delta.
+It provides a primary `Flow` calendar mode with `日・週・月`, plus `タスク` and `方向` aggregates. Day uses a narrow Apple Calendar-style timeline with a persisted `Elastic | 24時間` scale and a right mini-calendar/properties inspector. Week uses a vertically scrolling 24-hour grid with fixed headers; month is an overview. Calendar blocks represent separate actual Flow and rest records; the continuous series line belongs only to the Flow dashboard timeline. Todo completion remains in Task summaries and Statistics. Historical Flow and rest entries open their canonical editors. Double-clicking empty time creates a manual independent Flow, never a manual rest. Historical Flow changes must adjust Direction totals and measured Todo progress by the same delta. Linking a manual Flow to a Task does not automatically complete it.

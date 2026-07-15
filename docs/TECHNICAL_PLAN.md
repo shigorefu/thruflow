@@ -51,7 +51,10 @@ Cover:
 - Flow timer transitions.
 - Statistics range construction and filters.
 - Day-history grouping, legacy untimed completions, and Flow correction deltas.
+- Manual Flow creation, linked Task progress without implicit completion, and fixed-Direction Task creation.
+- Flow series continuation, Long Break thresholds, rest correction, and same-series downstream shifting.
 - Flow dashboard totals, palette ordering, day filtering, live minimum-credit behavior, and timeline normalization.
+- Dashboard statistics distribution, 3/7-day trend comparisons, and completion projection.
 
 ## Migration Caution
 
