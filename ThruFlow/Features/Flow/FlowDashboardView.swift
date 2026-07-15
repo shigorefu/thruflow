@@ -11,6 +11,7 @@ import SwiftUI
 struct FlowDashboardView: View {
     private static let topPanelHeight: CGFloat = 410
 
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
 
@@ -227,8 +228,12 @@ struct FlowDashboardView: View {
 
                 ZStack(alignment: .leading) {
                     Capsule()
-                        .fill(Color.primary.opacity(0.07))
-                        .frame(height: 16)
+                        .fill(timelineTrackColor)
+                        .frame(height: 18)
+                        .overlay {
+                            Capsule()
+                                .strokeBorder(Color.primary.opacity(0.06))
+                        }
 
                     ForEach(snapshot.seriesSpans) { span in
                         let width = intervalWidth(
@@ -239,9 +244,9 @@ struct FlowDashboardView: View {
                             minimumWidth: 12
                         )
 
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.secondary.opacity(0.28))
-                            .frame(width: width, height: 10)
+                        Capsule()
+                            .fill(Color.secondary.opacity(0.42))
+                            .frame(width: width, height: 14)
                             .position(
                                 x: intervalCenter(
                                     from: span.startedAt,
@@ -262,7 +267,7 @@ struct FlowDashboardView: View {
                             totalWidth: proxy.size.width,
                             minimumWidth: 5
                         )
-                        let height: CGFloat = group.isActive ? 18 : 12
+                        let height: CGFloat = 18
 
                         ZStack(alignment: .leading) {
                             ForEach(group.segments) { segment in
@@ -282,8 +287,9 @@ struct FlowDashboardView: View {
                         .frame(width: width, height: height, alignment: .leading)
                         .clipShape(RoundedRectangle(cornerRadius: height / 2))
                         .shadow(
-                            color: Color(hex: group.segments.first?.colorHex ?? "#8E8E93").opacity(0.34),
-                            radius: 3
+                            color: Color(hex: group.segments.first?.colorHex ?? "#8E8E93")
+                                .opacity(group.isActive ? 0.55 : 0.40),
+                            radius: group.isActive ? 5 : 4
                         )
                         .position(
                             x: intervalCenter(
@@ -310,19 +316,14 @@ struct FlowDashboardView: View {
                             guard !flowBreak.isActive else { return }
                             selectedTimelineItem = .flowBreak(flowBreak.id)
                         } label: {
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 2)
-                                    .fill(Color.gray.opacity(flowBreak.isActive ? 0.64 : 0.46))
-                                    .frame(width: width, height: flowBreak.isActive ? 14 : 10)
-
-                                if width >= 24 {
-                                    Image(systemName: "cup.and.saucer.fill")
-                                        .font(.system(size: 7, weight: .semibold))
-                                        .foregroundStyle(.white.opacity(0.92))
-                                }
-                            }
-                            .frame(width: max(width, 10), height: 20)
-                            .contentShape(Rectangle())
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(
+                                    hoveredTimelineItem == .flowBreak(flowBreak.id)
+                                        ? Color.white.opacity(0.13)
+                                        : Color.white.opacity(0.001)
+                                )
+                                .frame(width: max(width, 10), height: 20)
+                                .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
                         .position(
@@ -726,6 +727,10 @@ struct FlowDashboardView: View {
     ) -> Double {
         guard let maximum = snapshot.directionSummaries.map(\.focusSeconds).max(), maximum > 0 else { return 0 }
         return Double(summary.focusSeconds) / Double(maximum)
+    }
+
+    private var timelineTrackColor: Color {
+        Color.black.opacity(colorScheme == .dark ? 0.46 : 0.12)
     }
 
     private var timelineMode: FlowTimelineMode {
