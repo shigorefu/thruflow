@@ -12,20 +12,25 @@ struct TodoProgressControl: View {
     var additionalFocusSeconds: Int = 0
     let action: () -> Void
 
+    @ViewBuilder
     var body: some View {
-        Button(action: action) {
-            switch todo.measurement {
-            case .checkbox:
+        if todo.measurement == .checkbox {
+            Button(action: action) {
                 checkbox
-            case .focusBlocks:
-                progressRing(systemImage: todo.isCompleted ? "checkmark" : nil)
-            case .minutes:
-                progressRing(systemImage: "timer")
             }
+            .buttonStyle(.plain)
+            .accessibilityLabel(todo.isCompleted ? "未完了に戻す" : "完了にする")
+            .accessibilityValue(accessibilityValue)
+        } else {
+            progressRing(systemImage: todo.measurement == .minutes ? "timer" : completionSymbol)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(todo.measurement == .focusBlocks ? "ブロック進捗" : "分の進捗")
+                .accessibilityValue(accessibilityValue)
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel(todo.isCompleted ? "未完了に戻す" : "完了にする")
-        .accessibilityValue(accessibilityValue)
+    }
+
+    private var completionSymbol: String? {
+        todo.isCompleted ? "checkmark" : nil
     }
 
     private var checkbox: some View {

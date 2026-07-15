@@ -19,6 +19,22 @@ struct TodoTests {
         #expect(calculator.status(measurement: .checkbox, plannedAmount: nil, actualProgress: 1) == .completed)
     }
 
+    @Test func manualCompletionOnlyChangesCheckboxTasks() {
+        let direction = Direction(name: "生活", type: .neutral)
+        let checkbox = Todo(title: "確認", direction: direction, measurement: .checkbox)
+        let blocks = Todo(title: "読書", direction: direction, measurement: .focusBlocks, plannedAmount: 2)
+        let minutes = Todo(title: "散歩", direction: direction, measurement: .minutes, plannedAmount: 30)
+
+        #expect(checkbox.setManuallyCompleted(true))
+        #expect(checkbox.isCompleted)
+        #expect(!blocks.setManuallyCompleted(true))
+        #expect(!minutes.setManuallyCompleted(true))
+        #expect(!blocks.isCompleted)
+        #expect(!minutes.isCompleted)
+        #expect(blocks.actualProgress == 0)
+        #expect(minutes.actualProgress == 0)
+    }
+
     @Test func blockProgressClampsAtCompletion() {
         let calculator = TodoProgressCalculator()
 

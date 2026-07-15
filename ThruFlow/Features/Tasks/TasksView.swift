@@ -235,7 +235,7 @@ struct TasksView: View {
     }
 
     private func toggleTodo(_ todo: Todo) {
-        todo.setCompleted(!todo.isCompleted)
+        guard todo.setManuallyCompleted(!todo.isCompleted) else { return }
         try? modelContext.save()
     }
 
@@ -1185,8 +1185,9 @@ private struct TodoRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             TodoProgressControl(todo: todo) {
-                todo.setCompleted(!todo.isCompleted)
-                try? modelContext.save()
+                if todo.setManuallyCompleted(!todo.isCompleted) {
+                    try? modelContext.save()
+                }
             }
 
             VStack(alignment: .leading, spacing: 4) {

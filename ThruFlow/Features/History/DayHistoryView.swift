@@ -449,7 +449,7 @@ struct DayHistoryView: View {
         guard !task.todos.isEmpty,
               task.todos.allSatisfy({ $0.measurement == .checkbox }) else { return }
         let shouldComplete = !task.todos.allSatisfy(\.isCompleted)
-        task.todos.forEach { $0.setCompleted(shouldComplete) }
+        task.todos.forEach { $0.setManuallyCompleted(shouldComplete) }
         try? modelContext.save()
     }
 }
