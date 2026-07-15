@@ -263,7 +263,17 @@ struct FlowDashboardTests {
         #expect(middle.speed < full.speed)
         #expect(full.speed == overflow.speed)
         #expect(full.volume == overflow.volume)
-        #expect(full.layerCount <= 10)
+        #expect(full.detail == overflow.detail)
+        #expect(full.layerCount <= 8)
+    }
+
+    @Test func visualOccupancyStopsGrowingBeforeDetailReachesMaximum() {
+        let fourBlocks = FlowVisualState(blocks: 4, flowCount: 4, isActive: false, mode: .twentyFiveFive)
+        let sixBlocks = FlowVisualState(blocks: 6, flowCount: 6, isActive: false, mode: .twentyFiveFive)
+
+        #expect(abs(fourBlocks.volume - 0.68) < 0.0001)
+        #expect(fourBlocks.volume == sixBlocks.volume)
+        #expect(fourBlocks.detail < sixBlocks.detail)
     }
 
     @Test func completedBlocksKeepIdleCalmAndAmplifyActiveFlow() {

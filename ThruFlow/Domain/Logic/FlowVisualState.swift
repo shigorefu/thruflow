@@ -13,6 +13,7 @@ struct FlowVisualState: Equatable {
     let progress: Double
     let speed: Double
     let volume: Double
+    let detail: Double
     let layerCount: Int
     let waveFrequency: Double
     let turbulence: Double
@@ -26,8 +27,11 @@ struct FlowVisualState: Equatable {
         speed = isActive
             ? 1.10 + easedProgress * 1.70
             : 0.06 + easedProgress * 0.22
-        volume = 0.42 + easedProgress * 0.58
-        layerCount = min(10, max(7, 7 + min(flowCount / 2, 3)))
+        let occupancyProgress = min(max(blocks / 4, 0), 1)
+        let easedOccupancy = occupancyProgress * occupancyProgress * (3 - (2 * occupancyProgress))
+        volume = 0.38 + easedOccupancy * 0.30
+        detail = 0.30 + easedProgress * 0.70
+        layerCount = min(8, max(6, 6 + min(flowCount / 3, 2)))
         waveFrequency = modeCharacter.frequency
         turbulence = modeCharacter.turbulence
     }

@@ -18,6 +18,7 @@ struct FlowStreamView: View {
     @Environment(\.controlActiveState) private var controlActiveState
     @Environment(\.scenePhase) private var scenePhase
     @State private var animationClock = FlowAnimationClock()
+    @State private var impulseStartedAt: Date?
 
     var body: some View {
         let state = FlowVisualState(blocks: blocks, flowCount: flowCount, isActive: isActive, mode: mode)
@@ -25,6 +26,8 @@ struct FlowStreamView: View {
 
         TimelineView(.animation(minimumInterval: frameInterval, paused: animationIsPaused)) { timeline in
             GeometryReader { proxy in
+                let impulse = impulseProgress(at: timeline.date)
+
                 Rectangle()
                     .fill(.white)
                     .colorEffect(
@@ -37,9 +40,11 @@ struct FlowStreamView: View {
                             ))),
                             .float(Float(state.progress)),
                             .float(Float(state.volume)),
+                            .float(Float(state.detail)),
                             .float(Float(state.layerCount)),
                             .float(Float(state.waveFrequency)),
                             .float(Float(state.turbulence)),
+                            .float(Float(impulse)),
                             .color(colors[0]),
                             .color(colors[1]),
                             .color(colors[2]),
@@ -52,6 +57,10 @@ struct FlowStreamView: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("今日のFlow")
         .accessibilityValue(accessibilityValue(state))
+        .onChange(of: completedHalfBlocks) { oldValue, newValue in
+            guard newValue > oldValue else { return }
+            impulseStartedAt = .now
+        }
     }
 
     private var resolvedColors: [Color] {
@@ -66,6 +75,16 @@ struct FlowStreamView: View {
 
     private var animationIsPaused: Bool {
         reduceMotion || isUITesting || scenePhase != .active || controlActiveState != .key
+    }
+
+    private var completedHalfBlocks: Int {
+        Int(floor(max(blocks, 0) * 2))
+    }
+
+    private func impulseProgress(at date: Date) -> Double {
+        guard let impulseStartedAt else { return -1 }
+        let progress = date.timeIntervalSince(impulseStartedAt) / 1.8
+        return (0...1).contains(progress) ? progress : -1
     }
 
     private var isUITesting: Bool {
