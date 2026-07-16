@@ -65,7 +65,12 @@ private struct FlowMenuBarLabel: View {
 
     var body: some View {
         if activeFlowStore.timerState == nil {
-            Label("Flow", systemImage: "waveform.path")
+            Image("FlowMenuBarIcon")
+                .renderingMode(.template)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 18, height: 13)
+                .accessibilityLabel("Flow")
         } else {
             Text(menuTitle)
                 .font(.system(.body, design: .default))
