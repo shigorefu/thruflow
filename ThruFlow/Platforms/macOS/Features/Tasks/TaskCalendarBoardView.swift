@@ -65,6 +65,135 @@ struct TaskCalendarToolbar: View {
     }
 }
 
+struct TaskDayStrip: View {
+    @Binding var selectedDate: Date
+    var onDropPayload: ((String, Date) -> Bool)?
+
+    @State private var showsCalendar = false
+
+    private let calendar = Calendar.current
+    private let spacing: CGFloat = 6
+
+    private var weekDates: [Date] {
+        guard let interval = calendar.dateInterval(of: .weekOfYear, for: selectedDate) else {
+            return [calendar.startOfDay(for: selectedDate)]
+        }
+        return (0..<7).compactMap {
+            calendar.date(byAdding: .day, value: $0, to: interval.start)
+        }
+    }
+
+    var body: some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 8) {
+                Button {
+                    moveWeek(by: -1)
+                } label: {
+                    Image(systemName: "chevron.left")
+                }
+
+                Spacer()
+
+                Text(monthTitle)
+                    .font(.headline)
+
+                Spacer()
+
+                Button {
+                    showsCalendar.toggle()
+                } label: {
+                    Image(systemName: "calendar")
+                }
+                .help("日付を選択")
+                .popover(isPresented: $showsCalendar, arrowEdge: .top) {
+                    HistoryMiniCalendar(
+                        selectedDate: $selectedDate,
+                        onDropPayload: onDropPayload
+                    )
+                    .padding(16)
+                    .frame(width: 320)
+                }
+
+                Button {
+                    moveWeek(by: 1)
+                } label: {
+                    Image(systemName: "chevron.right")
+                }
+            }
+            .buttonStyle(.borderless)
+
+            HStack(spacing: spacing) {
+                ForEach(weekDates, id: \.self) { date in
+                    dayButton(date)
+                        .frame(maxWidth: .infinity)
+                }
+            }
+        }
+    }
+
+    private func dayButton(_ date: Date) -> some View {
+        let isSelected = calendar.isDate(date, inSameDayAs: selectedDate)
+        let isToday = calendar.isDateInToday(date)
+
+        return Button {
+            selectedDate = calendar.startOfDay(for: date)
+        } label: {
+            VStack(spacing: 4) {
+                Text(weekdayText(date))
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(isSelected ? Color.white.opacity(0.85) : Color.secondary)
+
+                Text(dayText(date))
+                    .font(.body.weight(.semibold))
+                    .monospacedDigit()
+                    .foregroundStyle(isSelected ? Color.white : Color.primary)
+            }
+            .frame(maxWidth: .infinity, minHeight: 48)
+            .background {
+                RoundedRectangle(cornerRadius: 7)
+                    .fill(isSelected ? Color.accentColor : Color.primary.opacity(0.035))
+            }
+            .overlay {
+                if isToday && !isSelected {
+                    RoundedRectangle(cornerRadius: 7)
+                        .strokeBorder(Color.accentColor.opacity(0.7))
+                }
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(accessibilityDate(date))
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .dropDestination(for: String.self) { payloads, _ in
+            guard let payload = payloads.first else { return false }
+            return onDropPayload?(payload, date) ?? false
+        }
+    }
+
+    private func moveWeek(by value: Int) {
+        guard let date = calendar.date(byAdding: .weekOfYear, value: value, to: selectedDate) else { return }
+        selectedDate = calendar.startOfDay(for: date)
+    }
+
+    private var monthTitle: String {
+        selectedDate.formatted(
+            .dateTime.locale(Locale(identifier: "ja_JP")).year().month(.wide)
+        )
+    }
+
+    private func weekdayText(_ date: Date) -> String {
+        date.formatted(.dateTime.locale(Locale(identifier: "ja_JP")).weekday(.narrow))
+    }
+
+    private func dayText(_ date: Date) -> String {
+        date.formatted(.dateTime.locale(Locale(identifier: "ja_JP")).day())
+    }
+
+    private func accessibilityDate(_ date: Date) -> String {
+        date.formatted(.dateTime.locale(Locale(identifier: "ja_JP")).year().month().day().weekday())
+    }
+}
+
 struct TaskMultiDayBoard: View {
     let dates: [Date]
     let selectedDate: Date
