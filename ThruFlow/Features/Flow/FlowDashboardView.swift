@@ -489,6 +489,14 @@ struct FlowDashboardView: View {
                 Label("統計", systemImage: "chart.bar.xaxis")
                     .font(.headline)
                 Spacer()
+                HStack(spacing: 5) {
+                    ForEach(DashboardStatisticsPage.allCases) { page in
+                        Circle()
+                            .fill(page == statisticsPage ? Color.accentColor : Color.secondary.opacity(0.25))
+                            .frame(width: 5, height: 5)
+                    }
+                }
+                .padding(.trailing, 4)
                 Button { moveStatisticsPage(-1) } label: {
                     Image(systemName: "chevron.left")
                 }
@@ -514,15 +522,6 @@ struct FlowDashboardView: View {
             }
             .id(statisticsPage)
             .transition(.opacity.combined(with: .scale(scale: 0.98)))
-
-            HStack(spacing: 5) {
-                ForEach(DashboardStatisticsPage.allCases) { page in
-                    Circle()
-                        .fill(page == statisticsPage ? Color.accentColor : Color.secondary.opacity(0.25))
-                        .frame(width: 5, height: 5)
-                }
-            }
-            .frame(maxWidth: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(16)
@@ -1406,18 +1405,16 @@ private struct DashboardStatisticsBars: View {
 
             HStack(alignment: .bottom, spacing: 7) {
                 ForEach(days) { day in
+                    let minimumHeight: CGFloat = day.focusSeconds > 0 ? 4 : 2
+                    let availableHeight = max(proxy.size.height - 23, 0)
+                    let proportionalHeight = availableHeight * CGFloat(day.focusSeconds) / CGFloat(maximum)
+                    let barHeight = max(minimumHeight, proportionalHeight)
+
                     VStack(spacing: 5) {
                         Spacer(minLength: 0)
                         Capsule()
                             .fill(Color(hex: day.colorHex))
-                            .frame(
-                                maxWidth: .infinity,
-                                minHeight: day.focusSeconds > 0 ? 4 : 2,
-                                maxHeight: max(
-                                    day.focusSeconds > 0 ? 4 : 2,
-                                    (proxy.size.height - 23) * CGFloat(day.focusSeconds) / CGFloat(maximum)
-                                )
-                            )
+                            .frame(width: 7, height: barHeight)
                         Text(dayLabel(day.date))
                             .font(.caption2)
                             .foregroundStyle(.secondary)
