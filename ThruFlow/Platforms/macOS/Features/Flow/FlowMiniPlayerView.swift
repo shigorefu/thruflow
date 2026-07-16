@@ -423,7 +423,7 @@ struct FlowMiniPlayerView: View {
 
         isTaskTitleFocused = false
 #if os(macOS)
-        NSApp.keyWindow?.makeFirstResponder(nil)
+        MacOSFocusController.dismissCurrentEditor()
 #endif
     }
 

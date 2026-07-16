@@ -130,6 +130,18 @@ Measured Todo progress is reconciled from credited Flow history after every Flow
 
 Reason: one source of truth prevents UI taps from disagreeing with recorded focus history.
 
+## D-019: Shared Core With Platform-Owned UI
+
+Persisted models, domain rules, application state, shared services, and small
+reusable controls live under `Shared`. The current navigation, windows,
+menu-bar integration, feature views, and AppKit adapters live under
+`Platforms/macOS`. A future iOS layer will depend on `Shared` without importing
+macOS presentation code.
+
+Reason: macOS behavior must remain stable while iOS receives a layout and scene
+model appropriate to its platform. One shared product and persistence layer
+prevents business-rule drift between the apps.
+
 ## Open Questions
 
 - What measurement and planned amount should be used for an auto-created Task when Flow starts with only a Direction or with neither Direction nor Task?
