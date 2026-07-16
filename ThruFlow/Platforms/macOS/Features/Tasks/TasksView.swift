@@ -126,28 +126,43 @@ struct TasksView: View {
 
     @ViewBuilder
     private var tasksWorkspace: some View {
-        GeometryReader { geometry in
-            if geometry.size.width >= 900 {
-                HStack(spacing: 0) {
-                    boardContent
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        if calendarRange == .oneDay {
+            VStack(spacing: 0) {
+                TaskDayStrip(
+                    selectedDate: selectedDateBinding,
+                    onDropPayload: moveTaskPayload
+                )
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
 
-                    Divider()
+                Divider()
 
+                oneDayList
+            }
+        } else {
+            GeometryReader { geometry in
+                if geometry.size.width >= 900 {
+                    HStack(spacing: 0) {
+                        boardContent
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                        Divider()
+
+                        VStack(spacing: 0) {
+                            taskPeriodPicker
+                                .padding(16)
+                            Spacer(minLength: 0)
+                        }
+                        .frame(width: min(390, max(310, geometry.size.width * 0.30)))
+                        .background(Color.secondary.opacity(0.035))
+                    }
+                } else {
                     VStack(spacing: 0) {
                         taskPeriodPicker
-                            .padding(16)
-                        Spacer(minLength: 0)
+                            .padding(12)
+                        Divider()
+                        boardContent
                     }
-                    .frame(width: min(390, max(310, geometry.size.width * 0.30)))
-                    .background(Color.secondary.opacity(0.035))
-                }
-            } else {
-                VStack(spacing: 0) {
-                    taskPeriodPicker
-                        .padding(12)
-                    Divider()
-                    boardContent
                 }
             }
         }
