@@ -7,10 +7,16 @@
 
 import SwiftUI
 import SwiftData
+#if os(macOS)
+import AppKit
+#endif
 
 @main
 struct ThruFlowApp: App {
     @StateObject private var activeFlowStore = ActiveFlowStore()
+#if os(macOS)
+    @NSApplicationDelegateAdaptor(ThruFlowAppDelegate.self) private var appDelegate
+#endif
 
     private static var isRunningTests: Bool {
         let processInfo = ProcessInfo.processInfo
@@ -60,6 +66,15 @@ struct ThruFlowApp: App {
 }
 
 #if os(macOS)
+private final class ThruFlowAppDelegate: NSObject, NSApplicationDelegate {
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        guard let iconURL = Bundle.main.url(forResource: "AppIcon", withExtension: "icns"),
+              let icon = NSImage(contentsOf: iconURL) else { return }
+
+        NSApplication.shared.applicationIconImage = icon
+    }
+}
+
 private struct FlowMenuBarLabel: View {
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
 
