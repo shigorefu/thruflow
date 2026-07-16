@@ -258,10 +258,12 @@ struct HistoryTimeGrid: View {
     let onSelect: (HistoryCalendarItem) -> Void
     let onMove: (HistoryCalendarItem, Date) -> Bool
 
+    @State private var dragState: HistoryCalendarDragState?
+
     private let calendar = Calendar.current
     private let timeAxisWidth: CGFloat = 72
     private let minimumDayWidth: CGFloat = 132
-    private let minimumVisibleItemHeight: CGFloat = 3
+    private let minimumVisibleItemHeight: CGFloat = 12
 
     private var days: [Date] {
         let interval = range.interval(containing: selectedDate, calendar: calendar)
@@ -376,7 +378,7 @@ struct HistoryTimeGrid: View {
                     item: item,
                     isCompact: item.durationSeconds < 15 * 60,
                     isSelected: selectedItemID == item.id,
-                    dragPayload: item.kind == .flow ? "history-flow:\(item.id)" : nil
+                    previewStartedAt: dragState?.itemID == item.id ? dragState?.targetDate : nil
                 ) {
                     manualFlowDraft = nil
                     onSelect(item)
@@ -384,8 +386,25 @@ struct HistoryTimeGrid: View {
                     .frame(width: max(32, width - 3), height: frame.height, alignment: .topLeading)
                     .clipped()
                     .offset(
-                        x: timeAxisWidth + CGFloat(dayIndex) * dayWidth + 4 + CGFloat(placement.lane) * width,
-                        y: frame.y
+                        x: timeAxisWidth + CGFloat(dayIndex) * dayWidth + 4 + CGFloat(placement.lane) * width
+                            + dragTranslation(for: item).width,
+                        y: frame.y + dragTranslation(for: item).height
+                    )
+                    .zIndex(dragState?.itemID == item.id ? 10 : 0)
+                    .shadow(
+                        color: .black.opacity(dragState?.itemID == item.id ? 0.28 : 0),
+                        radius: dragState?.itemID == item.id ? 8 : 0,
+                        y: dragState?.itemID == item.id ? 4 : 0
+                    )
+                    .highPriorityGesture(
+                        calendarDragGesture(
+                            for: item,
+                            dayIndex: dayIndex,
+                            dayWidth: dayWidth,
+                            itemWidth: max(32, width - 3),
+                            frame: frame
+                        ),
+                        including: canMove(item) ? .all : .none
                     )
             }
         }
@@ -506,6 +525,86 @@ struct HistoryTimeGrid: View {
         return min(interval.end.addingTimeInterval(-60), interval.start.addingTimeInterval(roundedSeconds))
     }
 
+    private func calendarDragGesture(
+        for item: HistoryCalendarItem,
+        dayIndex: Int,
+        dayWidth: CGFloat,
+        itemWidth: CGFloat,
+        frame: (y: CGFloat, height: CGFloat)
+    ) -> some Gesture {
+        DragGesture(minimumDistance: 4)
+            .onChanged { value in
+                guard canMove(item) else { return }
+                manualFlowDraft = nil
+                dragState = resolvedDragState(
+                    for: item,
+                    dayIndex: dayIndex,
+                    dayWidth: dayWidth,
+                    itemWidth: itemWidth,
+                    frame: frame,
+                    proposedTranslation: value.translation
+                )
+            }
+            .onEnded { value in
+                guard canMove(item) else { return }
+                let resolved = resolvedDragState(
+                    for: item,
+                    dayIndex: dayIndex,
+                    dayWidth: dayWidth,
+                    itemWidth: itemWidth,
+                    frame: frame,
+                    proposedTranslation: value.translation
+                )
+                let didMove = onMove(item, resolved.targetDate)
+                withAnimation(.snappy(duration: 0.18)) {
+                    dragState = nil
+                }
+                if !didMove {
+                    onSelect(item)
+                }
+            }
+    }
+
+    private func resolvedDragState(
+        for item: HistoryCalendarItem,
+        dayIndex: Int,
+        dayWidth: CGFloat,
+        itemWidth: CGFloat,
+        frame: (y: CGFloat, height: CGFloat),
+        proposedTranslation: CGSize
+    ) -> HistoryCalendarDragState {
+        let gridHeight = hourHeight * CGFloat(hourRange.count)
+        let originalX = CGFloat(dayIndex) * dayWidth + 4
+        let clampedX = min(
+            dayWidth * CGFloat(days.count) - itemWidth,
+            max(0, originalX + proposedTranslation.width)
+        )
+        let clampedY = min(
+            max(0, gridHeight - frame.height),
+            max(0, frame.y + proposedTranslation.height)
+        )
+        let targetDayIndex = min(
+            days.count - 1,
+            max(0, Int((clampedX + itemWidth / 2) / dayWidth))
+        )
+        let targetDate = date(on: days[targetDayIndex], y: clampedY)
+
+        return HistoryCalendarDragState(
+            itemID: item.id,
+            translation: CGSize(width: clampedX - originalX, height: clampedY - frame.y),
+            targetDate: targetDate
+        )
+    }
+
+    private func dragTranslation(for item: HistoryCalendarItem) -> CGSize {
+        dragState?.itemID == item.id ? dragState?.translation ?? .zero : .zero
+    }
+
+    private func canMove(_ item: HistoryCalendarItem) -> Bool {
+        guard item.kind == .flow, let status = item.session?.status else { return false }
+        return status == .completed || status == .interrupted
+    }
+
     private func scrollToRelevantHour(_ proxy: ScrollViewProxy) {
         let timed = items.filter { item in
             days.contains { day in
@@ -523,6 +622,12 @@ struct HistoryTimeGrid: View {
             proxy.scrollTo("history-hour-\(hour)", anchor: .top)
         }
     }
+}
+
+private struct HistoryCalendarDragState {
+    let itemID: String
+    let translation: CGSize
+    let targetDate: Date
 }
 
 struct HistoryFlowCreationDraft: Identifiable {
@@ -560,19 +665,10 @@ private struct HistoryTimedItemView: View {
     let item: HistoryCalendarItem
     let isCompact: Bool
     let isSelected: Bool
-    let dragPayload: String?
+    let previewStartedAt: Date?
     let action: () -> Void
 
-    @ViewBuilder
     var body: some View {
-        if let dragPayload {
-            itemButton.draggable(dragPayload)
-        } else {
-            itemButton
-        }
-    }
-
-    private var itemButton: some View {
         Button(action: action) {
             Group {
                 if isCompact {
@@ -629,7 +725,9 @@ private struct HistoryTimedItemView: View {
     }
 
     private var timeText: String {
-        "\(item.startedAt.formatted(date: .omitted, time: .shortened))–\(item.endedAt.formatted(date: .omitted, time: .shortened))"
+        let start = previewStartedAt ?? item.startedAt
+        let end = start.addingTimeInterval(TimeInterval(item.durationSeconds))
+        return "\(start.formatted(date: .omitted, time: .shortened))–\(end.formatted(date: .omitted, time: .shortened))"
     }
 }
 
