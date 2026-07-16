@@ -7,15 +7,21 @@
 
 import SwiftData
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct DirectionListView: View {
     @Environment(\.modelContext) private var modelContext
+    @AppStorage("directionKanbanColumnOrder") private var directionGroupOrderRaw = DirectionGroupOrder.encode(DirectionGroupOrder.defaultValue)
 
     @Query(sort: \Direction.sortIndex, order: .forward) private var directions: [Direction]
 
     @State private var isShowingAddSheet = false
     @State private var editingDirectionID: UUID?
     @State private var showingArchived = false
+    @State private var draggedDirectionID: UUID?
+    @State private var dropTargetID: UUID?
+    @State private var draggedGroupType: DirectionType?
+    @State private var dropTargetGroupType: DirectionType?
 
     private var visibleDirections: [Direction] {
         directions
@@ -25,7 +31,11 @@ struct DirectionListView: View {
     }
 
     private var directionGroups: [DirectionGroup] {
-        DirectionGroup.groups(for: visibleDirections)
+        DirectionGroup.groups(for: visibleDirections, order: directionGroupOrder)
+    }
+
+    private var directionGroupOrder: [DirectionType] {
+        DirectionGroup.order(from: directionGroupOrderRaw)
     }
 
     private var editingDirection: Direction? {
@@ -34,44 +44,95 @@ struct DirectionListView: View {
     }
 
     var body: some View {
-        List {
-            if visibleDirections.isEmpty {
-                ContentUnavailableView(
-                    showingArchived ? "アーカイブ済みの方向はありません" : "方向はまだありません",
-                    systemImage: showingArchived ? "archivebox" : "point.3.connected.trianglepath.dotted",
-                    description: Text(showingArchived ? "アーカイブした方向がここに表示されます。" : "進捗に変えたい領域を最初に作成しましょう。")
-                )
-                .listRowSeparator(.hidden)
-            } else {
+        ScrollView(.horizontal) {
+            HStack(alignment: .top, spacing: 14) {
                 ForEach(directionGroups) { group in
-                    Section {
-                        ForEach(group.directions) { direction in
-                            DirectionRow(direction: direction)
-                                .contentShape(Rectangle())
-                                .onTapGesture {
-                                    editingDirectionID = direction.id
-                                }
-                                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                    if !direction.isArchived {
-                                        Button("アーカイブ", systemImage: "archivebox", role: .destructive) {
-                                            direction.archive()
-                                            try? modelContext.save()
-                                        }
-                                    }
-                                }
-                        }
-                        .onMove { source, destination in
-                            moveDirections(in: group.type, from: source, to: destination)
-                        }
-                    } header: {
+                    VStack(alignment: .leading, spacing: 10) {
                         DirectionSectionHeader(group: group)
+                            .contentShape(Rectangle())
+                            .overlay {
+                                if dropTargetGroupType == group.type {
+                                    RoundedRectangle(cornerRadius: 6)
+                                        .strokeBorder(Color.accentColor, lineWidth: 2)
+                                }
+                            }
+                            .onDrag {
+                                draggedGroupType = group.type
+                                return NSItemProvider(
+                                    object: "direction-group:\(group.type.rawValue)" as NSString
+                                )
+                            }
+
+                        ScrollView(.vertical) {
+                            LazyVStack(spacing: 8) {
+                                if group.directions.isEmpty {
+                                    ContentUnavailableView(
+                                        "方向はありません",
+                                        systemImage: "tray",
+                                        description: Text("この列に該当する方向はまだありません。")
+                                    )
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.top, 40)
+                                }
+
+                                ForEach(group.directions) { direction in
+                                    DirectionRow(direction: direction)
+                                        .contentShape(Rectangle())
+                                        .overlay {
+                                            if dropTargetID == direction.id {
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .strokeBorder(Color.accentColor, lineWidth: 2)
+                                            }
+                                        }
+                                        .onTapGesture {
+                                            editingDirectionID = direction.id
+                                        }
+                                        .onDrag {
+                                            draggedDirectionID = direction.id
+                                            return NSItemProvider(object: direction.id.uuidString as NSString)
+                                        }
+                                        .onDrop(
+                                            of: [UTType.text],
+                                            delegate: DirectionReorderDropDelegate(
+                                                targetID: direction.id,
+                                                draggedDirectionID: $draggedDirectionID,
+                                                dropTargetID: $dropTargetID,
+                                                move: moveDirection
+                                            )
+                                        )
+                                        .contextMenu {
+                                            if !direction.isArchived {
+                                                Button("アーカイブ", systemImage: "archivebox", role: .destructive) {
+                                                    direction.archive()
+                                                    try? modelContext.save()
+                                                }
+                                            }
+                                        }
+                                }
+                            }
+                            .padding(.bottom, 8)
+                        }
+                        .scrollIndicators(.visible)
                     }
-                    .listSectionSeparator(.hidden)
+                    .frame(width: 320)
+                    .frame(maxHeight: .infinity, alignment: .top)
+                    .padding(12)
+                    .background(Color.primary.opacity(0.035))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .onDrop(
+                        of: [UTType.text],
+                        delegate: DirectionGroupReorderDropDelegate(
+                            targetType: group.type,
+                            draggedGroupType: $draggedGroupType,
+                            dropTargetGroupType: $dropTargetGroupType,
+                            move: moveDirectionGroup
+                        )
+                    )
                 }
             }
+            .padding(16)
         }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
+        .scrollIndicators(.visible)
         .animation(.default, value: visibleDirections.map(\.id))
         .navigationTitle("方向")
         .toolbar {
@@ -106,15 +167,26 @@ struct DirectionListView: View {
         }
     }
 
-    private func moveDirections(in type: DirectionType, from source: IndexSet, to destination: Int) {
-        var reordered = visibleDirections.filter { $0.type == type }
-        reordered.move(fromOffsets: source, toOffset: destination)
+    private func moveDirection(_ sourceID: UUID, _ targetID: UUID) {
+        guard sourceID != targetID,
+              let sourceDirection = visibleDirections.first(where: { $0.id == sourceID }),
+              let targetDirection = visibleDirections.first(where: { $0.id == targetID }),
+              sourceDirection.type == targetDirection.type else { return }
+
+        var reordered = visibleDirections.filter { $0.type == sourceDirection.type }
+        guard let sourceIndex = reordered.firstIndex(where: { $0.id == sourceID }),
+              let originalTargetIndex = reordered.firstIndex(where: { $0.id == targetID }) else { return }
+
+        let movedDirection = reordered.remove(at: sourceIndex)
+        guard let targetIndex = reordered.firstIndex(where: { $0.id == targetID }) else { return }
+        let insertionIndex = sourceIndex < originalTargetIndex ? targetIndex + 1 : targetIndex
+        reordered.insert(movedDirection, at: insertionIndex)
 
         let groupedDirections = Dictionary(grouping: visibleDirections) { direction in
             direction.type
         }
-        let orderedDirections = DirectionGroup.defaultOrder.flatMap { groupType -> [Direction] in
-            groupType == type ? reordered : groupedDirections[groupType] ?? []
+        let orderedDirections = directionGroupOrder.flatMap { groupType -> [Direction] in
+            groupType == sourceDirection.type ? reordered : groupedDirections[groupType] ?? []
         }
 
         for (index, direction) in orderedDirections.enumerated() {
@@ -157,7 +229,88 @@ struct DirectionListView: View {
     }
 
     private func typeOrder(_ type: DirectionType) -> Int {
-        DirectionGroup.defaultOrder.firstIndex(of: type) ?? DirectionGroup.defaultOrder.count
+        directionGroupOrder.firstIndex(of: type) ?? directionGroupOrder.count
+    }
+
+    private func moveDirectionGroup(_ sourceType: DirectionType, _ targetType: DirectionType) {
+        guard sourceType != targetType else { return }
+
+        let reordered = DirectionGroupOrder.moving(
+            sourceType,
+            relativeTo: targetType,
+            in: directionGroupOrder
+        )
+        directionGroupOrderRaw = DirectionGroupOrder.encode(reordered)
+    }
+}
+
+private struct DirectionReorderDropDelegate: DropDelegate {
+    let targetID: UUID
+    @Binding var draggedDirectionID: UUID?
+    @Binding var dropTargetID: UUID?
+    let move: (UUID, UUID) -> Void
+
+    func validateDrop(info: DropInfo) -> Bool {
+        draggedDirectionID != nil
+    }
+
+    func dropEntered(info: DropInfo) {
+        guard let draggedDirectionID, draggedDirectionID != targetID else { return }
+        dropTargetID = targetID
+        withAnimation(.easeInOut(duration: 0.16)) {
+            move(draggedDirectionID, targetID)
+        }
+    }
+
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        DropProposal(operation: .move)
+    }
+
+    func dropExited(info: DropInfo) {
+        if dropTargetID == targetID {
+            dropTargetID = nil
+        }
+    }
+
+    func performDrop(info: DropInfo) -> Bool {
+        draggedDirectionID = nil
+        dropTargetID = nil
+        return true
+    }
+}
+
+private struct DirectionGroupReorderDropDelegate: DropDelegate {
+    let targetType: DirectionType
+    @Binding var draggedGroupType: DirectionType?
+    @Binding var dropTargetGroupType: DirectionType?
+    let move: (DirectionType, DirectionType) -> Void
+
+    func validateDrop(info: DropInfo) -> Bool {
+        draggedGroupType != nil
+    }
+
+    func dropEntered(info: DropInfo) {
+        guard let draggedGroupType, draggedGroupType != targetType else { return }
+        dropTargetGroupType = targetType
+        withAnimation(.easeInOut(duration: 0.16)) {
+            move(draggedGroupType, targetType)
+        }
+    }
+
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        DropProposal(operation: .move)
+    }
+
+    func dropExited(info: DropInfo) {
+        if dropTargetGroupType == targetType {
+            dropTargetGroupType = nil
+        }
+    }
+
+    func performDrop(info: DropInfo) -> Bool {
+        draggedGroupType = nil
+        dropTargetGroupType = nil
+        return true
     }
 }
 
@@ -196,9 +349,7 @@ private struct DirectionRow: View {
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 8)
-        .listRowInsets(EdgeInsets(top: 3, leading: 10, bottom: 3, trailing: 10))
-        .listRowSeparator(.hidden)
-        .listRowBackground(rowBackground)
+        .background(rowBackground)
     }
 
     private var summary: String {
@@ -226,10 +377,16 @@ private struct DirectionGroup: Identifiable {
 
     var id: String { type.rawValue }
 
-    static let defaultOrder: [DirectionType] = [.habit, .neutral, .nice]
+    static func order(from rawValue: String) -> [DirectionType] {
+        DirectionGroupOrder.decode(rawValue)
+    }
 
     var title: String {
-        type.displayName
+        switch type {
+        case .neutral: "通常"
+        case .habit: "習慣"
+        case .nice: "ナイス"
+        }
     }
 
     var tint: Color {
@@ -243,11 +400,12 @@ private struct DirectionGroup: Identifiable {
         }
     }
 
-    static func groups(for directions: [Direction]) -> [DirectionGroup] {
-        defaultOrder.compactMap { type in
-            let items = directions.filter { $0.type == type }
-            guard !items.isEmpty else { return nil }
-            return DirectionGroup(type: type, directions: items)
+    static func groups(for directions: [Direction], order: [DirectionType]) -> [DirectionGroup] {
+        order.map { type in
+            DirectionGroup(
+                type: type,
+                directions: directions.filter { $0.type == type }
+            )
         }
     }
 }
@@ -273,9 +431,12 @@ private struct DirectionSectionHeader: View {
                 .clipShape(Capsule())
 
             Spacer(minLength: 0)
+
+            Image(systemName: "line.3.horizontal")
+                .foregroundStyle(.secondary)
+                .accessibilityLabel("グループを並び替え")
         }
-        .padding(.top, 12)
-        .padding(.bottom, 4)
+        .padding(.vertical, 4)
         .textCase(nil)
     }
 }
