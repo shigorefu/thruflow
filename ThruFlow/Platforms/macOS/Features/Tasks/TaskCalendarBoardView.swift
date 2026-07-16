@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct TaskCalendarToolbar: View {
+    private static let wideLayoutMinimumWidth: CGFloat = 700
+
     @Binding var range: TaskCalendarRange
     @Binding var filter: TaskCalendarFilter
 
@@ -16,12 +18,7 @@ struct TaskCalendarToolbar: View {
     var body: some View {
         ViewThatFits(in: .horizontal) {
             ZStack {
-                Picker("フィルター", selection: $filter) {
-                    ForEach(TaskCalendarFilter.allCases) { option in
-                        Text(option.displayName).tag(option)
-                    }
-                }
-                .pickerStyle(.segmented)
+                filterPicker
                 .frame(width: 260)
 
                 HStack(spacing: 10) {
@@ -33,21 +30,20 @@ struct TaskCalendarToolbar: View {
                         .frame(width: 150)
                 }
             }
+            .frame(minWidth: Self.wideLayoutMinimumWidth)
 
             VStack(spacing: 8) {
-                HStack {
-                    Spacer()
+                filterPicker
+
+                HStack(spacing: 10) {
                     Button("今日", action: onToday)
                         .buttonStyle(.borderedProminent)
-                    rangePicker.frame(width: 150)
-                }
 
-                Picker("フィルター", selection: $filter) {
-                    ForEach(TaskCalendarFilter.allCases) { option in
-                        Text(option.displayName).tag(option)
-                    }
+                    Spacer(minLength: 0)
+
+                    rangePicker
+                        .frame(width: 150)
                 }
-                .pickerStyle(.segmented)
             }
         }
         .padding(.horizontal, 16)
@@ -62,6 +58,19 @@ struct TaskCalendarToolbar: View {
             }
         }
         .pickerStyle(.segmented)
+        .labelsHidden()
+        .accessibilityLabel("表示範囲")
+    }
+
+    private var filterPicker: some View {
+        Picker("フィルター", selection: $filter) {
+            ForEach(TaskCalendarFilter.allCases) { option in
+                Text(option.displayName).tag(option)
+            }
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .accessibilityLabel("フィルター")
     }
 }
 
