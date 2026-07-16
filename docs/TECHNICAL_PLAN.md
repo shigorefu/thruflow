@@ -2,7 +2,8 @@
 
 ## Architecture
 
-Keep separation between:
+The canonical source layout and dependency rules are documented in
+`docs/ARCHITECTURE.md`. Keep separation between:
 
 - domain models: Direction, Todo, FlowSession, FlowSegment, FlowBreak;
 - domain logic: validation, filtering, planning, progress, timer, statistics;
@@ -10,6 +11,11 @@ Keep separation between:
 - SwiftUI features.
 
 SwiftUI views should call domain logic instead of owning product rules directly.
+
+The current macOS application shell and feature screens live under
+`Platforms/macOS`. Shared models, logic, application state, services, and small
+cross-platform controls live under `Shared`. A future iOS presentation layer
+depends on `Shared` and never on the macOS folder.
 
 ## Current Data Rules
 

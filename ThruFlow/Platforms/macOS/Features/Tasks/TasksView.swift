@@ -119,7 +119,7 @@ struct TasksView: View {
         }
         .onTapGesture {
 #if os(macOS)
-            NSApp.keyWindow?.makeFirstResponder(nil)
+            MacOSFocusController.dismissCurrentEditor()
 #endif
         }
     }
