@@ -10,6 +10,9 @@ import SwiftUI
 
 struct FlowDashboardView: View {
     private static let topPanelHeight: CGFloat = 410
+    private static let wideLayoutMinimumWidth: CGFloat = 760
+    private static let widePlayerWidth: CGFloat = 270
+    private static let panelSpacing: CGFloat = 16
 
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.modelContext) private var modelContext
@@ -45,6 +48,7 @@ struct FlowDashboardView: View {
                 ScrollView {
                     dashboardLayout(
                         snapshot: snapshot,
+                        availableWidth: max(0, viewport.size.width - 40),
                         availableHeight: max(0, viewport.size.height - 40),
                         now: timeline.date
                     )
@@ -85,43 +89,51 @@ struct FlowDashboardView: View {
 
     private func dashboardLayout(
         snapshot: FlowDashboardSnapshot,
+        availableWidth: CGFloat,
         availableHeight: CGFloat,
         now: Date
     ) -> some View {
-        let lowerPanelHeight = max(340, availableHeight - Self.topPanelHeight - 16)
+        let lowerPanelHeight = max(340, availableHeight - Self.topPanelHeight - Self.panelSpacing)
 
-        return ViewThatFits(in: .horizontal) {
-            Grid(horizontalSpacing: 16, verticalSpacing: 16) {
-                GridRow(alignment: .top) {
-                    flowStage(snapshot: snapshot, now: now)
-                        .frame(minWidth: 560, maxWidth: .infinity)
-                        .frame(height: Self.topPanelHeight)
+        return Group {
+            if availableWidth >= Self.wideLayoutMinimumWidth {
+                Grid(horizontalSpacing: Self.panelSpacing, verticalSpacing: Self.panelSpacing) {
+                    GridRow(alignment: .top) {
+                        flowStage(snapshot: snapshot, now: now)
+                            .frame(
+                                minWidth: Self.wideLayoutMinimumWidth
+                                    - Self.widePlayerWidth
+                                    - Self.panelSpacing,
+                                maxWidth: .infinity
+                            )
+                            .frame(height: Self.topPanelHeight)
 
+                        FlowMiniPlayerView(style: .dashboard)
+                            .frame(width: Self.widePlayerWidth, height: Self.topPanelHeight)
+                    }
+
+                    GridRow(alignment: .top) {
+                        taskColumns
+                            .frame(height: lowerPanelHeight)
+                        statisticsPanel(snapshot: snapshot)
+                            .frame(width: Self.widePlayerWidth)
+                            .frame(height: lowerPanelHeight)
+                    }
+                }
+                .frame(minWidth: Self.wideLayoutMinimumWidth)
+            } else {
+                VStack(spacing: Self.panelSpacing) {
                     FlowMiniPlayerView(style: .dashboard)
-                        .frame(width: 310, height: Self.topPanelHeight)
-                }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 360)
 
-                GridRow(alignment: .top) {
+                    flowStage(snapshot: snapshot, now: now)
+                        .frame(height: 340)
+
                     taskColumns
-                        .frame(height: lowerPanelHeight)
                     statisticsPanel(snapshot: snapshot)
-                        .frame(width: 310)
-                        .frame(height: lowerPanelHeight)
+                        .frame(height: 340)
                 }
-            }
-            .frame(minWidth: 900)
-
-            VStack(spacing: 16) {
-                FlowMiniPlayerView(style: .dashboard)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 360)
-
-                flowStage(snapshot: snapshot, now: now)
-                    .frame(height: 340)
-
-                taskColumns
-                statisticsPanel(snapshot: snapshot)
-                    .frame(height: 340)
             }
         }
     }
