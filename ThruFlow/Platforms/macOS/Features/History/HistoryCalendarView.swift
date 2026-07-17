@@ -282,12 +282,8 @@ struct HistoryTimeGrid: View {
             let contentWidth = timeAxisWidth + dayWidth * CGFloat(days.count)
 
             ScrollView(.horizontal) {
-                VStack(spacing: 0) {
-                    dayHeader(dayWidth: dayWidth)
-                    Divider()
-                    hourScroll(dayWidth: dayWidth, contentWidth: contentWidth)
-                }
-                .frame(width: contentWidth)
+                hourScroll(dayWidth: dayWidth, contentWidth: contentWidth)
+                    .frame(width: contentWidth)
             }
             .scrollIndicators(.automatic)
         }
@@ -315,15 +311,26 @@ struct HistoryTimeGrid: View {
     private func hourScroll(dayWidth: CGFloat, contentWidth: CGFloat) -> some View {
         ScrollViewReader { proxy in
             ScrollView(.vertical) {
-                ZStack(alignment: .topLeading) {
-                    hourGrid(dayWidth: dayWidth, contentWidth: contentWidth)
-                        .allowsHitTesting(false)
-                    emptyDoubleClickLayer(dayWidth: dayWidth)
-                    timedItems(dayWidth: dayWidth)
-                    manualFlowDraftBlock(dayWidth: dayWidth)
-                    currentTimeLine(dayWidth: dayWidth)
+                LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
+                    Section {
+                        ZStack(alignment: .topLeading) {
+                            hourGrid(dayWidth: dayWidth, contentWidth: contentWidth)
+                                .allowsHitTesting(false)
+                            emptyDoubleClickLayer(dayWidth: dayWidth)
+                            timedItems(dayWidth: dayWidth)
+                            manualFlowDraftBlock(dayWidth: dayWidth)
+                            currentTimeLine(dayWidth: dayWidth)
+                        }
+                        .frame(width: contentWidth, height: hourHeight * CGFloat(hourRange.count))
+                    } header: {
+                        VStack(spacing: 0) {
+                            dayHeader(dayWidth: dayWidth)
+                            Divider()
+                        }
+                        .background(.bar)
+                    }
                 }
-                .frame(width: contentWidth, height: hourHeight * CGFloat(hourRange.count))
+                .frame(width: contentWidth)
             }
             .scrollIndicators(.hidden, axes: .vertical)
             .onAppear { scrollToRelevantHour(proxy) }
