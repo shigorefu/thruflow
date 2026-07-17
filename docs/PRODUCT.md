@@ -25,7 +25,7 @@ Task title may be empty. When empty, UI displays `(方向)`, for example `(読�
 
 The screen is named `タスク`. There is no separate Inbox navigation item; date-less Task behavior is deferred.
 
-`タスク` supports `日`, `週`, and `月` calendar ranges. Week is a seven-column kanban, while month is a calendar overview. Filters stay centered; `今日` and the History-style period picker own date navigation. Active Tasks can be moved between dates subject to Habit rules.
+`タスク` supports `日`, `週`, and `月` calendar ranges. Day uses a compact seven-day strip above the Task list and opens a full month only in a date-picker popover. Week is a seven-column kanban, while month is a calendar overview. Filters stay centered and `今日` remains prominent. Active Tasks can be moved between dates subject to Habit rules.
 
 Weekly-count Habits create one pending Task at a time. Completion allows the next instance on a later day, while moving the pending Task never creates a duplicate or makes the weekly goal impossible.
 
