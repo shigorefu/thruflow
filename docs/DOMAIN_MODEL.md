@@ -32,7 +32,7 @@ Important fields:
 - `measurement`: checkbox, focus blocks, or minutes;
 - `priority`: high, medium, low;
 - `isRoomIfPossible`: only meaningful for low priority;
-- `scheduledDate`: optional task date; the UI behavior for nil is deferred;
+- `scheduledDate`: optional task date; nil places an active normal Task in the `日付なし` projection;
 - `plannedAmount` and `actualProgress`;
 - `focusDurationSeconds`: exact accumulated focused seconds.
 - `completedAt`: optional exact completion timestamp; nil on active and legacy completed records.
@@ -97,6 +97,8 @@ Weekly-count Habit Directions create one pending Todo at a time. A completed Tod
 `TaskCalendarBuilder` creates deterministic day, seven-day week, and month-grid date ranges. `TaskRescheduleService` validates calendar drag-and-drop independently from SwiftUI.
 
 Normal active Tasks may change `scheduledDate`. Completed Tasks and fixed daily/weekday Habit instances cannot move. Weekly-count Habit movement delegates to `RequiredTodoPlanner` feasibility rules.
+
+`TaskBacklogBuilder` derives active overdue and undated normal Tasks. It excludes completed, archived, deleted, and Habit Todos. Overdue is evaluated against the calendar start of today so time-of-day and time-zone differences do not change membership.
 
 ## Statistics
 

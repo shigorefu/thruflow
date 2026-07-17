@@ -57,6 +57,56 @@ struct TaskCalendarTests {
         #expect(!TaskCalendarFilter.habits.includes(task))
     }
 
+    @Test func backlogSeparatesOverdueAndUnscheduledTasks() {
+        let calendar = testCalendar()
+        let now = date(2026, 7, 17, calendar: calendar)
+        let direction = Direction(name: "仕事", type: .neutral)
+        let overdue = Todo(
+            title: "期限切れ",
+            direction: direction,
+            scheduledDate: date(2026, 7, 16, calendar: calendar)
+        )
+        let today = Todo(title: "今日", direction: direction, scheduledDate: now)
+        let future = Todo(
+            title: "明日",
+            direction: direction,
+            scheduledDate: date(2026, 7, 18, calendar: calendar)
+        )
+        let unscheduled = Todo(title: "日付なし", direction: direction)
+
+        let snapshot = TaskBacklogBuilder(calendar: calendar).build(
+            todos: [future, unscheduled, today, overdue],
+            now: now
+        )
+
+        #expect(snapshot.overdue.map(\.id) == [overdue.id])
+        #expect(snapshot.unscheduled.map(\.id) == [unscheduled.id])
+    }
+
+    @Test func backlogExcludesHabitsAndInactiveTasks() {
+        let calendar = testCalendar()
+        let now = date(2026, 7, 17, calendar: calendar)
+        let yesterday = date(2026, 7, 16, calendar: calendar)
+        let normal = Direction(name: "仕事", type: .neutral)
+        let habit = Direction(name: "運動", type: .habit)
+        let overdueHabit = Todo(title: "", direction: habit, scheduledDate: yesterday)
+        let unscheduledHabit = Todo(title: "", direction: habit)
+        let completed = Todo(title: "完了", direction: normal, scheduledDate: yesterday)
+        completed.setCompleted(true, now: yesterday)
+        let archived = Todo(title: "保管", direction: normal)
+        archived.archive(now: yesterday)
+        let deleted = Todo(title: "削除", direction: normal, scheduledDate: yesterday)
+        deleted.softDelete(now: yesterday)
+
+        let snapshot = TaskBacklogBuilder(calendar: calendar).build(
+            todos: [overdueHabit, unscheduledHabit, completed, archived, deleted],
+            now: now
+        )
+
+        #expect(snapshot.overdue.isEmpty)
+        #expect(snapshot.unscheduled.isEmpty)
+    }
+
     @Test func completedAndFixedHabitTasksCannotMove() {
         let calendar = testCalendar()
         let service = TaskRescheduleService(calendar: calendar)

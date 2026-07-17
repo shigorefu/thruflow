@@ -30,11 +30,11 @@ Todo title may be empty. UI displays `(Direction name)` when title is empty.
 
 Reason: generated Habit tasks should start as lightweight templates, and the same display rule remains available if automatic Flow Task creation is defined later.
 
-## D-005: Date-less Task Behavior Is Deferred
+## D-005: Backlog Lives Inside Tasks
 
-There is no separate Inbox navigation item in the current UI. The storage field remains optional, but product behavior for date-less Tasks will be defined later.
+There is no separate Inbox navigation item. Overdue normal Tasks appear in Today, while active normal Tasks with no date are available through a counted `日付なし` inspector in `タスク`. Habit instances are excluded because their dates are owned by Habit scheduling rules.
 
-Reason: the previous Inbox concept was removed before the replacement workflow was defined.
+Reason: calendar planning should expose work that needs attention without adding another primary destination or mixing automatically generated Habit history into a manual backlog.
 
 ## D-006: Todo Owns Memo
 

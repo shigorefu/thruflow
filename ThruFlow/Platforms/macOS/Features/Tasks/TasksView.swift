@@ -28,11 +28,13 @@ struct TasksView: View {
     @State private var calendarRange: TaskCalendarRange = .oneDay
     @State private var taskFilter: TaskCalendarFilter = .all
     @State private var moveError: String?
+    @State private var showsUnscheduledInspector = false
     @AppStorage("today.groupOrder") private var groupOrderRaw = TasksTodoGroup.defaultOrderRaw
 
     private let filter = TodayTodoFilter()
     private let requiredPlanner = RequiredTodoPlanner()
     private let calendarBuilder = TaskCalendarBuilder()
+    private let backlogBuilder = TaskBacklogBuilder()
     private let rescheduleService = TaskRescheduleService()
     private let progress = TodoProgressCalculator()
     private let validator = TodoValidator()
@@ -61,12 +63,22 @@ struct TasksView: View {
         calendarBuilder.dates(for: calendarRange, anchoredAt: anchorDate)
     }
 
+    private var backlogSnapshot: TaskBacklogSnapshot {
+        backlogBuilder.build(todos: todos)
+    }
+
+    private var visibleOverdueTodos: [Todo] {
+        backlogSnapshot.overdue.filter(taskFilter.includes)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             TaskCalendarToolbar(
                 range: $calendarRange,
                 filter: $taskFilter,
-                onToday: moveToToday
+                unscheduledCount: backlogSnapshot.unscheduled.count,
+                onToday: moveToToday,
+                onShowUnscheduled: { showsUnscheduledInspector = true }
             )
 
             Divider()
@@ -89,6 +101,10 @@ struct TasksView: View {
         }
         .sheet(item: $editingTodo) { todo in
             TodoFormView(mode: .edit(todo))
+        }
+        .inspector(isPresented: $showsUnscheduledInspector) {
+            unscheduledInspector
+                .inspectorColumnWidth(min: 300, ideal: 340, max: 420)
         }
         .alert("移動できません", isPresented: moveErrorIsPresented) {
             Button("OK", role: .cancel) {
@@ -234,9 +250,25 @@ struct TasksView: View {
 
     private var oneDayList: some View {
         List {
+            if showsOverdueSection {
+                Section {
+                    ForEach(visibleOverdueTodos) { todo in
+                        draggableTodoRow(todo)
+                    }
+                } header: {
+                    TasksOverdueHeader(
+                        count: visibleOverdueTodos.count,
+                        onMoveAllToToday: { moveTodosToToday(visibleOverdueTodos) }
+                    )
+                }
+                .listSectionSeparator(.hidden)
+            }
+
             if selectedDateGroups.isEmpty {
-                EmptyRow(text: "この日のタスクはありません。")
-                    .listRowSeparator(.hidden)
+                if !showsOverdueSection {
+                    EmptyRow(text: "この日のタスクはありません。")
+                        .listRowSeparator(.hidden)
+                }
             } else {
                 ForEach(selectedDateGroups) { group in
                     Section {
@@ -259,6 +291,77 @@ struct TasksView: View {
         .animation(.default, value: selectedDateTodos.map(\.id))
     }
 
+    private var showsOverdueSection: Bool {
+        Calendar.current.isDateInToday(selectedDate) && !visibleOverdueTodos.isEmpty
+    }
+
+    private var unscheduledInspector: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 8) {
+                Label("日付なし", systemImage: "tray")
+                    .font(.headline)
+
+                Text("\(backlogSnapshot.unscheduled.count)")
+                    .font(.caption.monospacedDigit().weight(.semibold))
+                    .foregroundStyle(.secondary)
+
+                Spacer(minLength: 0)
+
+                if !backlogSnapshot.unscheduled.isEmpty {
+                    Button("すべて今日へ") {
+                        moveTodosToToday(backlogSnapshot.unscheduled)
+                    }
+                    .buttonStyle(.bordered)
+                }
+
+                Button {
+                    showsUnscheduledInspector = false
+                } label: {
+                    Image(systemName: "xmark")
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                .accessibilityLabel("日付なしを閉じる")
+            }
+            .padding(16)
+
+            Divider()
+
+            if backlogSnapshot.unscheduled.isEmpty {
+                ContentUnavailableView(
+                    "日付なしのタスクはありません",
+                    systemImage: "tray"
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                List {
+                    ForEach(backlogSnapshot.unscheduled) { todo in
+                        unscheduledTodoRow(todo)
+                            .listRowSeparator(.hidden)
+                    }
+                }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+            }
+        }
+    }
+
+    private func unscheduledTodoRow(_ todo: Todo) -> some View {
+        HStack(spacing: 8) {
+            draggableTodoRow(todo)
+
+            Button {
+                _ = moveTodo(todo, to: .now)
+            } label: {
+                Image(systemName: "calendar.badge.plus")
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.secondary)
+            .help("今日へ移動")
+            .accessibilityLabel("\(TodoDisplay.title(for: todo))を今日へ移動")
+        }
+    }
+
     private var moveErrorIsPresented: Binding<Bool> {
         Binding(
             get: { moveError != nil },
@@ -274,6 +377,30 @@ struct TasksView: View {
         let today = Calendar.current.startOfDay(for: .now)
         anchorDate = today
         selectedDate = today
+    }
+
+    private func moveTodosToToday(_ candidates: [Todo]) {
+        let today = Calendar.current.startOfDay(for: .now)
+        let movable = candidates.filter { todo in
+            if case .success = rescheduleService.validate(todo, movingTo: today, among: todos) {
+                return true
+            }
+            return false
+        }
+        guard !movable.isEmpty else { return }
+
+        let firstSortIndex = (todos.map(\.sortIndex).min() ?? 0) - movable.count
+        for (offset, todo) in movable.enumerated() {
+            todo.reschedule(to: today)
+            todo.setSortIndex(firstSortIndex + offset)
+        }
+
+        do {
+            try modelContext.save()
+        } catch {
+            modelContext.rollback()
+            moveError = "タスクを今日へ移動できませんでした。"
+        }
     }
 
     private func selectDate(_ date: Date) {
@@ -1259,6 +1386,38 @@ private struct TasksSectionHeader: View {
                 .clipShape(Capsule())
 
             Spacer(minLength: 0)
+        }
+        .padding(.top, 12)
+        .padding(.bottom, 4)
+        .textCase(nil)
+    }
+}
+
+private struct TasksOverdueHeader: View {
+    let count: Int
+    let onMoveAllToToday: () -> Void
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Circle()
+                .fill(.red)
+                .frame(width: 7, height: 7)
+
+            Text("期限切れ")
+                .font(.caption.weight(.semibold))
+
+            Text("\(count)")
+                .font(.caption2.monospacedDigit().weight(.medium))
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(Color.secondary.opacity(0.12), in: Capsule())
+
+            Spacer(minLength: 0)
+
+            Button("すべて今日へ", action: onMoveAllToToday)
+                .font(.caption)
+                .buttonStyle(.borderless)
         }
         .padding(.top, 12)
         .padding(.bottom, 4)

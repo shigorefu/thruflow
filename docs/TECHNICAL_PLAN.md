@@ -23,7 +23,7 @@ depends on `Shared` and never on the macOS folder.
 - `TodayTodoFilter` includes only scheduled tasks for the selected day.
 - `TaskCalendarBuilder` creates deterministic visible date ranges and month grids.
 - `TaskRescheduleService` validates kanban and month-grid drag-and-drop.
-- Date-less Task presentation is deferred; no Inbox navigation is exposed.
+- `TaskBacklogBuilder` derives overdue and undated active normal Tasks for the Today section and Tasks inspector without adding persistence state.
 - `RequiredTodoPlanner` creates scheduled habit tasks.
 - `FlowProgressCalculator` defines focused-time conversion for isolated calculations.
 - `FlowProgressReconciler` rebuilds measured Todo progress/completion and Direction focus totals from credited Flow history after every history mutation and once at app launch.

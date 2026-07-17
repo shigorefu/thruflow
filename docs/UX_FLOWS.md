@@ -43,7 +43,9 @@ Task rows:
 
 Quick capture behaves like a messenger composer. The user can set measurement, Direction, priority, and date from compact controls.
 
-There is no separate Inbox navigation item. Date-less task behavior is deferred.
+When `今日` is selected, active overdue normal Tasks appear in a leading `期限切れ` section. The section supports normal Task actions, drag-to-date, and `すべて今日へ`. Automatically generated Habit instances are excluded.
+
+There is no separate Inbox navigation item. A toolbar `日付なし` button always shows the number of active undated normal Tasks. It opens a trailing inspector on macOS with per-Task `今日へ移動`, drag-to-date, edit, complete, delete, and `すべて今日へ` actions. Returning from the inspector preserves the selected calendar date and range.
 
 Weekly-count habits create one pending task at a time. After completion, the next instance may appear on a later eligible day until the weekly target is met. Moving the pending instance does not create a replacement for today, and dates that would make the target impossible are disabled.
 

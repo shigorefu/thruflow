@@ -23,7 +23,7 @@ Tasks are the daily Todo surface.
 
 Task title may be empty. When empty, UI displays `(方向)`, for example `(読書)` or `(その他)`.
 
-The screen is named `タスク`. There is no separate Inbox navigation item; date-less Task behavior is deferred.
+The screen is named `タスク`. There is no separate Inbox navigation item. When today is selected, overdue active normal Tasks appear in a leading `期限切れ` section. A toolbar `日付なし` button with a count opens an inspector for active normal Tasks without a date. Habit instances are excluded from both projections because their schedule is owned by the Habit planner.
 
 `タスク` supports `日`, `週`, and `月` calendar ranges. Day uses a compact seven-day strip above the Task list and opens a full month only in a date-picker popover. Week is a seven-column kanban, while month is a calendar overview. Filters stay centered and `今日` remains prominent. Active Tasks can be moved between dates subject to Habit rules.
 
