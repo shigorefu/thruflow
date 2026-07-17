@@ -148,6 +148,8 @@ struct TasksView: View {
             VStack(spacing: 0) {
                 TaskDayStrip(
                     selectedDate: selectedDateBinding,
+                    todos: todos.filter { !$0.isArchived && !$0.isDeleted },
+                    filter: taskFilter,
                     onDropPayload: moveTaskPayload
                 )
                 .padding(.horizontal, 12)

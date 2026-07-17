@@ -857,9 +857,7 @@ private struct HistoryMonthGrid: View {
     }
 
     private var weekdaySymbols: [String] {
-        let symbols = calendar.shortStandaloneWeekdaySymbols
-        let offset = max(0, calendar.firstWeekday - 1)
-        return Array(symbols[offset...]) + Array(symbols[..<offset])
+        CalendarWeekdaySymbols.orderedAbbreviated(calendar: calendar)
     }
 
     private func dayTextColor(_ day: Date) -> Color {
