@@ -1,25 +1,36 @@
 # Roadmap
 
-## Now
+## MVP 1.0
 
-- Use the app daily and harden the current `方向 -> Task -> Flow -> progress -> statistics` loop.
-- Keep the Flow dashboard, Tasks calendar, canonical History, Direction management, and contribution statistics consistent.
-- Preserve exact Flow/segment/rest history while presenting connected series on the dashboard.
-- Keep historical correction, Habit generation, progress attribution, and dashboard statistics deterministic and testable.
-- Keep documentation synchronized with shipped behavior.
+### Реализованно
+- Ежедневно использовать приложение и довести до стабильного состояния основной цикл `Направление -> Задача -> Flow -> прогресс -> статистика`.
 
-## Next
+- Поддерживать согласованность панели Flow, календаря задач, канонической Истории, управления Направлениями и статистики вкладов.
 
-- Define whether Flow without a selected Task should create one, including measurement and planned-amount defaults.
-- Define product-level Flow-series deletion by Block amount in addition to exact record deletion.
-- Define the replacement workflow for date-less Tasks.
-- Add CloudKit only after local data migration and conflict rules are specified and tested.
+- Сохранять точную историю Flow, сегментов и отдыха, одновременно отображая связанные серии на панели Flow.
 
-## Later
+- Обеспечить, чтобы исправление истории, генерация привычек, распределение прогресса и статистика панели были детерминированными и легко тестируемыми.
 
-- Richer rewards for `ナイス`.
-- Timeline outside Flow.
-- AI summaries.
-- CloudKit sync.
-- Widgets and Live Activities.
-- Apple Watch.
+- Поддерживать документацию в актуальном состоянии и синхронизированной с фактическим поведением приложения.
+
+### Далее
+- [ ] Синхронизация через CloudKit (После приобретиения Apple Developers).
+- [ ] Виджеты и Live Activities.
+- [ ] IOS версия
+- [ ] Поддержка Apple Watch.
+- [ ] tasks без назначенной даты помечаются в 
+- [ ] Таймлайн вне Flow.
+- [ ] Добавить простые настройки
+- [ ] Добавить английскую и русскую локалиацию
+- [ ] Экспорт данных в csv
+
+
+## В далеком будущем
+
+- Более продуманная система наград для `ナイス`.
+
+- AI-сводки.
+
+- Добавление Connectors (Toggl, Jiraなど)
+
+- Добавление Pets

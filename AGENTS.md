@@ -1,6 +1,8 @@
 # AGENTS.md
 
-This repository follows the product and implementation instructions in `CODEX.md`. Agents working here must read `CODEX.md` before making changes.
+This repository uses `CODEX.md` as the agent operating manual. Agents must read
+it first, then follow its links to the product, architecture, data, UX, and
+implementation sources relevant to the task.
 
 ## Working Rules
 
