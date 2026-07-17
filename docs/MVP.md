@@ -13,6 +13,7 @@ Current MVP goal:
 - Daily `タスク` list.
 - Calendar kanban ranges: `日`, `週`, and `月`.
 - Task/Habit filters and validated drag-and-drop between dates.
+- Today overdue section and counted undated-Task inspector.
 - Automatic habit tasks.
 - Sequential weekly-count Habit generation and safe rescheduling.
 - Quick task capture.
@@ -40,7 +41,6 @@ Current MVP goal:
 - Widgets.
 - Live Activities.
 - Apple Watch.
-- A replacement workflow for date-less Tasks.
 
 ## Known Product Gaps
 

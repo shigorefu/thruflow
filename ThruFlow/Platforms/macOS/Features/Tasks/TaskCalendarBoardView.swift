@@ -8,12 +8,14 @@
 import SwiftUI
 
 struct TaskCalendarToolbar: View {
-    private static let wideLayoutMinimumWidth: CGFloat = 700
+    private static let wideLayoutMinimumWidth: CGFloat = 820
 
     @Binding var range: TaskCalendarRange
     @Binding var filter: TaskCalendarFilter
 
+    let unscheduledCount: Int
     let onToday: () -> Void
+    let onShowUnscheduled: () -> Void
 
     var body: some View {
         ViewThatFits(in: .horizontal) {
@@ -25,6 +27,8 @@ struct TaskCalendarToolbar: View {
                     Spacer()
                     Button("今日", action: onToday)
                         .buttonStyle(.borderedProminent)
+
+                    unscheduledButton
 
                     rangePicker
                         .frame(width: 150)
@@ -38,6 +42,8 @@ struct TaskCalendarToolbar: View {
                 HStack(spacing: 10) {
                     Button("今日", action: onToday)
                         .buttonStyle(.borderedProminent)
+
+                    unscheduledButton
 
                     Spacer(minLength: 0)
 
@@ -71,6 +77,23 @@ struct TaskCalendarToolbar: View {
         .pickerStyle(.segmented)
         .labelsHidden()
         .accessibilityLabel("フィルター")
+    }
+
+    private var unscheduledButton: some View {
+        Button(action: onShowUnscheduled) {
+            HStack(spacing: 5) {
+                Image(systemName: "tray")
+                Text("日付なし")
+                Text("\(unscheduledCount)")
+                    .font(.caption2.monospacedDigit().weight(.semibold))
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 2)
+                    .background(Color.secondary.opacity(0.16), in: Capsule())
+            }
+        }
+        .buttonStyle(.bordered)
+        .foregroundStyle(unscheduledCount == 0 ? .secondary : .primary)
+        .accessibilityLabel("日付なしのタスク、\(unscheduledCount)件")
     }
 }
 
