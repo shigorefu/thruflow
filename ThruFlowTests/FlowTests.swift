@@ -444,6 +444,36 @@ struct FlowTests {
         #expect(secondTodo.recordedFocusSeconds == 9 * 60)
     }
 
+    @Test @MainActor func cancellingResultMemoRestoresFlowAndRemovesProvisionalProgress() throws {
+        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let start = Date(timeIntervalSince1970: 8_500)
+        let direction = Direction(name: "執筆", type: .neutral)
+        let todo = Todo(title: "本文", direction: direction, measurement: .minutes, plannedAmount: 30)
+        context.insert(direction)
+        context.insert(todo)
+
+        let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
+        let store = ActiveFlowStore(defaults: defaults, notifications: TestFlowNotificationService())
+        store.configure(direction: direction, todo: todo, mode: .twentyFiveFive)
+        store.start(direction: direction, todo: todo, modelContext: context, now: start)
+        store.stop(modelContext: context, now: start.addingTimeInterval(10 * 60))
+
+        #expect(store.phase == .awaitingResult)
+        #expect(todo.recordedFocusSeconds == 10 * 60)
+        #expect(store.activeSession?.segments.first?.endedAt != nil)
+
+        store.cancelResultMemo(modelContext: context, now: start.addingTimeInterval(10 * 60 + 10))
+
+        #expect(store.phase == .focusing)
+        #expect(store.activeSession?.status == .active)
+        #expect(store.activeSession?.segments.first?.endedAt == nil)
+        #expect(todo.recordedFocusSeconds == 0)
+        #expect(direction.recordedFocusSeconds == 0)
+    }
+
     @Test @MainActor func startingWorkDuringBreakImmediatelyCreatesNextFlow() throws {
         let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)

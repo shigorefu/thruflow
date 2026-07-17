@@ -49,7 +49,7 @@ Modes:
 - `Focus`: 25 focus / 5 break = 1 Block.
 - `Deep`: 50 focus / 10 break = 2 Blocks.
 
-Focus does not auto-stop or auto-switch to break. Break starts only after the user confirms memo. The dashboard and menu bar use the same square memo panel with cancel, no-memo, and save actions. Memo is stored on Todo, not FlowSession, and rest completion never prompts again. The rest timer ring is neutral gray and drains while the focus ring fills with the selected Direction color.
+Focus does not auto-stop or auto-switch to break. Break starts only after the user confirms memo. The dashboard and menu bar use the same square memo panel with two stable actions: cancel on the left and a checkmark submit action on the right. The submit label is `メモなしで送信` while the editor is empty and `送信` after text is entered. Memo is stored on Todo, not FlowSession, and rest completion never prompts again. The rest timer ring is neutral gray and drains while the focus ring fills with the selected Direction color.
 
 Flow sessions may share a stable series ID when the next session starts within 1.5 times the planned rest. The next rest after each 4 accumulated Blocks is a 20-minute Long Break with a 30-minute continuation window. History preserves separate Flow and rest records; only the dashboard renders their series as one continuous rail.
 

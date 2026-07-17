@@ -31,6 +31,7 @@ final class ActiveFlowStore: ObservableObject {
     private let notifications: FlowNotificationService
     private let defaults: UserDefaults
     private var didApplyProgress = false
+    private var stateBeforeResultPrompt: FlowTimerState?
     private var displayClock: AnyCancellable?
 
     init(
@@ -81,6 +82,7 @@ final class ActiveFlowStore: ObservableObject {
     }
 
     func start(direction: Direction, todo: Todo?, modelContext: ModelContext, now: Date = .now) {
+        stateBeforeResultPrompt = nil
         let state = engine.start(mode: selectedMode, now: now)
         let sessionID = UUID()
         let pendingBreak = eligiblePendingBreak(modelContext: modelContext, at: now)
@@ -198,6 +200,7 @@ final class ActiveFlowStore: ObservableObject {
         }
 
         guard !discardShortFlowIfNeeded(timerState, modelContext: modelContext, now: now) else { return }
+        stateBeforeResultPrompt = timerState
         apply(engine.finish(timerState, now: now), modelContext: modelContext, now: now)
     }
 
@@ -213,6 +216,36 @@ final class ActiveFlowStore: ObservableObject {
         self.timerState = nil
         didApplyProgress = false
         isAwaitingBreakMemo = false
+        stateBeforeResultPrompt = nil
+    }
+
+    func cancelResultMemo(modelContext: ModelContext, now: Date = .now) {
+        guard timerState?.phase == .awaitingResult,
+              let restoredState = stateBeforeResultPrompt,
+              let activeSession else {
+            return
+        }
+
+        activeSession.segments.max(by: { $0.startedAt < $1.startedAt })?.reopen()
+        timerState = restoredState
+        activeSession.apply(timerState: restoredState, now: now)
+        progressReconciler.reconcile(
+            session: activeSession,
+            modelContext: modelContext,
+            now: now
+        )
+        didApplyProgress = false
+        stateBeforeResultPrompt = nil
+
+        if restoredState.phase == .focusing {
+            notifications.scheduleFocusFinished(
+                mode: restoredState.mode,
+                focusedSeconds: restoredState.plannedFocusDurationSeconds,
+                fireDate: restoredState.plannedEndAt
+            )
+        }
+
+        try? modelContext.save()
     }
 
     func extendAdaptive(modelContext: ModelContext, now: Date = .now) {
@@ -314,6 +347,7 @@ final class ActiveFlowStore: ObservableObject {
         }
 
         guard !discardShortFlowIfNeeded(timerState, modelContext: modelContext, now: now) else { return }
+        stateBeforeResultPrompt = timerState
         apply(engine.finish(timerState, now: now), modelContext: modelContext, now: now)
     }
 
@@ -340,6 +374,7 @@ final class ActiveFlowStore: ObservableObject {
         timerState = nil
         didApplyProgress = false
         isAwaitingBreakMemo = false
+        stateBeforeResultPrompt = nil
         try? modelContext.save()
     }
 
@@ -553,6 +588,7 @@ final class ActiveFlowStore: ObservableObject {
         timerState = nil
         didApplyProgress = false
         isAwaitingBreakMemo = false
+        stateBeforeResultPrompt = nil
         try? modelContext.save()
         return true
     }

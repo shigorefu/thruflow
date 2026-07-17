@@ -819,34 +819,26 @@ struct FlowMiniPlayerView: View {
             }
 
             HStack(spacing: 10) {
-                if activeFlowStore.isAwaitingBreakMemo {
-                    memoActionButton(String(localized: "キャンセル"), systemImage: "xmark") {
-                        cancelBreakMemo()
-                    }
-                    .accessibilityLabel(String(localized: "メモ入力をキャンセル"))
+                memoActionButton(String(localized: "キャンセル"), systemImage: "xmark") {
+                    cancelMemo()
                 }
+                .accessibilityLabel(String(localized: "メモ入力をキャンセル"))
 
                 Spacer(minLength: 0)
 
-                memoActionButton(String(localized: "メモなし"), systemImage: "forward.fill") {
-                    submitWithoutResult()
-                }
-                .accessibilityLabel(String(localized: "メモなしで続ける"))
-
                 Button {
-                    submitResult()
+                    submitMemo()
                 } label: {
-                    Label(String(localized: "保存"), systemImage: "arrow.up")
+                    Label(memoSubmitTitle, systemImage: "checkmark")
                         .font(.subheadline.weight(.semibold))
-                        .frame(minWidth: 76, minHeight: 38)
-                        .padding(.horizontal, 4)
-                        .background(hasMemoText ? Color.accentColor : Color.secondary.opacity(0.35))
+                        .frame(minWidth: 132, minHeight: 38)
+                        .padding(.horizontal, 10)
+                        .background(Color.accentColor)
                         .foregroundStyle(.white)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                 }
                 .buttonStyle(.plain)
-                .disabled(!hasMemoText)
-                .accessibilityLabel(String(localized: "メモを保存"))
+                .accessibilityLabel(memoSubmitTitle)
             }
         }
         .padding(18)
@@ -882,6 +874,12 @@ struct FlowMiniPlayerView: View {
 
     private var hasMemoText: Bool {
         !resultText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private var memoSubmitTitle: String {
+        hasMemoText
+            ? String(localized: "送信")
+            : String(localized: "メモなしで送信")
     }
 
     private var adaptiveExtensionMinutes: Int {
@@ -944,9 +942,21 @@ struct FlowMiniPlayerView: View {
         }
     }
 
-    private func cancelBreakMemo() {
+    private func submitMemo() {
+        if hasMemoText {
+            submitResult()
+        } else {
+            submitWithoutResult()
+        }
+    }
+
+    private func cancelMemo() {
         resultText = ""
-        activeFlowStore.cancelBreakMemo()
+        if activeFlowStore.isAwaitingBreakMemo {
+            activeFlowStore.cancelBreakMemo()
+        } else {
+            activeFlowStore.cancelResultMemo(modelContext: modelContext)
+        }
     }
 
     private func resolvedStartDirection() -> Direction {
