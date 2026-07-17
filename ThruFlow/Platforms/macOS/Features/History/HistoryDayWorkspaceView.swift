@@ -153,6 +153,7 @@ struct HistoryMiniCalendar: View {
 
     @Binding var selectedDate: Date
     var selectionMode: HistoryMiniCalendarSelectionMode = .day
+    var taskFilter: TaskCalendarFilter = .all
     var onDropPayload: ((String, Date) -> Bool)?
 
     @Query(sort: \Todo.sortIndex, order: .forward) private var todos: [Todo]
@@ -209,7 +210,11 @@ struct HistoryMiniCalendar: View {
                                 .frame(maxWidth: selectionMode == .week ? .infinity : nil)
                                 .foregroundStyle(dayForeground(date))
 
-                            CalendarTaskIndicators(todos: todos, date: date, maximumVisibleCount: 3)
+                            CalendarTaskIndicators(
+                                todos: todos.filter(taskFilter.includes),
+                                date: date,
+                                maximumVisibleCount: 3
+                            )
                         }
                         .frame(minHeight: 28)
                         .background(dayBackground(date))
