@@ -17,22 +17,22 @@ enum StatisticsRange: String, CaseIterable, Identifiable {
     var displayName: String {
         switch self {
         case .currentMonth:
-            "今月"
+            String(localized: "今月")
         case .days180:
-            "180日"
+            String(localized: "180日")
         case .calendarYear:
-            "年"
+            String(localized: "年")
         }
     }
 
     var summaryText: String {
         switch self {
         case .currentMonth:
-            "今月"
+            String(localized: "今月")
         case .days180:
-            "過去180日"
+            String(localized: "過去180日")
         case .calendarYear:
-            "今年"
+            String(localized: "今年")
         }
     }
 }
@@ -46,9 +46,9 @@ enum StatisticsMode: String, CaseIterable, Identifiable {
     var displayName: String {
         switch self {
         case .achievement:
-            "達成"
+            String(localized: "達成")
         case .flow:
-            "Flow"
+            String(localized: "Flow")
         }
     }
 }

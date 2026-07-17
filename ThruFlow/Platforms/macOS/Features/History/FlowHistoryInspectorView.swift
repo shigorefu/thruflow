@@ -72,7 +72,7 @@ struct FlowHistoryInspectorView: View {
         VStack(spacing: 0) {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Flowを編集")
+                    Text(String(localized: "Flowを編集"))
                         .font(.title3.weight(.semibold))
                     Text(dateText)
                         .font(.caption)
@@ -87,7 +87,7 @@ struct FlowHistoryInspectorView: View {
                     Image(systemName: "xmark")
                 }
                 .buttonStyle(.borderless)
-                .accessibilityLabel("閉じる")
+                .accessibilityLabel(String(localized: "閉じる"))
             }
             .padding(18)
 
@@ -95,9 +95,9 @@ struct FlowHistoryInspectorView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    field("タスク") {
-                        Picker("タスク", selection: $selectedTodoID) {
-                            Text("タスクなし").tag(UUID?.none)
+                    field(String(localized: "タスク")) {
+                        Picker(String(localized: "タスク"), selection: $selectedTodoID) {
+                            Text(String(localized: "タスクなし")).tag(UUID?.none)
                             ForEach(availableTodos) { todo in
                                 Text("\(todo.direction?.symbolName ?? "📥") \(TodoDisplay.title(for: todo))")
                                     .tag(Optional(todo.id))
@@ -106,8 +106,8 @@ struct FlowHistoryInspectorView: View {
                         .labelsHidden()
                     }
 
-                    field("方向") {
-                        Picker("方向", selection: $selectedDirectionID) {
+                    field(String(localized: "方向")) {
+                        Picker(String(localized: "方向"), selection: $selectedDirectionID) {
                             ForEach(availableDirections) { direction in
                                 Text("\(direction.symbolName) \(direction.name)")
                                     .tag(Optional(direction.id))
@@ -117,11 +117,11 @@ struct FlowHistoryInspectorView: View {
                         .disabled(selectedTodo != nil)
                     }
 
-                    field("時間") {
+                    field(String(localized: "時間")) {
                         HStack(alignment: .bottom, spacing: 12) {
-                            timeField("開始") {
+                            timeField(String(localized: "開始")) {
                                 DatePicker(
-                                    "開始",
+                                    String(localized: "開始"),
                                     selection: Binding(
                                         get: { timeDraft.startedAt },
                                         set: { timeDraft.setStartedAt($0) }
@@ -135,9 +135,9 @@ struct FlowHistoryInspectorView: View {
                                 .foregroundStyle(.secondary)
                                 .padding(.bottom, 5)
 
-                            timeField("終了") {
+                            timeField(String(localized: "終了")) {
                                 DatePicker(
-                                    "終了",
+                                    String(localized: "終了"),
                                     selection: Binding(
                                         get: { timeDraft.endedAt },
                                         set: { timeDraft.setEndedAt($0) }
@@ -149,10 +149,10 @@ struct FlowHistoryInspectorView: View {
 
                             Spacer(minLength: 8)
 
-                            timeField("集中") {
+                            timeField(String(localized: "集中")) {
                                 HStack(spacing: 5) {
                                     TextField(
-                                        "分",
+                                        String(localized: "分"),
                                         value: Binding(
                                             get: { timeDraft.focusMinutes },
                                             set: { timeDraft.setFocusMinutes($0) }
@@ -163,7 +163,7 @@ struct FlowHistoryInspectorView: View {
                                     .frame(width: 68)
                                     .multilineTextAlignment(.trailing)
 
-                                    Text("分")
+                                    Text(String(localized: "分"))
                                         .foregroundStyle(.secondary)
                                 }
                                 .monospacedDigit()
@@ -171,7 +171,7 @@ struct FlowHistoryInspectorView: View {
                         }
                     }
 
-                    field("メモ") {
+                    field(String(localized: "メモ")) {
                         TextEditor(text: $memo)
                             .frame(minHeight: 92)
                             .padding(8)
@@ -180,7 +180,7 @@ struct FlowHistoryInspectorView: View {
                             .disabled(selectedTodo == nil)
 
                         if selectedTodo == nil {
-                            Text("メモはタスクに保存されます。")
+                            Text(String(localized: "メモはタスクに保存されます。"))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -189,7 +189,7 @@ struct FlowHistoryInspectorView: View {
                     Button(role: .destructive) {
                         showsDeleteConfirmation = true
                     } label: {
-                        Label("このFlowを削除", systemImage: "trash")
+                        Label(String(localized: "このFlowを削除"), systemImage: "trash")
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.bordered)
@@ -200,13 +200,13 @@ struct FlowHistoryInspectorView: View {
             Divider()
 
             HStack {
-                Button("キャンセル") {
+                Button(String(localized: "キャンセル")) {
                     dismiss()
                 }
 
                 Spacer()
 
-                Button("保存") {
+                Button(String(localized: "保存")) {
                     save()
                 }
                 .buttonStyle(.borderedProminent)
@@ -225,18 +225,18 @@ struct FlowHistoryInspectorView: View {
             memo = todo.notes ?? ""
         }
         .confirmationDialog(
-            "このFlowを削除しますか？",
+            String(localized: "このFlowを削除しますか？"),
             isPresented: $showsDeleteConfirmation,
             titleVisibility: .visible
         ) {
-            Button("削除", role: .destructive) {
+            Button(String(localized: "削除"), role: .destructive) {
                 editor.delete(session: session, modelContext: modelContext)
                 try? modelContext.save()
                 dismiss()
             }
-            Button("キャンセル", role: .cancel) {}
+            Button(String(localized: "キャンセル"), role: .cancel) {}
         } message: {
-            Text("方向とタスクの集中時間から、このFlowの分を差し引きます。")
+            Text(String(localized: "方向とタスクの集中時間から、このFlowの分を差し引きます。"))
         }
     }
 
@@ -262,8 +262,8 @@ struct FlowHistoryInspectorView: View {
 
     private var dateText: String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ja_JP")
-        formatter.dateFormat = "yyyy年M月d日 HH:mm"
+        formatter.locale = Locale.autoupdatingCurrent
+        formatter.setLocalizedDateFormatFromTemplate("yMdHm")
         return formatter.string(from: session.startedAt)
     }
 

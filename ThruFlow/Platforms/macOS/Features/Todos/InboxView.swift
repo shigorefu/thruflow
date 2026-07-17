@@ -25,9 +25,9 @@ struct InboxView: View {
         List {
             if inboxTodos.isEmpty {
                 ContentUnavailableView(
-                    "Inboxは空です",
+                    String(localized: "Inboxは空です"),
                     systemImage: "tray",
-                    description: Text("日付なしのタスクがここに表示されます。")
+                    description: Text(String(localized: "日付なしのタスクがここに表示されます。"))
                 )
                 .listRowSeparator(.hidden)
             } else {
@@ -38,24 +38,24 @@ struct InboxView: View {
                             editingTodo = todo
                         }
                         .contextMenu {
-                            Button("今日へ", systemImage: "sun.max") {
+                            Button(String(localized: "今日へ"), systemImage: "sun.max") {
                                 schedule(todo, to: .now)
                             }
 
-                            Button("明日へ", systemImage: "calendar.badge.clock") {
+                            Button(String(localized: "明日へ"), systemImage: "calendar.badge.clock") {
                                 schedule(
                                     todo,
                                     to: Calendar.current.date(byAdding: .day, value: 1, to: .now)
                                 )
                             }
 
-                            Button("編集", systemImage: "pencil") {
+                            Button(String(localized: "編集"), systemImage: "pencil") {
                                 editingTodo = todo
                             }
 
                             Divider()
 
-                            Button("削除", systemImage: "trash", role: .destructive) {
+                            Button(String(localized: "削除"), systemImage: "trash", role: .destructive) {
                                 todo.softDelete()
                                 try? modelContext.save()
                             }
@@ -65,7 +65,7 @@ struct InboxView: View {
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
-        .navigationTitle("Inbox")
+        .navigationTitle(String(localized: "Inbox"))
         .sheet(item: $editingTodo) { todo in
             TodoFormView(mode: .edit(todo))
         }

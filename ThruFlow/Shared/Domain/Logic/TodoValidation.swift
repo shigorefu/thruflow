@@ -73,9 +73,9 @@ enum TodoValidationError: Error, Equatable, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidPlannedAmount:
-            "予定量は1以上にしてください。"
+            String(localized: "予定量は1以上にしてください。")
         case .invalidActualProgress:
-            "進捗は0以上にしてください。"
+            String(localized: "進捗は0以上にしてください。")
         }
     }
 }

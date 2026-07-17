@@ -67,9 +67,9 @@ struct DirectionListView: View {
                             LazyVStack(spacing: 8) {
                                 if group.directions.isEmpty {
                                     ContentUnavailableView(
-                                        "方向はありません",
+                                        String(localized: "方向はありません"),
                                         systemImage: "tray",
-                                        description: Text("この列に該当する方向はまだありません。")
+                                        description: Text(String(localized: "この列に該当する方向はまだありません。"))
                                     )
                                     .frame(maxWidth: .infinity)
                                     .padding(.top, 40)
@@ -102,7 +102,7 @@ struct DirectionListView: View {
                                         )
                                         .contextMenu {
                                             if !direction.isArchived {
-                                                Button("アーカイブ", systemImage: "archivebox", role: .destructive) {
+                                                Button(String(localized: "アーカイブ"), systemImage: "archivebox", role: .destructive) {
                                                     direction.archive()
                                                     try? modelContext.save()
                                                 }
@@ -134,19 +134,19 @@ struct DirectionListView: View {
         }
         .scrollIndicators(.visible)
         .animation(.default, value: visibleDirections.map(\.id))
-        .navigationTitle("方向")
+        .navigationTitle(String(localized: "方向"))
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
                     isShowingAddSheet = true
                 } label: {
-                    Label("方向を追加", systemImage: "plus")
+                    Label(String(localized: "方向を追加"), systemImage: "plus")
                 }
             }
 
             ToolbarItem {
                 Toggle(isOn: $showingArchived) {
-                    Label("アーカイブ", systemImage: "archivebox")
+                    Label(String(localized: "アーカイブ"), systemImage: "archivebox")
                 }
                 .toggleStyle(.button)
             }
@@ -345,7 +345,7 @@ private struct DirectionRow: View {
 
             Image(systemName: direction.isArchived ? "archivebox" : "line.3.horizontal")
                 .foregroundStyle(.secondary)
-                .accessibilityLabel(direction.isArchived ? "アーカイブ済み" : "並び替え")
+                .accessibilityLabel(direction.isArchived ? String(localized: "アーカイブ済み") : String(localized: "並び替え"))
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 8)
@@ -383,9 +383,9 @@ private struct DirectionGroup: Identifiable {
 
     var title: String {
         switch type {
-        case .neutral: "通常"
-        case .habit: "習慣"
-        case .nice: "ナイス"
+        case .neutral: String(localized: "通常")
+        case .habit: String(localized: "習慣")
+        case .nice: String(localized: "ナイス")
         }
     }
 
@@ -434,7 +434,7 @@ private struct DirectionSectionHeader: View {
 
             Image(systemName: "line.3.horizontal")
                 .foregroundStyle(.secondary)
-                .accessibilityLabel("グループを並び替え")
+                .accessibilityLabel(String(localized: "グループを並び替え"))
         }
         .padding(.vertical, 4)
         .textCase(nil)

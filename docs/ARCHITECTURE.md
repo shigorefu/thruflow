@@ -18,6 +18,7 @@ ThruFlow/
       Services/     Platform-neutral protocols and shared implementations
     Application/    Shared observable state and use-case orchestration
     UI/             Small reusable SwiftUI components
+  Localisation/     Shared Apple String Catalog used by every platform target
   Platforms/
     macOS/
       App/          macOS scene composition and application delegate
@@ -53,6 +54,8 @@ Platforms/macOS  ──>  Shared/Application  ──>  Shared/Domain
   import Foundation, Combine, and SwiftData, but not AppKit or UIKit.
 - `Shared/UI` contains only components whose behavior and layout are intended
   to remain common across platforms.
+- `Localisation/Localizable.xcstrings` owns user-facing copy for every platform;
+  Japanese is the source and fallback language.
 - `Platforms/macOS` owns navigation, windows, menu-bar scenes, keyboard/focus
   integration, drag-and-drop presentation, and the current desktop layouts.
 - Platform-specific behavior is reached through small adapters in the owning

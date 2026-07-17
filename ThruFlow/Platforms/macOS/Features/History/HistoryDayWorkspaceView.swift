@@ -96,9 +96,9 @@ struct HistoryDayWorkspaceView: View {
         VStack(spacing: 8) {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(selectedDate.formatted(.dateTime.locale(Locale(identifier: "ja_JP")).month().day()))
+                    Text(selectedDate.formatted(.dateTime.locale(Locale.autoupdatingCurrent).month().day()))
                         .font(.headline)
-                    Text(selectedDate.formatted(.dateTime.locale(Locale(identifier: "ja_JP")).weekday(.wide)))
+                    Text(selectedDate.formatted(.dateTime.locale(Locale.autoupdatingCurrent).weekday(.wide)))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -107,14 +107,14 @@ struct HistoryDayWorkspaceView: View {
 
                 HistoryVisibilityMenu(visibleKinds: $visibleKinds)
 
-                Picker("時間軸", selection: $scale) {
+                Picker(String(localized: "時間軸"), selection: $scale) {
                     ForEach(HistoryDayTimelineScale.allCases) { option in
                         Text(option.displayName).tag(option)
                     }
                 }
                 .pickerStyle(.segmented)
                 .frame(width: 170)
-                .accessibilityLabel("日の時間軸")
+                .accessibilityLabel(String(localized: "日の時間軸"))
             }
             .padding(.horizontal, 10)
 
@@ -215,7 +215,7 @@ struct HistoryMiniCalendar: View {
     }
 
     private var monthTitle: String {
-        selectedDate.formatted(.dateTime.locale(Locale(identifier: "ja_JP")).year().month(.wide))
+        selectedDate.formatted(.dateTime.locale(Locale.autoupdatingCurrent).year().month(.wide))
     }
 
     private var weekdaySymbols: [String] {
@@ -244,7 +244,7 @@ struct HistoryMiniCalendar: View {
     }
 
     private func accessibilityDate(_ date: Date) -> String {
-        date.formatted(.dateTime.locale(Locale(identifier: "ja_JP")).year().month().day().weekday())
+        date.formatted(.dateTime.locale(Locale.autoupdatingCurrent).year().month().day().weekday())
     }
 
     private func isInSelectedWeek(_ date: Date) -> Bool {
@@ -299,7 +299,7 @@ struct HistoryYearMonthPicker: View {
 
                 Spacer()
 
-                Text(verbatim: "\(selectedYear)年")
+                Text(verbatim: String(localized: "\(selectedYear)年"))
                     .font(.headline)
 
                 Spacer()
@@ -317,7 +317,7 @@ struct HistoryYearMonthPicker: View {
                     Button {
                         select(month: month)
                     } label: {
-                        Text("\(month)月")
+                        Text(String(localized: "\(month)月"))
                             .font(.callout.weight(month == selectedMonth ? .semibold : .regular))
                             .frame(maxWidth: .infinity, minHeight: 34)
                             .foregroundStyle(month == selectedMonth ? Color.white : Color.primary)
@@ -325,7 +325,7 @@ struct HistoryYearMonthPicker: View {
                             .clipShape(RoundedRectangle(cornerRadius: 6))
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel(Text(verbatim: "\(selectedYear)年\(month)月"))
+                    .accessibilityLabel(Text(verbatim: String(localized: "\(selectedYear)年\(month)月")))
                     .accessibilityAddTraits(month == selectedMonth ? .isSelected : [])
                 }
             }
@@ -387,9 +387,9 @@ private struct HistoryDayInspectorPane: View {
                             .padding(18)
                     } else {
                         ContentUnavailableView(
-                            "記録を選択",
+                            String(localized: "記録を選択"),
                             systemImage: "cursorarrow.click",
-                            description: Text("Flowまたは休憩の詳細をここに表示します。")
+                            description: Text(String(localized: "Flowまたは休憩の詳細をここに表示します。"))
                         )
                         .padding(.horizontal, 20)
                         .padding(.vertical, 44)
@@ -432,36 +432,36 @@ private struct HistoryDayInspectorPane: View {
                     Image(systemName: "pencil")
                 }
                 .buttonStyle(.borderless)
-                .help("編集")
-                .accessibilityLabel("編集")
+                .help(String(localized: "編集"))
+                .accessibilityLabel(String(localized: "編集"))
             }
 
             Divider()
 
-            propertyRow("時間", systemImage: "clock") {
+            propertyRow(String(localized: "時間"), systemImage: "clock") {
                 "\(time(item.startedAt))–\(time(item.endedAt))"
             }
-            propertyRow("長さ", systemImage: "timer") {
+            propertyRow(String(localized: "長さ"), systemImage: "timer") {
                 duration(item.durationSeconds)
             }
 
             switch item.kind {
             case .flow:
-                propertyRow("Flow", systemImage: "waveform.path") {
-                    item.session?.mode.displayName ?? "Flow"
+                propertyRow(String(localized: "Flow"), systemImage: "waveform.path") {
+                    item.session?.mode.displayName ?? String(localized: "Flow")
                 }
-                propertyRow("方向", systemImage: "point.3.connected.trianglepath.dotted") {
+                propertyRow(String(localized: "方向"), systemImage: "point.3.connected.trianglepath.dotted") {
                     item.subtitle
                 }
             case .rest:
-                propertyRow("種類", systemImage: "cup.and.saucer") {
-                    item.flowBreak?.isLongBreak == true ? "Long Break" : "休憩"
+                propertyRow(String(localized: "種類"), systemImage: "cup.and.saucer") {
+                    item.flowBreak?.isLongBreak == true ? String(localized: "Long Break") : String(localized: "休憩")
                 }
             }
 
             if let memo = item.todo?.notes, !memo.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 VStack(alignment: .leading, spacing: 6) {
-                    Label("メモ", systemImage: "note.text")
+                    Label(String(localized: "メモ"), systemImage: "note.text")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
                     Text(memo)
@@ -474,7 +474,7 @@ private struct HistoryDayInspectorPane: View {
             Button {
                 onEdit(item)
             } label: {
-                Label("詳細を編集", systemImage: "square.and.pencil")
+                Label(String(localized: "詳細を編集"), systemImage: "square.and.pencil")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
@@ -501,7 +501,7 @@ private struct HistoryDayInspectorPane: View {
 
     private func duration(_ seconds: Int) -> String {
         let minutes = max(0, seconds) / 60
-        if minutes < 60 { return "\(minutes)分" }
-        return "\(minutes / 60)時間\(minutes % 60)分"
+        if minutes < 60 { return String(localized: "\(minutes)分") }
+        return String(localized: "\(minutes / 60)時間\(minutes % 60)分")
     }
 }

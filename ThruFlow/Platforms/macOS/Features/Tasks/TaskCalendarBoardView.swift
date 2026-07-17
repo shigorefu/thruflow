@@ -25,7 +25,7 @@ struct TaskCalendarToolbar: View {
 
                 HStack(spacing: 10) {
                     Spacer()
-                    Button("今日", action: onToday)
+                    Button(String(localized: "今日"), action: onToday)
                         .buttonStyle(.borderedProminent)
 
                     unscheduledButton
@@ -40,7 +40,7 @@ struct TaskCalendarToolbar: View {
                 filterPicker
 
                 HStack(spacing: 10) {
-                    Button("今日", action: onToday)
+                    Button(String(localized: "今日"), action: onToday)
                         .buttonStyle(.borderedProminent)
 
                     unscheduledButton
@@ -58,32 +58,32 @@ struct TaskCalendarToolbar: View {
     }
 
     private var rangePicker: some View {
-        Picker("表示範囲", selection: $range) {
+        Picker(String(localized: "表示範囲"), selection: $range) {
             ForEach(TaskCalendarRange.allCases) { option in
                 Text(option.displayName).tag(option)
             }
         }
         .pickerStyle(.segmented)
         .labelsHidden()
-        .accessibilityLabel("表示範囲")
+        .accessibilityLabel(String(localized: "表示範囲"))
     }
 
     private var filterPicker: some View {
-        Picker("フィルター", selection: $filter) {
+        Picker(String(localized: "フィルター"), selection: $filter) {
             ForEach(TaskCalendarFilter.allCases) { option in
                 Text(option.displayName).tag(option)
             }
         }
         .pickerStyle(.segmented)
         .labelsHidden()
-        .accessibilityLabel("フィルター")
+        .accessibilityLabel(String(localized: "フィルター"))
     }
 
     private var unscheduledButton: some View {
         Button(action: onShowUnscheduled) {
             HStack(spacing: 5) {
                 Image(systemName: "tray")
-                Text("日付なし")
+                Text(String(localized: "日付なし"))
                 Text("\(unscheduledCount)")
                     .font(.caption2.monospacedDigit().weight(.semibold))
                     .padding(.horizontal, 5)
@@ -93,7 +93,7 @@ struct TaskCalendarToolbar: View {
         }
         .buttonStyle(.bordered)
         .foregroundStyle(unscheduledCount == 0 ? .secondary : .primary)
-        .accessibilityLabel("日付なしのタスク、\(unscheduledCount)件")
+        .accessibilityLabel(String(localized: "日付なしのタスク、\(unscheduledCount)件"))
     }
 }
 
@@ -136,7 +136,7 @@ struct TaskDayStrip: View {
                 } label: {
                     Image(systemName: "calendar")
                 }
-                .help("日付を選択")
+                .help(String(localized: "日付を選択"))
                 .popover(isPresented: $showsCalendar, arrowEdge: .top) {
                     HistoryMiniCalendar(
                         selectedDate: $selectedDate,
@@ -209,20 +209,20 @@ struct TaskDayStrip: View {
 
     private var monthTitle: String {
         selectedDate.formatted(
-            .dateTime.locale(Locale(identifier: "ja_JP")).year().month(.wide)
+            .dateTime.locale(Locale.autoupdatingCurrent).year().month(.wide)
         )
     }
 
     private func weekdayText(_ date: Date) -> String {
-        date.formatted(.dateTime.locale(Locale(identifier: "ja_JP")).weekday(.narrow))
+        date.formatted(.dateTime.locale(Locale.autoupdatingCurrent).weekday(.narrow))
     }
 
     private func dayText(_ date: Date) -> String {
-        date.formatted(.dateTime.locale(Locale(identifier: "ja_JP")).day())
+        date.formatted(.dateTime.locale(Locale.autoupdatingCurrent).day())
     }
 
     private func accessibilityDate(_ date: Date) -> String {
-        date.formatted(.dateTime.locale(Locale(identifier: "ja_JP")).year().month().day().weekday())
+        date.formatted(.dateTime.locale(Locale.autoupdatingCurrent).year().month().day().weekday())
     }
 }
 
@@ -318,7 +318,7 @@ private struct TaskDayColumn: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 12) {
                     if todos.isEmpty {
-                        Text("タスクはありません")
+                        Text(String(localized: "タスクはありません"))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, minHeight: 100)
@@ -381,12 +381,12 @@ private struct TaskDayColumn: View {
     }
 
     private static let weekdayFormatter = makeFormatter("EEEE")
-    private static let dayFormatter = makeFormatter("M月d日")
+    private static let dayFormatter = makeFormatter(String(localized: "M月d日"))
 
     private static func makeFormatter(_ format: String) -> DateFormatter {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ja_JP")
-        formatter.dateFormat = format
+        formatter.locale = Locale.autoupdatingCurrent
+        formatter.setLocalizedDateFormatFromTemplate(format)
         return formatter
     }
 }
@@ -467,11 +467,11 @@ struct TaskMonthGrid: View {
                 }
 
                 if dayTodos.contains(where: { $0.direction?.type == .habit && !$0.isCompleted }) {
-                    Label("習慣", systemImage: "exclamationmark.circle.fill")
+                    Label(String(localized: "習慣"), systemImage: "exclamationmark.circle.fill")
                         .font(.caption2)
                         .foregroundStyle(.red)
                 } else {
-                    Text(dayTodos.isEmpty ? "" : "残り \(dayTodos.filter { !$0.isCompleted }.count)")
+                    Text(dayTodos.isEmpty ? "" : String(localized: "残り \(dayTodos.filter { !$0.isCompleted }.count)"))
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
@@ -572,10 +572,10 @@ private struct TaskBoardCard: View {
         .contentShape(Rectangle())
         .onTapGesture(count: 2, perform: onEdit)
         .contextMenu {
-            Button("編集", systemImage: "pencil", action: onEdit)
-            Button("Flowを開始", systemImage: "play.fill", action: onStartFlow)
+            Button(String(localized: "編集"), systemImage: "pencil", action: onEdit)
+            Button(String(localized: "Flowを開始"), systemImage: "play.fill", action: onStartFlow)
             Divider()
-            Button("削除", systemImage: "trash", role: .destructive, action: onDelete)
+            Button(String(localized: "削除"), systemImage: "trash", role: .destructive, action: onDelete)
         }
     }
 

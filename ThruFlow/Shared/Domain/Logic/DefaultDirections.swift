@@ -8,7 +8,7 @@
 import Foundation
 
 enum DefaultDirections {
-    static let taskInboxName = "その他"
+    static let taskInboxName = String(localized: "その他")
     static let taskInboxSymbol = "📝"
     static let taskInboxColorHex = "#007AFF"
 

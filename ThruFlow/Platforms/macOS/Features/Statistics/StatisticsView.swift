@@ -77,7 +77,7 @@ struct StatisticsView: View {
             }
             .padding(20)
         }
-        .navigationTitle("統計")
+        .navigationTitle(String(localized: "統計"))
     }
 
     private var header: some View {
@@ -99,51 +99,51 @@ struct StatisticsView: View {
 
     private var controls: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Picker("表示", selection: $selectedMode) {
+            Picker(String(localized: "表示"), selection: $selectedMode) {
                 ForEach(StatisticsMode.allCases) { mode in
                     Text(mode.displayName).tag(mode)
                 }
             }
             .pickerStyle(.segmented)
-            .accessibilityLabel("統計表示")
+            .accessibilityLabel(String(localized: "統計表示"))
 
-            Picker("期間", selection: $selectedRange) {
+            Picker(String(localized: "期間"), selection: $selectedRange) {
                 ForEach(StatisticsRange.allCases) { range in
                     Text(range.displayName).tag(range)
                 }
             }
             .pickerStyle(.segmented)
-            .accessibilityLabel("統計期間")
+            .accessibilityLabel(String(localized: "統計期間"))
         }
     }
 
     private var headerTitle: String {
         switch selectedMode {
         case .achievement:
-            "\(achievementResult.summary.completedCount) 達成 in \(selectedRange.summaryText)"
+            String(localized: "\(achievementResult.summary.completedCount) 達成 in \(selectedRange.summaryText)")
         case .flow:
-            "\(flowResult.summary.sessionCount) Flow in \(selectedRange.summaryText)"
+            String(localized: "\(flowResult.summary.sessionCount) Flow in \(selectedRange.summaryText)")
         }
     }
 
     private var flowSummaryRow: some View {
         HStack(spacing: 12) {
             StatisticSummaryTile(
-                title: "合計",
+                title: String(localized: "合計"),
                 value: blocksText(flowResult.summary.totalBlocks),
-                subtitle: "\(flowResult.summary.sessionCount) Flow"
+                subtitle: String(localized: "\(flowResult.summary.sessionCount) Flow")
             )
 
             StatisticSummaryTile(
-                title: "活動日",
-                value: "\(flowResult.summary.activeDayCount)日",
+                title: String(localized: "活動日"),
+                value: String(localized: "\(flowResult.summary.activeDayCount)日"),
                 subtitle: selectedRange.displayName
             )
 
             StatisticSummaryTile(
-                title: "時間",
+                title: String(localized: "時間"),
                 value: durationText(flowResult.summary.totalFocusSeconds),
-                subtitle: "集中のみ"
+                subtitle: String(localized: "集中のみ")
             )
         }
     }
@@ -151,21 +151,21 @@ struct StatisticsView: View {
     private var achievementSummaryRow: some View {
         HStack(spacing: 12) {
             StatisticSummaryTile(
-                title: "達成",
+                title: String(localized: "達成"),
                 value: "\(achievementResult.summary.completedCount)",
-                subtitle: "完了タスク"
+                subtitle: String(localized: "完了タスク")
             )
 
             StatisticSummaryTile(
-                title: "達成日",
-                value: "\(achievementResult.summary.activeDayCount)日",
+                title: String(localized: "達成日"),
+                value: String(localized: "\(achievementResult.summary.activeDayCount)日"),
                 subtitle: selectedRange.displayName
             )
 
             StatisticSummaryTile(
-                title: "方向",
+                title: String(localized: "方向"),
                 value: "\(achievementResult.summary.directionCount)",
-                subtitle: "完了あり"
+                subtitle: String(localized: "完了あり")
             )
         }
     }
@@ -173,12 +173,12 @@ struct StatisticsView: View {
     private var flowSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("Flow")
+                Text(String(localized: "Flow"))
                     .font(.headline)
 
                 Spacer()
 
-                Text("複数の方向は色を混ぜて表示")
+                Text(String(localized: "複数の方向は色を混ぜて表示"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -193,7 +193,7 @@ struct StatisticsView: View {
                         completedTaskCount: achievementDaysByDate[day.date]?.completedCount ?? 0,
                         flowCount: day.sessionCount,
                         flowSeconds: day.totalFocusSeconds,
-                        emptyAccessibilityText: "Flowなし",
+                        emptyAccessibilityText: String(localized: "Flowなし"),
                         valueAccessibilityText: BlockUnit.displayText(forFocusedSeconds: day.totalFocusSeconds)
                     )
                 },
@@ -203,13 +203,13 @@ struct StatisticsView: View {
             )
 
             HStack(spacing: 6) {
-                Text("少ない")
+                Text(String(localized: "少ない"))
                 ForEach(0..<5, id: \.self) { level in
                     RoundedRectangle(cornerRadius: 3)
                         .fill(level == 0 ? Color.secondary.opacity(0.14) : Color.accentColor.opacity(Double(level) * 0.18 + 0.16))
                         .frame(width: 12, height: 12)
                 }
-                Text("多い")
+                Text(String(localized: "多い"))
             }
             .font(.caption2)
             .foregroundStyle(.secondary)
@@ -219,12 +219,12 @@ struct StatisticsView: View {
     private var achievementSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("達成")
+                Text(String(localized: "達成"))
                     .font(.headline)
 
                 Spacer()
 
-                Text("複数の方向は色を混ぜて表示")
+                Text(String(localized: "複数の方向は色を混ぜて表示"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -239,8 +239,8 @@ struct StatisticsView: View {
                         completedTaskCount: day.completedCount,
                         flowCount: flowDaysByDate[day.date]?.sessionCount ?? 0,
                         flowSeconds: flowDaysByDate[day.date]?.totalFocusSeconds ?? 0,
-                        emptyAccessibilityText: "達成なし",
-                        valueAccessibilityText: "\(day.completedCount)達成"
+                        emptyAccessibilityText: String(localized: "達成なし"),
+                        valueAccessibilityText: String(localized: "\(day.completedCount)達成")
                     )
                 },
                 range: selectedRange,
@@ -249,13 +249,13 @@ struct StatisticsView: View {
             )
 
             HStack(spacing: 6) {
-                Text("少ない")
+                Text(String(localized: "少ない"))
                 ForEach(0..<5, id: \.self) { level in
                     RoundedRectangle(cornerRadius: 3)
                         .fill(level == 0 ? Color.secondary.opacity(0.14) : Color.accentColor.opacity(Double(level) * 0.18 + 0.16))
                         .frame(width: 12, height: 12)
                 }
-                Text("多い")
+                Text(String(localized: "多い"))
             }
             .font(.caption2)
             .foregroundStyle(.secondary)
@@ -264,9 +264,9 @@ struct StatisticsView: View {
 
     private func blocksText(_ blocks: Double) -> String {
         if blocks < 10 {
-            return String(format: "%.1f Blocks", blocks)
+            return String(format: String(localized: "%.1f Blocks"), blocks)
         }
-        return String(format: "%.0f Blocks", blocks)
+        return String(format: String(localized: "%.0f Blocks"), blocks)
     }
 
     private func durationText(_ seconds: Int) -> String {
@@ -275,9 +275,9 @@ struct StatisticsView: View {
         let remainingMinutes = minutes % 60
 
         if hours == 0 {
-            return "\(remainingMinutes)分"
+            return String(localized: "\(remainingMinutes)分")
         }
-        return "\(hours)時間\(remainingMinutes)分"
+        return String(localized: "\(hours)時間\(remainingMinutes)分")
     }
 
     private func flowOpacity(_ seconds: Int) -> Double {
@@ -322,7 +322,7 @@ private struct DirectionFilterMenu: View {
             Button {
                 selectedDirectionID = nil
             } label: {
-                menuRow(text: "すべて", isSelected: selectedDirectionID == nil)
+                menuRow(text: String(localized: "すべて"), isSelected: selectedDirectionID == nil)
             }
 
             if !directions.isEmpty {
@@ -341,7 +341,7 @@ private struct DirectionFilterMenu: View {
             }
         } label: {
             HStack(spacing: 6) {
-                Text(selectedDirection.map { "\($0.symbolName) \($0.name)" } ?? "すべて")
+                Text(selectedDirection.map { "\($0.symbolName) \($0.name)" } ?? String(localized: "すべて"))
                     .lineLimit(1)
                 Image(systemName: "chevron.down")
                     .font(.caption.weight(.semibold))
@@ -353,7 +353,7 @@ private struct DirectionFilterMenu: View {
             .clipShape(Capsule())
         }
         .menuStyle(.borderlessButton)
-        .accessibilityLabel("方向フィルター")
+        .accessibilityLabel(String(localized: "方向フィルター"))
     }
 
     @ViewBuilder
@@ -564,26 +564,26 @@ private struct ContributionHeatmap: View {
 
     private var monthFormatter: DateFormatter {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ja_JP")
-        formatter.dateFormat = "MMM"
+        formatter.locale = Locale.autoupdatingCurrent
+        formatter.setLocalizedDateFormatFromTemplate("MMM")
         return formatter
     }
 
     private func weekdayLabel(for index: Int) -> String {
         switch index {
         case 1:
-            "月"
+            String(localized: "月")
         case 3:
-            "水"
+            String(localized: "水")
         case 5:
-            "金"
+            String(localized: "金")
         default:
             ""
         }
     }
 
     private var monthWeekdayLabels: [String] {
-        ["日", "月", "火", "水", "木", "金", "土"]
+        [String(localized: "日"), String(localized: "月"), String(localized: "火"), String(localized: "水"), String(localized: "木"), String(localized: "金"), String(localized: "土")]
     }
 
     private var monthGridItems: [MonthGridItem] {
@@ -668,7 +668,7 @@ private struct ContributionHeatmapCell: View {
             }
         }
         .accessibilityLabel(accessibilityLabel)
-        .accessibilityHint(day == nil ? "" : "この日の履歴を開く")
+        .accessibilityHint(day == nil ? "" : String(localized: "この日の履歴を開く"))
     }
 
     private var fillColor: Color {
@@ -681,16 +681,16 @@ private struct ContributionHeatmapCell: View {
     }
 
     private var accessibilityLabel: String {
-        guard let day else { return "空白" }
+        guard let day else { return String(localized: "空白") }
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ja_JP")
+        formatter.locale = Locale.autoupdatingCurrent
         formatter.dateStyle = .medium
 
         if day.isEmpty {
-            return "\(formatter.string(from: day.date)) \(day.emptyAccessibilityText) タスク\(day.completedTaskCount)件 Flow\(day.flowCount)件"
+            return String(localized: "\(formatter.string(from: day.date)) \(day.emptyAccessibilityText) タスク\(day.completedTaskCount)件 Flow\(day.flowCount)件")
         }
 
-        return "\(formatter.string(from: day.date)) \(day.valueAccessibilityText) \(day.directionCount)方向 タスク\(day.completedTaskCount)件 Flow\(day.flowCount)件"
+        return String(localized: "\(formatter.string(from: day.date)) \(day.valueAccessibilityText) \(day.directionCount)方向 タスク\(day.completedTaskCount)件 Flow\(day.flowCount)件")
     }
 }
 
@@ -702,7 +702,7 @@ private struct ContributionHoverCard: View {
             Text(dateText)
                 .font(.caption.weight(.semibold))
 
-            Text("タスク \(day.completedTaskCount) ・ Flow \(day.flowCount)")
+            Text(String(localized: "タスク \(day.completedTaskCount) ・ Flow \(day.flowCount)"))
                 .font(.caption2)
                 .foregroundStyle(.white.opacity(0.78))
 
@@ -724,17 +724,17 @@ private struct ContributionHoverCard: View {
 
     private var dateText: String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ja_JP")
-        formatter.dateFormat = "M月d日（E）"
+        formatter.locale = Locale.autoupdatingCurrent
+        formatter.setLocalizedDateFormatFromTemplate("MdE")
         return formatter.string(from: day.date)
     }
 
     private var durationText: String {
         let minutes = max(0, day.flowSeconds) / 60
         if minutes < 60 {
-            return "\(minutes)分"
+            return String(localized: "\(minutes)分")
         }
-        return "\(minutes / 60)時間\(minutes % 60)分"
+        return String(localized: "\(minutes / 60)時間\(minutes % 60)分")
     }
 }
 

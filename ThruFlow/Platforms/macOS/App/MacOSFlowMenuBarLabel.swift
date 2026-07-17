@@ -11,7 +11,7 @@ struct MacOSFlowMenuBarLabel: View {
                 .resizable()
                 .scaledToFit()
                 .frame(width: 18, height: 13)
-                .accessibilityLabel("Flow")
+                .accessibilityLabel(String(localized: "Flow"))
         } else {
             Text(menuTitle)
                 .font(.system(.body, design: .default))
@@ -20,16 +20,16 @@ struct MacOSFlowMenuBarLabel: View {
     }
 
     private var menuTitle: String {
-        guard activeFlowStore.timerState != nil else { return "Flow" }
+        guard activeFlowStore.timerState != nil else { return String(localized: "Flow") }
 
         if activeFlowStore.isBreakPhase {
-            let title = activeFlowStore.timerState?.isLongBreak == true ? "Long Break" : "休憩"
-            return "☕️ \(title) - \(activeFlowStore.remainingText(now: activeFlowStore.displayDate))"
+            let title = activeFlowStore.timerState?.isLongBreak == true ? String(localized: "Long Break") : String(localized: "休憩")
+            return String(localized: "☕️ \(title) - \(activeFlowStore.remainingText(now: activeFlowStore.displayDate))")
         }
 
         let session = activeFlowStore.activeSession
         let emoji = session?.direction?.symbolName ?? "▶"
-        return "\(emoji): \(taskName(for: session)) - \(activeFlowStore.remainingText(now: activeFlowStore.displayDate))"
+        return String(localized: "\(emoji): \(taskName(for: session)) - \(activeFlowStore.remainingText(now: activeFlowStore.displayDate))")
     }
 
     private func taskName(for session: FlowSession?) -> String {
@@ -42,7 +42,7 @@ struct MacOSFlowMenuBarLabel: View {
             return directionName
         }
 
-        return "その他"
+        return String(localized: "その他")
     }
 }
 #endif

@@ -39,13 +39,13 @@ struct EmojiPickerView: View {
                     .padding()
                 }
             }
-            .navigationTitle("絵文字")
+            .navigationTitle(String(localized: "絵文字"))
 #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
 #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("閉じる") {
+                    Button(String(localized: "閉じる")) {
                         dismiss()
                     }
                 }
@@ -58,7 +58,7 @@ struct EmojiPickerView: View {
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(.secondary)
 
-            TextField("検索", text: $searchText)
+            TextField(String(localized: "検索"), text: $searchText)
                 .textFieldStyle(.plain)
         }
         .padding(.horizontal, 12)
@@ -67,20 +67,20 @@ struct EmojiPickerView: View {
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .padding([.horizontal, .top])
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("絵文字を検索")
+        .accessibilityLabel(String(localized: "絵文字を検索"))
     }
 
     private var customEmojiSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Другое emoji")
+            Text(String(localized: "その他の絵文字"))
                 .font(.headline)
 
             HStack(spacing: 10) {
-                TextField("絵文字を入力", text: $customEmoji)
+                TextField(String(localized: "絵文字を入力"), text: $customEmoji)
                     .textFieldStyle(.roundedBorder)
                     .onSubmit(selectCustomEmoji)
 
-                Button("追加", action: selectCustomEmoji)
+                Button(String(localized: "追加"), action: selectCustomEmoji)
                     .disabled(customEmoji.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
 
@@ -89,7 +89,7 @@ struct EmojiPickerView: View {
                     .font(.caption)
                     .foregroundStyle(.red)
             } else {
-                Text("複数入力された場合は最初の絵文字だけ保存します。")
+                Text(String(localized: "複数入力された場合は最初の絵文字だけ保存します。"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -125,11 +125,11 @@ struct EmojiPickerView: View {
 
     private var recentSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Recent")
+            Text(String(localized: "Recent"))
                 .font(.headline)
 
             if filteredRecentEmoji.isEmpty {
-                Text("最近使った絵文字はまだありません。")
+                Text(String(localized: "最近使った絵文字はまだありません。"))
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             } else {
@@ -172,7 +172,7 @@ struct EmojiPickerView: View {
                 }
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("絵文字 \(value)")
+        .accessibilityLabel(String(localized: "絵文字 \(value)"))
         .accessibilityAddTraits(selection == value ? [.isSelected] : [])
     }
 
@@ -185,7 +185,7 @@ struct EmojiPickerView: View {
 
     private func selectCustomEmoji() {
         guard let normalized = EmojiValidation.normalizedSingleEmoji(from: customEmoji) else {
-            customEmojiError = "絵文字を1つ入力してください。"
+            customEmojiError = String(localized: "絵文字を1つ入力してください。")
             return
         }
 
@@ -223,35 +223,35 @@ struct EmojiCategory: Identifiable {
 
 private let emojiCategories: [EmojiCategory] = [
     EmojiCategory(
-        name: "People",
+        name: String(localized: "People"),
         emoji: ["😀", "😄", "😊", "😌", "🙂", "😎", "🤔", "🥳", "👍", "👏", "🙏", "💪", "🧑‍💻", "👩‍🎓", "🧑‍🏫", "🧘"]
     ),
     EmojiCategory(
-        name: "Activities",
+        name: String(localized: "Activities"),
         emoji: ["🎯", "✅", "🔥", "🏃‍♂️", "🏋️", "🚴", "🏊", "🎮", "🎧", "🎨", "🎹", "📷", "🧩", "🧘", "🚶", "🏆"]
     ),
     EmojiCategory(
-        name: "Work & Study",
+        name: String(localized: "Work & Study"),
         emoji: ["💼", "📚", "📝", "🧠", "💻", "📈", "📅", "✍️", "📖", "🎓", "🧪", "🗂️", "📌", "💡", "🛠️", "💬"]
     ),
     EmojiCategory(
-        name: "Objects",
+        name: String(localized: "Objects"),
         emoji: ["📦", "🧾", "💰", "🛒", "📱", "⌚️", "🎒", "🔑", "🧰", "🪴", "🛏️", "🪑", "💊", "📎", "🖊️", "📓"]
     ),
     EmojiCategory(
-        name: "Food",
+        name: String(localized: "Food"),
         emoji: ["🍎", "🥗", "🍱", "☕️", "🍵", "🥐", "🍳", "🍜", "🍣", "🍙", "🥛", "🍫", "🍊", "🥑", "🍞", "🍰"]
     ),
     EmojiCategory(
-        name: "Travel",
+        name: String(localized: "Travel"),
         emoji: ["🌍", "🧳", "🗾", "✈️", "🚆", "🚗", "🚲", "⛵️", "🏕️", "🏙️", "🏠", "🗺️", "🗽", "⛰️", "🏖️", "🚀"]
     ),
     EmojiCategory(
-        name: "Nature",
+        name: String(localized: "Nature"),
         emoji: ["🌱", "🌙", "☀️", "⭐️", "🌿", "🌲", "🌊", "🔥", "🌧️", "❄️", "🌸", "🍀", "🌵", "🌻", "⛰️", "☁️"]
     ),
     EmojiCategory(
-        name: "Symbols",
+        name: String(localized: "Symbols"),
         emoji: ["❤️", "⭐️", "✅", "☑️", "🔵", "🟢", "🟡", "🔴", "🟣", "⚪️", "⚫️", "🔁", "➡️", "⬆️", "💤", "♻️"]
     )
 ]

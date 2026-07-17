@@ -27,20 +27,26 @@ enum BlockUnit {
         let halfBlocks = halfBlocks(forFocusedSeconds: seconds)
 
         guard halfBlocks > 0 else {
-            return "0 Block"
+            return String(localized: "0 Block")
         }
 
         if halfBlocks % 2 == 0 {
             let wholeBlocks = halfBlocks / 2
-            return wholeBlocks == 1 ? "1 Block" : "\(wholeBlocks) Blocks"
+            return wholeBlocks == 1
+                ? String(localized: "1 Block")
+                : String(localized: "\(wholeBlocks) Blocks")
         }
 
         let value = Double(halfBlocks) * 0.5
-        return value == 0.5 ? "0.5 Block" : "\(value) Blocks"
+        return value == 0.5
+            ? String(localized: "0.5 Block")
+            : String(localized: "\(value, format: .number.precision(.fractionLength(0...1))) Blocks")
     }
 
     static func progressText(focusedSeconds: Int, targetBlocks: Int) -> String {
-        let targetText = targetBlocks == 1 ? "1 Block" : "\(max(0, targetBlocks)) Blocks"
+        let targetText = targetBlocks == 1
+            ? String(localized: "1 Block")
+            : String(localized: "\(max(0, targetBlocks)) Blocks")
         return "\(displayText(forFocusedSeconds: focusedSeconds)) / \(targetText)"
     }
 }

@@ -95,7 +95,7 @@ struct DayHistorySnapshot {
                 directionID: direction?.id,
                 title: TodoDisplay.title(for: representative),
                 directionSymbol: direction?.symbolName ?? "📥",
-                directionName: direction?.name ?? "その他",
+                directionName: direction?.name ?? String(localized: "その他"),
                 directionColorHex: direction?.colorHex ?? "#8E8E93",
                 focusSeconds: todoFlows.reduce(0) { $0 + $1.focusSeconds },
                 flowCount: Set(todoFlows.map(\.sessionID)).count
@@ -315,7 +315,7 @@ struct DayHistoryBuilder {
         focusSeconds: Int,
         breakSeconds: Int
     ) -> DayHistoryFlow {
-        let fallbackName = "その他"
+        let fallbackName = String(localized: "その他")
         let taskTitle = todo.map(TodoDisplay.title(for:)) ?? "(\(direction?.name ?? fallbackName))"
 
         return DayHistoryFlow(
@@ -338,7 +338,7 @@ struct DayHistoryBuilder {
 
     private func makeTask(_ todo: Todo) -> DayHistoryTask {
         let direction = todo.direction
-        let directionName = direction?.name ?? "その他"
+        let directionName = direction?.name ?? String(localized: "その他")
         return DayHistoryTask(
             id: todo.id,
             todo: todo,

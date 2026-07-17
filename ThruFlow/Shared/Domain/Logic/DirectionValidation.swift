@@ -80,17 +80,17 @@ enum DirectionValidationError: Error, Equatable, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .emptyName:
-            "名前を入力してください。"
+            String(localized: "名前を入力してください。")
         case .invalidGoalTarget:
-            "目標値は1以上にしてください。"
+            String(localized: "目標値は1以上にしてください。")
         case .missingGoalUnit:
-            "目標を使う場合は単位を選んでください。"
+            String(localized: "目標を使う場合は単位を選んでください。")
         case .missingGoalSchedule:
-            "習慣の方向は頻度を選んでください。"
+            String(localized: "習慣の方向は頻度を選んでください。")
         case .invalidWeeklyTargetCount:
-            "週回は1〜7回で選んでください。"
+            String(localized: "週回は1〜7回で選んでください。")
         case .missingWeekdays:
-            "曜日を1つ以上選んでください。"
+            String(localized: "曜日を1つ以上選んでください。")
         }
     }
 }

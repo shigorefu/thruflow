@@ -17,11 +17,11 @@ enum TaskCalendarRange: String, CaseIterable, Identifiable {
     var displayName: String {
         switch self {
         case .oneDay:
-            "日"
+            String(localized: "日")
         case .sevenDays:
-            "週"
+            String(localized: "週")
         case .month:
-            "月"
+            String(localized: "月")
         }
     }
 }
@@ -36,11 +36,11 @@ enum TaskCalendarFilter: String, CaseIterable, Identifiable {
     var displayName: String {
         switch self {
         case .all:
-            "すべて"
+            String(localized: "すべて")
         case .tasks:
-            "タスク"
+            String(localized: "タスク")
         case .habits:
-            "習慣"
+            String(localized: "習慣")
         }
     }
 
@@ -120,11 +120,11 @@ enum TaskRescheduleFailure: Error, Equatable {
     var message: String {
         switch self {
         case .completedTask:
-            "完了したタスクは移動できません"
+            String(localized: "完了したタスクは移動できません")
         case .fixedHabit:
-            "固定された習慣の日付は変更できません"
+            String(localized: "固定された習慣の日付は変更できません")
         case .weeklyTargetWouldBecomeImpossible:
-            "週間目標を達成できなくなるため移動できません"
+            String(localized: "週間目標を達成できなくなるため移動できません")
         }
     }
 }

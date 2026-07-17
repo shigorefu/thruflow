@@ -82,7 +82,7 @@ struct ManualFlowCreationView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    field("タスク") {
+                    field(String(localized: "タスク")) {
                         if let selectedTodo, lockedTodoID != nil {
                             Label {
                                 Text(TodoDisplay.title(for: selectedTodo))
@@ -92,8 +92,8 @@ struct ManualFlowCreationView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.vertical, 6)
                         } else {
-                            Picker("タスク", selection: $selectedTodoID) {
-                                Text("タスクなし").tag(UUID?.none)
+                            Picker(String(localized: "タスク"), selection: $selectedTodoID) {
+                                Text(String(localized: "タスクなし")).tag(UUID?.none)
                                 ForEach(availableTodos) { todo in
                                     Text("\(todo.direction?.symbolName ?? "📥") \(TodoDisplay.title(for: todo))")
                                         .tag(Optional(todo.id))
@@ -103,8 +103,8 @@ struct ManualFlowCreationView: View {
                         }
                     }
 
-                    field("方向") {
-                        Picker("方向", selection: directionSelection) {
+                    field(String(localized: "方向")) {
+                        Picker(String(localized: "方向"), selection: directionSelection) {
                             ForEach(availableDirections) { direction in
                                 Text("\(direction.symbolName) \(direction.name)")
                                     .tag(Optional(direction.id))
@@ -114,8 +114,8 @@ struct ManualFlowCreationView: View {
                         .disabled(selectedTodo != nil || lockedTodoID != nil)
                     }
 
-                    field("Flow") {
-                        Picker("Flow", selection: $mode) {
+                    field(String(localized: "Flow")) {
+                        Picker(String(localized: "Flow"), selection: $mode) {
                             ForEach(manualModes) { mode in
                                 Text(mode.displayName).tag(mode)
                             }
@@ -124,11 +124,11 @@ struct ManualFlowCreationView: View {
                         .labelsHidden()
                     }
 
-                    field("時間") {
+                    field(String(localized: "時間")) {
                         HStack(alignment: .bottom, spacing: 10) {
-                            timeField("開始") {
+                            timeField(String(localized: "開始")) {
                                 DatePicker(
-                                    "開始",
+                                    String(localized: "開始"),
                                     selection: Binding(
                                         get: { timeDraft.startedAt },
                                         set: { timeDraft.setStartedAt($0) }
@@ -142,9 +142,9 @@ struct ManualFlowCreationView: View {
                                 .foregroundStyle(.secondary)
                                 .padding(.bottom, 5)
 
-                            timeField("終了") {
+                            timeField(String(localized: "終了")) {
                                 DatePicker(
-                                    "終了",
+                                    String(localized: "終了"),
                                     selection: Binding(
                                         get: { timeDraft.endedAt },
                                         set: { timeDraft.setEndedAt($0) }
@@ -156,10 +156,10 @@ struct ManualFlowCreationView: View {
 
                             Spacer(minLength: 6)
 
-                            timeField("集中") {
+                            timeField(String(localized: "集中")) {
                                 HStack(spacing: 4) {
                                     TextField(
-                                        "分",
+                                        String(localized: "分"),
                                         value: Binding(
                                             get: { timeDraft.focusMinutes },
                                             set: { timeDraft.setFocusMinutes($0) }
@@ -170,7 +170,7 @@ struct ManualFlowCreationView: View {
                                     .frame(width: 62)
                                     .multilineTextAlignment(.trailing)
 
-                                    Text("分")
+                                    Text(String(localized: "分"))
                                         .foregroundStyle(.secondary)
                                 }
                                 .monospacedDigit()
@@ -214,9 +214,9 @@ struct ManualFlowCreationView: View {
     private var header: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
-                Text("Flowを追加")
+                Text(String(localized: "Flowを追加"))
                     .font(.title3.weight(.semibold))
-                Text(timeDraft.startedAt.formatted(.dateTime.locale(Locale(identifier: "ja_JP")).month().day().weekday()))
+                Text(timeDraft.startedAt.formatted(.dateTime.locale(Locale.autoupdatingCurrent).month().day().weekday()))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -227,16 +227,16 @@ struct ManualFlowCreationView: View {
                 Image(systemName: "xmark")
             }
             .buttonStyle(.borderless)
-            .accessibilityLabel("閉じる")
+            .accessibilityLabel(String(localized: "閉じる"))
         }
         .padding(18)
     }
 
     private var footer: some View {
         HStack {
-            Button("キャンセル", action: onDismiss)
+            Button(String(localized: "キャンセル"), action: onDismiss)
             Spacer()
-            Button("追加", action: save)
+            Button(String(localized: "追加"), action: save)
                 .buttonStyle(.borderedProminent)
                 .disabled(selectedDirection == nil)
         }
@@ -275,7 +275,7 @@ struct ManualFlowCreationView: View {
 
     private func save() {
         guard let selectedDirection else {
-            errorMessage = "方向を選択してください"
+            errorMessage = String(localized: "方向を選択してください")
             return
         }
 
@@ -292,7 +292,7 @@ struct ManualFlowCreationView: View {
             try modelContext.save()
             onDismiss()
         } catch {
-            errorMessage = "Flowを保存できませんでした"
+            errorMessage = String(localized: "Flowを保存できませんでした")
         }
     }
 }

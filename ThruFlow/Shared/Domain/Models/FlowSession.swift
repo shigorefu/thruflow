@@ -19,13 +19,13 @@ enum FlowMode: String, CaseIterable, Codable, Identifiable {
     var displayName: String {
         switch self {
         case .twelveThree:
-            "Short"
+            String(localized: "Short")
         case .twentyFiveFive:
-            "Focus"
+            String(localized: "Focus")
         case .fiftyTen:
-            "Deep"
+            String(localized: "Deep")
         case .adaptive:
-            "オート"
+            String(localized: "オート")
         }
     }
 
@@ -54,13 +54,13 @@ enum FlowMode: String, CaseIterable, Codable, Identifiable {
     var blockSummary: String {
         switch self {
         case .twelveThree:
-            "12分集中 / 3分休憩"
+            String(localized: "12分集中 / 3分休憩")
         case .twentyFiveFive:
-            "25分集中 / 5分休憩"
+            String(localized: "25分集中 / 5分休憩")
         case .fiftyTen:
-            "50分集中 / 10分休憩"
+            String(localized: "50分集中 / 10分休憩")
         case .adaptive:
-            "12分から開始"
+            String(localized: "12分から開始")
         }
     }
 
@@ -102,21 +102,21 @@ enum FlowPhase: String, CaseIterable, Codable, Identifiable {
     var displayName: String {
         switch self {
         case .idle:
-            "未設定"
+            String(localized: "未設定")
         case .configured:
-            "準備完了"
+            String(localized: "準備完了")
         case .focusing:
-            "集中"
+            String(localized: "集中")
         case .paused:
-            "一時停止"
+            String(localized: "一時停止")
         case .breakTime:
-            "休憩"
+            String(localized: "休憩")
         case .awaitingExtensionDecision:
-            "次を選択"
+            String(localized: "次を選択")
         case .awaitingResult:
-            "結果を入力"
+            String(localized: "結果を入力")
         case .completed:
-            "完了"
+            String(localized: "完了")
         }
     }
 }

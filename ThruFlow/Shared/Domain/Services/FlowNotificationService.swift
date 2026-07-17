@@ -42,7 +42,7 @@ final class LocalFlowNotificationService: FlowNotificationService {
     func scheduleBreakFinished(fireDate: Date) {
         schedule(
             id: "flow.breakFinished",
-            title: "休憩が終わりました。Flowに戻りますか？",
+            title: String(localized: "休憩が終わりました。Flowに戻りますか？"),
             fireDate: fireDate
         )
     }
@@ -68,13 +68,13 @@ final class LocalFlowNotificationService: FlowNotificationService {
     private func focusTitle(mode: FlowMode, focusedSeconds: Int) -> String {
         switch focusedSeconds {
         case 12 * 60:
-            "最初の0.5 Blockが完了しました。1 Blockまで続けますか？"
+            String(localized: "最初の0.5 Blockが完了しました。1 Blockまで続けますか？")
         case 25 * 60:
-            "1 Blockが完了しました。"
+            String(localized: "1 Blockが完了しました。")
         case 50 * 60:
-            "2 Blocksが完了しました。"
+            String(localized: "2 Blocksが完了しました。")
         default:
-            "\(BlockUnit.displayText(forFocusedSeconds: focusedSeconds)) が完了しました。"
+            String(localized: "\(BlockUnit.displayText(forFocusedSeconds: focusedSeconds)) が完了しました。")
         }
     }
 }

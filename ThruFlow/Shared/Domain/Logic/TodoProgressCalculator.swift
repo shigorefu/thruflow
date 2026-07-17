@@ -42,7 +42,7 @@ struct TodoProgressCalculator {
     ) -> String {
         switch measurement {
         case .checkbox:
-            return actualProgress > 0 ? "完了" : "未完了"
+            return actualProgress > 0 ? String(localized: "完了") : String(localized: "未完了")
         case .focusBlocks:
             if let focusDurationSeconds {
                 return BlockUnit.progressText(
@@ -51,9 +51,9 @@ struct TodoProgressCalculator {
                 )
             }
 
-            return "\(max(0, actualProgress))/\(plannedAmount ?? 0) ブロック"
+            return String(localized: "\(max(0, actualProgress))/\(plannedAmount ?? 0) ブロック")
         case .minutes:
-            return "\(max(0, actualProgress))/\(plannedAmount ?? 0) 分"
+            return String(localized: "\(max(0, actualProgress))/\(plannedAmount ?? 0) 分")
         }
     }
 }
