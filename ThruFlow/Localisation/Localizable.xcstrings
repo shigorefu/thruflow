@@ -2951,6 +2951,22 @@
         }
       }
     },
+    "メモなしで送信": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send Without Memo"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отправить без заметки"
+          }
+        }
+      }
+    },
     "メモなしで続ける": {
       "localizations": {
         "en": {
@@ -3593,6 +3609,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Если останется время"
+          }
+        }
+      }
+    },
+    "送信": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отправить"
           }
         }
       }

@@ -45,4 +45,9 @@ final class FlowSegment {
         endedAt = max(date, startedAt)
         endFocusSeconds = max(startFocusSeconds, totalFocusSeconds)
     }
+
+    func reopen() {
+        endedAt = nil
+        endFocusSeconds = nil
+    }
 }

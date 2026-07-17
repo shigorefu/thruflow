@@ -90,7 +90,7 @@ At the planned focus end, Flow does not auto-switch. The timer continues. The us
 - start break;
 - stop.
 
-Stopping focus or starting break opens the same square memo panel in the dashboard and macOS menu bar player. It shows `お疲れ様です。メモを追加しますか？`, a large editor, and `キャンセル`, `メモなし`, and `保存`. Focus keeps counting while the panel is open. Saving writes to Todo; `メモなし` continues without changing it. Cancelling a pending break returns to focus and does not start rest. Stopping or skipping an existing rest never asks for memo again.
+Stopping focus or starting break opens the same square memo panel in the dashboard and macOS menu bar player. It shows `お疲れ様です。メモを追加しますか？`, a large editor, `キャンセル` on the left, and one checkmark submit button on the right. The submit label is `メモなしで送信` for an empty editor and `送信` when text exists. Focus keeps counting while a break memo is open. Submitting text writes it to Todo; submitting an empty editor continues without changing the memo. Cancelling returns to the state before the prompt: a pending break returns to focus, while a stop prompt restores the previous running or paused Flow and removes its provisional progress. Stopping or skipping an existing rest never asks for memo again.
 
 The trash action is phase-aware. During focus it deletes the current Flow and rolls back any credited Task/Direction progress through the canonical History editor. During rest it deletes only the active FlowBreak and closes the player, preserving the completed focus session and its progress.
 
