@@ -102,6 +102,8 @@ struct TaskDayStrip: View {
     @Environment(\.locale) private var locale
 
     @Binding var selectedDate: Date
+    let todos: [Todo]
+    let filter: TaskCalendarFilter
     var onDropPayload: ((String, Date) -> Bool)?
 
     @State private var showsCalendar = false
@@ -181,8 +183,13 @@ struct TaskDayStrip: View {
                     .font(.body.weight(.semibold))
                     .monospacedDigit()
                     .foregroundStyle(isSelected ? Color.white : Color.primary)
+
+                CalendarTaskIndicators(
+                    todos: todos.filter(filter.includes),
+                    date: date
+                )
             }
-            .frame(maxWidth: .infinity, minHeight: 48)
+            .frame(maxWidth: .infinity, minHeight: 54)
             .background {
                 RoundedRectangle(cornerRadius: 7)
                     .fill(isSelected ? Color.accentColor : Color.primary.opacity(0.035))
@@ -216,7 +223,7 @@ struct TaskDayStrip: View {
     }
 
     private func weekdayText(_ date: Date) -> String {
-        date.formatted(.dateTime.locale(locale).weekday(.narrow))
+        date.formatted(.dateTime.locale(locale).weekday(.abbreviated))
     }
 
     private func dayText(_ date: Date) -> String {
@@ -306,6 +313,8 @@ private struct TaskDayColumn: View {
                             .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
                         Text(date.formatted(.dateTime.locale(locale).month().day()))
                             .font(.title3.weight(.semibold))
+
+                        CalendarTaskIndicators(todos: todos, date: date)
                     }
 
                     Spacer(minLength: 0)
@@ -513,9 +522,7 @@ struct TaskMonthGrid: View {
     }
 
     private var weekdaySymbols: [String] {
-        let symbols = calendar.veryShortStandaloneWeekdaySymbols
-        let first = max(0, calendar.firstWeekday - 1)
-        return Array(symbols[first...] + symbols[..<first])
+        CalendarWeekdaySymbols.orderedAbbreviated(calendar: calendar)
     }
 
     private static let dayFormatter: DateFormatter = {

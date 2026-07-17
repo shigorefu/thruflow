@@ -5,6 +5,7 @@
 //  Created by Codex on 2026/07/14.
 //
 
+import SwiftData
 import SwiftUI
 
 struct HistoryDayWorkspaceView: View {
@@ -154,6 +155,8 @@ struct HistoryMiniCalendar: View {
     var selectionMode: HistoryMiniCalendarSelectionMode = .day
     var onDropPayload: ((String, Date) -> Bool)?
 
+    @Query(sort: \Todo.sortIndex, order: .forward) private var todos: [Todo]
+
     private var columns: [GridItem] {
         Array(repeating: GridItem(.flexible(), spacing: selectionMode == .week ? 0 : 2), count: 7)
     }
@@ -199,13 +202,18 @@ struct HistoryMiniCalendar: View {
                     Button {
                         selectedDate = calendar.startOfDay(for: date)
                     } label: {
-                        Text("\(calendar.component(.day, from: date))")
-                            .font(.caption)
-                            .frame(width: selectionMode == .week ? nil : 24, height: 24)
-                            .frame(maxWidth: selectionMode == .week ? .infinity : nil)
-                            .foregroundStyle(dayForeground(date))
-                            .background(dayBackground(date))
-                            .clipShape(dayShape(date))
+                        VStack(spacing: 2) {
+                            Text("\(calendar.component(.day, from: date))")
+                                .font(.caption)
+                                .frame(width: selectionMode == .week ? nil : 24, height: 20)
+                                .frame(maxWidth: selectionMode == .week ? .infinity : nil)
+                                .foregroundStyle(dayForeground(date))
+
+                            CalendarTaskIndicators(todos: todos, date: date, maximumVisibleCount: 3)
+                        }
+                        .frame(minHeight: 28)
+                        .background(dayBackground(date))
+                        .clipShape(dayShape(date))
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(accessibilityDate(date))
@@ -223,9 +231,7 @@ struct HistoryMiniCalendar: View {
     }
 
     private var weekdaySymbols: [String] {
-        let symbols = calendar.veryShortStandaloneWeekdaySymbols
-        let offset = max(0, calendar.firstWeekday - 1)
-        return Array(symbols[offset...]) + Array(symbols[..<offset])
+        CalendarWeekdaySymbols.orderedAbbreviated(calendar: calendar)
     }
 
     private func dayForeground(_ date: Date) -> Color {

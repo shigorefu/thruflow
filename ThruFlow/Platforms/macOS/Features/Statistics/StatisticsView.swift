@@ -584,9 +584,7 @@ private struct ContributionHeatmap: View {
     }
 
     private var orderedWeekdaySymbols: [String] {
-        let symbols = calendar.veryShortStandaloneWeekdaySymbols
-        let first = max(0, calendar.firstWeekday - 1)
-        return Array(symbols[first...] + symbols[..<first])
+        CalendarWeekdaySymbols.orderedAbbreviated(calendar: calendar)
     }
 
     private var monthGridItems: [MonthGridItem] {

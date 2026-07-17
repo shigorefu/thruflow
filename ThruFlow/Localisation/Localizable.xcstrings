@@ -2097,6 +2097,22 @@
         }
       }
     },
+    "この日のタスク、%lld件": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tasks for this day: %lld"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Задач на этот день: %lld"
+          }
+        }
+      }
+    },
     "この日のタスクはありません。": {
       "localizations": {
         "en": {

@@ -41,6 +41,30 @@ struct AppSettingsTests {
         #expect(settings.effectiveCalendar.firstWeekday == 7)
     }
 
+    @Test func calendarWeekdaysUseReadableLocalizedAbbreviations() {
+        var englishCalendar = Calendar(identifier: .gregorian)
+        englishCalendar.locale = Locale(identifier: "en_US")
+        englishCalendar.firstWeekday = 2
+
+        var russianCalendar = Calendar(identifier: .gregorian)
+        russianCalendar.locale = Locale(identifier: "ru_RU")
+        russianCalendar.firstWeekday = 2
+
+        var japaneseCalendar = Calendar(identifier: .gregorian)
+        japaneseCalendar.locale = Locale(identifier: "ja_JP")
+        japaneseCalendar.firstWeekday = 2
+
+        let english = CalendarWeekdaySymbols.orderedAbbreviated(calendar: englishCalendar)
+        let russian = CalendarWeekdaySymbols.orderedAbbreviated(calendar: russianCalendar)
+        let japanese = CalendarWeekdaySymbols.orderedAbbreviated(calendar: japaneseCalendar)
+
+        #expect(english.first == "Mon")
+        #expect(russian.first == "Пн")
+        #expect(japanese.first == "月")
+        #expect(english.allSatisfy { $0.count > 1 })
+        #expect(russian.allSatisfy { $0.count > 1 })
+    }
+
     @Test func clockFormatOverridesLocaleHourCycle() {
         let settings = AppSettings(defaults: makeDefaults())
         settings.languageCode = "ja"
