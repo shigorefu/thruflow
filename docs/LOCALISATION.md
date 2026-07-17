@@ -7,6 +7,10 @@ Japanese is the development and fallback language. The catalog is part of the
 application target and uses Apple's String Catalog format so macOS and future
 iOS presentation layers share translations without sharing screen layouts.
 
+The maintained application locales are Japanese (`ja`), English (`en`), and
+Russian (`ru`). Every catalog entry must contain complete English and Russian
+translations before the localisation tests pass.
+
 ## Code Rules
 
 - SwiftUI literals and `String(localized:)` are extracted into the catalog.
@@ -34,3 +38,4 @@ SwiftData changes. Local SwiftData remains independent of the selected locale.
 first column contains stable code references, while language columns contain
 approved translations. It is intentionally not loaded at runtime and therefore
 cannot diverge application behavior from the validated String Catalog.
+Unambiguous glossary terms are checked against the catalog by unit tests.

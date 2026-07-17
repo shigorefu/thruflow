@@ -35,6 +35,7 @@ struct MacOSRootView: View {
                     .tag(AppSection.statistics)
             }
             .navigationTitle(String(localized: "スルフロ"))
+            .navigationSplitViewColumnWidth(min: 175, ideal: 190, max: 240)
         } detail: {
             detailContent
         }

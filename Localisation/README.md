@@ -5,6 +5,10 @@ The application catalog is
 It is the single source of truth for user-facing text. Japanese (`ja`) is the
 source and fallback language.
 
+The app currently ships Japanese (`ja`), English (`en`), and Russian (`ru`).
+Unit tests require every catalog key to be translated into English and Russian
+and verify that unambiguous glossary terms match `TERMS.csv`.
+
 [`TERMS.csv`](TERMS.csv) is the shared product glossary. It maps stable code
 names to their meaning and approved terminology in Japanese, English, and
 Russian. The CSV helps translators stay consistent; the runtime source of truth
