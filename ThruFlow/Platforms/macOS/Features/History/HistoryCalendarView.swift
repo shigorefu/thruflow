@@ -325,6 +325,7 @@ struct HistoryTimeGrid: View {
                 }
                 .frame(width: contentWidth, height: hourHeight * CGFloat(hourRange.count))
             }
+            .scrollIndicators(.hidden, axes: .vertical)
             .onAppear { scrollToRelevantHour(proxy) }
             .onChange(of: selectedDate) { _, _ in scrollToRelevantHour(proxy) }
             .onChange(of: range) { _, _ in scrollToRelevantHour(proxy) }
