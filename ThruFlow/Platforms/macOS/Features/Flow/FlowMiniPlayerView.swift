@@ -152,7 +152,7 @@ struct FlowMiniPlayerView: View {
             }
             .frame(width: 158, height: 158)
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("Flowタイマー")
+            .accessibilityLabel(String(localized: "Flowタイマー"))
 
             transportControls
         }
@@ -210,7 +210,7 @@ struct FlowMiniPlayerView: View {
                 openTaskPicker()
             }
             .accessibilityElement(children: .contain)
-            .accessibilityAction(named: "Flowタスクを選択") {
+            .accessibilityAction(named: String(localized: "Flowタスクを選択")) {
                 openTaskPicker()
             }
         }
@@ -288,7 +288,7 @@ struct FlowMiniPlayerView: View {
             }
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Focusを選択")
+        .accessibilityLabel(String(localized: "Focusを選択"))
         .disabled(!activeFlowStore.canChangeMode)
         .popover(isPresented: $showsModePicker, arrowEdge: .bottom) {
             FlowModePickerView(
@@ -323,25 +323,25 @@ struct FlowMiniPlayerView: View {
             }
         }
         .frame(width: 130, alignment: .leading)
-        .accessibilityLabel(activeFlowStore.timerState == nil ? "Flow未開始" : "残り時間 \(activeFlowStore.remainingText(now: now))")
+        .accessibilityLabel(activeFlowStore.timerState == nil ? String(localized: "Flow未開始") : String(localized: "残り時間 \(activeFlowStore.remainingText(now: now))"))
     }
 
     private var timerEyebrow: String {
         switch activeFlowStore.phase {
         case .focusing:
-            "集中"
+            String(localized: "集中")
         case .paused:
-            "一時停止"
+            String(localized: "一時停止")
         case .breakTime:
-            activeFlowStore.timerState?.isLongBreak == true ? "Long Break" : "休憩"
+            activeFlowStore.timerState?.isLongBreak == true ? String(localized: "Long Break") : String(localized: "休憩")
         default:
-            "待機中"
+            String(localized: "待機中")
         }
     }
 
     private var timerPhaseName: String {
         activeFlowStore.isBreakPhase && activeFlowStore.timerState?.isLongBreak == true
-            ? "Long Break"
+            ? String(localized: "Long Break")
             : activeFlowStore.selectedMode.displayName
     }
 
@@ -391,7 +391,7 @@ struct FlowMiniPlayerView: View {
                 .focused($isTaskTitleFocused)
                 .onSubmit(commitTaskTitle)
                 .onExitCommand(perform: cancelTaskTitleEdit)
-                .accessibilityLabel("タスク名")
+                .accessibilityLabel(String(localized: "タスク名"))
         } else {
             Text(flowTaskTitle)
                 .font(contextTitleFont)
@@ -411,10 +411,10 @@ struct FlowMiniPlayerView: View {
                             }
                         }
                 )
-                .accessibilityAction(named: "タスク名を編集") {
+                .accessibilityAction(named: String(localized: "タスク名を編集")) {
                     beginTaskTitleEdit()
                 }
-                .accessibilityLabel("タスク名")
+                .accessibilityLabel(String(localized: "タスク名"))
         }
     }
 
@@ -502,7 +502,7 @@ struct FlowMiniPlayerView: View {
             return "(\(selectedDirection.name))"
         }
 
-        return "具体的なタスクなし"
+        return String(localized: "具体的なタスクなし")
     }
 
     private var flowTaskTitleIsPlaceholder: Bool {
@@ -519,7 +519,7 @@ struct FlowMiniPlayerView: View {
     }
 
     private var flowDirectionName: String {
-        flowDirection?.name ?? "その他"
+        flowDirection?.name ?? String(localized: "その他")
     }
 
     private var artworkColor: Color {
@@ -535,15 +535,15 @@ struct FlowMiniPlayerView: View {
 
         switch todo.measurement {
         case .checkbox:
-            return todo.isCompleted ? "完了" : "未完了"
+            return todo.isCompleted ? String(localized: "完了") : String(localized: "未完了")
         case .focusBlocks:
             let planned = Double(todo.plannedAmount ?? 0)
             let remaining = max(0, planned - BlockUnit.blocks(forFocusedSeconds: displayedFocusSeconds))
             let value = remaining == remaining.rounded() ? String(Int(remaining)) : String(format: "%.1f", remaining)
-            return "残り \(value) Block"
+            return String(localized: "残り \(value) Block")
         case .minutes:
             let remainingSeconds = max(0, (todo.plannedAmount ?? 0) * 60 - displayedFocusSeconds)
-            return "残り \(Int(ceil(Double(remainingSeconds) / 60)))分"
+            return String(localized: "残り \(Int(ceil(Double(remainingSeconds) / 60)))分")
         }
     }
 
@@ -635,7 +635,7 @@ struct FlowMiniPlayerView: View {
         }
         .buttonStyle(.plain)
         .foregroundStyle(.secondary)
-        .accessibilityLabel("ブロックを短縮")
+        .accessibilityLabel(String(localized: "ブロックを短縮"))
     }
 
     private var seekForwardButton: some View {
@@ -648,7 +648,7 @@ struct FlowMiniPlayerView: View {
         }
         .buttonStyle(.plain)
         .foregroundStyle(.secondary)
-        .accessibilityLabel("ブロックを延長")
+        .accessibilityLabel(String(localized: "ブロックを延長"))
     }
 
     private var stopButton: some View {
@@ -661,7 +661,7 @@ struct FlowMiniPlayerView: View {
         }
         .buttonStyle(.plain)
         .foregroundStyle(.secondary)
-        .accessibilityLabel("Flowを停止して保存")
+        .accessibilityLabel(String(localized: "Flowを停止して保存"))
     }
 
     private var breakButton: some View {
@@ -674,7 +674,7 @@ struct FlowMiniPlayerView: View {
         }
         .buttonStyle(.plain)
         .foregroundStyle(.secondary)
-        .accessibilityLabel("休憩を開始")
+        .accessibilityLabel(String(localized: "休憩を開始"))
     }
 
     private var destroyButton: some View {
@@ -687,7 +687,7 @@ struct FlowMiniPlayerView: View {
         }
         .buttonStyle(.plain)
         .foregroundStyle(.red)
-        .accessibilityLabel(activeFlowStore.isBreakPhase ? "休憩を削除" : "Flowを破壊")
+        .accessibilityLabel(activeFlowStore.isBreakPhase ? String(localized: "休憩を削除") : String(localized: "Flowを破壊"))
     }
 
     private var primaryButton: some View {
@@ -717,19 +717,19 @@ struct FlowMiniPlayerView: View {
     private var primaryButtonTitle: String {
         switch activeFlowStore.phase {
         case .idle, .configured:
-            "Flowを開始"
+            String(localized: "Flowを開始")
         case .focusing:
-            activeFlowStore.isFocusOvertime(now: activeFlowStore.displayDate) ? "休憩" : "一時停止"
+            activeFlowStore.isFocusOvertime(now: activeFlowStore.displayDate) ? String(localized: "休憩") : String(localized: "一時停止")
         case .paused:
-            "再開"
+            String(localized: "再開")
         case .breakTime:
-            "Flowを開始"
+            String(localized: "Flowを開始")
         case .awaitingExtensionDecision:
-            "完了"
+            String(localized: "完了")
         case .awaitingResult:
-            "保存"
+            String(localized: "保存")
         case .completed:
-            "Flowを開始"
+            String(localized: "Flowを開始")
         }
     }
 
@@ -763,22 +763,22 @@ struct FlowMiniPlayerView: View {
 
     private var adaptiveDecisionBar: some View {
         HStack(spacing: 10) {
-            Text("次を選択")
+            Text(String(localized: "次を選択"))
                 .font(.headline)
 
             Spacer()
 
             if activeFlowStore.timerState?.nextAdaptiveFocusDurationSeconds != nil {
-                Button("+\(adaptiveExtensionMinutes)分") {
+                Button(String(localized: "+\(adaptiveExtensionMinutes)分")) {
                     activeFlowStore.extendAdaptive(modelContext: modelContext)
                 }
             }
 
-            Button("休憩") {
+            Button(String(localized: "休憩")) {
                 activeFlowStore.requestBreakMemo(modelContext: modelContext)
             }
 
-            Button("終了") {
+            Button(String(localized: "終了")) {
                 activeFlowStore.finish(modelContext: modelContext)
             }
         }
@@ -790,12 +790,12 @@ struct FlowMiniPlayerView: View {
 
     private var resultBar: some View {
         VStack(alignment: .leading, spacing: 18) {
-            Label("お疲れ様です。メモを追加しますか？", systemImage: "note.text")
+            Label(String(localized: "お疲れ様です。メモを追加しますか？"), systemImage: "note.text")
                 .font(.headline)
 
             ZStack(alignment: .topLeading) {
                 if resultText.isEmpty {
-                    Text("何をしましたか？")
+                    Text(String(localized: "何をしましたか？"))
                         .font(.body)
                         .foregroundStyle(.tertiary)
                         .padding(.horizontal, 15)
@@ -808,7 +808,7 @@ struct FlowMiniPlayerView: View {
                     .scrollContentBackground(.hidden)
                     .padding(10)
                     .focused($isMemoFocused)
-                    .accessibilityLabel("Flowメモ")
+                    .accessibilityLabel(String(localized: "Flowメモ"))
             }
             .frame(maxWidth: .infinity, minHeight: 150, maxHeight: .infinity)
             .background(Color.primary.opacity(0.055))
@@ -820,23 +820,23 @@ struct FlowMiniPlayerView: View {
 
             HStack(spacing: 10) {
                 if activeFlowStore.isAwaitingBreakMemo {
-                    memoActionButton("キャンセル", systemImage: "xmark") {
+                    memoActionButton(String(localized: "キャンセル"), systemImage: "xmark") {
                         cancelBreakMemo()
                     }
-                    .accessibilityLabel("メモ入力をキャンセル")
+                    .accessibilityLabel(String(localized: "メモ入力をキャンセル"))
                 }
 
                 Spacer(minLength: 0)
 
-                memoActionButton("メモなし", systemImage: "forward.fill") {
+                memoActionButton(String(localized: "メモなし"), systemImage: "forward.fill") {
                     submitWithoutResult()
                 }
-                .accessibilityLabel("メモなしで続ける")
+                .accessibilityLabel(String(localized: "メモなしで続ける"))
 
                 Button {
                     submitResult()
                 } label: {
-                    Label("保存", systemImage: "arrow.up")
+                    Label(String(localized: "保存"), systemImage: "arrow.up")
                         .font(.subheadline.weight(.semibold))
                         .frame(minWidth: 76, minHeight: 38)
                         .padding(.horizontal, 4)
@@ -846,7 +846,7 @@ struct FlowMiniPlayerView: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(!hasMemoText)
-                .accessibilityLabel("メモを保存")
+                .accessibilityLabel(String(localized: "メモを保存"))
             }
         }
         .padding(18)
@@ -1000,13 +1000,13 @@ struct FlowMiniPlayerView: View {
     private func modeSubtitle(_ mode: FlowMode) -> String {
         switch mode {
         case .twelveThree:
-            "12分作業 / 3分休憩"
+            String(localized: "12分作業 / 3分休憩")
         case .twentyFiveFive:
-            "25分作業 / 5分休憩"
+            String(localized: "25分作業 / 5分休憩")
         case .fiftyTen:
-            "50分作業 / 10分休憩"
+            String(localized: "50分作業 / 10分休憩")
         case .adaptive:
-            "12分から開始"
+            String(localized: "12分から開始")
         }
     }
 
@@ -1074,7 +1074,7 @@ private struct FlowTaskPickerView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("Flowタスク")
+                Text(String(localized: "Flowタスク"))
                     .font(.headline.weight(.semibold))
 
                 Spacer(minLength: 0)
@@ -1090,7 +1090,7 @@ private struct FlowTaskPickerView: View {
                 .foregroundStyle(.secondary)
             }
 
-            Picker("表示", selection: $selectedTab) {
+            Picker(String(localized: "表示"), selection: $selectedTab) {
                 ForEach(FlowTaskPickerTab.allCases) { tab in
                     Text(tab.title).tag(tab)
                 }
@@ -1120,7 +1120,7 @@ private struct FlowTaskPickerView: View {
             Button {
                 showsTaskComposer = true
             } label: {
-                Label("タスクを追加", systemImage: "plus.circle.fill")
+                Label(String(localized: "タスクを追加"), systemImage: "plus.circle.fill")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Color.accentColor)
                     .frame(maxWidth: .infinity, minHeight: 42, alignment: .leading)
@@ -1136,7 +1136,7 @@ private struct FlowTaskPickerView: View {
             }
 
             if taskGroups.isEmpty {
-                emptyState("今日のタスクはありません")
+                emptyState(String(localized: "今日のタスクはありません"))
             } else {
                 ForEach(taskGroups) { group in
                     sectionHeader(title: group.title, count: group.todos.count, tint: group.tint)
@@ -1155,7 +1155,7 @@ private struct FlowTaskPickerView: View {
     @ViewBuilder
     private var habitTab: some View {
         if habitTodos.isEmpty {
-            emptyState("今日の習慣はありません")
+            emptyState(String(localized: "今日の習慣はありません"))
         } else {
             VStack(spacing: 7) {
                 ForEach(habitTodos) { todo in
@@ -1174,7 +1174,7 @@ private struct FlowTaskPickerView: View {
         ) {
             directionGridItem(
                 iconText: otherDirection?.symbolName ?? DefaultDirections.taskInboxSymbol,
-                title: otherDirection?.name ?? "その他",
+                title: otherDirection?.name ?? String(localized: "その他"),
                 color: .secondary,
                 isSelected: selectedTodoID == nil && (selectedDirectionID == otherDirection?.id || selectedDirectionID == nil)
             ) {
@@ -1307,8 +1307,8 @@ private struct FlowTaskPickerView: View {
     }
 
     private func taskSubtitle(_ todo: Todo) -> String {
-        let directionName = todo.direction?.name ?? "その他"
-        let priority = todo.priority == .low && todo.isRoomIfPossible ? "余裕があれば" : todo.priority.displayName
+        let directionName = todo.direction?.name ?? String(localized: "その他")
+        let priority = todo.priority == .low && todo.isRoomIfPossible ? String(localized: "余裕があれば") : todo.priority.displayName
         return "\(directionName) ・ \(priority)"
     }
 
@@ -1352,11 +1352,11 @@ private enum FlowTaskPickerTab: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .tasks:
-            "タスク"
+            String(localized: "タスク")
         case .habits:
-            "習慣"
+            String(localized: "習慣")
         case .directions:
-            "方向"
+            String(localized: "方向")
         }
     }
 }
@@ -1372,11 +1372,11 @@ private struct FlowTaskPickerGroup: Identifiable {
     var title: String {
         switch type {
         case .habit:
-            "習慣"
+            String(localized: "習慣")
         case .neutral:
-            "通常"
+            String(localized: "通常")
         case .nice:
-            "ナイス"
+            String(localized: "ナイス")
         }
     }
 
@@ -1425,7 +1425,7 @@ private struct FlowModePickerView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("Focus")
+                Text(String(localized: "Focus"))
                     .font(.headline.weight(.semibold))
 
                 Spacer(minLength: 0)
@@ -1515,13 +1515,13 @@ private struct FlowModePickerView: View {
     private func subtitle(_ mode: FlowMode) -> String {
         switch mode {
         case .twelveThree:
-            "12分作業 / 3分休憩"
+            String(localized: "12分作業 / 3分休憩")
         case .twentyFiveFive:
-            "25分作業 / 5分休憩"
+            String(localized: "25分作業 / 5分休憩")
         case .fiftyTen:
-            "50分作業 / 10分休憩"
+            String(localized: "50分作業 / 10分休憩")
         case .adaptive:
-            "12分から開始"
+            String(localized: "12分から開始")
         }
     }
 }

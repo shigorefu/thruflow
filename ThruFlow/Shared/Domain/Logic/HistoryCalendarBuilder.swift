@@ -16,9 +16,9 @@ enum HistoryCalendarRange: String, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .day: "日"
-        case .week: "週"
-        case .month: "月"
+        case .day: String(localized: "日")
+        case .week: String(localized: "週")
+        case .month: String(localized: "月")
         }
     }
 
@@ -53,8 +53,8 @@ enum HistoryDayTimelineScale: String, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .elastic: "Elastic"
-        case .fullDay: "24時間"
+        case .elastic: String(localized: "Elastic")
+        case .fullDay: String(localized: "24時間")
         }
     }
 }
@@ -177,8 +177,8 @@ struct HistoryCalendarBuilder {
                 kind: .rest,
                 startedAt: flowBreak.startedAt,
                 endedAt: end,
-                title: flowBreak.isLongBreak ? "Long Break" : "休憩",
-                subtitle: direction?.name ?? "Flowシリーズ",
+                title: flowBreak.isLongBreak ? String(localized: "Long Break") : String(localized: "休憩"),
+                subtitle: direction?.name ?? String(localized: "Flowシリーズ"),
                 symbol: "☕️",
                 colorHex: "#8E8E93",
                 session: previousSession,
@@ -230,7 +230,7 @@ struct HistoryCalendarBuilder {
         start: Date,
         end: Date
     ) -> HistoryCalendarItem {
-        let directionName = direction?.name ?? "その他"
+        let directionName = direction?.name ?? String(localized: "その他")
         return HistoryCalendarItem(
             id: "flow-\(id.uuidString)",
             kind: .flow,

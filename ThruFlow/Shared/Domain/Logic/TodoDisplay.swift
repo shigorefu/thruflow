@@ -19,7 +19,7 @@ enum TodoDisplay {
             return "(\(directionName))"
         }
 
-        return "(その他)"
+        return String(localized: "(その他)")
     }
 
     static func placeholder(for todo: Todo) -> String {
@@ -28,6 +28,6 @@ enum TodoDisplay {
             return "(\(directionName))"
         }
 
-        return "(その他)"
+        return String(localized: "(その他)")
     }
 }

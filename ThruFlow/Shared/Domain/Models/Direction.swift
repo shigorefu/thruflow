@@ -31,22 +31,22 @@ enum DirectionType: String, CaseIterable, Codable, Identifiable {
     var displayName: String {
         switch self {
         case .habit:
-            "習慣"
+            String(localized: "習慣")
         case .neutral:
-            "通常"
+            String(localized: "通常")
         case .nice:
-            "ナイス"
+            String(localized: "ナイス")
         }
     }
 
     var description: String {
         switch self {
         case .habit:
-            "予定日にタスクへ自動で入る習慣です。"
+            String(localized: "予定日にタスクへ自動で入る習慣です。")
         case .neutral:
-            "必要なときにタスクを計画する作業領域です。"
+            String(localized: "必要なときにタスクを計画する作業領域です。")
         case .nice:
-            "できると嬉しい任意の活動です。"
+            String(localized: "できると嬉しい任意の活動です。")
         }
     }
 }
@@ -60,9 +60,9 @@ enum GoalPeriod: String, CaseIterable, Codable, Identifiable {
     var displayName: String {
         switch self {
         case .daily:
-            "毎日"
+            String(localized: "毎日")
         case .weekly:
-            "毎週"
+            String(localized: "毎週")
         }
     }
 }
@@ -78,13 +78,13 @@ enum GoalUnit: String, CaseIterable, Codable, Identifiable {
     var displayName: String {
         switch self {
         case .occurrences:
-            "回"
+            String(localized: "回")
         case .focusBlocks:
-            "フローブロック"
+            String(localized: "フローブロック")
         case .minutes:
-            "分"
+            String(localized: "分")
         case .hours:
-            "時間"
+            String(localized: "時間")
         }
     }
 }
@@ -99,11 +99,11 @@ enum GoalScheduleKind: String, CaseIterable, Codable, Identifiable {
     var displayName: String {
         switch self {
         case .everyDay:
-            "毎日"
+            String(localized: "毎日")
         case .weeklyCount:
-            "週回"
+            String(localized: "週回")
         case .weekdays:
-            "曜日"
+            String(localized: "曜日")
         }
     }
 
@@ -131,19 +131,19 @@ enum GoalWeekday: Int, CaseIterable, Codable, Identifiable {
     var displayName: String {
         switch self {
         case .sunday:
-            "日"
+            String(localized: "日")
         case .monday:
-            "月"
+            String(localized: "月")
         case .tuesday:
-            "火"
+            String(localized: "火")
         case .wednesday:
-            "水"
+            String(localized: "水")
         case .thursday:
-            "木"
+            String(localized: "木")
         case .friday:
-            "金"
+            String(localized: "金")
         case .saturday:
-            "土"
+            String(localized: "土")
         }
     }
 }
@@ -294,7 +294,7 @@ final class Direction {
 extension Direction {
     static var sample: Direction {
         Direction(
-            name: "読書",
+            name: String(localized: "読書"),
             type: .habit,
             symbolName: "📚",
             colorHex: "#34C759",

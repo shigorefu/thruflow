@@ -85,7 +85,7 @@ struct TasksView: View {
 
             tasksWorkspace
         }
-        .navigationTitle("タスク")
+        .navigationTitle(String(localized: "タスク"))
         .safeAreaInset(edge: .bottom) {
             MessengerTodoComposer(
                 title: $newTodoTitle,
@@ -106,8 +106,8 @@ struct TasksView: View {
             unscheduledInspector
                 .inspectorColumnWidth(min: 300, ideal: 340, max: 420)
         }
-        .alert("移動できません", isPresented: moveErrorIsPresented) {
-            Button("OK", role: .cancel) {
+        .alert(String(localized: "移動できません"), isPresented: moveErrorIsPresented) {
+            Button(String(localized: "OK"), role: .cancel) {
                 moveError = nil
             }
         } message: {
@@ -266,7 +266,7 @@ struct TasksView: View {
 
             if selectedDateGroups.isEmpty {
                 if !showsOverdueSection {
-                    EmptyRow(text: "この日のタスクはありません。")
+                    EmptyRow(text: String(localized: "この日のタスクはありません。"))
                         .listRowSeparator(.hidden)
                 }
             } else {
@@ -298,7 +298,7 @@ struct TasksView: View {
     private var unscheduledInspector: some View {
         VStack(spacing: 0) {
             HStack(spacing: 8) {
-                Label("日付なし", systemImage: "tray")
+                Label(String(localized: "日付なし"), systemImage: "tray")
                     .font(.headline)
 
                 Text("\(backlogSnapshot.unscheduled.count)")
@@ -308,7 +308,7 @@ struct TasksView: View {
                 Spacer(minLength: 0)
 
                 if !backlogSnapshot.unscheduled.isEmpty {
-                    Button("すべて今日へ") {
+                    Button(String(localized: "すべて今日へ")) {
                         moveTodosToToday(backlogSnapshot.unscheduled)
                     }
                     .buttonStyle(.bordered)
@@ -321,7 +321,7 @@ struct TasksView: View {
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
-                .accessibilityLabel("日付なしを閉じる")
+                .accessibilityLabel(String(localized: "日付なしを閉じる"))
             }
             .padding(16)
 
@@ -329,7 +329,7 @@ struct TasksView: View {
 
             if backlogSnapshot.unscheduled.isEmpty {
                 ContentUnavailableView(
-                    "日付なしのタスクはありません",
+                    String(localized: "日付なしのタスクはありません"),
                     systemImage: "tray"
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -357,8 +357,8 @@ struct TasksView: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(.secondary)
-            .help("今日へ移動")
-            .accessibilityLabel("\(TodoDisplay.title(for: todo))を今日へ移動")
+            .help(String(localized: "今日へ移動"))
+            .accessibilityLabel(String(localized: "\(TodoDisplay.title(for: todo))を今日へ移動"))
         }
     }
 
@@ -399,7 +399,7 @@ struct TasksView: View {
             try modelContext.save()
         } catch {
             modelContext.rollback()
-            moveError = "タスクを今日へ移動できませんでした。"
+            moveError = String(localized: "タスクを今日へ移動できませんでした。")
         }
     }
 
@@ -450,7 +450,7 @@ struct TasksView: View {
                 return true
             } catch {
                 modelContext.rollback()
-                moveError = "タスクを移動できませんでした。"
+                moveError = String(localized: "タスクを移動できませんでした。")
                 return false
             }
         case .failure(let failure):
@@ -492,7 +492,7 @@ struct TasksView: View {
             )
         )
         .contextMenu {
-            Button("編集", systemImage: "pencil") {
+            Button(String(localized: "編集"), systemImage: "pencil") {
                 editingTodo = todo
             }
 
@@ -506,18 +506,18 @@ struct TasksView: View {
 
             Divider()
 
-            Button("Flowを開始", systemImage: "play.fill") {
+            Button(String(localized: "Flowを開始"), systemImage: "play.fill") {
                 activeFlowStore.configure(direction: todo.direction, todo: todo)
             }
 
             Divider()
 
-            Button("削除", systemImage: "trash", role: .destructive) {
+            Button(String(localized: "削除"), systemImage: "trash", role: .destructive) {
                 todo.softDelete()
             }
         }
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-            Button("削除", systemImage: "trash", role: .destructive) {
+            Button(String(localized: "削除"), systemImage: "trash", role: .destructive) {
                 todo.softDelete()
             }
         }
@@ -525,14 +525,14 @@ struct TasksView: View {
 
     @ViewBuilder
     private func standardMoveMenu(for todo: Todo) -> some View {
-        Menu("移動") {
-            Button("今日") {
+        Menu(String(localized: "移動")) {
+            Button(String(localized: "今日")) {
                 reschedule(todo, to: .now)
             }
-            Button("明日") {
+            Button(String(localized: "明日")) {
                 reschedule(todo, to: Calendar.current.date(byAdding: .day, value: 1, to: .now))
             }
-            Button("日付なし") {
+            Button(String(localized: "日付なし")) {
                 reschedule(todo, to: nil)
             }
         }
@@ -542,13 +542,13 @@ struct TasksView: View {
     private func weeklyHabitMoveMenu(for todo: Todo) -> some View {
         let options = requiredPlanner.weeklyRescheduleOptions(for: todo, in: todos)
 
-        Menu("移動") {
+        Menu(String(localized: "移動")) {
             ForEach(options, id: \.date) { option in
                 Button(rescheduleLabel(for: option.date)) {
                     reschedule(todo, to: option.date)
                 }
                 .disabled(!option.isAllowed)
-                .help(option.isAllowed ? "" : "週間目標を達成できなくなるため移動できません")
+                .help(option.isAllowed ? "" : String(localized: "週間目標を達成できなくなるため移動できません"))
             }
         }
     }
@@ -561,10 +561,10 @@ struct TasksView: View {
     private func rescheduleLabel(for date: Date) -> String {
         let calendar = Calendar.current
         if calendar.isDateInToday(date) {
-            return "今日"
+            return String(localized: "今日")
         }
         if calendar.isDateInTomorrow(date) {
-            return "明日"
+            return String(localized: "明日")
         }
 
         return Self.rescheduleDateFormatter.string(from: date)
@@ -572,8 +572,8 @@ struct TasksView: View {
 
     private static let rescheduleDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ja_JP")
-        formatter.dateFormat = "M/d（E）"
+        formatter.locale = Locale.autoupdatingCurrent
+        formatter.setLocalizedDateFormatFromTemplate("MdE")
         return formatter
     }()
 
@@ -767,22 +767,22 @@ enum QuickTodoVolume: Hashable {
     var menuLabel: String {
         switch self {
         case .checkbox:
-            "チェックのみ"
+            String(localized: "チェックのみ")
         case .blocks(let count):
-            count == 1 ? "1 Block" : "\(count) Blocks"
+            count == 1 ? String(localized: "1 Block") : String(localized: "\(count) Blocks")
         case .minutes(let count):
-            "\(count)分"
+            String(localized: "\(count)分")
         }
     }
 
     var chipLabel: String {
         switch self {
         case .checkbox:
-            "チェック"
+            String(localized: "チェック")
         case .blocks(let count):
-            count == 1 ? "1 Block" : "\(count) Blocks"
+            count == 1 ? String(localized: "1 Block") : String(localized: "\(count) Blocks")
         case .minutes(let count):
-            "\(count)分"
+            String(localized: "\(count)分")
         }
     }
 }
@@ -810,11 +810,11 @@ enum QuickTodoDate: Hashable {
     var chipLabel: String {
         switch self {
         case .today:
-            "今日"
+            String(localized: "今日")
         case .tomorrow:
-            "明日"
+            String(localized: "明日")
         case .none:
-            "日付なし"
+            String(localized: "日付なし")
         case .custom(let date):
             Self.formatter.string(from: date)
         }
@@ -852,7 +852,7 @@ struct MessengerTodoComposer: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .top, spacing: 10) {
-                TextField("タスクを入力してください", text: $title, axis: .vertical)
+                TextField(String(localized: "タスクを入力してください"), text: $title, axis: .vertical)
                     .textFieldStyle(.plain)
                     .font(.body)
                     .lineLimit(2...5)
@@ -867,8 +867,8 @@ struct MessengerTodoComposer: View {
                     }
                     .buttonStyle(.plain)
                     .foregroundStyle(.secondary)
-                    .help("閉じる")
-                    .accessibilityLabel("タスク作成を閉じる")
+                    .help(String(localized: "閉じる"))
+                    .accessibilityLabel(String(localized: "タスク作成を閉じる"))
                 }
             }
 
@@ -888,9 +888,9 @@ struct MessengerTodoComposer: View {
                 if allowsDateSelection {
                     DateChip(dateOption: $dateOption)
                 } else {
-                    Text("今日")
+                    Text(String(localized: "今日"))
                         .chipStyle(tint: .secondary)
-                        .accessibilityLabel("日付 今日")
+                        .accessibilityLabel(String(localized: "日付 今日"))
                 }
 
                 Spacer(minLength: 0)
@@ -904,7 +904,7 @@ struct MessengerTodoComposer: View {
                         .clipShape(Circle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("タスクを追加")
+                .accessibilityLabel(String(localized: "タスクを追加"))
             }
             .lineLimit(1)
             .minimumScaleFactor(0.8)
@@ -1062,7 +1062,7 @@ private struct PriorityChip: View {
                 Button {
                     isRoomIfPossible.toggle()
                 } label: {
-                    menuRow(text: "余裕があれば", isSelected: isRoomIfPossible)
+                    menuRow(text: String(localized: "余裕があれば"), isSelected: isRoomIfPossible)
                 }
             }
         } label: {
@@ -1070,7 +1070,7 @@ private struct PriorityChip: View {
                 .chipStyle(tint: tint)
         }
         .menuStyle(.borderlessButton)
-        .accessibilityLabel("優先度を選択")
+        .accessibilityLabel(String(localized: "優先度を選択"))
     }
 
     private var labelText: String {
@@ -1121,12 +1121,12 @@ private struct RoomIfPossibleChip: View {
                     }
                     .frame(width: 13, height: 13)
 
-                Text("余裕があれば")
+                Text(String(localized: "余裕があれば"))
             }
             .chipStyle(tint: .green)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("余裕があれば")
+        .accessibilityLabel(String(localized: "余裕があれば"))
         .accessibilityAddTraits(isSelected ? [.isSelected] : [])
     }
 }
@@ -1143,7 +1143,7 @@ private struct DirectionChip: View {
 
     private var labelText: String {
         guard let selectedDirection else {
-            return "その他"
+            return String(localized: "その他")
         }
 
         return "\(selectedDirection.symbolName) \(selectedDirection.name)"
@@ -1154,7 +1154,7 @@ private struct DirectionChip: View {
             Button {
                 selectedDirectionID = nil
             } label: {
-                menuRow(text: "自動: その他", isSelected: selectedDirectionID == nil)
+                menuRow(text: String(localized: "自動: その他"), isSelected: selectedDirectionID == nil)
             }
 
             if !directions.isEmpty {
@@ -1178,7 +1178,7 @@ private struct DirectionChip: View {
                 .chipStyle(tint: chipColor)
         }
         .menuStyle(.borderlessButton)
-        .accessibilityLabel("方向を選択")
+        .accessibilityLabel(String(localized: "方向を選択"))
     }
 
     @ViewBuilder
@@ -1219,7 +1219,7 @@ private struct VolumeChip: View {
                 .chipStyle(tint: .secondary)
         }
         .menuStyle(.borderlessButton)
-        .accessibilityLabel("タスクの分量を選択")
+        .accessibilityLabel(String(localized: "タスクの分量を選択"))
     }
 }
 
@@ -1234,24 +1234,24 @@ private struct DateChip: View {
             Button {
                 dateOption = .today
             } label: {
-                menuRow(text: "今日", isSelected: dateOption == .today)
+                menuRow(text: String(localized: "今日"), isSelected: dateOption == .today)
             }
 
             Button {
                 dateOption = .tomorrow
             } label: {
-                menuRow(text: "明日", isSelected: dateOption == .tomorrow)
+                menuRow(text: String(localized: "明日"), isSelected: dateOption == .tomorrow)
             }
 
             Button {
                 dateOption = .none
             } label: {
-                menuRow(text: "日付なし", isSelected: dateOption == .none)
+                menuRow(text: String(localized: "日付なし"), isSelected: dateOption == .none)
             }
 
             Divider()
 
-            Button("他の日付...") {
+            Button(String(localized: "他の日付...")) {
                 customDate = dateOption.resolvedDate ?? .now
                 showingCustomPicker = true
             }
@@ -1260,14 +1260,14 @@ private struct DateChip: View {
                 .chipStyle(tint: .secondary)
         }
         .menuStyle(.borderlessButton)
-        .accessibilityLabel("日付を選択")
+        .accessibilityLabel(String(localized: "日付を選択"))
         .popover(isPresented: $showingCustomPicker) {
             VStack(spacing: 12) {
-                DatePicker("日付", selection: $customDate, displayedComponents: .date)
+                DatePicker(String(localized: "日付"), selection: $customDate, displayedComponents: .date)
                     .datePickerStyle(.graphical)
                     .labelsHidden()
 
-                Button("設定") {
+                Button(String(localized: "設定")) {
                     dateOption = .custom(customDate)
                     showingCustomPicker = false
                 }
@@ -1309,11 +1309,11 @@ private struct TasksTodoGroup: Identifiable {
     var title: String {
         switch type {
         case .habit:
-            "習慣"
+            String(localized: "習慣")
         case .neutral:
-            "通常"
+            String(localized: "通常")
         case .nice:
-            "ナイス"
+            String(localized: "ナイス")
         }
     }
 
@@ -1403,7 +1403,7 @@ private struct TasksOverdueHeader: View {
                 .fill(.red)
                 .frame(width: 7, height: 7)
 
-            Text("期限切れ")
+            Text(String(localized: "期限切れ"))
                 .font(.caption.weight(.semibold))
 
             Text("\(count)")
@@ -1415,7 +1415,7 @@ private struct TasksOverdueHeader: View {
 
             Spacer(minLength: 0)
 
-            Button("すべて今日へ", action: onMoveAllToToday)
+            Button(String(localized: "すべて今日へ"), action: onMoveAllToToday)
                 .font(.caption)
                 .buttonStyle(.borderless)
         }
@@ -1501,7 +1501,7 @@ private struct TodoRow: View {
                 .foregroundStyle(todo.isCompleted ? .secondary : .primary)
                 .focused($isTitleFocused)
                 .onSubmit(commitTitle)
-                .accessibilityLabel("タスク名")
+                .accessibilityLabel(String(localized: "タスク名"))
         } else {
             Text(TodoDisplay.title(for: todo))
                 .font(titleIsPlaceholder ? .body.weight(.medium).italic() : .body.weight(.medium))
@@ -1513,7 +1513,7 @@ private struct TodoRow: View {
                 .onTapGesture(count: 2) {
                     beginTitleEdit()
                 }
-                .accessibilityLabel("タスク名")
+                .accessibilityLabel(String(localized: "タスク名"))
         }
     }
 
@@ -1545,7 +1545,7 @@ private struct TodoRow: View {
 
     private var priorityLabel: String {
         if todo.priority == .low, todo.isRoomIfPossible {
-            return "余裕があれば"
+            return String(localized: "余裕があれば")
         }
         return todo.priority.displayName
     }

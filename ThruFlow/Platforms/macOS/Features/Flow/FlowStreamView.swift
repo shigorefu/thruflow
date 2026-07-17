@@ -55,7 +55,7 @@ struct FlowStreamView: View {
             }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("今日のFlow")
+        .accessibilityLabel(String(localized: "今日のFlow"))
         .accessibilityValue(accessibilityValue(state))
         .onChange(of: completedHalfBlocks) { oldValue, newValue in
             guard newValue > oldValue else { return }
@@ -94,13 +94,13 @@ struct FlowStreamView: View {
     private func accessibilityValue(_ state: FlowVisualState) -> String {
         switch state.progress {
         case ..<0.01:
-            "まだFlowはありません"
+            String(localized: "まだFlowはありません")
         case ..<0.34:
-            "小さな流れ"
+            String(localized: "小さな流れ")
         case ..<0.84:
-            "育っている流れ"
+            String(localized: "育っている流れ")
         default:
-            "満ちている流れ"
+            String(localized: "満ちている流れ")
         }
     }
 }

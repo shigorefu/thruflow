@@ -223,14 +223,14 @@ struct HistoryVisibilityMenu: View {
 
     var body: some View {
         Menu {
-            filterToggle("Flow", symbol: "waveform.path", kinds: [.flow])
-            filterToggle("休憩", symbol: "cup.and.saucer", kinds: [.rest])
+            filterToggle(String(localized: "Flow"), symbol: "waveform.path", kinds: [.flow])
+            filterToggle(String(localized: "休憩"), symbol: "cup.and.saucer", kinds: [.rest])
         } label: {
-            Label("表示", systemImage: "line.3.horizontal.decrease.circle")
+            Label(String(localized: "表示"), systemImage: "line.3.horizontal.decrease.circle")
         }
         .menuStyle(.borderlessButton)
         .fixedSize()
-        .accessibilityLabel("表示内容")
+        .accessibilityLabel(String(localized: "表示内容"))
     }
 
     private func filterToggle(_ title: String, symbol: String, kinds: Set<HistoryCalendarItemKind>) -> some View {
@@ -296,7 +296,7 @@ struct HistoryTimeGrid: View {
             Color.clear.frame(width: timeAxisWidth, height: 54)
             ForEach(days, id: \.self) { day in
                 VStack(spacing: 3) {
-                    Text(day.formatted(.dateTime.locale(Locale(identifier: "ja_JP")).weekday(.abbreviated)))
+                    Text(day.formatted(.dateTime.locale(Locale.autoupdatingCurrent).weekday(.abbreviated)))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Text("\(calendar.component(.day, from: day))")
@@ -642,7 +642,7 @@ private struct HistoryManualFlowDraftView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text("新しいFlow")
+            Text(String(localized: "新しいFlow"))
                 .font(.caption.weight(.semibold))
             Text("\(startedAt.formatted(date: .omitted, time: .shortened))–\(endedAt.formatted(date: .omitted, time: .shortened))")
                 .font(.caption2.monospacedDigit())
@@ -657,7 +657,7 @@ private struct HistoryManualFlowDraftView: View {
             RoundedRectangle(cornerRadius: 5)
                 .stroke(Color.white.opacity(0.75), lineWidth: 1.5)
         }
-        .accessibilityLabel("新しいFlow、\(startedAt.formatted(date: .omitted, time: .shortened))から\(endedAt.formatted(date: .omitted, time: .shortened))")
+        .accessibilityLabel(String(localized: "新しいFlow、\(startedAt.formatted(date: .omitted, time: .shortened))から\(endedAt.formatted(date: .omitted, time: .shortened))"))
     }
 }
 
@@ -814,7 +814,7 @@ private struct HistoryMonthGrid: View {
             }
 
             if dayItems.count > 3 {
-                Text("ほか\(dayItems.count - 3)件")
+                Text(String(localized: "ほか\(dayItems.count - 3)件"))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
@@ -873,9 +873,9 @@ private struct HistoryBreakEditorView: View {
         VStack(alignment: .leading, spacing: 18) {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Label(flowBreak.isLongBreak ? "Long Break" : "休憩", systemImage: "cup.and.saucer")
+                    Label(flowBreak.isLongBreak ? String(localized: "Long Break") : String(localized: "休憩"), systemImage: "cup.and.saucer")
                         .font(.title3.weight(.semibold))
-                    Text("開始 \(flowBreak.startedAt.formatted(date: .omitted, time: .shortened))")
+                    Text(String(localized: "開始 \(flowBreak.startedAt.formatted(date: .omitted, time: .shortened))"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -885,13 +885,13 @@ private struct HistoryBreakEditorView: View {
             }
 
             HStack {
-                Text("時間")
+                Text(String(localized: "時間"))
                 Spacer()
-                TextField("分", value: $minutes, format: .number)
+                TextField(String(localized: "分"), value: $minutes, format: .number)
                     .textFieldStyle(.roundedBorder)
                     .frame(width: 76)
                     .multilineTextAlignment(.trailing)
-                Text("分")
+                Text(String(localized: "分"))
                     .foregroundStyle(.secondary)
             }
 
@@ -902,9 +902,9 @@ private struct HistoryBreakEditorView: View {
             }
 
             HStack {
-                Button("キャンセル") { dismiss() }
+                Button(String(localized: "キャンセル")) { dismiss() }
                 Spacer()
-                Button("保存") { save() }
+                Button(String(localized: "保存")) { save() }
                     .buttonStyle(.borderedProminent)
                     .disabled(minutes < FlowBreakEditor.minimumDurationMinutes || minutes > FlowBreakEditor.maximumDurationMinutes)
             }
@@ -923,9 +923,9 @@ private struct HistoryBreakEditorView: View {
             )
             dismiss()
         } catch FlowBreakEditorError.activeFlowWouldMove {
-            errorMessage = "実行中のFlowは移動できません。"
+            errorMessage = String(localized: "実行中のFlowは移動できません。")
         } catch {
-            errorMessage = "休憩を保存できませんでした。"
+            errorMessage = String(localized: "休憩を保存できませんでした。")
         }
     }
 }

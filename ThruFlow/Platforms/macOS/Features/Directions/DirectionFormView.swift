@@ -16,9 +16,9 @@ struct DirectionFormView: View {
         var title: String {
             switch self {
             case .create:
-                "新しい方向"
+                String(localized: "新しい方向")
             case .edit:
-                "方向を編集"
+                String(localized: "方向を編集")
             }
         }
     }
@@ -72,13 +72,13 @@ struct DirectionFormView: View {
 #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("キャンセル") {
+                    Button(String(localized: "キャンセル")) {
                         dismiss()
                     }
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("保存", action: save)
+                    Button(String(localized: "保存"), action: save)
                 }
             }
         }
@@ -101,11 +101,11 @@ struct DirectionFormView: View {
                 .frame(width: 560, height: 680)
         }
 #endif
-        .confirmationDialog("この方向を削除しますか？", isPresented: $isShowingDeleteConfirmation) {
-            Button("削除", role: .destructive, action: deleteDirection)
-            Button("キャンセル", role: .cancel) {}
+        .confirmationDialog(String(localized: "この方向を削除しますか？"), isPresented: $isShowingDeleteConfirmation) {
+            Button(String(localized: "削除"), role: .destructive, action: deleteDirection)
+            Button(String(localized: "キャンセル"), role: .cancel) {}
         } message: {
-            Text("履歴と関連タスクを保つため、方向はアーカイブされます。")
+            Text(String(localized: "履歴と関連タスクを保つため、方向はアーカイブされます。"))
         }
     }
 
@@ -123,27 +123,27 @@ struct DirectionFormView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 14))
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("絵文字を選択")
+                .accessibilityLabel(String(localized: "絵文字を選択"))
                 .accessibilityValue(draft.normalizedSymbolName)
 
-                TextField("名前", text: $draft.name)
+                TextField(String(localized: "名前"), text: $draft.name)
                     .font(.title3.weight(.semibold))
                     .textFieldStyle(.plain)
-                    .accessibilityLabel("方向名")
+                    .accessibilityLabel(String(localized: "方向名"))
                     .padding(.bottom, 18)
             }
         }
     }
 
     private var typeCard: some View {
-        DirectionSectionCard(title: "種類") {
-            Picker("種類", selection: $draft.type) {
+        DirectionSectionCard(title: String(localized: "種類")) {
+            Picker(String(localized: "種類"), selection: $draft.type) {
                 ForEach(DirectionType.allCases) { type in
                     Text(type.displayName).tag(type)
                 }
             }
             .pickerStyle(.segmented)
-            .accessibilityLabel("種類")
+            .accessibilityLabel(String(localized: "種類"))
 
             Text(draft.type.description)
                 .font(.footnote)
@@ -152,39 +152,39 @@ struct DirectionFormView: View {
     }
 
     private var goalCard: some View {
-        DirectionSectionCard(title: "目標") {
+        DirectionSectionCard(title: String(localized: "目標")) {
             HStack(spacing: 10) {
                 TextField("1", value: goalTargetBinding, format: .number)
                     .textFieldStyle(.roundedBorder)
                     .frame(width: 82)
-                    .accessibilityLabel("目標値")
+                    .accessibilityLabel(String(localized: "目標値"))
 
-                Picker("単位", selection: goalUnitBinding) {
+                Picker(String(localized: "単位"), selection: goalUnitBinding) {
                     ForEach(goalUnitOptions) { unit in
                         Text(unit.displayName).tag(unit)
                     }
                 }
                 .labelsHidden()
                 .frame(maxWidth: 180)
-                .accessibilityLabel("単位")
+                .accessibilityLabel(String(localized: "単位"))
 
                 Spacer(minLength: 0)
             }
 
-            Picker("頻度", selection: goalScheduleBinding) {
+            Picker(String(localized: "頻度"), selection: goalScheduleBinding) {
                 ForEach(GoalScheduleKind.allCases) { schedule in
                     Text(schedule.displayName).tag(schedule)
                 }
             }
             .pickerStyle(.segmented)
-            .accessibilityLabel("頻度")
+            .accessibilityLabel(String(localized: "頻度"))
 
             goalScheduleDetails
         }
     }
 
     private var colorCard: some View {
-        DirectionSectionCard(title: "カラー") {
+        DirectionSectionCard(title: String(localized: "カラー")) {
             LazyVGrid(columns: colorColumns, alignment: .leading, spacing: 10) {
                 ForEach(colorOptions, id: \.hex) { option in
                     Button {
@@ -231,13 +231,13 @@ struct DirectionFormView: View {
                 Button(role: .destructive) {
                     isShowingDeleteConfirmation = true
                 } label: {
-                    Label("方向を削除", systemImage: "trash")
+                    Label(String(localized: "方向を削除"), systemImage: "trash")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.red)
                 .controlSize(.large)
-                .accessibilityHint("この方向を削除します")
+                .accessibilityHint(String(localized: "この方向を削除します"))
             }
         }
     }
@@ -274,14 +274,14 @@ struct DirectionFormView: View {
     private var goalScheduleDetails: some View {
         switch draft.goalSchedule ?? .everyDay {
         case .everyDay:
-            Text("毎日この目標を達成します。")
+            Text(String(localized: "毎日この目標を達成します。"))
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         case .weeklyCount:
-            Stepper("週 \(draft.weeklyTargetCount ?? 1) 回", value: weeklyTargetCountBinding, in: 1...7)
+            Stepper(String(localized: "週 \(draft.weeklyTargetCount ?? 1) 回"), value: weeklyTargetCountBinding, in: 1...7)
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("任意: 曜日も選べます")
+                Text(String(localized: "任意: 曜日も選べます"))
                     .font(.footnote)
                     .foregroundStyle(.secondary)
 
@@ -289,7 +289,7 @@ struct DirectionFormView: View {
             }
         case .weekdays:
             VStack(alignment: .leading, spacing: 8) {
-                Text("取り組む曜日")
+                Text(String(localized: "取り組む曜日"))
                     .font(.footnote)
                     .foregroundStyle(.secondary)
 
@@ -444,18 +444,18 @@ private let colorColumns = [
 ]
 
 private let colorOptions: [(name: String, hex: String)] = [
-    ("ブルー", "#007AFF"),
-    ("グリーン", "#34C759"),
-    ("ミント", "#00C7BE"),
-    ("ティール", "#30B0C7"),
-    ("シアン", "#32ADE6"),
-    ("インディゴ", "#5856D6"),
-    ("パープル", "#AF52DE"),
-    ("ピンク", "#FF2D55"),
-    ("レッド", "#FF3B30"),
-    ("オレンジ", "#FF9500"),
-    ("イエロー", "#FFCC00"),
-    ("グレー", "#8E8E93")
+    (String(localized: "ブルー"), "#007AFF"),
+    (String(localized: "グリーン"), "#34C759"),
+    (String(localized: "ミント"), "#00C7BE"),
+    (String(localized: "ティール"), "#30B0C7"),
+    (String(localized: "シアン"), "#32ADE6"),
+    (String(localized: "インディゴ"), "#5856D6"),
+    (String(localized: "パープル"), "#AF52DE"),
+    (String(localized: "ピンク"), "#FF2D55"),
+    (String(localized: "レッド"), "#FF3B30"),
+    (String(localized: "オレンジ"), "#FF9500"),
+    (String(localized: "イエロー"), "#FFCC00"),
+    (String(localized: "グレー"), "#8E8E93")
 ]
 
 private let goalUnitOptions: [GoalUnit] = [
@@ -481,7 +481,7 @@ extension Color {
     }
 }
 
-#Preview("方向を作成") {
+#Preview(String(localized: "方向を作成")) {
     DirectionFormView(mode: .create)
         .modelContainer(for: Direction.self, inMemory: true)
 }

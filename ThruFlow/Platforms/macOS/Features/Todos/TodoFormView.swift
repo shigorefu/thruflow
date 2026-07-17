@@ -16,9 +16,9 @@ struct TodoFormView: View {
         var title: String {
             switch self {
             case .create:
-                "新しいタスク"
+                String(localized: "新しいタスク")
             case .edit:
-                "タスクを編集"
+                String(localized: "タスクを編集")
             }
         }
     }
@@ -84,20 +84,20 @@ struct TodoFormView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("基本") {
-                    TextField("タイトル", text: $draft.title)
+                Section(String(localized: "基本")) {
+                    TextField(String(localized: "タイトル"), text: $draft.title)
 
-                    TextField("メモ", text: $draft.notes, axis: .vertical)
+                    TextField(String(localized: "メモ"), text: $draft.notes, axis: .vertical)
                         .lineLimit(2...5)
 
                     if let fixedDirection {
-                        LabeledContent("方向") {
+                        LabeledContent(String(localized: "方向")) {
                             Text("\(fixedDirection.symbolName) \(fixedDirection.name)")
                                 .foregroundStyle(.secondary)
                         }
                     } else if !isHabitTodoEdit {
-                        Picker("方向", selection: selectedDirectionBinding) {
-                            Text("未選択").tag(UUID?.none)
+                        Picker(String(localized: "方向"), selection: selectedDirectionBinding) {
+                            Text(String(localized: "未選択")).tag(UUID?.none)
 
                             ForEach(visibleDirections) { direction in
                                 Text("\(direction.symbolName) \(direction.name)")
@@ -107,50 +107,50 @@ struct TodoFormView: View {
                     }
                 }
 
-                Section("進捗") {
+                Section(String(localized: "進捗")) {
                     if !isHabitTodoEdit {
-                        Picker("測定", selection: $draft.measurement) {
+                        Picker(String(localized: "測定"), selection: $draft.measurement) {
                             ForEach(TodoMeasurement.allCases) { measurement in
                                 Text(measurement.displayName).tag(measurement)
                             }
                         }
 
-                        Picker("優先度", selection: $draft.priority) {
+                        Picker(String(localized: "優先度"), selection: $draft.priority) {
                             ForEach(TodoPriority.allCases) { priority in
                                 Text(priority.displayName).tag(priority)
                             }
                         }
 
                         if draft.priority == .low {
-                            Toggle("余裕があれば", isOn: $draft.isRoomIfPossible)
+                            Toggle(String(localized: "余裕があれば"), isOn: $draft.isRoomIfPossible)
                         }
 
                         if draft.measurement != .checkbox {
                             Stepper(value: plannedAmountBinding, in: 1...999) {
-                                Text("予定量: \(draft.plannedAmount ?? 1)")
+                                Text(String(localized: "予定量: \(draft.plannedAmount ?? 1)"))
                             }
                         }
                     }
 
                     if draft.measurement != .checkbox {
                         Stepper(value: actualProgressBinding, in: 0...999) {
-                            Text("進捗: \(draft.actualProgress)")
+                            Text(String(localized: "進捗: \(draft.actualProgress)"))
                         }
                     }
                 }
 
                 if !isHabitTodoEdit {
-                    Section("日付") {
-                        Toggle("今日に入れる", isOn: $usesScheduledDate)
+                    Section(String(localized: "日付")) {
+                        Toggle(String(localized: "今日に入れる"), isOn: $usesScheduledDate)
 
                         if usesScheduledDate {
-                            DatePicker("予定日", selection: scheduledDateBinding, displayedComponents: .date)
+                            DatePicker(String(localized: "予定日"), selection: scheduledDateBinding, displayedComponents: .date)
                         }
 
-                        Toggle("期限を使う", isOn: $usesDeadline)
+                        Toggle(String(localized: "期限を使う"), isOn: $usesDeadline)
 
                         if usesDeadline {
-                            DatePicker("期限", selection: deadlineBinding, displayedComponents: .date)
+                            DatePicker(String(localized: "期限"), selection: deadlineBinding, displayedComponents: .date)
                         }
                     }
                 }
@@ -170,13 +170,13 @@ struct TodoFormView: View {
 #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("キャンセル") {
+                    Button(String(localized: "キャンセル")) {
                         dismiss()
                     }
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("保存", action: save)
+                    Button(String(localized: "保存"), action: save)
                 }
             }
         }
@@ -309,7 +309,7 @@ struct TodoFormView: View {
     }
 }
 
-#Preview("タスクを作成") {
+#Preview(String(localized: "タスクを作成")) {
     TodoFormView(mode: .create)
         .modelContainer(for: [Direction.self, Todo.self], inMemory: true)
 }

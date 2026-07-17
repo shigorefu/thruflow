@@ -17,9 +17,9 @@ enum DayHistoryMode: String, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .calendar: "Flow"
-        case .tasks: "タスク"
-        case .directions: "方向"
+        case .calendar: String(localized: "Flow")
+        case .tasks: String(localized: "タスク")
+        case .directions: String(localized: "方向")
         }
     }
 }
@@ -65,7 +65,7 @@ struct DayHistoryView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .padding(20)
-        .navigationTitle("履歴")
+        .navigationTitle(String(localized: "履歴"))
         .sheet(item: $editingTodo) { todo in
             TodoFormView(mode: .edit(todo))
                 .frame(minWidth: 480, idealWidth: 540, minHeight: 620, idealHeight: 700)
@@ -113,7 +113,7 @@ struct DayHistoryView: View {
     }
 
     private var todayButton: some View {
-        Button("今日") {
+        Button(String(localized: "今日")) {
             selectedDate = calendar.startOfDay(for: .now)
         }
         .buttonStyle(.borderedProminent)
@@ -127,12 +127,12 @@ struct DayHistoryView: View {
                     Image(systemName: "chevron.left")
                 }
                 .buttonStyle(.borderless)
-                .help("統計に戻る")
-                .accessibilityLabel("統計に戻る")
+                .help(String(localized: "統計に戻る"))
+                .accessibilityLabel(String(localized: "統計に戻る"))
             }
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("履歴")
+                Text(String(localized: "履歴"))
                     .font(.title2.weight(.semibold))
                 Text(dateTitle)
                     .font(.callout)
@@ -143,23 +143,23 @@ struct DayHistoryView: View {
     }
 
     private var modePicker: some View {
-        Picker("表示", selection: $selectedMode) {
+        Picker(String(localized: "表示"), selection: $selectedMode) {
             ForEach(DayHistoryMode.allCases) { mode in
                 Text(mode.displayName).tag(mode)
             }
         }
         .pickerStyle(.segmented)
-        .accessibilityLabel("履歴表示")
+        .accessibilityLabel(String(localized: "履歴表示"))
     }
 
     private var rangePicker: some View {
-        Picker("期間", selection: $selectedRange) {
+        Picker(String(localized: "期間"), selection: $selectedRange) {
             ForEach(HistoryCalendarRange.allCases) { range in
                 Text(range.displayName).tag(range)
             }
         }
         .pickerStyle(.segmented)
-        .accessibilityLabel("履歴の期間")
+        .accessibilityLabel(String(localized: "履歴の期間"))
     }
 
     private var summary: some View {
@@ -168,17 +168,17 @@ struct DayHistoryView: View {
             GridItem(.flexible(), spacing: 10)
         ], spacing: 10) {
             HistorySummaryTile(
-                title: "集中",
+                title: String(localized: "集中"),
                 value: durationText(snapshot.totalFocusSeconds),
                 systemImage: "timer"
             )
             HistorySummaryTile(
-                title: "ブロック",
+                title: String(localized: "ブロック"),
                 value: BlockUnit.displayText(forFocusedSeconds: snapshot.totalFocusSeconds),
                 systemImage: "square.stack.3d.up"
             )
             HistorySummaryTile(
-                title: "Flow",
+                title: String(localized: "Flow"),
                 value: "\(snapshot.flowCount)",
                 systemImage: "waveform.path.ecg"
             )
@@ -256,7 +256,7 @@ struct DayHistoryView: View {
 
     private var tasksContent: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("タスク別")
+            Text(String(localized: "タスク別"))
                 .font(.headline)
 
             if selectedRange == .week, !weeklyTaskSections.isEmpty {
@@ -290,7 +290,7 @@ struct DayHistoryView: View {
 
     private var directionsContent: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("方向別")
+            Text(String(localized: "方向別"))
                 .font(.headline)
 
             if snapshot.directionSummaries.isEmpty {
@@ -313,9 +313,9 @@ struct DayHistoryView: View {
 
     private var emptyState: some View {
         ContentUnavailableView(
-            "記録なし",
+            String(localized: "記録なし"),
             systemImage: "clock.arrow.circlepath",
-            description: Text("この期間のFlowとタスクはありません。")
+            description: Text(String(localized: "この期間のFlowとタスクはありません。"))
         )
         .frame(maxWidth: .infinity)
         .padding(.vertical, 40)
@@ -325,7 +325,7 @@ struct DayHistoryView: View {
         switch selectedRange {
         case .day:
             if calendar.isDateInToday(selectedDate) {
-                return "今日 ・ \(fullDateFormatter.string(from: selectedDate))"
+                return String(localized: "今日 ・ \(fullDateFormatter.string(from: selectedDate))")
             }
             return fullDateFormatter.string(from: selectedDate)
         case .week:
@@ -333,28 +333,28 @@ struct DayHistoryView: View {
             let end = interval.end.addingTimeInterval(-1)
             return "\(shortDateFormatter.string(from: interval.start))–\(shortDateFormatter.string(from: end))"
         case .month:
-            return selectedDate.formatted(.dateTime.locale(Locale(identifier: "ja_JP")).year().month(.wide))
+            return selectedDate.formatted(.dateTime.locale(Locale.autoupdatingCurrent).year().month(.wide))
         }
     }
 
     private var fullDateFormatter: DateFormatter {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ja_JP")
-        formatter.dateFormat = "yyyy年M月d日（E）"
+        formatter.locale = Locale.autoupdatingCurrent
+        formatter.setLocalizedDateFormatFromTemplate("yMdE")
         return formatter
     }
 
     private var shortDateFormatter: DateFormatter {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ja_JP")
-        formatter.dateFormat = "M月d日"
+        formatter.locale = Locale.autoupdatingCurrent
+        formatter.setLocalizedDateFormatFromTemplate("Md")
         return formatter
     }
 
     private func durationText(_ seconds: Int) -> String {
         let minutes = max(0, seconds) / 60
-        if minutes < 60 { return "\(minutes)分" }
-        return "\(minutes / 60)時間\(minutes % 60)分"
+        if minutes < 60 { return String(localized: "\(minutes)分") }
+        return String(localized: "\(minutes / 60)時間\(minutes % 60)分")
     }
 
     @ViewBuilder
@@ -371,9 +371,9 @@ struct DayHistoryView: View {
 
     private var periodSummaryTitle: String {
         switch selectedRange {
-        case .day: "この日の記録"
-        case .week: "この週の記録"
-        case .month: "この月の記録"
+        case .day: String(localized: "この日の記録")
+        case .week: String(localized: "この週の記録")
+        case .month: String(localized: "この月の記録")
         }
     }
 
@@ -437,7 +437,7 @@ struct DayHistoryView: View {
     }
 
     private func taskSectionTitle(_ date: Date) -> String {
-        date.formatted(.dateTime.locale(Locale(identifier: "ja_JP")).month().day().weekday(.wide))
+        date.formatted(.dateTime.locale(Locale.autoupdatingCurrent).month().day().weekday(.wide))
     }
 
     private func toggleCheckbox(_ task: DayHistoryTaskSummary) {
@@ -536,7 +536,7 @@ private struct HistoryExpandableTaskRow: View {
                                 .font(.body.weight(.medium))
                                 .strikethrough(task.todo?.isCompleted == true)
                                 .lineLimit(1)
-                            Text("\(task.directionName) ・ \(task.flowCount) Flow")
+                            Text(String(localized: "\(task.directionName) ・ \(task.flowCount) Flow"))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -559,8 +559,8 @@ private struct HistoryExpandableTaskRow: View {
                                 .frame(width: 24, height: 24)
                         }
                         .buttonStyle(.plain)
-                        .help("このタスクにFlowを追加")
-                        .accessibilityLabel("このタスクにFlowを追加")
+                        .help(String(localized: "このタスクにFlowを追加"))
+                        .accessibilityLabel(String(localized: "このタスクにFlowを追加"))
                     }
 
                     Image(systemName: "chevron.right")
@@ -577,7 +577,7 @@ private struct HistoryExpandableTaskRow: View {
             if isExpanded {
                 Divider().padding(.leading, 54)
                 if flows.isEmpty {
-                    Text("この期間のFlowはありません")
+                    Text(String(localized: "この期間のFlowはありません"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -596,7 +596,7 @@ private struct HistoryExpandableTaskRow: View {
 
     private func durationText(_ seconds: Int) -> String {
         let minutes = max(0, seconds) / 60
-        return minutes < 60 ? "\(minutes)分" : "\(minutes / 60)時間\(minutes % 60)分"
+        return minutes < 60 ? String(localized: "\(minutes)分") : String(localized: "\(minutes / 60)時間\(minutes % 60)分")
     }
 }
 
@@ -616,20 +616,20 @@ private struct HistoryTodoProgressIndicator: View {
                 }
                 .buttonStyle(.plain)
                 .frame(width: 34, height: 34)
-                .accessibilityLabel(isCompleted ? "未完了に戻す" : "完了にする")
+                .accessibilityLabel(isCompleted ? String(localized: "未完了に戻す") : String(localized: "完了にする"))
                 .accessibilityValue(progressDescription)
             } else {
                 checkbox
                     .frame(width: 34, height: 34)
                     .accessibilityElement(children: .ignore)
-                    .accessibilityLabel("タスク進捗")
+                    .accessibilityLabel(String(localized: "タスク進捗"))
                     .accessibilityValue(progressDescription)
             }
         case .focusBlocks, .minutes:
             progressRing
                 .frame(width: 34, height: 34)
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel("タスク進捗")
+                .accessibilityLabel(String(localized: "タスク進捗"))
                 .accessibilityValue(progressDescription)
         }
     }
@@ -700,7 +700,7 @@ private struct HistoryTodoProgressIndicator: View {
     }
 
     private var progressDescription: String {
-        if isCompleted { return "完了" }
+        if isCompleted { return String(localized: "完了") }
         return "\(Int((progress * 100).rounded()))%"
     }
 }
@@ -726,7 +726,7 @@ private struct HistoryExpandableDirectionRow: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(direction.name)
                         .font(.body.weight(.medium))
-                    Text("\(direction.taskCount) タスク ・ \(direction.flowCount) Flow")
+                    Text(String(localized: "\(direction.taskCount) タスク ・ \(direction.flowCount) Flow"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -748,7 +748,7 @@ private struct HistoryExpandableDirectionRow: View {
             if isExpanded {
                 Divider().padding(.leading, 54)
                 if tasks.isEmpty {
-                    Text("この期間のタスクはありません")
+                    Text(String(localized: "この期間のタスクはありません"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -782,14 +782,14 @@ private struct HistoryExpandableDirectionRow: View {
                 }
 
                 Button(action: onAddTask) {
-                    Label("タスクを追加", systemImage: "plus")
+                    Label(String(localized: "タスクを追加"), systemImage: "plus")
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.leading, 46)
                         .padding(.vertical, 7)
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(Color.accentColor)
-                .accessibilityLabel("\(direction.name)にタスクを追加")
+                .accessibilityLabel(String(localized: "\(direction.name)にタスクを追加"))
             }
         }
         .background(Color.secondary.opacity(0.055))
@@ -798,7 +798,7 @@ private struct HistoryExpandableDirectionRow: View {
 
     private func durationText(_ seconds: Int) -> String {
         let minutes = max(0, seconds) / 60
-        return minutes < 60 ? "\(minutes)分" : "\(minutes / 60)時間\(minutes % 60)分"
+        return minutes < 60 ? String(localized: "\(minutes)分") : String(localized: "\(minutes / 60)時間\(minutes % 60)分")
     }
 }
 
@@ -832,11 +832,11 @@ private struct HistoryFlowDisclosureRow: View {
     }
 
     private func time(_ date: Date) -> String {
-        date.formatted(.dateTime.locale(Locale(identifier: "ja_JP")).hour().minute())
+        date.formatted(.dateTime.locale(Locale.autoupdatingCurrent).hour().minute())
     }
 
     private func duration(_ seconds: Int) -> String {
-        "\(max(0, seconds) / 60)分"
+        String(localized: "\(max(0, seconds) / 60)分")
     }
 }
 

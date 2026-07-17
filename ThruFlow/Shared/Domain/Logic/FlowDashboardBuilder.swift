@@ -359,10 +359,11 @@ struct FlowDashboardBuilder {
             focusSeconds: focusSeconds,
             taskID: todo?.id,
             directionID: direction?.id ?? id,
-            directionName: direction?.name ?? "その他",
+            directionName: direction?.name ?? String(localized: "その他"),
             colorHex: direction?.colorHex ?? "#8E8E93",
             symbol: direction?.symbolName ?? "📥",
-            taskTitle: todo.map(TodoDisplay.title(for:)) ?? "(\(direction?.name ?? "その他"))",
+            taskTitle: todo.map(TodoDisplay.title(for:))
+                ?? String(localized: "(\(direction?.name ?? String(localized: "その他")))"),
             isActive: isActive
         )
     }

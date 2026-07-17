@@ -59,7 +59,7 @@ struct FlowDashboardView: View {
             }
             .background(modeBackgroundTint.ignoresSafeArea())
         }
-        .navigationTitle("Flow")
+        .navigationTitle(String(localized: "Flow"))
         .sheet(item: $inspectedSession) { session in
             FlowHistoryInspectorView(session: session)
         }
@@ -142,7 +142,7 @@ struct FlowDashboardView: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .firstTextBaseline, spacing: 16) {
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("今日のFlow")
+                    Text(String(localized: "今日のFlow"))
                         .font(.title2.weight(.semibold))
                     Text(dateText(snapshot.date))
                         .font(.subheadline)
@@ -151,9 +151,9 @@ struct FlowDashboardView: View {
 
                 Spacer()
 
-                metric(value: focusText(snapshot.totalFocusSeconds), label: "集中時間")
-                metric(value: blockText(snapshot.blocks), label: "ブロック")
-                metric(value: "\(snapshot.flowCount)", label: "Flow")
+                metric(value: focusText(snapshot.totalFocusSeconds), label: String(localized: "集中時間"))
+                metric(value: blockText(snapshot.blocks), label: String(localized: "ブロック"))
+                metric(value: "\(snapshot.flowCount)", label: String(localized: "Flow"))
             }
 
             streamSurface(snapshot: snapshot)
@@ -192,7 +192,7 @@ struct FlowDashboardView: View {
             )
 
             if snapshot.totalFocusSeconds == 0 {
-                Text("Flowを始めると、今日の流れがここから育ちます")
+                Text(String(localized: "Flowを始めると、今日の流れがここから育ちます"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .padding(12)
@@ -211,7 +211,7 @@ struct FlowDashboardView: View {
         )
 
         return VStack(alignment: .leading, spacing: 8) {
-            Text("今日のタイムライン")
+            Text(String(localized: "今日のタイムライン"))
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
 
@@ -462,7 +462,7 @@ struct FlowDashboardView: View {
     private var taskColumns: some View {
         HStack(alignment: .top, spacing: 14) {
             DashboardTodoColumn(
-                title: "タスク",
+                title: String(localized: "タスク"),
                 systemImage: "checklist",
                 todos: standardTodos,
                 showsPriority: true,
@@ -473,7 +473,7 @@ struct FlowDashboardView: View {
             )
 
             DashboardTodoColumn(
-                title: "習慣",
+                title: String(localized: "習慣"),
                 systemImage: "repeat",
                 todos: habitTodos,
                 progressText: progressText,
@@ -483,7 +483,7 @@ struct FlowDashboardView: View {
 
             if !niceTodos.isEmpty {
                 DashboardTodoColumn(
-                    title: "ナイス",
+                    title: String(localized: "ナイス"),
                     systemImage: "sparkles",
                     todos: niceTodos,
                     progressText: progressText,
@@ -498,7 +498,7 @@ struct FlowDashboardView: View {
     private func statisticsPanel(snapshot: FlowDashboardSnapshot) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
-                Label("統計", systemImage: "chart.bar.xaxis")
+                Label(String(localized: "統計"), systemImage: "chart.bar.xaxis")
                     .font(.headline)
                 Spacer()
                 HStack(spacing: 5) {
@@ -547,7 +547,7 @@ struct FlowDashboardView: View {
 
     private func statisticsDistributionPage(snapshot: FlowDashboardSnapshot) -> some View {
         VStack(spacing: 12) {
-            Picker("集計単位", selection: $distributionMode) {
+            Picker(String(localized: "集計単位"), selection: $distributionMode) {
                 ForEach(DashboardDistributionMode.allCases) { mode in
                     Text(mode.title).tag(mode)
                 }
@@ -585,7 +585,7 @@ struct FlowDashboardView: View {
             }
 
             if distributionRows(snapshot: snapshot).isEmpty {
-                Text("Flowを記録すると時間配分が表示されます")
+                Text(String(localized: "Flowを記録すると時間配分が表示されます"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -608,7 +608,7 @@ struct FlowDashboardView: View {
                     .font(.callout.weight(.bold))
                     .minimumScaleFactor(0.7)
                     .monospacedDigit()
-                Text("今日の集中")
+                Text(String(localized: "今日の集中"))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
@@ -633,7 +633,7 @@ struct FlowDashboardView: View {
         )
 
         return VStack(alignment: .leading, spacing: 12) {
-            Text("7日")
+            Text(String(localized: "7日"))
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
 
@@ -642,11 +642,11 @@ struct FlowDashboardView: View {
 
             Divider()
 
-            comparisonRow("集中時間", value: signedMinutes(comparison.focusSecondsDelta), systemImage: "timer")
-            comparisonRow("完了タスク", value: signedCount(comparison.completedTaskDelta), systemImage: "checkmark.circle")
-            comparisonRow("ブロック", value: signedBlocks(comparison.blocksDelta), systemImage: "square.stack.3d.up")
+            comparisonRow(String(localized: "集中時間"), value: signedMinutes(comparison.focusSecondsDelta), systemImage: "timer")
+            comparisonRow(String(localized: "完了タスク"), value: signedCount(comparison.completedTaskDelta), systemImage: "checkmark.circle")
+            comparisonRow(String(localized: "ブロック"), value: signedBlocks(comparison.blocksDelta), systemImage: "square.stack.3d.up")
             comparisonRow(
-                "伸びた方向",
+                String(localized: "伸びた方向"),
                 value: growthText(comparison.growingDirection),
                 systemImage: "arrow.up.right"
             )
@@ -675,13 +675,13 @@ struct FlowDashboardView: View {
             }
             .frame(width: 112, height: 112)
 
-            achievementRow("タスク", completed: standard.filter(\.isCompleted).count, total: standard.count)
-            achievementRow("習慣", completed: habits.filter(\.isCompleted).count, total: habits.count)
+            achievementRow(String(localized: "タスク"), completed: standard.filter(\.isCompleted).count, total: standard.count)
+            achievementRow(String(localized: "習慣"), completed: habits.filter(\.isCompleted).count, total: habits.count)
             if !nice.isEmpty {
-                achievementRow("ナイス", completed: nice.filter(\.isCompleted).count, total: nice.count)
+                achievementRow(String(localized: "ナイス"), completed: nice.filter(\.isCompleted).count, total: nice.count)
             }
 
-            Text("今日の達成 \(completed) / \(required.count)")
+            Text(String(localized: "今日の達成 \(completed) / \(required.count)"))
                 .font(.caption.weight(.medium))
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
@@ -716,8 +716,8 @@ struct FlowDashboardView: View {
             Image(systemName: "plus")
         }
         .buttonStyle(.plain)
-        .help("タスクを追加")
-        .accessibilityLabel("タスクを追加")
+        .help(String(localized: "タスクを追加"))
+        .accessibilityLabel(String(localized: "タスクを追加"))
         .popover(isPresented: $showsQuickComposer, arrowEdge: .top) {
             QuickTodoCreationPopover(directions: activeDirections)
         }
@@ -812,7 +812,7 @@ struct FlowDashboardView: View {
     }
 
     private func signedMinutes(_ seconds: Int) -> String {
-        signedValue(Int((Double(seconds) / 60).rounded()), suffix: "分")
+        signedValue(Int((Double(seconds) / 60).rounded()), suffix: String(localized: "分"))
     }
 
     private func signedCount(_ count: Int) -> String {
@@ -832,8 +832,8 @@ struct FlowDashboardView: View {
     }
 
     private func growthText(_ growth: DashboardStatisticsDirectionGrowth?) -> String {
-        guard let growth else { return "変化なし" }
-        return "\(growth.symbol) \(growth.name) +\(max(1, growth.focusSecondsDelta / 60))分"
+        guard let growth else { return String(localized: "変化なし") }
+        return String(localized: "\(growth.symbol) \(growth.name) +\(max(1, growth.focusSecondsDelta / 60))分")
     }
 
     private var modeBackgroundTint: Color {
@@ -972,7 +972,7 @@ struct FlowDashboardView: View {
     }
 
     private func breakHelpText(_ flowBreak: FlowDashboardBreak) -> String {
-        let name = flowBreak.isLongBreak ? "Long Break" : "休憩"
+        let name = flowBreak.isLongBreak ? String(localized: "Long Break") : String(localized: "休憩")
         return "☕️ \(name) \(TimelineSegmentFormat.duration(flowBreak.durationSeconds))"
     }
 
@@ -1073,13 +1073,13 @@ struct FlowDashboardView: View {
     }
 
     private func dateText(_ date: Date) -> String {
-        date.formatted(.dateTime.locale(Locale(identifier: "ja_JP")).month(.wide).day().weekday(.wide))
+        date.formatted(.dateTime.locale(Locale.autoupdatingCurrent).month(.wide).day().weekday(.wide))
     }
 
     private func focusText(_ seconds: Int) -> String {
         let hours = seconds / 3_600
         let minutes = (seconds % 3_600) / 60
-        return hours > 0 ? "\(hours)時間\(minutes)分" : "\(minutes)分"
+        return hours > 0 ? String(localized: "\(hours)時間\(minutes)分") : String(localized: "\(minutes)分")
     }
 
     private func blockText(_ blocks: Double) -> String {
@@ -1133,7 +1133,7 @@ private struct TimelineBreakHoverCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
-            Label(flowBreak.isLongBreak ? "Long Break" : "休憩", systemImage: "cup.and.saucer.fill")
+            Label(flowBreak.isLongBreak ? String(localized: "Long Break") : String(localized: "休憩"), systemImage: "cup.and.saucer.fill")
                 .font(.caption.weight(.semibold))
 
             Text("\(TimelineSegmentFormat.interval(from: flowBreak.startedAt, to: flowBreak.endedAt)) · \(TimelineSegmentFormat.duration(flowBreak.durationSeconds))")
@@ -1181,9 +1181,9 @@ private struct TimelineBreakPopover: View {
                     .clipShape(RoundedRectangle(cornerRadius: 8))
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(flowBreak.isLongBreak ? "Long Break" : "休憩")
+                    Text(flowBreak.isLongBreak ? String(localized: "Long Break") : String(localized: "休憩"))
                         .font(.headline)
-                    Text("開始時刻は固定されます")
+                    Text(String(localized: "開始時刻は固定されます"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -1192,7 +1192,7 @@ private struct TimelineBreakPopover: View {
             Divider()
 
             HStack {
-                Label("開始", systemImage: "clock")
+                Label(String(localized: "開始"), systemImage: "clock")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
@@ -1201,7 +1201,7 @@ private struct TimelineBreakPopover: View {
             }
 
             HStack {
-                Label("終了", systemImage: "clock.badge.checkmark")
+                Label(String(localized: "終了"), systemImage: "clock.badge.checkmark")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
@@ -1210,16 +1210,16 @@ private struct TimelineBreakPopover: View {
             }
 
             HStack(spacing: 8) {
-                Text("休憩時間")
+                Text(String(localized: "休憩時間"))
                     .font(.callout.weight(.medium))
                 Spacer()
-                TextField("分", value: $minutes, format: .number)
+                TextField(String(localized: "分"), value: $minutes, format: .number)
                     .textFieldStyle(.roundedBorder)
                     .multilineTextAlignment(.trailing)
                     .monospacedDigit()
                     .frame(width: 76)
                     .onSubmit(save)
-                Text("分")
+                Text(String(localized: "分"))
                     .foregroundStyle(.secondary)
             }
 
@@ -1231,7 +1231,7 @@ private struct TimelineBreakPopover: View {
             }
 
             Button(action: save) {
-                Text("保存")
+                Text(String(localized: "保存"))
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
@@ -1250,9 +1250,9 @@ private struct TimelineBreakPopover: View {
             _ = try onSave(minutes)
             errorText = nil
         } catch FlowBreakEditorError.activeFlowWouldMove {
-            errorText = "実行中のFlowは移動できません。現在のFlowを終了してから編集してください。"
+            errorText = String(localized: "実行中のFlowは移動できません。現在のFlowを終了してから編集してください。")
         } catch {
-            errorText = "休憩時間を保存できませんでした。"
+            errorText = String(localized: "休憩時間を保存できませんでした。")
         }
     }
 }
@@ -1284,7 +1284,7 @@ private struct TimelineSegmentPopover: View {
                 Spacer(minLength: 0)
 
                 if segment.isActive {
-                    Text("実行中")
+                    Text(String(localized: "実行中"))
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(Color(hex: segment.colorHex))
                 } else if onDelete != nil {
@@ -1297,20 +1297,20 @@ private struct TimelineSegmentPopover: View {
                     }
                     .buttonStyle(.plain)
                     .foregroundStyle(.red)
-                    .help("この区間を削除")
-                    .accessibilityLabel("このFlow区間を削除")
+                    .help(String(localized: "この区間を削除"))
+                    .accessibilityLabel(String(localized: "このFlow区間を削除"))
                 }
             }
 
             Divider()
 
-            segmentDetail("時間", value: TimelineSegmentFormat.interval(segment), systemImage: "clock")
-            segmentDetail("集中", value: TimelineSegmentFormat.duration(segment.focusSeconds), systemImage: "timer")
-            segmentDetail("Flow", value: segment.session.mode.displayName, systemImage: "waveform.path")
+            segmentDetail(String(localized: "時間"), value: TimelineSegmentFormat.interval(segment), systemImage: "clock")
+            segmentDetail(String(localized: "集中"), value: TimelineSegmentFormat.duration(segment.focusSeconds), systemImage: "timer")
+            segmentDetail(String(localized: "Flow"), value: segment.session.mode.displayName, systemImage: "waveform.path")
 
             if let onOpenHistory {
                 Button(action: onOpenHistory) {
-                    Label("Flow履歴を開く", systemImage: "arrow.up.forward.app")
+                    Label(String(localized: "Flow履歴を開く"), systemImage: "arrow.up.forward.app")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
@@ -1320,16 +1320,16 @@ private struct TimelineSegmentPopover: View {
         .padding(16)
         .frame(width: 290)
         .confirmationDialog(
-            "このFlow区間を削除しますか？",
+            String(localized: "このFlow区間を削除しますか？"),
             isPresented: $showsDeleteConfirmation,
             titleVisibility: .visible
         ) {
-            Button("削除", role: .destructive) {
+            Button(String(localized: "削除"), role: .destructive) {
                 onDelete?()
             }
-            Button("キャンセル", role: .cancel) {}
+            Button(String(localized: "キャンセル"), role: .cancel) {}
         } message: {
-            Text("この区間の集中時間がタスクと方向の進捗から差し引かれます。")
+            Text(String(localized: "この区間の集中時間がタスクと方向の進捗から差し引かれます。"))
         }
     }
 
@@ -1352,8 +1352,8 @@ private struct TimelineSegmentPopover: View {
 private enum TimelineSegmentFormat {
     private static let timeFormatter: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ja_JP")
-        formatter.dateFormat = "H:mm"
+        formatter.locale = Locale.autoupdatingCurrent
+        formatter.setLocalizedDateFormatFromTemplate("Hm")
         return formatter
     }()
 
@@ -1372,7 +1372,7 @@ private enum TimelineSegmentFormat {
     static func duration(_ seconds: Int) -> String {
         let minutes = seconds / 60
         let remainingSeconds = seconds % 60
-        return remainingSeconds == 0 ? "\(minutes)分" : "\(minutes)分\(remainingSeconds)秒"
+        return remainingSeconds == 0 ? String(localized: "\(minutes)分") : String(localized: "\(minutes)分\(remainingSeconds)秒")
     }
 }
 
@@ -1385,9 +1385,9 @@ private enum DashboardStatisticsPage: Int, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .distribution: "時間配分"
-        case .trend: "Flow推移"
-        case .achievement: "達成状況"
+        case .distribution: String(localized: "時間配分")
+        case .trend: String(localized: "Flow推移")
+        case .achievement: String(localized: "達成状況")
         }
     }
 }
@@ -1397,7 +1397,7 @@ private enum DashboardDistributionMode: String, CaseIterable, Identifiable {
     case direction
 
     var id: String { rawValue }
-    var title: String { self == .task ? "タスク別" : "方向別" }
+    var title: String { self == .task ? String(localized: "タスク別") : String(localized: "方向別") }
 }
 
 private struct DashboardDistributionRow: Identifiable {
@@ -1445,7 +1445,7 @@ private struct DashboardStatisticsBars: View {
 
     private func dayAccessibilityLabel(_ day: DashboardStatisticsDay) -> String {
         let minutes = day.focusSeconds / 60
-        return "\(day.date.formatted(date: .abbreviated, time: .omitted))、\(minutes)分"
+        return String(localized: "\(day.date.formatted(date: .abbreviated, time: .omitted))、\(minutes)分")
     }
 }
 
@@ -1483,7 +1483,7 @@ private struct DashboardTodoColumn: View {
             }
 
             if todos.isEmpty {
-                Text("今日の項目はありません")
+                Text(String(localized: "今日の項目はありません"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, minHeight: 70, alignment: .center)
@@ -1568,7 +1568,7 @@ private struct DashboardTodoColumn: View {
 
     private func priorityLabel(_ todo: Todo) -> String {
         if todo.priority == .low, todo.isRoomIfPossible {
-            return "余裕があれば"
+            return String(localized: "余裕があれば")
         }
         return todo.priority.displayName
     }

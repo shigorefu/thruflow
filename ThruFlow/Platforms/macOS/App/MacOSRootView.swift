@@ -18,22 +18,22 @@ struct MacOSRootView: View {
     var body: some View {
         NavigationSplitView {
             List(selection: $selection) {
-                Label("Flow", systemImage: "waveform.path")
+                Label(String(localized: "Flow"), systemImage: "waveform.path")
                     .tag(AppSection.flow)
 
-                Label("タスク", systemImage: "checklist")
+                Label(String(localized: "タスク"), systemImage: "checklist")
                     .tag(AppSection.tasks)
 
-                Label("履歴", systemImage: "clock.arrow.circlepath")
+                Label(String(localized: "履歴"), systemImage: "clock.arrow.circlepath")
                     .tag(AppSection.history)
 
-                Label("方向", systemImage: "point.3.connected.trianglepath.dotted")
+                Label(String(localized: "方向"), systemImage: "point.3.connected.trianglepath.dotted")
                     .tag(AppSection.directions)
 
-                Label("統計", systemImage: "square.grid.3x3")
+                Label(String(localized: "統計"), systemImage: "square.grid.3x3")
                     .tag(AppSection.statistics)
             }
-            .navigationTitle("スルフロ")
+            .navigationTitle(String(localized: "スルフロ"))
         } detail: {
             detailContent
         }

@@ -18,11 +18,11 @@ enum TodoMeasurement: String, CaseIterable, Codable, Identifiable {
     var displayName: String {
         switch self {
         case .checkbox:
-            "チェック"
+            String(localized: "チェック")
         case .focusBlocks:
-            "集中ブロック"
+            String(localized: "集中ブロック")
         case .minutes:
-            "分"
+            String(localized: "分")
         }
     }
 }
@@ -37,11 +37,11 @@ enum TodoPriority: String, CaseIterable, Codable, Identifiable {
     var displayName: String {
         switch self {
         case .high:
-            "高"
+            String(localized: "高")
         case .medium:
-            "中"
+            String(localized: "中")
         case .low:
-            "低い"
+            String(localized: "低い")
         }
     }
 }
@@ -56,11 +56,11 @@ enum TodoStatus: String, CaseIterable, Codable, Identifiable {
     var displayName: String {
         switch self {
         case .active:
-            "進行中"
+            String(localized: "進行中")
         case .completed:
-            "完了"
+            String(localized: "完了")
         case .archived:
-            "アーカイブ"
+            String(localized: "アーカイブ")
         }
     }
 }
@@ -281,8 +281,8 @@ final class Todo {
 extension Todo {
     static func sample(direction: Direction = .sample) -> Todo {
         Todo(
-            title: "発表資料を作る",
-            notes: "最初の構成を整理する",
+            title: String(localized: "発表資料を作る"),
+            notes: String(localized: "最初の構成を整理する"),
             direction: direction,
             measurement: .focusBlocks,
             plannedAmount: 3,

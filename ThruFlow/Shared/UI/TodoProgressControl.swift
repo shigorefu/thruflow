@@ -19,12 +19,12 @@ struct TodoProgressControl: View {
                 checkbox
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(todo.isCompleted ? "未完了に戻す" : "完了にする")
+            .accessibilityLabel(todo.isCompleted ? String(localized: "未完了に戻す") : String(localized: "完了にする"))
             .accessibilityValue(accessibilityValue)
         } else {
             progressRing(systemImage: todo.measurement == .minutes ? "timer" : completionSymbol)
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel(todo.measurement == .focusBlocks ? "ブロック進捗" : "分の進捗")
+                .accessibilityLabel(todo.measurement == .focusBlocks ? String(localized: "ブロック進捗") : String(localized: "分の進捗"))
                 .accessibilityValue(accessibilityValue)
         }
     }
