@@ -1,5 +1,9 @@
 # Vocabulary
 
+The canonical translator glossary is `Localisation/TERMS.csv`. This page is a
+compact product reference; additions and translation changes belong in the CSV
+first so GitHub contributors have one shared terminology table.
+
 | English | Japanese UI |
 | --- | --- |
 | ThruFlow | スルフロ |

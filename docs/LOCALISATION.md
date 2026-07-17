@@ -29,3 +29,8 @@ reviewed like an API rename.
 The non-programmer workflow is documented in `Localisation/README.md`. A new
 language is added in Xcode's String Catalog editor and requires no Swift or
 SwiftData changes. Local SwiftData remains independent of the selected locale.
+
+`Localisation/TERMS.csv` is the contributor-facing terminology glossary. Its
+first column contains stable code references, while language columns contain
+approved translations. It is intentionally not loaded at runtime and therefore
+cannot diverge application behavior from the validated String Catalog.
