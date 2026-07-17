@@ -9,6 +9,8 @@ import SwiftData
 import SwiftUI
 
 struct TasksView: View {
+    @Environment(\.calendar) private var calendar
+    @Environment(\.locale) private var locale
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
 
@@ -31,11 +33,11 @@ struct TasksView: View {
     @State private var showsUnscheduledInspector = false
     @AppStorage("today.groupOrder") private var groupOrderRaw = TasksTodoGroup.defaultOrderRaw
 
-    private let filter = TodayTodoFilter()
-    private let requiredPlanner = RequiredTodoPlanner()
-    private let calendarBuilder = TaskCalendarBuilder()
-    private let backlogBuilder = TaskBacklogBuilder()
-    private let rescheduleService = TaskRescheduleService()
+    private var filter: TodayTodoFilter { TodayTodoFilter(calendar: calendar) }
+    private var requiredPlanner: RequiredTodoPlanner { RequiredTodoPlanner(calendar: calendar) }
+    private var calendarBuilder: TaskCalendarBuilder { TaskCalendarBuilder(calendar: calendar) }
+    private var backlogBuilder: TaskBacklogBuilder { TaskBacklogBuilder(calendar: calendar) }
+    private var rescheduleService: TaskRescheduleService { TaskRescheduleService(calendar: calendar) }
     private let progress = TodoProgressCalculator()
     private let validator = TodoValidator()
 
@@ -207,7 +209,7 @@ struct TasksView: View {
         Binding(
             get: { selectedDate },
             set: { date in
-                let day = Calendar.current.startOfDay(for: date)
+                let day = calendar.startOfDay(for: date)
                 selectedDate = day
                 anchorDate = day
             }
@@ -292,7 +294,7 @@ struct TasksView: View {
     }
 
     private var showsOverdueSection: Bool {
-        Calendar.current.isDateInToday(selectedDate) && !visibleOverdueTodos.isEmpty
+        calendar.isDateInToday(selectedDate) && !visibleOverdueTodos.isEmpty
     }
 
     private var unscheduledInspector: some View {
@@ -374,13 +376,13 @@ struct TasksView: View {
     }
 
     private func moveToToday() {
-        let today = Calendar.current.startOfDay(for: .now)
+        let today = calendar.startOfDay(for: .now)
         anchorDate = today
         selectedDate = today
     }
 
     private func moveTodosToToday(_ candidates: [Todo]) {
-        let today = Calendar.current.startOfDay(for: .now)
+        let today = calendar.startOfDay(for: .now)
         let movable = candidates.filter { todo in
             if case .success = rescheduleService.validate(todo, movingTo: today, among: todos) {
                 return true
@@ -404,18 +406,17 @@ struct TasksView: View {
     }
 
     private func selectDate(_ date: Date) {
-        selectedDate = Calendar.current.startOfDay(for: date)
+        selectedDate = calendar.startOfDay(for: date)
     }
 
     private func openDay(_ date: Date) {
-        let day = Calendar.current.startOfDay(for: date)
+        let day = calendar.startOfDay(for: date)
         selectedDate = day
         anchorDate = day
         calendarRange = .oneDay
     }
 
     private func selectComposerDate(_ date: Date) {
-        let calendar = Calendar.current
         if calendar.isDateInToday(date) {
             newTodoDateOption = .today
         } else if calendar.isDateInTomorrow(date) {
@@ -443,7 +444,7 @@ struct TasksView: View {
     private func moveTodo(_ todo: Todo, to date: Date) -> Bool {
         switch rescheduleService.validate(todo, movingTo: date, among: todos) {
         case .success:
-            todo.reschedule(to: Calendar.current.startOfDay(for: date))
+            todo.reschedule(to: calendar.startOfDay(for: date))
             todo.setSortIndex((todos.map(\.sortIndex).min() ?? 0) - 1)
             do {
                 try modelContext.save()
@@ -530,7 +531,7 @@ struct TasksView: View {
                 reschedule(todo, to: .now)
             }
             Button(String(localized: "明日")) {
-                reschedule(todo, to: Calendar.current.date(byAdding: .day, value: 1, to: .now))
+                reschedule(todo, to: calendar.date(byAdding: .day, value: 1, to: .now))
             }
             Button(String(localized: "日付なし")) {
                 reschedule(todo, to: nil)
@@ -559,7 +560,6 @@ struct TasksView: View {
     }
 
     private func rescheduleLabel(for date: Date) -> String {
-        let calendar = Calendar.current
         if calendar.isDateInToday(date) {
             return String(localized: "今日")
         }
@@ -567,15 +567,15 @@ struct TasksView: View {
             return String(localized: "明日")
         }
 
-        return Self.rescheduleDateFormatter.string(from: date)
+        return rescheduleDateFormatter.string(from: date)
     }
 
-    private static let rescheduleDateFormatter: DateFormatter = {
+    private var rescheduleDateFormatter: DateFormatter {
         let formatter = DateFormatter()
-        formatter.locale = Locale.autoupdatingCurrent
+        formatter.locale = locale
         formatter.setLocalizedDateFormatFromTemplate("MdE")
         return formatter
-    }()
+    }
 
     private func moveGroups(from source: IndexSet, to destination: Int) {
         var visibleOrder = selectedDateGroups.map(\.type)
@@ -652,7 +652,6 @@ struct TasksView: View {
     }
 
     private func ensureRequiredTodosForVisibleDates(now: Date = .now) {
-        let calendar = Calendar.current
         let today = calendar.startOfDay(for: now)
         let dates = visibleDates
             .filter { $0 >= today }

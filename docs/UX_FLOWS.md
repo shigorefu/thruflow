@@ -149,6 +149,15 @@ Lane assignment uses exact stored start/end intervals. Contiguous Flow and rest 
 
 Selecting an entry reuses `FlowHistoryInspectorView` or `FlowBreakEditor`. A completed Flow can be dragged to another exact day/time in day and week, or to another date in month; the complete session and its task-switch segments move together without changing duration or measured progress. Active Flow and rest records are not draggable. Double-clicking empty time inserts a selected `新しいFlow` draft block directly into the calendar. The clicked time is rounded to five minutes and the default duration is 25 minutes. In wide day view, `Flowを追加` occupies the right inspector; Task, Direction, Short/Focus/Deep, linked start/end, and minutes update the visible draft block immediately. Compact day and week use a sheet while retaining the draft block in the grid. Saving creates a completed independent Flow series and applies normal Direction/Todo progress without completing the Task; manual rest creation is intentionally unavailable. `履歴 > タスク` exposes the same action with the chosen Task fixed. Expanded `履歴 > 方向` ends with `タスクを追加`, which creates a Task with fixed Direction but no Flow. The calendar does not provide direct resize and does not persist a second calendar entity.
 
+## Settings
+
+`設定` opens through the native macOS Settings scene. `テーマ` offers system,
+light, and dark appearance. `言語` lists the String Catalog localizations plus
+the system language and clearly marks that changing it requires relaunching the
+app. `週の開始日` offers system, Sunday, Monday, and Saturday; it updates Task,
+History, and Statistics week layouts immediately. `時刻表示` offers system,
+12-hour, and 24-hour clocks and updates locale-aware time labels immediately.
+
 The Flow inspector limits its Task picker to Tasks scheduled on the Flow date plus the currently assigned Task. It edits time through linked `開始`, `終了`, and direct `分` fields: start/end changes recalculate minutes, and minute changes keep start fixed while moving end.
 
 - `カレンダー`: day, week, and month calendar history.

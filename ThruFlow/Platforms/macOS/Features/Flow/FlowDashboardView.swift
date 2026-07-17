@@ -15,6 +15,8 @@ struct FlowDashboardView: View {
     private static let panelSpacing: CGFloat = 16
 
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.calendar) private var calendar
+    @Environment(\.locale) private var locale
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
 
@@ -889,7 +891,7 @@ struct FlowDashboardView: View {
                 in: knownTodos,
                 on: now
             ) {
-                pendingTodo.reschedule(to: Calendar.current.startOfDay(for: now), now: now)
+                pendingTodo.reschedule(to: calendar.startOfDay(for: now), now: now)
                 hasChanges = true
                 continue
             }
@@ -1053,7 +1055,7 @@ struct FlowDashboardView: View {
     }
 
     private func timelineLabel(_ date: Date) -> String {
-        return date.formatted(.dateTime.hour().minute())
+        return date.formatted(.dateTime.locale(locale).hour().minute())
     }
 
     private func deleteTimelineSegment(_ segment: FlowDashboardSegment) {
@@ -1073,7 +1075,7 @@ struct FlowDashboardView: View {
     }
 
     private func dateText(_ date: Date) -> String {
-        date.formatted(.dateTime.locale(Locale.autoupdatingCurrent).month(.wide).day().weekday(.wide))
+        date.formatted(.dateTime.locale(locale).month(.wide).day().weekday(.wide))
     }
 
     private func focusText(_ seconds: Int) -> String {
@@ -1102,6 +1104,8 @@ private struct TimelineSessionGroup: Identifiable {
 }
 
 private struct TimelineSegmentHoverCard: View {
+    @Environment(\.locale) private var locale
+
     let segment: FlowDashboardSegment
 
     var body: some View {
@@ -1110,7 +1114,7 @@ private struct TimelineSegmentHoverCard: View {
                 .font(.caption.weight(.semibold))
                 .lineLimit(1)
 
-            Text("\(TimelineSegmentFormat.interval(segment)) · \(TimelineSegmentFormat.duration(segment.focusSeconds))")
+            Text("\(TimelineSegmentFormat.interval(segment, locale: locale)) · \(TimelineSegmentFormat.duration(segment.focusSeconds))")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
@@ -1129,6 +1133,8 @@ private struct TimelineSegmentHoverCard: View {
 }
 
 private struct TimelineBreakHoverCard: View {
+    @Environment(\.locale) private var locale
+
     let flowBreak: FlowDashboardBreak
 
     var body: some View {
@@ -1136,7 +1142,7 @@ private struct TimelineBreakHoverCard: View {
             Label(flowBreak.isLongBreak ? String(localized: "Long Break") : String(localized: "休憩"), systemImage: "cup.and.saucer.fill")
                 .font(.caption.weight(.semibold))
 
-            Text("\(TimelineSegmentFormat.interval(from: flowBreak.startedAt, to: flowBreak.endedAt)) · \(TimelineSegmentFormat.duration(flowBreak.durationSeconds))")
+            Text("\(TimelineSegmentFormat.interval(from: flowBreak.startedAt, to: flowBreak.endedAt, locale: locale)) · \(TimelineSegmentFormat.duration(flowBreak.durationSeconds))")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
@@ -1155,6 +1161,8 @@ private struct TimelineBreakHoverCard: View {
 }
 
 private struct TimelineBreakPopover: View {
+    @Environment(\.locale) private var locale
+
     let flowBreak: FlowDashboardBreak
     let onSave: (Int) throws -> FlowBreakEditResult
 
@@ -1196,7 +1204,7 @@ private struct TimelineBreakPopover: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
-                Text(TimelineSegmentFormat.time(flowBreak.startedAt))
+                Text(TimelineSegmentFormat.time(flowBreak.startedAt, locale: locale))
                     .monospacedDigit()
             }
 
@@ -1205,7 +1213,7 @@ private struct TimelineBreakPopover: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
-                Text(TimelineSegmentFormat.time(adjustedEndAt))
+                Text(TimelineSegmentFormat.time(adjustedEndAt, locale: locale))
                     .monospacedDigit()
             }
 
@@ -1258,6 +1266,8 @@ private struct TimelineBreakPopover: View {
 }
 
 private struct TimelineSegmentPopover: View {
+    @Environment(\.locale) private var locale
+
     let segment: FlowDashboardSegment
     let onDelete: (() -> Void)?
     let onOpenHistory: (() -> Void)?
@@ -1304,7 +1314,7 @@ private struct TimelineSegmentPopover: View {
 
             Divider()
 
-            segmentDetail(String(localized: "時間"), value: TimelineSegmentFormat.interval(segment), systemImage: "clock")
+            segmentDetail(String(localized: "時間"), value: TimelineSegmentFormat.interval(segment, locale: locale), systemImage: "clock")
             segmentDetail(String(localized: "集中"), value: TimelineSegmentFormat.duration(segment.focusSeconds), systemImage: "timer")
             segmentDetail(String(localized: "Flow"), value: segment.session.mode.displayName, systemImage: "waveform.path")
 
@@ -1350,23 +1360,19 @@ private struct TimelineSegmentPopover: View {
 }
 
 private enum TimelineSegmentFormat {
-    private static let timeFormatter: DateFormatter = {
+    static func interval(_ segment: FlowDashboardSegment, locale: Locale) -> String {
+        interval(from: segment.startedAt, to: segment.endedAt, locale: locale)
+    }
+
+    static func interval(from start: Date, to end: Date, locale: Locale) -> String {
+        "\(time(start, locale: locale))–\(time(end, locale: locale))"
+    }
+
+    static func time(_ date: Date, locale: Locale) -> String {
         let formatter = DateFormatter()
-        formatter.locale = Locale.autoupdatingCurrent
-        formatter.setLocalizedDateFormatFromTemplate("Hm")
-        return formatter
-    }()
-
-    static func interval(_ segment: FlowDashboardSegment) -> String {
-        interval(from: segment.startedAt, to: segment.endedAt)
-    }
-
-    static func interval(from start: Date, to end: Date) -> String {
-        "\(time(start))–\(time(end))"
-    }
-
-    static func time(_ date: Date) -> String {
-        timeFormatter.string(from: date)
+        formatter.locale = locale
+        formatter.setLocalizedDateFormatFromTemplate("jm")
+        return formatter.string(from: date)
     }
 
     static func duration(_ seconds: Int) -> String {

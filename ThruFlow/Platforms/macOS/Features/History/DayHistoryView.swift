@@ -25,6 +25,8 @@ enum DayHistoryMode: String, CaseIterable, Identifiable {
 }
 
 struct DayHistoryView: View {
+    @Environment(\.calendar) private var calendar
+    @Environment(\.locale) private var locale
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \FlowSession.startedAt, order: .reverse) private var sessions: [FlowSession]
     @Query(sort: \FlowBreak.startedAt, order: .reverse) private var breaks: [FlowBreak]
@@ -41,7 +43,6 @@ struct DayHistoryView: View {
     @State private var taskDirection: Direction?
 
     private let onClose: (() -> Void)?
-    private let calendar = Calendar.current
     private let builder = DayHistoryBuilder()
 
     init(initialDate: Date = .now, onClose: (() -> Void)? = nil) {
@@ -333,20 +334,20 @@ struct DayHistoryView: View {
             let end = interval.end.addingTimeInterval(-1)
             return "\(shortDateFormatter.string(from: interval.start))–\(shortDateFormatter.string(from: end))"
         case .month:
-            return selectedDate.formatted(.dateTime.locale(Locale.autoupdatingCurrent).year().month(.wide))
+            return selectedDate.formatted(.dateTime.locale(locale).year().month(.wide))
         }
     }
 
     private var fullDateFormatter: DateFormatter {
         let formatter = DateFormatter()
-        formatter.locale = Locale.autoupdatingCurrent
+        formatter.locale = locale
         formatter.setLocalizedDateFormatFromTemplate("yMdE")
         return formatter
     }
 
     private var shortDateFormatter: DateFormatter {
         let formatter = DateFormatter()
-        formatter.locale = Locale.autoupdatingCurrent
+        formatter.locale = locale
         formatter.setLocalizedDateFormatFromTemplate("Md")
         return formatter
     }
@@ -437,7 +438,7 @@ struct DayHistoryView: View {
     }
 
     private func taskSectionTitle(_ date: Date) -> String {
-        date.formatted(.dateTime.locale(Locale.autoupdatingCurrent).month().day().weekday(.wide))
+        date.formatted(.dateTime.locale(locale).month().day().weekday(.wide))
     }
 
     private func toggleCheckbox(_ task: DayHistoryTaskSummary) {
@@ -803,6 +804,8 @@ private struct HistoryExpandableDirectionRow: View {
 }
 
 private struct HistoryFlowDisclosureRow: View {
+    @Environment(\.locale) private var locale
+
     let flow: DayHistoryFlow
 
     var body: some View {
@@ -832,7 +835,7 @@ private struct HistoryFlowDisclosureRow: View {
     }
 
     private func time(_ date: Date) -> String {
-        date.formatted(.dateTime.locale(Locale.autoupdatingCurrent).hour().minute())
+        date.formatted(.dateTime.locale(locale).hour().minute())
     }
 
     private func duration(_ seconds: Int) -> String {

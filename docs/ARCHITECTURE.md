@@ -73,6 +73,9 @@ Each platform owns its composition root:
   importing a platform UI framework.
 - `ActiveFlowStore` is shared application state. Platform views observe and
   control it but do not create a second timer state machine.
+- `AppSettings` owns typed local preferences and derives the effective
+  `Calendar` and `Locale`. Platform composition roots inject those values into
+  their scene environments; settings never enter SwiftData.
 
 A future iOS target must provide its own `App`, navigation shell, scene
 lifecycle integration, and platform adapters under `Platforms/iOS/App`.
