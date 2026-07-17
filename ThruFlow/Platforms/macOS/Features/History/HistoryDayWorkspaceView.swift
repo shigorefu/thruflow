@@ -8,6 +8,9 @@
 import SwiftUI
 
 struct HistoryDayWorkspaceView: View {
+    @Environment(\.calendar) private var calendar
+    @Environment(\.locale) private var locale
+
     @Binding var selectedDate: Date
     @Binding var scale: HistoryDayTimelineScale
     let items: [HistoryCalendarItem]
@@ -20,7 +23,6 @@ struct HistoryDayWorkspaceView: View {
 
     @State private var compactInspectorItem: HistoryCalendarItem?
 
-    private let calendar = Calendar.current
     private let windowBuilder = HistoryDayTimelineWindowBuilder()
 
     private var hourRange: Range<Int> {
@@ -96,9 +98,9 @@ struct HistoryDayWorkspaceView: View {
         VStack(spacing: 8) {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(selectedDate.formatted(.dateTime.locale(Locale.autoupdatingCurrent).month().day()))
+                    Text(selectedDate.formatted(.dateTime.locale(locale).month().day()))
                         .font(.headline)
-                    Text(selectedDate.formatted(.dateTime.locale(Locale.autoupdatingCurrent).weekday(.wide)))
+                    Text(selectedDate.formatted(.dateTime.locale(locale).weekday(.wide)))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -145,11 +147,13 @@ struct HistoryDayWorkspaceView: View {
 }
 
 struct HistoryMiniCalendar: View {
+    @Environment(\.calendar) private var calendar
+    @Environment(\.locale) private var locale
+
     @Binding var selectedDate: Date
     var selectionMode: HistoryMiniCalendarSelectionMode = .day
     var onDropPayload: ((String, Date) -> Bool)?
 
-    private let calendar = Calendar.current
     private var columns: [GridItem] {
         Array(repeating: GridItem(.flexible(), spacing: selectionMode == .week ? 0 : 2), count: 7)
     }
@@ -215,7 +219,7 @@ struct HistoryMiniCalendar: View {
     }
 
     private var monthTitle: String {
-        selectedDate.formatted(.dateTime.locale(Locale.autoupdatingCurrent).year().month(.wide))
+        selectedDate.formatted(.dateTime.locale(locale).year().month(.wide))
     }
 
     private var weekdaySymbols: [String] {
@@ -244,7 +248,7 @@ struct HistoryMiniCalendar: View {
     }
 
     private func accessibilityDate(_ date: Date) -> String {
-        date.formatted(.dateTime.locale(Locale.autoupdatingCurrent).year().month().day().weekday())
+        date.formatted(.dateTime.locale(locale).year().month().day().weekday())
     }
 
     private func isInSelectedWeek(_ date: Date) -> Bool {
@@ -283,9 +287,10 @@ enum HistoryMiniCalendarSelectionMode {
 }
 
 struct HistoryYearMonthPicker: View {
+    @Environment(\.calendar) private var calendar
+
     @Binding var selectedDate: Date
 
-    private let calendar = Calendar.current
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 3)
 
     var body: some View {

@@ -9,6 +9,8 @@ import SwiftData
 import SwiftUI
 
 struct StatisticsView: View {
+    @Environment(\.calendar) private var calendar
+
     @Query(sort: \FlowSession.startedAt, order: .reverse) private var sessions: [FlowSession]
     @Query(sort: \Direction.name, order: .forward) private var directions: [Direction]
     @Query(sort: \Todo.updatedAt, order: .reverse) private var todos: [Todo]
@@ -18,8 +20,8 @@ struct StatisticsView: View {
     @State private var selectedDirectionID: UUID?
     let onSelectHistoryDate: (Date) -> Void
 
-    private let flowBuilder = StatisticsHeatmapBuilder()
-    private let achievementBuilder = AchievementHeatmapBuilder()
+    private var flowBuilder: StatisticsHeatmapBuilder { StatisticsHeatmapBuilder(calendar: calendar) }
+    private var achievementBuilder: AchievementHeatmapBuilder { AchievementHeatmapBuilder(calendar: calendar) }
 
     init(onSelectHistoryDate: @escaping (Date) -> Void = { _ in }) {
         self.onSelectHistoryDate = onSelectHistoryDate
@@ -412,13 +414,15 @@ private struct ContributionDay: Identifiable {
 }
 
 private struct ContributionHeatmap: View {
+    @Environment(\.calendar) private var calendar
+    @Environment(\.locale) private var locale
+
     let days: [ContributionDay]
     let range: StatisticsRange
     let intensity: (Int) -> Double
     let onSelectDate: (Date) -> Void
 
     private let monthLabelHeight: CGFloat = 18
-    private let calendar = Calendar.current
 
     private var layout: ContributionHeatmapLayout {
         ContributionHeatmapLayout(range: range)
@@ -431,7 +435,8 @@ private struct ContributionHeatmap: View {
     private var paddedDays: [ContributionDay?] {
         guard let first = days.first else { return [] }
         let weekday = calendar.component(.weekday, from: first.date)
-        return Array(repeating: nil, count: max(0, weekday - 1)) + days.map(Optional.some)
+        let leadingDays = (weekday - calendar.firstWeekday + 7) % 7
+        return Array(repeating: nil, count: leadingDays) + days.map(Optional.some)
     }
 
     private var columnCount: Int {
@@ -564,26 +569,24 @@ private struct ContributionHeatmap: View {
 
     private var monthFormatter: DateFormatter {
         let formatter = DateFormatter()
-        formatter.locale = Locale.autoupdatingCurrent
+        formatter.locale = locale
         formatter.setLocalizedDateFormatFromTemplate("MMM")
         return formatter
     }
 
     private func weekdayLabel(for index: Int) -> String {
-        switch index {
-        case 1:
-            String(localized: "月")
-        case 3:
-            String(localized: "水")
-        case 5:
-            String(localized: "金")
-        default:
-            ""
-        }
+        guard [1, 3, 5].contains(index) else { return "" }
+        return orderedWeekdaySymbols[index]
     }
 
     private var monthWeekdayLabels: [String] {
-        [String(localized: "日"), String(localized: "月"), String(localized: "火"), String(localized: "水"), String(localized: "木"), String(localized: "金"), String(localized: "土")]
+        orderedWeekdaySymbols
+    }
+
+    private var orderedWeekdaySymbols: [String] {
+        let symbols = calendar.veryShortStandaloneWeekdaySymbols
+        let first = max(0, calendar.firstWeekday - 1)
+        return Array(symbols[first...] + symbols[..<first])
     }
 
     private var monthGridItems: [MonthGridItem] {
@@ -627,6 +630,8 @@ private struct MonthLabel: Identifiable {
 }
 
 private struct ContributionHeatmapCell: View {
+    @Environment(\.locale) private var locale
+
     let day: ContributionDay?
     let cellSize: CGFloat
     let intensity: (Int) -> Double
@@ -683,7 +688,7 @@ private struct ContributionHeatmapCell: View {
     private var accessibilityLabel: String {
         guard let day else { return String(localized: "空白") }
         let formatter = DateFormatter()
-        formatter.locale = Locale.autoupdatingCurrent
+        formatter.locale = locale
         formatter.dateStyle = .medium
 
         if day.isEmpty {
@@ -695,6 +700,8 @@ private struct ContributionHeatmapCell: View {
 }
 
 private struct ContributionHoverCard: View {
+    @Environment(\.locale) private var locale
+
     let day: ContributionDay
 
     var body: some View {
@@ -724,7 +731,7 @@ private struct ContributionHoverCard: View {
 
     private var dateText: String {
         let formatter = DateFormatter()
-        formatter.locale = Locale.autoupdatingCurrent
+        formatter.locale = locale
         formatter.setLocalizedDateFormatFromTemplate("MdE")
         return formatter.string(from: day.date)
     }

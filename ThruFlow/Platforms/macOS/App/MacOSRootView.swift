@@ -9,6 +9,7 @@ import SwiftUI
 import SwiftData
 
 struct MacOSRootView: View {
+    @Environment(\.calendar) private var calendar
     @Environment(\.modelContext) private var modelContext
 
     @State private var selection: AppSection? = .flow
@@ -59,7 +60,7 @@ struct MacOSRootView: View {
             DirectionListView()
         case .statistics:
             StatisticsView { date in
-                historyDate = Calendar.current.startOfDay(for: date)
+                historyDate = calendar.startOfDay(for: date)
                 selection = .history
             }
         }

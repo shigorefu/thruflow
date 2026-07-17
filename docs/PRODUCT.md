@@ -77,3 +77,12 @@ Cell brightness is relative to the maximum day in the selected range.
 `履歴` is the single canonical History surface and a dedicated navigation item below `タスク`. Clicking a statistics cell switches navigation to this section on that date; Statistics does not embed another history view.
 
 It provides a primary `Flow` calendar mode with `日・週・月`, plus `タスク` and `方向` aggregates. Day uses a narrow Apple Calendar-style timeline with an Elastic scale and a right mini-calendar/properties inspector. Week uses a vertically scrolling 24-hour grid with fixed headers; month is an overview. Calendar blocks represent separate actual Flow and rest records; the continuous series line belongs only to the Flow dashboard timeline. Completed Flow records can be dragged between exact day/time positions in day and week, or between dates in month; the session and all task-switch segments preserve their duration and progress. Active Flow and rest records remain fixed. Todo completion remains in Task summaries and Statistics. Historical Flow and rest entries open their canonical editors. Double-clicking empty time creates a manual independent Flow, never a manual rest. Historical Flow changes must adjust Direction totals and measured Todo progress by the same delta. Linking a manual Flow to a Task does not automatically complete it.
+
+## Settings
+
+The native macOS Settings window stores appearance, application language,
+first weekday, and 12/24-hour clock preferences locally. Appearance and
+regional calendar/clock preferences apply immediately to every app scene.
+Language follows the shared String Catalog and takes effect after relaunch;
+available languages are discovered from the bundle so contributors can add a
+locale without changing Settings code.

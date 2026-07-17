@@ -9,6 +9,7 @@ import SwiftData
 import SwiftUI
 
 struct HistoryCalendarView: View {
+    @Environment(\.calendar) private var calendar
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
 
@@ -25,7 +26,6 @@ struct HistoryCalendarView: View {
     @State private var manualFlowDraft: HistoryFlowCreationDraft?
     @AppStorage("history.dayTimelineScale") private var dayScaleRawValue = HistoryDayTimelineScale.elastic.rawValue
 
-    private let calendar = Calendar.current
     private let builder = HistoryCalendarBuilder()
     private let historyEditor = FlowHistoryEditor()
 
@@ -248,6 +248,9 @@ struct HistoryVisibilityMenu: View {
 }
 
 struct HistoryTimeGrid: View {
+    @Environment(\.calendar) private var calendar
+    @Environment(\.locale) private var locale
+
     let selectedDate: Date
     let range: HistoryCalendarRange
     let items: [HistoryCalendarItem]
@@ -260,7 +263,6 @@ struct HistoryTimeGrid: View {
 
     @State private var dragState: HistoryCalendarDragState?
 
-    private let calendar = Calendar.current
     private let timeAxisWidth: CGFloat = 72
     private let minimumDayWidth: CGFloat = 132
     private let minimumVisibleItemHeight: CGFloat = 12
@@ -296,7 +298,7 @@ struct HistoryTimeGrid: View {
             Color.clear.frame(width: timeAxisWidth, height: 54)
             ForEach(days, id: \.self) { day in
                 VStack(spacing: 3) {
-                    Text(day.formatted(.dateTime.locale(Locale.autoupdatingCurrent).weekday(.abbreviated)))
+                    Text(day.formatted(.dateTime.locale(locale).weekday(.abbreviated)))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Text("\(calendar.component(.day, from: day))")
@@ -334,7 +336,7 @@ struct HistoryTimeGrid: View {
             VStack(spacing: 0) {
                 ForEach(Array(hourRange), id: \.self) { hour in
                     HStack(alignment: .top, spacing: 8) {
-                        Text(String(format: "%d:00", hour))
+                        Text(hourLabel(hour))
                             .font(.caption2.monospacedDigit())
                             .foregroundStyle(.secondary)
                             .frame(width: timeAxisWidth - 8, alignment: .trailing)
@@ -361,6 +363,18 @@ struct HistoryTimeGrid: View {
                     .offset(x: timeAxisWidth + CGFloat(index) * dayWidth)
             }
         }
+    }
+
+    private func hourLabel(_ hour: Int) -> String {
+        guard let date = calendar.date(
+            bySettingHour: hour,
+            minute: 0,
+            second: 0,
+            of: selectedDate
+        ) else {
+            return "\(hour)"
+        }
+        return date.formatted(.dateTime.locale(locale).hour())
     }
 
     @ViewBuilder
@@ -732,12 +746,13 @@ private struct HistoryTimedItemView: View {
 }
 
 private struct HistoryMonthGrid: View {
+    @Environment(\.calendar) private var calendar
+
     @Binding var selectedDate: Date
     let items: [HistoryCalendarItem]
     let onSelect: (HistoryCalendarItem) -> Void
     let onMove: (HistoryCalendarItem, Date) -> Bool
 
-    private let calendar = Calendar.current
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 0), count: 7)
 
     private var days: [Date] {

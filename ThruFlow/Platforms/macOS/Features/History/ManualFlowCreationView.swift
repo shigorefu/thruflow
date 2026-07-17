@@ -9,6 +9,7 @@ import SwiftData
 import SwiftUI
 
 struct ManualFlowCreationView: View {
+    @Environment(\.locale) private var locale
     @Environment(\.modelContext) private var modelContext
 
     @Query(sort: \Direction.sortIndex) private var directions: [Direction]
@@ -216,7 +217,7 @@ struct ManualFlowCreationView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(String(localized: "Flowを追加"))
                     .font(.title3.weight(.semibold))
-                Text(timeDraft.startedAt.formatted(.dateTime.locale(Locale.autoupdatingCurrent).month().day().weekday()))
+                Text(timeDraft.startedAt.formatted(.dateTime.locale(locale).month().day().weekday()))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

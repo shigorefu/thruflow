@@ -10,6 +10,7 @@ import SwiftUI
 
 struct FlowHistoryInspectorView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.locale) private var locale
     @Environment(\.modelContext) private var modelContext
 
     @Query(sort: \Direction.sortIndex) private var directions: [Direction]
@@ -262,7 +263,7 @@ struct FlowHistoryInspectorView: View {
 
     private var dateText: String {
         let formatter = DateFormatter()
-        formatter.locale = Locale.autoupdatingCurrent
+        formatter.locale = locale
         formatter.setLocalizedDateFormatFromTemplate("yMdHm")
         return formatter.string(from: session.startedAt)
     }

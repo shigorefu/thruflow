@@ -98,12 +98,14 @@ struct TaskCalendarToolbar: View {
 }
 
 struct TaskDayStrip: View {
+    @Environment(\.calendar) private var calendar
+    @Environment(\.locale) private var locale
+
     @Binding var selectedDate: Date
     var onDropPayload: ((String, Date) -> Bool)?
 
     @State private var showsCalendar = false
 
-    private let calendar = Calendar.current
     private let spacing: CGFloat = 6
 
     private var weekDates: [Date] {
@@ -209,24 +211,26 @@ struct TaskDayStrip: View {
 
     private var monthTitle: String {
         selectedDate.formatted(
-            .dateTime.locale(Locale.autoupdatingCurrent).year().month(.wide)
+            .dateTime.locale(locale).year().month(.wide)
         )
     }
 
     private func weekdayText(_ date: Date) -> String {
-        date.formatted(.dateTime.locale(Locale.autoupdatingCurrent).weekday(.narrow))
+        date.formatted(.dateTime.locale(locale).weekday(.narrow))
     }
 
     private func dayText(_ date: Date) -> String {
-        date.formatted(.dateTime.locale(Locale.autoupdatingCurrent).day())
+        date.formatted(.dateTime.locale(locale).day())
     }
 
     private func accessibilityDate(_ date: Date) -> String {
-        date.formatted(.dateTime.locale(Locale.autoupdatingCurrent).year().month().day().weekday())
+        date.formatted(.dateTime.locale(locale).year().month().day().weekday())
     }
 }
 
 struct TaskMultiDayBoard: View {
+    @Environment(\.calendar) private var calendar
+
     let dates: [Date]
     let selectedDate: Date
     let todos: [Todo]
@@ -246,7 +250,7 @@ struct TaskMultiDayBoard: View {
                     ForEach(dates, id: \.self) { date in
                         TaskDayColumn(
                             date: date,
-                            isSelected: Calendar.current.isDate(date, inSameDayAs: selectedDate),
+                            isSelected: calendar.isDate(date, inSameDayAs: selectedDate),
                             todos: todosForDate(date),
                             width: columnWidth,
                             onSelect: { onSelectDate(date) },
@@ -272,13 +276,15 @@ struct TaskMultiDayBoard: View {
         todos
             .filter { todo in
                 guard let scheduledDate = todo.scheduledDate else { return false }
-                return Calendar.current.isDate(scheduledDate, inSameDayAs: date) && filter.includes(todo)
+                return calendar.isDate(scheduledDate, inSameDayAs: date) && filter.includes(todo)
             }
             .sorted(by: TaskBoardSort.areInIncreasingOrder)
     }
 }
 
 private struct TaskDayColumn: View {
+    @Environment(\.locale) private var locale
+
     let date: Date
     let isSelected: Bool
     let todos: [Todo]
@@ -295,10 +301,10 @@ private struct TaskDayColumn: View {
             Button(action: onSelect) {
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(Self.weekdayFormatter.string(from: date))
+                        Text(date.formatted(.dateTime.locale(locale).weekday(.wide)))
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
-                        Text(Self.dayFormatter.string(from: date))
+                        Text(date.formatted(.dateTime.locale(locale).month().day()))
                             .font(.title3.weight(.semibold))
                     }
 
@@ -380,18 +386,11 @@ private struct TaskDayColumn: View {
         return UUID(uuidString: String(payload.dropFirst("task:".count)))
     }
 
-    private static let weekdayFormatter = makeFormatter("EEEE")
-    private static let dayFormatter = makeFormatter(String(localized: "M月d日"))
-
-    private static func makeFormatter(_ format: String) -> DateFormatter {
-        let formatter = DateFormatter()
-        formatter.locale = Locale.autoupdatingCurrent
-        formatter.setLocalizedDateFormatFromTemplate(format)
-        return formatter
-    }
 }
 
 struct TaskMonthGrid: View {
+    @Environment(\.calendar) private var calendar
+
     let anchorDate: Date
     let dates: [Date]
     let selectedDate: Date
@@ -422,8 +421,8 @@ struct TaskMonthGrid: View {
 
     private func monthCell(_ date: Date) -> some View {
         let dayTodos = todosForDate(date)
-        let isSelected = Calendar.current.isDate(date, inSameDayAs: selectedDate)
-        let isCurrentMonth = Calendar.current.isDate(date, equalTo: anchorDate, toGranularity: .month)
+        let isSelected = calendar.isDate(date, inSameDayAs: selectedDate)
+        let isCurrentMonth = calendar.isDate(date, equalTo: anchorDate, toGranularity: .month)
 
         return VStack(alignment: .leading, spacing: 7) {
                 HStack {
@@ -503,7 +502,7 @@ struct TaskMonthGrid: View {
     private func todosForDate(_ date: Date) -> [Todo] {
         todos.filter { todo in
             guard let scheduledDate = todo.scheduledDate else { return false }
-            return Calendar.current.isDate(scheduledDate, inSameDayAs: date) && filter.includes(todo)
+            return calendar.isDate(scheduledDate, inSameDayAs: date) && filter.includes(todo)
         }
     }
 
@@ -514,8 +513,8 @@ struct TaskMonthGrid: View {
     }
 
     private var weekdaySymbols: [String] {
-        let symbols = Calendar.current.veryShortStandaloneWeekdaySymbols
-        let first = max(0, Calendar.current.firstWeekday - 1)
+        let symbols = calendar.veryShortStandaloneWeekdaySymbols
+        let first = max(0, calendar.firstWeekday - 1)
         return Array(symbols[first...] + symbols[..<first])
     }
 
