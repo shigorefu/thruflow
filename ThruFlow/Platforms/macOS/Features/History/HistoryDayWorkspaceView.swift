@@ -147,16 +147,49 @@ struct HistoryDayWorkspaceView: View {
     }
 }
 
+enum HistoryMiniCalendarIndicatorSource {
+    case flowHistory
+    case tasks(TaskCalendarFilter)
+}
+
+private struct HistoryCalendarFlowIndicators: View {
+    @Environment(\.calendar) private var calendar
+
+    let items: [HistoryCalendarItem]
+    let date: Date
+    var maximumVisibleCount = 4
+
+    private var dayItems: [HistoryCalendarItem] {
+        items.filter {
+            $0.kind == .flow && calendar.isDate($0.startedAt, inSameDayAs: date)
+        }
+    }
+
+    var body: some View {
+        HStack(spacing: 3) {
+            ForEach(Array(dayItems.prefix(maximumVisibleCount))) { item in
+                Circle()
+                    .fill(Color(hex: item.colorHex))
+                    .frame(width: 4, height: 4)
+            }
+        }
+        .frame(height: 4)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(String(localized: "Flow"))
+    }
+}
+
 struct HistoryMiniCalendar: View {
     @Environment(\.calendar) private var calendar
     @Environment(\.locale) private var locale
 
     @Binding var selectedDate: Date
     var selectionMode: HistoryMiniCalendarSelectionMode = .day
-    var taskFilter: TaskCalendarFilter = .all
+    var indicatorSource: HistoryMiniCalendarIndicatorSource = .flowHistory
     var onDropPayload: ((String, Date) -> Bool)?
 
     @Query(sort: \Todo.sortIndex, order: .forward) private var todos: [Todo]
+    @Query(sort: \FlowSession.startedAt, order: .forward) private var sessions: [FlowSession]
 
     private var columns: [GridItem] {
         Array(repeating: GridItem(.flexible(), spacing: selectionMode == .week ? 0 : 2), count: 7)
@@ -168,7 +201,23 @@ struct HistoryMiniCalendar: View {
         return (0..<42).compactMap { calendar.date(byAdding: .day, value: $0, to: firstWeek.start) }
     }
 
+    private var historyItems: [HistoryCalendarItem] {
+        guard case .flowHistory = indicatorSource,
+              let firstDay = monthDays.first,
+              let lastDay = monthDays.last,
+              let intervalEnd = calendar.date(byAdding: .day, value: 1, to: lastDay) else {
+            return []
+        }
+        return HistoryCalendarBuilder(calendar: calendar).build(
+            interval: DateInterval(start: firstDay, end: intervalEnd),
+            sessions: sessions,
+            breaks: []
+        ).items
+    }
+
     var body: some View {
+        let flowItems = historyItems
+
         VStack(spacing: 10) {
             HStack {
                 Button {
@@ -210,11 +259,7 @@ struct HistoryMiniCalendar: View {
                                 .frame(maxWidth: selectionMode == .week ? .infinity : nil)
                                 .foregroundStyle(dayForeground(date))
 
-                            CalendarTaskIndicators(
-                                todos: todos.filter(taskFilter.includes),
-                                date: date,
-                                maximumVisibleCount: 3
-                            )
+                            calendarIndicators(for: date, flowItems: flowItems)
                         }
                         .frame(minHeight: 28)
                         .background(dayBackground(date))
@@ -228,6 +273,20 @@ struct HistoryMiniCalendar: View {
                     }
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private func calendarIndicators(for date: Date, flowItems: [HistoryCalendarItem]) -> some View {
+        switch indicatorSource {
+        case .flowHistory:
+            HistoryCalendarFlowIndicators(items: flowItems, date: date, maximumVisibleCount: 3)
+        case .tasks(let filter):
+            CalendarTaskIndicators(
+                todos: todos.filter(filter.includes),
+                date: date,
+                maximumVisibleCount: 3
+            )
         }
     }
 

@@ -194,14 +194,14 @@ struct TasksView: View {
         case .oneDay:
             HistoryMiniCalendar(
                 selectedDate: selectedDateBinding,
-                taskFilter: taskFilter,
+                indicatorSource: .tasks(taskFilter),
                 onDropPayload: moveTaskPayload
             )
         case .sevenDays:
             HistoryMiniCalendar(
                 selectedDate: selectedDateBinding,
                 selectionMode: .week,
-                taskFilter: taskFilter,
+                indicatorSource: .tasks(taskFilter),
                 onDropPayload: moveTaskPayload
             )
         case .month:

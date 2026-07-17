@@ -131,6 +131,8 @@ Hovering a cell shows its date, completed Task count, Flow count, Blocks, and fo
 
 `履歴` is available directly below `タスク`, owns the canonical History presentation, and initially opens today. It preserves the date selected from Statistics. The user can move backward or forward by the selected range, choose a date, or use the mini-calendar on wide macOS windows.
 
+The History mini-calendar marks only days that contain recorded Flow history, using the corresponding Direction colors. Scheduled, pending, and future Task or Habit dates do not create History dots. Task calendars keep their separate indicators and apply the active `すべて | タスク | 習慣` filter.
+
 The primary `カレンダー` mode provides:
 
 - `日`: a narrow scrollable timeline with `Elastic | 24時間` scale and a right inspector;

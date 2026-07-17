@@ -144,7 +144,7 @@ struct TaskDayStrip: View {
                 .popover(isPresented: $showsCalendar, arrowEdge: .top) {
                     HistoryMiniCalendar(
                         selectedDate: $selectedDate,
-                        taskFilter: filter,
+                        indicatorSource: .tasks(filter),
                         onDropPayload: onDropPayload
                     )
                     .padding(16)
