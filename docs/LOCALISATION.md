@@ -39,3 +39,20 @@ first column contains stable code references, while language columns contain
 approved translations. It is intentionally not loaded at runtime and therefore
 cannot diverge application behavior from the validated String Catalog.
 Unambiguous glossary terms are checked against the catalog by unit tests.
+
+## Context-Specific Labels
+
+Entity names remain singular in prose and editors (`Task`, `Direction`), while
+navigation labels name collections and therefore use plurals:
+
+| Context | Japanese key | English | Russian |
+| --- | --- | --- | --- |
+| Tasks navigation | `タスク` | Tasks | Задачи |
+| Directions navigation | `方向` | Directions | Направления |
+| Statistics completed-task count | `達成` | Tasks | Задачи |
+| Current year period | `今年` | this year | Этот год |
+| Current month period | `今月` | This month | Этот месяц |
+
+Translators must use the UI context from `Localisation/TERMS.csv`; identical
+Japanese wording does not imply that English and Russian should use a singular
+entity label in collection navigation.
