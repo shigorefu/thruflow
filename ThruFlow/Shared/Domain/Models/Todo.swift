@@ -70,6 +70,7 @@ final class Todo {
     var id: UUID
     var title: String
     var notes: String?
+    var hashtagsRawValue: String?
     var direction: Direction?
     var measurementRawValue: String
     var priorityRawValue: String = TodoPriority.medium.rawValue
@@ -91,6 +92,7 @@ final class Todo {
         id: UUID = UUID(),
         title: String,
         notes: String? = nil,
+        hashtags: [String] = [],
         direction: Direction,
         measurement: TodoMeasurement = .checkbox,
         priority: TodoPriority = .medium,
@@ -111,6 +113,7 @@ final class Todo {
         self.id = id
         self.title = title
         self.notes = notes
+        self.hashtagsRawValue = TodoHashtagCodec.encode(hashtags)
         self.direction = direction
         self.measurementRawValue = measurement.rawValue
         self.priorityRawValue = priority.rawValue
@@ -133,6 +136,11 @@ final class Todo {
     var measurement: TodoMeasurement {
         get { TodoMeasurement(rawValue: measurementRawValue) ?? .checkbox }
         set { measurementRawValue = newValue.rawValue }
+    }
+
+    var hashtags: [String] {
+        get { TodoHashtagCodec.decode(hashtagsRawValue) }
+        set { hashtagsRawValue = TodoHashtagCodec.encode(newValue) }
     }
 
     var priority: TodoPriority {
@@ -170,6 +178,7 @@ final class Todo {
     func update(
         title: String,
         notes: String?,
+        hashtags: [String],
         direction: Direction,
         measurement: TodoMeasurement,
         priority: TodoPriority,
@@ -182,6 +191,7 @@ final class Todo {
     ) {
         self.title = title
         self.notes = notes
+        self.hashtags = hashtags
         self.direction = direction
         self.measurement = measurement
         self.priority = priority

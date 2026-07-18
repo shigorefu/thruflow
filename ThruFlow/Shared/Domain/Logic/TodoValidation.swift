@@ -10,6 +10,7 @@ import Foundation
 struct TodoDraft {
     var title: String
     var notes: String
+    var hashtags: [String]
     var direction: Direction?
     var measurement: TodoMeasurement
     var priority: TodoPriority
@@ -22,6 +23,7 @@ struct TodoDraft {
     init(
         title: String = "",
         notes: String = "",
+        hashtags: [String] = [],
         direction: Direction? = nil,
         measurement: TodoMeasurement = .checkbox,
         priority: TodoPriority = .medium,
@@ -33,6 +35,7 @@ struct TodoDraft {
     ) {
         self.title = title
         self.notes = notes
+        self.hashtags = TodoHashtagNormalizer.normalize(hashtags)
         self.direction = direction
         self.measurement = measurement
         self.priority = priority
@@ -46,6 +49,7 @@ struct TodoDraft {
     init(todo: Todo) {
         self.title = todo.title
         self.notes = todo.notes ?? ""
+        self.hashtags = todo.hashtags
         self.direction = todo.direction
         self.measurement = todo.measurement
         self.priority = todo.priority

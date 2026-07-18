@@ -20,10 +20,11 @@ struct TasksView: View {
     @State private var editingTodo: Todo?
     @State private var newTodoTitle = ""
     @State private var newTodoDirectionID: UUID?
-    @State private var newTodoVolume: QuickTodoVolume = .checkbox
+    @State private var newTodoVolume: QuickTodoVolume = .unspecified
     @State private var newTodoPriority: TodoPriority = .medium
     @State private var newTodoIsRoomIfPossible = false
     @State private var newTodoDateOption: QuickTodoDate = .today
+    @State private var newTodoHashtags: [String] = []
     @State private var newTodoError: String?
     @State private var anchorDate = Calendar.current.startOfDay(for: .now)
     @State private var selectedDate = Calendar.current.startOfDay(for: .now)
@@ -96,6 +97,7 @@ struct TasksView: View {
                 priority: $newTodoPriority,
                 isRoomIfPossible: $newTodoIsRoomIfPossible,
                 dateOption: $newTodoDateOption,
+                hashtags: $newTodoHashtags,
                 directions: visibleDirections,
                 validationMessage: newTodoError,
                 onSubmit: createInlineTodo
@@ -615,6 +617,7 @@ struct TasksView: View {
     private func createInlineTodo() {
         let draft = TodoDraft(
             title: newTodoTitle,
+            hashtags: newTodoHashtags,
             direction: direction(for: newTodoDirectionID),
             measurement: newTodoVolume.measurement,
             priority: newTodoPriority,
@@ -632,6 +635,7 @@ struct TasksView: View {
         let direction = resolvedDirection(for: newTodoDirectionID)
         let todo = Todo(
             title: draft.trimmedTitle,
+            hashtags: draft.hashtags,
             direction: direction,
             measurement: newTodoVolume.measurement,
             priority: newTodoPriority,
@@ -649,6 +653,7 @@ struct TasksView: View {
         try? modelContext.save()
 
         newTodoTitle = ""
+        newTodoHashtags = []
         if newTodoPriority != .low {
             newTodoIsRoomIfPossible = false
         }
@@ -733,23 +738,14 @@ struct TasksView: View {
 /// Quick-add volume selection for the composer. `checkbox` means "no target amount",
 /// `blocks(n)` targets `n` focus blocks (1 Block = 25 focused minutes).
 enum QuickTodoVolume: Hashable {
+    case unspecified
     case checkbox
     case blocks(Int)
     case minutes(Int)
 
-    static let options: [QuickTodoVolume] = [
-        .checkbox,
-        .blocks(1),
-        .blocks(2),
-        .blocks(3),
-        .minutes(15),
-        .minutes(25),
-        .minutes(50)
-    ]
-
     var measurement: TodoMeasurement {
         switch self {
-        case .checkbox:
+        case .unspecified, .checkbox:
             .checkbox
         case .blocks:
             .focusBlocks
@@ -760,7 +756,7 @@ enum QuickTodoVolume: Hashable {
 
     var plannedAmount: Int? {
         switch self {
-        case .checkbox:
+        case .unspecified, .checkbox:
             nil
         case .blocks(let count), .minutes(let count):
             count
@@ -769,6 +765,8 @@ enum QuickTodoVolume: Hashable {
 
     var menuLabel: String {
         switch self {
+        case .unspecified:
+            String(localized: "種類")
         case .checkbox:
             String(localized: "チェックのみ")
         case .blocks(let count):
@@ -780,6 +778,8 @@ enum QuickTodoVolume: Hashable {
 
     var chipLabel: String {
         switch self {
+        case .unspecified:
+            String(localized: "種類")
         case .checkbox:
             String(localized: "チェック")
         case .blocks(let count):
@@ -838,15 +838,28 @@ struct MessengerTodoComposer: View {
     @Binding var priority: TodoPriority
     @Binding var isRoomIfPossible: Bool
     @Binding var dateOption: QuickTodoDate
+    @Binding var hashtags: [String]
 
     let directions: [Direction]
     let validationMessage: String?
     var allowsDateSelection = true
     var showsOuterBackground = true
+    var allowsQuickInputLegend = true
     var onCancel: (() -> Void)?
     let onSubmit: () -> Void
 
     @FocusState private var isFocused: Bool
+    @AppStorage("settings.showsTaskQuickInputLegend") private var showsQuickInputLegend = true
+    @State private var parserMessage: String?
+    @State private var pendingDirectionName: String?
+    @State private var isApplyingParserResult = false
+    @State private var inlineTokens: [TaskComposerInlineToken] = []
+    @State private var hasExplicitDirection = false
+    @State private var hasExplicitPriority = false
+    @State private var hasExplicitDate = false
+    @State private var selectedAutocompleteSuggestionID: String?
+
+    private let parser = TaskQuickInputParser()
 
     private var trimmedTitle: String {
         title.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -854,72 +867,80 @@ struct MessengerTodoComposer: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .top, spacing: 10) {
-                TextField(String(localized: "タスクを入力してください"), text: $title, axis: .vertical)
-                    .textFieldStyle(.plain)
-                    .font(.body)
-                    .lineLimit(2...5)
-                    .focused($isFocused)
-                    .onSubmit(submit)
-
-                if let onCancel {
-                    Button(action: onCancel) {
-                        Image(systemName: "xmark")
-                            .font(.caption.weight(.bold))
-                            .frame(width: 26, height: 26)
-                    }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.secondary)
-                    .help(String(localized: "閉じる"))
-                    .accessibilityLabel(String(localized: "タスク作成を閉じる"))
-                }
+            if allowsQuickInputLegend && showsQuickInputLegend && isFocused && hasComposerContent && autocompleteToken == nil {
+                quickInputLegend
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
             }
 
-            HStack(spacing: 10) {
-                VolumeChip(volume: $volume)
-
-                DirectionChip(selectedDirectionID: $selectedDirectionID, directions: directions)
-                    .fixedSize(horizontal: true, vertical: false)
-                    .layoutPriority(3)
-
-                PriorityChip(priority: $priority, isRoomIfPossible: $isRoomIfPossible)
-
-                if priority == .low {
-                    RoomIfPossibleChip(isSelected: $isRoomIfPossible)
-                }
-
-                if allowsDateSelection {
-                    DateChip(dateOption: $dateOption)
-                } else {
-                    Text(String(localized: "今日"))
-                        .chipStyle(tint: .secondary)
-                        .accessibilityLabel(String(localized: "日付 今日"))
-                }
-
-                Spacer(minLength: 0)
-
-                Button(action: submit) {
-                    Image(systemName: "arrow.up")
-                        .font(.headline.weight(.semibold))
-                        .frame(width: 38, height: 38)
-                        .background(Color.accentColor)
-                        .foregroundStyle(.white)
-                        .clipShape(Circle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(String(localized: "タスクを追加"))
+            if let autocompleteToken {
+                autocompleteSuggestions(for: autocompleteToken)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
             }
-            .lineLimit(1)
-            .minimumScaleFactor(0.8)
 
-            if let validationMessage {
-                Text(validationMessage)
+            composerSurface
+        }
+        .animation(.snappy(duration: 0.22), value: hasComposerContent)
+        .animation(.snappy(duration: 0.18), value: autocompleteToken)
+        .padding(.horizontal, showsOuterBackground ? 12 : 0)
+        .padding(.vertical, showsOuterBackground ? 8 : 0)
+        .background {
+            if showsOuterBackground {
+                Rectangle().fill(.bar)
+            }
+        }
+        .sheet(isPresented: pendingDirectionSheetBinding) {
+            DirectionFormView(
+                mode: .create,
+                initialName: pendingDirectionName
+            ) { direction in
+                selectedDirectionID = direction.id
+                hasExplicitDirection = true
+                replaceInlineToken(.direction(direction.id))
+                removeDirectionToken(named: direction.name)
+                pendingDirectionName = nil
+                parserMessage = nil
+            }
+        }
+        .onChange(of: volume) { _, newValue in
+            updateExistingInlineToken(
+                .measurement(newValue.measurement, newValue.plannedAmount)
+            )
+        }
+        .onChange(of: selectedDirectionID) { _, newValue in
+            updateExistingInlineToken(newValue.map(TaskComposerInlineToken.direction), id: "direction")
+        }
+        .onChange(of: priority) { _, newValue in
+            updateExistingInlineToken(.priority(newValue, isRoomIfPossible))
+        }
+        .onChange(of: isRoomIfPossible) { _, newValue in
+            updateExistingInlineToken(.priority(priority, newValue))
+        }
+        .onChange(of: dateOption) { _, newValue in
+            updateExistingInlineToken(.date(newValue))
+        }
+        .onChange(of: autocompleteToken) { _, _ in
+            selectedAutocompleteSuggestionID = nil
+        }
+    }
+
+    private var composerSurface: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            inputArea
+
+            controlBar
+
+            if let message = parserMessage ?? validationMessage {
+                Text(message)
                     .font(.caption)
                     .foregroundStyle(.red)
             }
+
+            if let pendingDirectionName {
+                unresolvedDirectionActions(name: pendingDirectionName)
+            }
         }
         .padding(.horizontal, 16)
-        .padding(.top, 16)
+        .padding(.top, 14)
         .padding(.bottom, 10)
         .background {
             RoundedRectangle(cornerRadius: 22)
@@ -929,18 +950,689 @@ struct MessengerTodoComposer: View {
             RoundedRectangle(cornerRadius: 22)
                 .strokeBorder(Color.primary.opacity(0.12))
         }
-        .padding(.horizontal, showsOuterBackground ? 12 : 0)
-        .padding(.vertical, showsOuterBackground ? 8 : 0)
-        .background {
-            if showsOuterBackground {
-                Rectangle().fill(.bar)
+    }
+
+    private var inputArea: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            if !inlineTokens.isEmpty {
+                ScrollView(.horizontal) {
+                    HStack(spacing: 5) {
+                        ForEach(inlineTokens) { token in
+                            Button {
+                                removeInlineToken(token)
+                            } label: {
+                                inlineTokenView(token)
+                            }
+                            .buttonStyle(.plain)
+                            .help(String(localized: "トークンを削除"))
+                        }
+                    }
+                }
+                .scrollIndicators(.hidden)
+                .transition(.move(edge: .leading).combined(with: .opacity))
+            }
+
+            HStack(alignment: .top, spacing: 8) {
+                TextField(String(localized: "タスクを入力してください"), text: $title, axis: .vertical)
+                    .textFieldStyle(.plain)
+                    .font(.body)
+                    .lineLimit(2...5)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .focused($isFocused)
+                    .onSubmit {
+                        if !activateSelectedAutocompleteSuggestion() {
+                            submit()
+                        }
+                    }
+                    .onKeyPress(.upArrow) {
+                        moveAutocompleteSelection(by: -1) ? .handled : .ignored
+                    }
+                    .onKeyPress(.downArrow) {
+                        moveAutocompleteSelection(by: 1) ? .handled : .ignored
+                    }
+                    .onChange(of: title) { _, newValue in
+                        parseCommittedTokens(in: newValue)
+                    }
+
+                if let onCancel {
+                    Button(action: onCancel) {
+                        Image(systemName: "xmark")
+                            .font(.caption.weight(.bold))
+                            .frame(width: 28, height: 28)
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.secondary)
+                    .help(String(localized: "閉じる"))
+                    .accessibilityLabel(String(localized: "タスク作成を閉じる"))
+                }
+
+                submitButton
+            }
+        }
+        .animation(.snappy(duration: 0.22), value: inlineTokens)
+    }
+
+    private var controlBar: some View {
+        HStack(spacing: 8) {
+            VolumeChip(volume: $volume)
+
+            DirectionChip(
+                selectedDirectionID: $selectedDirectionID,
+                isExplicit: $hasExplicitDirection,
+                directions: directions
+            )
+                .fixedSize(horizontal: true, vertical: false)
+                .layoutPriority(3)
+
+            PriorityChip(
+                priority: $priority,
+                isRoomIfPossible: $isRoomIfPossible,
+                isExplicit: $hasExplicitPriority
+            )
+
+            if priority == .low {
+                RoomIfPossibleChip(isSelected: $isRoomIfPossible)
+            }
+
+            if allowsDateSelection {
+                DateChip(dateOption: $dateOption, isExplicit: $hasExplicitDate)
+            } else {
+                Text(String(localized: "今日"))
+                    .chipStyle(tint: .secondary)
+                    .accessibilityLabel(String(localized: "日付 今日"))
+            }
+
+            ForEach(hashtags, id: \.self) { hashtag in
+                Button {
+                    hashtags.removeAll { $0.caseInsensitiveCompare(hashtag) == .orderedSame }
+                    inlineTokens.removeAll { $0.hashtagMatches(hashtag) }
+                } label: {
+                    Text(verbatim: "#\(hashtag)")
+                        .chipStyle(tint: .accentColor)
+                }
+                .buttonStyle(.plain)
+                .help(String(localized: "タグを削除"))
+            }
+
+            Spacer(minLength: 0)
+        }
+        .lineLimit(1)
+        .minimumScaleFactor(0.8)
+    }
+
+    private func submit() {
+        let result = parser.parse(title, directions: parserDirections, consumeTrailingToken: true)
+        apply(result)
+        if let unresolved = result.unresolvedDirection, !unresolved.isEmpty {
+            pendingDirectionName = unresolved
+            parserMessage = String(localized: "方向「\(unresolved)」が見つかりません")
+            isCreatingDirection = true
+            isFocused = true
+            return
+        }
+        pendingDirectionName = nil
+        parserMessage = nil
+        onSubmit()
+        clearInlineTokensAfterSubmission()
+        isFocused = true
+    }
+
+    private var parserDirections: [TaskQuickInputDirection] {
+        directions.map { TaskQuickInputDirection(id: $0.id, name: $0.name) }
+    }
+
+    private var pendingDirectionSheetBinding: Binding<Bool> {
+        Binding(
+            get: { pendingDirectionName != nil && isCreatingDirection },
+            set: { newValue in
+                if !newValue { isCreatingDirection = false }
+            }
+        )
+    }
+
+    @State private var isCreatingDirection = false
+
+    private var hasComposerContent: Bool {
+        !trimmedTitle.isEmpty || !inlineTokens.isEmpty
+    }
+
+    private var autocompleteToken: String? {
+        guard isFocused else { return nil }
+        return parser.trailingAutocompleteToken(in: title)
+    }
+
+    private var submitButton: some View {
+        Button(action: submit) {
+            Image(systemName: "arrow.up")
+                .font(.system(size: 13, weight: .bold))
+                .frame(width: 30, height: 30)
+                .background(Color.accentColor, in: Circle())
+                .foregroundStyle(.white)
+        }
+        .buttonStyle(.plain)
+        .help(String(localized: "タスクを追加"))
+        .accessibilityLabel(String(localized: "タスクを追加"))
+        .disabled(trimmedTitle.isEmpty)
+        .opacity(trimmedTitle.isEmpty ? 0.45 : 1)
+    }
+
+    private var quickInputLegend: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            HStack {
+                Label(String(localized: "ショートカットを使えます"), systemImage: "command")
+                    .font(.caption.weight(.semibold))
+                Spacer(minLength: 0)
+                Button {
+                    showsQuickInputLegend = false
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.caption.weight(.semibold))
+                }
+                .buttonStyle(.plain)
+                .help(String(localized: "クイック入力のヒントを非表示"))
+            }
+
+            Grid(alignment: .leading, horizontalSpacing: 24, verticalSpacing: 6) {
+                GridRow {
+                    legendItem(shortcut: "[ ]", label: String(localized: "チェック"))
+                    legendItem(shortcut: "@", label: String(localized: "方向"))
+                    legendItem(shortcut: "!", label: String(localized: "優先度"))
+                }
+
+                GridRow {
+                    legendItem(shortcut: "[1b]", label: String(localized: "1ブロック"))
+                    legendItem(shortcut: "/", label: String(localized: "日付"))
+                    legendItem(shortcut: "#", label: String(localized: "タグ"))
+                }
+
+                GridRow {
+                    legendItem(shortcut: "[25m]", label: String(localized: "25分"))
+                }
+            }
+        }
+        .foregroundStyle(.secondary)
+        .padding(10)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 9))
+        .overlay {
+            RoundedRectangle(cornerRadius: 9)
+                .strokeBorder(Color.primary.opacity(0.1))
+        }
+    }
+
+    @ViewBuilder
+    private func legendItem(shortcut: String, label: String) -> some View {
+        HStack(spacing: 7) {
+            Text(verbatim: shortcut)
+                .font(.caption.monospaced().weight(.semibold))
+                .foregroundStyle(.primary)
+                .frame(minWidth: 30, alignment: .leading)
+            Text(label)
+                .font(.caption)
+                .lineLimit(1)
+        }
+    }
+
+    @ViewBuilder
+    private func autocompleteSuggestions(for token: String) -> some View {
+        let suggestions = autocompleteSuggestionItems(for: token)
+
+        VStack(alignment: .leading, spacing: 2) {
+            ForEach(suggestions) { suggestion in
+                suggestionRow(
+                    suggestion,
+                    isSelected: selectedSuggestionID(in: suggestions) == suggestion.id
+                )
+            }
+        }
+        .padding(5)
+        .frame(width: 320, alignment: .leading)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
+        .overlay {
+            RoundedRectangle(cornerRadius: 10)
+                .strokeBorder(Color.primary.opacity(0.12))
+        }
+        .shadow(color: .black.opacity(0.16), radius: 12, y: 5)
+    }
+
+    private func autocompleteSuggestionItems(for token: String) -> [TaskComposerAutocompleteSuggestion] {
+        let query = String(token.dropFirst())
+        switch token.first {
+        case "@": return directionAutocompleteSuggestions(query: query)
+        case "!": return priorityAutocompleteSuggestions(query: query)
+        case "/": return dateAutocompleteSuggestions(query: query)
+        case "[": return measurementAutocompleteSuggestions(query: query)
+        default: return []
+        }
+    }
+
+    private func directionAutocompleteSuggestions(query: String) -> [TaskComposerAutocompleteSuggestion] {
+        let matches = Array(
+            directions
+                .filter { query.isEmpty || $0.name.localizedCaseInsensitiveContains(query) }
+                .prefix(6)
+        )
+        guard !matches.isEmpty else {
+            return [
+                TaskComposerAutocompleteSuggestion(
+                    id: "create-direction:\(query)",
+                    icon: "plus.circle",
+                    title: String(localized: "新しい方向を作成"),
+                    detail: query.isEmpty ? nil : query,
+                    action: .createDirection(query)
+                )
+            ]
+        }
+        return matches.map { direction in
+            TaskComposerAutocompleteSuggestion(
+                id: "direction:\(direction.id.uuidString)",
+                symbol: direction.symbolName,
+                title: direction.name,
+                action: .direction(direction.id)
+            )
+        }
+    }
+
+    private func priorityAutocompleteSuggestions(query: String) -> [TaskComposerAutocompleteSuggestion] {
+        let options: [(String, String, TodoPriority, Bool)] = [
+            ("high", String(localized: "高"), .high, false),
+            ("medium", String(localized: "中"), .medium, false),
+            ("low", String(localized: "低い"), .low, false),
+            ("later", String(localized: "余裕があれば"), .low, true),
+        ]
+        return options
+            .filter { query.isEmpty || $0.0.hasPrefix(query.lowercased()) }
+            .map { option in
+                TaskComposerAutocompleteSuggestion(
+                    id: "priority:\(option.0)",
+                    icon: "exclamationmark",
+                    title: option.1,
+                    detail: "!\(option.0)",
+                    action: .token("!\(option.0)")
+                )
+            }
+    }
+
+    private func dateAutocompleteSuggestions(query: String) -> [TaskComposerAutocompleteSuggestion] {
+        let options: [(String, String)] = [
+            ("today", String(localized: "今日")),
+            ("tomorrow", String(localized: "明日")),
+            ("nodate", String(localized: "日付なし")),
+        ]
+        return options
+            .filter { query.isEmpty || $0.0.hasPrefix(query.lowercased()) }
+            .map { option in
+                TaskComposerAutocompleteSuggestion(
+                    id: "date:\(option.0)",
+                    icon: "calendar",
+                    title: option.1,
+                    detail: "/\(option.0)",
+                    action: .token("/\(option.0)")
+                )
+            }
+    }
+
+    private func measurementAutocompleteSuggestions(query: String) -> [TaskComposerAutocompleteSuggestion] {
+        let options: [(String, String, String)] = [
+            ("[]", "square", String(localized: "チェック")),
+            ("[1b]", "circle", String(localized: "1ブロック")),
+            ("[25m]", "circle.lefthalf.filled", String(localized: "25分")),
+        ]
+        return options
+            .filter { query.isEmpty || $0.0.dropFirst().hasPrefix(query) }
+            .map { option in
+                TaskComposerAutocompleteSuggestion(
+                    id: "measurement:\(option.0)",
+                    icon: option.1,
+                    title: option.2,
+                    detail: option.0,
+                    action: .token(option.0)
+                )
+            }
+    }
+
+    private func suggestionRow(
+        _ suggestion: TaskComposerAutocompleteSuggestion,
+        isSelected: Bool
+    ) -> some View {
+        Button {
+            activateAutocompleteSuggestion(suggestion)
+        } label: {
+            HStack(spacing: 9) {
+                if let icon = suggestion.icon {
+                    Image(systemName: icon)
+                        .frame(width: 18)
+                } else if let symbol = suggestion.symbol {
+                    Text(symbol)
+                        .frame(width: 18)
+                }
+                Text(suggestion.title)
+                    .lineLimit(1)
+                Spacer(minLength: 8)
+                if let detail = suggestion.detail {
+                    Text(verbatim: detail)
+                        .font(.caption.monospaced())
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding(.horizontal, 9)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(height: 32)
+            .contentShape(Rectangle())
+            .background(
+                isSelected ? Color.accentColor.opacity(0.18) : Color.clear,
+                in: RoundedRectangle(cornerRadius: 7)
+            )
+        }
+        .buttonStyle(.plain)
+        .contentShape(Rectangle())
+        .onHover { isHovering in
+            if isHovering {
+                selectedAutocompleteSuggestionID = suggestion.id
             }
         }
     }
 
-    private func submit() {
-        onSubmit()
+    private func selectedSuggestionID(in suggestions: [TaskComposerAutocompleteSuggestion]) -> String? {
+        if let selectedAutocompleteSuggestionID,
+           suggestions.contains(where: { $0.id == selectedAutocompleteSuggestionID }) {
+            return selectedAutocompleteSuggestionID
+        }
+        return suggestions.first?.id
+    }
+
+    private func moveAutocompleteSelection(by offset: Int) -> Bool {
+        guard let token = autocompleteToken else { return false }
+        let suggestions = autocompleteSuggestionItems(for: token)
+        guard !suggestions.isEmpty else { return false }
+        let currentID = selectedSuggestionID(in: suggestions)
+        let currentIndex = suggestions.firstIndex { $0.id == currentID } ?? 0
+        let nextIndex = min(max(currentIndex + offset, 0), suggestions.count - 1)
+        selectedAutocompleteSuggestionID = suggestions[nextIndex].id
+        return true
+    }
+
+    private func activateSelectedAutocompleteSuggestion() -> Bool {
+        guard let token = autocompleteToken else { return false }
+        let suggestions = autocompleteSuggestionItems(for: token)
+        guard let selectedID = selectedSuggestionID(in: suggestions),
+              let suggestion = suggestions.first(where: { $0.id == selectedID }) else {
+            return false
+        }
+        activateAutocompleteSuggestion(suggestion)
+        return true
+    }
+
+    private func activateAutocompleteSuggestion(_ suggestion: TaskComposerAutocompleteSuggestion) {
+        switch suggestion.action {
+        case .direction(let id):
+            guard let direction = directions.first(where: { $0.id == id }) else { return }
+            choose(direction)
+        case .createDirection(let name):
+            pendingDirectionName = name
+            isCreatingDirection = true
+        case .token(let token):
+            completeAutocompleteToken(token)
+        }
+        selectedAutocompleteSuggestionID = nil
+    }
+
+    private func unresolvedDirectionActions(name: String) -> some View {
+        HStack(spacing: 8) {
+            Button(String(localized: "新規作成")) {
+                isCreatingDirection = true
+            }
+            .buttonStyle(.borderedProminent)
+
+            Button(String(localized: "その他として追加")) {
+                selectedDirectionID = nil
+                hasExplicitDirection = true
+                removeDirectionToken(named: name)
+                pendingDirectionName = nil
+                parserMessage = nil
+                onSubmit()
+                clearInlineTokensAfterSubmission()
+            }
+            .buttonStyle(.bordered)
+        }
+    }
+
+    private func parseCommittedTokens(in input: String) {
+        guard !isApplyingParserResult else { return }
+        let result = parser.parse(input, directions: parserDirections, consumeTrailingToken: false)
+        apply(result)
+    }
+
+    private func apply(_ result: TaskQuickInputParseResult) {
+        isApplyingParserResult = true
+        defer { isApplyingParserResult = false }
+
+        recordInlineTokens(from: result)
+        if title != result.title {
+            title = result.title
+        }
+        if let measurement = result.measurement {
+            let amount = max(1, result.plannedAmount ?? 1)
+            switch measurement {
+            case .checkbox: volume = .checkbox
+            case .focusBlocks: volume = .blocks(amount)
+            case .minutes: volume = .minutes(amount)
+            }
+        }
+        if let directionID = result.directionID {
+            selectedDirectionID = directionID
+            hasExplicitDirection = true
+        }
+        if let priority = result.priority {
+            self.priority = priority
+            isRoomIfPossible = result.isRoomIfPossible ?? false
+            hasExplicitPriority = true
+        }
+        if allowsDateSelection, let date = result.date {
+            dateOption = quickDate(for: date)
+            hasExplicitDate = true
+        }
+        hashtags = TodoHashtagNormalizer.normalize(hashtags + result.hashtags)
+    }
+
+    private func choose(_ direction: Direction) {
+        guard let query = parser.trailingDirectionQuery(in: title) else { return }
+        removeDirectionToken(named: query)
+        selectedDirectionID = direction.id
+        hasExplicitDirection = true
+        replaceInlineToken(.direction(direction.id))
+        parserMessage = nil
+    }
+
+    private func completeAutocompleteToken(_ token: String) {
+        title = parser.replacingTrailingAutocompleteToken(in: title, with: "\(token) ")
+        parseCommittedTokens(in: title)
         isFocused = true
+    }
+
+    private func recordInlineTokens(from result: TaskQuickInputParseResult) {
+        if let measurement = result.measurement {
+            replaceInlineToken(.measurement(measurement, result.plannedAmount))
+        }
+        if let directionID = result.directionID {
+            replaceInlineToken(.direction(directionID))
+        }
+        if let priority = result.priority {
+            replaceInlineToken(.priority(priority, result.isRoomIfPossible ?? false))
+        }
+        if allowsDateSelection, let date = result.date {
+            replaceInlineToken(.date(quickDate(for: date)))
+        }
+        for hashtag in result.hashtags {
+            replaceInlineToken(.hashtag(hashtag))
+        }
+    }
+
+    private func replaceInlineToken(_ token: TaskComposerInlineToken) {
+        inlineTokens.removeAll { $0.id == token.id }
+        inlineTokens.append(token)
+    }
+
+    private func updateExistingInlineToken(_ token: TaskComposerInlineToken?, id: String? = nil) {
+        let targetID = id ?? token?.id
+        guard let targetID, inlineTokens.contains(where: { $0.id == targetID }) else { return }
+        inlineTokens.removeAll { $0.id == targetID }
+        if let token {
+            inlineTokens.append(token)
+        }
+    }
+
+    private func clearInlineTokensAfterSubmission() {
+        if trimmedTitle.isEmpty {
+            inlineTokens = []
+            hasExplicitDirection = false
+            hasExplicitPriority = false
+            hasExplicitDate = false
+        }
+    }
+
+    private func removeInlineToken(_ token: TaskComposerInlineToken) {
+        inlineTokens.removeAll { $0.id == token.id }
+        switch token {
+        case .measurement:
+            volume = .unspecified
+        case .direction:
+            selectedDirectionID = nil
+            hasExplicitDirection = false
+        case .priority:
+            priority = .medium
+            isRoomIfPossible = false
+            hasExplicitPriority = false
+        case .date:
+            dateOption = .today
+            hasExplicitDate = false
+        case .hashtag(let hashtag):
+            hashtags.removeAll { $0.caseInsensitiveCompare(hashtag) == .orderedSame }
+        }
+        isFocused = true
+    }
+
+    private func quickDate(for date: TaskQuickInputDate) -> QuickTodoDate {
+        switch date {
+        case .scheduled(let value):
+            if Calendar.current.isDateInToday(value) { return .today }
+            if Calendar.current.isDateInTomorrow(value) { return .tomorrow }
+            return .custom(value)
+        case .noDate:
+            return .none
+        }
+    }
+
+    private func inlineTokenView(_ token: TaskComposerInlineToken) -> some View {
+        HStack(spacing: 5) {
+            inlineTokenIcon(token)
+            Text(inlineTokenLabel(token))
+            Image(systemName: "xmark")
+                .font(.system(size: 7, weight: .bold))
+                .opacity(0.7)
+        }
+        .font(.caption.weight(.medium))
+        .foregroundStyle(inlineTokenTint(token))
+        .padding(.horizontal, 9)
+        .frame(height: 26)
+        .background(inlineTokenTint(token).opacity(0.12), in: Capsule())
+        .overlay {
+            Capsule().strokeBorder(inlineTokenTint(token).opacity(0.2), lineWidth: 1)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    @ViewBuilder
+    private func inlineTokenIcon(_ token: TaskComposerInlineToken) -> some View {
+        switch token {
+        case .measurement(let measurement, _):
+            Image(systemName: measurement == .checkbox ? "square" :
+                (measurement == .focusBlocks ? "circle" : "circle.lefthalf.filled"))
+        case .direction(let id):
+            Text(directions.first(where: { $0.id == id })?.symbolName ?? "@")
+        case .priority:
+            Image(systemName: "exclamationmark")
+        case .date:
+            Image(systemName: "calendar")
+        case .hashtag:
+            Image(systemName: "number")
+        }
+    }
+
+    private func inlineTokenLabel(_ token: TaskComposerInlineToken) -> String {
+        switch token {
+        case .measurement(let measurement, let amount):
+            switch measurement {
+            case .checkbox:
+                return String(localized: "チェック")
+            case .focusBlocks:
+                return "\(max(1, amount ?? 1)) \(String(localized: "ブロック"))"
+            case .minutes:
+                return "\(max(1, amount ?? 1)) \(String(localized: "分"))"
+            }
+        case .direction(let id):
+            return directions.first(where: { $0.id == id })?.name ?? String(localized: "方向")
+        case .priority(let priority, let later):
+            return later ? String(localized: "余裕があれば") : priority.displayName
+        case .date(let date):
+            return date.chipLabel
+        case .hashtag(let hashtag):
+            return "#\(hashtag)"
+        }
+    }
+
+    private func inlineTokenTint(_ token: TaskComposerInlineToken) -> Color {
+        if case .direction(let id) = token,
+           let direction = directions.first(where: { $0.id == id }),
+           !DefaultDirections.isTaskInbox(direction) {
+            return Color(hex: direction.colorHex)
+        }
+        return .accentColor
+    }
+
+    private func removeDirectionToken(named name: String) {
+        let target = "@\(name)"
+        title = title
+            .split(whereSeparator: \.isWhitespace)
+            .filter { String($0).caseInsensitiveCompare(target) != .orderedSame }
+            .joined(separator: " ")
+    }
+}
+
+private struct TaskComposerAutocompleteSuggestion: Identifiable {
+    enum Action {
+        case direction(UUID)
+        case createDirection(String)
+        case token(String)
+    }
+
+    let id: String
+    var icon: String?
+    var symbol: String?
+    let title: String
+    var detail: String?
+    let action: Action
+}
+
+private enum TaskComposerInlineToken: Equatable, Identifiable {
+    case measurement(TodoMeasurement, Int?)
+    case direction(UUID)
+    case priority(TodoPriority, Bool)
+    case date(QuickTodoDate)
+    case hashtag(String)
+
+    var id: String {
+        switch self {
+        case .measurement: "measurement"
+        case .direction: "direction"
+        case .priority: "priority"
+        case .date: "date"
+        case .hashtag(let value): "hashtag:\(value.lowercased(with: Locale(identifier: "en_US_POSIX")))"
+        }
+    }
+
+    func hashtagMatches(_ value: String) -> Bool {
+        guard case .hashtag(let hashtag) = self else { return false }
+        return hashtag.caseInsensitiveCompare(value) == .orderedSame
     }
 }
 
@@ -950,14 +1642,16 @@ struct QuickTodoCreationPopover: View {
     @Query(sort: \Todo.sortIndex, order: .forward) private var allTodos: [Todo]
 
     let directions: [Direction]
+    var showsQuickInputLegend = true
     var onCreated: ((Todo) -> Void)?
 
     @State private var title = ""
     @State private var selectedDirectionID: UUID?
-    @State private var volume: QuickTodoVolume = .checkbox
+    @State private var volume: QuickTodoVolume = .unspecified
     @State private var priority: TodoPriority = .medium
     @State private var isRoomIfPossible = false
     @State private var dateOption: QuickTodoDate = .today
+    @State private var hashtags: [String] = []
     @State private var validationMessage: String?
 
     private let validator = TodoValidator()
@@ -979,10 +1673,12 @@ struct QuickTodoCreationPopover: View {
             priority: $priority,
             isRoomIfPossible: $isRoomIfPossible,
             dateOption: $dateOption,
+            hashtags: $hashtags,
             directions: selectableDirections,
             validationMessage: validationMessage,
             allowsDateSelection: false,
             showsOuterBackground: false,
+            allowsQuickInputLegend: showsQuickInputLegend,
             onCancel: { dismiss() },
             onSubmit: createTodo
         )
@@ -995,6 +1691,7 @@ struct QuickTodoCreationPopover: View {
         }
         let draft = TodoDraft(
             title: title,
+            hashtags: hashtags,
             direction: selectedDirection,
             measurement: volume.measurement,
             priority: priority,
@@ -1012,6 +1709,7 @@ struct QuickTodoCreationPopover: View {
         let direction = selectedDirection ?? resolvedOtherDirection()
         let todo = Todo(
             title: draft.trimmedTitle,
+            hashtags: draft.hashtags,
             direction: direction,
             measurement: volume.measurement,
             priority: priority,
@@ -1045,12 +1743,14 @@ struct QuickTodoCreationPopover: View {
 private struct PriorityChip: View {
     @Binding var priority: TodoPriority
     @Binding var isRoomIfPossible: Bool
+    @Binding var isExplicit: Bool
 
     var body: some View {
         Menu {
             ForEach(TodoPriority.allCases) { option in
                 Button {
                     priority = option
+                    isExplicit = true
                     if option != .low {
                         isRoomIfPossible = false
                     }
@@ -1064,6 +1764,7 @@ private struct PriorityChip: View {
 
                 Button {
                     isRoomIfPossible.toggle()
+                    isExplicit = true
                 } label: {
                     menuRow(text: String(localized: "余裕があれば"), isSelected: isRoomIfPossible)
                 }
@@ -1077,7 +1778,7 @@ private struct PriorityChip: View {
     }
 
     private var labelText: String {
-        return priority.displayName
+        isExplicit ? priority.displayName : String(localized: "優先度")
     }
 
     private var tint: Color {
@@ -1136,6 +1837,7 @@ private struct RoomIfPossibleChip: View {
 
 private struct DirectionChip: View {
     @Binding var selectedDirectionID: UUID?
+    @Binding var isExplicit: Bool
 
     let directions: [Direction]
 
@@ -1145,6 +1847,9 @@ private struct DirectionChip: View {
     }
 
     private var labelText: String {
+        guard isExplicit else {
+            return String(localized: "方向")
+        }
         guard let selectedDirection else {
             return String(localized: "その他")
         }
@@ -1154,25 +1859,25 @@ private struct DirectionChip: View {
 
     var body: some View {
         Menu {
-            Button {
-                selectedDirectionID = nil
-            } label: {
-                menuRow(text: String(localized: "自動: その他"), isSelected: selectedDirectionID == nil)
+            ForEach(directions) { direction in
+                Button {
+                    selectedDirectionID = direction.id
+                    isExplicit = true
+                } label: {
+                    menuRow(
+                        text: "\(direction.symbolName) \(direction.name)",
+                        isSelected: selectedDirectionID == direction.id
+                    )
+                }
             }
 
-            if !directions.isEmpty {
-                Divider()
+            if !directions.isEmpty { Divider() }
 
-                ForEach(directions) { direction in
-                    Button {
-                        selectedDirectionID = direction.id
-                    } label: {
-                        menuRow(
-                            text: "\(direction.symbolName) \(direction.name)",
-                            isSelected: selectedDirectionID == direction.id
-                        )
-                    }
-                }
+            Button {
+                selectedDirectionID = nil
+                isExplicit = true
+            } label: {
+                menuRow(text: String(localized: "その他"), isSelected: selectedDirectionID == nil)
             }
         } label: {
             Text(labelText)
@@ -1205,29 +1910,103 @@ private struct VolumeChip: View {
     @Binding var volume: QuickTodoVolume
 
     var body: some View {
-        Menu {
-            ForEach(QuickTodoVolume.options, id: \.self) { option in
-                Button {
-                    volume = option
-                } label: {
-                    if option == volume {
-                        Label(option.menuLabel, systemImage: "checkmark")
-                    } else {
-                        Text(option.menuLabel)
-                    }
-                }
+        HStack(spacing: 3) {
+            Image(systemName: typeIcon)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(iconColor)
+                .frame(width: 13, height: 16)
+                .contentTransition(.symbolEffect(.replace))
+
+            if volume.measurement == .checkbox {
+                Text(typeLabel)
+                    .foregroundStyle(volume == .unspecified ? .secondary : .primary)
+                    .transition(.opacity.combined(with: .scale(scale: 0.92)))
+            } else {
+                TextField("1", value: amountBinding, format: .number)
+                    .textFieldStyle(.plain)
+                    .multilineTextAlignment(.trailing)
+                    .font(.caption.monospacedDigit().weight(.semibold))
+                    .frame(width: 25)
+
+                Text(volume.measurement == .focusBlocks ? String(localized: "ブロック") : String(localized: "分"))
+                    .foregroundStyle(.secondary)
+                    .transition(.opacity.combined(with: .move(edge: .leading)))
             }
-        } label: {
-            Text(volume.chipLabel)
-                .chipStyle(tint: .secondary)
+
+            Menu {
+                Button { volume = .checkbox } label: {
+                    menuRow(String(localized: "チェック"), selected: volume.measurement == .checkbox && volume != .unspecified)
+                }
+                Button { volume = .blocks(max(1, volume.plannedAmount ?? 1)) } label: {
+                    menuRow(String(localized: "ブロック"), selected: volume.measurement == .focusBlocks)
+                }
+                Button { volume = .minutes(max(1, volume.plannedAmount ?? 25)) } label: {
+                    menuRow(String(localized: "分"), selected: volume.measurement == .minutes)
+                }
+            } label: {
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 8, weight: .bold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 16, height: 20)
+                    .contentShape(Rectangle())
+            }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
         }
-        .menuStyle(.borderlessButton)
+        .font(.caption.weight(.medium))
+        .padding(.leading, 9)
+        .padding(.trailing, 5)
+        .frame(height: 30)
+        .background(Color.secondary.opacity(0.1), in: RoundedRectangle(cornerRadius: 7))
+        .overlay {
+            RoundedRectangle(cornerRadius: 7)
+                .strokeBorder(Color.secondary.opacity(0.12), lineWidth: 1)
+        }
+        .animation(.snappy(duration: 0.22), value: volume.measurement)
         .accessibilityLabel(String(localized: "タスクの分量を選択"))
+    }
+
+    private var typeIcon: String {
+        switch volume {
+        case .unspecified: "square.dashed"
+        case .checkbox: "checkmark.square"
+        case .blocks: "circle"
+        case .minutes: "circle.lefthalf.filled"
+        }
+    }
+
+    private var iconColor: Color {
+        volume == .unspecified ? .secondary : .accentColor
+    }
+
+    private var typeLabel: String {
+        switch volume {
+        case .unspecified: String(localized: "種類")
+        case .checkbox: String(localized: "チェック")
+        case .blocks: String(localized: "ブロック")
+        case .minutes: String(localized: "分")
+        }
+    }
+
+    private var amountBinding: Binding<Int> {
+        Binding(
+            get: { max(1, volume.plannedAmount ?? 1) },
+            set: { value in
+                let amount = max(1, value)
+                volume = volume.measurement == .focusBlocks ? .blocks(amount) : .minutes(amount)
+            }
+        )
+    }
+
+    @ViewBuilder
+    private func menuRow(_ text: String, selected: Bool) -> some View {
+        if selected { Label(text, systemImage: "checkmark") } else { Text(text) }
     }
 }
 
 private struct DateChip: View {
     @Binding var dateOption: QuickTodoDate
+    @Binding var isExplicit: Bool
 
     @State private var showingCustomPicker = false
     @State private var customDate = Date.now
@@ -1236,18 +2015,21 @@ private struct DateChip: View {
         Menu {
             Button {
                 dateOption = .today
+                isExplicit = true
             } label: {
                 menuRow(text: String(localized: "今日"), isSelected: dateOption == .today)
             }
 
             Button {
                 dateOption = .tomorrow
+                isExplicit = true
             } label: {
                 menuRow(text: String(localized: "明日"), isSelected: dateOption == .tomorrow)
             }
 
             Button {
                 dateOption = .none
+                isExplicit = true
             } label: {
                 menuRow(text: String(localized: "日付なし"), isSelected: dateOption == .none)
             }
@@ -1259,7 +2041,7 @@ private struct DateChip: View {
                 showingCustomPicker = true
             }
         } label: {
-            Text(dateOption.chipLabel)
+            Text(isExplicit ? dateOption.chipLabel : String(localized: "日付"))
                 .chipStyle(tint: .secondary)
         }
         .menuStyle(.borderlessButton)
@@ -1272,6 +2054,7 @@ private struct DateChip: View {
 
                 Button(String(localized: "設定")) {
                     dateOption = .custom(customDate)
+                    isExplicit = true
                     showingCustomPicker = false
                 }
                 .buttonStyle(.borderedProminent)
@@ -1462,6 +2245,11 @@ private struct TodoRow: View {
                     Text("·")
 
                     Text(summary)
+
+                    ForEach(todo.hashtags, id: \.self) { hashtag in
+                        Text(verbatim: "#\(hashtag)")
+                            .foregroundStyle(checkboxTint)
+                    }
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)

@@ -5,6 +5,7 @@
 //  Created by Codex on 2026/07/08.
 //
 
+import AppKit
 import SwiftData
 import SwiftUI
 
@@ -21,6 +22,8 @@ struct FlowMiniPlayerView: View {
     @Query(sort: \Todo.createdAt, order: .forward) private var todos: [Todo]
 
     @State private var showsTaskPicker = false
+    @State private var showsTaskComposer = false
+    @State private var presentsTaskComposerAfterPicker = false
     @State private var showsModePicker = false
     @State private var resultText = ""
     @State private var editingTaskTitleID: UUID?
@@ -226,7 +229,8 @@ struct FlowMiniPlayerView: View {
                 directions: activeDirections,
                 todos: todayTodos,
                 selectedDirectionID: activeFlowStore.selectedDirectionID,
-                selectedTodoID: activeFlowStore.selectedTodoID
+                selectedTodoID: activeFlowStore.selectedTodoID,
+                onCreateTask: presentTaskComposer
             ) { direction, todo in
                 activeFlowStore.selectContext(
                     direction: direction,
@@ -235,6 +239,27 @@ struct FlowMiniPlayerView: View {
                 )
             }
             .frame(width: 520, height: 460)
+        }
+        .popover(isPresented: $showsTaskComposer, arrowEdge: .trailing) {
+            QuickTodoCreationPopover(
+                directions: activeDirections,
+                showsQuickInputLegend: false
+            ) { todo in
+                activeFlowStore.selectContext(
+                    direction: todo.direction,
+                    todo: todo,
+                    modelContext: modelContext
+                )
+            }
+        }
+        .onChange(of: showsTaskPicker) { _, isPresented in
+            guard !isPresented, presentsTaskComposerAfterPicker else { return }
+            presentsTaskComposerAfterPicker = false
+
+            Task { @MainActor in
+                await Task.yield()
+                showsTaskComposer = true
+            }
         }
         .onChange(of: selectedTodo?.id) { _, newID in
             if editingTaskTitleID != newID {
@@ -246,6 +271,11 @@ struct FlowMiniPlayerView: View {
                 commitTaskTitle()
             }
         }
+    }
+
+    private func presentTaskComposer() {
+        presentsTaskComposerAfterPicker = true
+        showsTaskPicker = false
     }
 
     private var modePickerButton: some View {
@@ -1044,11 +1074,11 @@ private struct FlowTaskPickerView: View {
     let todos: [Todo]
     let selectedDirectionID: UUID?
     let selectedTodoID: UUID?
+    let onCreateTask: () -> Void
     let onSelect: (Direction?, Todo?) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var selectedTab: FlowTaskPickerTab = .tasks
-    @State private var showsTaskComposer = false
 
     private var taskGroups: [FlowTaskPickerGroup] {
         FlowTaskPickerGroup.groups(for: todos.filter { $0.direction?.type != .habit })
@@ -1128,7 +1158,7 @@ private struct FlowTaskPickerView: View {
     private var taskTab: some View {
         VStack(alignment: .leading, spacing: 12) {
             Button {
-                showsTaskComposer = true
+                onCreateTask()
             } label: {
                 Label(String(localized: "タスクを追加"), systemImage: "plus.circle.fill")
                     .font(.subheadline.weight(.semibold))
@@ -1139,11 +1169,6 @@ private struct FlowTaskPickerView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 8))
             }
             .buttonStyle(.plain)
-            .popover(isPresented: $showsTaskComposer, arrowEdge: .trailing) {
-                QuickTodoCreationPopover(directions: directions) { todo in
-                    onSelect(todo.direction, todo)
-                }
-            }
 
             if taskGroups.isEmpty {
                 emptyState(String(localized: "今日のタスクはありません"))

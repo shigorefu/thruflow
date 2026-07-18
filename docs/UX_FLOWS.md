@@ -39,9 +39,13 @@ Task rows:
 - Direction color is used unless the Direction is `その他`;
 - `チェック` shows a checkbox;
 - `集中ブロック` shows a filling ring;
-- `分` shows minute progress.
+- `分` shows a filled timer circle, visually distinct from the Block ring.
 
-Quick capture behaves like a messenger composer. The user can set measurement, Direction, priority, and date from compact controls.
+Quick capture behaves like a messenger composer. The user can set measurement, Direction, priority, date, and multiple hashtags from compact controls. The default measurement control reads `種類`; leaving it untouched creates a Check Task. It is one stable animated control: its leading icon distinguishes Check, Block ring, and filled Minute circle; Block and Minute states expose an inline numeric field and unit before the menu chevron. Hashtags display with `#`, deduplicate case-insensitively, and preserve the first entered casing.
+
+The composer also recognizes `[]`, `[2b]`, `[30m]`, `@Direction`, `!high`, `/today`, and `#tag`. Completed tokens are removed from the persisted plain-text title, update the lower controls, and remain visible in a dedicated upper row inside the composer as semantic chips (`[]` becomes a `チェック` chip); clicking a chip removes its semantic value. English aliases always work, while Japanese and Russian aliases work in addition. Typing `@`, `!`, `/`, or `[` opens a contextual autocomplete surface above the composer. Each suggestion is clickable across its full row, and the current suggestion has an accent highlight. Mouse hover or `Up`/`Down` changes selection; `Return` applies it. An unknown Direction is never guessed: submitting it immediately opens the full Direction creation screen with the name prefilled; after cancellation the user can retry or explicitly create the Task under `その他`. Invalid tokens remain ordinary title text. A dismissible syntax legend appears above the composer only after typing begins, groups measurement shortcuts (`[ ]`, `[1b]`, `[25m]`) before metadata shortcuts (`@`, `!`, `/`, `#`), and can be restored from Settings. Autocomplete temporarily replaces the legend so the two surfaces never overlap. The primary submit action is an icon button in the composer's upper-right corner; unset Direction, priority, and date controls use neutral placeholder labels. Tasks and menu-bar quick creation use this same composer and interaction model.
+
+Inside the Flow task picker, quick creation opens as a separate compact trailing popover. It shows only the messenger composer, without the syntax legend. The add action first closes the Task picker and then presents the composer from the player itself. Avoiding a nested popover keeps controls and submenus interactive in the macOS menu-bar window instead of treating them as outside clicks.
 
 When `今日` is selected, active overdue normal Tasks appear in a leading `期限切れ` section. The section supports normal Task actions, drag-to-date, and `すべて今日へ`. Automatically generated Habit instances are excluded.
 
