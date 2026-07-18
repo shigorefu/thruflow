@@ -4,8 +4,9 @@
 
 ThruFlow keeps one product model and one persistence model while allowing each
 Apple platform to provide its own application shell and feature presentation.
-The current shipping platform is macOS. iOS will be added as a separate UI
-layer without copying domain rules or changing stored data.
+macOS remains the complete product surface. The iPhone app is a separate,
+narrow MVP presentation that reuses the same domain, application state, and
+persistence schema without copying the desktop UI.
 
 ## Source Layout
 
@@ -24,24 +25,25 @@ ThruFlow/
       App/          macOS scene composition and application delegate
       Features/     Current macOS feature screens
       Support/      AppKit adapters used by the macOS presentation layer
+    iOS/
+      App/          iPhone composition root, tabs, entitlements, and Info.plist
+      Features/     Native iPhone Flow, Tasks, Directions, and Settings screens
 ```
 
-An iOS implementation should be introduced under `Platforms/iOS` and reuse
-`Shared`. It must not import files from `Platforms/macOS`.
-
-The existing `ThruFlow` app and test targets are intentionally macOS-only.
-The iOS application will be a separate target with its own app entry point and
-source membership. This prevents Xcode from compiling desktop views and the
-Metal desktop presentation into the iPhone application by accident.
+`ThruFlow` and `ThruFlow iOS` are separate application targets. Explicit source
+exclusions keep AppKit, menu-bar, and Metal dashboard code out of iOS and keep
+UIKit/iPhone presentation out of macOS. Shared tests remain in the macOS test
+target because they verify the platform-neutral core.
 
 ## Dependency Rules
 
 Dependencies point inward:
 
 ```text
-Platforms/macOS  ──>  Shared/Application  ──>  Shared/Domain
-       │                       │
-       └──────────────────────> Shared/UI
+Platforms/macOS ─┐
+                 ├──> Shared/Application ──> Shared/Domain
+Platforms/iOS  ──┘              │
+                 └──────────────> Shared/UI
 ```
 
 - `Shared/Domain/Models` owns persisted entities and stable raw values.
@@ -58,6 +60,8 @@ Platforms/macOS  ──>  Shared/Application  ──>  Shared/Domain
   Japanese is the source and fallback language.
 - `Platforms/macOS` owns navigation, windows, menu-bar scenes, keyboard/focus
   integration, drag-and-drop presentation, and the current desktop layouts.
+- `Platforms/iOS` owns the iPhone tab shell and compact Flow, Tasks,
+  Directions, and Settings presentations.
 - Platform-specific behavior is reached through small adapters in the owning
   platform folder. Shared code does not use conditional AppKit/UIKit imports.
 
@@ -77,8 +81,8 @@ Each platform owns its composition root:
   `Calendar` and `Locale`. Platform composition roots inject those values into
   their scene environments; settings never enter SwiftData.
 
-A future iOS target must provide its own `App`, navigation shell, scene
-lifecycle integration, and platform adapters under `Platforms/iOS/App`.
+- `Platforms/iOS/App/ThruFlowiOSApp.swift` declares the iPhone scene and injects
+  the same `ActiveFlowStore`, `AppSettings`, calendar, locale, and model schema.
 
 ## Feature Boundaries
 
@@ -96,8 +100,11 @@ lifecycle integration, and platform adapters under `Platforms/iOS/App`.
 ## Persistence
 
 The existing SwiftData models and schema remain the single source of truth.
-This refactor does not rename entities, fields, enum raw values, or storage.
-Local SwiftData remains independent of CloudKit.
+Normal signed app runs use the private CloudKit database in
+`iCloud.com.shigorefu.thruflow`. Tests use an in-memory local configuration, and
+`THRUFLOW_DISABLE_CLOUDKIT=1` or `--local-store` provides an explicit local-only
+escape hatch. CloudKit availability must never be a precondition for domain
+logic or tests.
 
 All derived progress must be reproducible from persisted history. Mutations to
 Flow history go through the shared reconciliation logic rather than applying
@@ -112,17 +119,13 @@ view-local relative deltas.
 - A shared-layer change must build the macOS target and pass its relevant unit
   tests before it is used by a second platform.
 
-## Adding iOS
+## iPhone MVP Boundary
 
-1. Add a separate iOS app target and `Platforms/iOS` source tree.
-2. Include `Shared` sources and exclude `Platforms/macOS` sources explicitly.
-3. Create an iOS composition root using the same model container schema and
-   shared application state.
-4. Implement a narrow vertical slice (`タスク`, then Flow) with native iPhone
-   navigation instead of porting desktop layouts.
-5. Keep synchronization optional: both platform targets must remain functional
-   with local SwiftData only.
-6. Run macOS regression tests after every shared-layer extraction.
+The first iPhone release includes Flow, today's Tasks/Habits, Direction
+management, basic settings, and CloudKit synchronization. Advanced Statistics,
+complex History, and full calendar editing remain macOS-only until the next
+iPhone stage. Their shared calculations may be reused later, but their desktop
+views must not be compiled into the iOS target.
 
 ## Migration Strategy
 
@@ -130,10 +133,10 @@ view-local relative deltas.
 2. Build the macOS target after each source-boundary change.
 3. Extract direct AppKit calls behind macOS adapters.
 4. Run the complete macOS test suite before merging.
-5. Add a separate iOS target and app shell only after the shared boundary builds
-   cleanly and the macOS behavior has been verified unchanged.
+5. Build and smoke-test both application targets after shared changes.
 
 ## Non-Goals
 
-This refactor does not add an iOS screen, synchronization, new product
-features, new business rules, or visual changes.
+This cross-platform stage does not add new business rules or alter macOS
+behavior. It does not include advanced iPhone Statistics, complex History, full
+calendar editing, widgets, Live Activities, or Apple Watch.

@@ -29,6 +29,9 @@ Current MVP goal:
 - Manual historical Flow creation and correction without automatically completing a linked Task.
 - Dashboard statistics carousel for time distribution, a 7-day Flow trend, and completion status.
 - Flow and Tasks contribution-style statistics.
+- Private CloudKit synchronization between the user's signed-in Apple devices.
+- iPhone MVP with Flow, today's `タスク`, `方向`, and basic `設定`.
+- Animated completion feedback for Check, Block, and Minute Tasks, with an optional bundled completion sound.
 
 ## Not Included
 
@@ -36,11 +39,13 @@ Current MVP goal:
 - Non-Flow continuous timeline.
 - Food/sleep/game classification.
 - Complex rewards.
-- CloudKit sync.
 - Accounts/subscriptions.
 - Widgets.
 - Live Activities.
 - Apple Watch.
+- Advanced iPhone `統計`.
+- Complex iPhone `履歴`.
+- Full iPhone calendar editing.
 
 ## Known Product Gaps
 

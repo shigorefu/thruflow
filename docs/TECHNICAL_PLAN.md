@@ -12,10 +12,15 @@ The canonical source layout and dependency rules are documented in
 
 SwiftUI views should call domain logic instead of owning product rules directly.
 
-The current macOS application shell and feature screens live under
-`Platforms/macOS`. Shared models, logic, application state, services, and small
-cross-platform controls live under `Shared`. A future iOS presentation layer
-depends on `Shared` and never on the macOS folder.
+The macOS application shell and complete feature screens live under
+`Platforms/macOS`. The separate `ThruFlow iOS` target owns a narrow iPhone UI
+under `Platforms/iOS` and never imports the macOS folder. Both targets depend on
+the models, logic, application state, services, and small controls in `Shared`.
+
+Normal app composition uses the private CloudKit database in
+`iCloud.com.shigorefu.thruflow`. Tests explicitly use an in-memory local store.
+The iOS deployment target is 17.0 even when building with Xcode 26 and the iOS
+26 SDK; iOS 26-only APIs require availability guards and an explicit product need.
 
 ## Current Data Rules
 
@@ -45,6 +50,7 @@ depends on `Shared` and never on the macOS folder.
 - The dashboard reuses `FlowMiniPlayerView` behavior through its dedicated dashboard layout instead of creating a second timer controller. `ActiveFlowStore.phaseProgress` provides the circular timer progress.
 - The dashboard projects today's Todo groups and uses `RequiredTodoPlanner` to ensure today's Habit instances exist when Flow is the first opened screen.
 - `TodoProgressControl` is the shared Check/Block/Minute control used by Tasks and the dashboard.
+- `TaskCompletionFeedbackPlayer` optionally plays `task-complete.caf`; absence of the resource is a supported no-op. The shared progress control owns the completion drawing/pulse and respects Reduce Motion.
 
 ## Test Expectations
 

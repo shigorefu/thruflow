@@ -1,6 +1,6 @@
 # ThruFlow Data Model
 
-This document is the canonical inventory of persisted application data. ThruFlow uses local SwiftData as the primary store. CloudKit capability does not change or gate local persistence.
+This document is the canonical inventory of persisted application data. ThruFlow uses one SwiftData schema on macOS and iOS. Signed application runs synchronize its local store through the private CloudKit database; tests and the documented local-only escape hatch do not use CloudKit.
 
 ## Persistence Rules
 
@@ -9,6 +9,8 @@ This document is the canonical inventory of persisted application data. ThruFlow
 - Historical records use archive or soft-delete timestamps where removal must not destroy reporting context.
 - `FlowSession`, `FlowSegment`, and `FlowBreak` preserve exact seconds and dates. Blocks and dashboard values are derived projections.
 - A Flow series is a lightweight UUID association. Its sessions are not merged into one database row.
+- CloudKit container: `iCloud.com.shigorefu.thruflow`. There is no account or sharing model; records live in the signed-in user's private database.
+- CloudKit-compatible relationships are optional and have explicit inverses. Required scalar fields have declaration defaults so existing local stores and CloudKit imports can materialize records safely.
 
 ## Direction
 

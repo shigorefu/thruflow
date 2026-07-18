@@ -41,6 +41,13 @@ Task rows:
 - `集中ブロック` shows a filling ring;
 - `分` shows a filled timer circle, visually distinct from the Block ring.
 
+Completing a Check Task draws the checkmark into place and gives the control one
+restrained pulse. Reaching a Block or Minute goal uses the same completion pulse
+without making its progress control manually clickable. Completion feedback is
+triggered only on the incomplete-to-complete transition, respects Reduce Motion,
+and may play the bundled `task-complete.caf` sound when that optional asset is
+present. Re-rendering an already completed Task never repeats the sound.
+
 Quick capture behaves like a messenger composer. The user can set measurement, Direction, priority, date, and multiple hashtags from compact controls. The default measurement control reads `種類`; leaving it untouched creates a Check Task. It is one stable animated control: its leading icon distinguishes Check, Block ring, and filled Minute circle; Block and Minute states expose an inline numeric field and unit before the menu chevron. Hashtags display with `#`, deduplicate case-insensitively, and preserve the first entered casing.
 
 The composer also recognizes `[]`, `[2b]`, `[30m]`, `@Direction`, `!high`, `/today`, and `#tag`. Completed tokens are removed from the persisted plain-text title, update the lower controls, and remain visible in a dedicated upper row inside the composer as semantic chips (`[]` becomes a `チェック` chip); clicking a chip removes its semantic value. English aliases always work, while Japanese and Russian aliases work in addition. Typing `@`, `!`, `/`, or `[` opens a contextual autocomplete surface above the composer. Each suggestion is clickable across its full row, and the current suggestion has an accent highlight. Mouse hover or `Up`/`Down` changes selection; `Return` applies it. An unknown Direction is never guessed: submitting it immediately opens the full Direction creation screen with the name prefilled; after cancellation the user can retry or explicitly create the Task under `その他`. Invalid tokens remain ordinary title text. A dismissible syntax legend appears above the composer only after typing begins, groups measurement shortcuts (`[ ]`, `[1b]`, `[25m]`) before metadata shortcuts (`@`, `!`, `/`, `#`), and can be restored from Settings. Autocomplete temporarily replaces the legend so the two surfaces never overlap. The primary submit action is an icon button in the composer's upper-right corner; unset Direction, priority, and date controls use neutral placeholder labels. Tasks and menu-bar quick creation use this same composer and interaction model.
@@ -109,6 +116,20 @@ Hovering a rest shows its type, interval, and duration above the timeline. Click
 Below the Flow stage are today's `タスク` and `習慣` columns. `ナイス` is omitted when empty. Rows use the same square Check and circular Block/Minute progress controls as the Tasks screen. Check can be completed manually; Block and Minute rings are read-only because recorded Flow owns their progress. Rows can be opened for editing. The fixed-height compact `統計` carousel provides Task/Direction focused-time distribution, a seven-day Flow trend with previous-day comparisons, and today's completion status.
 
 The Dashboard Task header `+` opens the shared messenger-style composer in a separate popover. The Flow Task picker's `タスク` tab also ends with an add row that opens the same popover; a Task created there is immediately selected for Flow. Direction, measurement, and priority remain editable, while the date is fixed to `今日`. The composer has an explicit close button that discards the unfinished action. Habit has no manual add action.
+
+## iPhone MVP
+
+The first iPhone surface is a native four-tab shell: `Flow`, `タスク`, `方向`,
+and `設定`. It reuses shared domain models, persistence, timer state, progress
+logic, and localization, but owns compact iPhone layouts instead of embedding
+macOS views. Japanese is the default language for a fresh install.
+
+The iPhone MVP supports starting and controlling Flow, selecting today's Task or
+Habit, completing Check Tasks, creating and editing Tasks and Directions, and
+changing the basic shared settings. Private CloudKit synchronization carries the
+same SwiftData records between devices signed into one Apple ID. Advanced
+`統計`, complex `履歴`, and full calendar editing are intentionally deferred to
+the next iPhone stage.
 
 ## Statistics
 
