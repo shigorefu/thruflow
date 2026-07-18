@@ -1123,6 +1123,7 @@ private struct FlowTaskPickerView: View {
         }
         .padding(14)
         .background(.bar)
+        .interactiveDismissDisabled(showsTaskComposer)
     }
 
     @ViewBuilder
