@@ -856,6 +856,7 @@ struct MessengerTodoComposer: View {
     @State private var hasExplicitDirection = false
     @State private var hasExplicitPriority = false
     @State private var hasExplicitDate = false
+    @State private var selectedAutocompleteSuggestionID: String?
 
     private let parser = TaskQuickInputParser()
 
@@ -916,6 +917,9 @@ struct MessengerTodoComposer: View {
         .onChange(of: dateOption) { _, newValue in
             updateExistingInlineToken(.date(newValue))
         }
+        .onChange(of: autocompleteToken) { _, _ in
+            selectedAutocompleteSuggestionID = nil
+        }
     }
 
     private var composerSurface: some View {
@@ -974,7 +978,17 @@ struct MessengerTodoComposer: View {
                     .lineLimit(2...5)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .focused($isFocused)
-                    .onSubmit(submit)
+                    .onSubmit {
+                        if !activateSelectedAutocompleteSuggestion() {
+                            submit()
+                        }
+                    }
+                    .onKeyPress(.upArrow) {
+                        moveAutocompleteSelection(by: -1) ? .handled : .ignored
+                    }
+                    .onKeyPress(.downArrow) {
+                        moveAutocompleteSelection(by: 1) ? .handled : .ignored
+                    }
                     .onChange(of: title) { _, newValue in
                         parseCommittedTokens(in: newValue)
                     }
@@ -1155,18 +1169,14 @@ struct MessengerTodoComposer: View {
 
     @ViewBuilder
     private func autocompleteSuggestions(for token: String) -> some View {
+        let suggestions = autocompleteSuggestionItems(for: token)
+
         VStack(alignment: .leading, spacing: 2) {
-            switch token.first {
-            case "@":
-                directionAutocomplete(query: String(token.dropFirst()))
-            case "!":
-                priorityAutocomplete(query: String(token.dropFirst()))
-            case "/":
-                dateAutocomplete(query: String(token.dropFirst()))
-            case "[":
-                measurementAutocomplete(query: String(token.dropFirst()))
-            default:
-                EmptyView()
+            ForEach(suggestions) { suggestion in
+                suggestionRow(
+                    suggestion,
+                    isSelected: selectedSuggestionID(in: suggestions) == suggestion.id
+                )
             }
         }
         .padding(5)
@@ -1179,106 +1189,186 @@ struct MessengerTodoComposer: View {
         .shadow(color: .black.opacity(0.16), radius: 12, y: 5)
     }
 
-    @ViewBuilder
-    private func directionAutocomplete(query: String) -> some View {
-        let matches = directions
-            .filter { query.isEmpty || $0.name.localizedCaseInsensitiveContains(query) }
-            .prefix(6)
-
-        if matches.isEmpty {
-            suggestionRow(
-                icon: "plus.circle",
-                title: String(localized: "新しい方向を作成"),
-                detail: query.isEmpty ? nil : query
-            ) {
-                pendingDirectionName = query
-                isCreatingDirection = true
-            }
-        } else {
-            ForEach(Array(matches)) { direction in
-                suggestionRow(symbol: direction.symbolName, title: direction.name) {
-                    choose(direction)
-                }
-            }
+    private func autocompleteSuggestionItems(for token: String) -> [TaskComposerAutocompleteSuggestion] {
+        let query = String(token.dropFirst())
+        switch token.first {
+        case "@": return directionAutocompleteSuggestions(query: query)
+        case "!": return priorityAutocompleteSuggestions(query: query)
+        case "/": return dateAutocompleteSuggestions(query: query)
+        case "[": return measurementAutocompleteSuggestions(query: query)
+        default: return []
         }
     }
 
-    private func priorityAutocomplete(query: String) -> some View {
+    private func directionAutocompleteSuggestions(query: String) -> [TaskComposerAutocompleteSuggestion] {
+        let matches = Array(
+            directions
+                .filter { query.isEmpty || $0.name.localizedCaseInsensitiveContains(query) }
+                .prefix(6)
+        )
+        guard !matches.isEmpty else {
+            return [
+                TaskComposerAutocompleteSuggestion(
+                    id: "create-direction:\(query)",
+                    icon: "plus.circle",
+                    title: String(localized: "新しい方向を作成"),
+                    detail: query.isEmpty ? nil : query,
+                    action: .createDirection(query)
+                )
+            ]
+        }
+        return matches.map { direction in
+            TaskComposerAutocompleteSuggestion(
+                id: "direction:\(direction.id.uuidString)",
+                symbol: direction.symbolName,
+                title: direction.name,
+                action: .direction(direction.id)
+            )
+        }
+    }
+
+    private func priorityAutocompleteSuggestions(query: String) -> [TaskComposerAutocompleteSuggestion] {
         let options: [(String, String, TodoPriority, Bool)] = [
             ("high", String(localized: "高"), .high, false),
             ("medium", String(localized: "中"), .medium, false),
             ("low", String(localized: "低い"), .low, false),
             ("later", String(localized: "余裕があれば"), .low, true),
         ]
-        return VStack(alignment: .leading, spacing: 2) {
-            ForEach(options.filter { query.isEmpty || $0.0.hasPrefix(query.lowercased()) }, id: \.0) { option in
-                suggestionRow(icon: "exclamationmark", title: option.1, detail: "!\(option.0)") {
-                    completeAutocompleteToken("!\(option.0)")
-                }
+        return options
+            .filter { query.isEmpty || $0.0.hasPrefix(query.lowercased()) }
+            .map { option in
+                TaskComposerAutocompleteSuggestion(
+                    id: "priority:\(option.0)",
+                    icon: "exclamationmark",
+                    title: option.1,
+                    detail: "!\(option.0)",
+                    action: .token("!\(option.0)")
+                )
             }
-        }
     }
 
-    private func dateAutocomplete(query: String) -> some View {
+    private func dateAutocompleteSuggestions(query: String) -> [TaskComposerAutocompleteSuggestion] {
         let options: [(String, String)] = [
             ("today", String(localized: "今日")),
             ("tomorrow", String(localized: "明日")),
             ("nodate", String(localized: "日付なし")),
         ]
-        return VStack(alignment: .leading, spacing: 2) {
-            ForEach(options.filter { query.isEmpty || $0.0.hasPrefix(query.lowercased()) }, id: \.0) { option in
-                suggestionRow(icon: "calendar", title: option.1, detail: "/\(option.0)") {
-                    completeAutocompleteToken("/\(option.0)")
-                }
+        return options
+            .filter { query.isEmpty || $0.0.hasPrefix(query.lowercased()) }
+            .map { option in
+                TaskComposerAutocompleteSuggestion(
+                    id: "date:\(option.0)",
+                    icon: "calendar",
+                    title: option.1,
+                    detail: "/\(option.0)",
+                    action: .token("/\(option.0)")
+                )
             }
-        }
     }
 
-    private func measurementAutocomplete(query: String) -> some View {
+    private func measurementAutocompleteSuggestions(query: String) -> [TaskComposerAutocompleteSuggestion] {
         let options: [(String, String, String)] = [
             ("[]", "square", String(localized: "チェック")),
             ("[1b]", "circle", String(localized: "1ブロック")),
             ("[25m]", "circle.lefthalf.filled", String(localized: "25分")),
         ]
-        return VStack(alignment: .leading, spacing: 2) {
-            ForEach(options.filter { query.isEmpty || $0.0.dropFirst().hasPrefix(query) }, id: \.0) { option in
-                suggestionRow(icon: option.1, title: option.2, detail: option.0) {
-                    completeAutocompleteToken(option.0)
-                }
+        return options
+            .filter { query.isEmpty || $0.0.dropFirst().hasPrefix(query) }
+            .map { option in
+                TaskComposerAutocompleteSuggestion(
+                    id: "measurement:\(option.0)",
+                    icon: option.1,
+                    title: option.2,
+                    detail: option.0,
+                    action: .token(option.0)
+                )
             }
-        }
     }
 
     private func suggestionRow(
-        icon: String? = nil,
-        symbol: String? = nil,
-        title: String,
-        detail: String? = nil,
-        action: @escaping () -> Void
+        _ suggestion: TaskComposerAutocompleteSuggestion,
+        isSelected: Bool
     ) -> some View {
-        Button(action: action) {
+        Button {
+            activateAutocompleteSuggestion(suggestion)
+        } label: {
             HStack(spacing: 9) {
-                if let icon {
+                if let icon = suggestion.icon {
                     Image(systemName: icon)
                         .frame(width: 18)
-                } else if let symbol {
+                } else if let symbol = suggestion.symbol {
                     Text(symbol)
                         .frame(width: 18)
                 }
-                Text(title)
+                Text(suggestion.title)
                     .lineLimit(1)
                 Spacer(minLength: 8)
-                if let detail {
+                if let detail = suggestion.detail {
                     Text(verbatim: detail)
                         .font(.caption.monospaced())
                         .foregroundStyle(.secondary)
                 }
             }
-            .contentShape(Rectangle())
             .padding(.horizontal, 9)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .frame(height: 32)
+            .contentShape(Rectangle())
+            .background(
+                isSelected ? Color.accentColor.opacity(0.18) : Color.clear,
+                in: RoundedRectangle(cornerRadius: 7)
+            )
         }
         .buttonStyle(.plain)
+        .contentShape(Rectangle())
+        .onHover { isHovering in
+            if isHovering {
+                selectedAutocompleteSuggestionID = suggestion.id
+            }
+        }
+    }
+
+    private func selectedSuggestionID(in suggestions: [TaskComposerAutocompleteSuggestion]) -> String? {
+        if let selectedAutocompleteSuggestionID,
+           suggestions.contains(where: { $0.id == selectedAutocompleteSuggestionID }) {
+            return selectedAutocompleteSuggestionID
+        }
+        return suggestions.first?.id
+    }
+
+    private func moveAutocompleteSelection(by offset: Int) -> Bool {
+        guard let token = autocompleteToken else { return false }
+        let suggestions = autocompleteSuggestionItems(for: token)
+        guard !suggestions.isEmpty else { return false }
+        let currentID = selectedSuggestionID(in: suggestions)
+        let currentIndex = suggestions.firstIndex { $0.id == currentID } ?? 0
+        let nextIndex = min(max(currentIndex + offset, 0), suggestions.count - 1)
+        selectedAutocompleteSuggestionID = suggestions[nextIndex].id
+        return true
+    }
+
+    private func activateSelectedAutocompleteSuggestion() -> Bool {
+        guard let token = autocompleteToken else { return false }
+        let suggestions = autocompleteSuggestionItems(for: token)
+        guard let selectedID = selectedSuggestionID(in: suggestions),
+              let suggestion = suggestions.first(where: { $0.id == selectedID }) else {
+            return false
+        }
+        activateAutocompleteSuggestion(suggestion)
+        return true
+    }
+
+    private func activateAutocompleteSuggestion(_ suggestion: TaskComposerAutocompleteSuggestion) {
+        switch suggestion.action {
+        case .direction(let id):
+            guard let direction = directions.first(where: { $0.id == id }) else { return }
+            choose(direction)
+        case .createDirection(let name):
+            pendingDirectionName = name
+            isCreatingDirection = true
+        case .token(let token):
+            completeAutocompleteToken(token)
+        }
+        selectedAutocompleteSuggestionID = nil
     }
 
     private func unresolvedDirectionActions(name: String) -> some View {
@@ -1501,6 +1591,21 @@ struct MessengerTodoComposer: View {
             .filter { String($0).caseInsensitiveCompare(target) != .orderedSame }
             .joined(separator: " ")
     }
+}
+
+private struct TaskComposerAutocompleteSuggestion: Identifiable {
+    enum Action {
+        case direction(UUID)
+        case createDirection(String)
+        case token(String)
+    }
+
+    let id: String
+    var icon: String?
+    var symbol: String?
+    let title: String
+    var detail: String?
+    let action: Action
 }
 
 private enum TaskComposerInlineToken: Equatable, Identifiable {
