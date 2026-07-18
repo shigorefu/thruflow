@@ -107,7 +107,11 @@ struct TaskQuickInputParser {
         }
 
         return TaskQuickInputParseResult(
-            title: removing(ranges: consumedRanges, from: input),
+            title: removing(
+                ranges: consumedRanges,
+                from: input,
+                preservesEditingWhitespace: !consumeTrailingToken
+            ),
             tokens: tokens,
             measurement: measurement,
             plannedAmount: plannedAmount,
@@ -283,13 +287,28 @@ struct TaskQuickInputParser {
         return range
     }
 
-    private func removing(ranges: [Range<String.Index>], from input: String) -> String {
+    private func removing(
+        ranges: [Range<String.Index>],
+        from input: String,
+        preservesEditingWhitespace: Bool
+    ) -> String {
+        if ranges.isEmpty, preservesEditingWhitespace {
+            return input
+        }
+
         var output = input
         for range in ranges.sorted(by: { $0.lowerBound > $1.lowerBound }) {
             output.removeSubrange(range)
         }
-        return output
+
+        let normalized = output
             .split(whereSeparator: \Character.isWhitespace)
             .joined(separator: " ")
+        guard preservesEditingWhitespace,
+              input.last?.isWhitespace == true,
+              !normalized.isEmpty else {
+            return normalized
+        }
+        return normalized + " "
     }
 }
