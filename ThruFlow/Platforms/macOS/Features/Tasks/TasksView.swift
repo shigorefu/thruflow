@@ -853,6 +853,9 @@ struct MessengerTodoComposer: View {
     @State private var pendingDirectionName: String?
     @State private var isApplyingParserResult = false
     @State private var inlineTokens: [TaskComposerInlineToken] = []
+    @State private var hasExplicitDirection = false
+    @State private var hasExplicitPriority = false
+    @State private var hasExplicitDate = false
 
     private let parser = TaskQuickInputParser()
 
@@ -862,13 +865,20 @@ struct MessengerTodoComposer: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            if showsQuickInputLegend && isFocused {
+            if showsQuickInputLegend && isFocused && hasComposerContent && autocompleteToken == nil {
                 quickInputLegend
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+
+            if let autocompleteToken {
+                autocompleteSuggestions(for: autocompleteToken)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
 
             composerSurface
         }
+        .animation(.snappy(duration: 0.22), value: hasComposerContent)
+        .animation(.snappy(duration: 0.18), value: autocompleteToken)
         .padding(.horizontal, showsOuterBackground ? 12 : 0)
         .padding(.vertical, showsOuterBackground ? 8 : 0)
         .background {
@@ -882,6 +892,7 @@ struct MessengerTodoComposer: View {
                 initialName: pendingDirectionName
             ) { direction in
                 selectedDirectionID = direction.id
+                hasExplicitDirection = true
                 replaceInlineToken(.direction(direction.id))
                 removeDirectionToken(named: direction.name)
                 pendingDirectionName = nil
@@ -911,10 +922,6 @@ struct MessengerTodoComposer: View {
         VStack(alignment: .leading, spacing: 10) {
             inputArea
 
-            if let query = parser.trailingDirectionQuery(in: title), !query.isEmpty {
-                directionSuggestions(for: query)
-            }
-
             controlBar
 
             if let message = parserMessage ?? validationMessage {
@@ -941,12 +948,18 @@ struct MessengerTodoComposer: View {
     }
 
     private var inputArea: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 9) {
             if !inlineTokens.isEmpty {
                 ScrollView(.horizontal) {
-                    HStack(spacing: 6) {
+                    HStack(spacing: 5) {
                         ForEach(inlineTokens) { token in
-                            inlineTokenView(token)
+                            Button {
+                                removeInlineToken(token)
+                            } label: {
+                                inlineTokenView(token)
+                            }
+                            .buttonStyle(.plain)
+                            .help(String(localized: "トークンを削除"))
                         }
                     }
                 }
@@ -954,11 +967,12 @@ struct MessengerTodoComposer: View {
                 .transition(.move(edge: .leading).combined(with: .opacity))
             }
 
-            HStack(alignment: .top, spacing: 10) {
+            HStack(alignment: .top, spacing: 8) {
                 TextField(String(localized: "タスクを入力してください"), text: $title, axis: .vertical)
                     .textFieldStyle(.plain)
                     .font(.body)
                     .lineLimit(2...5)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .focused($isFocused)
                     .onSubmit(submit)
                     .onChange(of: title) { _, newValue in
@@ -969,13 +983,15 @@ struct MessengerTodoComposer: View {
                     Button(action: onCancel) {
                         Image(systemName: "xmark")
                             .font(.caption.weight(.bold))
-                            .frame(width: 26, height: 26)
+                            .frame(width: 28, height: 28)
                     }
                     .buttonStyle(.plain)
                     .foregroundStyle(.secondary)
                     .help(String(localized: "閉じる"))
                     .accessibilityLabel(String(localized: "タスク作成を閉じる"))
                 }
+
+                submitButton
             }
         }
         .animation(.snappy(duration: 0.22), value: inlineTokens)
@@ -985,18 +1001,26 @@ struct MessengerTodoComposer: View {
         HStack(spacing: 8) {
             VolumeChip(volume: $volume)
 
-            DirectionChip(selectedDirectionID: $selectedDirectionID, directions: directions)
+            DirectionChip(
+                selectedDirectionID: $selectedDirectionID,
+                isExplicit: $hasExplicitDirection,
+                directions: directions
+            )
                 .fixedSize(horizontal: true, vertical: false)
                 .layoutPriority(3)
 
-            PriorityChip(priority: $priority, isRoomIfPossible: $isRoomIfPossible)
+            PriorityChip(
+                priority: $priority,
+                isRoomIfPossible: $isRoomIfPossible,
+                isExplicit: $hasExplicitPriority
+            )
 
             if priority == .low {
                 RoomIfPossibleChip(isSelected: $isRoomIfPossible)
             }
 
             if allowsDateSelection {
-                DateChip(dateOption: $dateOption)
+                DateChip(dateOption: $dateOption, isExplicit: $hasExplicitDate)
             } else {
                 Text(String(localized: "今日"))
                     .chipStyle(tint: .secondary)
@@ -1016,18 +1040,6 @@ struct MessengerTodoComposer: View {
             }
 
             Spacer(minLength: 0)
-
-            Button(action: submit) {
-                Text(String(localized: "タスクを追加 =>"))
-                    .font(.callout.weight(.semibold))
-                    .padding(.horizontal, 14)
-                    .frame(height: 34)
-                    .background(Color.accentColor)
-                    .foregroundStyle(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 7))
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(String(localized: "タスクを追加"))
         }
         .lineLimit(1)
         .minimumScaleFactor(0.8)
@@ -1065,60 +1077,208 @@ struct MessengerTodoComposer: View {
 
     @State private var isCreatingDirection = false
 
-    private var quickInputLegend: some View {
-        HStack(spacing: 10) {
-            Label(String(localized: "クイック入力"), systemImage: "command")
-                .fontWeight(.semibold)
-            Text(verbatim: "[]  [2b]  [30m]  @direction  !high  /today  #tag")
-                .fontDesign(.monospaced)
-                .textSelection(.enabled)
-            Spacer(minLength: 0)
-            Button {
-                showsQuickInputLegend = false
-            } label: {
-                Image(systemName: "xmark")
-            }
-            .buttonStyle(.plain)
-            .help(String(localized: "クイック入力のヒントを非表示"))
+    private var hasComposerContent: Bool {
+        !trimmedTitle.isEmpty || !inlineTokens.isEmpty
+    }
+
+    private var autocompleteToken: String? {
+        guard isFocused else { return nil }
+        return parser.trailingAutocompleteToken(in: title)
+    }
+
+    private var submitButton: some View {
+        Button(action: submit) {
+            Image(systemName: "arrow.up")
+                .font(.system(size: 13, weight: .bold))
+                .frame(width: 30, height: 30)
+                .background(Color.accentColor, in: Circle())
+                .foregroundStyle(.white)
         }
-        .font(.caption)
+        .buttonStyle(.plain)
+        .help(String(localized: "タスクを追加"))
+        .accessibilityLabel(String(localized: "タスクを追加"))
+        .disabled(trimmedTitle.isEmpty)
+        .opacity(trimmedTitle.isEmpty ? 0.45 : 1)
+    }
+
+    private var quickInputLegend: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            HStack {
+                Label(String(localized: "ショートカットを使えます"), systemImage: "command")
+                    .font(.caption.weight(.semibold))
+                Spacer(minLength: 0)
+                Button {
+                    showsQuickInputLegend = false
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.caption.weight(.semibold))
+                }
+                .buttonStyle(.plain)
+                .help(String(localized: "クイック入力のヒントを非表示"))
+            }
+
+            LazyVGrid(
+                columns: Array(repeating: GridItem(.flexible(), alignment: .leading), count: 3),
+                alignment: .leading,
+                spacing: 6
+            ) {
+                legendItem(shortcut: "[ ]", label: String(localized: "チェック"))
+                legendItem(shortcut: "[1b]", label: String(localized: "1ブロック"))
+                legendItem(shortcut: "[25m]", label: String(localized: "25分"))
+                legendItem(shortcut: "@", label: String(localized: "方向"))
+                legendItem(shortcut: "!", label: String(localized: "優先度"))
+                legendItem(shortcut: "/", label: String(localized: "日付"))
+                legendItem(shortcut: "#", label: String(localized: "タグ"))
+            }
+        }
         .foregroundStyle(.secondary)
-        .padding(.horizontal, 10)
-        .padding(.vertical, 7)
-        .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 7))
+        .padding(10)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 9))
+        .overlay {
+            RoundedRectangle(cornerRadius: 9)
+                .strokeBorder(Color.primary.opacity(0.1))
+        }
     }
 
     @ViewBuilder
-    private func directionSuggestions(for query: String) -> some View {
-        let matches = directions
-            .filter { $0.name.localizedCaseInsensitiveContains(query) }
-            .prefix(6)
+    private func legendItem(shortcut: String, label: String) -> some View {
+        HStack(spacing: 7) {
+            Text(verbatim: shortcut)
+                .font(.caption.monospaced().weight(.semibold))
+                .foregroundStyle(.primary)
+                .frame(minWidth: 30, alignment: .leading)
+            Text(label)
+                .font(.caption)
+                .lineLimit(1)
+        }
+    }
 
-        if !matches.isEmpty {
-            VStack(alignment: .leading, spacing: 2) {
-                ForEach(Array(matches)) { direction in
-                    Button {
-                        choose(direction)
-                    } label: {
-                        HStack(spacing: 8) {
-                            Text(direction.symbolName)
-                            Text(direction.name)
-                            Spacer(minLength: 0)
-                        }
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.horizontal, 9)
-                    .padding(.vertical, 6)
-                }
-            }
-            .padding(4)
-            .frame(maxWidth: 320)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
-            .overlay {
-                RoundedRectangle(cornerRadius: 8).strokeBorder(Color.primary.opacity(0.1))
+    @ViewBuilder
+    private func autocompleteSuggestions(for token: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            switch token.first {
+            case "@":
+                directionAutocomplete(query: String(token.dropFirst()))
+            case "!":
+                priorityAutocomplete(query: String(token.dropFirst()))
+            case "/":
+                dateAutocomplete(query: String(token.dropFirst()))
+            case "[":
+                measurementAutocomplete(query: String(token.dropFirst()))
+            default:
+                EmptyView()
             }
         }
+        .padding(5)
+        .frame(width: 320, alignment: .leading)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
+        .overlay {
+            RoundedRectangle(cornerRadius: 10)
+                .strokeBorder(Color.primary.opacity(0.12))
+        }
+        .shadow(color: .black.opacity(0.16), radius: 12, y: 5)
+    }
+
+    @ViewBuilder
+    private func directionAutocomplete(query: String) -> some View {
+        let matches = directions
+            .filter { query.isEmpty || $0.name.localizedCaseInsensitiveContains(query) }
+            .prefix(6)
+
+        if matches.isEmpty {
+            suggestionRow(
+                icon: "plus.circle",
+                title: String(localized: "新しい方向を作成"),
+                detail: query.isEmpty ? nil : query
+            ) {
+                pendingDirectionName = query
+                isCreatingDirection = true
+            }
+        } else {
+            ForEach(Array(matches)) { direction in
+                suggestionRow(symbol: direction.symbolName, title: direction.name) {
+                    choose(direction)
+                }
+            }
+        }
+    }
+
+    private func priorityAutocomplete(query: String) -> some View {
+        let options: [(String, String, TodoPriority, Bool)] = [
+            ("high", String(localized: "高"), .high, false),
+            ("medium", String(localized: "中"), .medium, false),
+            ("low", String(localized: "低い"), .low, false),
+            ("later", String(localized: "余裕があれば"), .low, true),
+        ]
+        return VStack(alignment: .leading, spacing: 2) {
+            ForEach(options.filter { query.isEmpty || $0.0.hasPrefix(query.lowercased()) }, id: \.0) { option in
+                suggestionRow(icon: "exclamationmark", title: option.1, detail: "!\(option.0)") {
+                    completeAutocompleteToken("!\(option.0)")
+                }
+            }
+        }
+    }
+
+    private func dateAutocomplete(query: String) -> some View {
+        let options: [(String, String)] = [
+            ("today", String(localized: "今日")),
+            ("tomorrow", String(localized: "明日")),
+            ("nodate", String(localized: "日付なし")),
+        ]
+        return VStack(alignment: .leading, spacing: 2) {
+            ForEach(options.filter { query.isEmpty || $0.0.hasPrefix(query.lowercased()) }, id: \.0) { option in
+                suggestionRow(icon: "calendar", title: option.1, detail: "/\(option.0)") {
+                    completeAutocompleteToken("/\(option.0)")
+                }
+            }
+        }
+    }
+
+    private func measurementAutocomplete(query: String) -> some View {
+        let options: [(String, String, String)] = [
+            ("[]", "square", String(localized: "チェック")),
+            ("[1b]", "circle", String(localized: "1ブロック")),
+            ("[25m]", "circle.lefthalf.filled", String(localized: "25分")),
+        ]
+        return VStack(alignment: .leading, spacing: 2) {
+            ForEach(options.filter { query.isEmpty || $0.0.dropFirst().hasPrefix(query) }, id: \.0) { option in
+                suggestionRow(icon: option.1, title: option.2, detail: option.0) {
+                    completeAutocompleteToken(option.0)
+                }
+            }
+        }
+    }
+
+    private func suggestionRow(
+        icon: String? = nil,
+        symbol: String? = nil,
+        title: String,
+        detail: String? = nil,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: 9) {
+                if let icon {
+                    Image(systemName: icon)
+                        .frame(width: 18)
+                } else if let symbol {
+                    Text(symbol)
+                        .frame(width: 18)
+                }
+                Text(title)
+                    .lineLimit(1)
+                Spacer(minLength: 8)
+                if let detail {
+                    Text(verbatim: detail)
+                        .font(.caption.monospaced())
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .contentShape(Rectangle())
+            .padding(.horizontal, 9)
+            .frame(height: 32)
+        }
+        .buttonStyle(.plain)
     }
 
     private func unresolvedDirectionActions(name: String) -> some View {
@@ -1130,6 +1290,7 @@ struct MessengerTodoComposer: View {
 
             Button(String(localized: "その他として追加")) {
                 selectedDirectionID = nil
+                hasExplicitDirection = true
                 removeDirectionToken(named: name)
                 pendingDirectionName = nil
                 parserMessage = nil
@@ -1164,13 +1325,16 @@ struct MessengerTodoComposer: View {
         }
         if let directionID = result.directionID {
             selectedDirectionID = directionID
+            hasExplicitDirection = true
         }
         if let priority = result.priority {
             self.priority = priority
             isRoomIfPossible = result.isRoomIfPossible ?? false
+            hasExplicitPriority = true
         }
         if allowsDateSelection, let date = result.date {
             dateOption = quickDate(for: date)
+            hasExplicitDate = true
         }
         hashtags = TodoHashtagNormalizer.normalize(hashtags + result.hashtags)
     }
@@ -1179,8 +1343,15 @@ struct MessengerTodoComposer: View {
         guard let query = parser.trailingDirectionQuery(in: title) else { return }
         removeDirectionToken(named: query)
         selectedDirectionID = direction.id
+        hasExplicitDirection = true
         replaceInlineToken(.direction(direction.id))
         parserMessage = nil
+    }
+
+    private func completeAutocompleteToken(_ token: String) {
+        title = parser.replacingTrailingAutocompleteToken(in: title, with: "\(token) ")
+        parseCommittedTokens(in: title)
+        isFocused = true
     }
 
     private func recordInlineTokens(from result: TaskQuickInputParseResult) {
@@ -1218,7 +1389,31 @@ struct MessengerTodoComposer: View {
     private func clearInlineTokensAfterSubmission() {
         if trimmedTitle.isEmpty {
             inlineTokens = []
+            hasExplicitDirection = false
+            hasExplicitPriority = false
+            hasExplicitDate = false
         }
+    }
+
+    private func removeInlineToken(_ token: TaskComposerInlineToken) {
+        inlineTokens.removeAll { $0.id == token.id }
+        switch token {
+        case .measurement:
+            volume = .unspecified
+        case .direction:
+            selectedDirectionID = nil
+            hasExplicitDirection = false
+        case .priority:
+            priority = .medium
+            isRoomIfPossible = false
+            hasExplicitPriority = false
+        case .date:
+            dateOption = .today
+            hasExplicitDate = false
+        case .hashtag(let hashtag):
+            hashtags.removeAll { $0.caseInsensitiveCompare(hashtag) == .orderedSame }
+        }
+        isFocused = true
     }
 
     private func quickDate(for date: TaskQuickInputDate) -> QuickTodoDate {
@@ -1236,6 +1431,9 @@ struct MessengerTodoComposer: View {
         HStack(spacing: 5) {
             inlineTokenIcon(token)
             Text(inlineTokenLabel(token))
+            Image(systemName: "xmark")
+                .font(.system(size: 7, weight: .bold))
+                .opacity(0.7)
         }
         .font(.caption.weight(.medium))
         .foregroundStyle(inlineTokenTint(token))
@@ -1433,12 +1631,14 @@ struct QuickTodoCreationPopover: View {
 private struct PriorityChip: View {
     @Binding var priority: TodoPriority
     @Binding var isRoomIfPossible: Bool
+    @Binding var isExplicit: Bool
 
     var body: some View {
         Menu {
             ForEach(TodoPriority.allCases) { option in
                 Button {
                     priority = option
+                    isExplicit = true
                     if option != .low {
                         isRoomIfPossible = false
                     }
@@ -1452,6 +1652,7 @@ private struct PriorityChip: View {
 
                 Button {
                     isRoomIfPossible.toggle()
+                    isExplicit = true
                 } label: {
                     menuRow(text: String(localized: "余裕があれば"), isSelected: isRoomIfPossible)
                 }
@@ -1465,7 +1666,7 @@ private struct PriorityChip: View {
     }
 
     private var labelText: String {
-        return priority.displayName
+        isExplicit ? priority.displayName : String(localized: "優先度")
     }
 
     private var tint: Color {
@@ -1524,6 +1725,7 @@ private struct RoomIfPossibleChip: View {
 
 private struct DirectionChip: View {
     @Binding var selectedDirectionID: UUID?
+    @Binding var isExplicit: Bool
 
     let directions: [Direction]
 
@@ -1533,6 +1735,9 @@ private struct DirectionChip: View {
     }
 
     private var labelText: String {
+        guard isExplicit else {
+            return String(localized: "方向")
+        }
         guard let selectedDirection else {
             return String(localized: "その他")
         }
@@ -1545,6 +1750,7 @@ private struct DirectionChip: View {
             ForEach(directions) { direction in
                 Button {
                     selectedDirectionID = direction.id
+                    isExplicit = true
                 } label: {
                     menuRow(
                         text: "\(direction.symbolName) \(direction.name)",
@@ -1557,6 +1763,7 @@ private struct DirectionChip: View {
 
             Button {
                 selectedDirectionID = nil
+                isExplicit = true
             } label: {
                 menuRow(text: String(localized: "その他"), isSelected: selectedDirectionID == nil)
             }
@@ -1591,11 +1798,11 @@ private struct VolumeChip: View {
     @Binding var volume: QuickTodoVolume
 
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 3) {
             Image(systemName: typeIcon)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(iconColor)
-                .frame(width: 16, height: 16)
+                .frame(width: 13, height: 16)
                 .contentTransition(.symbolEffect(.replace))
 
             if volume.measurement == .checkbox {
@@ -1607,7 +1814,7 @@ private struct VolumeChip: View {
                     .textFieldStyle(.plain)
                     .multilineTextAlignment(.trailing)
                     .font(.caption.monospacedDigit().weight(.semibold))
-                    .frame(width: 34)
+                    .frame(width: 25)
 
                 Text(volume.measurement == .focusBlocks ? String(localized: "ブロック") : String(localized: "分"))
                     .foregroundStyle(.secondary)
@@ -1632,6 +1839,7 @@ private struct VolumeChip: View {
                     .contentShape(Rectangle())
             }
             .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
         }
         .font(.caption.weight(.medium))
         .padding(.leading, 9)
@@ -1686,6 +1894,7 @@ private struct VolumeChip: View {
 
 private struct DateChip: View {
     @Binding var dateOption: QuickTodoDate
+    @Binding var isExplicit: Bool
 
     @State private var showingCustomPicker = false
     @State private var customDate = Date.now
@@ -1694,18 +1903,21 @@ private struct DateChip: View {
         Menu {
             Button {
                 dateOption = .today
+                isExplicit = true
             } label: {
                 menuRow(text: String(localized: "今日"), isSelected: dateOption == .today)
             }
 
             Button {
                 dateOption = .tomorrow
+                isExplicit = true
             } label: {
                 menuRow(text: String(localized: "明日"), isSelected: dateOption == .tomorrow)
             }
 
             Button {
                 dateOption = .none
+                isExplicit = true
             } label: {
                 menuRow(text: String(localized: "日付なし"), isSelected: dateOption == .none)
             }
@@ -1717,7 +1929,7 @@ private struct DateChip: View {
                 showingCustomPicker = true
             }
         } label: {
-            Text(dateOption.chipLabel)
+            Text(isExplicit ? dateOption.chipLabel : String(localized: "日付"))
                 .chipStyle(tint: .secondary)
         }
         .menuStyle(.borderlessButton)
@@ -1730,6 +1942,7 @@ private struct DateChip: View {
 
                 Button(String(localized: "設定")) {
                     dateOption = .custom(customDate)
+                    isExplicit = true
                     showingCustomPicker = false
                 }
                 .buttonStyle(.borderedProminent)
@@ -1922,7 +2135,7 @@ private struct TodoRow: View {
                     Text(summary)
 
                     ForEach(todo.hashtags, id: \.self) { hashtag in
-                        Text("#\(hashtag)")
+                        Text(verbatim: "#\(hashtag)")
                             .foregroundStyle(checkboxTint)
                     }
                 }

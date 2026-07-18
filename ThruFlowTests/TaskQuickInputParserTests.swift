@@ -98,6 +98,25 @@ struct TaskQuickInputParserTests {
         #expect(result.recognizedTokens.map(\.rawValue) == ["[]"])
     }
 
+    @Test func exposesOnlySupportedTrailingAutocompleteTokens() {
+        #expect(parser.trailingAutocompleteToken(in: "Prepare @AW") == "@AW")
+        #expect(parser.trailingAutocompleteToken(in: "Prepare !h") == "!h")
+        #expect(parser.trailingAutocompleteToken(in: "Prepare /to") == "/to")
+        #expect(parser.trailingAutocompleteToken(in: "Prepare [2") == "[2")
+        #expect(parser.trailingAutocompleteToken(in: "Prepare #tag") == nil)
+        #expect(parser.trailingAutocompleteToken(in: "Prepare text") == nil)
+        #expect(parser.trailingAutocompleteToken(in: "Prepare @AW ") == nil)
+    }
+
+    @Test func replacesOnlyTheTrailingAutocompleteToken() {
+        let result = parser.replacingTrailingAutocompleteToken(
+            in: "Prepare release !h",
+            with: "!high "
+        )
+
+        #expect(result == "Prepare release !high ")
+    }
+
     private var referenceDate: Date {
         Date(timeIntervalSince1970: 1_768_579_200)
     }
