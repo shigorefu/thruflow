@@ -84,8 +84,8 @@ struct DayHistoryTests {
         #expect(session.status == .completed)
         #expect(session.phase == .completed)
         #expect(session.endedAt == start.addingTimeInterval(25 * 60))
-        #expect(session.segments.count == 1)
-        #expect(session.segments.first?.resolvedFocusSeconds == 25 * 60)
+        #expect(session.resolvedSegments.count == 1)
+        #expect(session.resolvedSegments.first?.resolvedFocusSeconds == 25 * 60)
         #expect(direction.recordedFocusSeconds == 25 * 60)
         #expect(todo.recordedFocusSeconds == 25 * 60)
         #expect(todo.actualProgress == 25)
@@ -120,7 +120,7 @@ struct DayHistoryTests {
             now: start.addingTimeInterval(25 * 60)
         )
         let originalCreatedAt = session.createdAt
-        let originalSegmentCreatedAt = try #require(session.segments.first?.createdAt)
+        let originalSegmentCreatedAt = try #require(session.resolvedSegments.first?.createdAt)
         let target = start.addingTimeInterval(24 * 60 * 60 + 90 * 60)
 
         editor.move(
@@ -134,10 +134,10 @@ struct DayHistoryTests {
         #expect(session.startedAt == target)
         #expect(session.plannedEndAt == target.addingTimeInterval(25 * 60))
         #expect(session.endedAt == target.addingTimeInterval(25 * 60))
-        #expect(session.segments.first?.startedAt == target)
-        #expect(session.segments.first?.endedAt == target.addingTimeInterval(25 * 60))
+        #expect(session.resolvedSegments.first?.startedAt == target)
+        #expect(session.resolvedSegments.first?.endedAt == target.addingTimeInterval(25 * 60))
         #expect(session.createdAt == originalCreatedAt)
-        #expect(session.segments.first?.createdAt == originalSegmentCreatedAt)
+        #expect(session.resolvedSegments.first?.createdAt == originalSegmentCreatedAt)
         #expect(todo.recordedFocusSeconds == 25 * 60)
         #expect(todo.actualProgress == 25)
         #expect(direction.recordedFocusSeconds == 25 * 60)
@@ -480,14 +480,14 @@ struct DayHistoryTests {
         first.close(at: start.addingTimeInterval(10 * 60), totalFocusSeconds: 10 * 60)
         let second = FlowSegment(session: session, direction: direction, todo: todo, startedAt: start.addingTimeInterval(10 * 60), startFocusSeconds: 10 * 60)
         second.close(at: start.addingTimeInterval(25 * 60), totalFocusSeconds: 25 * 60)
-        session.segments = [first, second]
+        session.resolvedSegments = [first, second]
         context.insert(direction)
         context.insert(todo)
         context.insert(session)
 
         FlowHistoryEditor().delete(segment: first, from: session, modelContext: context)
 
-        #expect(session.segments.map(\.id) == [second.id])
+        #expect(session.resolvedSegments.map(\.id) == [second.id])
         #expect(session.actualFocusDurationSeconds == 15 * 60)
         #expect(direction.recordedFocusSeconds == 15 * 60)
         #expect(todo.recordedFocusSeconds == 15 * 60)
@@ -572,7 +572,7 @@ struct DayHistoryTests {
             startFocusSeconds: 0
         )
         secondSegment.close(at: secondStart.addingTimeInterval(25 * 60), totalFocusSeconds: 25 * 60)
-        second.segments = [secondSegment]
+        second.resolvedSegments = [secondSegment]
         let thirdStart = start.addingTimeInterval(60 * 60)
         let third = FlowSession(
             seriesID: seriesID,

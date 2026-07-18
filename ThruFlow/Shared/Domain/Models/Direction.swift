@@ -150,11 +150,11 @@ enum GoalWeekday: Int, CaseIterable, Codable, Identifiable {
 
 @Model
 final class Direction {
-    var id: UUID
-    var name: String
-    var typeRawValue: String
-    var symbolName: String
-    var colorHex: String
+    var id: UUID = UUID()
+    var name: String = ""
+    var typeRawValue: String = DirectionType.neutral.rawValue
+    var symbolName: String = "🎯"
+    var colorHex: String = "#007AFF"
     var goalTarget: Int?
     var goalPeriodRawValue: String?
     var goalUnitRawValue: String?
@@ -163,9 +163,15 @@ final class Direction {
     var weekdayMask: Int?
     var focusDurationSeconds: Int?
     var sortIndex: Int = 0
-    var createdAt: Date
-    var updatedAt: Date
+    var createdAt: Date = Date.now
+    var updatedAt: Date = Date.now
     var archivedAt: Date?
+    @Relationship(inverse: \Todo.direction)
+    var todos: [Todo]?
+    @Relationship(inverse: \FlowSession.direction)
+    var flowSessions: [FlowSession]?
+    @Relationship(inverse: \FlowSegment.direction)
+    var flowSegments: [FlowSegment]?
 
     init(
         id: UUID = UUID(),

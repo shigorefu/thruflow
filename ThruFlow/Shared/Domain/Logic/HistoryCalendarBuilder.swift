@@ -196,8 +196,8 @@ struct HistoryCalendarBuilder {
     }
 
     private func makeFlowItems(_ session: FlowSession) -> [HistoryCalendarItem] {
-        if !session.segments.isEmpty {
-            return session.segments.compactMap { segment in
+        if !session.resolvedSegments.isEmpty {
+            return session.resolvedSegments.compactMap { segment in
                 guard segment.resolvedFocusSeconds > 0 else { return nil }
                 let end = segment.endedAt
                     ?? segment.startedAt.addingTimeInterval(TimeInterval(segment.resolvedFocusSeconds))

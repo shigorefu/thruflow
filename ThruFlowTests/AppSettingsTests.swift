@@ -11,6 +11,13 @@ import Testing
 
 @MainActor
 struct AppSettingsTests {
+    @Test func newInstallationDefaultsToJapanese() {
+        let settings = AppSettings(defaults: makeDefaults())
+
+        #expect(settings.languageCode == "ja")
+        #expect(settings.effectiveLocale.language.languageCode?.identifier == "ja")
+    }
+
     @Test func persistsEveryPreference() {
         let defaults = makeDefaults()
         let settings = AppSettings(defaults: defaults)
@@ -96,11 +103,11 @@ struct AppSettingsTests {
         let settings = AppSettings(defaults: defaults)
 
         #expect(!settings.requiresRestartForLanguage)
-        settings.languageCode = "ja"
+        settings.languageCode = "en"
         #expect(settings.requiresRestartForLanguage)
 
         settings.languageCode = AppSettings.systemLanguageCode
-        #expect(!settings.requiresRestartForLanguage)
+        #expect(settings.requiresRestartForLanguage)
         #expect(defaults.persistentDomain(forName: suiteName)?["AppleLanguages"] == nil)
     }
 

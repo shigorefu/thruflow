@@ -2,6 +2,8 @@ import Foundation
 import SwiftData
 
 enum AppModelContainerFactory {
+    static let cloudKitContainerIdentifier = "iCloud.com.shigorefu.thruflow"
+
     static func make() -> ModelContainer {
         let schema = Schema([
             Direction.self,
@@ -10,10 +12,24 @@ enum AppModelContainerFactory {
             FlowSegment.self,
             FlowBreak.self,
         ])
-        let configuration = ModelConfiguration(
-            schema: schema,
-            isStoredInMemoryOnly: isRunningTests
-        )
+        let configuration: ModelConfiguration
+        if isRunningTests {
+            configuration = ModelConfiguration(
+                schema: schema,
+                isStoredInMemoryOnly: true,
+                cloudKitDatabase: .none
+            )
+        } else if isCloudKitDisabled {
+            configuration = ModelConfiguration(
+                schema: schema,
+                cloudKitDatabase: .none
+            )
+        } else {
+            configuration = ModelConfiguration(
+                schema: schema,
+                cloudKitDatabase: .private(cloudKitContainerIdentifier)
+            )
+        }
 
         do {
             return try ModelContainer(for: schema, configurations: [configuration])
@@ -26,5 +42,11 @@ enum AppModelContainerFactory {
         let processInfo = ProcessInfo.processInfo
         return processInfo.environment["XCTestConfigurationFilePath"] != nil ||
             processInfo.arguments.contains("--uitesting")
+    }
+
+    private static var isCloudKitDisabled: Bool {
+        let processInfo = ProcessInfo.processInfo
+        return processInfo.environment["THRUFLOW_DISABLE_CLOUDKIT"] == "1" ||
+            processInfo.arguments.contains("--local-store")
     }
 }

@@ -85,7 +85,7 @@ struct FlowBreakEditor {
         session.endedAt = session.endedAt?.addingTimeInterval(seconds)
         session.updatedAt = now
 
-        for segment in session.segments {
+        for segment in session.resolvedSegments {
             segment.startedAt = segment.startedAt.addingTimeInterval(seconds)
             segment.endedAt = segment.endedAt?.addingTimeInterval(seconds)
         }

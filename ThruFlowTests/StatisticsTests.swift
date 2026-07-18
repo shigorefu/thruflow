@@ -105,7 +105,7 @@ struct StatisticsTests {
         first.close(at: now.addingTimeInterval(10 * 60), totalFocusSeconds: 10 * 60)
         let second = FlowSegment(session: flow, direction: review, todo: nil, startedAt: now.addingTimeInterval(10 * 60), startFocusSeconds: 10 * 60)
         second.close(at: now.addingTimeInterval(25 * 60), totalFocusSeconds: 25 * 60)
-        flow.segments = [first, second]
+        flow.resolvedSegments = [first, second]
         let builder = StatisticsHeatmapBuilder(calendar: calendar)
 
         let all = builder.build(sessions: [flow], filter: StatisticsFilter(range: .days180), now: now)

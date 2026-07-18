@@ -31,8 +31,8 @@ struct FlowProgressCalculator {
     }
 
     func applySession(_ session: FlowSession, fallbackSeconds: Int, now: Date = .now) {
-        if !session.segments.isEmpty {
-            for segment in session.segments where segment.resolvedFocusSeconds > 0 {
+        if !session.resolvedSegments.isEmpty {
+            for segment in session.resolvedSegments where segment.resolvedFocusSeconds > 0 {
                 applyFocusDuration(
                     seconds: segment.resolvedFocusSeconds,
                     direction: segment.direction,

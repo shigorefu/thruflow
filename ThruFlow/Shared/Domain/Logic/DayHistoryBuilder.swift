@@ -276,8 +276,8 @@ struct DayHistoryBuilder {
     }
 
     private func makeFlows(_ session: FlowSession) -> [DayHistoryFlow] {
-        if !session.segments.isEmpty {
-            return session.segments.compactMap { segment in
+        if !session.resolvedSegments.isEmpty {
+            return session.resolvedSegments.compactMap { segment in
                 let focusSeconds = segment.resolvedFocusSeconds
                 guard focusSeconds > 0 else { return nil }
                 return makeFlow(

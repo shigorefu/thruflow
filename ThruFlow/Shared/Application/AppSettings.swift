@@ -60,6 +60,7 @@ enum AppClockFormat: String, CaseIterable, Identifiable {
 @MainActor
 final class AppSettings: ObservableObject {
     static let systemLanguageCode = "system"
+    static let defaultLanguageCode = "ja"
 
     @Published var appearance: AppAppearance {
         didSet { defaults.set(appearance.rawValue, forKey: Keys.appearance) }
@@ -94,7 +95,7 @@ final class AppSettings: ObservableObject {
         appearance = AppAppearance(
             rawValue: defaults.string(forKey: Keys.appearance) ?? ""
         ) ?? .system
-        let storedLanguageCode = defaults.string(forKey: Keys.languageCode) ?? Self.systemLanguageCode
+        let storedLanguageCode = defaults.string(forKey: Keys.languageCode) ?? Self.defaultLanguageCode
         languageCode = storedLanguageCode
         weekStart = AppWeekStart(
             rawValue: defaults.string(forKey: Keys.weekStart) ?? ""
