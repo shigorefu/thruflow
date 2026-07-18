@@ -844,6 +844,7 @@ struct MessengerTodoComposer: View {
     let validationMessage: String?
     var allowsDateSelection = true
     var showsOuterBackground = true
+    var allowsQuickInputLegend = true
     var onCancel: (() -> Void)?
     let onSubmit: () -> Void
 
@@ -866,7 +867,7 @@ struct MessengerTodoComposer: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            if showsQuickInputLegend && isFocused && hasComposerContent && autocompleteToken == nil {
+            if allowsQuickInputLegend && showsQuickInputLegend && isFocused && hasComposerContent && autocompleteToken == nil {
                 quickInputLegend
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
@@ -1637,8 +1638,7 @@ struct QuickTodoCreationPopover: View {
     @Query(sort: \Todo.sortIndex, order: .forward) private var allTodos: [Todo]
 
     let directions: [Direction]
-    var onCancel: (() -> Void)?
-    var width: CGFloat? = 520
+    var showsQuickInputLegend = true
     var onCreated: ((Todo) -> Void)?
 
     @State private var title = ""
@@ -1674,18 +1674,11 @@ struct QuickTodoCreationPopover: View {
             validationMessage: validationMessage,
             allowsDateSelection: false,
             showsOuterBackground: false,
-            onCancel: cancel,
+            allowsQuickInputLegend: showsQuickInputLegend,
+            onCancel: { dismiss() },
             onSubmit: createTodo
         )
-        .frame(width: width)
-    }
-
-    private func cancel() {
-        if let onCancel {
-            onCancel()
-        } else {
-            dismiss()
-        }
+        .frame(width: 520)
     }
 
     private func createTodo() {
