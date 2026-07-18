@@ -93,9 +93,26 @@ struct TaskQuickInputParserTests {
     @Test func commitsTokenAfterDelimiterForInlineChipPresentation() {
         let result = parser.parse("[] Prepare ", consumeTrailingToken: false)
 
-        #expect(result.title == "Prepare")
+        #expect(result.title == "Prepare ")
         #expect(result.measurement == .checkbox)
         #expect(result.recognizedTokens.map(\.rawValue) == ["[]"])
+    }
+
+    @Test func preservesWhitespaceDuringLiveEditing() {
+        #expect(parser.parse("Prepare ", consumeTrailingToken: false).title == "Prepare ")
+        #expect(parser.parse("Prepare release", consumeTrailingToken: false).title == "Prepare release")
+        #expect(parser.parse("Prepare  release", consumeTrailingToken: false).title == "Prepare  release")
+    }
+
+    @Test func keepsASeparatorAfterCommittingAnInlineToken() {
+        let result = parser.parse(
+            "Prepare @AWS ",
+            directions: [.init(id: awsID, name: "AWS")],
+            consumeTrailingToken: false
+        )
+
+        #expect(result.title == "Prepare ")
+        #expect(result.directionID == awsID)
     }
 
     @Test func exposesOnlySupportedTrailingAutocompleteTokens() {
