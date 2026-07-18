@@ -394,7 +394,7 @@ struct FlowTests {
             startFocusSeconds: 16 * 60
         )
         second.close(at: start.addingTimeInterval(25 * 60), totalFocusSeconds: 25 * 60)
-        session.segments = [first, second]
+        session.resolvedSegments = [first, second]
 
         FlowProgressCalculator().applySession(session, fallbackSeconds: 25 * 60)
 
@@ -434,11 +434,11 @@ struct FlowTests {
 
         #expect(store.timerState?.startedAt == start)
         #expect(store.selectedTodoID == secondTodo.id)
-        #expect(store.activeSession?.segments.count == 2)
+        #expect(store.activeSession?.resolvedSegments.count == 2)
 
         store.stop(modelContext: context, now: start.addingTimeInterval(25 * 60))
 
-        let segments = store.activeSession?.segments.sorted { $0.startedAt < $1.startedAt } ?? []
+        let segments = store.activeSession?.resolvedSegments.sorted { $0.startedAt < $1.startedAt } ?? []
         #expect(segments.map(\.resolvedFocusSeconds) == [16 * 60, 9 * 60])
         #expect(firstTodo.recordedFocusSeconds == 16 * 60)
         #expect(secondTodo.recordedFocusSeconds == 9 * 60)
@@ -463,13 +463,13 @@ struct FlowTests {
 
         #expect(store.phase == .awaitingResult)
         #expect(todo.recordedFocusSeconds == 10 * 60)
-        #expect(store.activeSession?.segments.first?.endedAt != nil)
+        #expect(store.activeSession?.resolvedSegments.first?.endedAt != nil)
 
         store.cancelResultMemo(modelContext: context, now: start.addingTimeInterval(10 * 60 + 10))
 
         #expect(store.phase == .focusing)
         #expect(store.activeSession?.status == .active)
-        #expect(store.activeSession?.segments.first?.endedAt == nil)
+        #expect(store.activeSession?.resolvedSegments.first?.endedAt == nil)
         #expect(todo.recordedFocusSeconds == 0)
         #expect(direction.recordedFocusSeconds == 0)
     }

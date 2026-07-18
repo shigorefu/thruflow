@@ -228,8 +228,8 @@ struct FlowDashboardBuilder {
                 ? max(session.resolvedActualFocusDurationSeconds, activeFocusSeconds)
                 : session.resolvedActualFocusDurationSeconds
 
-            if !session.segments.isEmpty {
-                return session.segments.compactMap { segment in
+            if !session.resolvedSegments.isEmpty {
+                return session.resolvedSegments.compactMap { segment in
                     let focusSeconds = segment.endFocusSeconds.map { max(0, $0 - segment.startFocusSeconds) }
                         ?? (isActive ? max(0, resolvedFocusSeconds - segment.startFocusSeconds) : 0)
                     guard focusSeconds > 0 else { return nil }

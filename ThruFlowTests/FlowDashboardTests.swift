@@ -354,7 +354,7 @@ struct FlowDashboardTests {
             startFocusSeconds: 16 * 60
         )
         second.close(at: session.startedAt.addingTimeInterval(25 * 60), totalFocusSeconds: 25 * 60)
-        session.segments = [first, second]
+        session.resolvedSegments = [first, second]
 
         let snapshot = FlowDashboardBuilder(calendar: calendar).build(
             date: day.addingTimeInterval(12 * 3_600),

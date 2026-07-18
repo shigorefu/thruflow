@@ -207,8 +207,8 @@ struct StatisticsHeatmapBuilder {
     private func makeContributions(_ session: FlowSession) -> [FlowContribution] {
         guard session.status != .interrupted else { return [] }
 
-        if !session.segments.isEmpty {
-            return session.segments.compactMap { segment in
+        if !session.resolvedSegments.isEmpty {
+            return session.resolvedSegments.compactMap { segment in
                 guard segment.resolvedFocusSeconds > 0 else { return nil }
                 return FlowContribution(
                     sessionID: session.id,

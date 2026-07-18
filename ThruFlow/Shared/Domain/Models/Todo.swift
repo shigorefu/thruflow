@@ -67,26 +67,30 @@ enum TodoStatus: String, CaseIterable, Codable, Identifiable {
 
 @Model
 final class Todo {
-    var id: UUID
-    var title: String
+    var id: UUID = UUID()
+    var title: String = ""
     var notes: String?
     var hashtagsRawValue: String?
     var direction: Direction?
-    var measurementRawValue: String
+    var measurementRawValue: String = TodoMeasurement.checkbox.rawValue
     var priorityRawValue: String = TodoPriority.medium.rawValue
     var isRoomIfPossible: Bool = false
     var plannedAmount: Int?
-    var actualProgress: Int
+    var actualProgress: Int = 0
     var focusDurationSeconds: Int?
-    var statusRawValue: String
+    var statusRawValue: String = TodoStatus.active.rawValue
     var completedAt: Date?
     var scheduledDate: Date?
     var deadline: Date?
     var sortIndex: Int = 0
-    var createdAt: Date
-    var updatedAt: Date
+    var createdAt: Date = Date.now
+    var updatedAt: Date = Date.now
     var archivedAt: Date?
     var deletedAt: Date?
+    @Relationship(inverse: \FlowSession.todo)
+    var flowSessions: [FlowSession]?
+    @Relationship(inverse: \FlowSegment.todo)
+    var flowSegments: [FlowSegment]?
 
     init(
         id: UUID = UUID(),

@@ -111,8 +111,8 @@ final class ActiveFlowStore: ObservableObject {
             startFocusSeconds: 0
         )
         modelContext.insert(segment)
-        if !session.segments.contains(where: { $0.id == segment.id }) {
-            session.segments.append(segment)
+        if !session.resolvedSegments.contains(where: { $0.id == segment.id }) {
+            session.resolvedSegments.append(segment)
         }
         pendingBreak?.connect(to: sessionID, at: now)
         activeSession = session
@@ -139,8 +139,8 @@ final class ActiveFlowStore: ObservableObject {
         if let state = timerState,
            state.phase == .focusing || state.phase == .paused || state.phase == .awaitingExtensionDecision,
            let session = activeSession {
-            let currentTodoID = session.segments.last(where: { $0.endedAt == nil })?.todo?.id
-            let currentDirectionID = session.segments.last(where: { $0.endedAt == nil })?.direction?.id
+            let currentTodoID = session.resolvedSegments.last(where: { $0.endedAt == nil })?.todo?.id
+            let currentDirectionID = session.resolvedSegments.last(where: { $0.endedAt == nil })?.direction?.id
 
             if currentTodoID != todo?.id || currentDirectionID != direction.id {
                 let focusedSeconds = engine.actualFocusDuration(for: state, now: now)
@@ -154,8 +154,8 @@ final class ActiveFlowStore: ObservableObject {
                     startFocusSeconds: focusedSeconds
                 )
                 modelContext.insert(segment)
-                if !session.segments.contains(where: { $0.id == segment.id }) {
-                    session.segments.append(segment)
+                if !session.resolvedSegments.contains(where: { $0.id == segment.id }) {
+                    session.resolvedSegments.append(segment)
                 }
                 session.direction = direction
                 session.todo = todo
@@ -226,7 +226,7 @@ final class ActiveFlowStore: ObservableObject {
             return
         }
 
-        activeSession.segments.max(by: { $0.startedAt < $1.startedAt })?.reopen()
+        activeSession.resolvedSegments.max(by: { $0.startedAt < $1.startedAt })?.reopen()
         timerState = restoredState
         activeSession.apply(timerState: restoredState, now: now)
         progressReconciler.reconcile(
@@ -566,7 +566,7 @@ final class ActiveFlowStore: ObservableObject {
     }
 
     private func closeCurrentSegment(at date: Date, totalFocusSeconds: Int) {
-        activeSession?.segments
+        activeSession?.resolvedSegments
             .last(where: { $0.endedAt == nil })?
             .close(at: date, totalFocusSeconds: totalFocusSeconds)
     }

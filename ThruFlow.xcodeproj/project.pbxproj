@@ -27,6 +27,7 @@
 		2E1176ED2FFE20CF0011219C /* ThruFlow.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ThruFlow.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		2E1176FE2FFE20CF0011219C /* ThruFlowTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ThruFlowTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		2E1177082FFE20CF0011219C /* ThruFlowUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ThruFlowUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		4A1000013000000000000001 /* ThruFlow.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ThruFlow.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -34,8 +35,17 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
+				Platforms/iOS/App/Info.plist,
 			);
 			target = 2E1176EC2FFE20CF0011219C /* ThruFlow */;
+		};
+		4A1000023000000000000002 /* Exceptions for "ThruFlow" folder in "ThruFlow iOS" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+				Platforms/iOS/App/Info.plist,
+			);
+			target = 4A1000083000000000000008 /* ThruFlow iOS */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -44,6 +54,7 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				2E1177102FFE20CF0011219C /* Exceptions for "ThruFlow" folder in "ThruFlow" target */,
+				4A1000023000000000000002 /* Exceptions for "ThruFlow" folder in "ThruFlow iOS" target */,
 			);
 			path = ThruFlow;
 			sourceTree = "<group>";
@@ -82,6 +93,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		4A1000043000000000000004 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -99,6 +117,7 @@
 			isa = PBXGroup;
 			children = (
 				2E1176ED2FFE20CF0011219C /* ThruFlow.app */,
+				4A1000013000000000000001 /* ThruFlow.app */,
 				2E1176FE2FFE20CF0011219C /* ThruFlowTests.xctest */,
 				2E1177082FFE20CF0011219C /* ThruFlowUITests.xctest */,
 			);
@@ -176,6 +195,28 @@
 			productReference = 2E1177082FFE20CF0011219C /* ThruFlowUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		4A1000083000000000000008 /* ThruFlow iOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4A10000B300000000000000B /* Build configuration list for PBXNativeTarget "ThruFlow iOS" */;
+			buildPhases = (
+				4A1000033000000000000003 /* Sources */,
+				4A1000043000000000000004 /* Frameworks */,
+				4A1000053000000000000005 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				2E1176EF2FFE20CF0011219C /* ThruFlow */,
+			);
+			name = "ThruFlow iOS";
+			packageProductDependencies = (
+			);
+			productName = ThruFlow;
+			productReference = 4A1000013000000000000001 /* ThruFlow.app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -197,6 +238,9 @@
 						CreatedOnToolsVersion = 26.6;
 						TestTargetID = 2E1176EC2FFE20CF0011219C;
 					};
+					4A1000083000000000000008 = {
+						CreatedOnToolsVersion = 26.6;
+					};
 				};
 			};
 			buildConfigurationList = 2E1176E82FFE20CF0011219C /* Build configuration list for PBXProject "ThruFlow" */;
@@ -215,6 +259,7 @@
 			projectRoot = "";
 			targets = (
 				2E1176EC2FFE20CF0011219C /* ThruFlow */,
+				4A1000083000000000000008 /* ThruFlow iOS */,
 				2E1176FD2FFE20CF0011219C /* ThruFlowTests */,
 				2E1177072FFE20CF0011219C /* ThruFlowUITests */,
 			);
@@ -237,6 +282,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		2E1177062FFE20CF0011219C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4A1000053000000000000005 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -267,6 +319,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		4A1000033000000000000003 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -288,11 +347,25 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = ThruFlow/ThruFlow.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = BR727PS795;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
+				EXCLUDED_SOURCE_FILE_NAMES = (
+					IOSDirectionEditorView.swift,
+					IOSDirectionsView.swift,
+					IOSFlowContextPicker.swift,
+					IOSFlowMemoView.swift,
+					IOSFlowView.swift,
+					IOSRootView.swift,
+					IOSSettingsView.swift,
+					IOSTaskEditorView.swift,
+					IOSTasksView.swift,
+					ThruFlowiOSApp.swift,
+				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ThruFlow/Info.plist;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -331,11 +404,25 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = ThruFlow/ThruFlow.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = BR727PS795;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
+				EXCLUDED_SOURCE_FILE_NAMES = (
+					IOSDirectionEditorView.swift,
+					IOSDirectionsView.swift,
+					IOSFlowContextPicker.swift,
+					IOSFlowMemoView.swift,
+					IOSFlowView.swift,
+					IOSRootView.swift,
+					IOSSettingsView.swift,
+					IOSTaskEditorView.swift,
+					IOSTasksView.swift,
+					ThruFlowiOSApp.swift,
+				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ThruFlow/Info.plist;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -581,6 +668,122 @@
 			};
 			name = Release;
 		};
+		4A1000093000000000000009 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = ThruFlow/Platforms/iOS/App/ThruFlowiOS.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = BR727PS795;
+				ENABLE_PREVIEWS = YES;
+				EXCLUDED_SOURCE_FILE_NAMES = (
+					DayHistoryView.swift,
+					DirectionFormView.swift,
+					DirectionListView.swift,
+					EmojiPickerView.swift,
+					FlowDashboardView.swift,
+					FlowHistoryInspectorView.swift,
+					FlowMiniPlayerView.swift,
+					FlowStream.metal,
+					FlowStreamView.swift,
+					HistoryCalendarView.swift,
+					HistoryDayWorkspaceView.swift,
+					InboxView.swift,
+					MacOSAppDelegate.swift,
+					MacOSFlowMenuBarLabel.swift,
+					MacOSFocusController.swift,
+					MacOSRootView.swift,
+					MacOSSettingsView.swift,
+					ManualFlowCreationView.swift,
+					StatisticsView.swift,
+					TaskCalendarBoardView.swift,
+					TasksView.swift,
+					ThruFlowApp.swift,
+					TodoFormView.swift,
+				);
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ThruFlow/Platforms/iOS/App/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.shigorefu.thruflow;
+				PRODUCT_NAME = ThruFlow;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		4A10000A300000000000000A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = ThruFlow/Platforms/iOS/App/ThruFlowiOS.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = BR727PS795;
+				ENABLE_PREVIEWS = YES;
+				EXCLUDED_SOURCE_FILE_NAMES = (
+					DayHistoryView.swift,
+					DirectionFormView.swift,
+					DirectionListView.swift,
+					EmojiPickerView.swift,
+					FlowDashboardView.swift,
+					FlowHistoryInspectorView.swift,
+					FlowMiniPlayerView.swift,
+					FlowStream.metal,
+					FlowStreamView.swift,
+					HistoryCalendarView.swift,
+					HistoryDayWorkspaceView.swift,
+					InboxView.swift,
+					MacOSAppDelegate.swift,
+					MacOSFlowMenuBarLabel.swift,
+					MacOSFocusController.swift,
+					MacOSRootView.swift,
+					MacOSSettingsView.swift,
+					ManualFlowCreationView.swift,
+					StatisticsView.swift,
+					TaskCalendarBoardView.swift,
+					TasksView.swift,
+					ThruFlowApp.swift,
+					TodoFormView.swift,
+				);
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ThruFlow/Platforms/iOS/App/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.shigorefu.thruflow;
+				PRODUCT_NAME = ThruFlow;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -616,6 +819,15 @@
 			buildConfigurations = (
 				2E11771A2FFE20CF0011219C /* Debug */,
 				2E11771B2FFE20CF0011219C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4A10000B300000000000000B /* Build configuration list for PBXNativeTarget "ThruFlow iOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4A1000093000000000000009 /* Debug */,
+				4A10000A300000000000000A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -134,28 +134,28 @@ enum FlowSessionStatus: String, CaseIterable, Codable, Identifiable {
 
 @Model
 final class FlowSession {
-    var id: UUID
+    var id: UUID = UUID()
     var seriesID: UUID?
     var direction: Direction?
     var todo: Todo?
-    var intent: String
+    var intent: String = ""
     var result: String?
-    var modeRawValue: String
-    var phaseRawValue: String
-    var statusRawValue: String
-    var startedAt: Date
-    var plannedEndAt: Date
+    var modeRawValue: String = FlowMode.twentyFiveFive.rawValue
+    var phaseRawValue: String = FlowPhase.focusing.rawValue
+    var statusRawValue: String = FlowSessionStatus.active.rawValue
+    var startedAt: Date = Date.now
+    var plannedEndAt: Date = Date.now
     var endedAt: Date?
-    var plannedFocusDurationSeconds: Int
+    var plannedFocusDurationSeconds: Int = 0
     var actualFocusDurationSeconds: Int?
-    var plannedBreakDurationSeconds: Int
-    var accumulatedPauseDurationSeconds: Int
-    var wasPaused: Bool
-    var interruptionCount: Int
-    var createdAt: Date
-    var updatedAt: Date
+    var plannedBreakDurationSeconds: Int = 0
+    var accumulatedPauseDurationSeconds: Int = 0
+    var wasPaused: Bool = false
+    var interruptionCount: Int = 0
+    var createdAt: Date = Date.now
+    var updatedAt: Date = Date.now
     @Relationship(deleteRule: .cascade, inverse: \FlowSegment.session)
-    var segments: [FlowSegment] = []
+    var segments: [FlowSegment]?
 
     init(
         id: UUID = UUID(),
@@ -199,6 +199,11 @@ final class FlowSession {
         self.interruptionCount = interruptionCount
         self.createdAt = createdAt
         self.updatedAt = updatedAt
+    }
+
+    var resolvedSegments: [FlowSegment] {
+        get { segments ?? [] }
+        set { segments = newValue }
     }
 
     var mode: FlowMode {

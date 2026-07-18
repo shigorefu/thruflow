@@ -91,7 +91,7 @@ struct FlowHistoryEditor {
             startFocusSeconds: 0
         )
         segment.close(at: endedAt, totalFocusSeconds: adjustedSeconds)
-        session.segments = [segment]
+        session.resolvedSegments = [segment]
 
         modelContext.insert(session)
         modelContext.insert(segment)
@@ -113,8 +113,8 @@ struct FlowHistoryEditor {
         modelContext: ModelContext,
         now: Date = .now
     ) {
-        let previousTodos = [session.todo] + session.segments.map(\.todo)
-        let previousDirections = [session.direction] + session.segments.map(\.direction)
+        let previousTodos = [session.todo] + session.resolvedSegments.map(\.todo)
+        let previousDirections = [session.direction] + session.resolvedSegments.map(\.direction)
 
         let adjustedSeconds = max(0, focusSeconds)
         let adjustedStart = startedAt ?? session.startedAt
@@ -127,18 +127,18 @@ struct FlowHistoryEditor {
         session.updatedAt = now
         todo?.setMemo(memo, now: now)
 
-        if !session.segments.isEmpty {
-            let retained = session.segments[0]
+        if !session.resolvedSegments.isEmpty {
+            let retained = session.resolvedSegments[0]
             retained.direction = session.direction
             retained.todo = todo
             retained.startedAt = session.startedAt
             retained.startFocusSeconds = 0
             retained.close(at: session.endedAt ?? now, totalFocusSeconds: adjustedSeconds)
 
-            for segment in session.segments.dropFirst() {
+            for segment in session.resolvedSegments.dropFirst() {
                 modelContext.delete(segment)
             }
-            session.segments = [retained]
+            session.resolvedSegments = [retained]
         }
 
         reconciler.reconcile(
@@ -150,8 +150,8 @@ struct FlowHistoryEditor {
     }
 
     func delete(session: FlowSession, modelContext: ModelContext, now: Date = .now) {
-        let todos = [session.todo] + session.segments.map(\.todo)
-        let directions = [session.direction] + session.segments.map(\.direction)
+        let todos = [session.todo] + session.resolvedSegments.map(\.todo)
+        let directions = [session.direction] + session.resolvedSegments.map(\.direction)
         deleteRelatedBreaks(sessionID: session.id, modelContext: modelContext, now: now)
         modelContext.delete(session)
         reconciler.reconcile(
@@ -165,13 +165,13 @@ struct FlowHistoryEditor {
 
     func delete(segment: FlowSegment, from session: FlowSession, modelContext: ModelContext, now: Date = .now) {
         let seconds = segment.resolvedFocusSeconds
-        let todos = [segment.todo, session.todo] + session.segments.map(\.todo)
-        let directions = [segment.direction, session.direction] + session.segments.map(\.direction)
+        let todos = [segment.todo, session.todo] + session.resolvedSegments.map(\.todo)
+        let directions = [segment.direction, session.direction] + session.resolvedSegments.map(\.direction)
 
-        session.segments.removeAll { $0.id == segment.id }
+        session.resolvedSegments.removeAll { $0.id == segment.id }
         modelContext.delete(segment)
 
-        guard !session.segments.isEmpty else {
+        guard !session.resolvedSegments.isEmpty else {
             deleteRelatedBreaks(sessionID: session.id, modelContext: modelContext, now: now)
             modelContext.delete(session)
             reconciler.reconcile(
@@ -213,7 +213,7 @@ struct FlowHistoryEditor {
         session.endedAt = session.endedAt?.addingTimeInterval(offset)
         session.updatedAt = now
 
-        for segment in session.segments {
+        for segment in session.resolvedSegments {
             segment.startedAt = segment.startedAt.addingTimeInterval(offset)
             segment.endedAt = segment.endedAt?.addingTimeInterval(offset)
         }

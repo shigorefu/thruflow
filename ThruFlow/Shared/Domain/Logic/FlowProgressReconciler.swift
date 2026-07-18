@@ -28,8 +28,8 @@ struct FlowProgressReconciler {
         now: Date = .now
     ) {
         reconcile(
-            todos: [session.todo] + session.segments.map(\.todo),
-            directions: [session.direction] + session.segments.map(\.direction),
+            todos: [session.todo] + session.resolvedSegments.map(\.todo),
+            directions: [session.direction] + session.resolvedSegments.map(\.direction),
             modelContext: modelContext,
             excludingSessionIDs: excludingSessionIDs,
             excludingSegmentIDs: excludingSegmentIDs,
@@ -100,8 +100,8 @@ struct FlowProgressReconciler {
         todoID: UUID,
         excludingSegmentIDs: Set<UUID>
     ) -> Int {
-        if !session.segments.isEmpty {
-            return session.segments.reduce(0) { total, segment in
+        if !session.resolvedSegments.isEmpty {
+            return session.resolvedSegments.reduce(0) { total, segment in
                 guard !excludingSegmentIDs.contains(segment.id), segment.todo?.id == todoID else {
                     return total
                 }
@@ -117,8 +117,8 @@ struct FlowProgressReconciler {
         directionID: UUID,
         excludingSegmentIDs: Set<UUID>
     ) -> Int {
-        if !session.segments.isEmpty {
-            return session.segments.reduce(0) { total, segment in
+        if !session.resolvedSegments.isEmpty {
+            return session.resolvedSegments.reduce(0) { total, segment in
                 guard !excludingSegmentIDs.contains(segment.id), segment.direction?.id == directionID else {
                     return total
                 }

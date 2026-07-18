@@ -580,7 +580,7 @@ struct FlowMiniPlayerView: View {
     private func liveSelectedTaskFocusSeconds(now: Date) -> Int {
         guard activeFlowStore.phase == .focusing || activeFlowStore.phase == .paused,
               let selectedTodo,
-              let segment = activeFlowStore.activeSession?.segments.last(where: { $0.endedAt == nil }),
+              let segment = activeFlowStore.activeSession?.resolvedSegments.last(where: { $0.endedAt == nil }),
               segment.todo?.id == selectedTodo.id else {
             return 0
         }
