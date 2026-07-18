@@ -22,6 +22,7 @@ struct FlowMiniPlayerView: View {
     @Query(sort: \Todo.createdAt, order: .forward) private var todos: [Todo]
 
     @State private var showsTaskPicker = false
+    @State private var showsTaskComposer = false
     @State private var showsModePicker = false
     @State private var resultText = ""
     @State private var editingTaskTitleID: UUID?
@@ -70,6 +71,7 @@ struct FlowMiniPlayerView: View {
                     activeFlowStore.refresh(modelContext: modelContext, now: date)
                 }
         }
+        .interactiveDismissDisabled(showsTaskComposer)
     }
 
     @ViewBuilder
@@ -227,7 +229,8 @@ struct FlowMiniPlayerView: View {
                 directions: activeDirections,
                 todos: todayTodos,
                 selectedDirectionID: activeFlowStore.selectedDirectionID,
-                selectedTodoID: activeFlowStore.selectedTodoID
+                selectedTodoID: activeFlowStore.selectedTodoID,
+                showsTaskComposer: $showsTaskComposer
             ) { direction, todo in
                 activeFlowStore.selectContext(
                     direction: direction,
@@ -236,6 +239,11 @@ struct FlowMiniPlayerView: View {
                 )
             }
             .frame(width: 520, height: 460)
+        }
+        .onChange(of: showsTaskPicker) { _, isPresented in
+            if !isPresented {
+                showsTaskComposer = false
+            }
         }
         .onChange(of: selectedTodo?.id) { _, newID in
             if editingTaskTitleID != newID {
@@ -1045,11 +1053,11 @@ private struct FlowTaskPickerView: View {
     let todos: [Todo]
     let selectedDirectionID: UUID?
     let selectedTodoID: UUID?
+    @Binding var showsTaskComposer: Bool
     let onSelect: (Direction?, Todo?) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var selectedTab: FlowTaskPickerTab = .tasks
-    @State private var showsTaskComposer = false
 
     private var taskGroups: [FlowTaskPickerGroup] {
         FlowTaskPickerGroup.groups(for: todos.filter { $0.direction?.type != .habit })
@@ -1141,12 +1149,15 @@ private struct FlowTaskPickerView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 8))
             }
             .buttonStyle(.plain)
-            .popover(isPresented: $showsTaskComposer, arrowEdge: .trailing) {
-                QuickTodoCreationPopover(
-                    directions: directions,
-                    showsQuickInputLegend: false
-                ) { todo in
-                    onSelect(todo.direction, todo)
+            .background {
+                FlowChildPopoverPresenter(isPresented: $showsTaskComposer) {
+                    QuickTodoCreationPopover(
+                        directions: directions,
+                        showsQuickInputLegend: false,
+                        onCancel: { showsTaskComposer = false }
+                    ) { todo in
+                        onSelect(todo.direction, todo)
+                    }
                 }
             }
 
@@ -1363,6 +1374,97 @@ private struct FlowTaskPickerView: View {
             .font(.subheadline)
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, minHeight: 240, alignment: .center)
+    }
+}
+
+private struct FlowChildPopoverPresenter<PopoverContent: View>: NSViewRepresentable {
+    @Binding var isPresented: Bool
+    @ViewBuilder let content: () -> PopoverContent
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(isPresented: $isPresented)
+    }
+
+    func makeNSView(context: Context) -> NSView {
+        NSView()
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        context.coordinator.isPresented = $isPresented
+
+        if isPresented {
+            context.coordinator.present(
+                relativeTo: nsView,
+                content: AnyView(content())
+            )
+        } else {
+            context.coordinator.close()
+        }
+    }
+
+    static func dismantleNSView(_ nsView: NSView, coordinator: Coordinator) {
+        coordinator.close()
+    }
+
+    @MainActor
+    final class Coordinator: NSObject, NSPopoverDelegate {
+        var isPresented: Binding<Bool>
+
+        private let popover = NSPopover()
+        private let hostingController = NSHostingController(rootView: AnyView(EmptyView()))
+        private weak var anchorView: NSView?
+        private var pendingPresentation = false
+
+        init(isPresented: Binding<Bool>) {
+            self.isPresented = isPresented
+            super.init()
+            popover.behavior = .transient
+            popover.animates = true
+            popover.delegate = self
+            popover.contentViewController = hostingController
+        }
+
+        func present(relativeTo anchorView: NSView, content: AnyView) {
+            hostingController.rootView = content
+            self.anchorView = anchorView
+
+            guard !popover.isShown, !pendingPresentation else { return }
+            guard anchorView.window != nil else {
+                pendingPresentation = true
+                DispatchQueue.main.async { [weak self, weak anchorView] in
+                    guard let self, let anchorView else { return }
+                    self.pendingPresentation = false
+                    guard self.isPresented.wrappedValue else { return }
+                    self.present(relativeTo: anchorView, content: content)
+                }
+                return
+            }
+
+            popover.show(
+                relativeTo: anchorView.bounds,
+                of: anchorView,
+                preferredEdge: .maxX
+            )
+
+            if let parentWindow = anchorView.window,
+               let childWindow = hostingController.view.window,
+               childWindow.parent == nil {
+                parentWindow.addChildWindow(childWindow, ordered: .above)
+            }
+        }
+
+        func close() {
+            pendingPresentation = false
+            if popover.isShown {
+                popover.performClose(nil)
+            }
+        }
+
+        func popoverDidClose(_ notification: Notification) {
+            if isPresented.wrappedValue {
+                isPresented.wrappedValue = false
+            }
+        }
     }
 }
 

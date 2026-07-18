@@ -1643,6 +1643,7 @@ struct QuickTodoCreationPopover: View {
 
     let directions: [Direction]
     var showsQuickInputLegend = true
+    var onCancel: (() -> Void)?
     var onCreated: ((Todo) -> Void)?
 
     @State private var title = ""
@@ -1679,10 +1680,18 @@ struct QuickTodoCreationPopover: View {
             allowsDateSelection: false,
             showsOuterBackground: false,
             allowsQuickInputLegend: showsQuickInputLegend,
-            onCancel: { dismiss() },
+            onCancel: cancel,
             onSubmit: createTodo
         )
         .frame(width: 520)
+    }
+
+    private func cancel() {
+        if let onCancel {
+            onCancel()
+        } else {
+            dismiss()
+        }
     }
 
     private func createTodo() {
