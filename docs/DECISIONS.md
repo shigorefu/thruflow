@@ -135,12 +135,34 @@ Reason: one source of truth prevents UI taps from disagreeing with recorded focu
 Persisted models, domain rules, application state, shared services, and small
 reusable controls live under `Shared`. The current navigation, windows,
 menu-bar integration, feature views, and AppKit adapters live under
-`Platforms/macOS`. A future iOS layer will depend on `Shared` without importing
+`Platforms/macOS`. The separate iOS layer depends on `Shared` without importing
 macOS presentation code.
 
 Reason: macOS behavior must remain stable while iOS receives a layout and scene
 model appropriate to its platform. One shared product and persistence layer
 prevents business-rule drift between the apps.
+
+## D-020: Private CloudKit Over One Shared SwiftData Schema
+
+Signed macOS and iOS application runs use the private CloudKit database in
+`iCloud.com.shigorefu.thruflow`. Tests remain in-memory and local-only; developers
+can use `THRUFLOW_DISABLE_CLOUDKIT=1` or `--local-store` when CloudKit is not
+available. Relationships have explicit optional inverses and persisted scalar
+properties have declaration defaults required by the synchronized schema.
+
+Reason: one schema prevents device-specific data drift while retaining a
+deterministic offline/test path and avoiding a second persistence stack.
+
+## D-021: Narrow Native iPhone MVP
+
+The first iPhone target uses iOS 17.0 as its minimum deployment version and
+contains Flow, today's Tasks/Habits, Directions, and basic Settings. Advanced
+Statistics, complex History, and full calendar editing are deferred to the next
+iPhone stage. The iPhone uses native compact navigation rather than shrinking
+the macOS dashboard and calendar screens.
+
+Reason: the core daily loop must be useful and stable on a phone before desktop
+analysis and editing surfaces are redesigned for touch.
 
 ## Open Questions
 
