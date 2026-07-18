@@ -90,6 +90,9 @@ struct TodoFormView: View {
                     TextField(String(localized: "メモ"), text: $draft.notes, axis: .vertical)
                         .lineLimit(2...5)
 
+                    TextField(String(localized: "ハッシュタグ"), text: hashtagsBinding)
+                        .textFieldStyle(.roundedBorder)
+
                     if let fixedDirection {
                         LabeledContent(String(localized: "方向")) {
                             Text("\(fixedDirection.symbolName) \(fixedDirection.name)")
@@ -261,6 +264,7 @@ struct TodoFormView: View {
             let todo = Todo(
                 title: draft.trimmedTitle,
                 notes: draft.trimmedNotes,
+                hashtags: draft.hashtags,
                 direction: direction,
                 measurement: measurement,
                 priority: priority,
@@ -280,6 +284,7 @@ struct TodoFormView: View {
             todo.update(
                 title: draft.trimmedTitle,
                 notes: draft.trimmedNotes,
+                hashtags: draft.hashtags,
                 direction: direction,
                 measurement: measurement,
                 priority: priority,
@@ -306,6 +311,17 @@ struct TodoFormView: View {
         let taskInbox = DefaultDirections.makeTaskInbox()
         modelContext.insert(taskInbox)
         return taskInbox
+    }
+
+    private var hashtagsBinding: Binding<String> {
+        Binding(
+            get: { draft.hashtags.map { "#\($0)" }.joined(separator: " ") },
+            set: { value in
+                draft.hashtags = TodoHashtagNormalizer.normalize(
+                    value.split(whereSeparator: { $0.isWhitespace || $0 == "," }).map(String.init)
+                )
+            }
+        )
     }
 }
 

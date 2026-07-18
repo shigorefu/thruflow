@@ -21,10 +21,15 @@ struct TodoProgressControl: View {
             .buttonStyle(.plain)
             .accessibilityLabel(todo.isCompleted ? String(localized: "未完了に戻す") : String(localized: "完了にする"))
             .accessibilityValue(accessibilityValue)
-        } else {
-            progressRing(systemImage: todo.measurement == .minutes ? "timer" : completionSymbol)
+        } else if todo.measurement == .focusBlocks {
+            progressRing(systemImage: completionSymbol)
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel(todo.measurement == .focusBlocks ? String(localized: "ブロック進捗") : String(localized: "分の進捗"))
+                .accessibilityLabel(String(localized: "ブロック進捗"))
+                .accessibilityValue(accessibilityValue)
+        } else {
+            minuteProgress
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(String(localized: "分の進捗"))
                 .accessibilityValue(accessibilityValue)
         }
     }
@@ -73,6 +78,26 @@ struct TodoProgressControl: View {
         .contentShape(Rectangle())
     }
 
+    private var minuteProgress: some View {
+        ZStack {
+            Circle()
+                .fill(tint.opacity(0.16))
+
+            ProgressPieShape(progress: progress)
+                .fill(tint)
+
+            Image(systemName: todo.isCompleted ? "checkmark" : "timer")
+                .font(.system(size: 9, weight: .semibold))
+                .foregroundStyle(progress > 0.52 ? Color.white : tint)
+        }
+        .overlay {
+            Circle().strokeBorder(tint.opacity(0.55), lineWidth: 1)
+        }
+        .frame(width: 22, height: 22)
+        .frame(width: 34, height: 34)
+        .contentShape(Rectangle())
+    }
+
     private var progress: Double {
         if todo.measurement == .focusBlocks,
            let plannedAmount = todo.plannedAmount,
@@ -111,5 +136,34 @@ struct TodoProgressControl: View {
             actualProgress: todo.actualProgress,
             focusDurationSeconds: displayedFocusSeconds
         )
+    }
+}
+
+private struct ProgressPieShape: Shape {
+    var progress: Double
+
+    var animatableData: Double {
+        get { progress }
+        set { progress = newValue }
+    }
+
+    func path(in rect: CGRect) -> Path {
+        let value = min(max(progress, 0), 1)
+        guard value > 0 else { return Path() }
+        if value >= 1 { return Path(ellipseIn: rect) }
+
+        let center = CGPoint(x: rect.midX, y: rect.midY)
+        let radius = min(rect.width, rect.height) / 2
+        var path = Path()
+        path.move(to: center)
+        path.addArc(
+            center: center,
+            radius: radius,
+            startAngle: .degrees(-90),
+            endAngle: .degrees(-90 + 360 * value),
+            clockwise: false
+        )
+        path.closeSubpath()
+        return path
     }
 }

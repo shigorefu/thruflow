@@ -945,6 +945,22 @@
         }
       }
     },
+    "1ブロック" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 Block"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 блок"
+          }
+        }
+      }
+    },
     "2 Blocksが完了しました。" : {
       "localizations" : {
         "en" : {
@@ -1069,6 +1085,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "24-часовой"
+          }
+        }
+      }
+    },
+    "25分" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "25 min"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "25 мин"
           }
         }
       }
@@ -1889,6 +1921,38 @@
         }
       }
     },
+    "クイック入力のヒントを表示" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show quick input tips"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показывать подсказки быстрого ввода"
+          }
+        }
+      }
+    },
+    "クイック入力のヒントを非表示" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide quick input tips"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скрыть подсказки быстрого ввода"
+          }
+        }
+      }
+    },
     "グリーン" : {
       "localizations" : {
         "en" : {
@@ -2273,6 +2337,22 @@
         }
       }
     },
+    "ショートカットを使えます" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shortcuts available"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Доступны быстрые команды"
+          }
+        }
+      }
+    },
     "すべて" : {
       "localizations" : {
         "en" : {
@@ -2337,6 +2417,22 @@
         }
       }
     },
+    "その他として追加" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add as Other"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить как Другое"
+          }
+        }
+      }
+    },
     "その他の絵文字" : {
       "localizations" : {
         "en" : {
@@ -2381,6 +2477,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Название"
+          }
+        }
+      }
+    },
+    "タグ" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tag"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Тег"
+          }
+        }
+      }
+    },
+    "タグを削除" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove tag"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить тег"
           }
         }
       }
@@ -2711,6 +2839,22 @@
         }
       }
     },
+    "トークンを削除" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove token"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить токен"
+          }
+        }
+      }
+    },
     "ナイス" : {
       "localizations" : {
         "en" : {
@@ -2739,6 +2883,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Фиолетовый"
+          }
+        }
+      }
+    },
+    "ハッシュタグ" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hashtags"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Хэштеги"
           }
         }
       }
@@ -2935,40 +3095,6 @@
         }
       }
     },
-    "メモなし" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No Memo"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Без заметки"
-          }
-        }
-      }
-    },
-    "メモなしで続ける" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Continue Without Memo"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Продолжить без заметки"
-          }
-        }
-      }
-    },
     "メモなしで送信" : {
       "localizations" : {
         "en" : {
@@ -2997,23 +3123,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Заметка будет сохранена в задаче."
-          }
-        }
-      }
-    },
-    "メモを保存" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Save Memo"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сохранить заметку"
           }
         }
       }
@@ -4342,6 +4451,38 @@
         }
       }
     },
+    "新しい方向を作成" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create Direction"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Создать направление"
+          }
+        }
+      }
+    },
+    "新規作成" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create New"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Создать"
+          }
+        }
+      }
+    },
     "方向" : {
       "localizations" : {
         "en" : {
@@ -4354,6 +4495,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Направления"
+          }
+        }
+      }
+    },
+    "方向「%@」が見つかりません" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Direction “%1$@” was not found"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Направление «%1$@» не найдено"
           }
         }
       }
@@ -5634,22 +5791,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Растущий поток"
-          }
-        }
-      }
-    },
-    "自動: その他" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Automatic: Other"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Автоматически: Другое"
           }
         }
       }

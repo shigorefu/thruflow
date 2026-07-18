@@ -30,13 +30,18 @@ System Direction `その他` is stored like other Directions but hidden from Dir
 
 Persisted data includes:
 
-- identity, title, notes (`メモ`), Direction, and scheduled date;
+- identity, title, notes (`メモ`), Direction, scheduled date, and optional `hashtagsRawValue`;
 - priority and optional `余裕があれば` state;
 - measurement type (`check`, `focusBlocks`, or `minutes`), planned amount, actual progress, and focused seconds;
 - active/completed status, completion timestamp, generation metadata, and sort order;
 - creation/update timestamps and deletion state.
 
 User-facing Flow memo is stored on `Todo`, not on a new memo entity. `FlowSession.result` remains only for migration compatibility.
+
+`hashtagsRawValue` is an optional JSON array of display values without `#`.
+Normalization trims leading `#`, removes empty values, and deduplicates using a
+locale-stable case-insensitive key while preserving the first spelling. The
+optional field keeps existing local SwiftData stores migration-compatible.
 
 ## FlowSession
 
