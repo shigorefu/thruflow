@@ -852,6 +852,7 @@ struct MessengerTodoComposer: View {
     @State private var parserMessage: String?
     @State private var pendingDirectionName: String?
     @State private var isApplyingParserResult = false
+    @State private var inlineTokens: [TaskComposerInlineToken] = []
 
     private let parser = TaskQuickInputParser()
 
@@ -864,6 +865,93 @@ struct MessengerTodoComposer: View {
             if showsQuickInputLegend && isFocused {
                 quickInputLegend
                     .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+
+            composerSurface
+        }
+        .padding(.horizontal, showsOuterBackground ? 12 : 0)
+        .padding(.vertical, showsOuterBackground ? 8 : 0)
+        .background {
+            if showsOuterBackground {
+                Rectangle().fill(.bar)
+            }
+        }
+        .sheet(isPresented: pendingDirectionSheetBinding) {
+            DirectionFormView(
+                mode: .create,
+                initialName: pendingDirectionName
+            ) { direction in
+                selectedDirectionID = direction.id
+                replaceInlineToken(.direction(direction.id))
+                removeDirectionToken(named: direction.name)
+                pendingDirectionName = nil
+                parserMessage = nil
+            }
+        }
+        .onChange(of: volume) { _, newValue in
+            updateExistingInlineToken(
+                .measurement(newValue.measurement, newValue.plannedAmount)
+            )
+        }
+        .onChange(of: selectedDirectionID) { _, newValue in
+            updateExistingInlineToken(newValue.map(TaskComposerInlineToken.direction), id: "direction")
+        }
+        .onChange(of: priority) { _, newValue in
+            updateExistingInlineToken(.priority(newValue, isRoomIfPossible))
+        }
+        .onChange(of: isRoomIfPossible) { _, newValue in
+            updateExistingInlineToken(.priority(priority, newValue))
+        }
+        .onChange(of: dateOption) { _, newValue in
+            updateExistingInlineToken(.date(newValue))
+        }
+    }
+
+    private var composerSurface: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            inputArea
+
+            if let query = parser.trailingDirectionQuery(in: title), !query.isEmpty {
+                directionSuggestions(for: query)
+            }
+
+            controlBar
+
+            if let message = parserMessage ?? validationMessage {
+                Text(message)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
+
+            if let pendingDirectionName {
+                unresolvedDirectionActions(name: pendingDirectionName)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 14)
+        .padding(.bottom, 10)
+        .background {
+            RoundedRectangle(cornerRadius: 22)
+                .fill(Color.primary.opacity(0.08))
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 22)
+                .strokeBorder(Color.primary.opacity(0.12))
+        }
+    }
+
+    private var inputArea: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if !inlineTokens.isEmpty {
+                ScrollView(.horizontal) {
+                    HStack(spacing: 6) {
+                        ForEach(inlineTokens) { token in
+                            inlineTokenView(token)
+                        }
+                    }
+                }
+                .scrollIndicators(.hidden)
+                .transition(.move(edge: .leading).combined(with: .opacity))
             }
 
             HStack(alignment: .top, spacing: 10) {
@@ -889,109 +977,60 @@ struct MessengerTodoComposer: View {
                     .accessibilityLabel(String(localized: "タスク作成を閉じる"))
                 }
             }
+        }
+        .animation(.snappy(duration: 0.22), value: inlineTokens)
+    }
 
-            if let query = parser.trailingDirectionQuery(in: title), !query.isEmpty {
-                directionSuggestions(for: query)
-            } else if let token = trailingToken {
-                HStack(spacing: 6) {
-                    Image(systemName: "sparkles")
-                    Text(token.rawValue)
-                }
-                .font(.caption.weight(.medium))
-                .foregroundStyle(Color.accentColor)
-                .padding(.horizontal, 9)
-                .padding(.vertical, 5)
-                .background(Color.accentColor.opacity(0.12), in: Capsule())
+    private var controlBar: some View {
+        HStack(spacing: 8) {
+            VolumeChip(volume: $volume)
+
+            DirectionChip(selectedDirectionID: $selectedDirectionID, directions: directions)
+                .fixedSize(horizontal: true, vertical: false)
+                .layoutPriority(3)
+
+            PriorityChip(priority: $priority, isRoomIfPossible: $isRoomIfPossible)
+
+            if priority == .low {
+                RoomIfPossibleChip(isSelected: $isRoomIfPossible)
             }
 
-            HStack(spacing: 8) {
-                VolumeChip(volume: $volume)
+            if allowsDateSelection {
+                DateChip(dateOption: $dateOption)
+            } else {
+                Text(String(localized: "今日"))
+                    .chipStyle(tint: .secondary)
+                    .accessibilityLabel(String(localized: "日付 今日"))
+            }
 
-                DirectionChip(selectedDirectionID: $selectedDirectionID, directions: directions)
-                    .fixedSize(horizontal: true, vertical: false)
-                    .layoutPriority(3)
-
-                PriorityChip(priority: $priority, isRoomIfPossible: $isRoomIfPossible)
-
-                if priority == .low {
-                    RoomIfPossibleChip(isSelected: $isRoomIfPossible)
-                }
-
-                if allowsDateSelection {
-                    DateChip(dateOption: $dateOption)
-                } else {
-                    Text(String(localized: "今日"))
-                        .chipStyle(tint: .secondary)
-                        .accessibilityLabel(String(localized: "日付 今日"))
-                }
-
-                ForEach(hashtags, id: \.self) { hashtag in
-                    Button {
-                        hashtags.removeAll { $0.caseInsensitiveCompare(hashtag) == .orderedSame }
-                    } label: {
-                        Text("#\(hashtag)")
-                            .chipStyle(tint: .accentColor)
-                    }
-                    .buttonStyle(.plain)
-                    .help(String(localized: "タグを削除"))
-                }
-
-                Spacer(minLength: 0)
-
-                Button(action: submit) {
-                    Text(String(localized: "タスクを追加 =>"))
-                        .font(.callout.weight(.semibold))
-                        .padding(.horizontal, 14)
-                        .frame(height: 34)
-                        .background(Color.accentColor)
-                        .foregroundStyle(.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 7))
+            ForEach(hashtags, id: \.self) { hashtag in
+                Button {
+                    hashtags.removeAll { $0.caseInsensitiveCompare(hashtag) == .orderedSame }
+                    inlineTokens.removeAll { $0.hashtagMatches(hashtag) }
+                } label: {
+                    Text(verbatim: "#\(hashtag)")
+                        .chipStyle(tint: .accentColor)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(String(localized: "タスクを追加"))
-            }
-            .lineLimit(1)
-            .minimumScaleFactor(0.8)
-
-            if let message = parserMessage ?? validationMessage {
-                Text(message)
-                    .font(.caption)
-                    .foregroundStyle(.red)
+                .help(String(localized: "タグを削除"))
             }
 
-            if let pendingDirectionName {
-                unresolvedDirectionActions(name: pendingDirectionName)
+            Spacer(minLength: 0)
+
+            Button(action: submit) {
+                Text(String(localized: "タスクを追加 =>"))
+                    .font(.callout.weight(.semibold))
+                    .padding(.horizontal, 14)
+                    .frame(height: 34)
+                    .background(Color.accentColor)
+                    .foregroundStyle(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 7))
             }
+            .buttonStyle(.plain)
+            .accessibilityLabel(String(localized: "タスクを追加"))
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 16)
-        .padding(.bottom, 10)
-        .background {
-            RoundedRectangle(cornerRadius: 22)
-                .fill(Color.primary.opacity(0.08))
-        }
-        .overlay {
-            RoundedRectangle(cornerRadius: 22)
-                .strokeBorder(Color.primary.opacity(0.12))
-        }
-        .padding(.horizontal, showsOuterBackground ? 12 : 0)
-        .padding(.vertical, showsOuterBackground ? 8 : 0)
-        .background {
-            if showsOuterBackground {
-                Rectangle().fill(.bar)
-            }
-        }
-        .sheet(isPresented: pendingDirectionSheetBinding) {
-            DirectionFormView(
-                mode: .create,
-                initialName: pendingDirectionName
-            ) { direction in
-                selectedDirectionID = direction.id
-                removeDirectionToken(named: direction.name)
-                pendingDirectionName = nil
-                parserMessage = nil
-            }
-        }
+        .lineLimit(1)
+        .minimumScaleFactor(0.8)
     }
 
     private func submit() {
@@ -1007,18 +1046,12 @@ struct MessengerTodoComposer: View {
         pendingDirectionName = nil
         parserMessage = nil
         onSubmit()
+        clearInlineTokensAfterSubmission()
         isFocused = true
     }
 
     private var parserDirections: [TaskQuickInputDirection] {
         directions.map { TaskQuickInputDirection(id: $0.id, name: $0.name) }
-    }
-
-    private var trailingToken: TaskQuickInputToken? {
-        let result = parser.parse(title, directions: parserDirections, consumeTrailingToken: false)
-        guard let token = result.tokens.last, token.range.upperBound == title.endIndex else { return nil }
-        if case .unrecognized = token.kind { return nil }
-        return token
     }
 
     private var pendingDirectionSheetBinding: Binding<Bool> {
@@ -1036,7 +1069,7 @@ struct MessengerTodoComposer: View {
         HStack(spacing: 10) {
             Label(String(localized: "クイック入力"), systemImage: "command")
                 .fontWeight(.semibold)
-            Text("[]  [2b]  [30m]  @direction  !high  /today  #tag")
+            Text(verbatim: "[]  [2b]  [30m]  @direction  !high  /today  #tag")
                 .fontDesign(.monospaced)
                 .textSelection(.enabled)
             Spacer(minLength: 0)
@@ -1101,6 +1134,7 @@ struct MessengerTodoComposer: View {
                 pendingDirectionName = nil
                 parserMessage = nil
                 onSubmit()
+                clearInlineTokensAfterSubmission()
             }
             .buttonStyle(.bordered)
         }
@@ -1116,6 +1150,7 @@ struct MessengerTodoComposer: View {
         isApplyingParserResult = true
         defer { isApplyingParserResult = false }
 
+        recordInlineTokens(from: result)
         if title != result.title {
             title = result.title
         }
@@ -1135,13 +1170,7 @@ struct MessengerTodoComposer: View {
             isRoomIfPossible = result.isRoomIfPossible ?? false
         }
         if allowsDateSelection, let date = result.date {
-            switch date {
-            case .scheduled(let value):
-                dateOption = Calendar.current.isDateInToday(value) ? .today :
-                    (Calendar.current.isDateInTomorrow(value) ? .tomorrow : .custom(value))
-            case .noDate:
-                dateOption = .none
-            }
+            dateOption = quickDate(for: date)
         }
         hashtags = TodoHashtagNormalizer.normalize(hashtags + result.hashtags)
     }
@@ -1150,7 +1179,121 @@ struct MessengerTodoComposer: View {
         guard let query = parser.trailingDirectionQuery(in: title) else { return }
         removeDirectionToken(named: query)
         selectedDirectionID = direction.id
+        replaceInlineToken(.direction(direction.id))
         parserMessage = nil
+    }
+
+    private func recordInlineTokens(from result: TaskQuickInputParseResult) {
+        if let measurement = result.measurement {
+            replaceInlineToken(.measurement(measurement, result.plannedAmount))
+        }
+        if let directionID = result.directionID {
+            replaceInlineToken(.direction(directionID))
+        }
+        if let priority = result.priority {
+            replaceInlineToken(.priority(priority, result.isRoomIfPossible ?? false))
+        }
+        if allowsDateSelection, let date = result.date {
+            replaceInlineToken(.date(quickDate(for: date)))
+        }
+        for hashtag in result.hashtags {
+            replaceInlineToken(.hashtag(hashtag))
+        }
+    }
+
+    private func replaceInlineToken(_ token: TaskComposerInlineToken) {
+        inlineTokens.removeAll { $0.id == token.id }
+        inlineTokens.append(token)
+    }
+
+    private func updateExistingInlineToken(_ token: TaskComposerInlineToken?, id: String? = nil) {
+        let targetID = id ?? token?.id
+        guard let targetID, inlineTokens.contains(where: { $0.id == targetID }) else { return }
+        inlineTokens.removeAll { $0.id == targetID }
+        if let token {
+            inlineTokens.append(token)
+        }
+    }
+
+    private func clearInlineTokensAfterSubmission() {
+        if trimmedTitle.isEmpty {
+            inlineTokens = []
+        }
+    }
+
+    private func quickDate(for date: TaskQuickInputDate) -> QuickTodoDate {
+        switch date {
+        case .scheduled(let value):
+            if Calendar.current.isDateInToday(value) { return .today }
+            if Calendar.current.isDateInTomorrow(value) { return .tomorrow }
+            return .custom(value)
+        case .noDate:
+            return .none
+        }
+    }
+
+    private func inlineTokenView(_ token: TaskComposerInlineToken) -> some View {
+        HStack(spacing: 5) {
+            inlineTokenIcon(token)
+            Text(inlineTokenLabel(token))
+        }
+        .font(.caption.weight(.medium))
+        .foregroundStyle(inlineTokenTint(token))
+        .padding(.horizontal, 9)
+        .frame(height: 26)
+        .background(inlineTokenTint(token).opacity(0.12), in: Capsule())
+        .overlay {
+            Capsule().strokeBorder(inlineTokenTint(token).opacity(0.2), lineWidth: 1)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    @ViewBuilder
+    private func inlineTokenIcon(_ token: TaskComposerInlineToken) -> some View {
+        switch token {
+        case .measurement(let measurement, _):
+            Image(systemName: measurement == .checkbox ? "square" :
+                (measurement == .focusBlocks ? "circle" : "circle.lefthalf.filled"))
+        case .direction(let id):
+            Text(directions.first(where: { $0.id == id })?.symbolName ?? "@")
+        case .priority:
+            Image(systemName: "exclamationmark")
+        case .date:
+            Image(systemName: "calendar")
+        case .hashtag:
+            Image(systemName: "number")
+        }
+    }
+
+    private func inlineTokenLabel(_ token: TaskComposerInlineToken) -> String {
+        switch token {
+        case .measurement(let measurement, let amount):
+            switch measurement {
+            case .checkbox:
+                return String(localized: "チェック")
+            case .focusBlocks:
+                return "\(max(1, amount ?? 1)) \(String(localized: "ブロック"))"
+            case .minutes:
+                return "\(max(1, amount ?? 1)) \(String(localized: "分"))"
+            }
+        case .direction(let id):
+            return directions.first(where: { $0.id == id })?.name ?? String(localized: "方向")
+        case .priority(let priority, let later):
+            return later ? String(localized: "余裕があれば") : priority.displayName
+        case .date(let date):
+            return date.chipLabel
+        case .hashtag(let hashtag):
+            return "#\(hashtag)"
+        }
+    }
+
+    private func inlineTokenTint(_ token: TaskComposerInlineToken) -> Color {
+        if case .direction(let id) = token,
+           let direction = directions.first(where: { $0.id == id }),
+           !DefaultDirections.isTaskInbox(direction) {
+            return Color(hex: direction.colorHex)
+        }
+        return .accentColor
     }
 
     private func removeDirectionToken(named name: String) {
@@ -1159,6 +1302,29 @@ struct MessengerTodoComposer: View {
             .split(whereSeparator: \.isWhitespace)
             .filter { String($0).caseInsensitiveCompare(target) != .orderedSame }
             .joined(separator: " ")
+    }
+}
+
+private enum TaskComposerInlineToken: Equatable, Identifiable {
+    case measurement(TodoMeasurement, Int?)
+    case direction(UUID)
+    case priority(TodoPriority, Bool)
+    case date(QuickTodoDate)
+    case hashtag(String)
+
+    var id: String {
+        switch self {
+        case .measurement: "measurement"
+        case .direction: "direction"
+        case .priority: "priority"
+        case .date: "date"
+        case .hashtag(let value): "hashtag:\(value.lowercased(with: Locale(identifier: "en_US_POSIX")))"
+        }
+    }
+
+    func hashtagMatches(_ value: String) -> Bool {
+        guard case .hashtag(let hashtag) = self else { return false }
+        return hashtag.caseInsensitiveCompare(value) == .orderedSame
     }
 }
 
@@ -1426,6 +1592,28 @@ private struct VolumeChip: View {
 
     var body: some View {
         HStack(spacing: 6) {
+            Image(systemName: typeIcon)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(iconColor)
+                .frame(width: 16, height: 16)
+                .contentTransition(.symbolEffect(.replace))
+
+            if volume.measurement == .checkbox {
+                Text(typeLabel)
+                    .foregroundStyle(volume == .unspecified ? .secondary : .primary)
+                    .transition(.opacity.combined(with: .scale(scale: 0.92)))
+            } else {
+                TextField("1", value: amountBinding, format: .number)
+                    .textFieldStyle(.plain)
+                    .multilineTextAlignment(.trailing)
+                    .font(.caption.monospacedDigit().weight(.semibold))
+                    .frame(width: 34)
+
+                Text(volume.measurement == .focusBlocks ? String(localized: "ブロック") : String(localized: "分"))
+                    .foregroundStyle(.secondary)
+                    .transition(.opacity.combined(with: .move(edge: .leading)))
+            }
+
             Menu {
                 Button { volume = .checkbox } label: {
                     menuRow(String(localized: "チェック"), selected: volume.measurement == .checkbox && volume != .unspecified)
@@ -1437,27 +1625,38 @@ private struct VolumeChip: View {
                     menuRow(String(localized: "分"), selected: volume.measurement == .minutes)
                 }
             } label: {
-                Text(typeLabel)
-                    .chipStyle(tint: .secondary)
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 8, weight: .bold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 16, height: 20)
+                    .contentShape(Rectangle())
             }
             .menuStyle(.borderlessButton)
-
-            if volume.measurement != .checkbox {
-                HStack(spacing: 4) {
-                    TextField("1", value: amountBinding, format: .number)
-                        .textFieldStyle(.plain)
-                        .multilineTextAlignment(.trailing)
-                        .frame(width: 34)
-                    Text(volume.measurement == .focusBlocks ? String(localized: "ブロック") : String(localized: "分"))
-                        .foregroundStyle(.secondary)
-                }
-                .font(.caption)
-                .padding(.horizontal, 8)
-                .frame(height: 28)
-                .background(Color.secondary.opacity(0.1), in: RoundedRectangle(cornerRadius: 7))
-            }
         }
+        .font(.caption.weight(.medium))
+        .padding(.leading, 9)
+        .padding(.trailing, 5)
+        .frame(height: 30)
+        .background(Color.secondary.opacity(0.1), in: RoundedRectangle(cornerRadius: 7))
+        .overlay {
+            RoundedRectangle(cornerRadius: 7)
+                .strokeBorder(Color.secondary.opacity(0.12), lineWidth: 1)
+        }
+        .animation(.snappy(duration: 0.22), value: volume.measurement)
         .accessibilityLabel(String(localized: "タスクの分量を選択"))
+    }
+
+    private var typeIcon: String {
+        switch volume {
+        case .unspecified: "square.dashed"
+        case .checkbox: "checkmark.square"
+        case .blocks: "circle"
+        case .minutes: "circle.lefthalf.filled"
+        }
+    }
+
+    private var iconColor: Color {
+        volume == .unspecified ? .secondary : .accentColor
     }
 
     private var typeLabel: String {

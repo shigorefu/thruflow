@@ -90,6 +90,14 @@ struct TaskQuickInputParserTests {
         #expect(result.tokens.last?.kind == .priority(.high, isRoomIfPossible: false))
     }
 
+    @Test func commitsTokenAfterDelimiterForInlineChipPresentation() {
+        let result = parser.parse("[] Prepare ", consumeTrailingToken: false)
+
+        #expect(result.title == "Prepare")
+        #expect(result.measurement == .checkbox)
+        #expect(result.recognizedTokens.map(\.rawValue) == ["[]"])
+    }
+
     private var referenceDate: Date {
         Date(timeIntervalSince1970: 1_768_579_200)
     }
