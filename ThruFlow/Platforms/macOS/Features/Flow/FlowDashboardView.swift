@@ -1568,8 +1568,11 @@ private struct DashboardTodoColumn: View {
     }
 
     private func todoDetail(_ todo: Todo) -> String {
-        guard showsPriority else { return progressText(todo) }
-        return "\(priorityLabel(todo)) ・ \(progressText(todo))"
+        let tags = todo.hashtags.map { "#\($0)" }.joined(separator: " ")
+        let detail = showsPriority
+            ? "\(priorityLabel(todo)) ・ \(progressText(todo))"
+            : progressText(todo)
+        return tags.isEmpty ? detail : "\(detail) ・ \(tags)"
     }
 
     private func priorityLabel(_ todo: Todo) -> String {

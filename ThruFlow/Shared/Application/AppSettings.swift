@@ -80,6 +80,10 @@ final class AppSettings: ObservableObject {
         didSet { defaults.set(clockFormat.rawValue, forKey: Keys.clockFormat) }
     }
 
+    @Published var showsTaskQuickInputLegend: Bool {
+        didSet { defaults.set(showsTaskQuickInputLegend, forKey: Keys.showsTaskQuickInputLegend) }
+    }
+
     let launchLanguageCode: String
 
     private let defaults: UserDefaults
@@ -98,6 +102,7 @@ final class AppSettings: ObservableObject {
         clockFormat = AppClockFormat(
             rawValue: defaults.string(forKey: Keys.clockFormat) ?? ""
         ) ?? .system
+        showsTaskQuickInputLegend = defaults.object(forKey: Keys.showsTaskQuickInputLegend) as? Bool ?? true
         launchLanguageCode = storedLanguageCode
         applyLanguagePreference()
     }
@@ -141,5 +146,6 @@ final class AppSettings: ObservableObject {
         static let languageCode = "settings.languageCode"
         static let weekStart = "settings.weekStart"
         static let clockFormat = "settings.clockFormat"
+        static let showsTaskQuickInputLegend = "settings.showsTaskQuickInputLegend"
     }
 }

@@ -39,9 +39,11 @@ Task rows:
 - Direction color is used unless the Direction is `その他`;
 - `チェック` shows a checkbox;
 - `集中ブロック` shows a filling ring;
-- `分` shows minute progress.
+- `分` shows a filled timer circle, visually distinct from the Block ring.
 
-Quick capture behaves like a messenger composer. The user can set measurement, Direction, priority, and date from compact controls.
+Quick capture behaves like a messenger composer. The user can set measurement, Direction, priority, date, and multiple hashtags from compact controls. The default measurement chip reads `種類`; leaving it untouched creates a Check Task. Block and Minute selections reveal a compact numeric field. Hashtags display with `#`, deduplicate case-insensitively, and preserve the first entered casing.
+
+The composer also recognizes `[]`, `[2b]`, `[30m]`, `@Direction`, `!high`, `/today`, and `#tag`. Completed tokens are removed from the title and update the lower chips; the active trailing token remains highlighted until committed. English aliases always work, while Japanese and Russian aliases work in addition. Typing `@` opens Direction autocomplete. An unknown Direction is never guessed: submitting it immediately opens the full Direction creation screen with the name prefilled; after cancellation the user can retry or explicitly create the Task under `その他`. Invalid tokens remain ordinary title text. A dismissible syntax legend appears above the focused composer and can be restored from Settings.
 
 When `今日` is selected, active overdue normal Tasks appear in a leading `期限切れ` section. The section supports normal Task actions, drag-to-date, and `すべて今日へ`. Automatically generated Habit instances are excluded.
 

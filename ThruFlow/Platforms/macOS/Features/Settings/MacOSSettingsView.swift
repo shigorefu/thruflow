@@ -47,6 +47,10 @@ struct MacOSSettingsView: View {
                     Text(String(localized: "24時間制")).tag(AppClockFormat.twentyFourHour)
                 }
             }
+
+            Section(String(localized: "タスク")) {
+                Toggle(String(localized: "クイック入力のヒントを表示"), isOn: $settings.showsTaskQuickInputLegend)
+            }
         }
         .formStyle(.grouped)
         .padding(20)

@@ -20,10 +20,11 @@ struct TasksView: View {
     @State private var editingTodo: Todo?
     @State private var newTodoTitle = ""
     @State private var newTodoDirectionID: UUID?
-    @State private var newTodoVolume: QuickTodoVolume = .checkbox
+    @State private var newTodoVolume: QuickTodoVolume = .unspecified
     @State private var newTodoPriority: TodoPriority = .medium
     @State private var newTodoIsRoomIfPossible = false
     @State private var newTodoDateOption: QuickTodoDate = .today
+    @State private var newTodoHashtags: [String] = []
     @State private var newTodoError: String?
     @State private var anchorDate = Calendar.current.startOfDay(for: .now)
     @State private var selectedDate = Calendar.current.startOfDay(for: .now)
@@ -96,6 +97,7 @@ struct TasksView: View {
                 priority: $newTodoPriority,
                 isRoomIfPossible: $newTodoIsRoomIfPossible,
                 dateOption: $newTodoDateOption,
+                hashtags: $newTodoHashtags,
                 directions: visibleDirections,
                 validationMessage: newTodoError,
                 onSubmit: createInlineTodo
@@ -615,6 +617,7 @@ struct TasksView: View {
     private func createInlineTodo() {
         let draft = TodoDraft(
             title: newTodoTitle,
+            hashtags: newTodoHashtags,
             direction: direction(for: newTodoDirectionID),
             measurement: newTodoVolume.measurement,
             priority: newTodoPriority,
@@ -632,6 +635,7 @@ struct TasksView: View {
         let direction = resolvedDirection(for: newTodoDirectionID)
         let todo = Todo(
             title: draft.trimmedTitle,
+            hashtags: draft.hashtags,
             direction: direction,
             measurement: newTodoVolume.measurement,
             priority: newTodoPriority,
@@ -649,6 +653,7 @@ struct TasksView: View {
         try? modelContext.save()
 
         newTodoTitle = ""
+        newTodoHashtags = []
         if newTodoPriority != .low {
             newTodoIsRoomIfPossible = false
         }
@@ -733,23 +738,14 @@ struct TasksView: View {
 /// Quick-add volume selection for the composer. `checkbox` means "no target amount",
 /// `blocks(n)` targets `n` focus blocks (1 Block = 25 focused minutes).
 enum QuickTodoVolume: Hashable {
+    case unspecified
     case checkbox
     case blocks(Int)
     case minutes(Int)
 
-    static let options: [QuickTodoVolume] = [
-        .checkbox,
-        .blocks(1),
-        .blocks(2),
-        .blocks(3),
-        .minutes(15),
-        .minutes(25),
-        .minutes(50)
-    ]
-
     var measurement: TodoMeasurement {
         switch self {
-        case .checkbox:
+        case .unspecified, .checkbox:
             .checkbox
         case .blocks:
             .focusBlocks
@@ -760,7 +756,7 @@ enum QuickTodoVolume: Hashable {
 
     var plannedAmount: Int? {
         switch self {
-        case .checkbox:
+        case .unspecified, .checkbox:
             nil
         case .blocks(let count), .minutes(let count):
             count
@@ -769,6 +765,8 @@ enum QuickTodoVolume: Hashable {
 
     var menuLabel: String {
         switch self {
+        case .unspecified:
+            String(localized: "種類")
         case .checkbox:
             String(localized: "チェックのみ")
         case .blocks(let count):
@@ -780,6 +778,8 @@ enum QuickTodoVolume: Hashable {
 
     var chipLabel: String {
         switch self {
+        case .unspecified:
+            String(localized: "種類")
         case .checkbox:
             String(localized: "チェック")
         case .blocks(let count):
@@ -838,6 +838,7 @@ struct MessengerTodoComposer: View {
     @Binding var priority: TodoPriority
     @Binding var isRoomIfPossible: Bool
     @Binding var dateOption: QuickTodoDate
+    @Binding var hashtags: [String]
 
     let directions: [Direction]
     let validationMessage: String?
@@ -847,6 +848,12 @@ struct MessengerTodoComposer: View {
     let onSubmit: () -> Void
 
     @FocusState private var isFocused: Bool
+    @AppStorage("settings.showsTaskQuickInputLegend") private var showsQuickInputLegend = true
+    @State private var parserMessage: String?
+    @State private var pendingDirectionName: String?
+    @State private var isApplyingParserResult = false
+
+    private let parser = TaskQuickInputParser()
 
     private var trimmedTitle: String {
         title.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -854,6 +861,11 @@ struct MessengerTodoComposer: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
+            if showsQuickInputLegend && isFocused {
+                quickInputLegend
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+
             HStack(alignment: .top, spacing: 10) {
                 TextField(String(localized: "タスクを入力してください"), text: $title, axis: .vertical)
                     .textFieldStyle(.plain)
@@ -861,6 +873,9 @@ struct MessengerTodoComposer: View {
                     .lineLimit(2...5)
                     .focused($isFocused)
                     .onSubmit(submit)
+                    .onChange(of: title) { _, newValue in
+                        parseCommittedTokens(in: newValue)
+                    }
 
                 if let onCancel {
                     Button(action: onCancel) {
@@ -875,7 +890,21 @@ struct MessengerTodoComposer: View {
                 }
             }
 
-            HStack(spacing: 10) {
+            if let query = parser.trailingDirectionQuery(in: title), !query.isEmpty {
+                directionSuggestions(for: query)
+            } else if let token = trailingToken {
+                HStack(spacing: 6) {
+                    Image(systemName: "sparkles")
+                    Text(token.rawValue)
+                }
+                .font(.caption.weight(.medium))
+                .foregroundStyle(Color.accentColor)
+                .padding(.horizontal, 9)
+                .padding(.vertical, 5)
+                .background(Color.accentColor.opacity(0.12), in: Capsule())
+            }
+
+            HStack(spacing: 8) {
                 VolumeChip(volume: $volume)
 
                 DirectionChip(selectedDirectionID: $selectedDirectionID, directions: directions)
@@ -896,15 +925,27 @@ struct MessengerTodoComposer: View {
                         .accessibilityLabel(String(localized: "日付 今日"))
                 }
 
+                ForEach(hashtags, id: \.self) { hashtag in
+                    Button {
+                        hashtags.removeAll { $0.caseInsensitiveCompare(hashtag) == .orderedSame }
+                    } label: {
+                        Text("#\(hashtag)")
+                            .chipStyle(tint: .accentColor)
+                    }
+                    .buttonStyle(.plain)
+                    .help(String(localized: "タグを削除"))
+                }
+
                 Spacer(minLength: 0)
 
                 Button(action: submit) {
-                    Image(systemName: "arrow.up")
-                        .font(.headline.weight(.semibold))
-                        .frame(width: 38, height: 38)
+                    Text(String(localized: "タスクを追加 =>"))
+                        .font(.callout.weight(.semibold))
+                        .padding(.horizontal, 14)
+                        .frame(height: 34)
                         .background(Color.accentColor)
                         .foregroundStyle(.white)
-                        .clipShape(Circle())
+                        .clipShape(RoundedRectangle(cornerRadius: 7))
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(String(localized: "タスクを追加"))
@@ -912,10 +953,14 @@ struct MessengerTodoComposer: View {
             .lineLimit(1)
             .minimumScaleFactor(0.8)
 
-            if let validationMessage {
-                Text(validationMessage)
+            if let message = parserMessage ?? validationMessage {
+                Text(message)
                     .font(.caption)
                     .foregroundStyle(.red)
+            }
+
+            if let pendingDirectionName {
+                unresolvedDirectionActions(name: pendingDirectionName)
             }
         }
         .padding(.horizontal, 16)
@@ -936,11 +981,184 @@ struct MessengerTodoComposer: View {
                 Rectangle().fill(.bar)
             }
         }
+        .sheet(isPresented: pendingDirectionSheetBinding) {
+            DirectionFormView(
+                mode: .create,
+                initialName: pendingDirectionName
+            ) { direction in
+                selectedDirectionID = direction.id
+                removeDirectionToken(named: direction.name)
+                pendingDirectionName = nil
+                parserMessage = nil
+            }
+        }
     }
 
     private func submit() {
+        let result = parser.parse(title, directions: parserDirections, consumeTrailingToken: true)
+        apply(result)
+        if let unresolved = result.unresolvedDirection, !unresolved.isEmpty {
+            pendingDirectionName = unresolved
+            parserMessage = String(localized: "方向「\(unresolved)」が見つかりません")
+            isCreatingDirection = true
+            isFocused = true
+            return
+        }
+        pendingDirectionName = nil
+        parserMessage = nil
         onSubmit()
         isFocused = true
+    }
+
+    private var parserDirections: [TaskQuickInputDirection] {
+        directions.map { TaskQuickInputDirection(id: $0.id, name: $0.name) }
+    }
+
+    private var trailingToken: TaskQuickInputToken? {
+        let result = parser.parse(title, directions: parserDirections, consumeTrailingToken: false)
+        guard let token = result.tokens.last, token.range.upperBound == title.endIndex else { return nil }
+        if case .unrecognized = token.kind { return nil }
+        return token
+    }
+
+    private var pendingDirectionSheetBinding: Binding<Bool> {
+        Binding(
+            get: { pendingDirectionName != nil && isCreatingDirection },
+            set: { newValue in
+                if !newValue { isCreatingDirection = false }
+            }
+        )
+    }
+
+    @State private var isCreatingDirection = false
+
+    private var quickInputLegend: some View {
+        HStack(spacing: 10) {
+            Label(String(localized: "クイック入力"), systemImage: "command")
+                .fontWeight(.semibold)
+            Text("[]  [2b]  [30m]  @direction  !high  /today  #tag")
+                .fontDesign(.monospaced)
+                .textSelection(.enabled)
+            Spacer(minLength: 0)
+            Button {
+                showsQuickInputLegend = false
+            } label: {
+                Image(systemName: "xmark")
+            }
+            .buttonStyle(.plain)
+            .help(String(localized: "クイック入力のヒントを非表示"))
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 7))
+    }
+
+    @ViewBuilder
+    private func directionSuggestions(for query: String) -> some View {
+        let matches = directions
+            .filter { $0.name.localizedCaseInsensitiveContains(query) }
+            .prefix(6)
+
+        if !matches.isEmpty {
+            VStack(alignment: .leading, spacing: 2) {
+                ForEach(Array(matches)) { direction in
+                    Button {
+                        choose(direction)
+                    } label: {
+                        HStack(spacing: 8) {
+                            Text(direction.symbolName)
+                            Text(direction.name)
+                            Spacer(minLength: 0)
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 6)
+                }
+            }
+            .padding(4)
+            .frame(maxWidth: 320)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+            .overlay {
+                RoundedRectangle(cornerRadius: 8).strokeBorder(Color.primary.opacity(0.1))
+            }
+        }
+    }
+
+    private func unresolvedDirectionActions(name: String) -> some View {
+        HStack(spacing: 8) {
+            Button(String(localized: "新規作成")) {
+                isCreatingDirection = true
+            }
+            .buttonStyle(.borderedProminent)
+
+            Button(String(localized: "その他として追加")) {
+                selectedDirectionID = nil
+                removeDirectionToken(named: name)
+                pendingDirectionName = nil
+                parserMessage = nil
+                onSubmit()
+            }
+            .buttonStyle(.bordered)
+        }
+    }
+
+    private func parseCommittedTokens(in input: String) {
+        guard !isApplyingParserResult else { return }
+        let result = parser.parse(input, directions: parserDirections, consumeTrailingToken: false)
+        apply(result)
+    }
+
+    private func apply(_ result: TaskQuickInputParseResult) {
+        isApplyingParserResult = true
+        defer { isApplyingParserResult = false }
+
+        if title != result.title {
+            title = result.title
+        }
+        if let measurement = result.measurement {
+            let amount = max(1, result.plannedAmount ?? 1)
+            switch measurement {
+            case .checkbox: volume = .checkbox
+            case .focusBlocks: volume = .blocks(amount)
+            case .minutes: volume = .minutes(amount)
+            }
+        }
+        if let directionID = result.directionID {
+            selectedDirectionID = directionID
+        }
+        if let priority = result.priority {
+            self.priority = priority
+            isRoomIfPossible = result.isRoomIfPossible ?? false
+        }
+        if allowsDateSelection, let date = result.date {
+            switch date {
+            case .scheduled(let value):
+                dateOption = Calendar.current.isDateInToday(value) ? .today :
+                    (Calendar.current.isDateInTomorrow(value) ? .tomorrow : .custom(value))
+            case .noDate:
+                dateOption = .none
+            }
+        }
+        hashtags = TodoHashtagNormalizer.normalize(hashtags + result.hashtags)
+    }
+
+    private func choose(_ direction: Direction) {
+        guard let query = parser.trailingDirectionQuery(in: title) else { return }
+        removeDirectionToken(named: query)
+        selectedDirectionID = direction.id
+        parserMessage = nil
+    }
+
+    private func removeDirectionToken(named name: String) {
+        let target = "@\(name)"
+        title = title
+            .split(whereSeparator: \.isWhitespace)
+            .filter { String($0).caseInsensitiveCompare(target) != .orderedSame }
+            .joined(separator: " ")
     }
 }
 
@@ -954,10 +1172,11 @@ struct QuickTodoCreationPopover: View {
 
     @State private var title = ""
     @State private var selectedDirectionID: UUID?
-    @State private var volume: QuickTodoVolume = .checkbox
+    @State private var volume: QuickTodoVolume = .unspecified
     @State private var priority: TodoPriority = .medium
     @State private var isRoomIfPossible = false
     @State private var dateOption: QuickTodoDate = .today
+    @State private var hashtags: [String] = []
     @State private var validationMessage: String?
 
     private let validator = TodoValidator()
@@ -979,6 +1198,7 @@ struct QuickTodoCreationPopover: View {
             priority: $priority,
             isRoomIfPossible: $isRoomIfPossible,
             dateOption: $dateOption,
+            hashtags: $hashtags,
             directions: selectableDirections,
             validationMessage: validationMessage,
             allowsDateSelection: false,
@@ -995,6 +1215,7 @@ struct QuickTodoCreationPopover: View {
         }
         let draft = TodoDraft(
             title: title,
+            hashtags: hashtags,
             direction: selectedDirection,
             measurement: volume.measurement,
             priority: priority,
@@ -1012,6 +1233,7 @@ struct QuickTodoCreationPopover: View {
         let direction = selectedDirection ?? resolvedOtherDirection()
         let todo = Todo(
             title: draft.trimmedTitle,
+            hashtags: draft.hashtags,
             direction: direction,
             measurement: volume.measurement,
             priority: priority,
@@ -1154,25 +1376,23 @@ private struct DirectionChip: View {
 
     var body: some View {
         Menu {
+            ForEach(directions) { direction in
+                Button {
+                    selectedDirectionID = direction.id
+                } label: {
+                    menuRow(
+                        text: "\(direction.symbolName) \(direction.name)",
+                        isSelected: selectedDirectionID == direction.id
+                    )
+                }
+            }
+
+            if !directions.isEmpty { Divider() }
+
             Button {
                 selectedDirectionID = nil
             } label: {
-                menuRow(text: String(localized: "自動: その他"), isSelected: selectedDirectionID == nil)
-            }
-
-            if !directions.isEmpty {
-                Divider()
-
-                ForEach(directions) { direction in
-                    Button {
-                        selectedDirectionID = direction.id
-                    } label: {
-                        menuRow(
-                            text: "\(direction.symbolName) \(direction.name)",
-                            isSelected: selectedDirectionID == direction.id
-                        )
-                    }
-                }
+                menuRow(text: String(localized: "その他"), isSelected: selectedDirectionID == nil)
             }
         } label: {
             Text(labelText)
@@ -1205,24 +1425,63 @@ private struct VolumeChip: View {
     @Binding var volume: QuickTodoVolume
 
     var body: some View {
-        Menu {
-            ForEach(QuickTodoVolume.options, id: \.self) { option in
-                Button {
-                    volume = option
-                } label: {
-                    if option == volume {
-                        Label(option.menuLabel, systemImage: "checkmark")
-                    } else {
-                        Text(option.menuLabel)
-                    }
+        HStack(spacing: 6) {
+            Menu {
+                Button { volume = .checkbox } label: {
+                    menuRow(String(localized: "チェック"), selected: volume.measurement == .checkbox && volume != .unspecified)
                 }
+                Button { volume = .blocks(max(1, volume.plannedAmount ?? 1)) } label: {
+                    menuRow(String(localized: "ブロック"), selected: volume.measurement == .focusBlocks)
+                }
+                Button { volume = .minutes(max(1, volume.plannedAmount ?? 25)) } label: {
+                    menuRow(String(localized: "分"), selected: volume.measurement == .minutes)
+                }
+            } label: {
+                Text(typeLabel)
+                    .chipStyle(tint: .secondary)
             }
-        } label: {
-            Text(volume.chipLabel)
-                .chipStyle(tint: .secondary)
+            .menuStyle(.borderlessButton)
+
+            if volume.measurement != .checkbox {
+                HStack(spacing: 4) {
+                    TextField("1", value: amountBinding, format: .number)
+                        .textFieldStyle(.plain)
+                        .multilineTextAlignment(.trailing)
+                        .frame(width: 34)
+                    Text(volume.measurement == .focusBlocks ? String(localized: "ブロック") : String(localized: "分"))
+                        .foregroundStyle(.secondary)
+                }
+                .font(.caption)
+                .padding(.horizontal, 8)
+                .frame(height: 28)
+                .background(Color.secondary.opacity(0.1), in: RoundedRectangle(cornerRadius: 7))
+            }
         }
-        .menuStyle(.borderlessButton)
         .accessibilityLabel(String(localized: "タスクの分量を選択"))
+    }
+
+    private var typeLabel: String {
+        switch volume {
+        case .unspecified: String(localized: "種類")
+        case .checkbox: String(localized: "チェック")
+        case .blocks: String(localized: "ブロック")
+        case .minutes: String(localized: "分")
+        }
+    }
+
+    private var amountBinding: Binding<Int> {
+        Binding(
+            get: { max(1, volume.plannedAmount ?? 1) },
+            set: { value in
+                let amount = max(1, value)
+                volume = volume.measurement == .focusBlocks ? .blocks(amount) : .minutes(amount)
+            }
+        )
+    }
+
+    @ViewBuilder
+    private func menuRow(_ text: String, selected: Bool) -> some View {
+        if selected { Label(text, systemImage: "checkmark") } else { Text(text) }
     }
 }
 
@@ -1462,6 +1721,11 @@ private struct TodoRow: View {
                     Text("·")
 
                     Text(summary)
+
+                    ForEach(todo.hashtags, id: \.self) { hashtag in
+                        Text("#\(hashtag)")
+                            .foregroundStyle(checkboxTint)
+                    }
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)

@@ -2936,7 +2936,6 @@
       }
     },
     "メモなし" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2953,7 +2952,6 @@
       }
     },
     "メモなしで続ける" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3002,7 +3000,6 @@
       }
     },
     "メモを保存" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6340,6 +6337,60 @@
             "value" : "Частота"
           }
         }
+      }
+    },
+    "クイック入力" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Quick Input" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Быстрый ввод" } }
+      }
+    },
+    "クイック入力のヒントを非表示" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Hide quick input tips" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Скрыть подсказки быстрого ввода" } }
+      }
+    },
+    "クイック入力のヒントを表示" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Show quick input tips" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Показывать подсказки быстрого ввода" } }
+      }
+    },
+    "その他として追加" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Add as Other" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Добавить как Другое" } }
+      }
+    },
+    "タグを削除" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Remove tag" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Удалить тег" } }
+      }
+    },
+    "タスクを追加 =>" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Add Task =>" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Добавить задачу =>" } }
+      }
+    },
+    "ハッシュタグ" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Hashtags" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Хэштеги" } }
+      }
+    },
+    "新規作成" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Create New" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Создать" } }
+      }
+    },
+    "方向「%@」が見つかりません" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Direction “%1$@” was not found" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Направление «%1$@» не найдено" } }
       }
     },
     "高" : {
