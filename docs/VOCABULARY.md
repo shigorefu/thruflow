@@ -13,7 +13,8 @@ first so GitHub contributors have one shared terminology table.
 | Nice Direction | ナイス |
 | System Other Direction | その他 |
 | Task / Todo | タスク |
-| Daily task screen | タスク |
+| Tasks navigation | タスク |
+| Directions navigation | 方向 |
 | All task filter | すべて |
 | Day range | 日 |
 | Week range | 週 |
@@ -38,6 +39,7 @@ first so GitHub contributors have one shared terminology table.
 | By Direction | 方向別 |
 | Flow trend | Flow推移 |
 | Completion status | 達成状況 |
+| Completed-task statistics label | 達成 |
 | History | 履歴 |
 | Timeline | タイムライン |
 | Today | 今日 |

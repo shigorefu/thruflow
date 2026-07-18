@@ -2390,13 +2390,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Task"
+            "value" : "Tasks"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Задача"
+            "value" : "Задачи"
           }
         }
       }
@@ -3183,7 +3183,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "This Year"
+            "value" : "this year"
           }
         },
         "ru" : {
@@ -3397,7 +3397,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "This Month"
+            "value" : "This month"
           }
         },
         "ru" : {
@@ -4347,13 +4347,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Direction"
+            "value" : "Directions"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Направление"
+            "value" : "Направления"
           }
         }
       }
@@ -6091,13 +6091,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Completed"
+            "value" : "Tasks"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Выполнено"
+            "value" : "Задачи"
           }
         }
       }
