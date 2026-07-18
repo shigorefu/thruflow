@@ -121,11 +121,23 @@ struct TaskQuickInputParser {
     }
 
     func trailingDirectionQuery(in input: String) -> String? {
-        guard let range = tokenRanges(in: input).last,
-              range.upperBound == input.endIndex else { return nil }
-        let token = String(input[range])
+        guard let token = trailingAutocompleteToken(in: input) else { return nil }
         guard token.hasPrefix("@") else { return nil }
         return String(token.dropFirst())
+    }
+
+    func trailingAutocompleteToken(in input: String) -> String? {
+        guard let range = trailingTokenRange(in: input) else { return nil }
+        let token = String(input[range])
+        guard token.first.map({ "@!/[".contains($0) }) == true else { return nil }
+        return token
+    }
+
+    func replacingTrailingAutocompleteToken(in input: String, with replacement: String) -> String {
+        guard let range = trailingTokenRange(in: input) else { return input }
+        var output = input
+        output.replaceSubrange(range, with: replacement)
+        return output
     }
 
     private func classify(
@@ -263,6 +275,12 @@ struct TaskQuickInputParser {
         return regex.matches(in: input, range: NSRange(input.startIndex..., in: input)).compactMap {
             Range($0.range, in: input)
         }
+    }
+
+    private func trailingTokenRange(in input: String) -> Range<String.Index>? {
+        guard let range = tokenRanges(in: input).last,
+              range.upperBound == input.endIndex else { return nil }
+        return range
     }
 
     private func removing(ranges: [Range<String.Index>], from input: String) -> String {
