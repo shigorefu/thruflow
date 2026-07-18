@@ -1100,26 +1100,44 @@ private struct FlowTaskPickerView: View {
                 .foregroundStyle(.secondary)
             }
 
-            Picker(String(localized: "表示"), selection: $selectedTab) {
-                ForEach(FlowTaskPickerTab.allCases) { tab in
-                    Text(tab.title).tag(tab)
+            if showsTaskComposer {
+                QuickTodoCreationPopover(
+                    directions: directions,
+                    onCancel: {
+                        withAnimation(.snappy(duration: 0.2)) {
+                            showsTaskComposer = false
+                        }
+                    },
+                    width: nil,
+                    onCreated: { todo in
+                        onSelect(todo.direction, todo)
+                    }
+                )
+                .transition(.move(edge: .top).combined(with: .opacity))
+            } else {
+                Picker(String(localized: "表示"), selection: $selectedTab) {
+                    ForEach(FlowTaskPickerTab.allCases) { tab in
+                        Text(tab.title).tag(tab)
+                    }
                 }
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
+                .pickerStyle(.segmented)
+                .labelsHidden()
 
-            ScrollView {
-                switch selectedTab {
-                case .tasks:
-                    taskTab
-                case .habits:
-                    habitTab
-                case .directions:
-                    directionTab
+                ScrollView {
+                    switch selectedTab {
+                    case .tasks:
+                        taskTab
+                    case .habits:
+                        habitTab
+                    case .directions:
+                        directionTab
+                    }
                 }
+                .scrollIndicators(.hidden)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
             }
-            .scrollIndicators(.hidden)
         }
+        .animation(.snappy(duration: 0.2), value: showsTaskComposer)
         .padding(14)
         .background(.bar)
     }
@@ -1128,7 +1146,9 @@ private struct FlowTaskPickerView: View {
     private var taskTab: some View {
         VStack(alignment: .leading, spacing: 12) {
             Button {
-                showsTaskComposer = true
+                withAnimation(.snappy(duration: 0.2)) {
+                    showsTaskComposer = true
+                }
             } label: {
                 Label(String(localized: "タスクを追加"), systemImage: "plus.circle.fill")
                     .font(.subheadline.weight(.semibold))
@@ -1139,11 +1159,6 @@ private struct FlowTaskPickerView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 8))
             }
             .buttonStyle(.plain)
-            .popover(isPresented: $showsTaskComposer, arrowEdge: .trailing) {
-                QuickTodoCreationPopover(directions: directions) { todo in
-                    onSelect(todo.direction, todo)
-                }
-            }
 
             if taskGroups.isEmpty {
                 emptyState(String(localized: "今日のタスクはありません"))

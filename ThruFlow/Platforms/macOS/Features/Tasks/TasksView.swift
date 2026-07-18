@@ -1637,6 +1637,8 @@ struct QuickTodoCreationPopover: View {
     @Query(sort: \Todo.sortIndex, order: .forward) private var allTodos: [Todo]
 
     let directions: [Direction]
+    var onCancel: (() -> Void)?
+    var width: CGFloat? = 520
     var onCreated: ((Todo) -> Void)?
 
     @State private var title = ""
@@ -1672,10 +1674,18 @@ struct QuickTodoCreationPopover: View {
             validationMessage: validationMessage,
             allowsDateSelection: false,
             showsOuterBackground: false,
-            onCancel: { dismiss() },
+            onCancel: cancel,
             onSubmit: createTodo
         )
-        .frame(width: 520)
+        .frame(width: width)
+    }
+
+    private func cancel() {
+        if let onCancel {
+            onCancel()
+        } else {
+            dismiss()
+        }
     }
 
     private func createTodo() {
