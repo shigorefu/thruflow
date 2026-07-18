@@ -27,6 +27,7 @@ struct DirectionFormView: View {
     @Environment(\.modelContext) private var modelContext
 
     let mode: Mode
+    let onSaved: ((Direction) -> Void)?
 
     @State private var draft: DirectionDraft
     @State private var validationErrors: [DirectionValidationError] = []
@@ -35,12 +36,19 @@ struct DirectionFormView: View {
 
     private let validator = DirectionValidator()
 
-    init(mode: Mode) {
+    init(
+        mode: Mode,
+        initialName: String? = nil,
+        onSaved: ((Direction) -> Void)? = nil
+    ) {
         self.mode = mode
+        self.onSaved = onSaved
 
         switch mode {
         case .create:
-            _draft = State(initialValue: DirectionDraft())
+            var draft = DirectionDraft()
+            draft.name = initialName ?? ""
+            _draft = State(initialValue: draft)
         case .edit(let direction):
             _draft = State(initialValue: DirectionDraft(direction: direction))
         }
@@ -311,6 +319,7 @@ struct DirectionFormView: View {
         let weeklyTargetCount = requiresGoal && goalSchedule == .weeklyCount ? draft.weeklyTargetCount : nil
         let weekdayMask = requiresGoal && goalSchedule != .everyDay ? draft.weekdayMask : nil
 
+        let savedDirection: Direction
         switch mode {
         case .create:
             let direction = Direction(
@@ -326,6 +335,7 @@ struct DirectionFormView: View {
                 weekdayMask: weekdayMask
             )
             modelContext.insert(direction)
+            savedDirection = direction
         case .edit(let direction):
             direction.update(
                 name: draft.trimmedName,
@@ -339,8 +349,11 @@ struct DirectionFormView: View {
                 weeklyTargetCount: weeklyTargetCount,
                 weekdayMask: weekdayMask
             )
+            savedDirection = direction
         }
 
+        try? modelContext.save()
+        onSaved?(savedDirection)
         dismiss()
     }
 

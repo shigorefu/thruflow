@@ -28,6 +28,7 @@ Important fields:
 
 - `title`: may be empty;
 - `notes`: Todo memo;
+- `hashtags`: ordered display tags decoded from optional persistence; normalized without `#` and unique case-insensitively;
 - `direction`: resolved Direction, usually never nil in app-created data;
 - `measurement`: checkbox, focus blocks, or minutes;
 - `priority`: high, medium, low;
