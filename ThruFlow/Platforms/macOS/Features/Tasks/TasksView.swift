@@ -1132,18 +1132,23 @@ struct MessengerTodoComposer: View {
                 .help(String(localized: "クイック入力のヒントを非表示"))
             }
 
-            LazyVGrid(
-                columns: Array(repeating: GridItem(.flexible(), alignment: .leading), count: 3),
-                alignment: .leading,
-                spacing: 6
-            ) {
-                legendItem(shortcut: "[ ]", label: String(localized: "チェック"))
-                legendItem(shortcut: "[1b]", label: String(localized: "1ブロック"))
-                legendItem(shortcut: "[25m]", label: String(localized: "25分"))
-                legendItem(shortcut: "@", label: String(localized: "方向"))
-                legendItem(shortcut: "!", label: String(localized: "優先度"))
-                legendItem(shortcut: "/", label: String(localized: "日付"))
-                legendItem(shortcut: "#", label: String(localized: "タグ"))
+            HStack(alignment: .top, spacing: 18) {
+                VStack(alignment: .leading, spacing: 6) {
+                    legendItem(shortcut: "[ ]", label: String(localized: "チェック"))
+                    legendItem(shortcut: "[1b]", label: String(localized: "1ブロック"))
+                    legendItem(shortcut: "[25m]", label: String(localized: "25分"))
+                }
+
+                LazyVGrid(
+                    columns: Array(repeating: GridItem(.flexible(), alignment: .leading), count: 2),
+                    alignment: .leading,
+                    spacing: 6
+                ) {
+                    legendItem(shortcut: "@", label: String(localized: "方向"))
+                    legendItem(shortcut: "!", label: String(localized: "優先度"))
+                    legendItem(shortcut: "/", label: String(localized: "日付"))
+                    legendItem(shortcut: "#", label: String(localized: "タグ"))
+                }
             }
         }
         .foregroundStyle(.secondary)
