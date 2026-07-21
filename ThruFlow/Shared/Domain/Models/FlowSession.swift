@@ -19,7 +19,7 @@ enum FlowMode: String, CaseIterable, Codable, Identifiable {
     var displayName: String {
         switch self {
         case .twelveThree:
-            String(localized: "Short")
+            String(localized: "Sprint")
         case .twentyFiveFive:
             String(localized: "Focus")
         case .fiftyTen:

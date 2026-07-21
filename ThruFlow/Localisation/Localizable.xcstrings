@@ -1843,18 +1843,18 @@
         }
       }
     },
-    "Short" : {
+    "Sprint" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Short"
+            "value" : "Sprint"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Short"
+            "value" : "Sprint"
           }
         }
       }
@@ -6881,6 +6881,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Введите один эмодзи"
+          }
+        }
+      }
+    },
+    "[ ]  ·  [1b]  ·  [25m]  ·  @  ·  !  ·  /  ·  #" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "[ ]  ·  [1b]  ·  [25m]  ·  @  ·  !  ·  /  ·  #"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "[ ]  ·  [1b]  ·  [25m]  ·  @  ·  !  ·  /  ·  #"
+          }
+        }
+      }
+    },
+    "🙂" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "🙂"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "🙂"
+          }
+        }
+      }
+    },
+    "最近" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recent"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Недавние"
           }
         }
       }

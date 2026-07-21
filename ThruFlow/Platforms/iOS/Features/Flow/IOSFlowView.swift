@@ -28,7 +28,8 @@ struct IOSFlowView: View {
                 LazyVStack(spacing: 16) {
                     flowCard(snapshot: dashboard, now: timeline.date)
                     playerCard
-                    dashboardPager(snapshot: dashboard)
+                    dashboardTasks
+                    IOSDashboardStatisticsView(snapshot: dashboard)
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 10)
@@ -50,9 +51,6 @@ struct IOSFlowView: View {
                 }
                 .accessibilityLabel(String(localized: "その他"))
             }
-        }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            bottomNavigation
         }
         .sheet(isPresented: $showsContextPicker) {
             NavigationStack {
@@ -326,15 +324,6 @@ struct IOSFlowView: View {
         }
     }
 
-    private func dashboardPager(snapshot: FlowDashboardSnapshot) -> some View {
-        TabView {
-            dashboardTasks
-            IOSDashboardStatisticsView(snapshot: snapshot)
-        }
-        .tabViewStyle(.page(indexDisplayMode: .always))
-        .frame(height: 310)
-    }
-
     private var dashboardTasks: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
@@ -368,47 +357,8 @@ struct IOSFlowView: View {
             Spacer(minLength: 0)
         }
         .padding(16)
+        .frame(maxWidth: .infinity, minHeight: 220, alignment: .topLeading)
         .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 16))
-    }
-
-    private var bottomNavigation: some View {
-        HStack(spacing: 4) {
-            navigationButton(String(localized: "タスク"), systemImage: "checklist", route: .tasks)
-            navigationButton(String(localized: "履歴"), systemImage: "clock.arrow.circlepath", route: .history)
-            navigationButton(
-                String(localized: "方向"),
-                systemImage: "point.3.connected.trianglepath.dotted",
-                route: .directions
-            )
-            navigationButton(String(localized: "統計"), systemImage: "chart.bar.xaxis", route: .statistics)
-        }
-        .padding(6)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20))
-        .overlay {
-            RoundedRectangle(cornerRadius: 20)
-                .strokeBorder(Color.primary.opacity(0.09))
-        }
-        .shadow(color: .black.opacity(0.12), radius: 16, y: 6)
-        .padding(.horizontal, 12)
-        .padding(.bottom, 6)
-    }
-
-    private func navigationButton(_ title: String, systemImage: String, route: IOSAppRoute) -> some View {
-        Button {
-            open(route)
-        } label: {
-            VStack(spacing: 3) {
-                Image(systemName: systemImage)
-                    .font(.body.weight(.medium))
-                Text(title)
-                    .font(.caption2)
-            }
-            .frame(maxWidth: .infinity)
-            .frame(minHeight: 44)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .foregroundStyle(.primary)
     }
 
     private var modeBinding: Binding<FlowMode> {
@@ -629,6 +579,7 @@ private struct IOSDashboardStatisticsView: View {
             Spacer(minLength: 0)
         }
         .padding(16)
+        .frame(maxWidth: .infinity, minHeight: 220, alignment: .topLeading)
         .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 16))
     }
 

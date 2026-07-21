@@ -41,11 +41,11 @@ Flow is a media-player-like recorder.
 
 `Flow` is the first/default navigation section and today's primary dashboard. In wide layout, one grid aligns the stream/timeline above Tasks on the left and the square player above Statistics on the right. The left column occupies roughly three quarters of the content. Direction colors compose the stream palette, while focus duration and session count control its visual volume.
 
-The stream is a field of broad, bright, softly glowing translucent ribbons rendered on the GPU around one shared S-shaped channel with three levels of depth. It remains smooth while idle and immediately accelerates when Flow starts. Its occupied area stops growing at 4 Blocks so depth, transparency, and motion preserve the silhouette without black carved stripes; progress through 6 Blocks instead adds internal detail, parallax, saturation, and motion. A restrained light pulse crosses the stream at each completed half-Block. Short, Focus, and Deep change the wave character, while a subtle mode-specific tint is applied to the dashboard. Below it, today's normal Tasks and Habits remain actionable with the same Check, Block, and Minute indicators as Tasks; Nice appears only when present. Fixed-height compact Statistics form a three-page carousel for Task/Direction time distribution, a seven-day Flow trend with day-over-day deltas, and today's completion status.
+The stream is a field of broad, bright, softly glowing translucent ribbons rendered on the GPU around one shared S-shaped channel with three levels of depth. It remains smooth while idle and immediately accelerates when Flow starts. Its occupied area stops growing at 4 Blocks so depth, transparency, and motion preserve the silhouette without black carved stripes; progress through 6 Blocks instead adds internal detail, parallax, saturation, and motion. A restrained light pulse crosses the stream at each completed half-Block. Sprint, Focus, and Deep change the wave character, while a subtle mode-specific tint is applied to the dashboard. Below it, today's normal Tasks and Habits remain actionable with the same Check, Block, and Minute indicators as Tasks; Nice appears only when present. Fixed-height compact Statistics form a three-page carousel for Task/Direction time distribution, a seven-day Flow trend with day-over-day deltas, and today's completion status.
 
 Modes:
 
-- `Short`: 12 focus / 3 break = 0.5 Block.
+- `Sprint`: 12 focus / 3 break = 0.5 Block.
 - `Focus`: 25 focus / 5 break = 1 Block.
 - `Deep`: 50 focus / 10 break = 2 Blocks.
 

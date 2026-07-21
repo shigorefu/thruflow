@@ -172,7 +172,7 @@ analysis and editing surfaces are redesigned for touch.
 The iPhone shell amends D-021 with four floating material navigation actions:
 Flow, Tasks, History, and Statistics. Settings moves to the trailing More menu.
 Direction management remains reachable from that menu. The Flow stream appears
-before the player, and both platforms use one shared segmented Short, Focus,
+before the player, and both platforms use one shared segmented Sprint, Focus,
 and Deep selector with a separate help presentation for work/rest duration and
 usage guidance. The iPhone Statistics screen is a compact contribution summary;
 advanced analysis remains deferred. The iPhone Task composer uses material
@@ -189,6 +189,6 @@ while mode meaning and task syntax should not drift between platforms.
 ## Open Questions
 
 - What measurement and planned amount should be used for an auto-created Task when Flow starts with only a Direction or with neither Direction nor Task?
-- Should Adaptive/Auto Flow remain, or should MVP expose only Short, Focus, and Deep?
+- Should Adaptive/Auto Flow remain, or should MVP expose only Sprint, Focus, and Deep?
 - How exactly should the “continue for longer break” prompt behave when less than 5 minutes remain to the next threshold?
 - What is the exact meaning of deleting the “last 1 Block” from a Flow series?

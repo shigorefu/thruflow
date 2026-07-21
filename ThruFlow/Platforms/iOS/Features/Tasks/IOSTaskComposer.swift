@@ -16,6 +16,13 @@ struct IOSTaskComposer: View {
     @State private var datePickerValue = Date.now
     @State private var showsDatePicker = false
     @State private var unresolvedDirection: String?
+    @State private var directionDraft: IOSDirectionDraft?
+    @State private var pendingCreatedDirectionName: String?
+    @State private var hasExplicitMeasurement = false
+    @State private var hasExplicitDirection = false
+    @State private var hasExplicitPriority = false
+    @State private var hasExplicitDate = false
+    @AppStorage("settings.showsTaskQuickInputLegend") private var showsQuickInputLegend = true
     @FocusState private var isFocused: Bool
 
     private let parser = TaskQuickInputParser()
@@ -24,6 +31,9 @@ struct IOSTaskComposer: View {
         VStack(spacing: 8) {
             if !autocompleteSuggestions.isEmpty {
                 autocompletePanel
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            } else if showsQuickInputLegend && isFocused && !title.isEmpty {
+                quickInputLegend
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
 
@@ -57,10 +67,6 @@ struct IOSTaskComposer: View {
                 }
                 .font(.caption.weight(.medium))
 
-                Text("[ ]  ·  [1b]  ·  [25m]  ·  @  ·  !  ·  /  ·  #")
-                    .font(.caption2.monospaced())
-                    .foregroundStyle(.tertiary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
             }
             .padding(12)
             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
@@ -74,7 +80,7 @@ struct IOSTaskComposer: View {
         .padding(.top, 8)
         .padding(.bottom, 8)
         .task {
-            directionID = defaultDirection?.id
+            directionID = nil
             scheduledDate = calendar.startOfDay(for: .now)
         }
         .animation(.snappy(duration: 0.22), value: autocompleteSuggestions.map(\.id))
@@ -96,12 +102,18 @@ struct IOSTaskComposer: View {
                     ToolbarItem(placement: .confirmationAction) {
                         Button(String(localized: "完了")) {
                             scheduledDate = calendar.startOfDay(for: datePickerValue)
+                            hasExplicitDate = true
                             showsDatePicker = false
                         }
                     }
                 }
             }
             .presentationDetents([.medium, .large])
+        }
+        .sheet(item: $directionDraft, onDismiss: selectCreatedDirectionIfAvailable) { draft in
+            NavigationStack {
+                IOSDirectionEditorView(mode: .create(initialName: draft.name))
+            }
         }
         .alert(
             String(localized: "方向"),
@@ -110,7 +122,15 @@ struct IOSTaskComposer: View {
                 set: { if !$0 { unresolvedDirection = nil } }
             )
         ) {
-            Button(String(localized: "OK"), role: .cancel) {}
+            Button(String(localized: "新規作成")) {
+                guard let unresolvedDirection else { return }
+                pendingCreatedDirectionName = unresolvedDirection
+                directionDraft = IOSDirectionDraft(name: unresolvedDirection)
+            }
+            Button(String(localized: "その他として追加")) {
+                useInboxForUnresolvedDirection()
+            }
+            Button(String(localized: "キャンセル"), role: .cancel) {}
         } message: {
             if let unresolvedDirection {
                 Text(
@@ -125,13 +145,22 @@ struct IOSTaskComposer: View {
 
     private var measurementMenu: some View {
         Menu {
-            Button { measurement = .checkbox } label: {
+            Button {
+                measurement = .checkbox
+                hasExplicitMeasurement = true
+            } label: {
                 Label(TodoMeasurement.checkbox.displayName, systemImage: "checkmark.square")
             }
-            Button { measurement = .focusBlocks } label: {
+            Button {
+                measurement = .focusBlocks
+                hasExplicitMeasurement = true
+            } label: {
                 Label(TodoMeasurement.focusBlocks.displayName, systemImage: "circle")
             }
-            Button { measurement = .minutes } label: {
+            Button {
+                measurement = .minutes
+                hasExplicitMeasurement = true
+            } label: {
                 Label(TodoMeasurement.minutes.displayName, systemImage: "timer")
             }
 
@@ -142,7 +171,10 @@ struct IOSTaskComposer: View {
                 }
             }
         } label: {
-            compactLabel(measurementTitle, systemImage: measurementSymbol)
+            compactLabel(
+                hasExplicitMeasurement ? measurementTitle : String(localized: "種類"),
+                systemImage: hasExplicitMeasurement ? measurementSymbol : "square.dashed"
+            )
         }
     }
 
@@ -151,22 +183,32 @@ struct IOSTaskComposer: View {
             ForEach(directions) { direction in
                 Button {
                     directionID = direction.id
+                    hasExplicitDirection = true
                 } label: {
                     Text("\(direction.symbolName) \(direction.name)")
                 }
             }
         } label: {
-            compactLabel(selectedDirection?.name ?? String(localized: "方向"), systemImage: "scope")
+            compactLabel(
+                hasExplicitDirection ? selectedDirection?.name ?? String(localized: "方向") : String(localized: "方向"),
+                systemImage: "scope"
+            )
         }
     }
 
     private var priorityMenu: some View {
         Menu {
             ForEach(TodoPriority.allCases) { value in
-                Button(value.displayName) { priority = value }
+                Button(value.displayName) {
+                    priority = value
+                    hasExplicitPriority = true
+                }
             }
         } label: {
-            compactLabel(priority.displayName, systemImage: "flag")
+            compactLabel(
+                hasExplicitPriority ? priority.displayName : String(localized: "優先度"),
+                systemImage: "flag"
+            )
         }
     }
 
@@ -174,12 +216,15 @@ struct IOSTaskComposer: View {
         Menu {
             Button(String(localized: "今日")) {
                 scheduledDate = calendar.startOfDay(for: .now)
+                hasExplicitDate = true
             }
             Button(String(localized: "明日")) {
                 scheduledDate = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: .now))
+                hasExplicitDate = true
             }
             Button(String(localized: "日付なし")) {
                 scheduledDate = nil
+                hasExplicitDate = true
             }
             Divider()
             Button(String(localized: "日付を選択"), systemImage: "calendar") {
@@ -187,7 +232,62 @@ struct IOSTaskComposer: View {
                 showsDatePicker = true
             }
         } label: {
-            compactLabel(dateTitle, systemImage: "calendar")
+            compactLabel(hasExplicitDate ? dateTitle : String(localized: "日付"), systemImage: "calendar")
+        }
+    }
+
+    private var quickInputLegend: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Label(String(localized: "ショートカットを使えます"), systemImage: "command")
+                    .font(.caption.weight(.semibold))
+                Spacer(minLength: 0)
+                Button {
+                    showsQuickInputLegend = false
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.caption.weight(.semibold))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(String(localized: "クイック入力のヒントを非表示"))
+            }
+
+            Grid(alignment: .leading, horizontalSpacing: 18, verticalSpacing: 6) {
+                GridRow {
+                    legendItem("[ ]", String(localized: "チェック"))
+                    legendItem("@", String(localized: "方向"))
+                }
+                GridRow {
+                    legendItem("[1b]", String(localized: "1ブロック"))
+                    legendItem("!", String(localized: "優先度"))
+                }
+                GridRow {
+                    legendItem("[25m]", String(localized: "25分"))
+                    legendItem("/", String(localized: "日付"))
+                }
+                GridRow {
+                    legendItem("#", String(localized: "タグ"))
+                }
+            }
+        }
+        .foregroundStyle(.secondary)
+        .padding(11)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14)
+                .strokeBorder(Color.primary.opacity(0.09))
+        }
+    }
+
+    private func legendItem(_ shortcut: String, _ label: String) -> some View {
+        HStack(spacing: 7) {
+            Text(verbatim: shortcut)
+                .font(.caption.monospaced().weight(.semibold))
+                .foregroundStyle(.primary)
+                .frame(width: 38, alignment: .leading)
+            Text(label)
+                .font(.caption)
+                .lineLimit(1)
         }
     }
 
@@ -334,10 +434,18 @@ struct IOSTaskComposer: View {
         if let value = result.measurement {
             measurement = value
             plannedAmount = result.plannedAmount ?? 1
+            hasExplicitMeasurement = true
         }
-        if let id = result.directionID { directionID = id }
-        if let value = result.priority { priority = value }
+        if let id = result.directionID {
+            directionID = id
+            hasExplicitDirection = true
+        }
+        if let value = result.priority {
+            priority = value
+            hasExplicitPriority = true
+        }
         if let value = result.date {
+            hasExplicitDate = true
             switch value {
             case .scheduled(let date): scheduledDate = calendar.startOfDay(for: date)
             case .noDate: scheduledDate = nil
@@ -383,7 +491,11 @@ struct IOSTaskComposer: View {
         plannedAmount = 1
         priority = .medium
         scheduledDate = calendar.startOfDay(for: .now)
-        directionID = defaultDirection?.id
+        directionID = nil
+        hasExplicitMeasurement = false
+        hasExplicitDirection = false
+        hasExplicitPriority = false
+        hasExplicitDate = false
         isFocused = true
     }
 
@@ -397,6 +509,39 @@ struct IOSTaskComposer: View {
 
         return scheduledDate
     }
+
+    private func useInboxForUnresolvedDirection() {
+        guard let unresolvedDirection else { return }
+        title = removingDirectionToken(unresolvedDirection, from: title)
+        directionID = defaultDirection?.id
+        hasExplicitDirection = true
+        self.unresolvedDirection = nil
+        isFocused = true
+    }
+
+    private func selectCreatedDirectionIfAvailable() {
+        guard let name = pendingCreatedDirectionName,
+              let direction = directions.first(where: {
+                  $0.name.compare(name, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame
+              }) else {
+            pendingCreatedDirectionName = nil
+            return
+        }
+
+        title = title.replacingOccurrences(of: "@\(name)", with: "@\(direction.name)")
+        directionID = direction.id
+        hasExplicitDirection = true
+        unresolvedDirection = nil
+        pendingCreatedDirectionName = nil
+        isFocused = true
+    }
+
+    private func removingDirectionToken(_ name: String, from source: String) -> String {
+        source
+            .replacingOccurrences(of: "@\(name)", with: "")
+            .replacingOccurrences(of: "  ", with: " ")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
 }
 
 private struct IOSQuickInputSuggestion: Identifiable {
@@ -404,4 +549,9 @@ private struct IOSQuickInputSuggestion: Identifiable {
     let title: String
     let replacement: String
     let systemImage: String
+}
+
+private struct IOSDirectionDraft: Identifiable {
+    let id = UUID()
+    let name: String
 }

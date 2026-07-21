@@ -94,7 +94,7 @@ Normal continuation windows are:
 
 | Flow size | Planned break | Series window |
 | --- | ---: | ---: |
-| Short | 3 min | 4 min 30 sec |
+| Sprint | 3 min | 4 min 30 sec |
 | Focus | 5 min | 7 min 30 sec |
 | Deep | 10 min | 15 min |
 | Long Break | 20 min | 30 min |

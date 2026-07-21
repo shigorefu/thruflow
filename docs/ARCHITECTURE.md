@@ -97,7 +97,7 @@ Each platform owns its composition root:
 - `FlowStreamSurface` and `FlowStreamShader.metal` form one shared Metal render
   path for macOS and iOS; platform wrappers only decide when rendering pauses.
 - Desktop-specific dashboard layout remains macOS-owned.
-  until another platform has an explicit implementation and performance budget.
+  Each other platform receives its own explicit implementation and performance budget.
 
 ## Persistence
 
@@ -123,9 +123,12 @@ view-local relative deltas.
 
 ## iPhone MVP Boundary
 
-The first iPhone release includes the Flow dashboard, today's Tasks/Habits,
-Direction management, basic day/week/month History browsing, a compact
-contribution Statistics screen, basic settings, and CloudKit synchronization.
+The first iPhone release includes the Flow dashboard, Tasks/Habits across
+day/week/month ranges, Direction management and ordering, basic day/week/month
+History browsing, a compact contribution Statistics screen, basic settings,
+and CloudKit synchronization. Its persistent five-item navigation contains
+`Flow`, `タスク`, `履歴`, `方向`, and `統計`; Tasks temporarily replaces it with
+the quick-capture composer.
 Advanced Statistics and full calendar/history editing remain macOS-only until
 the next iPhone stage. Shared calculations are reused, but desktop views are
 never compiled into the iOS target.
