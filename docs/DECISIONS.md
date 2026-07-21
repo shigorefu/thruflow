@@ -167,6 +167,21 @@ rather than shrinking the macOS dashboard and calendar screens.
 Reason: the core daily loop must be useful and stable on a phone before desktop
 analysis and editing surfaces are redesigned for touch.
 
+## D-022: Material iPhone Shell and Shared Flow Mode Selector
+
+The iPhone shell amends D-021 with four floating material navigation actions:
+Flow, Tasks, History, and Statistics. Settings moves to the trailing More menu.
+Direction management remains reachable from that menu. The Flow stream appears
+before the player, and both platforms use one shared segmented Short, Focus,
+and Deep selector with a separate help presentation for work/rest duration and
+usage guidance. The iPhone Statistics screen is a compact contribution summary;
+advanced analysis remains deferred. The iPhone Task composer uses material
+surfaces, shared quick-input parsing, autocomplete, and an explicit arbitrary
+date picker.
+
+Reason: the primary touch targets must remain stable and legible on iPhone,
+while mode meaning and task syntax should not drift between platforms.
+
 ## Open Questions
 
 - What measurement and planned amount should be used for an auto-created Task when Flow starts with only a Direction or with neither Direction nor Task?

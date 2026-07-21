@@ -120,23 +120,35 @@ The Dashboard Task header `+` opens the shared messenger-style composer in a sep
 ## iPhone MVP
 
 The first iPhone surface is a Flow-first `NavigationStack`. `Flow` is always the
-root and opens by default. Its bottom navigation contains `タスク`, `履歴`, and
-`方向`; `設定` is reached from the leading hamburger menu. A secondary screen
-uses the native back action to return to Flow instead of keeping a persistent tab
-bar.
+root and opens by default. A floating native-material bottom surface contains
+`タスク`, `履歴`, `方向`, and `統計`; `設定` is reached from the trailing More
+menu. A secondary screen uses the native back action to return to Flow instead
+of keeping a persistent tab bar.
 
-The first Flow viewport keeps the Task selector, Focus mode, timer controls,
-animated stream, and Elastic timeline together. Below it, a horizontal page
-gesture moves between today's Tasks/Habits and compact Statistics. The iPhone
-owns this compact presentation while reusing shared models, persistence, timer
-state, dashboard projections, progress logic, and localization.
+The first Flow viewport presents the softened animated stream and Elastic
+timeline before the timer card. It keeps the Task selector, the shared
+`Short | Focus | Deep` segmented selector, timer controls, stream, and timeline
+together. The selector's Help button opens the mode icons, work/rest durations,
+and usage guidance; the same selector is used by the macOS player. Below it, a
+horizontal page gesture moves between today's Tasks/Habits and compact
+Statistics. The iPhone owns this compact presentation while reusing shared
+models, persistence, timer state, dashboard projections, progress logic, and
+localization.
 
-Opening `タスク` replaces the Flow bottom navigation with the messenger-style
-quick composer. `履歴` provides touch-native `日 | 週 | 月` calendar ranges:
+Opening `タスク` replaces the Flow bottom navigation with a floating
+material-backed messenger composer. Shared quick-input tokens (`[ ]`, `[1b]`,
+`[25m]`, `@`, `!`, `/`, and `#`) update the composer controls while typing, and
+contextual autocomplete is shown above the field. The date control supports
+Today, Tomorrow, No Date, and an arbitrary date through the native graphical
+picker. `履歴` provides touch-native `日 | 週 | 月` calendar ranges:
 day uses a vertically scrolling 24-hour timeline, week uses seven horizontally
-scrollable day columns, and month uses a Direction-colored activity grid. Flow
-and rest remain separate calendar records and tapping one opens its details.
-Advanced statistics and full calendar/history editing remain deferred.
+scrollable day columns, and month uses Apple Calendar-style numeric days with
+Direction-colored activity dots. Flow and rest remain separate calendar records
+and tapping one opens its details. `方向` edits its emoji through a dedicated
+searchable picker instead of a text-field leading icon. The standalone iPhone
+`統計` provides a compact Task/Flow contribution overview with range and
+Direction filters. Advanced statistics and full calendar/history editing remain
+deferred.
 
 The iPhone MVP supports starting and controlling Flow, selecting today's Task or
 Habit, completing Check Tasks, creating and editing Tasks and Directions, and

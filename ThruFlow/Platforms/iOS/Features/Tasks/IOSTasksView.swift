@@ -32,7 +32,9 @@ struct IOSTasksView: View {
                 taskSection(title: String(localized: "ナイス"), todos: niceTodos)
             }
         }
-        .listStyle(.insetGrouped)
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .background(Color.primary.opacity(0.025).ignoresSafeArea())
         .navigationTitle(String(localized: "タスク"))
         .safeAreaInset(edge: .bottom, spacing: 0) {
             IOSTaskComposer(directions: activeDirections)
@@ -63,6 +65,13 @@ struct IOSTasksView: View {
                     IOSTaskRow(todo: todo) {
                         editorMode = .edit(todo)
                     }
+                    .padding(.vertical, 8)
+                    .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(
+                        RoundedRectangle(cornerRadius: 14)
+                            .fill(.regularMaterial)
+                    )
                 }
             }
         }

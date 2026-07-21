@@ -31,8 +31,12 @@ Current MVP goal:
 - Flow and Tasks contribution-style statistics.
 - Private CloudKit synchronization between the user's signed-in Apple devices.
 - Flow-first iPhone MVP with the player and animated stream in one viewport,
-  swipeable Tasks/Statistics dashboard pages, `タスク`, `履歴`, `方向`, and
-  basic `設定`.
+  swipeable Tasks/Statistics dashboard pages, material navigation for `タスク`,
+  `履歴`, `方向`, and compact `統計`, plus basic `設定` in the trailing More menu.
+- Shared `Short | Focus | Deep` segmented selection and mode Help on macOS and
+  iPhone.
+- iPhone live quick-input suggestions, arbitrary Task dates, Apple-style month
+  date cells, and a dedicated Direction emoji picker.
 - Animated completion feedback for Check, Block, and Minute Tasks, with an optional bundled completion sound.
 
 ## Not Included
@@ -45,7 +49,7 @@ Current MVP goal:
 - Widgets.
 - Live Activities.
 - Apple Watch.
-- Advanced iPhone `統計`.
+- Advanced iPhone `統計` beyond the compact contribution overview.
 - Full iPhone History/calendar editing.
 
 ## Known Product Gaps

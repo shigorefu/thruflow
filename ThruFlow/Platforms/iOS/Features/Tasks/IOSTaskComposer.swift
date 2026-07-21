@@ -12,7 +12,9 @@ struct IOSTaskComposer: View {
     @State private var measurement = TodoMeasurement.checkbox
     @State private var plannedAmount = 1
     @State private var priority = TodoPriority.medium
-    @State private var dateOption = IOSComposerDate.today
+    @State private var scheduledDate: Date? = .now
+    @State private var datePickerValue = Date.now
+    @State private var showsDatePicker = false
     @State private var unresolvedDirection: String?
     @FocusState private var isFocused: Bool
 
@@ -20,41 +22,86 @@ struct IOSTaskComposer: View {
 
     var body: some View {
         VStack(spacing: 8) {
-            TextField(String(localized: "タスクを入力してください"), text: $title, axis: .vertical)
-                .lineLimit(1...4)
-                .focused($isFocused)
-                .submitLabel(.send)
-                .onSubmit(submit)
-
-            HStack(spacing: 8) {
-                measurementMenu
-                directionMenu
-                priorityMenu
-                dateMenu
-                Spacer(minLength: 0)
-
-                Button(action: submit) {
-                    Image(systemName: "arrow.up")
-                        .font(.body.weight(.bold))
-                        .foregroundStyle(.white)
-                        .frame(width: 38, height: 38)
-                        .background(canSubmit ? Color.accentColor : Color.secondary.opacity(0.35), in: Circle())
-                }
-                .buttonStyle(.plain)
-                .disabled(!canSubmit)
-                .accessibilityLabel(String(localized: "タスクを追加"))
+            if !autocompleteSuggestions.isEmpty {
+                autocompletePanel
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
             }
-            .font(.caption.weight(.medium))
+
+            VStack(spacing: 10) {
+                TextField(String(localized: "タスクを入力してください"), text: $title, axis: .vertical)
+                    .lineLimit(1...4)
+                    .focused($isFocused)
+                    .submitLabel(.send)
+                    .onSubmit(submit)
+                    .onChange(of: title) { _, _ in
+                        applyRecognizedQuickInput()
+                    }
+
+                HStack(spacing: 6) {
+                    measurementMenu
+                    directionMenu
+                    priorityMenu
+                    dateMenu
+                    Spacer(minLength: 0)
+
+                    Button(action: submit) {
+                        Image(systemName: "arrow.up")
+                            .font(.body.weight(.bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 38, height: 38)
+                            .background(canSubmit ? Color.accentColor : Color.secondary.opacity(0.35), in: Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!canSubmit)
+                    .accessibilityLabel(String(localized: "タスクを追加"))
+                }
+                .font(.caption.weight(.medium))
+
+                Text("[ ]  ·  [1b]  ·  [25m]  ·  @  ·  !  ·  /  ·  #")
+                    .font(.caption2.monospaced())
+                    .foregroundStyle(.tertiary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(12)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
+            .overlay {
+                RoundedRectangle(cornerRadius: 18)
+                    .strokeBorder(Color.primary.opacity(0.08))
+            }
+            .shadow(color: .black.opacity(0.08), radius: 12, y: 4)
         }
-        .padding(12)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
         .padding(.horizontal, 12)
         .padding(.top, 8)
-        .padding(.bottom, 4)
-        .background(.bar)
-        .overlay(alignment: .top) { Divider() }
+        .padding(.bottom, 8)
         .task {
             directionID = defaultDirection?.id
+            scheduledDate = calendar.startOfDay(for: .now)
+        }
+        .animation(.snappy(duration: 0.22), value: autocompleteSuggestions.map(\.id))
+        .sheet(isPresented: $showsDatePicker) {
+            NavigationStack {
+                DatePicker(
+                    String(localized: "日付"),
+                    selection: $datePickerValue,
+                    displayedComponents: .date
+                )
+                .datePickerStyle(.graphical)
+                .padding()
+                .navigationTitle(String(localized: "日付を選択"))
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button(String(localized: "キャンセル")) { showsDatePicker = false }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button(String(localized: "完了")) {
+                            scheduledDate = calendar.startOfDay(for: datePickerValue)
+                            showsDatePicker = false
+                        }
+                    }
+                }
+            }
+            .presentationDetents([.medium, .large])
         }
         .alert(
             String(localized: "方向"),
@@ -125,12 +172,61 @@ struct IOSTaskComposer: View {
 
     private var dateMenu: some View {
         Menu {
-            ForEach(IOSComposerDate.allCases) { value in
-                Button(value.displayName) { dateOption = value }
+            Button(String(localized: "今日")) {
+                scheduledDate = calendar.startOfDay(for: .now)
+            }
+            Button(String(localized: "明日")) {
+                scheduledDate = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: .now))
+            }
+            Button(String(localized: "日付なし")) {
+                scheduledDate = nil
+            }
+            Divider()
+            Button(String(localized: "日付を選択"), systemImage: "calendar") {
+                datePickerValue = scheduledDate ?? .now
+                showsDatePicker = true
             }
         } label: {
-            compactLabel(dateOption.displayName, systemImage: "calendar")
+            compactLabel(dateTitle, systemImage: "calendar")
         }
+    }
+
+    private var autocompletePanel: some View {
+        VStack(spacing: 0) {
+            ForEach(autocompleteSuggestions) { suggestion in
+                Button {
+                    title = parser.replacingTrailingAutocompleteToken(in: title, with: suggestion.replacement) + " "
+                    applyRecognizedQuickInput()
+                    isFocused = true
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: suggestion.systemImage)
+                            .foregroundStyle(.tint)
+                            .frame(width: 22)
+                        Text(suggestion.title)
+                            .foregroundStyle(.primary)
+                        Spacer(minLength: 0)
+                        Text(suggestion.replacement)
+                            .font(.caption.monospaced())
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.horizontal, 12)
+                    .frame(minHeight: 42)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+
+                if suggestion.id != autocompleteSuggestions.last?.id {
+                    Divider().padding(.leading, 44)
+                }
+            }
+        }
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14)
+                .strokeBorder(Color.primary.opacity(0.09))
+        }
+        .shadow(color: .black.opacity(0.10), radius: 14, y: 5)
     }
 
     private func compactLabel(_ title: String, systemImage: String) -> some View {
@@ -174,6 +270,81 @@ struct IOSTaskComposer: View {
         }
     }
 
+    private var dateTitle: String {
+        guard let scheduledDate else { return String(localized: "日付なし") }
+        if calendar.isDateInToday(scheduledDate) { return String(localized: "今日") }
+        if calendar.isDateInTomorrow(scheduledDate) { return String(localized: "明日") }
+        return scheduledDate.formatted(.dateTime.month(.abbreviated).day())
+    }
+
+    private var autocompleteSuggestions: [IOSQuickInputSuggestion] {
+        guard let token = parser.trailingAutocompleteToken(in: title) else { return [] }
+        let query = String(token.dropFirst()).lowercased()
+
+        switch token.first {
+        case "@":
+            return directions
+                .filter { !$0.isArchived && (query.isEmpty || $0.name.lowercased().contains(query)) }
+                .prefix(6)
+                .map {
+                    IOSQuickInputSuggestion(
+                        id: $0.id.uuidString,
+                        title: "\($0.symbolName) \($0.name)",
+                        replacement: "@\($0.name)",
+                        systemImage: "scope"
+                    )
+                }
+        case "!":
+            return [
+                ("high", String(localized: "高")),
+                ("medium", String(localized: "中")),
+                ("low", String(localized: "低い")),
+                ("later", String(localized: "余裕があれば")),
+            ]
+            .filter { query.isEmpty || $0.0.hasPrefix(query) }
+            .map { IOSQuickInputSuggestion(id: "!\($0.0)", title: $0.1, replacement: "!\($0.0)", systemImage: "flag") }
+        case "/":
+            return [
+                ("today", String(localized: "今日")),
+                ("tomorrow", String(localized: "明日")),
+                ("nodate", String(localized: "日付なし")),
+            ]
+            .filter { query.isEmpty || $0.0.hasPrefix(query) }
+            .map { IOSQuickInputSuggestion(id: "/\($0.0)", title: $0.1, replacement: "/\($0.0)", systemImage: "calendar") }
+        case "[":
+            return [
+                IOSQuickInputSuggestion(id: "check", title: TodoMeasurement.checkbox.displayName, replacement: "[]", systemImage: "checkmark.square"),
+                IOSQuickInputSuggestion(id: "block", title: "1 \(String(localized: "ブロック"))", replacement: "[1b]", systemImage: "circle"),
+                IOSQuickInputSuggestion(id: "minutes", title: "25 \(String(localized: "分"))", replacement: "[25m]", systemImage: "timer"),
+            ]
+        default:
+            return []
+        }
+    }
+
+    private func applyRecognizedQuickInput() {
+        let result = parser.parse(
+            title,
+            directions: directions.map { TaskQuickInputDirection(id: $0.id, name: $0.name) },
+            anchorDate: .now,
+            calendar: calendar,
+            consumeTrailingToken: false
+        )
+
+        if let value = result.measurement {
+            measurement = value
+            plannedAmount = result.plannedAmount ?? 1
+        }
+        if let id = result.directionID { directionID = id }
+        if let value = result.priority { priority = value }
+        if let value = result.date {
+            switch value {
+            case .scheduled(let date): scheduledDate = calendar.startOfDay(for: date)
+            case .noDate: scheduledDate = nil
+            }
+        }
+    }
+
     private func submit() {
         let parserDirections = directions.map { TaskQuickInputDirection(id: $0.id, name: $0.name) }
         let result = parser.parse(
@@ -211,7 +382,7 @@ struct IOSTaskComposer: View {
         measurement = .checkbox
         plannedAmount = 1
         priority = .medium
-        dateOption = .today
+        scheduledDate = calendar.startOfDay(for: .now)
         directionID = defaultDirection?.id
         isFocused = true
     }
@@ -224,29 +395,13 @@ struct IOSTaskComposer: View {
             }
         }
 
-        switch dateOption {
-        case .today:
-            return calendar.startOfDay(for: .now)
-        case .tomorrow:
-            return calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: .now))
-        case .noDate:
-            return nil
-        }
+        return scheduledDate
     }
 }
 
-private enum IOSComposerDate: String, CaseIterable, Identifiable {
-    case today
-    case tomorrow
-    case noDate
-
-    var id: String { rawValue }
-
-    var displayName: String {
-        switch self {
-        case .today: String(localized: "今日")
-        case .tomorrow: String(localized: "明日")
-        case .noDate: String(localized: "日付なし")
-        }
-    }
+private struct IOSQuickInputSuggestion: Identifiable {
+    let id: String
+    let title: String
+    let replacement: String
+    let systemImage: String
 }

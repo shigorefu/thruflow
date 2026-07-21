@@ -27,7 +27,7 @@ ThruFlow/
       Support/      AppKit adapters used by the macOS presentation layer
     iOS/
       App/          iPhone composition root, navigation, entitlements, and Info.plist
-      Features/     Native iPhone Flow, Tasks, History, Directions, and Settings
+      Features/     Native iPhone Flow, Tasks, History, Directions, Statistics, and Settings
 ```
 
 `ThruFlow` and `ThruFlow iOS` are separate application targets. Explicit source
@@ -61,7 +61,7 @@ Platforms/iOS  ──┘              │
 - `Platforms/macOS` owns navigation, windows, menu-bar scenes, keyboard/focus
   integration, drag-and-drop presentation, and the current desktop layouts.
 - `Platforms/iOS` owns the Flow-first iPhone navigation shell and compact Flow,
-  Tasks, History, Directions, and Settings presentations.
+  Tasks, History, Directions, Statistics, and Settings presentations.
 - Platform-specific behavior is reached through small adapters in the owning
   platform folder. Shared code does not use conditional AppKit/UIKit imports.
 
@@ -122,10 +122,11 @@ view-local relative deltas.
 ## iPhone MVP Boundary
 
 The first iPhone release includes the Flow dashboard, today's Tasks/Habits,
-Direction management, basic day/week/month History browsing, basic settings,
-and CloudKit synchronization. Advanced Statistics and full calendar/history
-editing remain macOS-only until the next iPhone stage. Shared calculations are
-reused, but desktop views are never compiled into the iOS target.
+Direction management, basic day/week/month History browsing, a compact
+contribution Statistics screen, basic settings, and CloudKit synchronization.
+Advanced Statistics and full calendar/history editing remain macOS-only until
+the next iPhone stage. Shared calculations are reused, but desktop views are
+never compiled into the iOS target.
 
 ## Migration Strategy
 
