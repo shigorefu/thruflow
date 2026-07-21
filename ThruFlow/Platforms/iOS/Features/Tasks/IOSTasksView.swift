@@ -81,10 +81,15 @@ struct IOSTasksView: View {
             }
         }
         .task {
+            isClosing = false
+            showsComposer = false
             ensureRequiredTodos()
             await presentComposer()
         }
-        .onDisappear { showsComposer = false }
+        .onDisappear {
+            showsComposer = false
+            isClosing = false
+        }
         .onChange(of: range) { _, _ in ensureRequiredTodos() }
         .onChange(of: selectedDate) { _, _ in ensureRequiredTodos() }
         .onChange(of: directions.map(\.updatedAt)) { _, _ in ensureRequiredTodos() }
@@ -92,7 +97,7 @@ struct IOSTasksView: View {
 
     @MainActor
     private func presentComposer() async {
-        guard !showsComposer else { return }
+        guard !showsComposer, !isClosing else { return }
 
         do {
             try await Task.sleep(for: .milliseconds(220))
@@ -100,6 +105,7 @@ struct IOSTasksView: View {
             return
         }
 
+        guard !isClosing else { return }
         withAnimation(.easeOut(duration: 0.28)) {
             showsComposer = true
         }
@@ -108,6 +114,11 @@ struct IOSTasksView: View {
     private func closeTasks() {
         guard !isClosing else { return }
         isClosing = true
+
+        guard showsComposer else {
+            close()
+            return
+        }
 
         withAnimation(.easeIn(duration: 0.24)) {
             showsComposer = false
