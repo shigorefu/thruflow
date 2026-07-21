@@ -94,7 +94,9 @@ Each platform owns its composition root:
 - Reusable UI belongs in `Shared/UI` only when behavior and layout are genuinely
   the same on macOS and iOS. Sharing a large desktop screen to avoid writing an
   iPhone presentation is not a valid abstraction.
-- Metal rendering and desktop-specific dashboard layout remain macOS-owned
+- `FlowStreamSurface` and `FlowStreamShader.metal` form one shared Metal render
+  path for macOS and iOS; platform wrappers only decide when rendering pauses.
+- Desktop-specific dashboard layout remains macOS-owned.
   until another platform has an explicit implementation and performance budget.
 
 ## Persistence
