@@ -18,7 +18,7 @@ Current MVP goal:
 - Sequential weekly-count Habit generation and safe rescheduling.
 - Quick task capture.
 - Task measurements: `チェック`, `集中ブロック`, `分`.
-- Flow player with Short, Focus, and Deep modes.
+- Flow player with Sprint, Focus, and Deep modes.
 - First/default `Flow` dashboard with expanded player, animated daily stream, totals, and Elastic Flow timeline.
 - Task switching inside an active Flow through persisted Flow segments.
 - Persisted Flow series, editable rests, continuation windows, and a 20-minute Long Break after every 4 Blocks in a series.
@@ -30,13 +30,16 @@ Current MVP goal:
 - Dashboard statistics carousel for time distribution, a 7-day Flow trend, and completion status.
 - Flow and Tasks contribution-style statistics.
 - Private CloudKit synchronization between the user's signed-in Apple devices.
-- Flow-first iPhone MVP with the player and animated stream in one viewport,
-  swipeable Tasks/Statistics dashboard pages, material navigation for `タスク`,
-  `履歴`, `方向`, and compact `統計`, plus basic `設定` in the trailing More menu.
-- Shared `Short | Focus | Deep` segmented selection and mode Help on macOS and
+- Flow-first iPhone MVP with the animated stream above the complete player,
+  separate full-width Tasks and Statistics dashboard cards, and a persistent
+  five-item material navigation surface: `Flow`, `タスク`, `履歴`, `方向`, and
+  `統計`. The Tasks screen replaces that surface with quick capture; basic
+  `設定` remains in the trailing More menu.
+- Shared `Sprint | Focus | Deep` segmented selection and mode Help on macOS and
   iPhone.
-- iPhone live quick-input suggestions, arbitrary Task dates, Apple-style month
-  date cells, and a dedicated Direction emoji picker.
+- iPhone live quick-input suggestions, arbitrary and no-date Tasks, overdue and
+  no-date inboxes, day/week/month Task ranges, automatic Habits, native Task
+  editing, ordered Direction groups, and a dedicated Direction emoji picker.
 - Animated completion feedback for Check, Block, and Minute Tasks, with an optional bundled completion sound.
 
 ## Not Included

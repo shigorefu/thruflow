@@ -4,6 +4,7 @@ import SwiftUI
 struct IOSDirectionEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Query(sort: \Direction.sortIndex) private var directions: [Direction]
 
     let mode: IOSDirectionEditorMode
 
@@ -15,6 +16,7 @@ struct IOSDirectionEditorView: View {
     @State private var goalUnit: GoalUnit
     @State private var goalSchedule: GoalScheduleKind
     @State private var weeklyTargetCount: Int
+    @State private var weekdayMask: Int
     @State private var showsEmojiPicker = false
 
     private let colors = [
@@ -25,9 +27,17 @@ struct IOSDirectionEditorView: View {
     init(mode: IOSDirectionEditorMode) {
         self.mode = mode
         let direction: Direction?
-        if case .edit(let value) = mode { direction = value } else { direction = nil }
+        let initialName: String
+        switch mode {
+        case .create(let name):
+            direction = nil
+            initialName = name ?? ""
+        case .edit(let value):
+            direction = value
+            initialName = value.name
+        }
 
-        _name = State(initialValue: direction?.name ?? "")
+        _name = State(initialValue: initialName)
         _symbolName = State(initialValue: direction?.symbolName ?? "🎯")
         _type = State(initialValue: direction?.type ?? .neutral)
         _colorHex = State(initialValue: direction?.colorHex ?? "#007AFF")
@@ -35,6 +45,7 @@ struct IOSDirectionEditorView: View {
         _goalUnit = State(initialValue: direction?.goalUnit ?? .occurrences)
         _goalSchedule = State(initialValue: direction?.goalSchedule ?? .everyDay)
         _weeklyTargetCount = State(initialValue: max(1, direction?.weeklyTargetCount ?? 1))
+        _weekdayMask = State(initialValue: direction?.weekdayMask ?? 0)
     }
 
     var body: some View {
@@ -111,6 +122,24 @@ struct IOSDirectionEditorView: View {
                             Text("\(weeklyTargetCount) \(String(localized: "回 / 週"))")
                         }
                     }
+
+                    if goalSchedule != .everyDay {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text(
+                                goalSchedule == .weekdays
+                                    ? String(localized: "曜日")
+                                    : String(localized: "曜日（任意）")
+                            )
+                            .font(.subheadline.weight(.semibold))
+
+                            HStack(spacing: 7) {
+                                ForEach(GoalWeekday.allCases) { weekday in
+                                    weekdayButton(weekday)
+                                }
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
                 }
             }
 
@@ -145,6 +174,25 @@ struct IOSDirectionEditorView: View {
         return false
     }
 
+    private func weekdayButton(_ weekday: GoalWeekday) -> some View {
+        let isSelected = weekdayMask & weekday.rawValue != 0
+        return Button {
+            if isSelected {
+                weekdayMask &= ~weekday.rawValue
+            } else {
+                weekdayMask |= weekday.rawValue
+            }
+        } label: {
+            Text(weekday.displayName)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(isSelected ? Color.white : Color.primary)
+                .frame(maxWidth: .infinity, minHeight: 34)
+                .background(isSelected ? Color.accentColor : Color.primary.opacity(0.06), in: Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
     private var canSave: Bool {
         !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             && EmojiValidation.normalizedSingleEmoji(from: symbolName) != nil
@@ -158,6 +206,7 @@ struct IOSDirectionEditorView: View {
         let target: Int? = type == .habit ? goalTarget : nil
         let schedule: GoalScheduleKind? = type == .habit ? goalSchedule : nil
         let weeklyCount: Int? = type == .habit && goalSchedule == .weeklyCount ? weeklyTargetCount : nil
+        let selectedWeekdays: Int? = type == .habit && goalSchedule != .everyDay ? weekdayMask : nil
 
         switch mode {
         case .create:
@@ -170,7 +219,9 @@ struct IOSDirectionEditorView: View {
                 goalPeriod: goalPeriod,
                 goalUnit: unit,
                 goalSchedule: schedule,
-                weeklyTargetCount: weeklyCount
+                weeklyTargetCount: weeklyCount,
+                weekdayMask: selectedWeekdays,
+                sortIndex: (directions.map(\.sortIndex).max() ?? -1) + 1
             )
             modelContext.insert(direction)
         case .edit(let direction):
@@ -184,7 +235,7 @@ struct IOSDirectionEditorView: View {
                 goalUnit: unit,
                 goalSchedule: schedule,
                 weeklyTargetCount: weeklyCount,
-                weekdayMask: direction.weekdayMask
+                weekdayMask: selectedWeekdays
             )
         }
 

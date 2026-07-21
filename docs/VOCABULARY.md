@@ -30,7 +30,7 @@ first so GitHub contributors have one shared terminology table.
 | Flow | Flow |
 | Rest | 休憩 |
 | Long Break | Long Break |
-| Short Flow | Short |
+| Sprint Flow | Sprint |
 | Focus Flow | Focus |
 | Deep Flow | Deep |
 | Statistics | 統計 |

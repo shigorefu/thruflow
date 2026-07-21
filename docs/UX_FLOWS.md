@@ -75,7 +75,7 @@ In the narrow vertical dashboard layout, the player comes first, followed by the
 - `タスク` and `習慣` use separate lists of today's items;
 - `方向` uses an emoji-and-name grid with `その他` first for Direction-only starts;
 - Direction icon color follows the selected Task Direction;
-- compact Focus selector opens a separate picker for `Short`, `Focus`, and `Deep`;
+- compact Focus selector opens a separate picker for `Sprint`, `Focus`, and `Deep`;
 - selecting another Focus mode during focus or pause preserves elapsed time and only moves the planned end, matching the seek controls;
 - break time counts down past zero with a positive overtime sign; its neutral-gray progress ring drains while the Direction-colored focus ring fills. Starting work during rest completes the previous Flow and immediately starts the next one, while menu bar status becomes `☕️ 休憩 - time` or `☕️ Long Break - time`;
 - choosing another Task during focus or pause keeps the current Flow running and starts a new history segment; no memo prompt is shown for this switch;
@@ -89,7 +89,7 @@ In the narrow vertical dashboard layout, the player comes first, followed by the
 
 Mode labels:
 
-- `Short 12/3`;
+- `Sprint 12/3`;
 - `Focus 25/5`;
 - `Deep 50/10`.
 
@@ -105,11 +105,11 @@ Stopping focus or starting break opens the same square memo panel in the dashboa
 
 The trash action is phase-aware. During focus it deletes the current Flow and rolls back any credited Task/Direction progress through the canonical History editor. During rest it deletes only the active FlowBreak and closes the player, preserving the completed focus session and its progress.
 
-The daily stream is formed by broad, bright, softly glowing translucent ribbons following one shared S-shaped channel. Back, middle, and foreground ribbons move at different speeds to create depth; smooth color and alpha variation preserve separation without black negative channels. Today's focused Blocks permanently amplify movement until the day changes, reaching their visual maximum at 6 Blocks. Occupancy stops growing at 4 Blocks; later progress adds detail, parallax, color, and motion rather than filling the stage. Every completed half-Block sends a restrained light pulse through the channel. Idle stays in a calm `0.06...0.28` speed range, while an active Flow uses a separate `1.10...2.80` range. Short uses energetic waves, Focus balanced waves, and Deep broad slow bends; the background tint follows the selected mode. The current Flow appears live after its first creditable minute. Reduce Motion keeps the visualization static. Selecting a completed timeline segment opens the existing Flow history inspector.
+The daily stream is formed by broad, bright, softly glowing translucent ribbons following one shared S-shaped channel. Back, middle, and foreground ribbons move at different speeds to create depth; smooth color and alpha variation preserve separation without black negative channels. Today's focused Blocks permanently amplify movement until the day changes, reaching their visual maximum at 6 Blocks. Occupancy stops growing at 4 Blocks; later progress adds detail, parallax, color, and motion rather than filling the stage. Every completed half-Block sends a restrained light pulse through the channel. Idle stays in a calm `0.06...0.28` speed range, while an active Flow uses a separate `1.10...2.80` range. Sprint uses energetic waves, Focus balanced waves, and Deep broad slow bends; the background tint follows the selected mode. The current Flow appears live after its first creditable minute. Reduce Motion keeps the visualization static. Selecting a completed timeline segment opens the existing Flow history inspector.
 
 The dashboard timeline always uses `Elastic` and has no `24時間` control. When empty, it covers the current full hour and the following hour. Once activity exists, it expands from the first Flow's full hour through the full hour after the last Flow, never below two hours; this keeps short sessions visually meaningful. Hovering a dashboard timeline segment shows an immediate compact card with Task, clock interval, and focused duration. Clicking resolves one selected segment ID and opens one popover anchored to that exact timeline position, with Task, Direction, interval, focused duration, and Flow size. A red trash button deletes only that completed segment after confirmation and subtracts its progress; deleting the only segment deletes the Flow. Completed segments can continue to the canonical Flow history inspector; the active segment is read-only and marked `実行中`.
 
-The dashboard timeline uses a neutral dark rail for time without Flow. Every series containing a persisted rest receives one continuous light-gray underlay from its first Block through its final rest. The underlay and FlowSession Blocks have the same height. Blocks are rounded Direction-colored capsules above that underlay, so exposed gray intervals read as rests without becoming thinner, while unrelated series remain separated by the dark rail. FlowSegments caused by switching Tasks divide the color inside a Block edge-to-edge while sharing one outer capsule; they never appear as separately rounded Blocks. If the next Flow begins within 1.5 times the planned rest from rest start, both sessions retain separate history records but share one series ID and therefore one continuous underlay. Continuation windows are Short 4:30, Focus 7:30, Deep 15:00, and Long Break 30:00. After every 4 accumulated Blocks in the series, the next manually started rest becomes a 20-minute Long Break. Missing the window simply starts a new series.
+The dashboard timeline uses a neutral dark rail for time without Flow. Every series containing a persisted rest receives one continuous light-gray underlay from its first Block through its final rest. The underlay and FlowSession Blocks have the same height. Blocks are rounded Direction-colored capsules above that underlay, so exposed gray intervals read as rests without becoming thinner, while unrelated series remain separated by the dark rail. FlowSegments caused by switching Tasks divide the color inside a Block edge-to-edge while sharing one outer capsule; they never appear as separately rounded Blocks. If the next Flow begins within 1.5 times the planned rest from rest start, both sessions retain separate history records but share one series ID and therefore one continuous underlay. Continuation windows are Sprint 4:30, Focus 7:30, Deep 15:00, and Long Break 30:00. After every 4 accumulated Blocks in the series, the next manually started rest becomes a 20-minute Long Break. Missing the window simply starts a new series.
 
 Hovering a rest shows its type, interval, and duration above the timeline. Clicking a completed rest opens a duration editor anchored to that rest. Start time is fixed. If the new end overlaps the next Flow, that Flow and all later Flow/rest records in the same series move forward by the overlap. Free space absorbs an extension without shifting, shortening does not pull history backward, and unrelated series never move.
 
@@ -119,23 +119,23 @@ The Dashboard Task header `+` opens the shared messenger-style composer in a sep
 
 ## iPhone MVP
 
-The first iPhone surface is a Flow-first `NavigationStack`. `Flow` is always the
-root and opens by default. A floating native-material bottom surface contains
-`タスク`, `履歴`, `方向`, and `統計`; `設定` is reached from the trailing More
-menu. A secondary screen uses the native back action to return to Flow instead
-of keeping a persistent tab bar.
+The first iPhone surface is a Flow-first `NavigationStack`. `Flow` opens by
+default. A floating native-material bottom surface remains visible and marks
+the active destination across five items: `Flow`, `タスク`, `履歴`, `方向`, and
+`統計`. Only `タスク` replaces this surface with the messenger composer and a
+clear return-to-Flow action. `設定` is reached from the trailing More menu.
 
 The first Flow viewport presents the softened animated stream and Elastic
 timeline before the timer card. It keeps the Task selector, the shared
-`Short | Focus | Deep` segmented selector, timer controls, stream, and timeline
+`Sprint | Focus | Deep` segmented selector, timer controls, stream, and timeline
 together. The selector's Help button opens a native dimmed bottom sheet with
 mode icons, work/rest durations, and usage guidance; macOS keeps the same content
 in a popover. The timer exposes seek backward, Play/Pause, seek forward, destroy,
 stop, and break while preserving the established player size. iPhone and macOS
 share the same Metal stream renderer, including palette, speed, growth, glow,
-completion impulse, and a theme-aware light or dark background. Below it, a
-horizontal page gesture moves between today's Tasks/Habits and compact
-Statistics. The iPhone owns this presentation while reusing shared models,
+completion impulse, and a theme-aware light or dark background. Below the
+player, today's Tasks/Habits and compact Statistics are separate equal-width
+cards in the vertical dashboard. The iPhone owns this presentation while reusing shared models,
 persistence, timer state, dashboard projections, progress logic, and
 localization.
 
@@ -144,15 +144,21 @@ material-backed messenger composer. Shared quick-input tokens (`[ ]`, `[1b]`,
 `[25m]`, `@`, `!`, `/`, and `#`) update the composer controls while typing, and
 contextual autocomplete is shown above the field. The date control supports
 Today, Tomorrow, No Date, and an arbitrary date through the native graphical
-picker. `履歴` provides touch-native `日 | 週 | 月` calendar ranges:
+picker. Unspecified controls remain visibly labeled `種類`, `方向`, `優先度`,
+and `日付`, while submission applies the shared Check, inbox Direction, medium
+priority, and Today defaults. The screen provides filtered day/week/month
+ranges, automatic Habit instances, overdue and no-date inboxes, completion,
+progress, and native Task editing. `履歴` provides touch-native `日 | 週 | 月` calendar ranges:
 day uses a vertically scrolling 24-hour timeline, week uses seven horizontally
 scrollable day columns, and month uses Apple Calendar-style numeric days with
 Direction-colored activity dots. Flow and rest remain separate calendar records
 and tapping one opens its details. `方向` edits its emoji through a dedicated
 searchable picker instead of a text-field leading icon. The standalone iPhone
-`統計` provides a compact Task/Flow contribution overview with range and
-Direction filters. Advanced statistics and full calendar/history editing remain
-deferred.
+`方向` uses the same types, goals, schedules, weekday rules, color palette,
+archive behavior, item ordering, and group ordering as macOS in a native list
+and editor. The standalone iPhone `統計` provides a compact Task/Flow
+contribution overview with range and Direction filters. Advanced statistics and
+full calendar/history editing remain deferred.
 
 The iPhone MVP supports starting and controlling Flow, selecting today's Task or
 Habit, completing Check Tasks, creating and editing Tasks and Directions, and
@@ -203,7 +209,7 @@ Flow and FlowSegment records remain separate calendar blocks colored by Directio
 
 Lane assignment uses exact stored start/end intervals. Contiguous Flow and rest records stay in one vertical lane, and only actual time overlap creates side-by-side lanes. Entries below 15 minutes use compact title-only rendering; short rests become thin gray bars and expose exact time through hover and accessibility.
 
-Selecting an entry reuses `FlowHistoryInspectorView` or `FlowBreakEditor`. A completed Flow can be dragged to another exact day/time in day and week, or to another date in month; the complete session and its task-switch segments move together without changing duration or measured progress. Active Flow and rest records are not draggable. Double-clicking empty time inserts a selected `新しいFlow` draft block directly into the calendar. The clicked time is rounded to five minutes and the default duration is 25 minutes. In wide day view, `Flowを追加` occupies the right inspector; Task, Direction, Short/Focus/Deep, linked start/end, and minutes update the visible draft block immediately. Compact day and week use a sheet while retaining the draft block in the grid. Saving creates a completed independent Flow series and applies normal Direction/Todo progress without completing the Task; manual rest creation is intentionally unavailable. `履歴 > タスク` exposes the same action with the chosen Task fixed. Expanded `履歴 > 方向` ends with `タスクを追加`, which creates a Task with fixed Direction but no Flow. The calendar does not provide direct resize and does not persist a second calendar entity.
+Selecting an entry reuses `FlowHistoryInspectorView` or `FlowBreakEditor`. A completed Flow can be dragged to another exact day/time in day and week, or to another date in month; the complete session and its task-switch segments move together without changing duration or measured progress. Active Flow and rest records are not draggable. Double-clicking empty time inserts a selected `新しいFlow` draft block directly into the calendar. The clicked time is rounded to five minutes and the default duration is 25 minutes. In wide day view, `Flowを追加` occupies the right inspector; Task, Direction, Sprint/Focus/Deep, linked start/end, and minutes update the visible draft block immediately. Compact day and week use a sheet while retaining the draft block in the grid. Saving creates a completed independent Flow series and applies normal Direction/Todo progress without completing the Task; manual rest creation is intentionally unavailable. `履歴 > タスク` exposes the same action with the chosen Task fixed. Expanded `履歴 > 方向` ends with `タスクを追加`, which creates a Task with fixed Direction but no Flow. The calendar does not provide direct resize and does not persist a second calendar entity.
 
 ## Settings
 

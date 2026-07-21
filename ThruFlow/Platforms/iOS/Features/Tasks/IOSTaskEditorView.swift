@@ -14,8 +14,10 @@ struct IOSTaskEditorView: View {
     @State private var directionID: UUID?
     @State private var measurement: TodoMeasurement
     @State private var priority: TodoPriority
+    @State private var isRoomIfPossible: Bool
     @State private var plannedAmount: Int
-    @State private var scheduledDate: Date
+    @State private var scheduledDate: Date?
+    @State private var datePickerValue: Date
 
     init(mode: IOSTaskEditorMode, directions: [Direction]) {
         self.mode = mode
@@ -30,8 +32,10 @@ struct IOSTaskEditorView: View {
         _directionID = State(initialValue: todo?.direction?.id ?? directions.first?.id)
         _measurement = State(initialValue: todo?.measurement ?? .checkbox)
         _priority = State(initialValue: todo?.priority ?? .medium)
+        _isRoomIfPossible = State(initialValue: todo?.isRoomIfPossible ?? false)
         _plannedAmount = State(initialValue: max(1, todo?.plannedAmount ?? 1))
         _scheduledDate = State(initialValue: todo?.scheduledDate ?? .now)
+        _datePickerValue = State(initialValue: todo?.scheduledDate ?? .now)
     }
 
     var body: some View {
@@ -71,11 +75,30 @@ struct IOSTaskEditorView: View {
                     }
                 }
 
-                DatePicker(
-                    String(localized: "日付"),
-                    selection: $scheduledDate,
-                    displayedComponents: .date
+                if priority == .low {
+                    Toggle(String(localized: "余裕があれば"), isOn: $isRoomIfPossible)
+                }
+
+                Toggle(
+                    String(localized: "日付なし"),
+                    isOn: Binding(
+                        get: { scheduledDate == nil },
+                        set: { hasNoDate in
+                            scheduledDate = hasNoDate ? nil : datePickerValue
+                        }
+                    )
                 )
+
+                if scheduledDate != nil {
+                    DatePicker(
+                        String(localized: "日付"),
+                        selection: $datePickerValue,
+                        displayedComponents: .date
+                    )
+                    .onChange(of: datePickerValue) { _, newValue in
+                        scheduledDate = newValue
+                    }
+                }
             }
         }
         .navigationTitle(isEditing ? String(localized: "タスクを編集") : String(localized: "タスクを追加"))
@@ -128,6 +151,7 @@ struct IOSTaskEditorView: View {
                 direction: direction,
                 measurement: measurement,
                 priority: priority,
+                isRoomIfPossible: priority == .low && isRoomIfPossible,
                 plannedAmount: measurement == .checkbox ? nil : plannedAmount,
                 scheduledDate: scheduledDate
             )
@@ -140,7 +164,7 @@ struct IOSTaskEditorView: View {
                 direction: direction,
                 measurement: measurement,
                 priority: priority,
-                isRoomIfPossible: todo.isRoomIfPossible,
+                isRoomIfPossible: priority == .low && isRoomIfPossible,
                 plannedAmount: measurement == .checkbox ? nil : plannedAmount,
                 actualProgress: todo.actualProgress,
                 scheduledDate: scheduledDate,
