@@ -28,7 +28,8 @@ struct IOSFlowView: View {
                 LazyVStack(spacing: 16) {
                     flowCard(snapshot: dashboard, now: timeline.date)
                     playerCard
-                    dashboardPager(snapshot: dashboard)
+                    dashboardTasks
+                    IOSDashboardStatisticsView(snapshot: dashboard)
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 10)
@@ -124,17 +125,17 @@ struct IOSFlowView: View {
     }
 
     private var playerCard: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 6) {
             contextButton
             modePicker
 
-            HStack(spacing: 18) {
+            HStack(spacing: 10) {
                 timer
                 controls
             }
             .frame(maxWidth: .infinity)
         }
-        .padding(14)
+        .padding(10)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
     }
 
@@ -156,7 +157,7 @@ struct IOSFlowView: View {
 
                 Text(selectedDirection?.symbolName ?? "🎯")
                     .font(.title2)
-                    .frame(width: 46, height: 46)
+                    .frame(width: 36, height: 36)
                     .background(tint.opacity(0.16), in: RoundedRectangle(cornerRadius: 11))
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -184,7 +185,8 @@ struct IOSFlowView: View {
     private var modePicker: some View {
         FlowModeSelector(
             selection: modeBinding,
-            isSelectionEnabled: activeFlowStore.canChangeMode
+            isSelectionEnabled: activeFlowStore.canChangeMode,
+            helpPresentation: .sheet
         )
     }
 
@@ -203,52 +205,71 @@ struct IOSFlowView: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                 Text(timerText)
-                    .font(.system(size: 34, weight: .semibold, design: .rounded))
+                    .font(.system(size: 30, weight: .semibold, design: .rounded))
                     .monospacedDigit()
                 Text(activeFlowStore.selectedMode.displayName)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
         }
-        .frame(width: 164, height: 164)
+        .frame(width: 120, height: 120)
     }
 
     private var controls: some View {
-        VStack(spacing: 12) {
-            HStack(spacing: 14) {
-                controlButton("trash", role: .destructive) {
+        VStack(spacing: 10) {
+            HStack(spacing: 6) {
+                controlButton("gobackward.minus") {
+                    activeFlowStore.seekBackward(modelContext: modelContext)
+                }
+                .disabled(!canSeek)
+                .accessibilityLabel(String(localized: "ブロックを短縮"))
+
+                Spacer(minLength: 0)
+
+                Button(action: primaryAction) {
+                    Image(systemName: primarySymbol)
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(.white)
+                        .frame(width: 50, height: 50)
+                        .background(tint, in: Circle())
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .disabled(selectedDirection == nil)
+
+                Spacer(minLength: 0)
+
+                controlButton("goforward.plus") {
+                    activeFlowStore.seekForward(modelContext: modelContext)
+                }
+                .disabled(!canSeek)
+                .accessibilityLabel(String(localized: "ブロックを延長"))
+            }
+
+            HStack(spacing: 6) {
+                controlButton("trash.fill", role: .destructive) {
                     activeFlowStore.destroy(modelContext: modelContext)
                 }
                 .disabled(activeFlowStore.timerState == nil)
+                .accessibilityLabel(
+                    activeFlowStore.isBreakPhase
+                        ? String(localized: "休憩を削除")
+                        : String(localized: "Flowを破壊")
+                )
 
                 controlButton("stop.fill") {
                     activeFlowStore.stop(modelContext: modelContext)
                     presentMemoIfNeeded()
                 }
                 .disabled(activeFlowStore.timerState == nil)
-            }
+                .accessibilityLabel(String(localized: "Flowを停止して保存"))
 
-            Button(action: primaryAction) {
-                Image(systemName: primarySymbol)
-                    .font(.title2.weight(.bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 62, height: 62)
-                    .background(tint, in: Circle())
-            }
-            .buttonStyle(.plain)
-            .disabled(selectedDirection == nil)
-
-            HStack(spacing: 14) {
                 controlButton("cup.and.saucer.fill") {
                     activeFlowStore.requestBreakMemo(modelContext: modelContext)
                     presentMemoIfNeeded()
                 }
                 .disabled(activeFlowStore.timerState == nil || activeFlowStore.isBreakPhase)
-
-                controlButton("forward.end.fill") {
-                    activeFlowStore.seekForward(modelContext: modelContext)
-                }
-                .disabled(activeFlowStore.timerState == nil || activeFlowStore.isBreakPhase)
+                .accessibilityLabel(String(localized: "休憩を開始"))
             }
         }
         .frame(maxWidth: .infinity)
@@ -262,14 +283,14 @@ struct IOSFlowView: View {
         Button(role: role, action: action) {
             Image(systemName: systemName)
                 .font(.body.weight(.semibold))
-                .frame(width: 38, height: 38)
+                .frame(width: 44, height: 44)
                 .background(Color.primary.opacity(0.055), in: Circle())
         }
         .buttonStyle(.plain)
     }
 
     private func flowCard(snapshot: FlowDashboardSnapshot, now: Date) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(String(localized: "今日のFlow"))
@@ -289,7 +310,7 @@ struct IOSFlowView: View {
                 isActive: activeFlowStore.phase == .focusing,
                 mode: activeFlowStore.selectedMode
             )
-            .frame(height: 142)
+            .frame(height: 96)
             .compositingGroup()
             .blur(radius: 1.4)
             .scaleEffect(1.015)
@@ -297,7 +318,7 @@ struct IOSFlowView: View {
 
             IOSFlowTimelineView(snapshot: snapshot, now: now)
         }
-        .padding(14)
+        .padding(12)
         .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 16))
     }
 
@@ -310,15 +331,6 @@ struct IOSFlowView: View {
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }
-    }
-
-    private func dashboardPager(snapshot: FlowDashboardSnapshot) -> some View {
-        TabView {
-            dashboardTasks
-            IOSDashboardStatisticsView(snapshot: snapshot)
-        }
-        .tabViewStyle(.page(indexDisplayMode: .always))
-        .frame(height: 310)
     }
 
     private var dashboardTasks: some View {
@@ -342,16 +354,15 @@ struct IOSFlowView: View {
                     systemImage: "checkmark.circle"
                 )
             } else {
-                ForEach(todayTodos.prefix(5)) { todo in
+                ForEach(todayTodos.prefix(2)) { todo in
                     IOSTaskRow(todo: todo) {
                         editorMode = .edit(todo)
                     }
-                    if todo.id != todayTodos.prefix(5).last?.id {
+                    if todo.id != todayTodos.prefix(2).last?.id {
                         Divider()
                     }
                 }
             }
-            Spacer(minLength: 0)
         }
         .padding(16)
         .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 16))
@@ -402,6 +413,10 @@ struct IOSFlowView: View {
             get: { activeFlowStore.selectedMode },
             set: { activeFlowStore.selectMode($0, modelContext: modelContext) }
         )
+    }
+
+    private var canSeek: Bool {
+        activeFlowStore.phase == .focusing || activeFlowStore.phase == .paused
     }
 
     private var primarySymbol: String {
@@ -597,7 +612,6 @@ private struct IOSDashboardStatisticsView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
-            Spacer(minLength: 0)
         }
         .padding(16)
         .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 16))

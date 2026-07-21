@@ -1,9 +1,15 @@
 import SwiftUI
 
 struct FlowModeSelector: View {
+    enum HelpPresentation {
+        case popover
+        case sheet
+    }
+
     @Binding var selection: FlowMode
 
     let isSelectionEnabled: Bool
+    var helpPresentation: HelpPresentation = .popover
     var onSelect: ((FlowMode) -> Void)?
 
     @State private var showsHelp = false
@@ -20,29 +26,50 @@ struct FlowModeSelector: View {
             .pickerStyle(.segmented)
             .disabled(!isSelectionEnabled)
 
-            Button {
-                showsHelp = true
-            } label: {
-                Image(systemName: "questionmark.circle")
-                    .font(.body.weight(.semibold))
-                    .frame(width: 30, height: 30)
-                    .contentShape(Rectangle())
+            helpButton
+        }
+    }
+
+    @ViewBuilder
+    private var helpButton: some View {
+        let button = Button {
+            showsHelp = true
+        } label: {
+            Image(systemName: "questionmark.circle")
+                .font(.body.weight(.semibold))
+                .frame(width: 30, height: 30)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.secondary)
+        .accessibilityLabel(String(localized: "Flowタイプのヘルプ"))
+
+        switch helpPresentation {
+        case .popover:
+            button.popover(isPresented: $showsHelp, arrowEdge: .bottom) {
+                helpContent
+                    .frame(idealWidth: 360)
+                    .presentationCompactAdaptation(.none)
             }
-            .buttonStyle(.plain)
-            .foregroundStyle(.secondary)
-            .accessibilityLabel(String(localized: "Flowタイプのヘルプ"))
-            .popover(isPresented: $showsHelp, arrowEdge: .bottom) {
-                FlowModeHelpView(
-                    selectedMode: selection,
-                    modes: modes,
-                    isSelectionEnabled: isSelectionEnabled
-                ) { mode in
-                    selectionBinding.wrappedValue = mode
-                    showsHelp = false
+        case .sheet:
+            button.sheet(isPresented: $showsHelp) {
+                ScrollView {
+                    helpContent
                 }
-                .frame(idealWidth: 360)
-                .presentationCompactAdaptation(.sheet)
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.visible)
             }
+        }
+    }
+
+    private var helpContent: some View {
+        FlowModeHelpView(
+            selectedMode: selection,
+            modes: modes,
+            isSelectionEnabled: isSelectionEnabled
+        ) { mode in
+            selectionBinding.wrappedValue = mode
+            showsHelp = false
         }
     }
 

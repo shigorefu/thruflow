@@ -179,6 +179,12 @@ advanced analysis remains deferred. The iPhone Task composer uses material
 surfaces, shared quick-input parsing, autocomplete, and an explicit arbitrary
 date picker.
 
+On iPhone, the dashboard player uses a compact platform-specific transport:
+seek backward and forward flank Play/Pause, while reset, stop, and break remain
+visible below. Mode help is a dimmed bottom sheet. Today's two-row Task preview
+and compact Statistics are independent cards below the player, not pages of one
+carousel.
+
 Reason: the primary touch targets must remain stable and legible on iPhone,
 while mode meaning and task syntax should not drift between platforms.
 
