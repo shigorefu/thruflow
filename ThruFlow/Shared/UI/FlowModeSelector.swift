@@ -14,7 +14,7 @@ struct FlowModeSelector: View {
 
     @State private var showsHelp = false
 
-    private let modes: [FlowMode] = [.twelveThree, .twentyFiveFive, .fiftyTen]
+    private let modes: [FlowMode] = [.sprint, .twentyFiveFive, .fiftyTen]
 
     var body: some View {
         HStack(spacing: 8) {
@@ -170,7 +170,7 @@ private struct FlowModeHelpView: View {
 private extension FlowMode {
     var iconName: String {
         switch self {
-        case .twelveThree: "flame.fill"
+        case .sprint: "flame.fill"
         case .twentyFiveFive: "target"
         case .fiftyTen: "mountain.2.fill"
         case .adaptive: "sparkles"
@@ -179,7 +179,7 @@ private extension FlowMode {
 
     var iconColor: Color {
         switch self {
-        case .twelveThree: .orange
+        case .sprint: .orange
         case .twentyFiveFive: .blue
         case .fiftyTen: .purple
         case .adaptive: .teal
@@ -188,7 +188,7 @@ private extension FlowMode {
 
     var workBreakText: String {
         switch self {
-        case .twelveThree: String(localized: "12分作業 / 3分休憩")
+        case .sprint: String(localized: "12分作業 / 3分休憩")
         case .twentyFiveFive: String(localized: "25分作業 / 5分休憩")
         case .fiftyTen: String(localized: "50分作業 / 10分休憩")
         case .adaptive: String(localized: "12分から開始")
@@ -197,7 +197,7 @@ private extension FlowMode {
 
     var usageDescription: String {
         switch self {
-        case .twelveThree:
+        case .sprint:
             String(localized: "短い作業や、まず始めたいときに")
         case .twentyFiveFive:
             String(localized: "日常の集中作業に")

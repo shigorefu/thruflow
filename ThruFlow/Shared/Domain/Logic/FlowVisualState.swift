@@ -38,7 +38,7 @@ struct FlowVisualState: Equatable {
 
     private static func modeCharacter(for mode: FlowMode) -> (frequency: Double, turbulence: Double) {
         switch mode {
-        case .twelveThree, .adaptive:
+        case .sprint, .adaptive:
             (1.22, 0.86)
         case .twentyFiveFive:
             (0.96, 0.62)

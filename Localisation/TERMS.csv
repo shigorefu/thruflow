@@ -34,7 +34,7 @@
 "TaskCalendarRange.sevenDays","Недельное представление задач","週","Week","Неделя"
 "TaskCalendarRange.month","Месячное представление задач","月","Month","Месяц"
 "FlowSession","Зафиксированный период сфокусированной работы","Flow","Flow","Flow"
-"FlowMode.twelveThree","Режим: 12 минут работы и 3 минуты отдыха","Short","Short","Short"
+"FlowMode.sprint","Режим: 12 минут работы и 3 минуты отдыха","Sprint","Sprint","Sprint"
 "FlowMode.twentyFiveFive","Режим: 25 минут работы и 5 минут отдыха","Focus","Focus","Focus"
 "FlowMode.fiftyTen","Режим: 50 минут работы и 10 минут отдыха","Deep","Deep","Deep"
 "FlowMode.adaptive","Адаптивный режим, начинающийся с короткого блока","オート","Auto","Авто"
