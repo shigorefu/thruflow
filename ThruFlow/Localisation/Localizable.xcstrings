@@ -81,6 +81,9 @@
         }
       }
     },
+    "#tag" : {
+
+    },
     "%.0f Blocks" : {
       "localizations" : {
         "en" : {
@@ -431,6 +434,16 @@
         }
       }
     },
+    "%@: %lld" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@: %2$lld"
+          }
+        }
+      }
+    },
     "%@にタスクを追加" : {
       "localizations" : {
         "en" : {
@@ -497,6 +510,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld / %lld"
+          }
+        }
+      }
+    },
+    "%lld %@" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld %2$@"
           }
         }
       }
@@ -864,6 +887,9 @@
           }
         }
       }
+    },
+    "🎯" : {
+
     },
     "0 Block" : {
       "localizations" : {
@@ -1265,6 +1291,9 @@
         }
       }
     },
+    "Flowタイプ" : {
+
+    },
     "Flowタイマー" : {
       "localizations" : {
         "en" : {
@@ -1488,6 +1517,9 @@
           }
         }
       }
+    },
+    "Flow完了" : {
+
     },
     "Flow履歴を開く" : {
       "localizations" : {
@@ -2679,6 +2711,9 @@
         }
       }
     },
+    "タスクを選択" : {
+
+    },
     "タスク作成を閉じる" : {
       "localizations" : {
         "en" : {
@@ -3693,6 +3728,9 @@
         }
       }
     },
+    "何をしましたか" : {
+
+    },
     "何をしましたか？" : {
       "localizations" : {
         "en" : {
@@ -3996,6 +4034,9 @@
           }
         }
       }
+    },
+    "回 / 週" : {
+
     },
     "固定された習慣の日付は変更できません" : {
       "localizations" : {
@@ -4562,6 +4603,9 @@
           }
         }
       }
+    },
+    "方向を作成" : {
+
     },
     "方向を削除" : {
       "localizations" : {
@@ -5746,6 +5790,9 @@
           }
         }
       }
+    },
+    "繰り返し" : {
+
     },
     "習慣" : {
       "localizations" : {
