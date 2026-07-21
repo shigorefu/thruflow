@@ -26,8 +26,8 @@ struct IOSFlowView: View {
 
             ScrollView {
                 LazyVStack(spacing: 16) {
-                    playerCard
                     flowCard(snapshot: dashboard, now: timeline.date)
+                    playerCard
                     dashboardPager(snapshot: dashboard)
                 }
                 .padding(.horizontal, 16)
@@ -38,7 +38,7 @@ struct IOSFlowView: View {
         .navigationTitle(String(localized: "Flow"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
+            ToolbarItem(placement: .topBarTrailing) {
                 Menu {
                     Button {
                         open(.settings)
@@ -46,9 +46,9 @@ struct IOSFlowView: View {
                         Label(String(localized: "設定"), systemImage: "gearshape")
                     }
                 } label: {
-                    Image(systemName: "line.3.horizontal")
+                    Image(systemName: "ellipsis.circle")
                 }
-                .accessibilityLabel(String(localized: "設定"))
+                .accessibilityLabel(String(localized: "その他"))
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -182,13 +182,10 @@ struct IOSFlowView: View {
     }
 
     private var modePicker: some View {
-        Picker(String(localized: "Flowタイプ"), selection: modeBinding) {
-            ForEach([FlowMode.twelveThree, .twentyFiveFive, .fiftyTen]) { mode in
-                Text(mode.displayName).tag(mode)
-            }
-        }
-        .pickerStyle(.segmented)
-        .disabled(!activeFlowStore.canChangeMode)
+        FlowModeSelector(
+            selection: modeBinding,
+            isSelectionEnabled: activeFlowStore.canChangeMode
+        )
     }
 
     private var timer: some View {
@@ -293,6 +290,9 @@ struct IOSFlowView: View {
                 mode: activeFlowStore.selectedMode
             )
             .frame(height: 142)
+            .compositingGroup()
+            .blur(radius: 1.4)
+            .scaleEffect(1.015)
             .clipShape(RoundedRectangle(cornerRadius: 12))
 
             IOSFlowTimelineView(snapshot: snapshot, now: now)
@@ -358,7 +358,7 @@ struct IOSFlowView: View {
     }
 
     private var bottomNavigation: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: 4) {
             navigationButton(String(localized: "タスク"), systemImage: "checklist", route: .tasks)
             navigationButton(String(localized: "履歴"), systemImage: "clock.arrow.circlepath", route: .history)
             navigationButton(
@@ -366,12 +366,17 @@ struct IOSFlowView: View {
                 systemImage: "point.3.connected.trianglepath.dotted",
                 route: .directions
             )
+            navigationButton(String(localized: "統計"), systemImage: "chart.bar.xaxis", route: .statistics)
         }
-        .padding(.horizontal, 8)
-        .padding(.top, 8)
-        .padding(.bottom, 4)
-        .background(.bar)
-        .overlay(alignment: .top) { Divider() }
+        .padding(6)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20))
+        .overlay {
+            RoundedRectangle(cornerRadius: 20)
+                .strokeBorder(Color.primary.opacity(0.09))
+        }
+        .shadow(color: .black.opacity(0.12), radius: 16, y: 6)
+        .padding(.horizontal, 12)
+        .padding(.bottom, 6)
     }
 
     private func navigationButton(_ title: String, systemImage: String, route: IOSAppRoute) -> some View {
@@ -385,9 +390,11 @@ struct IOSFlowView: View {
                     .font(.caption2)
             }
             .frame(maxWidth: .infinity)
-            .frame(minHeight: 42)
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .foregroundStyle(.primary)
     }
 
     private var modeBinding: Binding<FlowMode> {

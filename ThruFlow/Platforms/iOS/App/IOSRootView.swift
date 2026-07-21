@@ -4,6 +4,7 @@ enum IOSAppRoute: Hashable {
     case tasks
     case history
     case directions
+    case statistics
     case settings
 }
 
@@ -28,6 +29,8 @@ struct IOSRootView: View {
             IOSHistoryView()
         case .directions:
             IOSDirectionsView()
+        case .statistics:
+            IOSStatisticsView()
         case .settings:
             IOSSettingsView()
         }

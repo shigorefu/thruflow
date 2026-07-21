@@ -24,7 +24,6 @@ struct FlowMiniPlayerView: View {
     @State private var showsTaskPicker = false
     @State private var showsTaskComposer = false
     @State private var presentsTaskComposerAfterPicker = false
-    @State private var showsModePicker = false
     @State private var resultText = ""
     @State private var editingTaskTitleID: UUID?
     @State private var taskTitleDraft = ""
@@ -279,57 +278,14 @@ struct FlowMiniPlayerView: View {
     }
 
     private var modePickerButton: some View {
-        Button {
-            showsModePicker = true
-        } label: {
-            HStack(spacing: 8) {
-                Image(systemName: modeIconName(activeFlowStore.selectedMode))
-                    .font(.callout.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .frame(width: 32, height: 32)
-                    .background(modeIconColor(activeFlowStore.selectedMode))
-                    .clipShape(RoundedRectangle(cornerRadius: 9))
-
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(activeFlowStore.selectedMode.displayName)
-                        .font(.caption.weight(.semibold))
-                        .lineLimit(1)
-
-                    Text(modeSubtitle(activeFlowStore.selectedMode))
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
-
-                Spacer(minLength: 0)
-
-                Image(systemName: "chevron.down")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.secondary)
-            }
-            .frame(width: style == .dashboard ? 220 : 190, alignment: .leading)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-            .background(Color.primary.opacity(0.05))
-            .clipShape(RoundedRectangle(cornerRadius: 14))
-            .overlay {
-                RoundedRectangle(cornerRadius: 14)
-                    .strokeBorder(Color.primary.opacity(0.08))
-            }
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(String(localized: "Focusを選択"))
-        .disabled(!activeFlowStore.canChangeMode)
-        .popover(isPresented: $showsModePicker, arrowEdge: .bottom) {
-            FlowModePickerView(
-                selectedMode: activeFlowStore.selectedMode,
-                modes: selectableModes,
-                onSelect: { mode in
-                    activeFlowStore.selectMode(mode, modelContext: modelContext)
-                }
-            )
-            .frame(width: 320)
-        }
+        FlowModeSelector(
+            selection: Binding(
+                get: { activeFlowStore.selectedMode },
+                set: { activeFlowStore.selectMode($0, modelContext: modelContext) }
+            ),
+            isSelectionEnabled: activeFlowStore.canChangeMode
+        )
+        .frame(width: style == .dashboard ? 280 : 240)
     }
 
     private func timerCluster(now: Date) -> some View {
@@ -1007,48 +963,6 @@ struct FlowMiniPlayerView: View {
         return taskInbox
     }
 
-    private var selectableModes: [FlowMode] {
-        [.twelveThree, .twentyFiveFive, .fiftyTen]
-    }
-
-    private func modeIconName(_ mode: FlowMode) -> String {
-        switch mode {
-        case .twelveThree:
-            "flame.fill"
-        case .twentyFiveFive:
-            "target"
-        case .fiftyTen:
-            "mountain.2.fill"
-        case .adaptive:
-            "sparkles"
-        }
-    }
-
-    private func modeIconColor(_ mode: FlowMode) -> Color {
-        switch mode {
-        case .twelveThree:
-            .orange
-        case .twentyFiveFive:
-            .blue
-        case .fiftyTen:
-            .purple
-        case .adaptive:
-            .teal
-        }
-    }
-
-    private func modeSubtitle(_ mode: FlowMode) -> String {
-        switch mode {
-        case .twelveThree:
-            String(localized: "12分作業 / 3分休憩")
-        case .twentyFiveFive:
-            String(localized: "25分作業 / 5分休憩")
-        case .fiftyTen:
-            String(localized: "50分作業 / 10分休憩")
-        case .adaptive:
-            String(localized: "12分から開始")
-        }
-    }
 
     private func todoMenuTitle(_ todo: Todo) -> String {
         if todo.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -1447,117 +1361,6 @@ private struct FlowTaskPickerGroup: Identifiable {
         }
 
         return lhs.createdAt < rhs.createdAt
-    }
-}
-
-private struct FlowModePickerView: View {
-    let selectedMode: FlowMode
-    let modes: [FlowMode]
-    let onSelect: (FlowMode) -> Void
-
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text(String(localized: "Focus"))
-                    .font(.headline.weight(.semibold))
-
-                Spacer(minLength: 0)
-
-                Button {
-                    dismiss()
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.caption.weight(.bold))
-                        .frame(width: 26, height: 26)
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
-            }
-
-            ForEach(modes) { mode in
-                Button {
-                    onSelect(mode)
-                    dismiss()
-                } label: {
-                    HStack(spacing: 12) {
-                        Image(systemName: iconName(mode))
-                            .font(.title3.weight(.semibold))
-                            .foregroundStyle(.white)
-                            .frame(width: 42, height: 42)
-                            .background(iconColor(mode))
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(mode.displayName)
-                                .font(.headline)
-                                .foregroundStyle(.primary)
-
-                            Text(subtitle(mode))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-
-                        Spacer(minLength: 0)
-
-                        if selectedMode == mode {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(.tint)
-                        }
-                    }
-                    .padding(10)
-                    .background(selectedMode == mode ? iconColor(mode).opacity(0.14) : Color.primary.opacity(0.05))
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 14)
-                            .strokeBorder(selectedMode == mode ? iconColor(mode).opacity(0.42) : Color.primary.opacity(0.08))
-                    }
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(14)
-        .background(.bar)
-    }
-
-    private func iconName(_ mode: FlowMode) -> String {
-        switch mode {
-        case .twelveThree:
-            "flame.fill"
-        case .twentyFiveFive:
-            "target"
-        case .fiftyTen:
-            "mountain.2.fill"
-        case .adaptive:
-            "sparkles"
-        }
-    }
-
-    private func iconColor(_ mode: FlowMode) -> Color {
-        switch mode {
-        case .twelveThree:
-            .orange
-        case .twentyFiveFive:
-            .blue
-        case .fiftyTen:
-            .purple
-        case .adaptive:
-            .teal
-        }
-    }
-
-    private func subtitle(_ mode: FlowMode) -> String {
-        switch mode {
-        case .twelveThree:
-            String(localized: "12分作業 / 3分休憩")
-        case .twentyFiveFive:
-            String(localized: "25分作業 / 5分休憩")
-        case .fiftyTen:
-            String(localized: "50分作業 / 10分休憩")
-        case .adaptive:
-            String(localized: "12分から開始")
-        }
     }
 }
 

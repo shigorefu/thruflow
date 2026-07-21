@@ -725,6 +725,28 @@
         }
       }
     },
+    "%lld%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld%2$@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld%2$@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld%2$@"
+          }
+        }
+      }
+    },
     "%lld%%" : {
       "localizations" : {
         "en" : {
@@ -1288,7 +1310,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Глубокий"
+            "value" : "Deep"
           }
         }
       }
@@ -1656,7 +1678,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Фокус"
+            "value" : "Focus"
           }
         }
       }
@@ -1832,7 +1854,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Короткий"
+            "value" : "Short"
           }
         }
       }
@@ -4057,6 +4079,22 @@
         }
       }
     },
+    "前へ" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Previous"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Назад"
+          }
+        }
+      }
+    },
     "単位" : {
       "localizations" : {
         "en" : {
@@ -4651,22 +4689,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Создать"
-          }
-        }
-      }
-    },
-    "前へ" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Previous"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Назад"
           }
         }
       }
@@ -6715,6 +6737,150 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Частота"
+          }
+        }
+      }
+    },
+    "Flowタイプのヘルプ" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flow mode help"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Справка о режимах Flow"
+          }
+        }
+      }
+    },
+    "作業に合う集中の長さを選びます" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a focus length that fits the work"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите длительность под текущую работу"
+          }
+        }
+      }
+    },
+    "作業時間に合わせて調整します" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adjusts to the time you work"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подстраивается под время работы"
+          }
+        }
+      }
+    },
+    "方向で絞り込む" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filter by Direction"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фильтр по направлению"
+          }
+        }
+      }
+    },
+    "日常の集中作業に" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For regular focused work"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для обычной сосредоточенной работы"
+          }
+        }
+      }
+    },
+    "短い作業や、まず始めたいときに" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For short work or simply getting started"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для короткой работы или лёгкого старта"
+          }
+        }
+      }
+    },
+    "中断せず深く取り組みたいときに" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For long, uninterrupted deep work"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для долгой глубокой работы без перерывов"
+          }
+        }
+      }
+    },
+    "選択" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбрать"
+          }
+        }
+      }
+    },
+    "絵文字を1つ入力してください" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter one emoji"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Введите один эмодзи"
           }
         }
       }

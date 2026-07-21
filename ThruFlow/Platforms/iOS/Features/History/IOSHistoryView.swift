@@ -421,7 +421,7 @@ private struct IOSHistoryMonthGrid: View {
                             openDay()
                         } label: {
                             VStack(spacing: 5) {
-                                Text(date, format: .dateTime.day())
+                                Text(verbatim: String(calendar.component(.day, from: date)))
                                     .font(.subheadline.weight(calendar.isDateInToday(date) ? .bold : .regular))
                                     .foregroundStyle(calendar.isDateInToday(date) ? Color.white : Color.primary)
                                     .frame(width: 30, height: 30)
