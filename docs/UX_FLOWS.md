@@ -126,18 +126,17 @@ menu. A secondary screen uses the native back action to return to Flow instead
 of keeping a persistent tab bar.
 
 The first Flow viewport presents the softened animated stream and Elastic
-timeline before a compact timer card. It keeps the Task selector, the shared
+timeline before the timer card. It keeps the Task selector, the shared
 `Short | Focus | Deep` segmented selector, timer controls, stream, and timeline
-together. The compact transport puts decrease and increase on the left and
-right of Play/Pause; destructive reset, save/stop, and break actions remain
-visible in a secondary row. Touch targets stay at least 44 points even though
-the visual controls and timer ring are smaller. The selector's Help button opens
-a dimmed bottom sheet with mode icons, work/rest durations, and usage guidance;
-the same selector uses a popover in the macOS player. Below the player, a
-two-row preview of today's Tasks/Habits and a separate compact Statistics card
-are shown in document order rather than sharing a paged container. The iPhone
-owns this compact presentation while reusing shared models, persistence, timer
-state, dashboard projections, progress logic, and localization.
+together. The selector's Help button opens a native dimmed bottom sheet with
+mode icons, work/rest durations, and usage guidance; macOS keeps the same content
+in a popover. The timer exposes seek backward, Play/Pause, seek forward, destroy,
+stop, and break while preserving the established player size. iPhone and macOS
+share the same Metal stream renderer, including palette, speed, growth, glow,
+and completion impulse. Below it, a horizontal page gesture moves between
+today's Tasks/Habits and compact Statistics. The iPhone owns this presentation
+while reusing shared models, persistence, timer state, dashboard projections,
+progress logic, and localization.
 
 Opening `タスク` replaces the Flow bottom navigation with a floating
 material-backed messenger composer. Shared quick-input tokens (`[ ]`, `[1b]`,

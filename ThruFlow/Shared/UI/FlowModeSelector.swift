@@ -56,8 +56,8 @@ struct FlowModeSelector: View {
                 ScrollView {
                     helpContent
                 }
-                    .presentationDetents([.medium, .large])
-                    .presentationDragIndicator(.visible)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
             }
         }
     }
