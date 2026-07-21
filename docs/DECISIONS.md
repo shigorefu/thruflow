@@ -156,10 +156,13 @@ deterministic offline/test path and avoiding a second persistence stack.
 ## D-021: Narrow Native iPhone MVP
 
 The first iPhone target uses iOS 17.0 as its minimum deployment version and
-contains Flow, today's Tasks/Habits, Directions, and basic Settings. Advanced
-Statistics, complex History, and full calendar editing are deferred to the next
-iPhone stage. The iPhone uses native compact navigation rather than shrinking
-the macOS dashboard and calendar screens.
+uses Flow as its root and default screen. Bottom navigation from Flow opens
+Tasks, History, and Directions, while Settings lives in the hamburger menu.
+The timer and animated Flow stream share the first viewport; Tasks and compact
+Statistics are horizontal dashboard pages. History provides native day, week,
+and month browsing. Advanced Statistics and full calendar/history editing are
+deferred to the next iPhone stage. The iPhone uses native compact navigation
+rather than shrinking the macOS dashboard and calendar screens.
 
 Reason: the core daily loop must be useful and stable on a phone before desktop
 analysis and editing surfaces are redesigned for touch.

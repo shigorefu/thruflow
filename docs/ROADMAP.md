@@ -15,8 +15,8 @@
 
 ### Далее
 - [x] Настроить private CloudKit для общего SwiftData store macOS и iOS.
-- [x] Добавить узкий iPhone MVP: Flow, сегодняшние Tasks/Habits, Directions и Settings.
-- [ ] После стабилизации MVP добавить на iPhone расширенную `統計`, сложный `履歴` и полную календарную редакцию.
+- [x] Добавить Flow-first iPhone MVP: Flow dashboard, Tasks/Habits, базовый `履歴`, Directions и Settings.
+- [ ] После стабилизации MVP добавить на iPhone расширенную `統計` и полную редакцию `履歴`/календаря.
 - [ ] Виджеты и Live Activities.
 - [x] Базовая iOS версия (minimum iOS 17.0, сборка Xcode 26/iOS 26 SDK).
 - [ ] Поддержка Apple Watch.

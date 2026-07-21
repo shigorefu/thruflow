@@ -119,17 +119,30 @@ The Dashboard Task header `+` opens the shared messenger-style composer in a sep
 
 ## iPhone MVP
 
-The first iPhone surface is a native four-tab shell: `Flow`, `タスク`, `方向`,
-and `設定`. It reuses shared domain models, persistence, timer state, progress
-logic, and localization, but owns compact iPhone layouts instead of embedding
-macOS views. Japanese is the default language for a fresh install.
+The first iPhone surface is a Flow-first `NavigationStack`. `Flow` is always the
+root and opens by default. Its bottom navigation contains `タスク`, `履歴`, and
+`方向`; `設定` is reached from the leading hamburger menu. A secondary screen
+uses the native back action to return to Flow instead of keeping a persistent tab
+bar.
+
+The first Flow viewport keeps the Task selector, Focus mode, timer controls,
+animated stream, and Elastic timeline together. Below it, a horizontal page
+gesture moves between today's Tasks/Habits and compact Statistics. The iPhone
+owns this compact presentation while reusing shared models, persistence, timer
+state, dashboard projections, progress logic, and localization.
+
+Opening `タスク` replaces the Flow bottom navigation with the messenger-style
+quick composer. `履歴` provides touch-native `日 | 週 | 月` calendar ranges:
+day uses a vertically scrolling 24-hour timeline, week uses seven horizontally
+scrollable day columns, and month uses a Direction-colored activity grid. Flow
+and rest remain separate calendar records and tapping one opens its details.
+Advanced statistics and full calendar/history editing remain deferred.
 
 The iPhone MVP supports starting and controlling Flow, selecting today's Task or
 Habit, completing Check Tasks, creating and editing Tasks and Directions, and
 changing the basic shared settings. Private CloudKit synchronization carries the
-same SwiftData records between devices signed into one Apple ID. Advanced
-`統計`, complex `履歴`, and full calendar editing are intentionally deferred to
-the next iPhone stage.
+same SwiftData records between devices signed into one Apple ID. Japanese is the
+default language for a fresh install.
 
 ## Statistics
 
