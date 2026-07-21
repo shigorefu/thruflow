@@ -22,7 +22,9 @@ static float hash21(float2 value) {
     half4 color0,
     half4 color1,
     half4 color2,
-    half4 color3
+    half4 color3,
+    half4 backgroundColor,
+    float darkMode
 ) {
     float2 safeSize = max(size, float2(1.0));
     float2 uv = position / safeSize;
@@ -103,6 +105,25 @@ static float hash21(float2 value) {
         rendered *= compressedPeak / peak;
     }
 
-    float alpha = clamp(accumulatedWeight * envelope + 0.64, 0.64, 1.0);
-    return half4(half3(rendered), half(alpha));
+    float3 background = float3(backgroundColor.rgb);
+    float3 composited;
+
+    if (darkMode > 0.5) {
+        composited = background + rendered;
+    } else {
+        float coverage = clamp(
+            accumulatedWeight * envelope * 1.18 + ambientStrength * ambientField * 0.22,
+            0.045,
+            0.82
+        );
+        float3 normalizedStream = accumulated / max(accumulatedWeight, 0.001);
+        float3 streamInk = clamp(
+            normalizedStream + rendered * 0.30,
+            float3(0.0),
+            float3(0.84)
+        );
+        composited = mix(background, streamInk, coverage);
+    }
+
+    return half4(half3(clamp(composited, float3(0.0), float3(1.0))), half(1.0));
 }

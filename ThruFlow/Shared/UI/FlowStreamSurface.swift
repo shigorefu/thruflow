@@ -9,6 +9,7 @@ struct FlowStreamSurface: View {
     let isRenderingEnabled: Bool
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.scenePhase) private var scenePhase
     @State private var animationClock = FlowAnimationClock()
     @State private var impulseStartedAt: Date?
@@ -25,7 +26,7 @@ struct FlowStreamSurface: View {
         TimelineView(.animation(minimumInterval: frameInterval, paused: animationIsPaused)) { timeline in
             GeometryReader { proxy in
                 Rectangle()
-                    .fill(.white)
+                    .fill(backgroundColor)
                     .colorEffect(
                         ShaderLibrary.flowStream(
                             .float2(proxy.size),
@@ -44,7 +45,9 @@ struct FlowStreamSurface: View {
                             .color(colors[0]),
                             .color(colors[1]),
                             .color(colors[2]),
-                            .color(colors[3])
+                            .color(colors[3]),
+                            .color(backgroundColor),
+                            .float(colorScheme == .dark ? 1 : 0)
                         )
                     )
                     .compositingGroup()
@@ -63,6 +66,15 @@ struct FlowStreamSurface: View {
         let fallback = ["#0A84FF", "#30D5C8", "#BF5AF2", "#64D2FF"]
         let values = palette.isEmpty ? fallback : palette
         return (0..<4).map { Color(hex: values[$0 % values.count]) }
+    }
+
+    private var backgroundColor: Color {
+        switch colorScheme {
+        case .dark:
+            Color(red: 0.025, green: 0.032, blue: 0.052)
+        default:
+            Color(red: 0.91, green: 0.93, blue: 0.96)
+        }
     }
 
     private var frameInterval: TimeInterval {

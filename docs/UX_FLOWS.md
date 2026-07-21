@@ -133,10 +133,11 @@ mode icons, work/rest durations, and usage guidance; macOS keeps the same conten
 in a popover. The timer exposes seek backward, Play/Pause, seek forward, destroy,
 stop, and break while preserving the established player size. iPhone and macOS
 share the same Metal stream renderer, including palette, speed, growth, glow,
-and completion impulse. Below it, a horizontal page gesture moves between
-today's Tasks/Habits and compact Statistics. The iPhone owns this presentation
-while reusing shared models, persistence, timer state, dashboard projections,
-progress logic, and localization.
+completion impulse, and a theme-aware light or dark background. Below it, a
+horizontal page gesture moves between today's Tasks/Habits and compact
+Statistics. The iPhone owns this presentation while reusing shared models,
+persistence, timer state, dashboard projections, progress logic, and
+localization.
 
 Opening `タスク` replaces the Flow bottom navigation with a floating
 material-backed messenger composer. Shared quick-input tokens (`[ ]`, `[1b]`,
