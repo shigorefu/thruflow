@@ -16,6 +16,7 @@ struct IOSTasksView: View {
     @State private var editorMode: IOSTaskEditorMode?
     @State private var backlogMode: IOSBacklogMode?
     @State private var showsComposer = false
+    @State private var isClosing = false
 
     init(close: @escaping () -> Void = {}) {
         self.close = close
@@ -59,16 +60,7 @@ struct IOSTasksView: View {
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if showsComposer {
                 IOSTaskComposer(directions: activeDirections)
-                    .transition(
-                        .asymmetric(
-                            insertion: .move(edge: .bottom)
-                                .combined(with: .scale(scale: 0.78, anchor: .bottom))
-                                .combined(with: .opacity),
-                            removal: .move(edge: .bottom)
-                                .combined(with: .scale(scale: 0.82, anchor: .bottom))
-                                .combined(with: .opacity)
-                        )
-                    )
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
         .sheet(item: $editorMode) { mode in
@@ -101,19 +93,28 @@ struct IOSTasksView: View {
     @MainActor
     private func presentComposer() async {
         guard !showsComposer else { return }
-        await Task.yield()
-        withAnimation(.spring(duration: 0.42, bounce: 0.16)) {
+
+        do {
+            try await Task.sleep(for: .milliseconds(220))
+        } catch {
+            return
+        }
+
+        withAnimation(.easeOut(duration: 0.28)) {
             showsComposer = true
         }
     }
 
     private func closeTasks() {
-        withAnimation(.snappy(duration: 0.22)) {
+        guard !isClosing else { return }
+        isClosing = true
+
+        withAnimation(.easeIn(duration: 0.24)) {
             showsComposer = false
         }
 
         Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(140))
+            try? await Task.sleep(for: .milliseconds(260))
             close()
         }
     }

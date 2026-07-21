@@ -124,9 +124,10 @@ The first iPhone surface is a Flow-first system `TabView`, with an independent
 remains visible and marks the active
 destination across five items: `Flow`, `タスク`, `履歴`, `方向`, and `統計`.
 On iOS 26 it uses the native Liquid Glass selection indicator and minimizes on
-scroll; iOS 17–25 retain the system tab-bar appearance. Only `タスク` replaces
-this surface with the messenger composer through a spring expansion from the
-bottom, and the reverse animation runs before the clear return-to-Flow action.
+scroll; iOS 17–25 retain the system tab-bar appearance. When `タスク` opens,
+the system tab bar disappears first and the messenger composer then slides up
+from the bottom. On return, the composer slides down completely before the
+system tab bar reappears and `Flow` becomes active.
 `設定` is reached from the trailing More menu.
 
 The first Flow viewport presents the softened animated stream and Elastic
@@ -143,8 +144,8 @@ cards in the vertical dashboard. The iPhone owns this presentation while reusing
 persistence, timer state, dashboard projections, progress logic, and
 localization.
 
-Opening `タスク` hides the system tab bar and expands a material-backed
-messenger composer from the same bottom edge. Shared quick-input tokens (`[ ]`, `[1b]`,
+Opening `タスク` hides the system tab bar and then slides a material-backed
+messenger composer in from the same bottom edge. Shared quick-input tokens (`[ ]`, `[1b]`,
 `[25m]`, `@`, `!`, `/`, and `#`) update the composer controls while typing, and
 contextual autocomplete is shown above the field. The date control supports
 Today, Tomorrow, No Date, and an arbitrary date through the native graphical
