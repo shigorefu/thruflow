@@ -15,6 +15,7 @@ struct IOSTasksView: View {
     @State private var filter = TaskCalendarFilter.all
     @State private var editorMode: IOSTaskEditorMode?
     @State private var backlogMode: IOSBacklogMode?
+    @State private var showsComposer = false
 
     init(close: @escaping () -> Void = {}) {
         self.close = close
@@ -50,13 +51,25 @@ struct IOSTasksView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                Button(action: close) {
+                Button(action: closeTasks) {
                     Label(String(localized: "Flow"), systemImage: "chevron.left")
                 }
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            IOSTaskComposer(directions: activeDirections)
+            if showsComposer {
+                IOSTaskComposer(directions: activeDirections)
+                    .transition(
+                        .asymmetric(
+                            insertion: .move(edge: .bottom)
+                                .combined(with: .scale(scale: 0.78, anchor: .bottom))
+                                .combined(with: .opacity),
+                            removal: .move(edge: .bottom)
+                                .combined(with: .scale(scale: 0.82, anchor: .bottom))
+                                .combined(with: .opacity)
+                        )
+                    )
+            }
         }
         .sheet(item: $editorMode) { mode in
             NavigationStack {
@@ -75,10 +88,34 @@ struct IOSTasksView: View {
                 )
             }
         }
-        .task { ensureRequiredTodos() }
+        .task {
+            ensureRequiredTodos()
+            await presentComposer()
+        }
+        .onDisappear { showsComposer = false }
         .onChange(of: range) { _, _ in ensureRequiredTodos() }
         .onChange(of: selectedDate) { _, _ in ensureRequiredTodos() }
         .onChange(of: directions.map(\.updatedAt)) { _, _ in ensureRequiredTodos() }
+    }
+
+    @MainActor
+    private func presentComposer() async {
+        guard !showsComposer else { return }
+        await Task.yield()
+        withAnimation(.spring(duration: 0.42, bounce: 0.16)) {
+            showsComposer = true
+        }
+    }
+
+    private func closeTasks() {
+        withAnimation(.snappy(duration: 0.22)) {
+            showsComposer = false
+        }
+
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(140))
+            close()
+        }
     }
 
     private var controls: some View {

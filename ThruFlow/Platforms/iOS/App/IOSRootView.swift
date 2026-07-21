@@ -41,13 +41,24 @@ struct IOSRootView: View {
     @State private var selection = IOSAppRoute.flow
     @State private var showsSettings = false
 
+    private var selectionBinding: Binding<IOSAppRoute> {
+        Binding(
+            get: { selection },
+            set: { route in
+                withAnimation(.snappy(duration: 0.28)) {
+                    selection = route
+                }
+            }
+        )
+    }
+
     var body: some View {
-        NavigationStack {
-            destination(for: selection)
-        }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            if selection != .tasks {
-                IOSBottomNavigation(selection: $selection)
+        Group {
+            if #available(iOS 26.0, *) {
+                tabs
+                    .tabBarMinimizeBehavior(.onScrollDown)
+            } else {
+                tabs
             }
         }
         .sheet(isPresented: $showsSettings) {
@@ -57,13 +68,30 @@ struct IOSRootView: View {
         }
     }
 
+    private var tabs: some View {
+        TabView(selection: selectionBinding) {
+            ForEach(IOSAppRoute.tabs) { route in
+                NavigationStack {
+                    destination(for: route)
+                }
+                .toolbar(route == .tasks ? .hidden : .visible, for: .tabBar)
+                .tabItem {
+                    Label(route.title, systemImage: route.systemImage)
+                }
+                .tag(route)
+                .accessibilityLabel(route.title)
+            }
+        }
+        .tint(.accentColor)
+    }
+
     @ViewBuilder
     private func destination(for route: IOSAppRoute) -> some View {
         switch route {
         case .flow:
             IOSFlowView(open: open)
         case .tasks:
-            IOSTasksView { selection = .flow }
+            IOSTasksView { open(.flow) }
         case .history:
             IOSHistoryView()
         case .directions:
@@ -79,54 +107,7 @@ struct IOSRootView: View {
         if route == .settings {
             showsSettings = true
         } else {
-            selection = route
+            selectionBinding.wrappedValue = route
         }
     }
-}
-
-private struct IOSBottomNavigation: View {
-    @Binding var selection: IOSAppRoute
-
-    var body: some View {
-        HStack(spacing: 2) {
-            ForEach(IOSAppRoute.tabs) { route in
-                Button {
-                    withAnimation(.snappy(duration: 0.22)) {
-                        selection = route
-                    }
-                } label: {
-                    VStack(spacing: 3) {
-                        Image(systemName: route.systemImage)
-                            .font(.body.weight(.semibold))
-                        Text(route.title)
-                            .font(.caption2)
-                            .lineLimit(1)
-                    }
-                    .foregroundStyle(selection == route ? Color.accentColor : Color.secondary)
-                    .frame(maxWidth: .infinity, minHeight: 48)
-                    .background {
-                        if selection == route {
-                            RoundedRectangle(cornerRadius: 14)
-                                .fill(Color.accentColor.opacity(0.13))
-                                .matchedGeometryEffect(id: "selected-tab", in: tabNamespace)
-                        }
-                    }
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(selection == route ? .isSelected : [])
-            }
-        }
-        .padding(5)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20))
-        .overlay {
-            RoundedRectangle(cornerRadius: 20)
-                .strokeBorder(Color.primary.opacity(0.09))
-        }
-        .shadow(color: .black.opacity(0.12), radius: 16, y: 6)
-        .padding(.horizontal, 10)
-        .padding(.bottom, 5)
-    }
-
-    @Namespace private var tabNamespace
 }
