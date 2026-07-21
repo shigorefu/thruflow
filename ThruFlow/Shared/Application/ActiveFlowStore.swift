@@ -627,6 +627,6 @@ private extension UserDefaults {
 
     func flowMode(forKey key: String) -> FlowMode? {
         guard let value = string(forKey: key) else { return nil }
-        return FlowMode(rawValue: value)
+        return FlowMode.persistedMode(rawValue: value)
     }
 }

@@ -9,16 +9,18 @@ import Foundation
 import SwiftData
 
 enum FlowMode: String, CaseIterable, Codable, Identifiable {
-    case twelveThree
+    case sprint
     case twentyFiveFive
     case fiftyTen
     case adaptive
+
+    private static let legacySprintRawValue = "twelveThree"
 
     var id: String { rawValue }
 
     var displayName: String {
         switch self {
-        case .twelveThree:
+        case .sprint:
             String(localized: "Sprint")
         case .twentyFiveFive:
             String(localized: "Focus")
@@ -31,7 +33,7 @@ enum FlowMode: String, CaseIterable, Codable, Identifiable {
 
     var initialFocusDurationSeconds: Int {
         switch self {
-        case .twelveThree, .adaptive:
+        case .sprint, .adaptive:
             12 * 60
         case .twentyFiveFive:
             25 * 60
@@ -42,7 +44,7 @@ enum FlowMode: String, CaseIterable, Codable, Identifiable {
 
     var breakDurationSeconds: Int {
         switch self {
-        case .twelveThree, .adaptive:
+        case .sprint, .adaptive:
             3 * 60
         case .twentyFiveFive:
             5 * 60
@@ -53,7 +55,7 @@ enum FlowMode: String, CaseIterable, Codable, Identifiable {
 
     var blockSummary: String {
         switch self {
-        case .twelveThree:
+        case .sprint:
             String(localized: "12分集中 / 3分休憩")
         case .twentyFiveFive:
             String(localized: "25分集中 / 5分休憩")
@@ -64,15 +66,39 @@ enum FlowMode: String, CaseIterable, Codable, Identifiable {
         }
     }
 
-    var shortDurationText: String {
+    var compactDurationText: String {
         switch self {
-        case .twelveThree, .adaptive:
+        case .sprint, .adaptive:
             "12/3"
         case .twentyFiveFive:
             "25/5"
         case .fiftyTen:
             "50/10"
         }
+    }
+
+    static func persistedMode(rawValue: String) -> FlowMode? {
+        if rawValue == legacySprintRawValue {
+            return .sprint
+        }
+        return FlowMode(rawValue: rawValue)
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let rawValue = try container.decode(String.self)
+        guard let mode = Self.persistedMode(rawValue: rawValue) else {
+            throw DecodingError.dataCorruptedError(
+                in: container,
+                debugDescription: "Unknown FlowMode raw value: \(rawValue)"
+            )
+        }
+        self = mode
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
     }
 
     static func adaptiveBreakDurationSeconds(forFocusSeconds seconds: Int) -> Int {
@@ -207,7 +233,7 @@ final class FlowSession {
     }
 
     var mode: FlowMode {
-        get { FlowMode(rawValue: modeRawValue) ?? .adaptive }
+        get { FlowMode.persistedMode(rawValue: modeRawValue) ?? .adaptive }
         set { modeRawValue = newValue.rawValue }
     }
 

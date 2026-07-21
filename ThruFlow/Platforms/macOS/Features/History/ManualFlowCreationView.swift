@@ -252,7 +252,7 @@ struct ManualFlowCreationView: View {
     }
 
     private var manualModes: [FlowMode] {
-        [.twelveThree, .twentyFiveFive, .fiftyTen]
+        [.sprint, .twentyFiveFive, .fiftyTen]
     }
 
     private func field<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {

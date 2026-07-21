@@ -60,6 +60,9 @@ Persisted data includes:
 - a cascade relationship to its `FlowSegment` records.
 
 Existing records with no `seriesID` are treated as a one-session series whose ID is the session ID.
+New Sprint records persist the stable raw value `sprint`. The legacy
+`twelveThree` value is accepted only while reading older local and CloudKit
+records, then normal writes use `sprint`.
 
 ## FlowSegment
 

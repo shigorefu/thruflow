@@ -11,6 +11,16 @@ import Testing
 @testable import ThruFlow
 
 struct FlowTests {
+    @Test @MainActor func sprintUsesNewRawValueAndReadsLegacyPersistenceValue() throws {
+        #expect(FlowMode.sprint.rawValue == "sprint")
+        #expect(FlowMode.persistedMode(rawValue: "sprint") == .sprint)
+        #expect(FlowMode.persistedMode(rawValue: "twelveThree") == .sprint)
+
+        let legacyData = Data("\"twelveThree\"".utf8)
+        #expect(try JSONDecoder().decode(FlowMode.self, from: legacyData) == .sprint)
+        #expect(String(decoding: try JSONEncoder().encode(FlowMode.sprint), as: UTF8.self) == "\"sprint\"")
+    }
+
     @Test func blockDisplayUsesProductValues() {
         #expect(BlockUnit.displayText(forFocusedSeconds: 11 * 60) == "0 Block")
         #expect(BlockUnit.displayText(forFocusedSeconds: 12 * 60) == "0.5 Block")
@@ -277,8 +287,8 @@ struct FlowTests {
         let engine = FlowTimerEngine()
         let start = Date(timeIntervalSince1970: 4_000)
 
-        let twelve = engine.start(mode: .twelveThree, now: start)
-        let twentyFive = engine.seekForward(twelve, now: start)
+        let sprint = engine.start(mode: .sprint, now: start)
+        let twentyFive = engine.seekForward(sprint, now: start)
         let fifty = engine.seekForward(twentyFive, now: start)
         let seventyFive = engine.seekForward(fifty, now: start)
 

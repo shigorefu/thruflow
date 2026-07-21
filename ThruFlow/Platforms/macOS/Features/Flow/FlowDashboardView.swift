@@ -840,7 +840,7 @@ struct FlowDashboardView: View {
 
     private var modeBackgroundTint: Color {
         switch activeFlowStore.selectedMode {
-        case .twelveThree, .adaptive:
+        case .sprint, .adaptive:
             Color.orange.opacity(0.025)
         case .twentyFiveFive:
             Color.blue.opacity(0.025)
@@ -851,7 +851,7 @@ struct FlowDashboardView: View {
 
     private var modeSurfaceTint: Color {
         switch activeFlowStore.selectedMode {
-        case .twelveThree, .adaptive:
+        case .sprint, .adaptive:
             Color.orange.opacity(0.035)
         case .twentyFiveFive:
             Color.cyan.opacity(0.035)

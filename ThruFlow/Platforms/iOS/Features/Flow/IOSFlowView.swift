@@ -381,7 +381,7 @@ struct IOSFlowView: View {
 
     private var timerText: String {
         activeFlowStore.timerState == nil
-            ? activeFlowStore.selectedMode.shortDurationText
+            ? activeFlowStore.selectedMode.compactDurationText
             : activeFlowStore.remainingText(now: activeFlowStore.displayDate)
     }
 
@@ -396,7 +396,7 @@ struct IOSFlowView: View {
 
     private var modeSurfaceTint: Color {
         switch activeFlowStore.selectedMode {
-        case .twelveThree, .adaptive:
+        case .sprint, .adaptive:
             Color.orange.opacity(0.035)
         case .twentyFiveFive:
             Color.cyan.opacity(0.035)

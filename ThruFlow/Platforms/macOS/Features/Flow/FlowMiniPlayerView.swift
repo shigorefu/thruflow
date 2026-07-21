@@ -295,7 +295,7 @@ struct FlowMiniPlayerView: View {
                 .foregroundStyle(.secondary)
 
             HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text(activeFlowStore.timerState == nil ? activeFlowStore.selectedMode.shortDurationText : activeFlowStore.remainingText(now: now))
+                Text(activeFlowStore.timerState == nil ? activeFlowStore.selectedMode.compactDurationText : activeFlowStore.remainingText(now: now))
                     .font(.system(.title2, design: .monospaced).weight(.bold))
                     .foregroundStyle(.primary)
                     .monospacedDigit()
