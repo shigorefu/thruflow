@@ -127,8 +127,9 @@ The first iPhone release includes the Flow dashboard, Tasks/Habits across
 day/week/month ranges, Direction management and ordering, basic day/week/month
 History browsing, a compact contribution Statistics screen, basic settings,
 and CloudKit synchronization. Its persistent five-item navigation contains
-`Flow`, `タスク`, `履歴`, `方向`, and `統計`; Tasks temporarily replaces it with
-the quick-capture composer.
+`Flow`, `タスク`, `履歴`, `方向`, and `統計`. The shell uses the system `TabView`
+so iOS owns selection, accessibility, Liquid Glass, and scroll minimization;
+Tasks temporarily hides the tab bar and animates in the quick-capture composer.
 Advanced Statistics and full calendar/history editing remain macOS-only until
 the next iPhone stage. Shared calculations are reused, but desktop views are
 never compiled into the iOS target.
