@@ -15,6 +15,7 @@ struct IOSTasksView: View {
     @State private var filter = TaskCalendarFilter.all
     @State private var editorMode: IOSTaskEditorMode?
     @State private var backlogMode: IOSBacklogMode?
+    @State private var dayPage = 0
     @State private var showsComposer = false
     @State private var isClosing = false
 
@@ -133,28 +134,38 @@ struct IOSTasksView: View {
     private var controls: some View {
         VStack(spacing: 10) {
             HStack(spacing: 10) {
-                Picker(String(localized: "フィルター"), selection: $filter) {
-                    ForEach(TaskCalendarFilter.allCases) { value in
-                        Text(value.displayName).tag(value)
+                Menu {
+                    Picker(String(localized: "フィルター"), selection: $filter) {
+                        ForEach(TaskCalendarFilter.allCases) { value in
+                            Text(value.displayName).tag(value)
+                        }
                     }
+                } label: {
+                    Label(filter.displayName, systemImage: "line.3.horizontal.decrease")
                 }
-                .pickerStyle(.segmented)
+                .buttonStyle(.bordered)
 
+                Spacer(minLength: 0)
+
+                Button(String(localized: "今日")) {
+                    selectedDate = calendar.startOfDay(for: .now)
+                }
+                .buttonStyle(.borderedProminent)
+            }
+
+            HStack {
+                Spacer(minLength: 0)
                 Picker(String(localized: "表示範囲"), selection: $range) {
                     ForEach(TaskCalendarRange.allCases) { value in
                         Text(value.displayName).tag(value)
                     }
                 }
                 .pickerStyle(.segmented)
-                .frame(maxWidth: 150)
+                .frame(width: 180)
+                Spacer(minLength: 0)
             }
 
             HStack(spacing: 8) {
-                Button(String(localized: "今日")) {
-                    selectedDate = calendar.startOfDay(for: .now)
-                }
-                .buttonStyle(.borderedProminent)
-
                 backlogButton(
                     String(localized: "期限切れ"),
                     count: backlog.overdue.count,
@@ -173,6 +184,13 @@ struct IOSTasksView: View {
 
             if range == .oneDay {
                 IOSWeekDateStrip(
+                    anchorDate: selectedDate,
+                    selectedDate: $selectedDate,
+                    todos: todos,
+                    filter: filter
+                )
+            } else if range == .sevenDays {
+                IOSWeekPager(
                     selectedDate: $selectedDate,
                     todos: todos,
                     filter: filter
@@ -214,7 +232,7 @@ struct IOSTasksView: View {
     private var taskContent: some View {
         switch range {
         case .oneDay:
-            groupedList(for: selectedDate, todos: selectedTodos)
+            dayPager
         case .sevenDays:
             ScrollView {
                 LazyVStack(spacing: 14) {
@@ -240,6 +258,32 @@ struct IOSTasksView: View {
                 }
                 .padding(12)
             }
+        }
+    }
+
+    private var dayPager: some View {
+        TabView(selection: $dayPage) {
+            ForEach(-1...1, id: \.self) { offset in
+                let date = calendar.date(byAdding: .day, value: offset, to: selectedDate) ?? selectedDate
+                groupedList(for: date, todos: todos(on: date))
+                    .tag(offset)
+            }
+        }
+        .tabViewStyle(.page(indexDisplayMode: .never))
+        .onChange(of: dayPage) { _, offset in
+            moveDay(by: offset)
+        }
+    }
+
+    private func moveDay(by offset: Int) {
+        guard offset != 0,
+              let date = calendar.date(byAdding: .day, value: offset, to: selectedDate) else { return }
+
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            selectedDate = calendar.startOfDay(for: date)
+            dayPage = 0
         }
     }
 
@@ -359,12 +403,13 @@ private struct IOSWeekDateStrip: View {
     @Environment(\.calendar) private var calendar
     @Environment(\.locale) private var locale
 
+    let anchorDate: Date
     @Binding var selectedDate: Date
     let todos: [Todo]
     let filter: TaskCalendarFilter
 
     private var dates: [Date] {
-        TaskCalendarBuilder(calendar: calendar).dates(for: .sevenDays, anchoredAt: selectedDate)
+        TaskCalendarBuilder(calendar: calendar).dates(for: .sevenDays, anchoredAt: anchorDate)
     }
 
     var body: some View {
@@ -377,7 +422,7 @@ private struct IOSWeekDateStrip: View {
                     VStack(spacing: 4) {
                         Text(date.formatted(.dateTime.locale(locale).weekday(.narrow)))
                             .font(.caption2.weight(.semibold))
-                        Text(date.formatted(.dateTime.day()))
+                        Text("\(calendar.component(.day, from: date))")
                             .font(.body.weight(.semibold))
                             .monospacedDigit()
                         HStack(spacing: 2) {
@@ -407,6 +452,51 @@ private struct IOSWeekDateStrip: View {
             .filter { seen.insert($0.lowercased()).inserted }
             .prefix(4)
             .map { $0 }
+    }
+}
+
+private struct IOSWeekPager: View {
+    @Environment(\.calendar) private var calendar
+
+    @Binding var selectedDate: Date
+    let todos: [Todo]
+    let filter: TaskCalendarFilter
+
+    @State private var page = 0
+
+    var body: some View {
+        TabView(selection: $page) {
+            ForEach(-1...1, id: \.self) { offset in
+                IOSWeekDateStrip(
+                    anchorDate: weekDate(offset: offset),
+                    selectedDate: $selectedDate,
+                    todos: todos,
+                    filter: filter
+                )
+                .padding(.horizontal, 1)
+                .tag(offset)
+            }
+        }
+        .tabViewStyle(.page(indexDisplayMode: .never))
+        .frame(height: 59)
+        .onChange(of: page) { _, offset in
+            moveWeek(by: offset)
+        }
+    }
+
+    private func weekDate(offset: Int) -> Date {
+        calendar.date(byAdding: .weekOfYear, value: offset, to: selectedDate) ?? selectedDate
+    }
+
+    private func moveWeek(by offset: Int) {
+        guard offset != 0 else { return }
+
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            selectedDate = calendar.startOfDay(for: weekDate(offset: offset))
+            page = 0
+        }
     }
 }
 

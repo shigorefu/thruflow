@@ -162,17 +162,30 @@ struct IOSFlowView: View {
                         .font(.headline)
                         .foregroundStyle(.primary)
                         .lineLimit(1)
-                    if selectedTodo != nil, let direction = selectedDirection {
-                        Text(direction.name)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+
+                    HStack(spacing: 5) {
+                        Circle()
+                            .fill(tint)
+                            .frame(width: 6, height: 6)
+                        Text(selectedDirection?.name ?? String(localized: "方向"))
+                            .lineLimit(1)
                     }
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(selectedDirection == nil ? Color.secondary : tint)
                 }
 
                 Spacer(minLength: 0)
                 Image(systemName: "chevron.down")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(tint)
+                    .frame(width: 28, height: 28)
+                    .background(tint.opacity(0.12), in: Circle())
+            }
+            .padding(10)
+            .background(tint.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
+            .overlay {
+                RoundedRectangle(cornerRadius: 14)
+                    .strokeBorder(tint.opacity(selectedDirection == nil ? 0.55 : 0.28))
             }
             .contentShape(Rectangle())
         }

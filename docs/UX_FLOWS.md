@@ -153,7 +153,12 @@ picker. Unspecified controls remain visibly labeled `種類`, `方向`, `優先�
 and `日付`, while submission applies the shared Check, inbox Direction, medium
 priority, and Today defaults. The screen provides filtered day/week/month
 ranges, automatic Habit instances, overdue and no-date inboxes, completion,
-progress, and native Task editing. `履歴` provides touch-native `日 | 週 | 月` calendar ranges:
+progress, and native Task editing. The Task filter is a system menu, `今日` is a
+separate trailing action, Japanese day cells use bare numbers, and the system
+page interaction moves between adjacent days. Week uses the same page behavior
+to move a complete seven-day strip at a time. The Flow player context is a
+visually bounded, Direction-tinted system button so its picker affordance stays
+clear. `履歴` provides touch-native `日 | 週 | 月` calendar ranges:
 day uses a vertically scrolling 24-hour timeline, week uses seven horizontally
 scrollable day columns, and month uses Apple Calendar-style numeric days with
 Direction-colored activity dots. Flow and rest remain separate calendar records
