@@ -34,14 +34,8 @@ struct IOSTasksView: View {
         }
         .listStyle(.insetGrouped)
         .navigationTitle(String(localized: "タスク"))
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    editorMode = .create
-                } label: {
-                    Label(String(localized: "タスクを追加"), systemImage: "plus")
-                }
-            }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            IOSTaskComposer(directions: activeDirections)
         }
         .overlay {
             if todayTodos.isEmpty {
@@ -122,7 +116,7 @@ struct IOSTasksView: View {
     }
 }
 
-private struct IOSTaskRow: View {
+struct IOSTaskRow: View {
     @Environment(\.modelContext) private var modelContext
 
     let todo: Todo

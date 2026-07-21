@@ -4,9 +4,9 @@
 
 ThruFlow keeps one product model and one persistence model while allowing each
 Apple platform to provide its own application shell and feature presentation.
-macOS remains the complete product surface. The iPhone app is a separate,
-narrow MVP presentation that reuses the same domain, application state, and
-persistence schema without copying the desktop UI.
+macOS remains the complete editing and analysis surface. The iPhone app is a
+separate, Flow-first MVP presentation that reuses the same domain, application
+state, and persistence schema without copying the desktop UI.
 
 ## Source Layout
 
@@ -26,8 +26,8 @@ ThruFlow/
       Features/     Current macOS feature screens
       Support/      AppKit adapters used by the macOS presentation layer
     iOS/
-      App/          iPhone composition root, tabs, entitlements, and Info.plist
-      Features/     Native iPhone Flow, Tasks, Directions, and Settings screens
+      App/          iPhone composition root, navigation, entitlements, and Info.plist
+      Features/     Native iPhone Flow, Tasks, History, Directions, and Settings
 ```
 
 `ThruFlow` and `ThruFlow iOS` are separate application targets. Explicit source
@@ -60,8 +60,8 @@ Platforms/iOS  ──┘              │
   Japanese is the source and fallback language.
 - `Platforms/macOS` owns navigation, windows, menu-bar scenes, keyboard/focus
   integration, drag-and-drop presentation, and the current desktop layouts.
-- `Platforms/iOS` owns the iPhone tab shell and compact Flow, Tasks,
-  Directions, and Settings presentations.
+- `Platforms/iOS` owns the Flow-first iPhone navigation shell and compact Flow,
+  Tasks, History, Directions, and Settings presentations.
 - Platform-specific behavior is reached through small adapters in the owning
   platform folder. Shared code does not use conditional AppKit/UIKit imports.
 
@@ -121,11 +121,11 @@ view-local relative deltas.
 
 ## iPhone MVP Boundary
 
-The first iPhone release includes Flow, today's Tasks/Habits, Direction
-management, basic settings, and CloudKit synchronization. Advanced Statistics,
-complex History, and full calendar editing remain macOS-only until the next
-iPhone stage. Their shared calculations may be reused later, but their desktop
-views must not be compiled into the iOS target.
+The first iPhone release includes the Flow dashboard, today's Tasks/Habits,
+Direction management, basic day/week/month History browsing, basic settings,
+and CloudKit synchronization. Advanced Statistics and full calendar/history
+editing remain macOS-only until the next iPhone stage. Shared calculations are
+reused, but desktop views are never compiled into the iOS target.
 
 ## Migration Strategy
 
@@ -138,5 +138,5 @@ views must not be compiled into the iOS target.
 ## Non-Goals
 
 This cross-platform stage does not add new business rules or alter macOS
-behavior. It does not include advanced iPhone Statistics, complex History, full
-calendar editing, widgets, Live Activities, or Apple Watch.
+behavior. It does not include advanced iPhone Statistics, full History/calendar
+editing, widgets, Live Activities, or Apple Watch.

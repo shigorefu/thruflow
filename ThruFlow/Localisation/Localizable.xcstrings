@@ -82,7 +82,20 @@
       }
     },
     "#tag" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "#tag"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "#тег"
+          }
+        }
+      }
     },
     "%.0f Blocks" : {
       "localizations" : {
@@ -436,9 +449,21 @@
     },
     "%@: %lld" : {
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@: %2$lld"
+          }
+        },
         "ja" : {
           "stringUnit" : {
             "state" : "new",
+            "value" : "%1$@: %2$lld"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "%1$@: %2$lld"
           }
         }
@@ -516,9 +541,21 @@
     },
     "%lld %@" : {
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld %2$@"
+          }
+        },
         "ja" : {
           "stringUnit" : {
             "state" : "new",
+            "value" : "%1$lld %2$@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "%1$lld %2$@"
           }
         }
@@ -889,7 +926,20 @@
       }
     },
     "🎯" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "🎯"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "🎯"
+          }
+        }
+      }
     },
     "0 Block" : {
       "localizations" : {
@@ -1292,7 +1342,20 @@
       }
     },
     "Flowタイプ" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flow Type"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Тип Flow"
+          }
+        }
+      }
     },
     "Flowタイマー" : {
       "localizations" : {
@@ -1519,7 +1582,20 @@
       }
     },
     "Flow完了" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flow Complete"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flow завершён"
+          }
+        }
+      }
     },
     "Flow履歴を開く" : {
       "localizations" : {
@@ -2712,7 +2788,20 @@
       }
     },
     "タスクを選択" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select Task"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбрать задачу"
+          }
+        }
+      }
     },
     "タスク作成を閉じる" : {
       "localizations" : {
@@ -3418,6 +3507,22 @@
         }
       }
     },
+    "今日のタスク" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today's Tasks"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Задачи на сегодня"
+          }
+        }
+      }
+    },
     "今日のタスクはありません" : {
       "localizations" : {
         "en" : {
@@ -3729,7 +3834,20 @@
       }
     },
     "何をしましたか" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What did you do?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Что вы сделали?"
+          }
+        }
+      }
     },
     "何をしましたか？" : {
       "localizations" : {
@@ -4036,7 +4154,20 @@
       }
     },
     "回 / 週" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Times / Week"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Раз в неделю"
+          }
+        }
+      }
     },
     "固定された習慣の日付は変更できません" : {
       "localizations" : {
@@ -4524,6 +4655,22 @@
         }
       }
     },
+    "前へ" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Previous"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Назад"
+          }
+        }
+      }
+    },
     "方向" : {
       "localizations" : {
         "en" : {
@@ -4605,7 +4752,20 @@
       }
     },
     "方向を作成" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create Direction"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Создать направление"
+          }
+        }
+      }
     },
     "方向を削除" : {
       "localizations" : {
@@ -5215,6 +5375,22 @@
         }
       }
     },
+    "次へ" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вперёд"
+          }
+        }
+      }
+    },
     "次を選択" : {
       "localizations" : {
         "en" : {
@@ -5792,7 +5968,20 @@
       }
     },
     "繰り返し" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Repeats"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Повторения"
+          }
+        }
+      }
     },
     "習慣" : {
       "localizations" : {
