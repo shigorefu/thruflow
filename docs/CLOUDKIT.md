@@ -3,9 +3,8 @@
 ## Configuration
 
 - Apple Developer Team: `BR727PS795`.
-- iOS bundle identifier: `com.shigorefu.thruflow`.
-- The existing macOS bundle identifier remains `com.shigorefu.ThruFlow` to
-  preserve its sandbox and local database path.
+- macOS and iOS bundle identifier: `com.shigorefu.thruflow`.
+- Test bundle identifiers use the lowercase suffixes `.tests` and `.uitests`.
 - Shared container: `iCloud.com.shigorefu.thruflow`.
 - Service: CloudKit private database. There is no public/shared database product
   behavior in the current MVP.
