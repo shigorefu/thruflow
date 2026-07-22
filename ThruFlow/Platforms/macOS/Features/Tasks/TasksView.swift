@@ -88,21 +88,25 @@ struct TasksView: View {
         }
         .navigationTitle(String(localized: "タスク"))
         .toolbar {
-            ToolbarItemGroup(placement: .primaryAction) {
-                backlogToolbarButton(
-                    String(localized: "期限切れ"),
-                    count: backlogSnapshot.overdue.count,
-                    mode: .overdue
-                )
+            ToolbarItem(placement: .primaryAction) {
+                HStack(spacing: 10) {
+                    backlogToolbarButton(
+                        String(localized: "期限切れ"),
+                        count: backlogSnapshot.overdue.count,
+                        mode: .overdue
+                    )
 
-                Divider()
-                    .frame(height: 18)
+                    Rectangle()
+                        .fill(Color.secondary.opacity(0.3))
+                        .frame(width: 1, height: 16)
 
-                backlogToolbarButton(
-                    String(localized: "日付なし"),
-                    count: backlogSnapshot.unscheduled.count,
-                    mode: .unscheduled
-                )
+                    backlogToolbarButton(
+                        String(localized: "日付なし"),
+                        count: backlogSnapshot.unscheduled.count,
+                        mode: .unscheduled
+                    )
+                }
+                .fixedSize(horizontal: true, vertical: true)
             }
         }
         .safeAreaInset(edge: .bottom) {
