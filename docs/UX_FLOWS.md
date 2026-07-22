@@ -229,6 +229,12 @@ filters are removed. `タスク` and `方向` use a wide two-column layout with
 aggregates on the left and a mini-calendar plus range summary on the right. At
 compact widths, the calendar and summary stack above the aggregate list.
 
+On iPhone, the trailing History dropdown switches between the same `Flow`,
+`タスク`, and `方向` modes without duplicating date navigation. Task and Direction
+aggregates use the active `日 | 週 | 月` interval. Task History only lists items
+with recorded focused time; scheduled or completed Tasks with `0分` are omitted on
+both platforms.
+
 In `日`, the right pane keeps the only wide-layout mini-calendar above the selected record properties. Flow/rest visibility uses the shared icon-only control row filter; there is no separate filter rail or timeline-header filter. Selecting a Flow or rest updates the right pane; changing the day clears the selection. Elastic includes the day's timed records and current hour with one-hour context and a four-hour minimum. `24時間` shows the full day, and the preference persists locally. At compact widths, selection opens the same inspector as a sheet so the timeline retains useful width.
 
 Week keeps date headers fixed while hours scroll. Its right mini-calendar highlights the complete selected week, and choosing any date selects that week. Opening a day/week grid scrolls near the current time when today is visible, otherwise near the first Flow. A red line marks the current time. Month keeps a minimum full-grid width and a right `1月...12月` year picker. Medium/narrow layouts preserve stable calendar widths through horizontal scrolling.

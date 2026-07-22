@@ -7,9 +7,11 @@ struct IOSHistoryView: View {
 
     @Query(sort: \FlowSession.startedAt) private var sessions: [FlowSession]
     @Query(sort: \FlowBreak.startedAt) private var flowBreaks: [FlowBreak]
+    @Query(sort: \Todo.updatedAt, order: .reverse) private var todos: [Todo]
 
     @State private var selectedDate = Date.now
     @State private var range = HistoryCalendarRange.day
+    @State private var selectedMode = DayHistoryMode.calendar
     @State private var selectedItem: HistoryCalendarItem?
 
     var body: some View {
@@ -18,45 +20,93 @@ struct IOSHistoryView: View {
             Divider()
 
             Group {
-                switch range {
-                case .day:
-                    IOSHistoryDayTimeline(
-                        date: selectedDate,
-                        items: snapshot.items,
-                        selection: $selectedItem
-                    )
-                case .week:
-                    IOSHistoryWeekTimeline(
-                        interval: snapshot.interval,
-                        items: snapshot.items,
-                        selection: $selectedItem
-                    )
-                case .month:
-                    IOSHistoryMonthGrid(
-                        interval: snapshot.interval,
-                        items: snapshot.items,
-                        selectedDate: $selectedDate
-                    ) {
-                        range = .day
-                    }
+                switch selectedMode {
+                case .calendar:
+                    calendarContent
+                case .tasks:
+                    IOSHistoryTaskSummaryList(snapshot: historySnapshot)
+                case .directions:
+                    IOSHistoryDirectionSummaryList(snapshot: historySnapshot)
                 }
             }
         }
         .navigationTitle(String(localized: "履歴"))
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                modeMenu
+            }
+        }
         .sheet(item: $selectedItem) { item in
             IOSHistoryItemDetail(item: item)
                 .presentationDetents([.medium])
         }
     }
 
-    private var snapshot: HistoryCalendarSnapshot {
+    private var calendarSnapshot: HistoryCalendarSnapshot {
         let interval = range.interval(containing: selectedDate, calendar: calendar)
         return HistoryCalendarBuilder(calendar: calendar).build(
             interval: interval,
             sessions: sessions,
             breaks: flowBreaks
         )
+    }
+
+    private var historySnapshot: DayHistorySnapshot {
+        DayHistoryBuilder(calendar: calendar).build(
+            interval: range.interval(containing: selectedDate, calendar: calendar),
+            sessions: sessions,
+            todos: todos
+        )
+    }
+
+    @ViewBuilder
+    private var calendarContent: some View {
+        switch range {
+        case .day:
+            IOSHistoryDayTimeline(
+                date: selectedDate,
+                items: calendarSnapshot.items,
+                selection: $selectedItem
+            )
+        case .week:
+            IOSHistoryWeekTimeline(
+                interval: calendarSnapshot.interval,
+                items: calendarSnapshot.items,
+                selection: $selectedItem
+            )
+        case .month:
+            IOSHistoryMonthGrid(
+                interval: calendarSnapshot.interval,
+                items: calendarSnapshot.items,
+                selectedDate: $selectedDate
+            ) {
+                range = .day
+            }
+        }
+    }
+
+    private var modeMenu: some View {
+        Menu {
+            ForEach(DayHistoryMode.allCases) { mode in
+                Button {
+                    selectedMode = mode
+                } label: {
+                    if selectedMode == mode {
+                        Label(mode.displayName, systemImage: "checkmark")
+                    } else {
+                        Text(mode.displayName)
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Text(selectedMode.displayName)
+                Image(systemName: "chevron.down")
+                    .font(.caption2.weight(.semibold))
+            }
+        }
+        .accessibilityLabel(String(localized: "履歴表示"))
     }
 
     private var calendarToolbar: some View {
@@ -117,6 +167,122 @@ struct IOSHistoryView: View {
         case .month:
             return selectedDate.formatted(.dateTime.year().month(.wide))
         }
+    }
+}
+
+private struct IOSHistoryTaskSummaryList: View {
+    let snapshot: DayHistorySnapshot
+
+    var body: some View {
+        ScrollView {
+            LazyVStack(spacing: 10) {
+                if snapshot.taskSummaries.isEmpty {
+                    ContentUnavailableView(
+                        String(localized: "記録なし"),
+                        systemImage: "clock.arrow.circlepath",
+                        description: Text(String(localized: "この期間のFlowとタスクはありません。"))
+                    )
+                    .padding(.top, 72)
+                } else {
+                    ForEach(snapshot.taskSummaries) { task in
+                        IOSHistorySummaryRow(
+                            symbol: task.directionSymbol,
+                            title: task.title,
+                            subtitle: task.directionName,
+                            colorHex: task.directionColorHex,
+                            focusSeconds: task.focusSeconds,
+                            flowCount: task.flowCount
+                        )
+                    }
+                }
+            }
+            .padding(16)
+        }
+    }
+}
+
+private struct IOSHistoryDirectionSummaryList: View {
+    let snapshot: DayHistorySnapshot
+
+    private var recordedDirections: [DayHistoryDirectionSummary] {
+        snapshot.directionSummaries.filter { $0.focusSeconds > 0 }
+    }
+
+    var body: some View {
+        ScrollView {
+            LazyVStack(spacing: 10) {
+                if recordedDirections.isEmpty {
+                    ContentUnavailableView(
+                        String(localized: "記録なし"),
+                        systemImage: "clock.arrow.circlepath",
+                        description: Text(String(localized: "この期間のFlowとタスクはありません。"))
+                    )
+                    .padding(.top, 72)
+                } else {
+                    ForEach(recordedDirections) { direction in
+                        IOSHistorySummaryRow(
+                            symbol: direction.symbol,
+                            title: direction.name,
+                            subtitle: nil,
+                            colorHex: direction.colorHex,
+                            focusSeconds: direction.focusSeconds,
+                            flowCount: direction.flowCount
+                        )
+                    }
+                }
+            }
+            .padding(16)
+        }
+    }
+}
+
+private struct IOSHistorySummaryRow: View {
+    let symbol: String
+    let title: String
+    let subtitle: String?
+    let colorHex: String
+    let focusSeconds: Int
+    let flowCount: Int
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Text(symbol)
+                .font(.title3)
+                .frame(width: 38, height: 38)
+                .background(Color(hex: colorHex).opacity(0.16), in: RoundedRectangle(cornerRadius: 8))
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.body.weight(.semibold))
+                    .lineLimit(2)
+                if let subtitle, subtitle != title {
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
+
+            Spacer(minLength: 8)
+
+            VStack(alignment: .trailing, spacing: 3) {
+                Text(focusDurationText)
+                    .font(.subheadline.weight(.semibold).monospacedDigit())
+                Text("\(flowCount) Flow")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(12)
+        .background(Color.secondary.opacity(0.10), in: RoundedRectangle(cornerRadius: 10))
+    }
+
+    private var focusDurationText: String {
+        let minutes = focusSeconds / 60
+        if minutes < 60 {
+            return String(localized: "\(minutes)分")
+        }
+        return String(localized: "\(minutes / 60)時間\(minutes % 60)分")
     }
 }
 

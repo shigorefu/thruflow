@@ -121,12 +121,14 @@ struct DayHistorySnapshot {
             )
         })
 
-        return summaries.sorted {
-            if $0.focusSeconds == $1.focusSeconds {
-                return $0.title.localizedStandardCompare($1.title) == .orderedAscending
+        return summaries
+            .filter { $0.focusSeconds > 0 }
+            .sorted {
+                if $0.focusSeconds == $1.focusSeconds {
+                    return $0.title.localizedStandardCompare($1.title) == .orderedAscending
+                }
+                return $0.focusSeconds > $1.focusSeconds
             }
-            return $0.focusSeconds > $1.focusSeconds
-        }
     }
 }
 
