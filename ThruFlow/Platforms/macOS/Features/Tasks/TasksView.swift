@@ -31,7 +31,7 @@ struct TasksView: View {
     @State private var calendarRange: TaskCalendarRange = .oneDay
     @State private var taskFilter: TaskCalendarFilter = .all
     @State private var moveError: String?
-    @State private var showsUnscheduledInspector = false
+    @State private var backlogInspectorMode: MacTaskBacklogMode?
     @AppStorage("today.groupOrder") private var groupOrderRaw = TasksTodoGroup.defaultOrderRaw
 
     private var filter: TodayTodoFilter { TodayTodoFilter(calendar: calendar) }
@@ -79,9 +79,7 @@ struct TasksView: View {
             TaskCalendarToolbar(
                 range: $calendarRange,
                 filter: $taskFilter,
-                unscheduledCount: backlogSnapshot.unscheduled.count,
-                onToday: moveToToday,
-                onShowUnscheduled: { showsUnscheduledInspector = true }
+                onToday: moveToToday
             )
 
             Divider()
@@ -89,6 +87,24 @@ struct TasksView: View {
             tasksWorkspace
         }
         .navigationTitle(String(localized: "タスク"))
+        .toolbar {
+            ToolbarItemGroup(placement: .primaryAction) {
+                backlogToolbarButton(
+                    String(localized: "期限切れ"),
+                    count: backlogSnapshot.overdue.count,
+                    mode: .overdue
+                )
+
+                Divider()
+                    .frame(height: 18)
+
+                backlogToolbarButton(
+                    String(localized: "日付なし"),
+                    count: backlogSnapshot.unscheduled.count,
+                    mode: .unscheduled
+                )
+            }
+        }
         .safeAreaInset(edge: .bottom) {
             MessengerTodoComposer(
                 title: $newTodoTitle,
@@ -106,8 +122,8 @@ struct TasksView: View {
         .sheet(item: $editingTodo) { todo in
             TodoFormView(mode: .edit(todo))
         }
-        .inspector(isPresented: $showsUnscheduledInspector) {
-            unscheduledInspector
+        .inspector(isPresented: backlogInspectorIsPresented) {
+            backlogInspector
                 .inspectorColumnWidth(min: 300, ideal: 340, max: 420)
         }
         .alert(String(localized: "移動できません"), isPresented: moveErrorIsPresented) {
@@ -303,47 +319,102 @@ struct TasksView: View {
         calendar.isDateInToday(selectedDate) && !visibleOverdueTodos.isEmpty
     }
 
-    private var unscheduledInspector: some View {
+    private var backlogInspectorIsPresented: Binding<Bool> {
+        Binding(
+            get: { backlogInspectorMode != nil },
+            set: { isPresented in
+                if !isPresented {
+                    backlogInspectorMode = nil
+                }
+            }
+        )
+    }
+
+    private func backlogToolbarButton(
+        _ title: String,
+        count: Int,
+        mode: MacTaskBacklogMode
+    ) -> some View {
+        Button {
+            backlogInspectorMode = mode
+        } label: {
+            HStack(spacing: 6) {
+                Text(title)
+                Text("\(count)")
+                    .font(.caption2.monospacedDigit().weight(.semibold))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.secondary.opacity(0.16), in: Capsule())
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(count == 0 ? .secondary : .primary)
+        .accessibilityLabel("\(title)、\(count)")
+    }
+
+    private var backlogInspectorTodos: [Todo] {
+        switch backlogInspectorMode {
+        case .overdue:
+            backlogSnapshot.overdue
+        case .unscheduled:
+            backlogSnapshot.unscheduled
+        case nil:
+            []
+        }
+    }
+
+    private var backlogInspectorTitle: String {
+        backlogInspectorMode == .overdue
+            ? String(localized: "期限切れ")
+            : String(localized: "日付なし")
+    }
+
+    private var backlogInspectorSystemImage: String {
+        backlogInspectorMode == .overdue ? "exclamationmark.circle" : "tray"
+    }
+
+    private var backlogInspector: some View {
         VStack(spacing: 0) {
             HStack(spacing: 8) {
-                Label(String(localized: "日付なし"), systemImage: "tray")
+                Label(backlogInspectorTitle, systemImage: backlogInspectorSystemImage)
                     .font(.headline)
 
-                Text("\(backlogSnapshot.unscheduled.count)")
+                Text("\(backlogInspectorTodos.count)")
                     .font(.caption.monospacedDigit().weight(.semibold))
                     .foregroundStyle(.secondary)
 
                 Spacer(minLength: 0)
 
-                if !backlogSnapshot.unscheduled.isEmpty {
+                if !backlogInspectorTodos.isEmpty {
                     Button(String(localized: "すべて今日へ")) {
-                        moveTodosToToday(backlogSnapshot.unscheduled)
+                        moveTodosToToday(backlogInspectorTodos)
                     }
                     .buttonStyle(.bordered)
                 }
 
                 Button {
-                    showsUnscheduledInspector = false
+                    backlogInspectorMode = nil
                 } label: {
                     Image(systemName: "xmark")
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
-                .accessibilityLabel(String(localized: "日付なしを閉じる"))
+                .accessibilityLabel("\(backlogInspectorTitle)を閉じる")
             }
             .padding(16)
 
             Divider()
 
-            if backlogSnapshot.unscheduled.isEmpty {
+            if backlogInspectorTodos.isEmpty {
                 ContentUnavailableView(
-                    String(localized: "日付なしのタスクはありません"),
-                    systemImage: "tray"
+                    backlogInspectorTitle,
+                    systemImage: backlogInspectorSystemImage
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 List {
-                    ForEach(backlogSnapshot.unscheduled) { todo in
+                    ForEach(backlogInspectorTodos) { todo in
                         unscheduledTodoRow(todo)
                             .listRowSeparator(.hidden)
                     }
@@ -733,6 +804,11 @@ struct TasksView: View {
         guard let id else { return nil }
         return visibleDirections.first { $0.id == id }
     }
+}
+
+private enum MacTaskBacklogMode {
+    case overdue
+    case unscheduled
 }
 
 /// Quick-add volume selection for the composer. `checkbox` means "no target amount",

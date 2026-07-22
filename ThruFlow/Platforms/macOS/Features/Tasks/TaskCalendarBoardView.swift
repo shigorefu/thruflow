@@ -8,49 +8,24 @@
 import SwiftUI
 
 struct TaskCalendarToolbar: View {
-    private static let wideLayoutMinimumWidth: CGFloat = 820
-
     @Binding var range: TaskCalendarRange
     @Binding var filter: TaskCalendarFilter
 
-    let unscheduledCount: Int
     let onToday: () -> Void
-    let onShowUnscheduled: () -> Void
 
     var body: some View {
-        ViewThatFits(in: .horizontal) {
-            ZStack {
-                filterPicker
-                .frame(width: 260)
+        ZStack {
+            HStack(spacing: 10) {
+                filterMenu
 
-                HStack(spacing: 10) {
-                    Spacer()
-                    Button(String(localized: "今日"), action: onToday)
-                        .buttonStyle(.borderedProminent)
+                Spacer(minLength: 0)
 
-                    unscheduledButton
-
-                    rangePicker
-                        .frame(width: 150)
-                }
+                Button(String(localized: "今日"), action: onToday)
+                    .buttonStyle(.borderedProminent)
             }
-            .frame(minWidth: Self.wideLayoutMinimumWidth)
 
-            VStack(spacing: 8) {
-                filterPicker
-
-                HStack(spacing: 10) {
-                    Button(String(localized: "今日"), action: onToday)
-                        .buttonStyle(.borderedProminent)
-
-                    unscheduledButton
-
-                    Spacer(minLength: 0)
-
-                    rangePicker
-                        .frame(width: 150)
-                }
-            }
+            rangePicker
+                .frame(width: 150)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
@@ -68,33 +43,31 @@ struct TaskCalendarToolbar: View {
         .accessibilityLabel(String(localized: "表示範囲"))
     }
 
-    private var filterPicker: some View {
-        Picker(String(localized: "フィルター"), selection: $filter) {
+    private var filterMenu: some View {
+        Menu {
             ForEach(TaskCalendarFilter.allCases) { option in
-                Text(option.displayName).tag(option)
+                Button {
+                    filter = option
+                } label: {
+                    if filter == option {
+                        Label(option.displayName, systemImage: "checkmark")
+                    } else {
+                        Text(option.displayName)
+                    }
+                }
             }
+        } label: {
+            Image(
+                systemName: filter == .all
+                    ? "line.3.horizontal.decrease"
+                    : "line.3.horizontal.decrease.circle.fill"
+            )
+            .frame(width: 24, height: 24)
         }
-        .pickerStyle(.segmented)
-        .labelsHidden()
         .accessibilityLabel(String(localized: "フィルター"))
+        .accessibilityValue(filter.displayName)
     }
 
-    private var unscheduledButton: some View {
-        Button(action: onShowUnscheduled) {
-            HStack(spacing: 5) {
-                Image(systemName: "tray")
-                Text(String(localized: "日付なし"))
-                Text("\(unscheduledCount)")
-                    .font(.caption2.monospacedDigit().weight(.semibold))
-                    .padding(.horizontal, 5)
-                    .padding(.vertical, 2)
-                    .background(Color.secondary.opacity(0.16), in: Capsule())
-            }
-        }
-        .buttonStyle(.bordered)
-        .foregroundStyle(unscheduledCount == 0 ? .secondary : .primary)
-        .accessibilityLabel(String(localized: "日付なしのタスク、\(unscheduledCount)件"))
-    }
 }
 
 struct TaskDayStrip: View {

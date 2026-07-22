@@ -24,7 +24,11 @@ Filters are `すべて`, `タスク`, and `習慣`. Habit instances stay in the 
 
 Active normal Tasks can be dragged between dates in day, week, and month. Month still opens a day for detailed actions when its date header is selected. Completed Tasks and fixed daily/weekday Habit Tasks stay on their original date. Weekly-count Habit moves are validated against the remaining weekly target.
 
-Clicking a month cell opens that date in `日`. The centered filter remains stable across ranges; `今日` and the right period picker navigate dates. The quick composer follows the selected date or kanban column.
+Clicking a month cell opens that date in `日`. On macOS, the system title toolbar
+places `期限切れ N | 日付なし N` beside `タスク`; both counters open the same
+trailing backlog inspector with the corresponding records. The compact calendar
+control row uses an icon-only filter, centered `日 | 週 | 月`, and an explicit
+trailing `今日`. The quick composer follows the selected date or kanban column.
 
 Sections:
 
@@ -56,7 +60,11 @@ Inside the Flow task picker, quick creation opens as a separate compact trailing
 
 When `今日` is selected, active overdue normal Tasks appear in a leading `期限切れ` section. The section supports normal Task actions, drag-to-date, and `すべて今日へ`. Automatically generated Habit instances are excluded.
 
-There is no separate Inbox navigation item. A toolbar `日付なし` button always shows the number of active undated normal Tasks. It opens a trailing inspector on macOS with per-Task `今日へ移動`, drag-to-date, edit, complete, delete, and `すべて今日へ` actions. Returning from the inspector preserves the selected calendar date and range.
+There is no separate Inbox navigation item. The macOS toolbar counters for
+`期限切れ` and `日付なし` always show their active normal Task totals and open a
+shared trailing inspector. It supports per-Task `今日へ移動`, drag-to-date, edit,
+complete, delete, and `すべて今日へ`. Returning from the inspector preserves the
+selected calendar date and range.
 
 Weekly-count habits create one pending task at a time. After completion, the next instance may appear on a later eligible day until the weekly target is met. Moving the pending instance does not create a replacement for today, and dates that would make the target impossible are disabled.
 
