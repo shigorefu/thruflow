@@ -19,7 +19,11 @@ enum AppModelContainerFactory {
                 isStoredInMemoryOnly: true,
                 cloudKitDatabase: .none
             )
-        } else if isCloudKitDisabled {
+        } else if !shouldUseCloudKit(
+            isRunningTests: isRunningTests,
+            isCloudKitDisabled: isCloudKitDisabled,
+            isRunningInSimulator: isRunningInSimulator
+        ) {
             configuration = ModelConfiguration(
                 schema: schema,
                 cloudKitDatabase: .none
@@ -48,5 +52,21 @@ enum AppModelContainerFactory {
         let processInfo = ProcessInfo.processInfo
         return processInfo.environment["THRUFLOW_DISABLE_CLOUDKIT"] == "1" ||
             processInfo.arguments.contains("--local-store")
+    }
+
+    private static var isRunningInSimulator: Bool {
+#if targetEnvironment(simulator)
+        true
+#else
+        false
+#endif
+    }
+
+    static func shouldUseCloudKit(
+        isRunningTests: Bool,
+        isCloudKitDisabled: Bool,
+        isRunningInSimulator: Bool
+    ) -> Bool {
+        !isRunningTests && !isCloudKitDisabled && !isRunningInSimulator
     }
 }

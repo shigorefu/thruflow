@@ -17,6 +17,8 @@ uses the same SwiftData schema and private container on normal signed runs.
 ## Local And Test Modes
 
 - Unit/UI tests use an in-memory `ModelConfiguration` with CloudKit disabled.
+- iOS Simulator uses a persistent local SwiftData store with CloudKit disabled
+  because simulator builds do not receive the iCloud container entitlement.
 - Set `THRUFLOW_DISABLE_CLOUDKIT=1` for a persistent local-only development run.
 - Pass `--local-store` for the same local-only behavior from a scheme.
 
@@ -34,8 +36,9 @@ second model schema or different domain behavior.
 5. Create or edit a Direction/Task/Flow on one device and verify it arrives on
    the other after both apps have had network time to process CloudKit changes.
 
-An unsigned simulator build cannot validate CloudKit entitlements. Use a normal
-signed simulator/device build for synchronization diagnostics.
+Simulator builds cannot validate CloudKit synchronization because Xcode strips
+the iCloud container entitlement for the simulator SDK. Use signed macOS and
+physical iPhone builds for synchronization diagnostics.
 
 ## Production Schema
 

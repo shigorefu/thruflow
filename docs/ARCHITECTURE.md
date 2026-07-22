@@ -104,6 +104,8 @@ Each platform owns its composition root:
 The existing SwiftData models and schema remain the single source of truth.
 Normal signed app runs use the private CloudKit database in
 `iCloud.com.shigorefu.thruflow`. Tests use an in-memory local configuration, and
+the iOS Simulator uses a persistent local configuration because its builds do
+not contain the iCloud container entitlement. The
 `THRUFLOW_DISABLE_CLOUDKIT=1` or `--local-store` provides an explicit local-only
 escape hatch. CloudKit availability must never be a precondition for domain
 logic or tests.

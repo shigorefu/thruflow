@@ -5,6 +5,23 @@ import Testing
 
 @MainActor
 struct PersistenceSchemaTests {
+    @Test func simulatorUsesLocalStoreWithoutCloudKitEntitlement() {
+        #expect(
+            !AppModelContainerFactory.shouldUseCloudKit(
+                isRunningTests: false,
+                isCloudKitDisabled: false,
+                isRunningInSimulator: true
+            )
+        )
+        #expect(
+            AppModelContainerFactory.shouldUseCloudKit(
+                isRunningTests: false,
+                isCloudKitDisabled: false,
+                isRunningInSimulator: false
+            )
+        )
+    }
+
     @Test func sharedSchemaPersistsCloudKitCompatibleRelationships() throws {
         let container = AppModelContainerFactory.make()
         let context = ModelContext(container)

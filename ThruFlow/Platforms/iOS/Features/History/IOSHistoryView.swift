@@ -31,6 +31,7 @@ struct IOSHistoryView: View {
                 }
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .navigationTitle(String(localized: "履歴"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
