@@ -106,6 +106,8 @@ struct TasksView: View {
                         mode: .unscheduled
                     )
                 }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
                 .fixedSize(horizontal: true, vertical: true)
             }
         }
