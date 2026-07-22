@@ -12,6 +12,7 @@ struct IOSHistoryView: View {
     @State private var selectedDate = Date.now
     @State private var range = HistoryCalendarRange.day
     @State private var selectedMode = DayHistoryMode.calendar
+    @State private var visibleKinds = Set(HistoryCalendarItemKind.allCases)
     @State private var selectedItem: HistoryCalendarItem?
 
     var body: some View {
@@ -60,29 +61,27 @@ struct IOSHistoryView: View {
         )
     }
 
+    private var visibleCalendarItems: [HistoryCalendarItem] {
+        calendarSnapshot.items.filter { visibleKinds.contains($0.kind) }
+    }
+
     @ViewBuilder
     private var calendarContent: some View {
         switch range {
         case .day:
             IOSHistoryDayTimeline(
                 date: selectedDate,
-                items: calendarSnapshot.items,
+                items: visibleCalendarItems,
                 selection: $selectedItem
             )
         case .week:
             IOSHistoryWeekTimeline(
                 interval: calendarSnapshot.interval,
-                items: calendarSnapshot.items,
+                items: visibleCalendarItems,
                 selection: $selectedItem
             )
         case .month:
-            IOSHistoryMonthGrid(
-                interval: calendarSnapshot.interval,
-                items: calendarSnapshot.items,
-                selectedDate: $selectedDate
-            ) {
-                range = .day
-            }
+            EmptyView()
         }
     }
 
@@ -111,62 +110,212 @@ struct IOSHistoryView: View {
 
     private var calendarToolbar: some View {
         VStack(spacing: 10) {
-            Picker(String(localized: "期間"), selection: $range) {
-                ForEach(HistoryCalendarRange.allCases) { value in
-                    Text(value.displayName).tag(value)
+            HStack(spacing: 10) {
+                if selectedMode == .calendar {
+                    historyVisibilityMenu
+                } else {
+                    Color.clear
+                        .frame(width: 30, height: 30)
                 }
-            }
-            .pickerStyle(.segmented)
 
-            HStack(spacing: 12) {
-                Button {
-                    selectedDate = range.moving(selectedDate, by: -1, calendar: calendar)
-                } label: {
-                    Image(systemName: "chevron.left")
-                }
-                .accessibilityLabel(String(localized: "前へ"))
+                Spacer(minLength: 0)
 
-                VStack(spacing: 1) {
-                    Text(periodTitle)
-                        .font(.headline)
-                    if range == .day {
-                        Text(selectedDate, format: .dateTime.weekday(.wide))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                Picker(String(localized: "期間"), selection: $range) {
+                    ForEach(HistoryCalendarRange.allCases) { value in
+                        Text(value.displayName).tag(value)
                     }
                 }
-                .frame(maxWidth: .infinity)
+                .pickerStyle(.segmented)
+                .frame(maxWidth: 190)
+
+                Spacer(minLength: 0)
 
                 Button(String(localized: "今日")) {
-                    selectedDate = .now
+                    selectedDate = calendar.startOfDay(for: .now)
                 }
                 .buttonStyle(.borderedProminent)
-                .controlSize(.small)
+            }
 
-                Button {
-                    selectedDate = range.moving(selectedDate, by: 1, calendar: calendar)
-                } label: {
-                    Image(systemName: "chevron.right")
+            switch range {
+            case .day:
+                IOSHistoryDayStrip(
+                    selectedDate: $selectedDate,
+                    sessions: sessions
+                )
+            case .week:
+                IOSHistoryWeekStrip(
+                    selectedDate: $selectedDate,
+                    sessions: sessions
+                )
+            case .month:
+                IOSHistoryMonthGrid(
+                    interval: calendarSnapshot.interval,
+                    items: visibleCalendarItems,
+                    selectedDate: $selectedDate
+                ) {
+                    if selectedMode == .calendar {
+                        range = .day
+                    }
                 }
-                .accessibilityLabel(String(localized: "次へ"))
             }
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 12)
         .padding(.vertical, 10)
         .background(.bar)
     }
 
-    private var periodTitle: String {
-        switch range {
-        case .day:
-            return selectedDate.formatted(.dateTime.year().month(.wide).day())
-        case .week:
-            let interval = range.interval(containing: selectedDate, calendar: calendar)
-            let lastDate = interval.end.addingTimeInterval(-1)
-            return "\(interval.start.formatted(.dateTime.month(.abbreviated).day())) – \(lastDate.formatted(.dateTime.month(.abbreviated).day()))"
-        case .month:
-            return selectedDate.formatted(.dateTime.year().month(.wide))
+    private var historyVisibilityMenu: some View {
+        Menu {
+            Toggle(String(localized: "Flow"), isOn: visibilityBinding(for: .flow))
+            Toggle(String(localized: "休憩"), isOn: visibilityBinding(for: .rest))
+        } label: {
+            Image(
+                systemName: visibleKinds.count == HistoryCalendarItemKind.allCases.count
+                    ? "line.3.horizontal.decrease"
+                    : "line.3.horizontal.decrease.circle.fill"
+            )
+            .frame(width: 30, height: 30)
         }
+        .accessibilityLabel(String(localized: "フィルター"))
+    }
+
+    private func visibilityBinding(for kind: HistoryCalendarItemKind) -> Binding<Bool> {
+        Binding(
+            get: { visibleKinds.contains(kind) },
+            set: { isVisible in
+                if isVisible {
+                    visibleKinds.insert(kind)
+                } else {
+                    visibleKinds.remove(kind)
+                }
+            }
+        )
+    }
+}
+
+private struct IOSHistoryDayStrip: View {
+    @Environment(\.calendar) private var calendar
+    @Environment(\.locale) private var locale
+
+    @Binding var selectedDate: Date
+    let sessions: [FlowSession]
+
+    private var dates: [Date] {
+        guard let interval = calendar.dateInterval(of: .weekOfYear, for: selectedDate) else { return [] }
+        return (0..<7).compactMap { calendar.date(byAdding: .day, value: $0, to: interval.start) }
+    }
+
+    var body: some View {
+        HStack(spacing: 5) {
+            ForEach(dates, id: \.self) { date in
+                let isSelected = calendar.isDate(date, inSameDayAs: selectedDate)
+                Button {
+                    selectedDate = calendar.startOfDay(for: date)
+                } label: {
+                    VStack(spacing: 4) {
+                        Text(date.formatted(.dateTime.locale(locale).weekday(.narrow)))
+                            .font(.caption2.weight(.semibold))
+                        Text(verbatim: String(calendar.component(.day, from: date)))
+                            .font(.body.monospacedDigit().weight(.semibold))
+                        IOSHistoryActivityDots(colors: activityColors(on: date))
+                    }
+                    .foregroundStyle(isSelected ? Color.white : Color.primary)
+                    .frame(maxWidth: .infinity, minHeight: 55)
+                    .background(
+                        isSelected ? Color.accentColor : Color.primary.opacity(0.04),
+                        in: RoundedRectangle(cornerRadius: 10)
+                    )
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(isSelected ? .isSelected : [])
+            }
+        }
+    }
+
+    private func activityColors(on date: Date) -> [String] {
+        let interval = HistoryCalendarRange.day.interval(containing: date, calendar: calendar)
+        var seen = Set<String>()
+        return HistoryCalendarBuilder(calendar: calendar)
+            .build(interval: interval, sessions: sessions, breaks: [])
+            .items
+            .filter { $0.kind == .flow }
+            .map(\.colorHex)
+            .filter { seen.insert($0.lowercased()).inserted }
+            .prefix(4)
+            .map { $0 }
+    }
+}
+
+private struct IOSHistoryWeekStrip: View {
+    @Environment(\.calendar) private var calendar
+    @Environment(\.locale) private var locale
+
+    @Binding var selectedDate: Date
+    let sessions: [FlowSession]
+
+    var body: some View {
+        HStack(spacing: 6) {
+            ForEach(-1...1, id: \.self) { offset in
+                let anchor = calendar.date(byAdding: .weekOfYear, value: offset, to: selectedDate) ?? selectedDate
+                let interval = HistoryCalendarRange.week.interval(containing: anchor, calendar: calendar)
+                let isSelected = offset == 0
+
+                Button {
+                    guard offset != 0 else { return }
+                    selectedDate = calendar.startOfDay(for: anchor)
+                } label: {
+                    VStack(spacing: 3) {
+                        Text(interval.start.formatted(.dateTime.locale(locale).month(.abbreviated)))
+                            .font(.caption.weight(.semibold))
+                        Text(dayRangeText(interval))
+                            .font(.body.monospacedDigit().weight(.semibold))
+                        IOSHistoryActivityDots(colors: activityColors(in: interval))
+                    }
+                    .foregroundStyle(isSelected ? Color.white : Color.primary)
+                    .frame(maxWidth: .infinity, minHeight: 58)
+                    .background(
+                        isSelected ? Color.accentColor : Color.primary.opacity(0.04),
+                        in: RoundedRectangle(cornerRadius: 10)
+                    )
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(isSelected ? .isSelected : [])
+            }
+        }
+    }
+
+    private func dayRangeText(_ interval: DateInterval) -> String {
+        let end = interval.end.addingTimeInterval(-1)
+        return "\(calendar.component(.day, from: interval.start))–\(calendar.component(.day, from: end))"
+    }
+
+    private func activityColors(in interval: DateInterval) -> [String] {
+        var seen = Set<String>()
+        return HistoryCalendarBuilder(calendar: calendar)
+            .build(interval: interval, sessions: sessions, breaks: [])
+            .items
+            .filter { $0.kind == .flow }
+            .map(\.colorHex)
+            .filter { seen.insert($0.lowercased()).inserted }
+            .prefix(4)
+            .map { $0 }
+    }
+}
+
+private struct IOSHistoryActivityDots: View {
+    let colors: [String]
+
+    var body: some View {
+        HStack(spacing: 2) {
+            ForEach(colors, id: \.self) { colorHex in
+                Circle()
+                    .fill(Color(hex: colorHex))
+                    .frame(width: 4, height: 4)
+            }
+        }
+        .frame(height: 4)
     }
 }
 
@@ -571,49 +720,74 @@ private struct IOSHistoryMonthGrid: View {
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 7)
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 8) {
-                LazyVGrid(columns: columns, spacing: 4) {
-                    ForEach(weekdaySymbols, id: \.self) { symbol in
-                        Text(symbol)
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity)
-                    }
+        VStack(spacing: 8) {
+            HStack {
+                Text(selectedDate, format: .dateTime.year().month(.wide))
+                    .font(.headline)
 
-                    ForEach(monthDates, id: \.self) { date in
-                        Button {
-                            selectedDate = date
-                            openDay()
-                        } label: {
-                            VStack(spacing: 5) {
-                                Text(verbatim: String(calendar.component(.day, from: date)))
-                                    .font(.subheadline.weight(calendar.isDateInToday(date) ? .bold : .regular))
-                                    .foregroundStyle(calendar.isDateInToday(date) ? Color.white : Color.primary)
-                                    .frame(width: 30, height: 30)
-                                    .background(
-                                        calendar.isDateInToday(date) ? Color.accentColor : Color.clear,
-                                        in: Circle()
-                                    )
+                Spacer(minLength: 0)
 
-                                HStack(spacing: 2) {
-                                    ForEach(colors(on: date).prefix(3), id: \.self) { colorHex in
-                                        Circle()
-                                            .fill(Color(hex: colorHex))
-                                            .frame(width: 5, height: 5)
-                                    }
+                Button {
+                    moveMonth(by: -1)
+                } label: {
+                    Image(systemName: "chevron.left")
+                }
+                .accessibilityLabel(String(localized: "前へ"))
+
+                Button {
+                    moveMonth(by: 1)
+                } label: {
+                    Image(systemName: "chevron.right")
+                }
+                .accessibilityLabel(String(localized: "次へ"))
+            }
+            .padding(.horizontal, 4)
+
+            LazyVGrid(columns: columns, spacing: 4) {
+                ForEach(weekdaySymbols, id: \.self) { symbol in
+                    Text(symbol)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity)
+                }
+
+                ForEach(monthDates, id: \.self) { date in
+                    let isSelected = calendar.isDate(date, inSameDayAs: selectedDate)
+                    Button {
+                        selectedDate = date
+                        openDay()
+                    } label: {
+                        VStack(spacing: 5) {
+                            Text(verbatim: String(calendar.component(.day, from: date)))
+                                .font(.subheadline.weight(isSelected || calendar.isDateInToday(date) ? .bold : .regular))
+                                .foregroundStyle(isSelected ? Color.white : Color.primary)
+                                .frame(width: 30, height: 30)
+                                .background(
+                                    isSelected ? Color.accentColor : Color.clear,
+                                    in: Circle()
+                                )
+
+                            HStack(spacing: 2) {
+                                ForEach(colors(on: date).prefix(3), id: \.self) { colorHex in
+                                    Circle()
+                                        .fill(Color(hex: colorHex))
+                                        .frame(width: 5, height: 5)
                                 }
-                                .frame(height: 5)
                             }
-                            .frame(maxWidth: .infinity, minHeight: 54)
-                            .contentShape(Rectangle())
+                            .frame(height: 5)
                         }
-                        .buttonStyle(.plain)
+                        .frame(maxWidth: .infinity, minHeight: 48)
+                        .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
                 }
             }
-            .padding(12)
         }
+        .padding(.horizontal, 4)
+    }
+
+    private func moveMonth(by value: Int) {
+        selectedDate = calendar.date(byAdding: .month, value: value, to: selectedDate) ?? selectedDate
     }
 
     private var monthDates: [Date] {

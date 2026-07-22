@@ -173,8 +173,11 @@ visually bounded, Direction-tinted system button so its picker affordance stays
 clear. `履歴` provides touch-native `日 | 週 | 月` calendar ranges:
 day uses a vertically scrolling 24-hour timeline, week uses seven horizontally
 scrollable day columns, and month uses Apple Calendar-style numeric days with
-Direction-colored activity dots. Flow and rest remain separate calendar records
-and tapping one opens its details. `方向` edits its emoji through a dedicated
+Direction-colored activity dots. Its period navigation matches `タスク`: `日`
+shows seven date cards, `週` shows previous/current/next week cards, and `月`
+shows the month calendar above the selected History mode. These controls mark
+only recorded Flow activity. Flow and rest remain separate calendar records and
+tapping one opens its details. `方向` edits its emoji through a dedicated
 searchable picker instead of a text-field leading icon. The standalone iPhone
 `方向` uses the same types, goals, schedules, weekday rules, color palette,
 archive behavior, item ordering, and group ordering as macOS in a native list
