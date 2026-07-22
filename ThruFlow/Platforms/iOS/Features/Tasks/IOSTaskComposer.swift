@@ -49,11 +49,15 @@ struct IOSTaskComposer: View {
                     }
 
                 HStack(spacing: 6) {
-                    measurementMenu
-                    directionMenu
-                    priorityMenu
-                    dateMenu
-                    Spacer(minLength: 0)
+                    ScrollView(.horizontal) {
+                        HStack(spacing: 6) {
+                            measurementMenu
+                            directionMenu
+                            priorityMenu
+                            dateMenu
+                        }
+                    }
+                    .scrollIndicators(.hidden)
 
                     Button(action: submit) {
                         Image(systemName: "arrow.up")
@@ -254,7 +258,7 @@ struct IOSTaskComposer: View {
         } label: {
             compactLabel(
                 hasExplicitDate ? dateTitle : String(localized: "日付"),
-                isExplicit: hasExplicitDate
+                isExplicit: false
             )
         }
         .buttonStyle(.plain)
@@ -380,6 +384,7 @@ struct IOSTaskComposer: View {
                     .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
             }
             .contentShape(Capsule())
+            .fixedSize(horizontal: true, vertical: false)
     }
 
     private var selectedDirection: Direction? {
@@ -459,7 +464,7 @@ struct IOSTaskComposer: View {
                         id: $0.id.uuidString,
                         title: "\($0.symbolName) \($0.name)",
                         replacement: "@\($0.name)",
-                        systemImage: "scope"
+                        systemImage: "point.3.connected.trianglepath.dotted"
                     )
                 }
         case "!":

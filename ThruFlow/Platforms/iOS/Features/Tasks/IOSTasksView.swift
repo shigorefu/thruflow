@@ -157,20 +157,8 @@ struct IOSTasksView: View {
     private func closeTasks() {
         guard !isClosing else { return }
         isClosing = true
-
-        guard showsComposer else {
-            close()
-            return
-        }
-
-        withAnimation(.easeIn(duration: 0.24)) {
-            showsComposer = false
-        }
-
-        Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(260))
-            close()
-        }
+        showsComposer = false
+        close()
     }
 
     private var backlogMenuContent: some View {

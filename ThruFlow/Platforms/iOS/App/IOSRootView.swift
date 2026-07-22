@@ -45,6 +45,15 @@ struct IOSRootView: View {
         Binding(
             get: { selection },
             set: { route in
+                if route == .flow {
+                    var transaction = Transaction()
+                    transaction.disablesAnimations = true
+                    withTransaction(transaction) {
+                        selection = route
+                    }
+                    return
+                }
+
                 withAnimation(.snappy(duration: 0.28)) {
                     selection = route
                 }

@@ -77,7 +77,7 @@ struct IOSDirectionsView: View {
                 if visibleDirections.isEmpty {
                     ContentUnavailableView(
                         showingArchived ? String(localized: "アーカイブはありません") : String(localized: "方向はありません"),
-                        systemImage: showingArchived ? "archivebox" : "scope"
+                        systemImage: showingArchived ? "archivebox" : "point.3.connected.trianglepath.dotted"
                     )
                 }
             }
