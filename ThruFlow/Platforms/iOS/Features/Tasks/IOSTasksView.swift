@@ -15,6 +15,7 @@ struct IOSTasksView: View {
     @State private var filter = TaskCalendarFilter.all
     @State private var editorMode: IOSTaskEditorMode?
     @State private var backlogMode: IOSBacklogMode?
+    @State private var showsBacklogMenu = false
     @State private var visibleDay: Date?
     @State private var showsComposer = false
     @State private var isClosing = false
@@ -63,31 +64,17 @@ struct IOSTasksView: View {
             }
 
             ToolbarItem(placement: .topBarTrailing) {
-                Menu {
-                    Button {
-                        backlogMode = .overdue
-                    } label: {
-                        backlogMenuLabel(
-                            String(localized: "期限切れ"),
-                            count: backlog.overdue.count,
-                            systemImage: "exclamationmark.circle"
-                        )
-                    }
-
-                    Button {
-                        backlogMode = .unscheduled
-                    } label: {
-                        backlogMenuLabel(
-                            String(localized: "日付なし"),
-                            count: backlog.unscheduled.count,
-                            systemImage: "tray"
-                        )
-                    }
+                Button {
+                    showsBacklogMenu.toggle()
                 } label: {
                     IOSMoreMenuLabel(badgeCount: backlogCount)
                 }
                 .accessibilityLabel(String(localized: "その他"))
                 .accessibilityValue("\(backlogCount)")
+                .popover(isPresented: $showsBacklogMenu, arrowEdge: .top) {
+                    backlogMenuContent
+                        .presentationCompactAdaptation(.popover)
+                }
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -163,21 +150,52 @@ struct IOSTasksView: View {
         }
     }
 
-    private func backlogMenuLabel(
+    private var backlogMenuContent: some View {
+        VStack(spacing: 4) {
+            backlogMenuButton(
+                String(localized: "期限切れ"),
+                count: backlog.overdue.count,
+                systemImage: "exclamationmark.circle",
+                mode: .overdue
+            )
+            backlogMenuButton(
+                String(localized: "日付なし"),
+                count: backlog.unscheduled.count,
+                systemImage: "tray",
+                mode: .unscheduled
+            )
+        }
+        .padding(8)
+        .frame(width: 240)
+    }
+
+    private func backlogMenuButton(
         _ title: String,
         count: Int,
-        systemImage: String
+        systemImage: String,
+        mode: IOSBacklogMode
     ) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: systemImage)
-            Text(title)
-            Spacer(minLength: 12)
-            Text("\(count)")
-                .font(.caption2.monospacedDigit().weight(.semibold))
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
-                .background(Color.secondary.opacity(0.16), in: Capsule())
+        Button {
+            showsBacklogMenu = false
+            backlogMode = mode
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: systemImage)
+                    .foregroundStyle(.tint)
+                    .frame(width: 22)
+                Text(title)
+                Spacer(minLength: 12)
+                Text("\(count)")
+                    .font(.caption2.monospacedDigit().weight(.semibold))
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 3)
+                    .background(Color.secondary.opacity(0.16), in: Capsule())
+            }
+            .padding(.horizontal, 10)
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
     }
 
     private var controls: some View {
