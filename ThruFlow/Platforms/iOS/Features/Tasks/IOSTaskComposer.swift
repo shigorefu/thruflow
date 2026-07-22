@@ -174,9 +174,11 @@ struct IOSTaskComposer: View {
             compactLabel(
                 hasExplicitMeasurement ? measurementTitle : String(localized: "種類"),
                 systemImage: hasExplicitMeasurement ? measurementSymbol : "square.dashed",
-                tint: hasExplicitMeasurement ? .accentColor : .secondary
+                tint: .accentColor,
+                isExplicit: hasExplicitMeasurement
             )
         }
+        .tint(hasExplicitMeasurement ? .accentColor : .secondary)
     }
 
     private var directionMenu: some View {
@@ -192,9 +194,11 @@ struct IOSTaskComposer: View {
         } label: {
             compactLabel(
                 hasExplicitDirection ? selectedDirection?.name ?? String(localized: "方向") : String(localized: "方向"),
-                tint: directionTint
+                tint: directionTint,
+                isExplicit: hasExplicitDirection
             )
         }
+        .tint(hasExplicitDirection ? directionTint : .secondary)
     }
 
     private var priorityMenu: some View {
@@ -208,9 +212,11 @@ struct IOSTaskComposer: View {
         } label: {
             compactLabel(
                 hasExplicitPriority ? priority.displayName : String(localized: "優先度"),
-                tint: priorityTint
+                tint: priorityTint,
+                isExplicit: hasExplicitPriority
             )
         }
+        .tint(hasExplicitPriority ? priorityTint : .secondary)
     }
 
     private var dateMenu: some View {
@@ -233,8 +239,12 @@ struct IOSTaskComposer: View {
                 showsDatePicker = true
             }
         } label: {
-            compactLabel(hasExplicitDate ? dateTitle : String(localized: "日付"))
+            compactLabel(
+                hasExplicitDate ? dateTitle : String(localized: "日付"),
+                isExplicit: hasExplicitDate
+            )
         }
+        .tint(.secondary)
     }
 
     private var quickInputLegend: some View {
@@ -333,7 +343,8 @@ struct IOSTaskComposer: View {
     private func compactLabel(
         _ title: String,
         systemImage: String? = nil,
-        tint: Color = .secondary
+        tint: Color = .secondary,
+        isExplicit: Bool = false
     ) -> some View {
         HStack(spacing: 5) {
             if let systemImage {
@@ -343,10 +354,13 @@ struct IOSTaskComposer: View {
             Text(title)
         }
             .lineLimit(1)
-            .foregroundStyle(tint)
+            .foregroundStyle(isExplicit ? tint : Color.secondary)
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
-            .background(tint.opacity(0.16), in: Capsule())
+            .background(
+                isExplicit ? tint.opacity(0.16) : Color.primary.opacity(0.07),
+                in: Capsule()
+            )
     }
 
     private var selectedDirection: Direction? {
