@@ -15,6 +15,7 @@ struct IOSTasksView: View {
     @State private var filter = TaskCalendarFilter.all
     @State private var editorMode: IOSTaskEditorMode?
     @State private var backlogMode: IOSBacklogMode?
+    @State private var pendingBacklogMode: IOSBacklogMode?
     @State private var showsBacklogMenu = false
     @State private var visibleDay: Date?
     @State private var showsComposer = false
@@ -74,11 +75,13 @@ struct IOSTasksView: View {
                     .accessibilityValue("\(backlogCount)")
 
                     IOSNotificationBadge(count: backlogCount)
+                        .allowsHitTesting(false)
                 }
                 .frame(width: 44, height: 44)
                 .popover(isPresented: $showsBacklogMenu, arrowEdge: .top) {
                     backlogMenuContent
                         .presentationCompactAdaptation(.popover)
+                        .onDisappear(perform: presentPendingBacklog)
                 }
             }
         }
@@ -181,8 +184,8 @@ struct IOSTasksView: View {
         mode: IOSBacklogMode
     ) -> some View {
         Button {
+            pendingBacklogMode = mode
             showsBacklogMenu = false
-            backlogMode = mode
         } label: {
             HStack(spacing: 10) {
                 Image(systemName: systemImage)
@@ -201,6 +204,16 @@ struct IOSTasksView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+
+    private func presentPendingBacklog() {
+        guard let mode = pendingBacklogMode else { return }
+        pendingBacklogMode = nil
+
+        Task { @MainActor in
+            await Task.yield()
+            backlogMode = mode
+        }
     }
 
     private var controls: some View {
