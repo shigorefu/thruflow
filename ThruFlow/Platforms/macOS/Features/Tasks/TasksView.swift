@@ -356,7 +356,7 @@ struct TasksView: View {
         }
         .buttonStyle(.plain)
         .foregroundStyle(count == 0 ? .secondary : .primary)
-        .accessibilityLabel("\(title)、\(count)")
+        .accessibilityLabel(String(localized: "項目 \(title)、件数 \(count)"))
     }
 
     private var backlogInspectorTodos: [Todo] {
@@ -406,7 +406,7 @@ struct TasksView: View {
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
-                .accessibilityLabel("\(backlogInspectorTitle)を閉じる")
+                .accessibilityLabel(String(localized: "「\(backlogInspectorTitle)」パネルを閉じる"))
             }
             .padding(16)
 

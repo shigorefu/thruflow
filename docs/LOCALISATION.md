@@ -34,6 +34,12 @@ The non-programmer workflow is documented in `Localisation/README.md`. A new
 language is added in Xcode's String Catalog editor and requires no Swift or
 SwiftData changes. Local SwiftData remains independent of the selected locale.
 
+Xcode may update the catalog automatically while extracting SwiftUI and
+accessibility strings. Review those diffs against the originating Swift code:
+empty keys indicate an extraction bug, obsolete `stale` entries should be
+removed when no source still references them, and dynamic placeholders must use
+translator-readable source keys with complete `ja`, `en`, and `ru` values.
+
 `Localisation/TERMS.csv` is the contributor-facing terminology glossary. Its
 first column contains stable code references, while language columns contain
 approved translations. It is intentionally not loaded at runtime and therefore

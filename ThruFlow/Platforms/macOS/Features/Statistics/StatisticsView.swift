@@ -670,8 +670,9 @@ private struct ContributionHeatmapCell: View {
                 isHovered = hovering && day != nil
             }
         }
+        .accessibilityHidden(day == nil)
         .accessibilityLabel(accessibilityLabel)
-        .accessibilityHint(day == nil ? "" : String(localized: "この日の履歴を開く"))
+        .accessibilityHint(String(localized: "この日の履歴を開く"))
     }
 
     private var fillColor: Color {

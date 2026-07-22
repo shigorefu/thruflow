@@ -5109,22 +5109,6 @@
         }
       }
     },
-    "日付なしのタスク、%lld件" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No Date Tasks, %lld"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Задачи без даты: %lld"
-          }
-        }
-      }
-    },
     "日付なしのタスクがここに表示されます。" : {
       "localizations" : {
         "en" : {
@@ -5137,38 +5121,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Здесь отображаются задачи без даты."
-          }
-        }
-      }
-    },
-    "日付なしのタスクはありません" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No Tasks Without a Date"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Задач без даты нет"
-          }
-        }
-      }
-    },
-    "日付なしを閉じる" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Close No Date"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Закрыть список без даты"
           }
         }
       }
@@ -6945,6 +6897,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Частота"
+          }
+        }
+      }
+    },
+    "「%@」パネルを閉じる" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close \"%1$@\" panel"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「%1$@」パネルを閉じる"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закрыть панель «%1$@»"
+          }
+        }
+      }
+    },
+    "項目 %@、件数 %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Item %1$@, count %2$lld"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "項目 %1$@、件数 %2$lld"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Элемент %1$@, количество: %2$lld"
           }
         }
       }
