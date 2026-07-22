@@ -20,6 +20,7 @@ struct IOSTasksView: View {
     @State private var visibleDay: Date?
     @State private var showsComposer = false
     @State private var isClosing = false
+    @State private var backlogMoveError: String?
 
     init(close: @escaping () -> Void = {}) {
         self.close = close
@@ -27,6 +28,7 @@ struct IOSTasksView: View {
 
     private var calendarBuilder: TaskCalendarBuilder { TaskCalendarBuilder(calendar: calendar) }
     private var requiredPlanner: RequiredTodoPlanner { RequiredTodoPlanner(calendar: calendar) }
+    private var rescheduleService: TaskRescheduleService { TaskRescheduleService(calendar: calendar) }
 
     private var activeDirections: [Direction] {
         directions.filter { !$0.isArchived }
@@ -107,6 +109,19 @@ struct IOSTasksView: View {
                     }
                 )
             }
+        }
+        .alert(
+            String(localized: "移動できません"),
+            isPresented: Binding(
+                get: { backlogMoveError != nil },
+                set: { if !$0 { backlogMoveError = nil } }
+            )
+        ) {
+            Button(String(localized: "OK"), role: .cancel) {
+                backlogMoveError = nil
+            }
+        } message: {
+            Text(backlogMoveError ?? "")
         }
         .task {
             isClosing = false
@@ -366,6 +381,9 @@ struct IOSTasksView: View {
                 .font(.headline)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
+            let overdueTodos = visibleOverdueTodos(on: date)
+            overdueTaskGroup(overdueTodos)
+
             let grouped = IOSGroupedTodos(todos: todos)
             taskGroup(title: String(localized: "習慣"), todos: grouped.habits)
             taskGroup(title: String(localized: "タスク"), todos: grouped.tasks)
@@ -373,7 +391,7 @@ struct IOSTasksView: View {
                 taskGroup(title: String(localized: "ナイス"), todos: grouped.nice)
             }
 
-            if todos.isEmpty {
+            if todos.isEmpty && overdueTodos.isEmpty {
                 ContentUnavailableView(
                     String(localized: "今日の項目はありません"),
                     systemImage: "checkmark.circle"
@@ -383,6 +401,46 @@ struct IOSTasksView: View {
         }
         .padding(14)
         .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 16))
+    }
+
+    @ViewBuilder
+    private func overdueTaskGroup(_ todos: [Todo]) -> some View {
+        if !todos.isEmpty {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 7) {
+                    Circle()
+                        .fill(.red)
+                        .frame(width: 7, height: 7)
+
+                    Text(String(localized: "期限切れ"))
+                        .font(.caption.weight(.semibold))
+
+                    Text("\(todos.count)")
+                        .font(.caption2.monospacedDigit().weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.secondary.opacity(0.14), in: Capsule())
+
+                    Spacer(minLength: 0)
+
+                    Button(String(localized: "すべて今日へ")) {
+                        moveTodosToToday(todos)
+                    }
+                    .font(.caption)
+                    .buttonStyle(.borderless)
+                }
+
+                ForEach(todos) { todo in
+                    IOSTaskRow(todo: todo) {
+                        editorMode = .edit(todo)
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 9)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+                }
+            }
+        }
     }
 
     @ViewBuilder
@@ -410,6 +468,37 @@ struct IOSTasksView: View {
             .filter { TodayTodoFilter(calendar: calendar).includes($0, on: date) }
             .filter(filter.includes)
             .sorted(by: taskSort)
+    }
+
+    private func visibleOverdueTodos(on date: Date) -> [Todo] {
+        guard calendar.isDateInToday(date) else { return [] }
+        return backlog.overdue
+            .filter(filter.includes)
+            .sorted(by: taskSort)
+    }
+
+    private func moveTodosToToday(_ candidates: [Todo]) {
+        let today = calendar.startOfDay(for: .now)
+        let movable = candidates.filter { todo in
+            if case .success = rescheduleService.validate(todo, movingTo: today, among: todos) {
+                return true
+            }
+            return false
+        }
+        guard !movable.isEmpty else { return }
+
+        let firstSortIndex = (todos.map(\.sortIndex).min() ?? 0) - movable.count
+        for (offset, todo) in movable.enumerated() {
+            todo.reschedule(to: today)
+            todo.setSortIndex(firstSortIndex + offset)
+        }
+
+        do {
+            try modelContext.save()
+        } catch {
+            modelContext.rollback()
+            backlogMoveError = String(localized: "タスクを今日へ移動できませんでした。")
+        }
     }
 
     private func ensureRequiredTodos(now: Date = .now) {

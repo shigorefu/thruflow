@@ -72,7 +72,7 @@ struct DayHistoryView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 modePicker
-                    .frame(width: 330)
+                    .fixedSize(horizontal: true, vertical: false)
             }
         }
         .sheet(item: $editingTodo) { todo in

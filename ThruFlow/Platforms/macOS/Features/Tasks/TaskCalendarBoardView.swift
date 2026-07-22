@@ -16,7 +16,8 @@ struct TaskCalendarToolbar: View {
     var body: some View {
         ZStack {
             HStack(spacing: 10) {
-                filterMenu
+                filterPicker
+                    .frame(width: 240)
 
                 Spacer(minLength: 0)
 
@@ -43,27 +44,14 @@ struct TaskCalendarToolbar: View {
         .accessibilityLabel(String(localized: "表示範囲"))
     }
 
-    private var filterMenu: some View {
-        Menu {
+    private var filterPicker: some View {
+        Picker(String(localized: "フィルター"), selection: $filter) {
             ForEach(TaskCalendarFilter.allCases) { option in
-                Button {
-                    filter = option
-                } label: {
-                    if filter == option {
-                        Label(option.displayName, systemImage: "checkmark")
-                    } else {
-                        Text(option.displayName)
-                    }
-                }
+                Text(option.displayName).tag(option)
             }
-        } label: {
-            Image(
-                systemName: filter == .all
-                    ? "line.3.horizontal.decrease"
-                    : "line.3.horizontal.decrease.circle.fill"
-            )
-            .frame(width: 24, height: 24)
         }
+        .pickerStyle(.segmented)
+        .labelsHidden()
         .accessibilityLabel(String(localized: "フィルター"))
         .accessibilityValue(filter.displayName)
     }

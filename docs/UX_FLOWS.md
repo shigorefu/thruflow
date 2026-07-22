@@ -27,7 +27,7 @@ Active normal Tasks can be dragged between dates in day, week, and month. Month 
 Clicking a month cell opens that date in `日`. On macOS, the system title toolbar
 places `期限切れ N | 日付なし N` beside `タスク`; both counters open the same
 trailing backlog inspector with the corresponding records. The compact calendar
-control row uses an icon-only filter, centered `日 | 週 | 月`, and an explicit
+control row uses the text segmented filter `すべて | タスク | 習慣`, centered `日 | 週 | 月`, and an explicit
 trailing `今日`. The quick composer follows the selected date or kanban column.
 
 Sections:
@@ -58,7 +58,7 @@ The composer also recognizes `[]`, `[2b]`, `[30m]`, `@Direction`, `!high`, `/tod
 
 Inside the Flow task picker, quick creation opens as a separate compact trailing popover. It shows only the messenger composer, without the syntax legend. The add action first closes the Task picker and then presents the composer from the player itself. Avoiding a nested popover keeps controls and submenus interactive in the macOS menu-bar window instead of treating them as outside clicks.
 
-When `今日` is selected, active overdue normal Tasks appear in a leading `期限切れ` section. The section supports normal Task actions, drag-to-date, and `すべて今日へ`. Automatically generated Habit instances are excluded.
+When `今日` is selected on macOS or iOS, active overdue normal Tasks appear in a leading `期限切れ` section. Both platforms use the shared backlog projection and expose normal Task actions plus `すべて今日へ`; macOS additionally supports drag-to-date. Automatically generated Habit instances are excluded.
 
 There is no separate Inbox navigation item. The macOS toolbar counters for
 `期限切れ` and `日付なし` always show their active normal Task totals and open a
