@@ -41,6 +41,9 @@ Current MVP goal:
   no-date inboxes, day/week/month Task ranges, automatic Habits, native Task
   editing, ordered Direction groups, and a dedicated Direction emoji picker.
 - Animated completion feedback for Check, Block, and Minute Tasks, with an optional bundled completion sound.
+- iPhone Live Activity and Dynamic Island player for an active Flow, including
+  system-updating time/progress, Task and Direction context, pause/resume,
+  finish, and deep-link return to the Flow screen.
 
 ## Not Included
 
@@ -49,8 +52,7 @@ Current MVP goal:
 - Food/sleep/game classification.
 - Complex rewards.
 - Accounts/subscriptions.
-- Widgets.
-- Live Activities.
+- Standalone widgets.
 - Apple Watch.
 - Advanced iPhone `統計` beyond the compact contribution overview.
 - Full iPhone History/calendar editing.

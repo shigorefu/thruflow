@@ -34,7 +34,10 @@ struct LocalisationTests {
             let source = try String(contentsOf: fileURL, encoding: .utf8)
             for (offset, line) in source.split(separator: "\n", omittingEmptySubsequences: false).enumerated() {
                 guard containsJapaneseStringLiteral(String(line)) else { continue }
-                guard !line.contains("String(localized:") else { continue }
+                let usesLocalisationAPI = line.contains("String(localized:") ||
+                    line.contains("LocalizedStringResource") ||
+                    line.contains("IntentDescription(")
+                guard !usesLocalisationAPI else { continue }
 
                 let relativePath = fileURL.path.replacingOccurrences(
                     of: repositoryRoot.path + "/",

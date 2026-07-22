@@ -18,6 +18,7 @@ ThruFlow/
       Logic/        Pure calculations and product rules
       Services/     Platform-neutral protocols and shared implementations
     Application/    Shared observable state and use-case orchestration
+    LiveActivity/   Shared ActivityKit attributes, content state, and intents
     UI/             Small reusable SwiftUI components
   Localisation/     Shared Apple String Catalog used by every platform target
   Platforms/
@@ -28,6 +29,8 @@ ThruFlow/
     iOS/
       App/          iPhone composition root, navigation, entitlements, and Info.plist
       Features/     Native iPhone Flow, Tasks, History, Directions, Statistics, and Settings
+      Support/      ActivityKit and other iOS framework adapters
+ThruFlowLiveActivity/  Widget extension that renders Live Activity surfaces
 ```
 
 `ThruFlow` and `ThruFlow iOS` are separate application targets. Explicit source
@@ -54,6 +57,8 @@ Platforms/iOS  ──┘              │
   platform, such as UserNotifications.
 - `Shared/Application` coordinates domain operations and persistence. It may
   import Foundation, Combine, and SwiftData, but not AppKit or UIKit.
+- `Shared/LiveActivity` owns the iOS ActivityKit attributes, immutable content
+  state, formatting, and App Intents shared by the application and extension.
 - `Shared/UI` contains only components whose behavior and layout are intended
   to remain common across platforms.
 - `Localisation/Localizable.xcstrings` owns user-facing copy for every platform;
@@ -62,6 +67,8 @@ Platforms/iOS  ──┘              │
   integration, drag-and-drop presentation, and the current desktop layouts.
 - `Platforms/iOS` owns the Flow-first iPhone navigation shell and compact Flow,
   Tasks, History, Directions, Statistics, and Settings presentations.
+- `ThruFlowLiveActivity` owns only Lock Screen and Dynamic Island rendering. It
+  does not open SwiftData or create another timer state machine.
 - Platform-specific behavior is reached through small adapters in the owning
   platform folder. Shared code does not use conditional AppKit/UIKit imports.
 
@@ -76,13 +83,17 @@ Each platform owns its composition root:
 - `AppModelContainerFactory` creates the shared SwiftData container without
   importing a platform UI framework.
 - `ActiveFlowStore` is shared application state. Platform views observe and
-  control it but do not create a second timer state machine.
+  control it but do not create a second timer state machine. It publishes a
+  platform-neutral `FlowLiveActivityContent` projection through
+  `LiveActivityService`; the iOS adapter translates that projection into
+  ActivityKit state.
 - `AppSettings` owns typed local preferences and derives the effective
   `Calendar` and `Locale`. Platform composition roots inject those values into
   their scene environments; settings never enter SwiftData.
 
 - `Platforms/iOS/App/ThruFlowiOSApp.swift` declares the iPhone scene and injects
   the same `ActiveFlowStore`, `AppSettings`, calendar, locale, and model schema.
+  It also registers the Live Activity control dependency used by system actions.
 
 ## Feature Boundaries
 
@@ -136,6 +147,12 @@ Advanced Statistics and full calendar/history editing remain macOS-only until
 the next iPhone stage. Shared calculations are reused, but desktop views are
 never compiled into the iOS target.
 
+An active iPhone Flow publishes one system Live Activity. The Lock Screen and
+Dynamic Island show Task, Direction, mode, phase, remaining time, and progress.
+Date-backed timer ranges let the system advance timer text and progress while
+the app is suspended. Pause/resume and finish actions call the same
+`ActiveFlowStore`; tapping the activity deep-links to the Flow tab.
+
 ## Migration Strategy
 
 1. Move files without changing declarations or behavior.
@@ -148,4 +165,4 @@ never compiled into the iOS target.
 
 This cross-platform stage does not add new business rules or alter macOS
 behavior. It does not include advanced iPhone Statistics, full History/calendar
-editing, widgets, Live Activities, or Apple Watch.
+editing, standalone widgets, or Apple Watch.

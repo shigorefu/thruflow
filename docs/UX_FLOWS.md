@@ -191,6 +191,21 @@ changing the basic shared settings. Private CloudKit synchronization carries the
 same SwiftData records between devices signed into one Apple ID. Japanese is the
 default language for a fresh install.
 
+## Live Activity
+
+Starting an iPhone Flow creates one system Live Activity. It remains visible on
+the Lock Screen and supported Dynamic Island devices until the Flow or its
+connected break ends. The presentation includes Task title and emoji, optional
+Direction, Sprint/Focus/Deep mode, focus/break/paused status, remaining time,
+and timer progress.
+
+Compact Island uses the Task emoji on the leading side and remaining time on
+the trailing side. Minimal Island uses a circular progress indicator. Expanded
+Island exposes the compact player and the system-permitted pause/resume,
+finish-without-memo, and open-app actions. Opening any activity routes to the
+Flow tab. ActivityKit advances date-backed timer text and progress while the app
+is suspended; state transitions still originate from `ActiveFlowStore`.
+
 ## Statistics
 
 Statistics uses a contribution grid.

@@ -646,6 +646,92 @@ struct FlowTests {
         #expect(flowBreak.isLongBreak)
         #expect(flowBreak.continuationDeadline == start.addingTimeInterval(25 * 60 + 30 * 60))
     }
+
+    @Test @MainActor func activeFlowPublishesLiveActivityContextAndPauseState() throws {
+        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let start = Date(timeIntervalSince1970: 30_000)
+        let direction = Direction(
+            name: "開発",
+            type: .neutral,
+            symbolName: "💻",
+            colorHex: "#34C759"
+        )
+        let todo = Todo(title: "Live Activity", direction: direction)
+        let liveActivities = TestLiveActivityService()
+        context.insert(direction)
+        context.insert(todo)
+
+        let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
+        let store = ActiveFlowStore(
+            defaults: defaults,
+            notifications: TestFlowNotificationService(),
+            liveActivities: liveActivities
+        )
+        store.configure(direction: direction, todo: todo, mode: .twentyFiveFive)
+        store.start(direction: direction, todo: todo, modelContext: context, now: start)
+
+        let started = try #require(liveActivities.started.last)
+        #expect(started.taskEmoji == "💻")
+        #expect(started.taskTitle == "Live Activity")
+        #expect(started.directionName == "開発")
+        #expect(started.directionColorHex == "#34C759")
+        #expect(started.modeName == "Focus")
+        #expect(started.status == .focus)
+        #expect(started.remainingSeconds == 25 * 60)
+        #expect(started.progress == 0)
+
+        store.pause(modelContext: context, now: start.addingTimeInterval(5 * 60))
+
+        let paused = try #require(liveActivities.updated.last)
+        #expect(paused.status == .paused)
+        #expect(paused.timerKind == .focus)
+        #expect(paused.remainingSeconds == 20 * 60)
+        #expect(abs(paused.progress - 0.2) < 0.000_001)
+
+        store.destroy(modelContext: context, now: start.addingTimeInterval(5 * 60))
+        #expect(liveActivities.endCount == 1)
+    }
+
+    @Test @MainActor func breakPublishesCountdownLiveActivityState() throws {
+        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let start = Date(timeIntervalSince1970: 40_000)
+        let breakStartedAt = start.addingTimeInterval(25 * 60)
+        let direction = Direction(name: "読書", type: .habit, symbolName: "📚")
+        let liveActivities = TestLiveActivityService()
+        context.insert(direction)
+
+        let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
+        let store = ActiveFlowStore(
+            defaults: defaults,
+            notifications: TestFlowNotificationService(),
+            liveActivities: liveActivities
+        )
+        store.configure(direction: direction, todo: nil, mode: .twentyFiveFive)
+        store.start(direction: direction, todo: nil, modelContext: context, now: start)
+        store.startBreak(modelContext: context, now: breakStartedAt)
+
+        let resting = try #require(liveActivities.updated.last)
+        #expect(resting.status == .breakTime)
+        #expect(resting.timerKind == .breakTime)
+        #expect(resting.taskTitle == "読書")
+        #expect(resting.remainingSeconds == 5 * 60)
+        #expect(resting.progress == 1)
+        #expect(resting.plannedEndAt == breakStartedAt.addingTimeInterval(5 * 60))
+
+        store.skipBreak(modelContext: context, now: breakStartedAt.addingTimeInterval(60))
+        #expect(liveActivities.endCount >= 1)
+    }
+
+    @Test func liveActivityTimeFormatterClampsOvertime() {
+        #expect(FlowLiveActivityFormatter.timeText(seconds: 65) == "01:05")
+        #expect(FlowLiveActivityFormatter.timeText(seconds: -1) == "00:00")
+    }
 }
 
 private final class TestFlowNotificationService: FlowNotificationService {
@@ -653,4 +739,23 @@ private final class TestFlowNotificationService: FlowNotificationService {
     func scheduleFocusFinished(mode: FlowMode, focusedSeconds: Int, fireDate: Date) {}
     func scheduleBreakFinished(fireDate: Date) {}
     func cancelPendingFlowNotifications() {}
+}
+
+@MainActor
+private final class TestLiveActivityService: LiveActivityService {
+    private(set) var started: [FlowLiveActivityContent] = []
+    private(set) var updated: [FlowLiveActivityContent] = []
+    private(set) var endCount = 0
+
+    func start(content: FlowLiveActivityContent) {
+        started.append(content)
+    }
+
+    func update(content: FlowLiveActivityContent) {
+        updated.append(content)
+    }
+
+    func end() {
+        endCount += 1
+    }
 }

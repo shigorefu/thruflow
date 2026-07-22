@@ -75,6 +75,10 @@ struct IOSRootView: View {
                 IOSSettingsView()
             }
         }
+        .onOpenURL { url in
+            guard url.scheme == "thruflow", url.host == "flow" else { return }
+            selectionBinding.wrappedValue = .flow
+        }
     }
 
     private var tabs: some View {

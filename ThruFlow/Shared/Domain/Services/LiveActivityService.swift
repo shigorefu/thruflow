@@ -7,23 +7,52 @@
 
 import Foundation
 
-struct FlowLiveActivityContent: Equatable {
-    var directionEmoji: String
-    var directionName: String
-    var todoTitle: String?
-    var modeName: String
-    var phase: FlowPhase
-    var plannedEndAt: Date
+enum FlowLiveActivityStatus: String, Codable, Equatable, Hashable {
+    case focus
+    case breakTime
+    case paused
 }
 
+enum FlowLiveActivityTimerKind: String, Codable, Equatable, Hashable {
+    case focus
+    case breakTime
+}
+
+struct FlowLiveActivityContent: Equatable {
+    var sessionID: UUID
+    var taskEmoji: String
+    var taskTitle: String
+    var directionEmoji: String
+    var directionName: String
+    var directionColorHex: String
+    var modeRawValue: String
+    var modeName: String
+    var status: FlowLiveActivityStatus
+    var timerKind: FlowLiveActivityTimerKind
+    var timerStartedAt: Date
+    var plannedEndAt: Date
+    var remainingSeconds: Int
+    var progress: Double
+    var updatedAt: Date
+}
+
+@MainActor
 protocol LiveActivityService {
     func start(content: FlowLiveActivityContent)
     func update(content: FlowLiveActivityContent)
     func end()
 }
 
+@MainActor
 struct NoopLiveActivityService: LiveActivityService {
     func start(content: FlowLiveActivityContent) {}
     func update(content: FlowLiveActivityContent) {}
     func end() {}
+}
+
+enum FlowLiveActivityFormatter {
+    nonisolated static func timeText(seconds: Int) -> String {
+        let clampedSeconds = max(0, seconds)
+        return String(format: "%02d:%02d", clampedSeconds / 60, clampedSeconds % 60)
+    }
 }

@@ -17,7 +17,8 @@
 - [x] Настроить private CloudKit для общего SwiftData store macOS и iOS.
 - [x] Добавить Flow-first iPhone MVP: Flow dashboard, Tasks/Habits, базовый `履歴`, Directions и Settings.
 - [ ] После стабилизации MVP добавить на iPhone расширенную `統計` и полную редакцию `履歴`/календаря.
-- [ ] Виджеты и Live Activities.
+- [x] Live Activities и Dynamic Island для активного Flow.
+- [ ] Самостоятельные виджеты.
 - [x] Базовая iOS версия (minimum iOS 17.0, сборка Xcode 26/iOS 26 SDK).
 - [ ] Поддержка Apple Watch.
 - [x] В Tasks добавить `期限切れ` в Today и inspector `日付なし`.

@@ -51,6 +51,11 @@ The iOS deployment target is 17.0 even when building with Xcode 26 and the iOS
 - The dashboard projects today's Todo groups and uses `RequiredTodoPlanner` to ensure today's Habit instances exist when Flow is the first opened screen.
 - `TodoProgressControl` is the shared Check/Block/Minute control used by Tasks and the dashboard.
 - `TaskCompletionFeedbackPlayer` optionally plays `task-complete.caf`; absence of the resource is a supported no-op. The shared progress control owns the completion drawing/pulse and respects Reduce Motion.
+- `LiveActivityService` is the platform-neutral output port owned by
+  `ActiveFlowStore`. `IOSFlowLiveActivityService` is the ActivityKit adapter;
+  the Widget Extension receives only shared `FlowActivityAttributes` and never
+  accesses SwiftData. Date-backed timer ranges provide system-driven Lock Screen
+  and Dynamic Island updates while the app is suspended.
 
 ## Test Expectations
 
@@ -68,6 +73,8 @@ Cover:
 - Flow series continuation, Long Break thresholds, rest correction, and same-series downstream shifting.
 - Flow dashboard totals, palette ordering, day filtering, live minimum-credit behavior, and timeline normalization.
 - Dashboard statistics distribution, seven-day trend comparisons, and completion projection.
+- Live Activity content projection for focus, break, and paused phases, plus
+  deterministic shared formatting.
 
 ## Migration Caution
 

@@ -6,6 +6,14 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		5B2000013000000000000001 /* ThruFlowLiveActivityExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 5B2000023000000000000002 /* ThruFlowLiveActivityExtension.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		5B2000133000000000000013 /* LiveActivityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B20000F300000000000000F /* LiveActivityService.swift */; };
+		5B2000143000000000000014 /* FlowActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B2000103000000000000010 /* FlowActivityAttributes.swift */; };
+		5B2000153000000000000015 /* FlowLiveActivityIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B2000113000000000000011 /* FlowLiveActivityIntents.swift */; };
+		5B2000163000000000000016 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 5B2000123000000000000012 /* Localizable.xcstrings */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		2E1176FF2FFE20CF0011219C /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -21,13 +29,39 @@
 			remoteGlobalIDString = 2E1176EC2FFE20CF0011219C;
 			remoteInfo = ThruFlow;
 		};
+		5B20000D300000000000000D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2E1176E52FFE20CF0011219C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 5B2000083000000000000008;
+			remoteInfo = ThruFlowLiveActivityExtension;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		5B20000C300000000000000C /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				5B2000013000000000000001 /* ThruFlowLiveActivityExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		2E1176ED2FFE20CF0011219C /* ThruFlow.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ThruFlow.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		2E1176FE2FFE20CF0011219C /* ThruFlowTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ThruFlowTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		2E1177082FFE20CF0011219C /* ThruFlowUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ThruFlowUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4A1000013000000000000001 /* ThruFlow.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ThruFlow.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		5B2000023000000000000002 /* ThruFlowLiveActivityExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ThruFlowLiveActivityExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		5B20000F300000000000000F /* LiveActivityService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThruFlow/Shared/Domain/Services/LiveActivityService.swift; sourceTree = SOURCE_ROOT; };
+		5B2000103000000000000010 /* FlowActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThruFlow/Shared/LiveActivity/FlowActivityAttributes.swift; sourceTree = SOURCE_ROOT; };
+		5B2000113000000000000011 /* FlowLiveActivityIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThruFlow/Shared/LiveActivity/FlowLiveActivityIntents.swift; sourceTree = SOURCE_ROOT; };
+		5B2000123000000000000012 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = ThruFlow/Localisation/Localizable.xcstrings; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -46,6 +80,13 @@
 				Platforms/iOS/App/Info.plist,
 			);
 			target = 4A1000083000000000000008 /* ThruFlow iOS */;
+		};
+		5B2000043000000000000004 /* Exceptions for "ThruFlowLiveActivity" folder in "ThruFlowLiveActivityExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 5B2000083000000000000008 /* ThruFlowLiveActivityExtension */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -67,6 +108,14 @@
 		2E11770B2FFE20CF0011219C /* ThruFlowUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = ThruFlowUITests;
+			sourceTree = "<group>";
+		};
+		5B2000033000000000000003 /* ThruFlowLiveActivity */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				5B2000043000000000000004 /* Exceptions for "ThruFlowLiveActivity" folder in "ThruFlowLiveActivityExtension" target */,
+			);
+			path = ThruFlowLiveActivity;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -100,6 +149,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		5B2000053000000000000005 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -107,6 +163,7 @@
 			isa = PBXGroup;
 			children = (
 				2E1176EF2FFE20CF0011219C /* ThruFlow */,
+				5B2000033000000000000003 /* ThruFlowLiveActivity */,
 				2E1177012FFE20CF0011219C /* ThruFlowTests */,
 				2E11770B2FFE20CF0011219C /* ThruFlowUITests */,
 				2E1176EE2FFE20CF0011219C /* Products */,
@@ -120,6 +177,7 @@
 				4A1000013000000000000001 /* ThruFlow.app */,
 				2E1176FE2FFE20CF0011219C /* ThruFlowTests.xctest */,
 				2E1177082FFE20CF0011219C /* ThruFlowUITests.xctest */,
+				5B2000023000000000000002 /* ThruFlowLiveActivityExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -202,10 +260,12 @@
 				4A1000033000000000000003 /* Sources */,
 				4A1000043000000000000004 /* Frameworks */,
 				4A1000053000000000000005 /* Resources */,
+				5B20000C300000000000000C /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				5B20000E300000000000000E /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				2E1176EF2FFE20CF0011219C /* ThruFlow */,
@@ -216,6 +276,28 @@
 			productName = ThruFlow;
 			productReference = 4A1000013000000000000001 /* ThruFlow.app */;
 			productType = "com.apple.product-type.application";
+		};
+		5B2000083000000000000008 /* ThruFlowLiveActivityExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5B20000B300000000000000B /* Build configuration list for PBXNativeTarget "ThruFlowLiveActivityExtension" */;
+			buildPhases = (
+				5B2000073000000000000007 /* Sources */,
+				5B2000053000000000000005 /* Frameworks */,
+				5B2000063000000000000006 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				5B2000033000000000000003 /* ThruFlowLiveActivity */,
+			);
+			name = ThruFlowLiveActivityExtension;
+			packageProductDependencies = (
+			);
+			productName = ThruFlowLiveActivityExtension;
+			productReference = 5B2000023000000000000002 /* ThruFlowLiveActivityExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -241,6 +323,9 @@
 					4A1000083000000000000008 = {
 						CreatedOnToolsVersion = 26.6;
 					};
+					5B2000083000000000000008 = {
+						CreatedOnToolsVersion = 26.6;
+					};
 				};
 			};
 			buildConfigurationList = 2E1176E82FFE20CF0011219C /* Build configuration list for PBXProject "ThruFlow" */;
@@ -260,6 +345,7 @@
 			targets = (
 				2E1176EC2FFE20CF0011219C /* ThruFlow */,
 				4A1000083000000000000008 /* ThruFlow iOS */,
+				5B2000083000000000000008 /* ThruFlowLiveActivityExtension */,
 				2E1176FD2FFE20CF0011219C /* ThruFlowTests */,
 				2E1177072FFE20CF0011219C /* ThruFlowUITests */,
 			);
@@ -295,6 +381,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		5B2000063000000000000006 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5B2000163000000000000016 /* Localizable.xcstrings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -326,6 +420,16 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		5B2000073000000000000007 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5B2000133000000000000013 /* LiveActivityService.swift in Sources */,
+				5B2000143000000000000014 /* FlowActivityAttributes.swift in Sources */,
+				5B2000153000000000000015 /* FlowLiveActivityIntents.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -338,6 +442,11 @@
 			isa = PBXTargetDependency;
 			target = 2E1176EC2FFE20CF0011219C /* ThruFlow */;
 			targetProxy = 2E1177092FFE20CF0011219C /* PBXContainerItemProxy */;
+		};
+		5B20000E300000000000000E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 5B2000083000000000000008 /* ThruFlowLiveActivityExtension */;
+			targetProxy = 5B20000D300000000000000D /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -794,6 +903,70 @@
 			};
 			name = Release;
 		};
+		5B2000093000000000000009 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = BR727PS795;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ThruFlowLiveActivity/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.shigorefu.thruflow.liveactivity;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		5B20000A300000000000000A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = BR727PS795;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ThruFlowLiveActivity/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.shigorefu.thruflow.liveactivity;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -838,6 +1011,15 @@
 			buildConfigurations = (
 				4A1000093000000000000009 /* Debug */,
 				4A10000A300000000000000A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		5B20000B300000000000000B /* Build configuration list for PBXNativeTarget "ThruFlowLiveActivityExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5B2000093000000000000009 /* Debug */,
+				5B20000A300000000000000A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

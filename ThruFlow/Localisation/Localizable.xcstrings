@@ -65,6 +65,28 @@
         }
       }
     },
+    "「%@」パネルを閉じる" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close \"%1$@\" panel"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「%1$@」パネルを閉じる"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закрыть панель «%1$@»"
+          }
+        }
+      }
+    },
     "/ %lld:00" : {
       "localizations" : {
         "en" : {
@@ -1491,6 +1513,22 @@
         }
       }
     },
+    "Flowの一時停止と再開を切り替えます。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pauses or resumes the current Flow."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Приостанавливает или продолжает текущий Flow."
+          }
+        }
+      }
+    },
     "Flowまたは休憩の詳細をここに表示します。" : {
       "localizations" : {
         "en" : {
@@ -1583,6 +1621,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Уничтожить Flow"
+          }
+        }
+      }
+    },
+    "Flowを終了" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finish Flow"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Завершить Flow"
           }
         }
       }
@@ -1983,6 +2037,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "В архиве"
+          }
+        }
+      }
+    },
+    "アプリを開く" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open App"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть приложение"
           }
         }
       }
@@ -3381,6 +3451,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Пауза"
+          }
+        }
+      }
+    },
+    "一時停止・再開" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pause or Resume"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пауза или продолжение"
           }
         }
       }
@@ -5749,6 +5835,22 @@
         }
       }
     },
+    "現在のFlowをメモなしで終了します。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finishes the current Flow without a memo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Завершает текущий Flow без заметки."
+          }
+        }
+      }
+    },
     "発表資料を作る" : {
       "localizations" : {
         "en" : {
@@ -6885,44 +6987,6 @@
         }
       }
     },
-    "頻度" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Frequency"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Частота"
-          }
-        }
-      }
-    },
-    "「%@」パネルを閉じる" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Close \"%1$@\" panel"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「%1$@」パネルを閉じる"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Закрыть панель «%1$@»"
-          }
-        }
-      }
-    },
     "項目 %@、件数 %lld" : {
       "localizations" : {
         "en" : {
@@ -6941,6 +7005,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Элемент %1$@, количество: %2$lld"
+          }
+        }
+      }
+    },
+    "頻度" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Frequency"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Частота"
           }
         }
       }

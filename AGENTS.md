@@ -14,7 +14,7 @@ implementation sources relevant to the task.
 - Prefer Swift, SwiftUI, SwiftData, Swift Testing, and Apple system frameworks.
 - Do not add third-party dependencies unless a future task explicitly justifies one.
 - Keep local SwiftData operation independent of CloudKit.
-- Do not implement AI, AWS, accounts, subscriptions, widgets, Live Activities, Apple Watch, or a full timeline editor in MVP 0.1.
+- Do not implement AI, AWS, accounts, subscriptions, standalone widgets, Apple Watch, or a full timeline editor in MVP 0.1. The iPhone app does include the approved Flow Live Activity and Dynamic Island surface.
 - Canonical productivity unit: `1 Block = 25 focused minutes`. Breaks are excluded. 12 focused minutes are presented as `0.5 Block`.
 
 ## Architecture Expectations

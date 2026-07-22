@@ -29,6 +29,7 @@ final class ActiveFlowStore: ObservableObject {
     private let historyEditor = FlowHistoryEditor()
     private let seriesPolicy = FlowSeriesPolicy()
     private let notifications: FlowNotificationService
+    private let liveActivities: any LiveActivityService
     private let defaults: UserDefaults
     private var didApplyProgress = false
     private var stateBeforeResultPrompt: FlowTimerState?
@@ -36,10 +37,12 @@ final class ActiveFlowStore: ObservableObject {
 
     init(
         defaults: UserDefaults = .standard,
-        notifications: FlowNotificationService? = nil
+        notifications: FlowNotificationService? = nil,
+        liveActivities: (any LiveActivityService)? = nil
     ) {
         self.defaults = defaults
         self.notifications = notifications ?? LocalFlowNotificationService()
+        self.liveActivities = liveActivities ?? NoopLiveActivityService()
         selectedDirectionID = defaults.uuid(forKey: "flow.selectedDirectionID")
         selectedTodoID = defaults.uuid(forKey: "flow.selectedTodoID")
         selectedMode = defaults.flowMode(forKey: "flow.selectedMode") ?? .twentyFiveFive
@@ -126,6 +129,7 @@ final class ActiveFlowStore: ObservableObject {
             fireDate: state.plannedEndAt
         )
         try? modelContext.save()
+        startLiveActivity(now: now)
     }
 
     func selectContext(
@@ -165,6 +169,7 @@ final class ActiveFlowStore: ObservableObject {
 
         configure(direction: direction, todo: todo)
         try? modelContext.save()
+        synchronizeLiveActivity(now: now)
     }
 
     func refresh(modelContext: ModelContext, now: Date = .now) {
@@ -217,6 +222,7 @@ final class ActiveFlowStore: ObservableObject {
         didApplyProgress = false
         isAwaitingBreakMemo = false
         stateBeforeResultPrompt = nil
+        liveActivities.end()
     }
 
     func cancelResultMemo(modelContext: ModelContext, now: Date = .now) {
@@ -246,6 +252,7 @@ final class ActiveFlowStore: ObservableObject {
         }
 
         try? modelContext.save()
+        synchronizeLiveActivity(now: now)
     }
 
     func extendAdaptive(modelContext: ModelContext, now: Date = .now) {
@@ -376,6 +383,7 @@ final class ActiveFlowStore: ObservableObject {
         isAwaitingBreakMemo = false
         stateBeforeResultPrompt = nil
         try? modelContext.save()
+        liveActivities.end()
     }
 
     func skipBreak(modelContext: ModelContext, now: Date = .now) {
@@ -410,6 +418,7 @@ final class ActiveFlowStore: ObservableObject {
         didApplyProgress = false
         isAwaitingBreakMemo = false
         try? modelContext.save()
+        liveActivities.end()
     }
 
     private func beginBreak(
@@ -532,6 +541,7 @@ final class ActiveFlowStore: ObservableObject {
         }
 
         try? modelContext.save()
+        synchronizeLiveActivity(now: now)
     }
 
     private func synchronizeDisplayClock() {
@@ -590,7 +600,74 @@ final class ActiveFlowStore: ObservableObject {
         isAwaitingBreakMemo = false
         stateBeforeResultPrompt = nil
         try? modelContext.save()
+        liveActivities.end()
         return true
+    }
+
+    private func startLiveActivity(now: Date) {
+        guard let content = liveActivityContent(now: now) else {
+            liveActivities.end()
+            return
+        }
+        liveActivities.start(content: content)
+    }
+
+    private func synchronizeLiveActivity(now: Date) {
+        guard let content = liveActivityContent(now: now) else {
+            liveActivities.end()
+            return
+        }
+        liveActivities.update(content: content)
+    }
+
+    func liveActivityContent(now: Date = .now) -> FlowLiveActivityContent? {
+        guard let state = timerState, let activeSession else { return nil }
+
+        let status: FlowLiveActivityStatus
+        let timerKind: FlowLiveActivityTimerKind
+        switch state.phase {
+        case .focusing, .awaitingExtensionDecision:
+            status = .focus
+            timerKind = .focus
+        case .breakTime:
+            status = .breakTime
+            timerKind = .breakTime
+        case .paused:
+            status = .paused
+            timerKind = state.phaseBeforePause == .breakTime ? .breakTime : .focus
+        case .idle, .configured, .awaitingResult, .completed:
+            return nil
+        }
+
+        let currentSegment = activeSession.resolvedSegments.last(where: { $0.endedAt == nil })
+        let direction = currentSegment?.direction ?? activeSession.direction
+        let todo = currentSegment?.todo ?? activeSession.todo
+        let directionName = direction?.name ?? String(localized: "その他")
+        let trimmedTitle = todo?.title.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let duration = timerKind == .breakTime
+            ? state.plannedBreakDurationSeconds
+            : state.plannedFocusDurationSeconds
+        let timerStartedAt = timerKind == .breakTime
+            ? (state.breakStartedAt ?? state.plannedEndAt.addingTimeInterval(-Double(duration)))
+            : state.plannedEndAt.addingTimeInterval(-Double(duration))
+
+        return FlowLiveActivityContent(
+            sessionID: activeSession.id,
+            taskEmoji: direction?.symbolName ?? "📝",
+            taskTitle: trimmedTitle.isEmpty ? directionName : trimmedTitle,
+            directionEmoji: direction?.symbolName ?? "📝",
+            directionName: directionName,
+            directionColorHex: direction?.colorHex ?? "#007AFF",
+            modeRawValue: state.mode.rawValue,
+            modeName: state.mode.displayName,
+            status: status,
+            timerKind: timerKind,
+            timerStartedAt: timerStartedAt,
+            plannedEndAt: state.plannedEndAt,
+            remainingSeconds: engine.remainingSeconds(for: state, now: now),
+            progress: phaseProgress(now: now),
+            updatedAt: now
+        )
     }
 
     private func persistConfiguration() {
