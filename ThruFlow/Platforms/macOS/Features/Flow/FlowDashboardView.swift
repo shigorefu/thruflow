@@ -11,7 +11,8 @@ import SwiftUI
 struct FlowDashboardView: View {
     private static let topPanelHeight: CGFloat = 410
     private static let wideLayoutMinimumWidth: CGFloat = 760
-    private static let widePlayerWidth: CGFloat = 270
+    private static let maximumDashboardWidth: CGFloat = 1320
+    private static let widePlayerWidth: CGFloat = 320
     private static let panelSpacing: CGFloat = 16
 
     @Environment(\.colorScheme) private var colorScheme
@@ -47,14 +48,19 @@ struct FlowDashboardView: View {
             let snapshot = snapshot(now: timeline.date)
 
             GeometryReader { viewport in
+                let availableWidth = min(
+                    max(0, viewport.size.width - 40),
+                    Self.maximumDashboardWidth
+                )
+
                 ScrollView {
                     dashboardLayout(
                         snapshot: snapshot,
-                        availableWidth: max(0, viewport.size.width - 40),
+                        availableWidth: availableWidth,
                         availableHeight: max(0, viewport.size.height - 40),
                         now: timeline.date
                     )
-                    .frame(maxWidth: 1320)
+                    .frame(width: availableWidth)
                     .padding(20)
                     .frame(maxWidth: .infinity)
                 }
@@ -96,33 +102,35 @@ struct FlowDashboardView: View {
         now: Date
     ) -> some View {
         let lowerPanelHeight = max(340, availableHeight - Self.topPanelHeight - Self.panelSpacing)
+        let leftColumnWidth = max(
+            0,
+            availableWidth - Self.widePlayerWidth - Self.panelSpacing
+        )
 
         return Group {
             if availableWidth >= Self.wideLayoutMinimumWidth {
-                Grid(horizontalSpacing: Self.panelSpacing, verticalSpacing: Self.panelSpacing) {
-                    GridRow(alignment: .top) {
+                VStack(spacing: Self.panelSpacing) {
+                    HStack(alignment: .top, spacing: Self.panelSpacing) {
                         flowStage(snapshot: snapshot, now: now)
-                            .frame(
-                                minWidth: Self.wideLayoutMinimumWidth
-                                    - Self.widePlayerWidth
-                                    - Self.panelSpacing,
-                                maxWidth: .infinity
-                            )
+                            .frame(width: leftColumnWidth)
                             .frame(height: Self.topPanelHeight)
 
                         FlowMiniPlayerView(style: .dashboard)
                             .frame(width: Self.widePlayerWidth, height: Self.topPanelHeight)
                     }
 
-                    GridRow(alignment: .top) {
+                    HStack(alignment: .top, spacing: Self.panelSpacing) {
                         taskColumns
+                            .frame(width: leftColumnWidth)
                             .frame(height: lowerPanelHeight)
                         statisticsPanel(snapshot: snapshot)
-                            .frame(width: Self.widePlayerWidth)
-                            .frame(height: lowerPanelHeight)
+                            .frame(
+                                width: Self.widePlayerWidth,
+                                height: lowerPanelHeight
+                            )
                     }
                 }
-                .frame(minWidth: Self.wideLayoutMinimumWidth)
+                .frame(width: availableWidth)
             } else {
                 VStack(spacing: Self.panelSpacing) {
                     FlowMiniPlayerView(style: .dashboard)
