@@ -96,7 +96,7 @@ struct IOSDirectionsView: View {
                         withAnimation { isEditingOrder.toggle() }
                     }
                 } label: {
-                    Image(systemName: "ellipsis.circle")
+                    IOSMoreMenuLabel()
                 }
 
                 Button {

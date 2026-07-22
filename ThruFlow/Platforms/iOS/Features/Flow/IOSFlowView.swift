@@ -47,7 +47,7 @@ struct IOSFlowView: View {
                         Label(String(localized: "設定"), systemImage: "gearshape")
                     }
                 } label: {
-                    Image(systemName: "ellipsis.circle")
+                    IOSMoreMenuLabel()
                 }
                 .accessibilityLabel(String(localized: "その他"))
             }
