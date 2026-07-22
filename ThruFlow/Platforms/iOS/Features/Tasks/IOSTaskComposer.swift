@@ -12,6 +12,7 @@ struct IOSTaskComposer: View {
     @State private var measurement = TodoMeasurement.checkbox
     @State private var plannedAmount = 1
     @State private var priority = TodoPriority.medium
+    @State private var isRoomIfPossible = false
     @State private var scheduledDate: Date? = .now
     @State private var datePickerValue = Date.now
     @State private var showsDatePicker = false
@@ -178,7 +179,8 @@ struct IOSTaskComposer: View {
                 isExplicit: hasExplicitMeasurement
             )
         }
-        .tint(hasExplicitMeasurement ? .accentColor : .secondary)
+        .buttonStyle(.plain)
+        .menuOrder(.fixed)
     }
 
     private var directionMenu: some View {
@@ -198,25 +200,36 @@ struct IOSTaskComposer: View {
                 isExplicit: hasExplicitDirection
             )
         }
-        .tint(hasExplicitDirection ? directionTint : .secondary)
+        .buttonStyle(.plain)
+        .menuOrder(.fixed)
     }
 
     private var priorityMenu: some View {
         Menu {
-            ForEach(TodoPriority.allCases) { value in
+            ForEach([TodoPriority.high, .medium, .low]) { value in
                 Button(value.displayName) {
                     priority = value
+                    isRoomIfPossible = false
                     hasExplicitPriority = true
                 }
             }
+
+            Divider()
+
+            Button(String(localized: "余裕があれば")) {
+                priority = .low
+                isRoomIfPossible = true
+                hasExplicitPriority = true
+            }
         } label: {
             compactLabel(
-                hasExplicitPriority ? priority.displayName : String(localized: "優先度"),
+                priorityTitle,
                 tint: priorityTint,
                 isExplicit: hasExplicitPriority
             )
         }
-        .tint(hasExplicitPriority ? priorityTint : .secondary)
+        .buttonStyle(.plain)
+        .menuOrder(.fixed)
     }
 
     private var dateMenu: some View {
@@ -244,7 +257,8 @@ struct IOSTaskComposer: View {
                 isExplicit: hasExplicitDate
             )
         }
-        .tint(.secondary)
+        .buttonStyle(.plain)
+        .menuOrder(.fixed)
     }
 
     private var quickInputLegend: some View {
@@ -354,13 +368,18 @@ struct IOSTaskComposer: View {
             Text(title)
         }
             .lineLimit(1)
-            .foregroundStyle(isExplicit ? tint : Color.secondary)
+            .foregroundStyle(isExplicit ? tint : Color.primary.opacity(0.72))
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
             .background(
-                isExplicit ? tint.opacity(0.16) : Color.primary.opacity(0.07),
+                isExplicit ? tint.opacity(0.16) : Color.gray.opacity(0.16),
                 in: Capsule()
             )
+            .overlay {
+                Capsule()
+                    .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+            }
+            .contentShape(Capsule())
     }
 
     private var selectedDirection: Direction? {
@@ -384,6 +403,11 @@ struct IOSTaskComposer: View {
         case .medium: return Color.secondary
         case .low: return Color.green
         }
+    }
+
+    private var priorityTitle: String {
+        guard hasExplicitPriority else { return String(localized: "優先度") }
+        return isRoomIfPossible ? String(localized: "余裕があれば") : priority.displayName
     }
 
     private var defaultDirection: Direction? {
@@ -486,6 +510,7 @@ struct IOSTaskComposer: View {
         }
         if let value = result.priority {
             priority = value
+            isRoomIfPossible = result.isRoomIfPossible ?? false
             hasExplicitPriority = true
         }
         if let value = result.date {
@@ -523,7 +548,7 @@ struct IOSTaskComposer: View {
             direction: direction,
             measurement: resolvedMeasurement,
             priority: result.priority ?? priority,
-            isRoomIfPossible: result.isRoomIfPossible ?? false,
+            isRoomIfPossible: result.isRoomIfPossible ?? isRoomIfPossible,
             plannedAmount: resolvedMeasurement == .checkbox ? nil : resolvedPlannedAmount,
             scheduledDate: resolvedDate(from: result.date)
         )
@@ -534,6 +559,7 @@ struct IOSTaskComposer: View {
         measurement = .checkbox
         plannedAmount = 1
         priority = .medium
+        isRoomIfPossible = false
         scheduledDate = calendar.startOfDay(for: .now)
         directionID = nil
         hasExplicitMeasurement = false
