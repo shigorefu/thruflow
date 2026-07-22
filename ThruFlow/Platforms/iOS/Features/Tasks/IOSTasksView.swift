@@ -367,22 +367,30 @@ struct IOSTasksView: View {
     }
 
     private func groupedList(for date: Date, todos: [Todo]) -> some View {
-        ScrollView {
+        let overdueTodos = visibleOverdueTodos(on: date)
+
+        return ScrollView {
             LazyVStack(spacing: 14) {
-                daySection(date: date, todos: todos)
+                overdueTaskCard(overdueTodos)
+                daySection(
+                    date: date,
+                    todos: todos,
+                    suppressesEmptyState: !overdueTodos.isEmpty
+                )
             }
             .padding(12)
         }
     }
 
-    private func daySection(date: Date, todos: [Todo]) -> some View {
+    private func daySection(
+        date: Date,
+        todos: [Todo],
+        suppressesEmptyState: Bool = false
+    ) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(date, format: .dateTime.month().day().weekday())
                 .font(.headline)
                 .frame(maxWidth: .infinity, alignment: .leading)
-
-            let overdueTodos = visibleOverdueTodos(on: date)
-            overdueTaskGroup(overdueTodos)
 
             let grouped = IOSGroupedTodos(todos: todos)
             taskGroup(title: String(localized: "習慣"), todos: grouped.habits)
@@ -391,7 +399,7 @@ struct IOSTasksView: View {
                 taskGroup(title: String(localized: "ナイス"), todos: grouped.nice)
             }
 
-            if todos.isEmpty && overdueTodos.isEmpty {
+            if todos.isEmpty && !suppressesEmptyState {
                 ContentUnavailableView(
                     String(localized: "今日の項目はありません"),
                     systemImage: "checkmark.circle"
@@ -404,7 +412,7 @@ struct IOSTasksView: View {
     }
 
     @ViewBuilder
-    private func overdueTaskGroup(_ todos: [Todo]) -> some View {
+    private func overdueTaskCard(_ todos: [Todo]) -> some View {
         if !todos.isEmpty {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 7) {
@@ -440,6 +448,8 @@ struct IOSTasksView: View {
                     .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
                 }
             }
+            .padding(14)
+            .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 16))
         }
     }
 
@@ -471,7 +481,7 @@ struct IOSTasksView: View {
     }
 
     private func visibleOverdueTodos(on date: Date) -> [Todo] {
-        guard calendar.isDateInToday(date) else { return [] }
+        guard range == .oneDay, calendar.isDateInToday(date) else { return [] }
         return backlog.overdue
             .filter(filter.includes)
             .sorted(by: taskSort)

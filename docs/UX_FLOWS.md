@@ -58,7 +58,7 @@ The composer also recognizes `[]`, `[2b]`, `[30m]`, `@Direction`, `!high`, `/tod
 
 Inside the Flow task picker, quick creation opens as a separate compact trailing popover. It shows only the messenger composer, without the syntax legend. The add action first closes the Task picker and then presents the composer from the player itself. Avoiding a nested popover keeps controls and submenus interactive in the macOS menu-bar window instead of treating them as outside clicks.
 
-When `今日` is selected on macOS or iOS, active overdue normal Tasks appear in a leading `期限切れ` section. Both platforms use the shared backlog projection and expose normal Task actions plus `すべて今日へ`; macOS additionally supports drag-to-date. Automatically generated Habit instances are excluded.
+When `今日` is selected on macOS, or the iOS `日` view is showing today, active overdue normal Tasks appear in a leading `期限切れ` section. On iOS this is a separate card above the dated Task card and it is not rendered in `週` or `月`. Both platforms use the shared backlog projection and expose normal Task actions plus `すべて今日へ`; macOS additionally supports drag-to-date. Automatically generated Habit instances are excluded.
 
 There is no separate Inbox navigation item. The macOS toolbar counters for
 `期限切れ` and `日付なし` always show their active normal Task totals and open a
