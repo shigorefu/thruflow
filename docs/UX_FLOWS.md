@@ -221,9 +221,15 @@ The primary `カレンダー` mode provides:
 - `週`: seven synchronized day columns in one vertically scrollable 24-hour grid;
 - `月`: a seven-column month overview.
 
-History has one responsive toolbar with the centered mode switch, prominent `今日`, and Calendar range. Duplicate top date controls are removed because the right period picker owns navigation. `タスク` and `方向` use a wide two-column layout with aggregates on the left and a mini-calendar plus range summary on the right. At compact widths, the calendar and summary stack above the aggregate list.
+On macOS, History follows the same two-level hierarchy as Tasks. The system title
+toolbar places `Flow | タスク | 方向` beside `履歴`. The compact control row below
+uses an icon-only Flow/rest filter on the left, centered `日 | 週 | 月`, and an
+explicit trailing `今日`; the visible `表示` label and duplicate in-content
+filters are removed. `タスク` and `方向` use a wide two-column layout with
+aggregates on the left and a mini-calendar plus range summary on the right. At
+compact widths, the calendar and summary stack above the aggregate list.
 
-In `日`, the right pane keeps the only wide-layout mini-calendar above the selected record properties. Flow/rest visibility is exposed by a compact `表示` menu in the timeline header; there is no separate filter rail. Selecting a Flow or rest updates the right pane; changing the day clears the selection. Elastic includes the day's timed records and current hour with one-hour context and a four-hour minimum. `24時間` shows the full day, and the preference persists locally. At compact widths, selection opens the same inspector as a sheet so the timeline retains useful width.
+In `日`, the right pane keeps the only wide-layout mini-calendar above the selected record properties. Flow/rest visibility uses the shared icon-only control row filter; there is no separate filter rail or timeline-header filter. Selecting a Flow or rest updates the right pane; changing the day clears the selection. Elastic includes the day's timed records and current hour with one-hour context and a four-hour minimum. `24時間` shows the full day, and the preference persists locally. At compact widths, selection opens the same inspector as a sheet so the timeline retains useful width.
 
 Week keeps date headers fixed while hours scroll. Its right mini-calendar highlights the complete selected week, and choosing any date selects that week. Opening a day/week grid scrolls near the current time when today is visible, otherwise near the first Flow. A red line marks the current time. Month keeps a minimum full-grid width and a right `1月...12月` year picker. Medium/narrow layouts preserve stable calendar widths through horizontal scrolling.
 

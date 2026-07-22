@@ -108,8 +108,6 @@ struct HistoryDayWorkspaceView: View {
 
                 Spacer()
 
-                HistoryVisibilityMenu(visibleKinds: $visibleKinds)
-
                 Picker(String(localized: "時間軸"), selection: $scale) {
                     ForEach(HistoryDayTimelineScale.allCases) { option in
                         Text(option.displayName).tag(option)

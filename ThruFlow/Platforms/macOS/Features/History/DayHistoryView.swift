@@ -36,6 +36,7 @@ struct DayHistoryView: View {
     @State private var selectedDate: Date
     @State private var selectedMode: DayHistoryMode = .calendar
     @State private var selectedRange: HistoryCalendarRange = .week
+    @State private var visibleCalendarKinds = Set(HistoryCalendarItemKind.allCases)
     @State private var expandedTaskIDs: Set<String> = []
     @State private var expandedDirectionIDs: Set<UUID> = []
     @State private var editingTodo: Todo?
@@ -59,14 +60,21 @@ struct DayHistoryView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(spacing: 0) {
             historyToolbar
+
+            Divider()
 
             modeContent
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .padding(20)
         .navigationTitle(String(localized: "履歴"))
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                modePicker
+                    .frame(width: 330)
+            }
+        }
         .sheet(item: $editingTodo) { todo in
             TodoFormView(mode: .edit(todo))
                 .frame(minWidth: 480, idealWidth: 540, minHeight: 620, idealHeight: 700)
@@ -91,26 +99,30 @@ struct DayHistoryView: View {
     }
 
     private var historyToolbar: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: 16) {
-                historyIdentity
-                Spacer(minLength: 12)
-                modePicker.frame(width: 330)
-                Spacer(minLength: 12)
+        ZStack {
+            HStack(spacing: 10) {
+                if let onClose {
+                    Button(action: onClose) {
+                        Image(systemName: "chevron.left")
+                    }
+                    .buttonStyle(.borderless)
+                    .help(String(localized: "統計に戻る"))
+                    .accessibilityLabel(String(localized: "統計に戻る"))
+                }
+
+                HistoryVisibilityMenu(visibleKinds: $visibleCalendarKinds)
+
+                Spacer(minLength: 0)
+
                 todayButton
-                rangePicker.frame(width: 150)
             }
 
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 12) {
-                    historyIdentity
-                    Spacer(minLength: 8)
-                    todayButton
-                    rangePicker.frame(width: 150)
-                }
-                modePicker.frame(maxWidth: .infinity)
-            }
+            rangePicker
+                .frame(width: 150)
         }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(.bar)
     }
 
     private var todayButton: some View {
@@ -121,35 +133,14 @@ struct DayHistoryView: View {
         .fixedSize()
     }
 
-    private var historyIdentity: some View {
-        HStack(spacing: 10) {
-            if let onClose {
-                Button(action: onClose) {
-                    Image(systemName: "chevron.left")
-                }
-                .buttonStyle(.borderless)
-                .help(String(localized: "統計に戻る"))
-                .accessibilityLabel(String(localized: "統計に戻る"))
-            }
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(String(localized: "履歴"))
-                    .font(.title2.weight(.semibold))
-                Text(dateTitle)
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .fixedSize(horizontal: true, vertical: false)
-    }
-
     private var modePicker: some View {
-        Picker(String(localized: "表示"), selection: $selectedMode) {
+        Picker("", selection: $selectedMode) {
             ForEach(DayHistoryMode.allCases) { mode in
                 Text(mode.displayName).tag(mode)
             }
         }
         .pickerStyle(.segmented)
+        .labelsHidden()
         .accessibilityLabel(String(localized: "履歴表示"))
     }
 
@@ -160,6 +151,7 @@ struct DayHistoryView: View {
             }
         }
         .pickerStyle(.segmented)
+        .labelsHidden()
         .accessibilityLabel(String(localized: "履歴の期間"))
     }
 
@@ -194,7 +186,8 @@ struct DayHistoryView: View {
                 selectedDate: $selectedDate,
                 range: $selectedRange,
                 sessions: sessions,
-                breaks: breaks
+                breaks: breaks,
+                visibleKinds: $visibleCalendarKinds
             )
         case .tasks:
             aggregateWorkspace { tasksContent }

@@ -18,8 +18,8 @@ struct HistoryCalendarView: View {
 
     let sessions: [FlowSession]
     let breaks: [FlowBreak]
+    @Binding var visibleKinds: Set<HistoryCalendarItemKind>
 
-    @State private var visibleKinds = Set(HistoryCalendarItemKind.allCases)
     @State private var inspectedSession: FlowSession?
     @State private var editedBreak: FlowBreak?
     @State private var selectedDayItemID: String?
@@ -51,14 +51,6 @@ struct HistoryCalendarView: View {
 
     var body: some View {
         VStack(spacing: 8) {
-            if range != .day {
-                HStack {
-                    Spacer()
-                    HistoryVisibilityMenu(visibleKinds: $visibleKinds)
-                }
-                .padding(.horizontal, 10)
-            }
-
             Group {
                 switch range {
                 case .day:
@@ -226,7 +218,8 @@ struct HistoryVisibilityMenu: View {
             filterToggle(String(localized: "Flow"), symbol: "waveform.path", kinds: [.flow])
             filterToggle(String(localized: "休憩"), symbol: "cup.and.saucer", kinds: [.rest])
         } label: {
-            Label(String(localized: "表示"), systemImage: "line.3.horizontal.decrease.circle")
+            Image(systemName: "line.3.horizontal.decrease")
+                .frame(width: 24, height: 24)
         }
         .menuStyle(.borderlessButton)
         .fixedSize()
