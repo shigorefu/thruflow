@@ -64,17 +64,18 @@ struct IOSTasksView: View {
             }
 
             ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    showsBacklogMenu.toggle()
-                } label: {
-                    IOSMoreMenuLabel()
-                }
-                .overlay(alignment: .topTrailing) {
+                ZStack(alignment: .topTrailing) {
+                    Button {
+                        showsBacklogMenu.toggle()
+                    } label: {
+                        IOSMoreMenuLabel()
+                    }
+                    .accessibilityLabel(String(localized: "その他"))
+                    .accessibilityValue("\(backlogCount)")
+
                     IOSNotificationBadge(count: backlogCount)
-                        .offset(x: 5, y: -5)
                 }
-                .accessibilityLabel(String(localized: "その他"))
-                .accessibilityValue("\(backlogCount)")
+                .frame(width: 44, height: 44)
                 .popover(isPresented: $showsBacklogMenu, arrowEdge: .top) {
                     backlogMenuContent
                         .presentationCompactAdaptation(.popover)
