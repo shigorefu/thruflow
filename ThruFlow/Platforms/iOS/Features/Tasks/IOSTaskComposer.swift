@@ -173,7 +173,8 @@ struct IOSTaskComposer: View {
         } label: {
             compactLabel(
                 hasExplicitMeasurement ? measurementTitle : String(localized: "種類"),
-                systemImage: hasExplicitMeasurement ? measurementSymbol : "square.dashed"
+                systemImage: hasExplicitMeasurement ? measurementSymbol : "square.dashed",
+                tint: hasExplicitMeasurement ? .accentColor : .secondary
             )
         }
     }
@@ -191,7 +192,7 @@ struct IOSTaskComposer: View {
         } label: {
             compactLabel(
                 hasExplicitDirection ? selectedDirection?.name ?? String(localized: "方向") : String(localized: "方向"),
-                systemImage: "scope"
+                tint: directionTint
             )
         }
     }
@@ -207,7 +208,7 @@ struct IOSTaskComposer: View {
         } label: {
             compactLabel(
                 hasExplicitPriority ? priority.displayName : String(localized: "優先度"),
-                systemImage: "flag"
+                tint: priorityTint
             )
         }
     }
@@ -232,7 +233,7 @@ struct IOSTaskComposer: View {
                 showsDatePicker = true
             }
         } label: {
-            compactLabel(hasExplicitDate ? dateTitle : String(localized: "日付"), systemImage: "calendar")
+            compactLabel(hasExplicitDate ? dateTitle : String(localized: "日付"))
         }
     }
 
@@ -329,17 +330,46 @@ struct IOSTaskComposer: View {
         .shadow(color: .black.opacity(0.10), radius: 14, y: 5)
     }
 
-    private func compactLabel(_ title: String, systemImage: String) -> some View {
-        Label(title, systemImage: systemImage)
+    private func compactLabel(
+        _ title: String,
+        systemImage: String? = nil,
+        tint: Color = .secondary
+    ) -> some View {
+        HStack(spacing: 5) {
+            if let systemImage {
+                Image(systemName: systemImage)
+            }
+
+            Text(title)
+        }
             .lineLimit(1)
-            .foregroundStyle(.secondary)
-            .padding(.vertical, 6)
-            .padding(.horizontal, 8)
-            .background(Color.primary.opacity(0.05), in: Capsule())
+            .foregroundStyle(tint)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(tint.opacity(0.16), in: Capsule())
     }
 
     private var selectedDirection: Direction? {
         directions.first { $0.id == directionID }
+    }
+
+    private var directionTint: Color {
+        guard hasExplicitDirection,
+              let selectedDirection,
+              !DefaultDirections.isTaskInbox(selectedDirection) else {
+            return .secondary
+        }
+        return Color(hex: selectedDirection.colorHex)
+    }
+
+    private var priorityTint: Color {
+        guard hasExplicitPriority else { return .secondary }
+
+        switch priority {
+        case .high: return Color.red
+        case .medium: return Color.secondary
+        case .low: return Color.green
+        }
     }
 
     private var defaultDirection: Direction? {
