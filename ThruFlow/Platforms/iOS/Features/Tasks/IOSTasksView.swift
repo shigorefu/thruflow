@@ -67,7 +67,11 @@ struct IOSTasksView: View {
                 Button {
                     showsBacklogMenu.toggle()
                 } label: {
-                    IOSMoreMenuLabel(badgeCount: backlogCount)
+                    IOSMoreMenuLabel()
+                }
+                .overlay(alignment: .topTrailing) {
+                    IOSNotificationBadge(count: backlogCount)
+                        .offset(x: 5, y: -5)
                 }
                 .accessibilityLabel(String(localized: "その他"))
                 .accessibilityValue("\(backlogCount)")
@@ -166,7 +170,7 @@ struct IOSTasksView: View {
             )
         }
         .padding(8)
-        .frame(width: 240)
+        .frame(width: 200)
     }
 
     private func backlogMenuButton(
@@ -184,12 +188,12 @@ struct IOSTasksView: View {
                     .foregroundStyle(.tint)
                     .frame(width: 22)
                 Text(title)
-                Spacer(minLength: 12)
                 Text("\(count)")
                     .font(.caption2.monospacedDigit().weight(.semibold))
                     .padding(.horizontal, 7)
                     .padding(.vertical, 3)
                     .background(Color.secondary.opacity(0.16), in: Capsule())
+                Spacer(minLength: 0)
             }
             .padding(.horizontal, 10)
             .frame(maxWidth: .infinity, minHeight: 44)
