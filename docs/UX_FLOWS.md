@@ -201,10 +201,13 @@ and timer progress.
 
 Compact Island uses the Task emoji on the leading side and remaining time on
 the trailing side. Minimal Island uses a circular progress indicator. Expanded
-Island exposes the compact player and the system-permitted pause/resume,
-finish-without-memo, and open-app actions. Opening any activity routes to the
-Flow tab. ActivityKit advances date-backed timer text and progress while the app
-is suspended; state transitions still originate from `ActiveFlowStore`.
+Island shows Task and Direction context, mode and status, progress, and three
+transport actions in the same order as the in-app player: seek backward,
+pause/resume, and seek forward. Seek is disabled during a break. Lock Screen
+content shows the same session identity, timer, status, and progress without
+action buttons. Opening any activity routes to the Flow tab. ActivityKit
+advances date-backed timer text and progress while the app is suspended; state
+transitions still originate from `ActiveFlowStore`.
 
 ## Statistics
 

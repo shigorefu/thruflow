@@ -42,8 +42,8 @@ Current MVP goal:
   editing, ordered Direction groups, and a dedicated Direction emoji picker.
 - Animated completion feedback for Check, Block, and Minute Tasks, with an optional bundled completion sound.
 - iPhone Live Activity and Dynamic Island player for an active Flow, including
-  system-updating time/progress, Task and Direction context, pause/resume,
-  finish, and deep-link return to the Flow screen.
+  system-updating time/progress, Task and Direction context, expanded
+  seek/pause controls, and deep-link return to the Flow screen.
 
 ## Not Included
 

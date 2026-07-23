@@ -195,11 +195,13 @@ transition. Shared `FlowActivityAttributes`, formatting, and App Intents are
 compiled into both the iOS app and its Widget Extension. The extension renders
 Lock Screen and Dynamic Island surfaces but does not access SwiftData or run an
 independent timer engine. Date-backed timer ranges let ActivityKit update time
-and progress while the app is suspended. Quick actions resolve the app-owned
-store through `AppDependencyManager`, and the activity URL returns to the Flow
-tab.
+and progress while the app is suspended. Expanded Dynamic Island actions for
+seek backward, pause/resume, and seek forward resolve the app-owned store
+through `AppDependencyManager`; they do not duplicate timer rules in the Widget
+Extension. Lock Screen content remains read-only, and the activity URL returns
+to the Flow tab.
 
-Reason: system surfaces must remain synchronized with the canonical timer state
+Reason: system surfaces must remain synchronized with the canonical timer state.
 Dynamic Island regions remain self-sizing: an unbounded `.infinity` frame inside
 an expanded region produced a `NaN` layout origin and terminated Apple's
 `WidgetRenderer_Activities` process on iOS 26.5. A static action registry is also

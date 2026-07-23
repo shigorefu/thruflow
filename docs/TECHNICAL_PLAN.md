@@ -55,7 +55,9 @@ The iOS deployment target is 17.0 even when building with Xcode 26 and the iOS
   `ActiveFlowStore`. `IOSFlowLiveActivityService` is the ActivityKit adapter;
   the Widget Extension receives only shared `FlowActivityAttributes` and never
   accesses SwiftData. Date-backed timer ranges provide system-driven Lock Screen
-  and Dynamic Island updates while the app is suspended.
+  and Dynamic Island updates while the app is suspended. Shared Live Activity
+  intents delegate expanded-Island seek and pause/resume actions to the existing
+  `ActiveFlowStore` operations; the extension contains no timer mutations.
 
 ## Test Expectations
 

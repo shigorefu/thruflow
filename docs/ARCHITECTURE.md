@@ -150,8 +150,12 @@ never compiled into the iOS target.
 An active iPhone Flow publishes one system Live Activity. The Lock Screen and
 Dynamic Island show Task, Direction, mode, phase, remaining time, and progress.
 Date-backed timer ranges let the system advance timer text and progress while
-the app is suspended. Pause/resume and finish actions call the same
-`ActiveFlowStore`; tapping the activity deep-links to the Flow tab.
+the app is suspended. Compact Dynamic Island shows only the Task emoji and
+remaining `MM:SS`; minimal presentation shows circular progress. Expanded
+Dynamic Island adds seek backward, pause/resume, and seek forward controls.
+Those App Intents call the same `ActiveFlowStore` operations as the in-app
+player. The Lock Screen presentation is read-only, and tapping any activity
+deep-links to the Flow tab.
 
 Dynamic Island regions must remain self-sizing. Do not use unbounded layout such
 as `.frame(maxWidth: .infinity)` or geometry-derived offsets inside an expanded
