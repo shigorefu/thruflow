@@ -6,12 +6,25 @@ import Foundation
 final class FlowLiveActivityControl: @unchecked Sendable {
     typealias Action = @MainActor @Sendable () -> Void
 
+    private let seekBackwardAction: Action
     private let togglePauseAction: Action
     private let finishAction: Action
+    private let seekForwardAction: Action
 
-    init(togglePause: @escaping Action, finish: @escaping Action) {
+    init(
+        seekBackward: @escaping Action,
+        togglePause: @escaping Action,
+        finish: @escaping Action,
+        seekForward: @escaping Action
+    ) {
+        seekBackwardAction = seekBackward
         togglePauseAction = togglePause
         finishAction = finish
+        seekForwardAction = seekForward
+    }
+
+    func seekBackward() {
+        seekBackwardAction()
     }
 
     func togglePause() {
@@ -20,6 +33,23 @@ final class FlowLiveActivityControl: @unchecked Sendable {
 
     func finish() {
         finishAction()
+    }
+
+    func seekForward() {
+        seekForwardAction()
+    }
+}
+
+struct SeekFlowBackwardIntent: LiveActivityIntent {
+    static var title: LocalizedStringResource = "ブロックを短縮"
+    static var description = IntentDescription("現在の集中ブロックを一段階短くします。")
+
+    @Dependency private var control: FlowLiveActivityControl
+
+    @MainActor
+    func perform() async throws -> some IntentResult {
+        control.seekBackward()
+        return .result()
     }
 }
 
@@ -45,6 +75,19 @@ struct FinishFlowIntent: LiveActivityIntent {
     @MainActor
     func perform() async throws -> some IntentResult {
         control.finish()
+        return .result()
+    }
+}
+
+struct SeekFlowForwardIntent: LiveActivityIntent {
+    static var title: LocalizedStringResource = "ブロックを延長"
+    static var description = IntentDescription("現在の集中ブロックを一段階長くします。")
+
+    @Dependency private var control: FlowLiveActivityControl
+
+    @MainActor
+    func perform() async throws -> some IntentResult {
+        control.seekForward()
         return .result()
     }
 }

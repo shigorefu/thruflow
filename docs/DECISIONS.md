@@ -197,10 +197,17 @@ Lock Screen and Dynamic Island surfaces but does not access SwiftData or run an
 independent timer engine. Date-backed timer ranges let ActivityKit update time
 and progress while the app is suspended. Quick actions resolve the app-owned
 store through `AppDependencyManager`, and the activity URL returns to the Flow
-tab.
+tab. The Expanded Island uses Apple's separate leading, trailing, and bottom
+regions with finite-width content: identity on the left, `MM:SS` on the right,
+and progress plus `backward | play/pause | stop | forward` below. The Lock Screen
+uses the same hierarchy.
 
 Reason: system surfaces must remain synchronized with the canonical timer state
 without duplicating business logic or persistence inside an extension process.
+Finite region constraints avoid the WidgetKit renderer instability observed
+when an infinitely expanding identity view was combined with dynamic vertical
+placement. A static action registry is also prohibited because it cannot bridge
+the application and extension processes.
 
 ## Open Questions
 

@@ -150,8 +150,19 @@ never compiled into the iOS target.
 An active iPhone Flow publishes one system Live Activity. The Lock Screen and
 Dynamic Island show Task, Direction, mode, phase, remaining time, and progress.
 Date-backed timer ranges let the system advance timer text and progress while
-the app is suspended. Pause/resume and finish actions call the same
-`ActiveFlowStore`; tapping the activity deep-links to the Flow tab.
+the app is suspended. Remaining time is forced to the stable `MM:SS` product
+format while retaining the system-updating date range. Backward, play/pause,
+stop, and forward actions call the same `ActiveFlowStore`; tapping the activity
+deep-links to the Flow tab.
+
+The Widget Extension keeps Apple's independent expanded regions and gives every
+region a finite content width. Do not combine `maxWidth: .infinity` with
+`dynamicIsland(verticalPlacement:)` inside leading or trailing regions: that
+creates competing layout claims and can make WidgetKit omit regions or terminate
+the renderer. Keep timer progress on the system date-backed `ProgressView`.
+Interactive intents resolve app-owned commands through
+`AppDependencyManager + @Dependency`; a process-local static registry is invalid
+because the app and Widget Extension do not share process memory.
 
 ## Migration Strategy
 

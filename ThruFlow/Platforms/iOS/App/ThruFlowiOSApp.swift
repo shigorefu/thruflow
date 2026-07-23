@@ -16,6 +16,9 @@ struct ThruFlowiOSApp: App {
             liveActivities: IOSFlowLiveActivityService()
         )
         let liveActivityControl = FlowLiveActivityControl(
+            seekBackward: { [weak activeFlowStore] in
+                activeFlowStore?.seekBackward(modelContext: modelContainer.mainContext)
+            },
             togglePause: { [weak activeFlowStore] in
                 guard let activeFlowStore else { return }
                 let context = modelContainer.mainContext
@@ -39,6 +42,9 @@ struct ThruFlowiOSApp: App {
                 if activeFlowStore.phase == .awaitingResult {
                     activeFlowStore.completeResult(nil, modelContext: context)
                 }
+            },
+            seekForward: { [weak activeFlowStore] in
+                activeFlowStore?.seekForward(modelContext: modelContainer.mainContext)
             }
         )
 

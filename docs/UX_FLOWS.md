@@ -201,8 +201,10 @@ and timer progress.
 
 Compact Island uses the Task emoji on the leading side and remaining time on
 the trailing side. Minimal Island uses a circular progress indicator. Expanded
-Island exposes the compact player and the system-permitted pause/resume,
-finish-without-memo, and open-app actions. Opening any activity routes to the
+Island places the Task emoji, title, and Direction on the leading side, the
+`MM:SS` countdown on the trailing side, and a progress bar plus backward,
+play/pause, stop, and forward actions below. The Lock Screen uses the same
+identity, countdown, progress, and actions. Opening any activity routes to the
 Flow tab. ActivityKit advances date-backed timer text and progress while the app
 is suspended; state transitions still originate from `ActiveFlowStore`.
 
