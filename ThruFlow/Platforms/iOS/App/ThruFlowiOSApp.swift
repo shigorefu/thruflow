@@ -62,6 +62,9 @@ struct ThruFlowiOSApp: App {
                 .environment(\.calendar, settings.effectiveCalendar)
                 .environment(\.locale, settings.effectiveLocale)
                 .preferredColorScheme(settings.preferredColorScheme)
+                .background {
+                    IOSProductWidgetSnapshotSyncView()
+                }
         }
         .modelContainer(modelContainer)
     }

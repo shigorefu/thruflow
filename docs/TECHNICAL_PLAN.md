@@ -71,6 +71,12 @@ The iOS deployment target is 17.0 even when building with Xcode 26 and the iOS
   Extension reads that Codable snapshot and uses system date-backed timer and
   progress views. The Home Screen widget never opens SwiftData, schedules a
   per-second timeline, or owns transport behavior.
+- `IOSProductWidgetSnapshotSyncView` observes Todo, Direction, and FlowSession
+  changes in the iOS application. `ProductWidgetSnapshotBuilder` produces the
+  canonical Today Tasks and 180-day Flow Dots projections, then stores Codable
+  snapshots in the same App Group and reloads `TasksWidget` and
+  `FlowDotsWidget`. The Widget Extension only renders those snapshots and
+  schedules a next-day refresh.
 
 ## Test Expectations
 
@@ -94,6 +100,10 @@ Cover:
   deterministic shared formatting.
 - Home Screen timer-widget snapshot mapping, App Group persistence round-trip,
   and clear behavior.
+- Today Tasks widget filtering, priority ordering, measurement progress, and
+  Tasks/Dots snapshot persistence.
+- Flow Dots reuse of the canonical 180-day statistics projection and mixed
+  Direction color.
 
 ## Migration Caution
 

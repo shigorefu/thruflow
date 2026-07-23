@@ -19,7 +19,7 @@ ThruFlow/
       Services/     Platform-neutral protocols and shared implementations
     Application/    Shared observable state and use-case orchestration
     LiveActivity/   Shared ActivityKit attributes, content state, and intents
-    Widget/         Cross-process timer-widget snapshots and App Group storage
+    Widget/         Cross-process WidgetKit snapshots and App Group storage
     UI/             Small reusable SwiftUI components
   Localisation/     Shared Apple String Catalog used by every platform target
   Platforms/
@@ -159,16 +159,24 @@ Those App Intents call the same `ActiveFlowStore` operations as the in-app
 player. The Lock Screen presentation is read-only, and tapping any activity
 deep-links to the Flow tab.
 
-The Small and Medium Home Screen `Flowタイマー` widgets are read-only
-projections of the same `FlowLiveActivityContent`. The iOS adapter serializes an
-immutable `FlowTimerWidgetSnapshot` into App Group
-`group.com.shigorefu.thruflow` and reloads only that widget kind on timer state
-transitions. The extension renders date-backed `Text(timerInterval:)` and
-`ProgressView(timerInterval:)`, so the system advances visible time and progress
-without a second timer engine or per-second application wakeups. Ending Flow
-clears the snapshot; tapping either the active or empty widget opens the Flow
-tab. The App Group capability must be provisioned for both the iOS app and the
-Widget Extension.
+Home Screen widgets are read-only projections delivered through App Group
+`group.com.shigorefu.thruflow`:
+
+- `Flowタイマー` supports Small and Medium and projects the current
+  `FlowLiveActivityContent`. Date-backed timer and progress views advance
+  without a second timer engine or per-second application wakeups.
+- `今日のタスク` supports Small, Medium, and Large. The iOS application builds
+  its immutable snapshot with the canonical Today filter and dashboard sorter.
+- `Flow Dots` supports Medium for the current month and Large for the canonical
+  180-day Flow heatmap.
+
+`IOSProductWidgetSnapshotSyncView` observes SwiftData in the application
+process, builds Task and Dots snapshots through shared domain logic, stores
+them in the App Group, and reloads only the affected widget kinds. The Widget
+Extension decodes snapshots; it never opens SwiftData, CloudKit, or a second
+business-rule engine. Widget taps deep-link to Flow, Tasks, or Statistics. The
+App Group capability must be provisioned for both the iOS app and the Widget
+Extension.
 
 Dynamic Island regions must remain self-sizing. Do not use unbounded layout such
 as `.frame(maxWidth: .infinity)` or geometry-derived offsets inside an expanded

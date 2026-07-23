@@ -47,6 +47,10 @@ Current MVP goal:
 - iPhone Home Screen `Flowタイマー` widget in Small and Medium sizes, with
   system-updating time/progress, active Task and Direction context, an empty
   state, and deep-link return to Flow.
+- iPhone Home Screen `今日のタスク` widget in Small, Medium, and Large sizes,
+  with Today ordering and Task measurement progress.
+- iPhone Home Screen `Flow Dots` widget: current month in Medium and the last
+  180 days in Large, using canonical Flow statistics colors.
 
 ## Not Included
 

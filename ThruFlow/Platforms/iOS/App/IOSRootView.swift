@@ -76,8 +76,17 @@ struct IOSRootView: View {
             }
         }
         .onOpenURL { url in
-            guard url.scheme == "thruflow", url.host == "flow" else { return }
-            selectionBinding.wrappedValue = .flow
+            guard url.scheme == "thruflow" else { return }
+            switch url.host {
+            case "flow":
+                selectionBinding.wrappedValue = .flow
+            case "tasks":
+                selectionBinding.wrappedValue = .tasks
+            case "statistics":
+                selectionBinding.wrappedValue = .statistics
+            default:
+                break
+            }
         }
     }
 

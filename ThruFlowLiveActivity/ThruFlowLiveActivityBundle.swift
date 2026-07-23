@@ -5,6 +5,8 @@ import WidgetKit
 struct ThruFlowLiveActivityBundle: WidgetBundle {
     var body: some Widget {
         FlowTimerWidget()
+        TasksWidget()
+        FlowDotsWidget()
         FlowLiveActivityWidget()
     }
 }

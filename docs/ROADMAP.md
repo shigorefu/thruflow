@@ -18,7 +18,8 @@
 - [x] Добавить Flow-first iPhone MVP: Flow dashboard, Tasks/Habits, базовый `履歴`, Directions и Settings.
 - [ ] После стабилизации MVP добавить на iPhone расширенную `統計` и полную редакцию `履歴`/календаря.
 - [x] Live Activities и Dynamic Island для активного Flow.
-- [x] Home Screen виджет активного Flow.
+- [x] Home Screen виджеты: активный Flow, сегодняшние Tasks и Flow Dots
+  (месяц/180 дней).
 - [x] Базовая iOS версия (minimum iOS 17.0, сборка Xcode 26/iOS 26 SDK).
 - [ ] Поддержка Apple Watch.
 - [x] В Tasks добавить `期限切れ` в Today и inspector `日付なし`.

@@ -223,6 +223,25 @@ WidgetKit's update budget. Sharing an immutable cross-process snapshot preserves
 one timer source of truth and avoids per-second timelines, SwiftData access, and
 business-rule duplication in the extension.
 
+## D-025: Product Widgets Use Application-Built Immutable Snapshots
+
+The Widget Extension exposes three independent Home Screen configurations:
+`Flowタイマー`, `今日のタスク`, and `Flow Dots`. The timer remains a projection
+of `FlowLiveActivityContent`. The iOS application builds Tasks with the
+canonical Today filter and dashboard ordering, and builds Dots with the
+canonical 180-day statistics heatmap. It serializes these immutable Codable
+snapshots into the shared App Group and requests targeted WidgetKit reloads.
+
+The extension is presentation-only: it does not open SwiftData or CloudKit and
+does not reproduce filtering, sorting, progress, color-mixing, or timer rules.
+Small/Medium/Large Tasks and Medium/Large Dots are different layouts over the
+same snapshots, not separate data pipelines.
+
+Reason: WidgetKit has a constrained execution and refresh budget. Computing
+product projections in the application preserves one source of truth, keeps the
+extension deterministic, and prevents persistence or migration failures from
+terminating the widget process.
+
 ## Open Questions
 
 - What measurement and planned amount should be used for an auto-created Task when Flow starts with only a Direction or with neither Direction nor Task?

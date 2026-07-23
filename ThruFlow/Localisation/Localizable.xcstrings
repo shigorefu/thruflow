@@ -1465,22 +1465,6 @@
         }
       }
     },
-    "実行中のFlowをホーム画面で確認できます。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "See the active Flow on your Home Screen."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Следите за активным Flow на экране «Домой»."
-          }
-        }
-      }
-    },
     "Flowタスク" : {
       "localizations" : {
         "en" : {
@@ -1525,6 +1509,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Без Flow"
+          }
+        }
+      }
+    },
+    "Flow Dots" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flow Dots"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Точки Flow"
+          }
+        }
+      }
+    },
+    "Flowの積み重ねを月または180日で確認できます。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See your Flow activity by month or across 180 days."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Смотрите активность Flow за месяц или последние 180 дней."
           }
         }
       }
@@ -3247,38 +3263,6 @@
         }
       }
     },
-    "残り時間を5分延長" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add 5 Minutes"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Добавить 5 минут"
-          }
-        }
-      }
-    },
-    "残り時間を5分短縮" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Subtract 5 Minutes"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Убавить 5 минут"
-          }
-        }
-      }
-    },
     "ブロック進捗" : {
       "localizations" : {
         "en" : {
@@ -3691,6 +3675,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Задачи на сегодня"
+          }
+        }
+      }
+    },
+    "今日のタスクと進捗をホーム画面で確認できます。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See today's Tasks and progress on your Home Screen."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Смотрите сегодняшние задачи и прогресс на экране «Домой»."
           }
         }
       }
@@ -4641,6 +4641,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Запущенный Flow нельзя перемещать. Завершите текущий Flow перед изменением."
+          }
+        }
+      }
+    },
+    "実行中のFlowをホーム画面で確認できます。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See the active Flow on your Home Screen."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Следите за активным Flow на экране «Домой»."
           }
         }
       }
@@ -5687,6 +5703,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Осталось %@"
+          }
+        }
+      }
+    },
+    "残り時間を5分延長" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add 5 Minutes"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить 5 минут"
+          }
+        }
+      }
+    },
+    "残り時間を5分短縮" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subtract 5 Minutes"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Убавить 5 минут"
           }
         }
       }
@@ -6923,6 +6971,22 @@
         }
       }
     },
+    "集中のみ" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Focus Only"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Только фокус"
+          }
+        }
+      }
+    },
     "集中の残り時間を5分短くします。" : {
       "localizations" : {
         "en" : {
@@ -6951,22 +7015,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Добавляет 5 минут к оставшемуся времени фокуса."
-          }
-        }
-      }
-    },
-    "集中のみ" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Focus Only"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Только фокус"
           }
         }
       }
