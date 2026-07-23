@@ -103,9 +103,9 @@ enum FlowMode: String, CaseIterable, Codable, Identifiable {
 
     static func adaptiveBreakDurationSeconds(forFocusSeconds seconds: Int) -> Int {
         switch seconds {
-        case 50 * 60:
+        case (49 * 60)...:
             return 10 * 60
-        case 25 * 60:
+        case (24 * 60)...:
             return 5 * 60
         default:
             return 3 * 60

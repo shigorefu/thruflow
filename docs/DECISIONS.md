@@ -180,7 +180,7 @@ surfaces, shared quick-input parsing, autocomplete, and an explicit arbitrary
 date picker. The iPhone selector presents Help as a system bottom sheet, while
 macOS keeps a popover. Both platforms render the animated stream through the
 same shared Metal surface and shader. The iPhone transport exposes destroy,
-stop, break, seek backward, Play/Pause, and seek forward without changing the
+stop, break, subtract five minutes, Play/Pause, and add five minutes without changing the
 established player-card dimensions.
 
 Reason: the primary touch targets must remain stable and legible on iPhone,
@@ -196,7 +196,7 @@ compiled into both the iOS app and its Widget Extension. The extension renders
 Lock Screen and Dynamic Island surfaces but does not access SwiftData or run an
 independent timer engine. Date-backed timer ranges let ActivityKit update time
 and progress while the app is suspended. Expanded Dynamic Island actions for
-seek backward, pause/resume, and seek forward resolve the app-owned store
+subtracting five minutes, pause/resume, and adding five minutes resolve the app-owned store
 through `AppDependencyManager`; they do not duplicate timer rules in the Widget
 Extension. Lock Screen content remains read-only, and the activity URL returns
 to the Flow tab.

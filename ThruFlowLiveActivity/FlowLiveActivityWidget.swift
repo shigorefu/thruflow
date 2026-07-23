@@ -190,11 +190,11 @@ private struct FlowActivityTransportControls: View {
     var body: some View {
         HStack(spacing: 20) {
             Button(intent: SeekFlowBackwardIntent()) {
-                actionIcon("gobackward.minus")
+                actionIcon("gobackward.5")
             }
             .disabled(!canSeek)
             .opacity(canSeek ? 1 : 0.35)
-            .accessibilityLabel(String(localized: "ブロックを短縮"))
+            .accessibilityLabel(String(localized: "残り時間を5分短縮"))
 
             Button(intent: ToggleFlowPauseIntent()) {
                 actionIcon(
@@ -206,11 +206,11 @@ private struct FlowActivityTransportControls: View {
             .accessibilityLabel(state.isPaused ? String(localized: "再開") : String(localized: "一時停止"))
 
             Button(intent: SeekFlowForwardIntent()) {
-                actionIcon("goforward.plus")
+                actionIcon("goforward.5")
             }
             .disabled(!canSeek)
             .opacity(canSeek ? 1 : 0.35)
-            .accessibilityLabel(String(localized: "ブロックを延長"))
+            .accessibilityLabel(String(localized: "残り時間を5分延長"))
         }
         .buttonStyle(.plain)
     }

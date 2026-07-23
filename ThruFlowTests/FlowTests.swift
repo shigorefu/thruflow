@@ -144,6 +144,20 @@ struct FlowTests {
         #expect(breakState.plannedBreakDurationSeconds == 5 * 60)
     }
 
+    @Test func manualBreakAtFortyNineMinutesCountsAsFiftyTen() {
+        let engine = FlowTimerEngine()
+        let start = Date(timeIntervalSince1970: 2_800)
+        let breakStartedAt = start.addingTimeInterval(49 * 60)
+
+        let initial = engine.start(mode: .twentyFiveFive, now: start)
+        let breakState = engine.startBreak(initial, now: breakStartedAt)
+
+        #expect(breakState.phase == .breakTime)
+        #expect(breakState.mode == .twentyFiveFive)
+        #expect(breakState.actualFocusDurationSeconds == 50 * 60)
+        #expect(breakState.plannedBreakDurationSeconds == 10 * 60)
+    }
+
     @Test func adaptiveExtendsOneTimerStateThroughTwelveTwentyFiveFifty() {
         let engine = FlowTimerEngine()
         let start = Date(timeIntervalSince1970: 3_000)
@@ -283,36 +297,68 @@ struct FlowTests {
         #expect(todo.actualProgress == 12)
     }
 
-    @Test func seekForwardStepsThroughTwelveTwentyFiveFiftyThenAddsWholeBlocks() {
+    @Test func seekForwardAddsFiveMinutesWithoutChangingModeOrElapsedFocus() {
         let engine = FlowTimerEngine()
         let start = Date(timeIntervalSince1970: 4_000)
+        let changedAt = start.addingTimeInterval(8 * 60)
 
         let sprint = engine.start(mode: .sprint, now: start)
-        let twentyFive = engine.seekForward(sprint, now: start)
-        let fifty = engine.seekForward(twentyFive, now: start)
-        let seventyFive = engine.seekForward(fifty, now: start)
+        let extended = engine.seekForward(sprint, now: changedAt)
 
-        #expect(twentyFive.plannedFocusDurationSeconds == 25 * 60)
-        #expect(twentyFive.plannedBreakDurationSeconds == 5 * 60)
-        #expect(fifty.plannedFocusDurationSeconds == 50 * 60)
-        #expect(fifty.plannedBreakDurationSeconds == 10 * 60)
-        #expect(seventyFive.plannedFocusDurationSeconds == 75 * 60)
-        #expect(seventyFive.plannedEndAt == fifty.plannedEndAt.addingTimeInterval(25 * 60))
+        #expect(extended.mode == .sprint)
+        #expect(extended.plannedFocusDurationSeconds == 17 * 60)
+        #expect(extended.plannedBreakDurationSeconds == 3 * 60)
+        #expect(extended.plannedEndAt == sprint.plannedEndAt.addingTimeInterval(5 * 60))
+        #expect(engine.actualFocusDuration(for: extended, now: changedAt) == 8 * 60)
+        #expect(engine.remainingSeconds(for: extended, now: changedAt) == 9 * 60)
     }
 
-    @Test func seekBackwardStepsDownAndStopsAtSmallestBlock() {
+    @Test func seekBackwardSubtractsFiveMinutesAndKeepsOneMinuteRemaining() {
         let engine = FlowTimerEngine()
         let start = Date(timeIntervalSince1970: 5_000)
+        let changedAt = start.addingTimeInterval(20 * 60)
 
-        let fifty = engine.start(mode: .fiftyTen, now: start)
-        let twentyFive = engine.seekBackward(fifty, now: start)
-        let twelve = engine.seekBackward(twentyFive, now: start)
-        let stillTwelve = engine.seekBackward(twelve, now: start)
+        let focus = engine.start(mode: .twentyFiveFive, now: start)
+        let shortened = engine.seekBackward(focus, now: changedAt)
+        let unchanged = engine.seekBackward(shortened, now: changedAt)
 
-        #expect(twentyFive.plannedFocusDurationSeconds == 25 * 60)
-        #expect(twelve.plannedFocusDurationSeconds == 12 * 60)
-        #expect(stillTwelve.plannedFocusDurationSeconds == 12 * 60)
-        #expect(stillTwelve.plannedEndAt == twelve.plannedEndAt)
+        #expect(shortened.mode == .twentyFiveFive)
+        #expect(shortened.plannedFocusDurationSeconds == 21 * 60)
+        #expect(shortened.plannedEndAt == start.addingTimeInterval(21 * 60))
+        #expect(engine.remainingSeconds(for: shortened, now: changedAt) == 60)
+        #expect(unchanged == shortened)
+    }
+
+    @Test func seekUsesPausedFocusTimeAndPreservesPauseState() {
+        let engine = FlowTimerEngine()
+        let start = Date(timeIntervalSince1970: 5_500)
+        let pausedAt = start.addingTimeInterval(10 * 60)
+        let focus = engine.start(mode: .twentyFiveFive, now: start)
+        let paused = engine.pause(focus, now: pausedAt)
+
+        let extended = engine.seekForward(paused, now: pausedAt.addingTimeInterval(30 * 60))
+        let restored = engine.seekBackward(extended, now: pausedAt.addingTimeInterval(30 * 60))
+
+        #expect(extended.phase == .paused)
+        #expect(extended.pausedAt == pausedAt)
+        #expect(extended.plannedFocusDurationSeconds == 30 * 60)
+        #expect(engine.remainingSeconds(for: extended, now: pausedAt.addingTimeInterval(30 * 60)) == 20 * 60)
+        #expect(restored.plannedFocusDurationSeconds == 25 * 60)
+        #expect(engine.remainingSeconds(for: restored, now: pausedAt.addingTimeInterval(30 * 60)) == 15 * 60)
+    }
+
+    @Test func seekCrossesPresetThresholdsWithoutRenamingTheMode() {
+        let engine = FlowTimerEngine()
+        let start = Date(timeIntervalSince1970: 5_800)
+        let sprint = engine.start(mode: .sprint, now: start)
+
+        let seventeen = engine.seekForward(sprint, now: start)
+        let twentyTwo = engine.seekForward(seventeen, now: start)
+        let twentySeven = engine.seekForward(twentyTwo, now: start)
+
+        #expect(twentySeven.mode == .sprint)
+        #expect(twentySeven.plannedFocusDurationSeconds == 27 * 60)
+        #expect(twentySeven.plannedBreakDurationSeconds == 5 * 60)
     }
 
     @Test func seekIsIgnoredOutsideFocusingOrPausedPhases() {
@@ -321,10 +367,13 @@ struct FlowTests {
 
         let initial = engine.start(mode: .twentyFiveFive, now: start)
         let inBreak = engine.startBreak(initial, now: start.addingTimeInterval(26 * 60))
-        let unchanged = engine.seekForward(inBreak, now: start.addingTimeInterval(26 * 60))
+        let pausedBreak = engine.pause(inBreak, now: start.addingTimeInterval(27 * 60))
 
         #expect(inBreak.phase == .breakTime)
-        #expect(unchanged == inBreak)
+        #expect(engine.seekForward(inBreak, now: start.addingTimeInterval(26 * 60)) == inBreak)
+        #expect(engine.seekBackward(inBreak, now: start.addingTimeInterval(26 * 60)) == inBreak)
+        #expect(engine.seekForward(pausedBreak, now: start.addingTimeInterval(28 * 60)) == pausedBreak)
+        #expect(engine.seekBackward(pausedBreak, now: start.addingTimeInterval(28 * 60)) == pausedBreak)
     }
 
     @Test func changingModeMovesThePlannedEndWithoutResettingElapsedFocus() {
@@ -352,6 +401,22 @@ struct FlowTests {
 
         #expect(engine.changeMode(.fiftyTen, for: resting) == resting)
         #expect(engine.changeMode(.fiftyTen, for: pausedRest) == pausedRest)
+    }
+
+    @Test func changingModeAfterItsTargetKeepsElapsedFocusAsOvertime() {
+        let engine = FlowTimerEngine()
+        let start = Date(timeIntervalSince1970: 6_650)
+        let changedAt = start.addingTimeInterval(27 * 60)
+        let initial = engine.start(mode: .fiftyTen, now: start)
+
+        let focus = engine.changeMode(.twentyFiveFive, for: initial)
+        let deep = engine.changeMode(.fiftyTen, for: focus)
+
+        #expect(focus.mode == .twentyFiveFive)
+        #expect(engine.remainingSeconds(for: focus, now: changedAt) == -2 * 60)
+        #expect(deep.mode == .fiftyTen)
+        #expect(engine.remainingSeconds(for: deep, now: changedAt) == 23 * 60)
+        #expect(engine.actualFocusDuration(for: deep, now: changedAt) == 27 * 60)
     }
 
     @Test @MainActor func breakProgressDrainsAndOvertimeUsesPlusPrefix() {

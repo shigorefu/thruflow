@@ -41,8 +41,8 @@ final class FlowLiveActivityControl: @unchecked Sendable {
 }
 
 struct SeekFlowBackwardIntent: LiveActivityIntent {
-    static var title: LocalizedStringResource = "ブロックを短縮"
-    static var description = IntentDescription("現在の集中ブロックを一段階短くします。")
+    static var title: LocalizedStringResource = "残り時間を5分短縮"
+    static var description = IntentDescription("集中の残り時間を5分短くします。")
 
     @Dependency private var control: FlowLiveActivityControl
 
@@ -80,8 +80,8 @@ struct FinishFlowIntent: LiveActivityIntent {
 }
 
 struct SeekFlowForwardIntent: LiveActivityIntent {
-    static var title: LocalizedStringResource = "ブロックを延長"
-    static var description = IntentDescription("現在の集中ブロックを一段階長くします。")
+    static var title: LocalizedStringResource = "残り時間を5分延長"
+    static var description = IntentDescription("集中の残り時間を5分長くします。")
 
     @Dependency private var control: FlowLiveActivityControl
 

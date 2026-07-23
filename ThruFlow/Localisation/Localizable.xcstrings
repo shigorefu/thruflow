@@ -2041,22 +2041,6 @@
         }
       }
     },
-    "アプリを開く" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open App"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Открыть приложение"
-          }
-        }
-      }
-    },
     "イエロー" : {
       "localizations" : {
         "en" : {
@@ -3247,34 +3231,34 @@
         }
       }
     },
-    "ブロックを延長" : {
+    "残り時間を5分延長" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Extend Block"
+            "value" : "Add 5 Minutes"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Увеличить блок"
+            "value" : "Добавить 5 минут"
           }
         }
       }
     },
-    "ブロックを短縮" : {
+    "残り時間を5分短縮" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Shorten Block"
+            "value" : "Subtract 5 Minutes"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Уменьшить блок"
+            "value" : "Убавить 5 минут"
           }
         }
       }
@@ -6919,6 +6903,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Фокус"
+          }
+        }
+      }
+    },
+    "集中の残り時間を5分短くします。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subtracts 5 minutes from the remaining focus time."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Уменьшает оставшееся время фокуса на 5 минут."
+          }
+        }
+      }
+    },
+    "集中の残り時間を5分長くします。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adds 5 minutes to the remaining focus time."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавляет 5 минут к оставшемуся времени фокуса."
           }
         }
       }

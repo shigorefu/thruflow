@@ -84,7 +84,9 @@ In the narrow vertical dashboard layout, the player comes first, followed by the
 - `方向` uses an emoji-and-name grid with `その他` first for Direction-only starts;
 - Direction icon color follows the selected Task Direction;
 - compact Focus selector opens a separate picker for `Sprint`, `Focus`, and `Deep`;
-- selecting another Focus mode during focus or pause preserves elapsed time and only moves the planned end, matching the seek controls;
+- selecting another Focus mode during focus or paused focus preserves elapsed time, applies that preset as the new total plan, and moves only the planned end. A shorter preset may immediately show overtime; crossing another preset threshold never renames the selected mode;
+- transport seek controls subtract or add exactly five minutes from remaining focus time across macOS, iOS, menu bar, and Live Activity. Subtract stops at one minute remaining, both actions preserve elapsed time and mode, and both are disabled during rest;
+- starting rest derives its duration from actual focused time rather than the selected mode: under 24 minutes gives 3 minutes, 24...48:59 gives 5 minutes, and 49 minutes or more gives 10 minutes. The 24- and 49-minute boundaries normalize Block credit to 25 and 50 minutes while longer actual time remains exact;
 - break time counts down past zero with a positive overtime sign; its neutral-gray progress ring drains while the Direction-colored focus ring fills. Starting work during rest completes the previous Flow and immediately starts the next one, while menu bar status becomes `☕️ 休憩 - time` or `☕️ Long Break - time`;
 - choosing another Task during focus or pause keeps the current Flow running and starts a new history segment; no memo prompt is shown for this switch;
 - the Task card reuses the canonical completion/progress control; only Check is interactive, while Block and Minute rings are read-only and show progress and the remaining amount;
@@ -143,7 +145,7 @@ timeline before the timer card. It keeps the Task selector, the shared
 `Sprint | Focus | Deep` segmented selector, timer controls, stream, and timeline
 together. The selector's Help button opens a native dimmed bottom sheet with
 mode icons, work/rest durations, and usage guidance; macOS keeps the same content
-in a popover. The timer exposes seek backward, Play/Pause, seek forward, destroy,
+in a popover. The timer exposes subtract five minutes, Play/Pause, add five minutes, destroy,
 stop, and break while preserving the established player size. iPhone and macOS
 share the same Metal stream renderer, including palette, speed, growth, glow,
 completion impulse, and a theme-aware light or dark background. Below the
@@ -202,8 +204,8 @@ and timer progress.
 Compact Island uses the Task emoji on the leading side and remaining time on
 the trailing side. Minimal Island uses a circular progress indicator. Expanded
 Island shows Task and Direction context, mode and status, progress, and three
-transport actions in the same order as the in-app player: seek backward,
-pause/resume, and seek forward. Seek is disabled during a break. Lock Screen
+transport actions in the same order as the in-app player: subtract five minutes,
+pause/resume, and add five minutes. Seek is disabled during a break. Lock Screen
 content shows the same session identity, timer, status, and progress without
 action buttons. Opening any activity routes to the Flow tab. ActivityKit
 advances date-backed timer text and progress while the app is suspended; state

@@ -228,11 +228,11 @@ struct IOSFlowView: View {
     private var controls: some View {
         VStack(spacing: 10) {
             HStack(spacing: 5) {
-                controlButton("gobackward.minus") {
+                controlButton("gobackward.5") {
                     activeFlowStore.seekBackward(modelContext: modelContext)
                 }
                 .disabled(!canSeek)
-                .accessibilityLabel(String(localized: "ブロックを短縮"))
+                .accessibilityLabel(String(localized: "残り時間を5分短縮"))
 
                 Button(action: primaryAction) {
                     Image(systemName: primarySymbol)
@@ -245,11 +245,11 @@ struct IOSFlowView: View {
                 .buttonStyle(.plain)
                 .disabled(selectedDirection == nil)
 
-                controlButton("goforward.plus") {
+                controlButton("goforward.5") {
                     activeFlowStore.seekForward(modelContext: modelContext)
                 }
                 .disabled(!canSeek)
-                .accessibilityLabel(String(localized: "ブロックを延長"))
+                .accessibilityLabel(String(localized: "残り時間を5分延長"))
             }
 
             HStack(spacing: 8) {
@@ -389,7 +389,8 @@ struct IOSFlowView: View {
     }
 
     private var canSeek: Bool {
-        activeFlowStore.phase == .focusing || activeFlowStore.phase == .paused
+        activeFlowStore.phase == .focusing ||
+            (activeFlowStore.phase == .paused && activeFlowStore.timerState?.phaseBeforePause == .focusing)
     }
 
     private var timerText: String {

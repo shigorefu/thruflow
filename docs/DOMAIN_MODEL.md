@@ -64,6 +64,16 @@ Completion:
 - timestamps;
 - pause/interruption data.
 
+`mode` records the explicitly selected `Sprint`, `Focus`, or `Deep` preset; it
+is not inferred again from elapsed time. Changing mode replaces the total
+planned focus duration without resetting elapsed focus. The two seek operations
+adjust remaining focus by `-5` or `+5` minutes and preserve both elapsed focus
+and mode; subtraction is clamped to one minute remaining and seek is unavailable
+during rest. Actual focused seconds remain canonical for history, progress, and
+rest calculation. Rest is 3 minutes below 24 focused minutes, 5 minutes from 24
+through 48:59, and 10 minutes from 49 minutes onward. Boundary credit normalizes
+24 to 25 and 49 to 50 focused minutes; longer actual durations remain exact.
+
 Todo memo is not stored in FlowSession. The current model may keep legacy `result` storage for migration compatibility, but new memo writes go to `Todo.notes`.
 
 ## FlowSegment

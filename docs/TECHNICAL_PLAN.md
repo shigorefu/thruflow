@@ -56,8 +56,9 @@ The iOS deployment target is 17.0 even when building with Xcode 26 and the iOS
   the Widget Extension receives only shared `FlowActivityAttributes` and never
   accesses SwiftData. Date-backed timer ranges provide system-driven Lock Screen
   and Dynamic Island updates while the app is suspended. Shared Live Activity
-  intents delegate expanded-Island seek and pause/resume actions to the existing
-  `ActiveFlowStore` operations; the extension contains no timer mutations.
+  intents delegate expanded-Island `-5 minutes`, pause/resume, and `+5 minutes`
+  actions to the existing `ActiveFlowStore` operations; the extension contains
+  no timer mutations.
 
 ## Test Expectations
 
@@ -68,7 +69,9 @@ Cover:
 - Calendar range, filtering, and rescheduling tests.
 - Habit task generation.
 - Block conversion and progress.
-- Flow timer transitions.
+- Flow timer transitions, five-minute remaining-time adjustments, one-minute
+  lower bound, mode changes without elapsed-time reset, and actual-time rest
+  thresholds.
 - Statistics range construction and filters.
 - Day-history grouping, legacy untimed completions, deterministic Flow progress reconciliation after create/edit/delete, and duration-preserving Flow moves.
 - Manual Flow creation, linked Task progress without implicit completion, and fixed-Direction Task creation.

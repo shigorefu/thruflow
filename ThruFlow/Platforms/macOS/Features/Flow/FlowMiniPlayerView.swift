@@ -468,7 +468,8 @@ struct FlowMiniPlayerView: View {
     }
 
     private var canSeek: Bool {
-        activeFlowStore.phase == .focusing || activeFlowStore.phase == .paused
+        activeFlowStore.phase == .focusing ||
+            (activeFlowStore.phase == .paused && activeFlowStore.timerState?.phaseBeforePause == .focusing)
     }
 
     private var flowDirection: Direction? {
@@ -615,26 +616,26 @@ struct FlowMiniPlayerView: View {
         Button {
             activeFlowStore.seekBackward(modelContext: modelContext)
         } label: {
-            Image(systemName: "gobackward.minus")
+            Image(systemName: "gobackward.5")
                 .font(.callout.weight(.semibold))
                 .frame(width: controlButtonSize, height: controlButtonSize)
         }
         .buttonStyle(.plain)
         .foregroundStyle(.secondary)
-        .accessibilityLabel(String(localized: "ブロックを短縮"))
+        .accessibilityLabel(String(localized: "残り時間を5分短縮"))
     }
 
     private var seekForwardButton: some View {
         Button {
             activeFlowStore.seekForward(modelContext: modelContext)
         } label: {
-            Image(systemName: "goforward.plus")
+            Image(systemName: "goforward.5")
                 .font(.callout.weight(.semibold))
                 .frame(width: controlButtonSize, height: controlButtonSize)
         }
         .buttonStyle(.plain)
         .foregroundStyle(.secondary)
-        .accessibilityLabel(String(localized: "ブロックを延長"))
+        .accessibilityLabel(String(localized: "残り時間を5分延長"))
     }
 
     private var stopButton: some View {

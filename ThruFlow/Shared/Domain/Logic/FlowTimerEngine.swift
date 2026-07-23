@@ -9,6 +9,8 @@ import Foundation
 
 struct FlowTimerEngine {
     static let minimumCreditableFocusDurationSeconds = 60
+    static let seekStepSeconds = 5 * 60
+    static let minimumRemainingFocusSeconds = 60
 
     func start(mode: FlowMode, now: Date) -> FlowTimerState {
         FlowTimerState(
@@ -132,22 +134,28 @@ struct FlowTimerEngine {
         return next
     }
 
-    /// Increases the current block size by one step (12 -> 25 -> 50 -> 75 -> ...),
-    /// keeping already-elapsed focus time intact by pushing the planned end forward.
+    /// Adds five minutes to the current focus plan without changing elapsed time.
     func seekForward(_ state: FlowTimerState, now: Date) -> FlowTimerState {
-        guard state.phase == .focusing || state.phase == .paused else { return state }
+        guard isActiveFocus(state) else { return state }
         return applyPlannedFocusDuration(
-            Self.nextBlockDurationSeconds(after: state.plannedFocusDurationSeconds),
+            state.plannedFocusDurationSeconds + Self.seekStepSeconds,
             to: state
         )
     }
 
-    /// Decreases the current block size by one step (... -> 50 -> 25 -> 12),
-    /// never going below the smallest block size.
+    /// Removes up to five minutes while keeping at least one minute remaining.
     func seekBackward(_ state: FlowTimerState, now: Date) -> FlowTimerState {
-        guard state.phase == .focusing || state.phase == .paused else { return state }
+        guard isActiveFocus(state) else { return state }
+
+        let remaining = remainingSeconds(for: state, now: now)
+        guard remaining > Self.minimumRemainingFocusSeconds else { return state }
+
+        let reduction = min(
+            Self.seekStepSeconds,
+            remaining - Self.minimumRemainingFocusSeconds
+        )
         return applyPlannedFocusDuration(
-            Self.previousBlockDurationSeconds(before: state.plannedFocusDurationSeconds),
+            state.plannedFocusDurationSeconds - reduction,
             to: state
         )
     }
@@ -173,34 +181,6 @@ struct FlowTimerEngine {
         next.plannedBreakDurationSeconds = FlowMode.adaptiveBreakDurationSeconds(forFocusSeconds: duration)
         next.plannedEndAt = state.plannedEndAt.addingTimeInterval(TimeInterval(delta))
         return next
-    }
-
-    static func nextBlockDurationSeconds(after seconds: Int) -> Int {
-        switch seconds {
-        case ..<(12 * 60):
-            12 * 60
-        case (12 * 60)..<(25 * 60):
-            25 * 60
-        case (25 * 60)..<(50 * 60):
-            50 * 60
-        default:
-            seconds + 25 * 60
-        }
-    }
-
-    static func previousBlockDurationSeconds(before seconds: Int) -> Int {
-        switch seconds {
-        case ...(12 * 60):
-            12 * 60
-        case (12 * 60 + 1)...(25 * 60):
-            12 * 60
-        case (25 * 60 + 1)...(50 * 60):
-            25 * 60
-        case (50 * 60 + 1)...(75 * 60):
-            50 * 60
-        default:
-            seconds - 25 * 60
-        }
     }
 
     func remainingSeconds(for state: FlowTimerState, now: Date) -> Int {
@@ -251,6 +231,11 @@ struct FlowTimerEngine {
         default:
             3 * 60
         }
+    }
+
+    private func isActiveFocus(_ state: FlowTimerState) -> Bool {
+        state.phase == .focusing ||
+            (state.phase == .paused && state.phaseBeforePause == .focusing)
     }
 }
 
