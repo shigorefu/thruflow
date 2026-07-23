@@ -13,35 +13,48 @@ struct FlowLiveActivityWidget: Widget {
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    FlowActivityIdentity(
-                        state: context.state,
-                        iconSize: 36,
-                        maximumWidth: 178
-                    )
-                    .padding(.leading, 8)
+                    FlowActivityTaskLabel(state: context.state, showsDirection: false)
                 }
 
                 DynamicIslandExpandedRegion(.trailing) {
-                    FlowActivityClock(state: context.state)
-                        .padding(.trailing, 8)
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text(context.state.statusTitle)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                        FlowActivityTimeLabel(state: context.state)
+                            .font(.title3.monospacedDigit().weight(.semibold))
+                    }
+                }
+
+                DynamicIslandExpandedRegion(.center) {
+                    HStack(spacing: 6) {
+                        Text(context.state.modeName)
+                            .font(.caption.weight(.semibold))
+                        if !context.state.directionName.isEmpty {
+                            Text("·")
+                                .foregroundStyle(.tertiary)
+                            Text("\(context.state.directionEmoji) \(context.state.directionName)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
+                    }
                 }
 
                 DynamicIslandExpandedRegion(.bottom) {
-                    VStack(spacing: 8) {
+                    VStack(spacing: 10) {
                         FlowActivityProgressView(state: context.state)
                             .tint(context.state.tintColor)
-                        FlowActivityActions(state: context.state)
+                        FlowActivityActions(state: context.state, compact: true)
                     }
-                    .padding(.horizontal, 10)
-                    .padding(.bottom, 4)
                 }
             } compactLeading: {
                 Text(context.state.taskEmoji)
-                    .font(.caption)
                     .accessibilityLabel(context.state.taskTitle)
             } compactTrailing: {
                 FlowActivityTimeLabel(state: context.state)
                     .font(.caption2.monospacedDigit().weight(.semibold))
+                    .frame(minWidth: 42)
             } minimal: {
                 FlowActivityCircularProgress(state: context.state)
                     .tint(context.state.tintColor)
@@ -57,78 +70,55 @@ private struct FlowLockScreenView: View {
     let context: ActivityViewContext<FlowActivityAttributes>
 
     var body: some View {
-        VStack(spacing: 10) {
-            HStack(spacing: 14) {
-                FlowActivityIdentity(
-                    state: context.state,
-                    iconSize: 44,
-                    maximumWidth: 230
-                )
+        VStack(spacing: 12) {
+            HStack(spacing: 12) {
+                Text(context.state.taskEmoji)
+                    .font(.system(size: 32))
+                    .frame(width: 48, height: 48)
+                    .background(context.state.tintColor.opacity(0.18), in: RoundedRectangle(cornerRadius: 12))
 
-                Spacer(minLength: 12)
+                FlowActivityTaskLabel(state: context.state, showsDirection: true)
 
-                FlowActivityClock(state: context.state)
+                Spacer(minLength: 8)
+
+                VStack(alignment: .trailing, spacing: 3) {
+                    Text(context.state.statusTitle)
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.secondary)
+                    FlowActivityTimeLabel(state: context.state)
+                        .font(.title2.monospacedDigit().weight(.bold))
+                    Text(context.state.modeName)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             FlowActivityProgressView(state: context.state)
                 .tint(context.state.tintColor)
 
-            FlowActivityActions(state: context.state)
+            FlowActivityActions(state: context.state, compact: false)
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 16)
+        .padding(16)
         .accessibilityElement(children: .contain)
     }
 }
 
-private struct FlowActivityIdentity: View {
+private struct FlowActivityTaskLabel: View {
     let state: FlowActivityAttributes.ContentState
-    let iconSize: CGFloat
-    let maximumWidth: CGFloat
+    let showsDirection: Bool
 
     var body: some View {
-        HStack(spacing: 10) {
-            Text(state.taskEmoji)
-                .font(.system(size: iconSize * 0.62))
-                .frame(width: iconSize, height: iconSize)
-                .background(
-                    state.tintColor.opacity(0.18),
-                    in: RoundedRectangle(cornerRadius: iconSize * 0.24)
-                )
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(state.taskTitle)
-                    .font(.headline)
+        VStack(alignment: .leading, spacing: 3) {
+            Text(state.taskTitle)
+                .font(.headline)
+                .lineLimit(1)
+            if showsDirection, !state.directionName.isEmpty {
+                Text("\(state.directionEmoji) \(state.directionName)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                     .lineLimit(1)
-
-                if !state.directionName.isEmpty {
-                    Text("\(state.directionEmoji) \(state.directionName)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
             }
-            .layoutPriority(1)
         }
-        .frame(maxWidth: maximumWidth, alignment: .leading)
-    }
-}
-
-private struct FlowActivityClock: View {
-    let state: FlowActivityAttributes.ContentState
-
-    var body: some View {
-        VStack(alignment: .trailing, spacing: 2) {
-            FlowActivityTimeLabel(state: state)
-                .font(.title2.monospacedDigit().weight(.bold))
-                .lineLimit(1)
-
-            Text("\(state.statusTitle) · \(state.modeName)")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-        }
-        .fixedSize(horizontal: true, vertical: false)
     }
 }
 
@@ -140,8 +130,6 @@ private struct FlowActivityTimeLabel: View {
             Text(FlowLiveActivityFormatter.timeText(seconds: state.remainingSeconds))
         } else {
             Text(timerInterval: state.timerRange, countsDown: true, showsHours: false)
-                // Keep the system-updating countdown in the product's MM:SS format.
-                .environment(\.locale, Locale(identifier: "en_US_POSIX"))
         }
     }
 }
@@ -182,59 +170,49 @@ private struct FlowActivityCircularProgress: View {
 
 private struct FlowActivityActions: View {
     let state: FlowActivityAttributes.ContentState
-
-    private var canSeek: Bool {
-        state.timerKind == .focus
-    }
+    let compact: Bool
 
     var body: some View {
-        HStack(spacing: 22) {
-            Button(intent: SeekFlowBackwardIntent()) {
-                actionIcon("gobackward")
-            }
-            .disabled(!canSeek)
-            .opacity(canSeek ? 1 : 0.35)
-            .accessibilityLabel(String(localized: "ブロックを短縮"))
-
+        HStack(spacing: compact ? 20 : 28) {
             Button(intent: ToggleFlowPauseIntent()) {
-                actionIcon(
-                    state.isPaused ? "play.fill" : "pause.fill",
-                    foreground: .white,
-                    background: state.tintColor
+                Label(
+                    state.isPaused ? String(localized: "再開") : String(localized: "一時停止"),
+                    systemImage: state.isPaused ? "play.fill" : "pause.fill"
                 )
             }
-            .accessibilityLabel(state.isPaused ? String(localized: "再開") : String(localized: "一時停止"))
+            .buttonStyle(.plain)
+            .labelStyle(FlowActivityActionLabelStyle(compact: compact))
 
             Button(intent: FinishFlowIntent()) {
-                actionIcon(
-                    "stop.fill",
-                    foreground: .red,
-                    background: Color.red.opacity(0.14)
-                )
+                Label(String(localized: "終了"), systemImage: "stop.fill")
+                    .foregroundStyle(.red)
             }
-            .accessibilityLabel(String(localized: "終了"))
+            .buttonStyle(.plain)
+            .labelStyle(FlowActivityActionLabelStyle(compact: compact))
 
-            Button(intent: SeekFlowForwardIntent()) {
-                actionIcon("goforward")
+            Link(destination: FlowLiveActivityView.openURL) {
+                Label(String(localized: "アプリを開く"), systemImage: "arrow.up.forward.app")
             }
-            .disabled(!canSeek)
-            .opacity(canSeek ? 1 : 0.35)
-            .accessibilityLabel(String(localized: "ブロックを延長"))
+            .buttonStyle(.plain)
+            .labelStyle(FlowActivityActionLabelStyle(compact: compact))
         }
-        .buttonStyle(.plain)
-        .frame(maxWidth: .infinity)
+        .font(compact ? .body : .subheadline.weight(.semibold))
     }
+}
 
-    private func actionIcon(
-        _ systemName: String,
-        foreground: Color = .secondary,
-        background: Color = .clear
-    ) -> some View {
-        Image(systemName: systemName)
-            .font(.callout.weight(.semibold))
-            .foregroundStyle(foreground)
-            .frame(width: 40, height: 40)
-            .background(background, in: Circle())
+private struct FlowActivityActionLabelStyle: LabelStyle {
+    let compact: Bool
+
+    @ViewBuilder
+    func makeBody(configuration: Configuration) -> some View {
+        if compact {
+            configuration.icon
+        } else {
+            HStack(spacing: 6) {
+                configuration.icon
+                configuration.title
+            }
+        }
     }
 }
 
