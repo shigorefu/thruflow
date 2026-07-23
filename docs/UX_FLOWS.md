@@ -49,8 +49,9 @@ Completing a Check Task draws the checkmark into place and gives the control one
 restrained pulse. Reaching a Block or Minute goal uses the same completion pulse
 without making its progress control manually clickable. Completion feedback is
 triggered only on the incomplete-to-complete transition, respects Reduce Motion,
-and may play the bundled `task-complete.caf` sound when that optional asset is
-present. Re-rendering an already completed Task never repeats the sound.
+and produces one system success haptic on iPhone. It may also play the bundled
+`task-complete.caf` sound when that optional asset is present. Re-rendering an
+already completed Task never repeats the feedback.
 
 Quick capture behaves like a messenger composer. The user can set measurement, Direction, priority, date, and multiple hashtags from compact controls. The default measurement control reads `種類`; leaving it untouched creates a Check Task. It is one stable animated control: its leading icon distinguishes Check, Block ring, and filled Minute circle; Block and Minute states expose an inline numeric field and unit before the menu chevron. The remaining metadata controls are text-only on both platforms. Direction uses its configured color, priority uses red/neutral/green for high/medium/low, and date always remains neutral. On iOS the metadata row scrolls horizontally instead of compressing or clipping selected values. The priority menu keeps the fixed order `高`, `中`, `低い`, `余裕があれば`; the final option persists as low priority with its dedicated room-if-possible flag. Hashtags display with `#`, deduplicate case-insensitively, and preserve the first entered casing.
 
@@ -112,6 +113,11 @@ At the planned focus end, Flow does not auto-switch. The timer continues. The us
 - stop.
 
 Stopping focus or starting break opens the same square memo panel in the dashboard and macOS menu bar player. It shows `お疲れ様です。メモを追加しますか？`, a large editor, `キャンセル` on the left, and one checkmark submit button on the right. The submit label is `メモなしで送信` for an empty editor and `送信` when text exists. Focus keeps counting while a break memo is open. Submitting text writes it to Todo; submitting an empty editor continues without changing the memo. Cancelling returns to the state before the prompt: a pending break returns to focus, while a stop prompt restores the previous running or paused Flow and removes its provisional progress. Stopping or skipping an existing rest never asks for memo again.
+
+On iPhone, successfully submitting the stop memo or starting the requested rest
+produces one system success haptic for the completed Flow. Cancelling the memo,
+discarding a sub-minute Flow, and ending a rest do not produce completion
+feedback.
 
 The trash action is phase-aware. During focus it deletes the current Flow and rolls back any credited Task/Direction progress through the canonical History editor. During rest it deletes only the active FlowBreak and closes the player, preserving the completed focus session and its progress.
 

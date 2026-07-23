@@ -210,6 +210,7 @@ final class ActiveFlowStore: ObservableObject {
     }
 
     func completeResult(_ result: String?, modelContext: ModelContext, now: Date = .now) {
+        let completedSessionID = activeSession?.id
         activeSession?.todo?.setMemo(result, now: now)
         activeSession?.complete(now: now)
 
@@ -223,6 +224,10 @@ final class ActiveFlowStore: ObservableObject {
         isAwaitingBreakMemo = false
         stateBeforeResultPrompt = nil
         liveActivities.end()
+
+        if let completedSessionID {
+            TaskCompletionFeedbackPlayer.shared.playFlow(for: completedSessionID, now: now)
+        }
     }
 
     func cancelResultMemo(modelContext: ModelContext, now: Date = .now) {
@@ -459,6 +464,7 @@ final class ActiveFlowStore: ObservableObject {
 
         modelContext.insert(flowBreak)
         apply(next, modelContext: modelContext, now: now)
+        TaskCompletionFeedbackPlayer.shared.playFlow(for: activeSession.id, now: now)
     }
 
     private func eligiblePendingBreak(modelContext: ModelContext, at date: Date) -> FlowBreak? {

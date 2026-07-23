@@ -50,7 +50,13 @@ The iOS deployment target is 17.0 even when building with Xcode 26 and the iOS
 - The dashboard reuses `FlowMiniPlayerView` behavior through its dedicated dashboard layout instead of creating a second timer controller. `ActiveFlowStore.phaseProgress` provides the circular timer progress.
 - The dashboard projects today's Todo groups and uses `RequiredTodoPlanner` to ensure today's Habit instances exist when Flow is the first opened screen.
 - `TodoProgressControl` is the shared Check/Block/Minute control used by Tasks and the dashboard.
-- `TaskCompletionFeedbackPlayer` optionally plays `task-complete.caf`; absence of the resource is a supported no-op. The shared progress control owns the completion drawing/pulse and respects Reduce Motion.
+- `TaskCompletionFeedbackPlayer` deduplicates completion feedback by Task or
+  Flow identifier. On iOS it emits the system success haptic for an actual
+  incomplete-to-complete Task transition and for a successfully finalized Flow;
+  on other platforms haptics are a no-op. It optionally plays
+  `task-complete.caf` for Task completion, and absence of that resource is
+  supported. The shared progress control owns the completion drawing/pulse and
+  respects Reduce Motion.
 - `LiveActivityService` is the platform-neutral output port owned by
   `ActiveFlowStore`. `IOSFlowLiveActivityService` is the ActivityKit adapter;
   the Widget Extension receives only shared `FlowActivityAttributes` and never
