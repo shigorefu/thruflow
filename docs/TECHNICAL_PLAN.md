@@ -65,6 +65,12 @@ The iOS deployment target is 17.0 even when building with Xcode 26 and the iOS
   intents delegate expanded-Island `-5 minutes`, pause/resume, and `+5 minutes`
   actions to the existing `ActiveFlowStore` operations; the extension contains
   no timer mutations.
+- `IOSFlowLiveActivityService` also converts the same immutable content into a
+  `FlowTimerWidgetSnapshot`, stores it in App Group
+  `group.com.shigorefu.thruflow`, and reloads only `FlowTimerWidget`. The Widget
+  Extension reads that Codable snapshot and uses system date-backed timer and
+  progress views. The Home Screen widget never opens SwiftData, schedules a
+  per-second timeline, or owns transport behavior.
 
 ## Test Expectations
 
@@ -86,6 +92,8 @@ Cover:
 - Dashboard statistics distribution, seven-day trend comparisons, and completion projection.
 - Live Activity content projection for focus, break, and paused phases, plus
   deterministic shared formatting.
+- Home Screen timer-widget snapshot mapping, App Group persistence round-trip,
+  and clear behavior.
 
 ## Migration Caution
 

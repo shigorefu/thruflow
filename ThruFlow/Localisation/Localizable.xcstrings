@@ -1465,6 +1465,22 @@
         }
       }
     },
+    "実行中のFlowをホーム画面で確認できます。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See the active Flow on your Home Screen."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Следите за активным Flow на экране «Домой»."
+          }
+        }
+      }
+    },
     "Flowタスク" : {
       "localizations" : {
         "en" : {

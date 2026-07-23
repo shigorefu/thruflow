@@ -2,16 +2,23 @@
 import ActivityKit
 import Foundation
 import OSLog
+import WidgetKit
 
 @MainActor
 final class IOSFlowLiveActivityService: LiveActivityService {
+    private let timerWidgetSnapshots = FlowTimerWidgetSnapshotStore()
     private let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "com.shigorefu.thruflow",
         category: "LiveActivity"
     )
 
     func start(content: FlowLiveActivityContent) {
-        guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
+        publishTimerWidget(content)
+
+        guard ActivityAuthorizationInfo().areActivitiesEnabled else {
+            endLiveActivities()
+            return
+        }
 
         if let existing = activity(for: content.sessionID) {
             update(existing, with: content)
@@ -32,8 +39,10 @@ final class IOSFlowLiveActivityService: LiveActivityService {
     }
 
     func update(content: FlowLiveActivityContent) {
+        publishTimerWidget(content)
+
         guard ActivityAuthorizationInfo().areActivitiesEnabled else {
-            end()
+            endLiveActivities()
             return
         }
 
@@ -46,6 +55,12 @@ final class IOSFlowLiveActivityService: LiveActivityService {
     }
 
     func end() {
+        timerWidgetSnapshots.clear()
+        WidgetCenter.shared.reloadTimelines(ofKind: FlowTimerWidgetSnapshotStore.widgetKind)
+        endLiveActivities()
+    }
+
+    private func endLiveActivities() {
         let activities = Activity<FlowActivityAttributes>.activities
         guard !activities.isEmpty else { return }
 
@@ -54,6 +69,11 @@ final class IOSFlowLiveActivityService: LiveActivityService {
                 await activity.end(nil, dismissalPolicy: .immediate)
             }
         }
+    }
+
+    private func publishTimerWidget(_ content: FlowLiveActivityContent) {
+        timerWidgetSnapshots.save(content.timerWidgetSnapshot)
+        WidgetCenter.shared.reloadTimelines(ofKind: FlowTimerWidgetSnapshotStore.widgetKind)
     }
 
     private func activity(for sessionID: UUID) -> Activity<FlowActivityAttributes>? {

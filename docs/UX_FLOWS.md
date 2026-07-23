@@ -217,6 +217,19 @@ action buttons. Opening any activity routes to the Flow tab. ActivityKit
 advances date-backed timer text and progress while the app is suspended; state
 transitions still originate from `ActiveFlowStore`.
 
+## Home Screen Flow Widget
+
+The iPhone provides a read-only `Flowタイマー` widget in Small and Medium
+families. During Flow it shows Task emoji and title, optional Direction, mode,
+phase, remaining `MM:SS`, and progress. When no Flow is active it shows
+`Flowなし` and an invitation to start Flow. Tapping either state opens the Flow
+tab.
+
+The Home Screen widget intentionally has no transport controls. Live Activity
+owns quick controls, while the regular widget remains a glanceable and reliable
+projection. Date-backed system timer and progress views keep moving while the
+app is suspended.
+
 ## Statistics
 
 Statistics uses a contribution grid.

@@ -19,6 +19,7 @@ ThruFlow/
       Services/     Platform-neutral protocols and shared implementations
     Application/    Shared observable state and use-case orchestration
     LiveActivity/   Shared ActivityKit attributes, content state, and intents
+    Widget/         Cross-process timer-widget snapshots and App Group storage
     UI/             Small reusable SwiftUI components
   Localisation/     Shared Apple String Catalog used by every platform target
   Platforms/
@@ -30,7 +31,7 @@ ThruFlow/
       App/          iPhone composition root, navigation, entitlements, and Info.plist
       Features/     Native iPhone Flow, Tasks, History, Directions, Statistics, and Settings
       Support/      ActivityKit and other iOS framework adapters
-ThruFlowLiveActivity/  Widget extension that renders Live Activity surfaces
+ThruFlowLiveActivity/  Widget extension for Live Activity and Home Screen widgets
 ```
 
 `ThruFlow` and `ThruFlow iOS` are separate application targets. Explicit source
@@ -67,8 +68,9 @@ Platforms/iOS  ──┘              │
   integration, drag-and-drop presentation, and the current desktop layouts.
 - `Platforms/iOS` owns the Flow-first iPhone navigation shell and compact Flow,
   Tasks, History, Directions, Statistics, and Settings presentations.
-- `ThruFlowLiveActivity` owns only Lock Screen and Dynamic Island rendering. It
-  does not open SwiftData or create another timer state machine.
+- `ThruFlowLiveActivity` owns Lock Screen, Dynamic Island, and Home Screen
+  widget rendering. It does not open SwiftData or create another timer state
+  machine.
 - Platform-specific behavior is reached through small adapters in the owning
   platform folder. Shared code does not use conditional AppKit/UIKit imports.
 
@@ -157,6 +159,17 @@ Those App Intents call the same `ActiveFlowStore` operations as the in-app
 player. The Lock Screen presentation is read-only, and tapping any activity
 deep-links to the Flow tab.
 
+The Small and Medium Home Screen `Flowタイマー` widgets are read-only
+projections of the same `FlowLiveActivityContent`. The iOS adapter serializes an
+immutable `FlowTimerWidgetSnapshot` into App Group
+`group.com.shigorefu.thruflow` and reloads only that widget kind on timer state
+transitions. The extension renders date-backed `Text(timerInterval:)` and
+`ProgressView(timerInterval:)`, so the system advances visible time and progress
+without a second timer engine or per-second application wakeups. Ending Flow
+clears the snapshot; tapping either the active or empty widget opens the Flow
+tab. The App Group capability must be provisioned for both the iOS app and the
+Widget Extension.
+
 Dynamic Island regions must remain self-sizing. Do not use unbounded layout such
 as `.frame(maxWidth: .infinity)` or geometry-derived offsets inside an expanded
 region. The iOS 26.5 renderer can pass an unbounded proposal there; propagating
@@ -176,4 +189,4 @@ verify compact, minimal, expanded, and Lock Screen rendering independently.
 
 This cross-platform stage does not add new business rules or alter macOS
 behavior. It does not include advanced iPhone Statistics, full History/calendar
-editing, standalone widgets, or Apple Watch.
+editing, or Apple Watch.

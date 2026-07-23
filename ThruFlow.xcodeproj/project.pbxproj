@@ -12,6 +12,7 @@
 		5B2000143000000000000014 /* FlowActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B2000103000000000000010 /* FlowActivityAttributes.swift */; };
 		5B2000153000000000000015 /* FlowLiveActivityIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B2000113000000000000011 /* FlowLiveActivityIntents.swift */; };
 		5B2000163000000000000016 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 5B2000123000000000000012 /* Localizable.xcstrings */; };
+		5B2000173000000000000017 /* ThruFlow/Shared/Widget/FlowTimerWidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B2000183000000000000018 /* ThruFlow/Shared/Widget/FlowTimerWidgetSnapshot.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -62,6 +63,7 @@
 		5B2000103000000000000010 /* FlowActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThruFlow/Shared/LiveActivity/FlowActivityAttributes.swift; sourceTree = SOURCE_ROOT; };
 		5B2000113000000000000011 /* FlowLiveActivityIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThruFlow/Shared/LiveActivity/FlowLiveActivityIntents.swift; sourceTree = SOURCE_ROOT; };
 		5B2000123000000000000012 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = ThruFlow/Localisation/Localizable.xcstrings; sourceTree = SOURCE_ROOT; };
+		5B2000183000000000000018 /* ThruFlow/Shared/Widget/FlowTimerWidgetSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThruFlow/Shared/Widget/FlowTimerWidgetSnapshot.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -427,6 +429,7 @@
 				5B2000133000000000000013 /* LiveActivityService.swift in Sources */,
 				5B2000143000000000000014 /* FlowActivityAttributes.swift in Sources */,
 				5B2000153000000000000015 /* FlowLiveActivityIntents.swift in Sources */,
+				5B2000173000000000000017 /* ThruFlow/Shared/Widget/FlowTimerWidgetSnapshot.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -907,6 +910,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = ThruFlowLiveActivity/ThruFlowLiveActivity.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = BR727PS795;
@@ -939,6 +943,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = ThruFlowLiveActivity/ThruFlowLiveActivity.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = BR727PS795;

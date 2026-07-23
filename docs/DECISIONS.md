@@ -207,6 +207,22 @@ an expanded region produced a `NaN` layout origin and terminated Apple's
 `WidgetRenderer_Activities` process on iOS 26.5. A static action registry is also
 prohibited because it cannot bridge the application and extension processes.
 
+## D-024: Home Screen Timer Widget Is A Read-Only Snapshot
+
+The Small and Medium `Flowタイマー` widgets reuse the existing Widget Extension
+but do not reuse ActivityKit rendering or create another timer controller. The
+iOS Live Activity adapter writes one Codable `FlowTimerWidgetSnapshot` to App
+Group `group.com.shigorefu.thruflow` whenever the canonical
+`FlowLiveActivityContent` changes, clears it when Flow ends, and requests a
+targeted WidgetKit reload. The extension uses date-backed system timer and
+progress views, and tapping the widget deep-links to Flow. Transport controls
+remain in the app and Live Activity.
+
+Reason: a Home Screen widget must stay glanceable and current while respecting
+WidgetKit's update budget. Sharing an immutable cross-process snapshot preserves
+one timer source of truth and avoids per-second timelines, SwiftData access, and
+business-rule duplication in the extension.
+
 ## Open Questions
 
 - What measurement and planned amount should be used for an auto-created Task when Flow starts with only a Direction or with neither Direction nor Task?

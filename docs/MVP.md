@@ -44,6 +44,9 @@ Current MVP goal:
 - iPhone Live Activity and Dynamic Island player for an active Flow, including
   system-updating time/progress, Task and Direction context, expanded
   seek/pause controls, and deep-link return to the Flow screen.
+- iPhone Home Screen `Flowタイマー` widget in Small and Medium sizes, with
+  system-updating time/progress, active Task and Direction context, an empty
+  state, and deep-link return to Flow.
 
 ## Not Included
 
@@ -52,7 +55,6 @@ Current MVP goal:
 - Food/sleep/game classification.
 - Complex rewards.
 - Accounts/subscriptions.
-- Standalone widgets.
 - Apple Watch.
 - Advanced iPhone `統計` beyond the compact contribution overview.
 - Full iPhone History/calendar editing.
