@@ -199,6 +199,20 @@ changing the basic shared settings. Private CloudKit synchronization carries the
 same SwiftData records between devices signed into one Apple ID. Japanese is the
 default language for a fresh install.
 
+## System Notifications
+
+macOS and iOS request alert, sound, and badge permission from the shared Flow
+notification service. A completed focus interval is named by its mode
+(`Sprint`, `Focus`, or `Deep`) instead of its Block value; Japanese completion
+copy starts with `お疲れ様です。`. Break completion prompts the user to return to
+Flow.
+
+Focus and break each schedule an additional forgotten-timer reminder after 60
+minutes of active phase time. Paused time shifts that deadline and does not
+count toward the hour. Pausing, stopping, destroying, or changing phase cancels
+obsolete pending reminders. Every delivered Flow notification sets badge `1`;
+opening or foregrounding either app clears it.
+
 ## Live Activity
 
 Starting an iPhone Flow creates one system Live Activity. It remains visible on

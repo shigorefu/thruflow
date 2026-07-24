@@ -12,10 +12,33 @@ protocol FlowNotificationService {
     func requestAuthorizationIfNeeded()
     func scheduleFocusFinished(mode: FlowMode, focusedSeconds: Int, fireDate: Date)
     func scheduleBreakFinished(fireDate: Date)
+    func scheduleRunningTooLong(phase: FlowNotificationPhase, fireDate: Date)
     func cancelPendingFlowNotifications()
+    func clearBadge()
+}
+
+enum FlowNotificationPhase: Equatable {
+    case focus
+    case breakTime
 }
 
 final class LocalFlowNotificationService: FlowNotificationService {
+    private static let authorizationDefaultsKey = "flow.notificationsRequested.v2"
+
+    private enum NotificationID {
+        static let focusFinished = "flow.focusFinished"
+        static let breakFinished = "flow.breakFinished"
+        static let focusRunningTooLong = "flow.focusRunningTooLong"
+        static let breakRunningTooLong = "flow.breakRunningTooLong"
+
+        static let all = [
+            focusFinished,
+            breakFinished,
+            focusRunningTooLong,
+            breakRunningTooLong,
+        ]
+    }
+
     private let center: UNUserNotificationCenter
     private let defaults: UserDefaults
 
@@ -25,15 +48,15 @@ final class LocalFlowNotificationService: FlowNotificationService {
     }
 
     func requestAuthorizationIfNeeded() {
-        guard !defaults.bool(forKey: "flow.notificationsRequested") else { return }
-        defaults.set(true, forKey: "flow.notificationsRequested")
+        guard !defaults.bool(forKey: Self.authorizationDefaultsKey) else { return }
+        defaults.set(true, forKey: Self.authorizationDefaultsKey)
 
-        center.requestAuthorization(options: [.alert, .sound]) { _, _ in }
+        center.requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in }
     }
 
     func scheduleFocusFinished(mode: FlowMode, focusedSeconds: Int, fireDate: Date) {
         schedule(
-            id: "flow.focusFinished",
+            id: NotificationID.focusFinished,
             title: focusTitle(mode: mode, focusedSeconds: focusedSeconds),
             fireDate: fireDate
         )
@@ -41,17 +64,34 @@ final class LocalFlowNotificationService: FlowNotificationService {
 
     func scheduleBreakFinished(fireDate: Date) {
         schedule(
-            id: "flow.breakFinished",
+            id: NotificationID.breakFinished,
             title: String(localized: "休憩が終わりました。Flowに戻りますか？"),
             fireDate: fireDate
         )
     }
 
+    func scheduleRunningTooLong(phase: FlowNotificationPhase, fireDate: Date) {
+        let id: String
+        let title: String
+
+        switch phase {
+        case .focus:
+            id = NotificationID.focusRunningTooLong
+            title = String(localized: "Flowを開始して1時間以上経過しました。タイマーを止め忘れていませんか？")
+        case .breakTime:
+            id = NotificationID.breakRunningTooLong
+            title = String(localized: "休憩を開始して1時間以上経過しました。タイマーを止め忘れていませんか？")
+        }
+
+        schedule(id: id, title: title, fireDate: fireDate)
+    }
+
     func cancelPendingFlowNotifications() {
-        center.removePendingNotificationRequests(withIdentifiers: [
-            "flow.focusFinished",
-            "flow.breakFinished",
-        ])
+        center.removePendingNotificationRequests(withIdentifiers: NotificationID.all)
+    }
+
+    func clearBadge() {
+        center.setBadgeCount(0)
     }
 
     private func schedule(id: String, title: String, fireDate: Date) {
@@ -59,6 +99,7 @@ final class LocalFlowNotificationService: FlowNotificationService {
         let content = UNMutableNotificationContent()
         content.title = title
         content.sound = .default
+        content.badge = 1
 
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: interval, repeats: false)
         let request = UNNotificationRequest(identifier: id, content: content, trigger: trigger)
@@ -66,15 +107,28 @@ final class LocalFlowNotificationService: FlowNotificationService {
     }
 
     private func focusTitle(mode: FlowMode, focusedSeconds: Int) -> String {
+        switch completionMode(for: mode, focusedSeconds: focusedSeconds) {
+        case .sprint:
+            String(localized: "お疲れ様です。Sprintが完了しました。")
+        case .twentyFiveFive:
+            String(localized: "お疲れ様です。Focusが完了しました。")
+        case .fiftyTen:
+            String(localized: "お疲れ様です。Deepが完了しました。")
+        case .adaptive:
+            String(localized: "お疲れ様です。Flowが完了しました。")
+        }
+    }
+
+    private func completionMode(for mode: FlowMode, focusedSeconds: Int) -> FlowMode {
+        guard mode == .adaptive else { return mode }
+
         switch focusedSeconds {
-        case 12 * 60:
-            String(localized: "最初の0.5 Blockが完了しました。1 Blockまで続けますか？")
-        case 25 * 60:
-            String(localized: "1 Blockが完了しました。")
-        case 50 * 60:
-            String(localized: "2 Blocksが完了しました。")
+        case (50 * 60)...:
+            return .fiftyTen
+        case (25 * 60)...:
+            return .twentyFiveFive
         default:
-            String(localized: "\(BlockUnit.displayText(forFocusedSeconds: focusedSeconds)) が完了しました。")
+            return .sprint
         }
     }
 }

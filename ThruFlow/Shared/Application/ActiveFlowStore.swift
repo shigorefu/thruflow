@@ -11,6 +11,8 @@ import SwiftData
 
 @MainActor
 final class ActiveFlowStore: ObservableObject {
+    private static let forgottenTimerReminderSeconds = 60 * 60
+
     @Published var selectedDirectionID: UUID?
     @Published var selectedTodoID: UUID?
     @Published var selectedMode: FlowMode
@@ -123,11 +125,7 @@ final class ActiveFlowStore: ObservableObject {
         didApplyProgress = false
         persistConfiguration()
         notifications.requestAuthorizationIfNeeded()
-        notifications.scheduleFocusFinished(
-            mode: state.mode,
-            focusedSeconds: state.plannedFocusDurationSeconds,
-            fireDate: state.plannedEndAt
-        )
+        scheduleNotifications(for: state)
         try? modelContext.save()
         startLiveActivity(now: now)
     }
@@ -188,11 +186,7 @@ final class ActiveFlowStore: ObservableObject {
     func resume(modelContext: ModelContext, now: Date = .now) {
         guard let timerState else { return }
         let next = engine.resume(timerState, now: now)
-        notifications.scheduleFocusFinished(
-            mode: next.mode,
-            focusedSeconds: next.plannedFocusDurationSeconds,
-            fireDate: next.plannedEndAt
-        )
+        scheduleNotifications(for: next)
         apply(next, modelContext: modelContext, now: now)
     }
 
@@ -249,11 +243,7 @@ final class ActiveFlowStore: ObservableObject {
         stateBeforeResultPrompt = nil
 
         if restoredState.phase == .focusing {
-            notifications.scheduleFocusFinished(
-                mode: restoredState.mode,
-                focusedSeconds: restoredState.plannedFocusDurationSeconds,
-                fireDate: restoredState.plannedEndAt
-            )
+            scheduleNotifications(for: restoredState)
         }
 
         try? modelContext.save()
@@ -263,11 +253,7 @@ final class ActiveFlowStore: ObservableObject {
     func extendAdaptive(modelContext: ModelContext, now: Date = .now) {
         guard let timerState else { return }
         let next = engine.extendAdaptive(timerState, now: now)
-        notifications.scheduleFocusFinished(
-            mode: next.mode,
-            focusedSeconds: next.plannedFocusDurationSeconds,
-            fireDate: next.plannedEndAt
-        )
+        scheduleNotifications(for: next)
         apply(next, modelContext: modelContext, now: now)
     }
 
@@ -308,11 +294,7 @@ final class ActiveFlowStore: ObservableObject {
         guard let timerState else { return }
         let next = engine.seekForward(timerState, now: now)
         guard next != timerState else { return }
-        notifications.scheduleFocusFinished(
-            mode: next.mode,
-            focusedSeconds: next.plannedFocusDurationSeconds,
-            fireDate: next.plannedEndAt
-        )
+        scheduleNotifications(for: next)
         apply(next, modelContext: modelContext, now: now)
     }
 
@@ -320,11 +302,7 @@ final class ActiveFlowStore: ObservableObject {
         guard let timerState else { return }
         let next = engine.seekBackward(timerState, now: now)
         guard next != timerState else { return }
-        notifications.scheduleFocusFinished(
-            mode: next.mode,
-            focusedSeconds: next.plannedFocusDurationSeconds,
-            fireDate: next.plannedEndAt
-        )
+        scheduleNotifications(for: next)
         apply(next, modelContext: modelContext, now: now)
     }
 
@@ -340,11 +318,7 @@ final class ActiveFlowStore: ObservableObject {
 
         notifications.cancelPendingFlowNotifications()
         if next.phase == .focusing {
-            notifications.scheduleFocusFinished(
-                mode: next.mode,
-                focusedSeconds: next.plannedFocusDurationSeconds,
-                fireDate: next.plannedEndAt
-            )
+            scheduleNotifications(for: next)
         }
         apply(next, modelContext: modelContext, now: now)
     }
@@ -529,6 +503,10 @@ final class ActiveFlowStore: ObservableObject {
         return engine.remainingSeconds(for: timerState, now: now) <= 0
     }
 
+    func clearNotificationBadge() {
+        notifications.clearBadge()
+    }
+
     private func apply(_ state: FlowTimerState, modelContext: ModelContext, now: Date) {
         guard state != timerState else { return }
 
@@ -543,11 +521,42 @@ final class ActiveFlowStore: ObservableObject {
         }
 
         if state.phase == .breakTime && previousPhase != .breakTime {
-            notifications.scheduleBreakFinished(fireDate: state.plannedEndAt)
+            scheduleNotifications(for: state)
         }
 
         try? modelContext.save()
         synchronizeLiveActivity(now: now)
+    }
+
+    private func scheduleNotifications(for state: FlowTimerState) {
+        switch state.phase {
+        case .focusing:
+            notifications.scheduleFocusFinished(
+                mode: state.mode,
+                focusedSeconds: state.plannedFocusDurationSeconds,
+                fireDate: state.plannedEndAt
+            )
+            notifications.scheduleRunningTooLong(
+                phase: .focus,
+                fireDate: runningTooLongReminderDate(for: state)
+            )
+        case .breakTime:
+            notifications.scheduleBreakFinished(fireDate: state.plannedEndAt)
+            notifications.scheduleRunningTooLong(
+                phase: .breakTime,
+                fireDate: runningTooLongReminderDate(for: state)
+            )
+        default:
+            break
+        }
+    }
+
+    private func runningTooLongReminderDate(for state: FlowTimerState) -> Date {
+        let plannedDuration = state.phase == .breakTime
+            ? state.plannedBreakDurationSeconds
+            : state.plannedFocusDurationSeconds
+        let activePhaseStart = state.plannedEndAt.addingTimeInterval(-TimeInterval(plannedDuration))
+        return activePhaseStart.addingTimeInterval(TimeInterval(Self.forgottenTimerReminderSeconds))
     }
 
     private func synchronizeDisplayClock() {

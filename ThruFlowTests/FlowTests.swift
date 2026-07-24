@@ -712,6 +712,64 @@ struct FlowTests {
         #expect(flowBreak.continuationDeadline == start.addingTimeInterval(25 * 60 + 30 * 60))
     }
 
+    @Test @MainActor func flowNotificationsWarnAfterOneActiveHourAndAccountForPause() throws {
+        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let start = Date(timeIntervalSince1970: 25_000)
+        let direction = Direction(name: "仕事", type: .neutral)
+        let notifications = TestFlowNotificationService()
+        context.insert(direction)
+
+        let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
+        let store = ActiveFlowStore(defaults: defaults, notifications: notifications)
+        store.configure(direction: direction, todo: nil, mode: .twentyFiveFive)
+        store.start(direction: direction, todo: nil, modelContext: context, now: start)
+
+        #expect(notifications.focusFinishedDates.last == start.addingTimeInterval(25 * 60))
+        #expect(notifications.runningTooLong.last?.phase == .focus)
+        #expect(notifications.runningTooLong.last?.fireDate == start.addingTimeInterval(60 * 60))
+
+        store.pause(modelContext: context, now: start.addingTimeInterval(10 * 60))
+        store.resume(modelContext: context, now: start.addingTimeInterval(20 * 60))
+
+        #expect(notifications.focusFinishedDates.last == start.addingTimeInterval(35 * 60))
+        #expect(notifications.runningTooLong.last?.phase == .focus)
+        #expect(notifications.runningTooLong.last?.fireDate == start.addingTimeInterval(70 * 60))
+    }
+
+    @Test @MainActor func breakNotificationsWarnAfterOneActiveHourAndResumeAsBreak() throws {
+        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let start = Date(timeIntervalSince1970: 28_000)
+        let breakStart = start.addingTimeInterval(25 * 60)
+        let direction = Direction(name: "仕事", type: .neutral)
+        let notifications = TestFlowNotificationService()
+        context.insert(direction)
+
+        let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
+        let store = ActiveFlowStore(defaults: defaults, notifications: notifications)
+        store.configure(direction: direction, todo: nil, mode: .twentyFiveFive)
+        store.start(direction: direction, todo: nil, modelContext: context, now: start)
+        store.startBreak(modelContext: context, now: breakStart)
+
+        #expect(notifications.breakFinishedDates.last == breakStart.addingTimeInterval(5 * 60))
+        #expect(notifications.runningTooLong.last?.phase == .breakTime)
+        #expect(notifications.runningTooLong.last?.fireDate == breakStart.addingTimeInterval(60 * 60))
+
+        let focusScheduleCount = notifications.focusFinishedDates.count
+        store.pause(modelContext: context, now: breakStart.addingTimeInterval(60))
+        store.resume(modelContext: context, now: breakStart.addingTimeInterval(3 * 60))
+
+        #expect(notifications.focusFinishedDates.count == focusScheduleCount)
+        #expect(notifications.breakFinishedDates.last == breakStart.addingTimeInterval(7 * 60))
+        #expect(notifications.runningTooLong.last?.phase == .breakTime)
+        #expect(notifications.runningTooLong.last?.fireDate == breakStart.addingTimeInterval(62 * 60))
+    }
+
     @Test @MainActor func activeFlowPublishesLiveActivityContextAndPauseState() throws {
         let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
@@ -800,10 +858,22 @@ struct FlowTests {
 }
 
 private final class TestFlowNotificationService: FlowNotificationService {
+    private(set) var focusFinishedDates: [Date] = []
+    private(set) var breakFinishedDates: [Date] = []
+    private(set) var runningTooLong: [(phase: FlowNotificationPhase, fireDate: Date)] = []
+
     func requestAuthorizationIfNeeded() {}
-    func scheduleFocusFinished(mode: FlowMode, focusedSeconds: Int, fireDate: Date) {}
-    func scheduleBreakFinished(fireDate: Date) {}
+    func scheduleFocusFinished(mode: FlowMode, focusedSeconds: Int, fireDate: Date) {
+        focusFinishedDates.append(fireDate)
+    }
+    func scheduleBreakFinished(fireDate: Date) {
+        breakFinishedDates.append(fireDate)
+    }
+    func scheduleRunningTooLong(phase: FlowNotificationPhase, fireDate: Date) {
+        runningTooLong.append((phase, fireDate))
+    }
     func cancelPendingFlowNotifications() {}
+    func clearBadge() {}
 }
 
 @MainActor

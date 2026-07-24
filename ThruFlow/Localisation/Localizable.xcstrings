@@ -1081,22 +1081,6 @@
         }
       }
     },
-    "1 Blockが完了しました。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1 Block completed."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1 блок завершён."
-          }
-        }
-      }
-    },
     "1ブロック" : {
       "localizations" : {
         "en" : {
@@ -1109,22 +1093,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "1 блок"
-          }
-        }
-      }
-    },
-    "2 Blocksが完了しました。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "2 Blocks completed."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "2 блока завершены."
           }
         }
       }
@@ -1605,6 +1573,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Не удалось сохранить Flow"
+          }
+        }
+      }
+    },
+    "Flowを開始して1時間以上経過しました。タイマーを止め忘れていませんか？" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You started Flow over an hour ago. Did you forget to stop the timer?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flow начался больше часа назад. Вы не забыли остановить таймер?"
           }
         }
       }
@@ -3893,6 +3877,22 @@
         }
       }
     },
+    "休憩を開始して1時間以上経過しました。タイマーを止め忘れていませんか？" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your break started over an hour ago. Did you forget to stop the timer?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Перерыв начался больше часа назад. Вы не забыли остановить таймер?"
+          }
+        }
+      }
+    },
     "休憩を保存できませんでした。" : {
       "localizations" : {
         "en" : {
@@ -4165,18 +4165,66 @@
         }
       }
     },
-    "最初の0.5 Blockが完了しました。1 Blockまで続けますか？" : {
+    "お疲れ様です。Deepが完了しました。" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The first 0.5 Block is complete. Continue to 1 Block?"
+            "value" : "Great work. Deep is complete."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Первые 0,5 блока завершены. Продолжить до 1 блока?"
+            "value" : "Отличная работа. Deep завершён."
+          }
+        }
+      }
+    },
+    "お疲れ様です。Flowが完了しました。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Great work. Flow is complete."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отличная работа. Flow завершён."
+          }
+        }
+      }
+    },
+    "お疲れ様です。Focusが完了しました。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Great work. Focus is complete."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отличная работа. Focus завершён."
+          }
+        }
+      }
+    },
+    "お疲れ様です。Sprintが完了しました。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Great work. Sprint is complete."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отличная работа. Sprint завершён."
           }
         }
       }

@@ -11,6 +11,7 @@ import SwiftUI
 
 @main
 struct ThruFlowApp: App {
+    @Environment(\.scenePhase) private var scenePhase
     @StateObject private var activeFlowStore = ActiveFlowStore()
     @StateObject private var settings = AppSettings()
     @NSApplicationDelegateAdaptor(MacOSAppDelegate.self) private var appDelegate
@@ -22,6 +23,14 @@ struct ThruFlowApp: App {
             MacOSRootView()
                 .environmentObject(activeFlowStore)
                 .appSettingsEnvironment(settings)
+                .onAppear {
+                    activeFlowStore.clearNotificationBadge()
+                }
+                .onChange(of: scenePhase) { _, phase in
+                    if phase == .active {
+                        activeFlowStore.clearNotificationBadge()
+                    }
+                }
         }
         .modelContainer(sharedModelContainer)
 

@@ -4,6 +4,7 @@ import SwiftUI
 
 @main
 struct ThruFlowiOSApp: App {
+    @Environment(\.scenePhase) private var scenePhase
     @StateObject private var activeFlowStore: ActiveFlowStore
     @StateObject private var settings = AppSettings()
 
@@ -62,6 +63,14 @@ struct ThruFlowiOSApp: App {
                 .environment(\.calendar, settings.effectiveCalendar)
                 .environment(\.locale, settings.effectiveLocale)
                 .preferredColorScheme(settings.preferredColorScheme)
+                .onAppear {
+                    activeFlowStore.clearNotificationBadge()
+                }
+                .onChange(of: scenePhase) { _, phase in
+                    if phase == .active {
+                        activeFlowStore.clearNotificationBadge()
+                    }
+                }
                 .background {
                     IOSProductWidgetSnapshotSyncView()
                 }

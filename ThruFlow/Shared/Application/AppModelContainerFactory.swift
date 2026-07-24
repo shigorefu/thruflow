@@ -65,6 +65,7 @@ enum AppModelContainerFactory {
     }
 
     private static var hasCloudKitEntitlement: Bool {
+#if os(macOS)
         guard let task = SecTaskCreateFromSelf(nil),
               let containerIdentifiers = SecTaskCopyValueForEntitlement(
                   task,
@@ -75,6 +76,9 @@ enum AppModelContainerFactory {
         }
 
         return containerIdentifiers.contains(cloudKitContainerIdentifier)
+#else
+        true
+#endif
     }
 
     static func shouldUseCloudKit(
