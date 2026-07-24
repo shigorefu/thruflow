@@ -474,7 +474,7 @@ struct IOSFlowView: View {
             return direction
         }()
         _ = inbox
-        try? HabitTodoMaterializer(calendar: calendar).materialize(
+        _ = try? HabitTodoMaterializer(calendar: calendar).materialize(
             directions: directions,
             dates: [.now],
             modelContext: modelContext

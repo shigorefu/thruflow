@@ -751,7 +751,7 @@ struct TasksView: View {
 
         guard !dates.isEmpty else { return }
 
-        try? HabitTodoMaterializer(calendar: calendar).materialize(
+        _ = try? HabitTodoMaterializer(calendar: calendar).materialize(
             directions: activeDirections,
             dates: dates,
             modelContext: modelContext,

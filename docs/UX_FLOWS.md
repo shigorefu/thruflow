@@ -139,8 +139,9 @@ The first iPhone surface is a Flow-first system `TabView`, with an independent
 `NavigationStack` inside each destination. `Flow` opens by default. The tab bar
 remains visible and marks the active
 destination across five items: `Flow`, `タスク`, `履歴`, `方向`, and `統計`.
-On iOS 26 it uses the native Liquid Glass selection indicator and minimizes on
-scroll; iOS 17–25 retain the system tab-bar appearance. When `タスク` opens,
+On iOS 26 it uses the native Liquid Glass selection indicator and remains
+full-size while content scrolls; iOS 17–25 retain the system tab-bar appearance.
+When `タスク` opens,
 the system tab bar disappears first and the messenger composer then slides up
 from the bottom. On return, the composer slides down completely before the
 system tab bar reappears and `Flow` becomes active.

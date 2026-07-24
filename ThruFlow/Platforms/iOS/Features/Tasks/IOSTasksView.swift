@@ -510,7 +510,7 @@ struct IOSTasksView: View {
             .filter { range != .month || calendarBuilder.isDate($0, inMonthContaining: selectedDate) }
             .sorted()
 
-        try? HabitTodoMaterializer(calendar: calendar).materialize(
+        _ = try? HabitTodoMaterializer(calendar: calendar).materialize(
             directions: activeDirections,
             dates: dates,
             modelContext: modelContext,

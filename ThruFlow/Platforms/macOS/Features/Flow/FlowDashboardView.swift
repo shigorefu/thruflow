@@ -885,7 +885,7 @@ struct FlowDashboardView: View {
     }
 
     private func ensureTodayHabits(now: Date = .now) {
-        try? HabitTodoMaterializer(calendar: calendar).materialize(
+        _ = try? HabitTodoMaterializer(calendar: calendar).materialize(
             directions: directions,
             dates: [now],
             modelContext: modelContext,
