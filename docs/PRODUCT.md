@@ -27,6 +27,10 @@ The screen is named `タスク`. There is no separate Inbox navigation item. Whe
 
 `タスク` supports `日`, `週`, and `月` calendar ranges. Day uses a compact seven-day strip above the Task list and opens a full month only in a date-picker popover. Week is a seven-column kanban, while month is a calendar overview. Filters stay centered and `今日` remains prominent. Active Tasks can be moved between dates subject to Habit rules.
 
+On iPhone, day and week content use interactive infinite horizontal paging.
+Day advances one date at a time; week advances the complete seven-day period
+while preserving the vertical list of non-empty day sections.
+
 Weekly-count Habits create one pending Task at a time. Completion allows the next instance on a later day, while moving the pending Task never creates a duplicate or makes the weekly goal impossible.
 
 Task completion:

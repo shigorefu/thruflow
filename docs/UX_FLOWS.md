@@ -174,10 +174,13 @@ progress, and native Task editing. Its compact header uses an icon-only system
 filter, centered `日 | 週 | 月`, a separate trailing `今日` action, and one
 vertical More button. More carries the combined nonzero inbox badge and opens
 `期限切れ N` and `日付なし N`; the same vertical More symbol is used throughout
-the iPhone app. Japanese day cells use bare numbers, and horizontal paging moves
-between adjacent days. Week presents previous/current/next week cards (`月` and
-the seven-day range) above a vertical list of day sections. Days without visible
-Tasks for the current filter are omitted. The Flow player context is a
+the iPhone app. Japanese day cells use bare numbers. Interactive horizontal
+paging reuses three pages indefinitely: the adjacent day follows the finger
+during the drag, then becomes the new center page. Week presents
+previous/current/next week cards (`月` and the seven-day range) above a vertical
+list of day sections; the complete list uses the same infinite paging by whole
+weeks. Days without visible Tasks for the current filter are omitted. The Flow
+player context is a
 visually bounded, Direction-tinted system button so its picker affordance stays
 clear. `履歴` provides touch-native `日 | 週 | 月` calendar ranges:
 day uses a vertically scrolling 24-hour timeline, week uses seven horizontally

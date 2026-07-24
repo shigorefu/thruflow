@@ -17,7 +17,9 @@ struct IOSTasksView: View {
     @State private var backlogMode: IOSBacklogMode?
     @State private var pendingBacklogMode: IOSBacklogMode?
     @State private var showsBacklogMenu = false
-    @State private var visibleDay: Date?
+    @State private var periodPageAnchor = Calendar.current.startOfDay(for: .now)
+    @State private var periodDragOffset: CGFloat = 0
+    @State private var periodTransitionID = UUID()
     @State private var showsComposer = false
     @State private var isClosing = false
     @State private var backlogMoveError: String?
@@ -132,8 +134,16 @@ struct IOSTasksView: View {
             showsComposer = false
             isClosing = false
         }
-        .onChange(of: range) { _, _ in ensureRequiredTodos() }
-        .onChange(of: selectedDate) { _, _ in ensureRequiredTodos() }
+        .onChange(of: range) { _, _ in
+            recenterPeriodPager(on: selectedDate)
+            ensureRequiredTodos()
+        }
+        .onChange(of: selectedDate) { _, date in
+            if !calendar.isDate(date, inSameDayAs: periodPageAnchor) {
+                recenterPeriodPager(on: date)
+            }
+            ensureRequiredTodos()
+        }
         .onChange(of: directions.map(\.updatedAt)) { _, _ in ensureRequiredTodos() }
         .onChange(of: todos.count) { _, _ in ensureRequiredTodos() }
     }
@@ -283,22 +293,7 @@ struct IOSTasksView: View {
         case .oneDay:
             dayPager
         case .sevenDays:
-            ScrollView {
-                LazyVStack(spacing: 14) {
-                    ForEach(weekDatesWithTodos, id: \.self) { date in
-                        daySection(date: date, todos: todos(on: date))
-                    }
-
-                    if weekDatesWithTodos.isEmpty {
-                        ContentUnavailableView(
-                            String(localized: "今日の項目はありません"),
-                            systemImage: "checkmark.circle"
-                        )
-                        .frame(maxWidth: .infinity, minHeight: 220)
-                    }
-                }
-                .padding(12)
-            }
+            weekPager
         case .month:
             ScrollView {
                 VStack(spacing: 14) {
@@ -319,39 +314,158 @@ struct IOSTasksView: View {
     }
 
     private var dayPager: some View {
-        ScrollView(.horizontal) {
-            LazyHStack(spacing: 0) {
-                ForEach(dayPageDates, id: \.self) { date in
-                    groupedList(for: date, todos: todos(on: date))
-                        .containerRelativeFrame(.horizontal)
-                        .id(date)
+        periodPager(component: .day) { date in
+            groupedList(for: date, todos: todos(on: date))
+        }
+    }
+
+    private var weekPager: some View {
+        periodPager(component: .weekOfYear) { anchorDate in
+            weekList(anchorDate: anchorDate)
+        }
+    }
+
+    private func periodPager<Page: View>(
+        component: Calendar.Component,
+        @ViewBuilder page: @escaping (Date) -> Page
+    ) -> some View {
+        GeometryReader { proxy in
+            let pageWidth = max(proxy.size.width, 1)
+
+            HStack(spacing: 0) {
+                ForEach(-1...1, id: \.self) { offset in
+                    if let date = pageDate(
+                        from: periodPageAnchor,
+                        byAdding: component,
+                        value: offset
+                    ) {
+                        page(date)
+                            .frame(width: pageWidth)
+                    }
                 }
             }
-            .scrollTargetLayout()
+            .frame(width: pageWidth * 3, alignment: .leading)
+            .offset(x: -pageWidth + periodDragOffset)
+            .contentShape(Rectangle())
+            .simultaneousGesture(periodDragGesture(pageWidth: pageWidth, component: component))
         }
-        .scrollIndicators(.hidden)
-        .scrollTargetBehavior(.paging)
-        .scrollPosition(id: $visibleDay)
-        .onAppear { visibleDay = selectedDate }
-        .onChange(of: selectedDate) { _, date in
-            guard visibleDay.map({ !calendar.isDate($0, inSameDayAs: date) }) ?? true else { return }
-            visibleDay = date
-        }
-        .onChange(of: visibleDay) { _, date in
-            guard let date, !calendar.isDate(date, inSameDayAs: selectedDate) else { return }
-            selectedDate = calendar.startOfDay(for: date)
+        .clipped()
+    }
+
+    private func weekList(anchorDate: Date) -> some View {
+        let dates = calendarBuilder
+            .dates(for: .sevenDays, anchoredAt: anchorDate)
+            .filter { !todos(on: $0).isEmpty }
+
+        return ScrollView {
+            LazyVStack(spacing: 14) {
+                ForEach(dates, id: \.self) { date in
+                    daySection(date: date, todos: todos(on: date))
+                }
+
+                if dates.isEmpty {
+                    ContentUnavailableView(
+                        String(localized: "今日の項目はありません"),
+                        systemImage: "checkmark.circle"
+                    )
+                    .frame(maxWidth: .infinity, minHeight: 220)
+                }
+            }
+            .padding(12)
         }
     }
 
-    private var dayPageDates: [Date] {
-        (-1...1).compactMap { offset in
-            calendar.date(byAdding: .day, value: offset, to: selectedDate)
-                .map { calendar.startOfDay(for: $0) }
+    private func pageDate(
+        from anchor: Date,
+        byAdding component: Calendar.Component,
+        value: Int
+    ) -> Date? {
+        calendar.date(byAdding: component, value: value, to: anchor)
+            .map { calendar.startOfDay(for: $0) }
+    }
+
+    private func periodDragGesture(
+        pageWidth: CGFloat,
+        component: Calendar.Component
+    ) -> some Gesture {
+        DragGesture(minimumDistance: 10)
+            .onChanged { value in
+                guard abs(value.translation.width) > abs(value.translation.height) else { return }
+                periodDragOffset = min(max(value.translation.width, -pageWidth), pageWidth)
+            }
+            .onEnded { value in
+                guard abs(value.translation.width) > abs(value.translation.height) else {
+                    resetPeriodDrag()
+                    return
+                }
+
+                let distanceThreshold = min(max(pageWidth * 0.14, 36), 72)
+                let projectedThreshold = pageWidth * 0.32
+                let shouldAdvance =
+                    abs(value.translation.width) >= distanceThreshold
+                    || abs(value.predictedEndTranslation.width) >= projectedThreshold
+
+                guard shouldAdvance else {
+                    resetPeriodDrag()
+                    return
+                }
+
+                let offset = value.translation.width < 0 ? 1 : -1
+                settlePeriodDrag(
+                    to: offset,
+                    pageWidth: pageWidth,
+                    component: component
+                )
+            }
+    }
+
+    private func resetPeriodDrag() {
+        withAnimation(.snappy(duration: 0.22)) {
+            periodDragOffset = 0
         }
     }
 
-    private var weekDatesWithTodos: [Date] {
-        visibleDates.filter { !todos(on: $0).isEmpty }
+    private func settlePeriodDrag(
+        to offset: Int,
+        pageWidth: CGFloat,
+        component: Calendar.Component
+    ) {
+        let transitionID = UUID()
+        periodTransitionID = transitionID
+
+        withAnimation(.snappy(duration: 0.22)) {
+            periodDragOffset = offset > 0 ? -pageWidth : pageWidth
+        }
+
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(220))
+            guard transitionID == periodTransitionID,
+                  let date = pageDate(
+                    from: periodPageAnchor,
+                    byAdding: component,
+                    value: offset
+                  ) else {
+                return
+            }
+
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) {
+                periodPageAnchor = date
+                selectedDate = date
+                periodDragOffset = 0
+            }
+        }
+    }
+
+    private func recenterPeriodPager(on date: Date) {
+        periodTransitionID = UUID()
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            periodPageAnchor = calendar.startOfDay(for: date)
+            periodDragOffset = 0
+        }
     }
 
     private func groupedList(for date: Date, todos: [Todo]) -> some View {
