@@ -27,7 +27,10 @@ The screen is named `タスク`. There is no separate Inbox navigation item. Whe
 
 `タスク` supports `日`, `週`, and `月` calendar ranges. Day uses a compact seven-day strip above the Task list and opens a full month only in a date-picker popover. Week is a seven-column kanban, while month is a calendar overview. Filters stay centered and `今日` remains prominent. Active Tasks can be moved between dates subject to Habit rules.
 
-On iPhone, day and week content use interactive infinite horizontal paging.
+On iPhone, day and week content use interactive infinite horizontal paging
+across the complete period surface. Native search filters the visible Tasks by
+title, Direction, emoji, and hashtag without changing stored records or Habit
+materialization.
 Day advances one date at a time; week advances the complete seven-day period
 while preserving the vertical list of non-empty day sections.
 
@@ -81,6 +84,10 @@ Cell brightness is relative to the maximum day in the selected range.
 `履歴` is the single canonical History surface and a dedicated navigation item below `タスク`. Clicking a statistics cell switches navigation to this section on that date; Statistics does not embed another history view.
 
 It provides a primary `Flow` calendar mode with `日・週・月`, plus `タスク` and `方向` aggregates. Day uses a narrow Apple Calendar-style timeline with an Elastic scale and a right mini-calendar/properties inspector. Week uses a vertically scrolling 24-hour grid with fixed headers; month is an overview. Calendar blocks represent separate actual Flow and rest records; the continuous series line belongs only to the Flow dashboard timeline. Completed Flow records can be dragged between exact day/time positions in day and week, or between dates in month; the session and all task-switch segments preserve their duration and progress. Active Flow and rest records remain fixed. Todo completion remains in Task summaries and Statistics. Historical Flow and rest entries open their canonical editors. Double-clicking empty time creates a manual independent Flow, never a manual rest. Historical Flow changes must adjust Direction totals and measured Todo progress by the same delta. Linking a manual Flow to a Task does not automatically complete it.
+
+On iPhone, `日` and `週` use the same interactive infinite period paging as
+Tasks across `Flow`, `タスク`, and `方向` History modes. Native search filters
+the selected period by record title, Direction, or emoji.
 
 ## Settings
 

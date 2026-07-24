@@ -15,33 +15,36 @@ struct IOSHistoryView: View {
     @State private var visibleKinds = Set(HistoryCalendarItemKind.allCases)
     @State private var selectedItem: HistoryCalendarItem?
     @State private var isAddingTaskRecord = false
+    @State private var periodPageAnchor = Calendar.current.startOfDay(for: .now)
+    @State private var periodDragOffset: CGFloat = 0
+    @State private var periodTransitionID = UUID()
+    @State private var searchText = ""
 
     init(selectedDate: Binding<Date>) {
         _selectedDate = selectedDate
+        _periodPageAnchor = State(
+            initialValue: Calendar.current.startOfDay(for: selectedDate.wrappedValue)
+        )
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            calendarToolbar
-            Divider()
-
-            Group {
-                switch selectedMode {
-                case .calendar:
-                    calendarContent
-                case .tasks:
-                    IOSHistoryTaskSummaryList(
-                        snapshot: historySnapshot,
-                        onAddRecord: { isAddingTaskRecord = true }
-                    )
-                case .directions:
-                    IOSHistoryDirectionSummaryList(snapshot: historySnapshot)
-                }
+        GeometryReader { proxy in
+            VStack(spacing: 0) {
+                calendarToolbar
+                Divider()
+                historyContent
             }
+            .contentShape(Rectangle())
+            .simultaneousGesture(periodDragGesture(pageWidth: max(proxy.size.width, 1)))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .navigationTitle(String(localized: "履歴"))
         .navigationBarTitleDisplayMode(.inline)
+        .searchable(
+            text: $searchText,
+            placement: .navigationBarDrawer(displayMode: .always),
+            prompt: Text("検索")
+        )
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 modeMenu
@@ -57,10 +60,22 @@ struct IOSHistoryView: View {
                 onDismiss: { isAddingTaskRecord = false }
             )
         }
+        .onChange(of: range) { _, _ in
+            recenterPeriodPager(on: selectedDate)
+        }
+        .onChange(of: selectedDate) { _, date in
+            if !calendar.isDate(date, inSameDayAs: periodPageAnchor) {
+                recenterPeriodPager(on: date)
+            }
+        }
     }
 
     private var calendarSnapshot: HistoryCalendarSnapshot {
-        let interval = range.interval(containing: selectedDate, calendar: calendar)
+        calendarSnapshot(for: selectedDate)
+    }
+
+    private func calendarSnapshot(for date: Date) -> HistoryCalendarSnapshot {
+        let interval = range.interval(containing: date, calendar: calendar)
         return HistoryCalendarBuilder(calendar: calendar).build(
             interval: interval,
             sessions: sessions,
@@ -69,34 +84,202 @@ struct IOSHistoryView: View {
     }
 
     private var historySnapshot: DayHistorySnapshot {
+        historySnapshot(for: selectedDate)
+    }
+
+    private func historySnapshot(for date: Date) -> DayHistorySnapshot {
         DayHistoryBuilder(calendar: calendar).build(
-            interval: range.interval(containing: selectedDate, calendar: calendar),
+            interval: range.interval(containing: date, calendar: calendar),
             sessions: sessions,
             todos: todos
         )
     }
 
     private var visibleCalendarItems: [HistoryCalendarItem] {
-        calendarSnapshot.items.filter { visibleKinds.contains($0.kind) }
+        visibleCalendarItems(for: selectedDate)
     }
 
     @ViewBuilder
-    private var calendarContent: some View {
+    private var historyContent: some View {
+        if let component = periodComponent {
+            periodPager(component: component) { date in
+                historyPageContent(for: date)
+            }
+        } else {
+            historyPageContent(for: selectedDate)
+        }
+    }
+
+    @ViewBuilder
+    private func historyPageContent(for date: Date) -> some View {
+        switch selectedMode {
+        case .calendar:
+            let snapshot = calendarSnapshot(for: date)
+            switch range {
+            case .day:
+                IOSHistoryDayTimeline(
+                    date: date,
+                    items: visibleCalendarItems(for: date),
+                    selection: $selectedItem
+                )
+            case .week:
+                IOSHistoryWeekTimeline(
+                    interval: snapshot.interval,
+                    items: visibleCalendarItems(for: date),
+                    selection: $selectedItem
+                )
+            case .month:
+                EmptyView()
+            }
+        case .tasks:
+            IOSHistoryTaskSummaryList(
+                snapshot: historySnapshot(for: date),
+                searchText: searchText,
+                onAddRecord: { isAddingTaskRecord = true }
+            )
+        case .directions:
+            IOSHistoryDirectionSummaryList(
+                snapshot: historySnapshot(for: date),
+                searchText: searchText
+            )
+        }
+    }
+
+    private func visibleCalendarItems(for date: Date) -> [HistoryCalendarItem] {
+        calendarSnapshot(for: date).items
+            .filter { visibleKinds.contains($0.kind) }
+            .filter(matchesSearch)
+    }
+
+    private func matchesSearch(_ item: HistoryCalendarItem) -> Bool {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return true }
+        return [item.title, item.subtitle, item.symbol]
+            .contains { $0.localizedCaseInsensitiveContains(query) }
+    }
+
+    private func periodPager<Page: View>(
+        component: Calendar.Component,
+        @ViewBuilder page: @escaping (Date) -> Page
+    ) -> some View {
+        GeometryReader { proxy in
+            let pageWidth = max(proxy.size.width, 1)
+
+            HStack(spacing: 0) {
+                ForEach(-1...1, id: \.self) { offset in
+                    if let date = pageDate(
+                        from: periodPageAnchor,
+                        byAdding: component,
+                        value: offset
+                    ) {
+                        page(date)
+                            .frame(width: pageWidth)
+                    }
+                }
+            }
+            .frame(width: pageWidth * 3, alignment: .leading)
+            .offset(x: -pageWidth + periodDragOffset)
+        }
+        .clipped()
+    }
+
+    private var periodComponent: Calendar.Component? {
         switch range {
-        case .day:
-            IOSHistoryDayTimeline(
-                date: selectedDate,
-                items: visibleCalendarItems,
-                selection: $selectedItem
-            )
-        case .week:
-            IOSHistoryWeekTimeline(
-                interval: calendarSnapshot.interval,
-                items: visibleCalendarItems,
-                selection: $selectedItem
-            )
-        case .month:
-            EmptyView()
+        case .day: .day
+        case .week: .weekOfYear
+        case .month: nil
+        }
+    }
+
+    private func pageDate(
+        from anchor: Date,
+        byAdding component: Calendar.Component,
+        value: Int
+    ) -> Date? {
+        calendar.date(byAdding: component, value: value, to: anchor)
+            .map { calendar.startOfDay(for: $0) }
+    }
+
+    private func periodDragGesture(pageWidth: CGFloat) -> some Gesture {
+        DragGesture(minimumDistance: 10)
+            .onChanged { value in
+                guard periodComponent != nil else { return }
+                guard abs(value.translation.width) > abs(value.translation.height) else { return }
+                periodDragOffset = min(max(value.translation.width, -pageWidth), pageWidth)
+            }
+            .onEnded { value in
+                guard let component = periodComponent else { return }
+                guard abs(value.translation.width) > abs(value.translation.height) else {
+                    resetPeriodDrag()
+                    return
+                }
+
+                let distanceThreshold = min(max(pageWidth * 0.14, 36), 72)
+                let projectedThreshold = pageWidth * 0.32
+                let shouldAdvance =
+                    abs(value.translation.width) >= distanceThreshold
+                    || abs(value.predictedEndTranslation.width) >= projectedThreshold
+
+                guard shouldAdvance else {
+                    resetPeriodDrag()
+                    return
+                }
+
+                let offset = value.translation.width < 0 ? 1 : -1
+                settlePeriodDrag(
+                    to: offset,
+                    pageWidth: pageWidth,
+                    component: component
+                )
+            }
+    }
+
+    private func resetPeriodDrag() {
+        withAnimation(.snappy(duration: 0.22)) {
+            periodDragOffset = 0
+        }
+    }
+
+    private func settlePeriodDrag(
+        to offset: Int,
+        pageWidth: CGFloat,
+        component: Calendar.Component
+    ) {
+        let transitionID = UUID()
+        periodTransitionID = transitionID
+
+        withAnimation(.snappy(duration: 0.22)) {
+            periodDragOffset = offset > 0 ? -pageWidth : pageWidth
+        }
+
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(220))
+            guard transitionID == periodTransitionID,
+                  let date = pageDate(
+                    from: periodPageAnchor,
+                    byAdding: component,
+                    value: offset
+                  ) else {
+                return
+            }
+
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) {
+                periodPageAnchor = date
+                selectedDate = date
+                periodDragOffset = 0
+            }
+        }
+    }
+
+    private func recenterPeriodPager(on date: Date) {
+        periodTransitionID = UUID()
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            periodPageAnchor = calendar.startOfDay(for: date)
+            periodDragOffset = 0
         }
     }
 
@@ -343,7 +526,17 @@ private struct IOSHistoryActivityDots: View {
 
 private struct IOSHistoryTaskSummaryList: View {
     let snapshot: DayHistorySnapshot
+    let searchText: String
     let onAddRecord: () -> Void
+
+    private var visibleTasks: [DayHistoryTaskSummary] {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return snapshot.taskSummaries }
+        return snapshot.taskSummaries.filter { task in
+            [task.title, task.directionName, task.directionSymbol]
+                .contains { $0.localizedCaseInsensitiveContains(query) }
+        }
+    }
 
     var body: some View {
         ScrollView {
@@ -361,7 +554,7 @@ private struct IOSHistoryTaskSummaryList: View {
                     .accessibilityLabel(String(localized: "記録を追加"))
                 }
 
-                if snapshot.taskSummaries.isEmpty {
+                if visibleTasks.isEmpty {
                     ContentUnavailableView(
                         String(localized: "記録なし"),
                         systemImage: "clock.arrow.circlepath",
@@ -369,7 +562,7 @@ private struct IOSHistoryTaskSummaryList: View {
                     )
                     .padding(.top, 72)
                 } else {
-                    ForEach(snapshot.taskSummaries) { task in
+                    ForEach(visibleTasks) { task in
                         IOSHistorySummaryRow(
                             symbol: task.directionSymbol,
                             title: task.title,
@@ -388,9 +581,16 @@ private struct IOSHistoryTaskSummaryList: View {
 
 private struct IOSHistoryDirectionSummaryList: View {
     let snapshot: DayHistorySnapshot
+    let searchText: String
 
     private var recordedDirections: [DayHistoryDirectionSummary] {
-        snapshot.directionSummaries.filter { $0.focusSeconds > 0 }
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        return snapshot.directionSummaries.filter { direction in
+            guard direction.focusSeconds > 0 else { return false }
+            guard !query.isEmpty else { return true }
+            return [direction.name, direction.symbol]
+                .contains { $0.localizedCaseInsensitiveContains(query) }
+        }
     }
 
     var body: some View {

@@ -179,7 +179,10 @@ paging reuses three pages indefinitely: the adjacent day follows the finger
 during the drag, then becomes the new center page. Week presents
 previous/current/next week cards (`月` and the seven-day range) above a vertical
 list of day sections; the complete list uses the same infinite paging by whole
-weeks. Days without visible Tasks for the current filter are omitted. The Flow
+weeks. The swipe is recognized across the complete period surface while
+vertical Task scrolling remains independent. Native search filters the visible
+period by Task title, Direction name/emoji, or hashtag. Days without visible
+Tasks for the current filter or search are omitted. The Flow
 player context is a
 visually bounded, Direction-tinted system button so its picker affordance stays
 clear. `履歴` provides touch-native `日 | 週 | 月` calendar ranges:
@@ -188,7 +191,10 @@ scrollable day columns, and month uses Apple Calendar-style numeric days with
 Direction-colored activity dots. Its period navigation matches `タスク`: `日`
 shows seven date cards, `週` shows previous/current/next week cards, and `月`
 shows the month calendar above the selected History mode. These controls mark
-only recorded Flow activity. Flow and rest remain separate calendar records and
+only recorded Flow activity. Day and week use the same three-page interactive
+infinite paging across the `Flow`, `タスク`, and `方向` modes. Native History
+search filters the selected period by record title, Direction, or emoji. Flow
+and rest remain separate calendar records and
 tapping one opens its details. `方向` edits its emoji through a dedicated
 searchable picker instead of a text-field leading icon. The standalone iPhone
 `方向` uses the same types, goals, schedules, weekday rules, color palette,

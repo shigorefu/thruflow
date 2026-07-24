@@ -20,6 +20,7 @@ struct IOSTasksView: View {
     @State private var periodPageAnchor = Calendar.current.startOfDay(for: .now)
     @State private var periodDragOffset: CGFloat = 0
     @State private var periodTransitionID = UUID()
+    @State private var searchText = ""
     @State private var showsComposer = false
     @State private var isClosing = false
     @State private var backlogMoveError: String?
@@ -52,14 +53,23 @@ struct IOSTasksView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            controls
-            Divider()
-            taskContent
+        GeometryReader { proxy in
+            VStack(spacing: 0) {
+                controls
+                Divider()
+                taskContent
+            }
+            .contentShape(Rectangle())
+            .simultaneousGesture(periodDragGesture(pageWidth: max(proxy.size.width, 1)))
         }
         .background(Color.primary.opacity(0.025).ignoresSafeArea())
         .navigationTitle(String(localized: "タスク"))
         .navigationBarTitleDisplayMode(.inline)
+        .searchable(
+            text: $searchText,
+            placement: .navigationBarDrawer(displayMode: .always),
+            prompt: Text("検索")
+        )
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button(action: closeTasks) {
@@ -271,13 +281,13 @@ struct IOSTasksView: View {
                 IOSWeekDateStrip(
                     anchorDate: selectedDate,
                     selectedDate: $selectedDate,
-                    todos: todos,
+                    todos: searchFilteredTodos,
                     filter: filter
                 )
             } else if range == .sevenDays {
                 IOSWeekCardStrip(
                     selectedDate: $selectedDate,
-                    todos: todos,
+                    todos: searchFilteredTodos,
                     filter: filter
                 )
             }
@@ -347,7 +357,6 @@ struct IOSTasksView: View {
             .frame(width: pageWidth * 3, alignment: .leading)
             .offset(x: -pageWidth + periodDragOffset)
             .contentShape(Rectangle())
-            .simultaneousGesture(periodDragGesture(pageWidth: pageWidth, component: component))
         }
         .clipped()
     }
@@ -385,15 +394,16 @@ struct IOSTasksView: View {
     }
 
     private func periodDragGesture(
-        pageWidth: CGFloat,
-        component: Calendar.Component
+        pageWidth: CGFloat
     ) -> some Gesture {
         DragGesture(minimumDistance: 10)
             .onChanged { value in
+                guard periodComponent != nil else { return }
                 guard abs(value.translation.width) > abs(value.translation.height) else { return }
                 periodDragOffset = min(max(value.translation.width, -pageWidth), pageWidth)
             }
             .onEnded { value in
+                guard let component = periodComponent else { return }
                 guard abs(value.translation.width) > abs(value.translation.height) else {
                     resetPeriodDrag()
                     return
@@ -417,6 +427,14 @@ struct IOSTasksView: View {
                     component: component
                 )
             }
+    }
+
+    private var periodComponent: Calendar.Component? {
+        switch range {
+        case .oneDay: .day
+        case .sevenDays: .weekOfYear
+        case .month: nil
+        }
     }
 
     private func resetPeriodDrag() {
@@ -579,6 +597,7 @@ struct IOSTasksView: View {
         todos
             .filter { TodayTodoFilter(calendar: calendar).includes($0, on: date) }
             .filter(filter.includes)
+            .filter(matchesSearch)
             .sorted(by: taskSort)
     }
 
@@ -586,7 +605,26 @@ struct IOSTasksView: View {
         guard range == .oneDay, calendar.isDateInToday(date) else { return [] }
         return backlog.overdue
             .filter(filter.includes)
+            .filter(matchesSearch)
             .sorted(by: taskSort)
+    }
+
+    private var searchFilteredTodos: [Todo] {
+        todos.filter(matchesSearch)
+    }
+
+    private func matchesSearch(_ todo: Todo) -> Bool {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return true }
+
+        let direction = todo.direction
+        let candidates = [
+            TodoDisplay.title(for: todo),
+            direction?.name ?? "",
+            direction?.symbolName ?? ""
+        ] + todo.hashtags.flatMap { [$0, "#\($0)"] }
+
+        return candidates.contains { $0.localizedCaseInsensitiveContains(query) }
     }
 
     private func moveTodosToToday(_ candidates: [Todo]) {
