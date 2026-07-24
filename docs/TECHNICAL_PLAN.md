@@ -29,7 +29,9 @@ The iOS deployment target is 17.0 even when building with Xcode 26 and the iOS
 - `TaskCalendarBuilder` creates deterministic visible date ranges and month grids.
 - `TaskRescheduleService` validates kanban and month-grid drag-and-drop.
 - `TaskBacklogBuilder` derives overdue and undated active normal Tasks for the Today section and Tasks inspector without adding persistence state.
-- `RequiredTodoPlanner` creates scheduled habit tasks.
+- `RequiredTodoPlanner` decides whether a scheduled Habit Task is eligible.
+- `HabitTodoMaterializer` is the only macOS/iOS persistence entry point for automatic Habit generation. It fetches fresh SwiftData state, normalizes dates, runs `HabitTodoReconciler`, and invokes the planner.
+- `HabitTodoReconciler` repairs duplicate active Habit occurrences for the same Direction/day, preserves related Flow history and progress, and soft-deletes redundant rows.
 - `FlowProgressCalculator` defines focused-time conversion for isolated calculations.
 - `FlowProgressReconciler` rebuilds measured Todo progress/completion and Direction focus totals from credited Flow history after every history mutation and once at app launch.
 - `Todo.notes` stores memo.
@@ -48,7 +50,7 @@ The iOS deployment target is 17.0 even when building with Xcode 26 and the iOS
 - `FlowVisualState` converts 0...6 daily Blocks into clamped speed, volume, layer count, and mode-specific wave character without placing those rules in SwiftUI.
 - `FlowStream.metal` renders the broad multi-color stream as one GPU effect. The SwiftUI host supplies only accumulated phase and visual-state uniforms, uses 30 FPS while idle and 60 FPS while active, and pauses when its window is not key, the scene is inactive, or Reduce Motion is enabled. `FlowAnimationClock` preserves phase when speed changes or rendering pauses, so starting Flow and returning to the window never replace the current stream frame.
 - The dashboard reuses `FlowMiniPlayerView` behavior through its dedicated dashboard layout instead of creating a second timer controller. `ActiveFlowStore.phaseProgress` provides the circular timer progress.
-- The dashboard projects today's Todo groups and uses `RequiredTodoPlanner` to ensure today's Habit instances exist when Flow is the first opened screen.
+- The dashboard and Tasks surfaces project Todo groups and use the shared `HabitTodoMaterializer` to ensure Habit instances exist without creating duplicates across views or platforms.
 - `TodoProgressControl` is the shared Check/Block/Minute control used by Tasks and the dashboard.
 - `TaskCompletionFeedbackPlayer` deduplicates completion feedback by Task or
   Flow identifier. On iOS it emits the system success haptic for an actual

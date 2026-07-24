@@ -40,6 +40,8 @@ Persisted data includes:
 
 User-facing Flow memo is stored on `Todo`, not on a new memo entity. `FlowSession.result` remains only for migration compatibility.
 
+An automatically generated Habit Todo is uniquely identified at the domain level by its Direction UUID and local calendar day. SwiftData does not provide a compound uniqueness constraint for this relationship/date projection, so `HabitTodoMaterializer` enforces the invariant before generation on both platforms. A duplicate reconciliation retains one active Todo, reconnects its FlowSession and FlowSegment relationships, merges progress and user-authored fields, and soft-deletes the redundant rows. This repair is safe to repeat after CloudKit imports.
+
 `hashtagsRawValue` is an optional JSON array of display values without `#`.
 Normalization trims leading `#`, removes empty values, and deduplicates using a
 locale-stable case-insensitive key while preserving the first spelling. The
