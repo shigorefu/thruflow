@@ -36,7 +36,6 @@ struct FlowDashboardView: View {
 
     private let builder = FlowDashboardBuilder()
     private let todayFilter = TodayTodoFilter()
-    private let requiredPlanner = RequiredTodoPlanner()
     private let progressCalculator = TodoProgressCalculator()
     private let historyEditor = FlowHistoryEditor()
     private let breakEditor = FlowBreakEditor()
@@ -78,6 +77,9 @@ struct FlowDashboardView: View {
             ensureTodayHabits()
         }
         .onChange(of: directions.map(\.updatedAt)) { _, _ in
+            ensureTodayHabits()
+        }
+        .onChange(of: todos.count) { _, _ in
             ensureTodayHabits()
         }
         .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) { _ in
@@ -883,44 +885,12 @@ struct FlowDashboardView: View {
     }
 
     private func ensureTodayHabits(now: Date = .now) {
-        let activeDirections = directions.filter { !$0.isArchived }
-        var knownTodos = todos
-        let minimumSortIndex = todos.map(\.sortIndex).min() ?? 0
-        var hasChanges = false
-
-        for (offset, direction) in activeDirections.enumerated() {
-            guard direction.type == .habit,
-                  requiredPlanner.shouldAppearToday(direction, on: now) else {
-                continue
-            }
-
-            if let pendingTodo = requiredPlanner.pendingWeeklyTodoToRollForward(
-                for: direction,
-                in: knownTodos,
-                on: now
-            ) {
-                pendingTodo.reschedule(to: calendar.startOfDay(for: now), now: now)
-                hasChanges = true
-                continue
-            }
-
-            guard let todo = requiredPlanner.makeRequiredTodo(
-                    for: direction,
-                    existingTodos: knownTodos,
-                    on: now,
-                    sortIndex: minimumSortIndex - offset - 1
-                  ) else {
-                continue
-            }
-
-            modelContext.insert(todo)
-            knownTodos.append(todo)
-            hasChanges = true
-        }
-
-        if hasChanges {
-            try? modelContext.save()
-        }
+        try? HabitTodoMaterializer(calendar: calendar).materialize(
+            directions: directions,
+            dates: [now],
+            modelContext: modelContext,
+            now: now
+        )
     }
 
     private var timelineTrackColor: Color {

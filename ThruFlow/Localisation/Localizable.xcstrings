@@ -360,6 +360,7 @@
       }
     },
     "%@ が完了しました。" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -393,6 +394,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@–%@"
+          }
+        }
+      }
+    },
+    "%@, %lld %@" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$lld %3$@"
           }
         }
       }
@@ -1369,6 +1380,22 @@
         }
       }
     },
+    "Flow Dots" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flow Dots"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Точки Flow"
+          }
+        }
+      }
+    },
     "Flowシリーズ" : {
       "localizations" : {
         "en" : {
@@ -1481,18 +1508,18 @@
         }
       }
     },
-    "Flow Dots" : {
+    "Flowの一時停止と再開を切り替えます。" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Flow Dots"
+            "value" : "Pauses or resumes the current Flow."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Точки Flow"
+            "value" : "Приостанавливает или продолжает текущий Flow."
           }
         }
       }
@@ -1509,22 +1536,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Смотрите активность Flow за месяц или последние 180 дней."
-          }
-        }
-      }
-    },
-    "Flowの一時停止と再開を切り替えます。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pauses or resumes the current Flow."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Приостанавливает или продолжает текущий Flow."
           }
         }
       }
@@ -1573,22 +1584,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Не удалось сохранить Flow"
-          }
-        }
-      }
-    },
-    "Flowを開始して1時間以上経過しました。タイマーを止め忘れていませんか？" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You started Flow over an hour ago. Did you forget to stop the timer?"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Flow начался больше часа назад. Вы не забыли остановить таймер?"
           }
         }
       }
@@ -1717,6 +1712,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Начать Flow"
+          }
+        }
+      }
+    },
+    "Flowを開始して1時間以上経過しました。タイマーを止め忘れていませんか？" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You started Flow over an hour ago. Did you forget to stop the timer?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flow начался больше часа назад. Вы не забыли остановить таймер?"
           }
         }
       }
@@ -2121,6 +2132,70 @@
         }
       }
     },
+    "お疲れ様です。Deepが完了しました。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Great work. Deep is complete."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отличная работа. Deep завершён."
+          }
+        }
+      }
+    },
+    "お疲れ様です。Flowが完了しました。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Great work. Flow is complete."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отличная работа. Flow завершён."
+          }
+        }
+      }
+    },
+    "お疲れ様です。Focusが完了しました。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Great work. Focus is complete."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отличная работа. Focus завершён."
+          }
+        }
+      }
+    },
+    "お疲れ様です。Sprintが完了しました。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Great work. Sprint is complete."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отличная работа. Sprint завершён."
+          }
+        }
+      }
+    },
     "お疲れ様です。メモを追加しますか？" : {
       "localizations" : {
         "en" : {
@@ -2409,6 +2484,22 @@
         }
       }
     },
+    "この日に記録なし" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Record on This Day"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет записи за этот день"
+          }
+        }
+      }
+    },
     "この日のタスク、%lld件" : {
       "localizations" : {
         "en" : {
@@ -2421,6 +2512,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Задач на этот день: %lld"
+          }
+        }
+      }
+    },
+    "この日のタスクはありません" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Tasks for This Day"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "На этот день нет задач"
           }
         }
       }
@@ -2441,38 +2548,6 @@
         }
       }
     },
-    "この日の習慣はありません" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No Habits for This Day"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "На этот день нет привычек"
-          }
-        }
-      }
-    },
-    "この日に記録なし" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No Record on This Day"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Нет записи за этот день"
-          }
-        }
-      }
-    },
     "この日の履歴を開く" : {
       "localizations" : {
         "en" : {
@@ -2485,6 +2560,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Открыть историю этого дня"
+          }
+        }
+      }
+    },
+    "この日の習慣はありません" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Habits for This Day"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "На этот день нет привычек"
           }
         }
       }
@@ -2746,6 +2837,7 @@
       }
     },
     "タイトル" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2831,22 +2923,6 @@
         }
       }
     },
-    "タスクなし" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No Task"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Без задачи"
-          }
-        }
-      }
-    },
     "タスク・習慣・方向を選択" : {
       "localizations" : {
         "en" : {
@@ -2859,6 +2935,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Выберите задачу, привычку или направление"
+          }
+        }
+      }
+    },
+    "タスクなし" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Task"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Без задачи"
           }
         }
       }
@@ -3035,6 +3127,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Название задачи"
+          }
+        }
+      }
+    },
+    "タスク名を入力してください。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter a Task name."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Введите название задачи."
           }
         }
       }
@@ -3568,6 +3676,7 @@
       }
     },
     "予定量: %lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3648,6 +3757,7 @@
       }
     },
     "今日に入れる" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3925,22 +4035,6 @@
         }
       }
     },
-    "休憩を開始して1時間以上経過しました。タイマーを止め忘れていませんか？" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your break started over an hour ago. Did you forget to stop the timer?"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Перерыв начался больше часа назад. Вы не забыли остановить таймер?"
-          }
-        }
-      }
-    },
     "休憩を保存できませんでした。" : {
       "localizations" : {
         "en" : {
@@ -3985,6 +4079,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Начать перерыв"
+          }
+        }
+      }
+    },
+    "休憩を開始して1時間以上経過しました。タイマーを止め忘れていませんか？" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your break started over an hour ago. Did you forget to stop the timer?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Перерыв начался больше часа назад. Вы не забыли остановить таймер?"
           }
         }
       }
@@ -4209,70 +4319,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Продолжить"
-          }
-        }
-      }
-    },
-    "お疲れ様です。Deepが完了しました。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Great work. Deep is complete."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Отличная работа. Deep завершён."
-          }
-        }
-      }
-    },
-    "お疲れ様です。Flowが完了しました。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Great work. Flow is complete."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Отличная работа. Flow завершён."
-          }
-        }
-      }
-    },
-    "お疲れ様です。Focusが完了しました。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Great work. Focus is complete."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Отличная работа. Focus завершён."
-          }
-        }
-      }
-    },
-    "お疲れ様です。Sprintが完了しました。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Great work. Sprint is complete."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Отличная работа. Sprint завершён."
           }
         }
       }
@@ -4955,18 +5001,36 @@
         }
       }
     },
-    "選択した日にタスクを作成" : {
+    "新しいタスクを作成" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Create a Task on the Selected Day"
+            "value" : "Create New Task"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Создать задачу на выбранный день"
+            "value" : "Создать новую задачу"
+          }
+        }
+      }
+    },
+    "新しいタスクを作成して記録できます。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create a new Task and record it."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Можно создать новую задачу и записать её."
           }
         }
       }
@@ -5211,6 +5275,22 @@
         }
       }
     },
+    "方向を選択してください。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select a Direction."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите направление."
+          }
+        }
+      }
+    },
     "方向別" : {
       "localizations" : {
         "en" : {
@@ -5239,6 +5319,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Название направления"
+          }
+        }
+      }
+    },
+    "既存のタスク" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Existing Task"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Существующая задача"
           }
         }
       }
@@ -5367,6 +5464,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Для обычной сосредоточенной работы"
+          }
+        }
+      }
+    },
+    "日時" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Date and Time"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дата и время"
           }
         }
       }
@@ -5628,6 +5741,7 @@
       }
     },
     "期限を使う" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5964,6 +6078,7 @@
       }
     },
     "測定" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6619,118 +6734,6 @@
         }
       }
     },
-    "この日のタスクはありません" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No Tasks for This Day"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "На этот день нет задач"
-          }
-        }
-      }
-    },
-    "タスク名を入力してください。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enter a Task name."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Введите название задачи."
-          }
-        }
-      }
-    },
-    "新しいタスクを作成" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Create New Task"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Создать новую задачу"
-          }
-        }
-      }
-    },
-    "新しいタスクを作成して記録できます。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Create a new Task and record it."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Можно создать новую задачу и записать её."
-          }
-        }
-      }
-    },
-    "方向を選択してください。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Select a Direction."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Выберите направление."
-          }
-        }
-      }
-    },
-    "日時" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Date and Time"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Дата и время"
-          }
-        }
-      }
-    },
-    "既存のタスク" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Existing Task"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Существующая задача"
-          }
-        }
-      }
-    },
     "記録" : {
       "localizations" : {
         "en" : {
@@ -6743,86 +6746,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Записать"
-          }
-        }
-      }
-    },
-    "記録対象" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Record Target"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Объект записи"
-          }
-        }
-      }
-    },
-    "記録を追加" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add Record"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Добавить запись"
-          }
-        }
-      }
-    },
-    "記録を保存できませんでした。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The record could not be saved."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Не удалось сохранить запись."
-          }
-        }
-      }
-    },
-    "記録日時" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Recorded At"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Время записи"
-          }
-        }
-      }
-    },
-    "記録方法" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Record Source"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Источник записи"
           }
         }
       }
@@ -6843,6 +6766,38 @@
         }
       }
     },
+    "記録を保存できませんでした。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The record could not be saved."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось сохранить запись."
+          }
+        }
+      }
+    },
+    "記録を追加" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Record"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить запись"
+          }
+        }
+      }
+    },
     "記録を選択" : {
       "localizations" : {
         "en" : {
@@ -6855,6 +6810,56 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Выберите запись"
+          }
+        }
+      }
+    },
+    "記録対象" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Record Target"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Объект записи"
+          }
+        }
+      }
+    },
+    "記録方法" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Record Source"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Источник записи"
+          }
+        }
+      }
+    },
+    "記録日時" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recorded At"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Время записи"
           }
         }
       }
@@ -7068,6 +7073,7 @@
       }
     },
     "進捗: %lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7207,6 +7213,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Выбрать"
+          }
+        }
+      }
+    },
+    "選択した日にタスクを作成" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create a Task on the Selected Day"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Создать задачу на выбранный день"
           }
         }
       }

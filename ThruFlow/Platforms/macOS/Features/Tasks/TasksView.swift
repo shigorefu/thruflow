@@ -156,6 +156,9 @@ struct TasksView: View {
         .onChange(of: directions.map(\.updatedAt)) { _, _ in
             ensureRequiredTodosForVisibleDates()
         }
+        .onChange(of: todos.count) { _, _ in
+            ensureRequiredTodosForVisibleDates()
+        }
         .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) { _ in
             ensureRequiredTodosForVisibleDates()
         }
@@ -748,48 +751,12 @@ struct TasksView: View {
 
         guard !dates.isEmpty else { return }
 
-        var knownTodos = todos
-        var hasChanges = false
-        let minimumSortIndex = todos.map(\.sortIndex).min() ?? 0
-
-        for (dateOffset, date) in dates.enumerated() {
-            let requiredDirections = activeDirections.filter { direction in
-                guard requiredPlanner.shouldAppearToday(direction, on: date) else { return false }
-                if direction.goalSchedule == .weeklyCount {
-                    return calendar.isDate(date, inSameDayAs: today)
-                }
-                return true
-            }
-
-            for (directionOffset, direction) in requiredDirections.enumerated() {
-                if let pendingTodo = requiredPlanner.pendingWeeklyTodoToRollForward(
-                    for: direction,
-                    in: knownTodos,
-                    on: date
-                ) {
-                    pendingTodo.reschedule(to: date, now: now)
-                    hasChanges = true
-                    continue
-                }
-
-                guard let todo = requiredPlanner.makeRequiredTodo(
-                    for: direction,
-                    existingTodos: knownTodos,
-                    on: date,
-                    sortIndex: minimumSortIndex - (dateOffset * max(1, requiredDirections.count)) - directionOffset - 1
-                ) else {
-                    continue
-                }
-
-                modelContext.insert(todo)
-                knownTodos.append(todo)
-                hasChanges = true
-            }
-        }
-
-        if hasChanges {
-            try? modelContext.save()
-        }
+        try? HabitTodoMaterializer(calendar: calendar).materialize(
+            directions: activeDirections,
+            dates: dates,
+            modelContext: modelContext,
+            now: now
+        )
     }
 
     private func resolvedDirection(for id: UUID?) -> Direction {

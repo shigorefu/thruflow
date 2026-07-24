@@ -8,10 +8,10 @@
 
 /* Begin PBXBuildFile section */
 		5B2000013000000000000001 /* ThruFlowLiveActivityExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 5B2000023000000000000002 /* ThruFlowLiveActivityExtension.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		5B2000133000000000000013 /* LiveActivityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B20000F300000000000000F /* LiveActivityService.swift */; };
-		5B2000143000000000000014 /* FlowActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B2000103000000000000010 /* FlowActivityAttributes.swift */; };
-		5B2000153000000000000015 /* FlowLiveActivityIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B2000113000000000000011 /* FlowLiveActivityIntents.swift */; };
-		5B2000163000000000000016 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 5B2000123000000000000012 /* Localizable.xcstrings */; };
+		5B2000133000000000000013 /* ThruFlow/Shared/Domain/Services/LiveActivityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B20000F300000000000000F /* ThruFlow/Shared/Domain/Services/LiveActivityService.swift */; };
+		5B2000143000000000000014 /* ThruFlow/Shared/LiveActivity/FlowActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B2000103000000000000010 /* ThruFlow/Shared/LiveActivity/FlowActivityAttributes.swift */; };
+		5B2000153000000000000015 /* ThruFlow/Shared/LiveActivity/FlowLiveActivityIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B2000113000000000000011 /* ThruFlow/Shared/LiveActivity/FlowLiveActivityIntents.swift */; };
+		5B2000163000000000000016 /* ThruFlow/Localisation/Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 5B2000123000000000000012 /* ThruFlow/Localisation/Localizable.xcstrings */; };
 		5B2000173000000000000017 /* ThruFlow/Shared/Widget/FlowTimerWidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B2000183000000000000018 /* ThruFlow/Shared/Widget/FlowTimerWidgetSnapshot.swift */; };
 		5B2000193000000000000019 /* ThruFlow/Shared/Widget/ProductWidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B20001A300000000000001A /* ThruFlow/Shared/Widget/ProductWidgetSnapshot.swift */; };
 /* End PBXBuildFile section */
@@ -60,10 +60,10 @@
 		2E1177082FFE20CF0011219C /* ThruFlowUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ThruFlowUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4A1000013000000000000001 /* ThruFlow.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ThruFlow.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		5B2000023000000000000002 /* ThruFlowLiveActivityExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ThruFlowLiveActivityExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		5B20000F300000000000000F /* LiveActivityService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThruFlow/Shared/Domain/Services/LiveActivityService.swift; sourceTree = SOURCE_ROOT; };
-		5B2000103000000000000010 /* FlowActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThruFlow/Shared/LiveActivity/FlowActivityAttributes.swift; sourceTree = SOURCE_ROOT; };
-		5B2000113000000000000011 /* FlowLiveActivityIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThruFlow/Shared/LiveActivity/FlowLiveActivityIntents.swift; sourceTree = SOURCE_ROOT; };
-		5B2000123000000000000012 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = ThruFlow/Localisation/Localizable.xcstrings; sourceTree = SOURCE_ROOT; };
+		5B20000F300000000000000F /* ThruFlow/Shared/Domain/Services/LiveActivityService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThruFlow/Shared/Domain/Services/LiveActivityService.swift; sourceTree = SOURCE_ROOT; };
+		5B2000103000000000000010 /* ThruFlow/Shared/LiveActivity/FlowActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThruFlow/Shared/LiveActivity/FlowActivityAttributes.swift; sourceTree = SOURCE_ROOT; };
+		5B2000113000000000000011 /* ThruFlow/Shared/LiveActivity/FlowLiveActivityIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThruFlow/Shared/LiveActivity/FlowLiveActivityIntents.swift; sourceTree = SOURCE_ROOT; };
+		5B2000123000000000000012 /* ThruFlow/Localisation/Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = ThruFlow/Localisation/Localizable.xcstrings; sourceTree = SOURCE_ROOT; };
 		5B2000183000000000000018 /* ThruFlow/Shared/Widget/FlowTimerWidgetSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThruFlow/Shared/Widget/FlowTimerWidgetSnapshot.swift; sourceTree = SOURCE_ROOT; };
 		5B20001A300000000000001A /* ThruFlow/Shared/Widget/ProductWidgetSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThruFlow/Shared/Widget/ProductWidgetSnapshot.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
@@ -171,6 +171,7 @@
 				2E1177012FFE20CF0011219C /* ThruFlowTests */,
 				2E11770B2FFE20CF0011219C /* ThruFlowUITests */,
 				2E1176EE2FFE20CF0011219C /* Products */,
+				2E8871CE301343EF00BA0328 /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
@@ -184,6 +185,19 @@
 				5B2000023000000000000002 /* ThruFlowLiveActivityExtension.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		2E8871CE301343EF00BA0328 /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				5B20000F300000000000000F /* ThruFlow/Shared/Domain/Services/LiveActivityService.swift */,
+				5B2000103000000000000010 /* ThruFlow/Shared/LiveActivity/FlowActivityAttributes.swift */,
+				5B2000113000000000000011 /* ThruFlow/Shared/LiveActivity/FlowLiveActivityIntents.swift */,
+				5B2000183000000000000018 /* ThruFlow/Shared/Widget/FlowTimerWidgetSnapshot.swift */,
+				5B20001A300000000000001A /* ThruFlow/Shared/Widget/ProductWidgetSnapshot.swift */,
+				5B2000123000000000000012 /* ThruFlow/Localisation/Localizable.xcstrings */,
+			);
+			name = "Recovered References";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -389,7 +403,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5B2000163000000000000016 /* Localizable.xcstrings in Resources */,
+				5B2000163000000000000016 /* ThruFlow/Localisation/Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -428,9 +442,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5B2000133000000000000013 /* LiveActivityService.swift in Sources */,
-				5B2000143000000000000014 /* FlowActivityAttributes.swift in Sources */,
-				5B2000153000000000000015 /* FlowLiveActivityIntents.swift in Sources */,
+				5B2000133000000000000013 /* ThruFlow/Shared/Domain/Services/LiveActivityService.swift in Sources */,
+				5B2000143000000000000014 /* ThruFlow/Shared/LiveActivity/FlowActivityAttributes.swift in Sources */,
+				5B2000153000000000000015 /* ThruFlow/Shared/LiveActivity/FlowLiveActivityIntents.swift in Sources */,
 				5B2000173000000000000017 /* ThruFlow/Shared/Widget/FlowTimerWidgetSnapshot.swift in Sources */,
 				5B2000193000000000000019 /* ThruFlow/Shared/Widget/ProductWidgetSnapshot.swift in Sources */,
 			);

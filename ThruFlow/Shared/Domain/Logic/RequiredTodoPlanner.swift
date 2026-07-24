@@ -117,7 +117,7 @@ struct RequiredTodoPlanner {
             priority: .high,
             isRoomIfPossible: false,
             plannedAmount: plannedAmount(for: goalUnit, target: target),
-            scheduledDate: date,
+            scheduledDate: calendar.startOfDay(for: date),
             sortIndex: sortIndex
         )
     }

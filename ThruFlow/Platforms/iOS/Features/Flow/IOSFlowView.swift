@@ -83,6 +83,9 @@ struct IOSFlowView: View {
             prepareToday()
             configureInitialContextIfNeeded()
         }
+        .onChange(of: todos.count) { _, _ in
+            prepareToday()
+        }
         .task(id: activeFlowStore.timerState?.phase) {
             guard activeFlowStore.timerState != nil else { return }
             while !Task.isCancelled, activeFlowStore.timerState != nil {
@@ -471,23 +474,11 @@ struct IOSFlowView: View {
             return direction
         }()
         _ = inbox
-
-        let planner = RequiredTodoPlanner(calendar: calendar)
-        var existingTodos = todos
-        var nextSortIndex = (todos.map(\.sortIndex).max() ?? -1) + 1
-
-        for direction in directions where direction.type == .habit && !direction.isArchived {
-            guard let todo = planner.makeRequiredTodo(
-                for: direction,
-                existingTodos: existingTodos,
-                sortIndex: nextSortIndex
-            ) else { continue }
-
-            modelContext.insert(todo)
-            existingTodos.append(todo)
-            nextSortIndex += 1
-        }
-        try? modelContext.save()
+        try? HabitTodoMaterializer(calendar: calendar).materialize(
+            directions: directions,
+            dates: [.now],
+            modelContext: modelContext
+        )
     }
 
     private func configureInitialContextIfNeeded() {

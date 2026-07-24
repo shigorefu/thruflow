@@ -27,7 +27,6 @@ struct IOSTasksView: View {
     }
 
     private var calendarBuilder: TaskCalendarBuilder { TaskCalendarBuilder(calendar: calendar) }
-    private var requiredPlanner: RequiredTodoPlanner { RequiredTodoPlanner(calendar: calendar) }
     private var rescheduleService: TaskRescheduleService { TaskRescheduleService(calendar: calendar) }
 
     private var activeDirections: [Direction] {
@@ -136,6 +135,7 @@ struct IOSTasksView: View {
         .onChange(of: range) { _, _ in ensureRequiredTodos() }
         .onChange(of: selectedDate) { _, _ in ensureRequiredTodos() }
         .onChange(of: directions.map(\.updatedAt)) { _, _ in ensureRequiredTodos() }
+        .onChange(of: todos.count) { _, _ in ensureRequiredTodos() }
     }
 
     @MainActor
@@ -510,29 +510,12 @@ struct IOSTasksView: View {
             .filter { range != .month || calendarBuilder.isDate($0, inMonthContaining: selectedDate) }
             .sorted()
 
-        var knownTodos = todos
-        var changed = false
-        var nextSortIndex = (todos.map(\.sortIndex).min() ?? 0) - 1
-
-        for date in dates {
-            for direction in activeDirections where direction.type == .habit {
-                if direction.goalSchedule == .weeklyCount && !calendar.isDate(date, inSameDayAs: today) {
-                    continue
-                }
-                guard let todo = requiredPlanner.makeRequiredTodo(
-                    for: direction,
-                    existingTodos: knownTodos,
-                    on: date,
-                    sortIndex: nextSortIndex
-                ) else { continue }
-                modelContext.insert(todo)
-                knownTodos.append(todo)
-                nextSortIndex -= 1
-                changed = true
-            }
-        }
-
-        if changed { try? modelContext.save() }
+        try? HabitTodoMaterializer(calendar: calendar).materialize(
+            directions: activeDirections,
+            dates: dates,
+            modelContext: modelContext,
+            now: now
+        )
     }
 
     private func taskSort(_ lhs: Todo, _ rhs: Todo) -> Bool {

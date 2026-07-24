@@ -38,10 +38,14 @@ struct FlowLiveActivityWidget: Widget {
             } compactLeading: {
                 Text(context.state.taskEmoji)
                     .font(.caption)
+                    .frame(width: 20, height: 20)
                     .accessibilityLabel(context.state.taskTitle)
             } compactTrailing: {
                 FlowActivityTimeLabel(state: context.state)
                     .font(.caption2.monospacedDigit().weight(.semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .frame(width: 48, alignment: .trailing)
             } minimal: {
                 FlowActivityCircularProgress(state: context.state)
                     .tint(context.state.tintColor)

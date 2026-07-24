@@ -133,6 +133,98 @@ struct TodoTests {
         #expect(todo?.scheduledDate == date)
     }
 
+    @Test func generatedHabitDateIsNormalizedToCalendarDay() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+
+        let direction = Direction(
+            name: "読書",
+            type: .habit,
+            goalTarget: 1,
+            goalPeriod: .daily,
+            goalUnit: .occurrences,
+            goalSchedule: .everyDay
+        )
+        let planner = RequiredTodoPlanner(calendar: calendar)
+        let afternoon = date(2026, 7, 24, calendar: calendar).addingTimeInterval(15 * 3_600)
+
+        #expect(
+            planner.makeRequiredTodo(for: direction, on: afternoon)?.scheduledDate ==
+                calendar.startOfDay(for: afternoon)
+        )
+    }
+
+    @Test func duplicateHabitOccurrencesKeepHistoryAndSoftDeleteTheEmptyDuplicate() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+
+        let day = date(2026, 7, 24, calendar: calendar)
+        let direction = weeklyHabitDirection()
+        let emptyDuplicate = Todo(
+            title: "",
+            direction: direction,
+            scheduledDate: day,
+            createdAt: day
+        )
+        let recordedDuplicate = Todo(
+            title: "上半身",
+            direction: direction,
+            scheduledDate: day.addingTimeInterval(15 * 3_600),
+            createdAt: day.addingTimeInterval(60)
+        )
+        let session = FlowSession(
+            direction: direction,
+            todo: recordedDuplicate,
+            mode: .sprint,
+            startedAt: day.addingTimeInterval(15 * 3_600),
+            plannedEndAt: day.addingTimeInterval((15 * 3_600) + 720),
+            plannedFocusDurationSeconds: 720,
+            plannedBreakDurationSeconds: 180
+        )
+
+        let result = HabitTodoReconciler(calendar: calendar).reconcile(
+            todos: [emptyDuplicate, recordedDuplicate],
+            sessions: [session],
+            segments: [],
+            now: day.addingTimeInterval(16 * 3_600)
+        )
+
+        #expect(result.changed)
+        #expect(result.canonicalTodos.map(\.id) == [recordedDuplicate.id])
+        #expect(session.todo?.id == recordedDuplicate.id)
+        #expect(emptyDuplicate.isDeleted)
+        #expect(!recordedDuplicate.isDeleted)
+        #expect(recordedDuplicate.scheduledDate == day)
+    }
+
+    @Test func duplicateCompletedCheckboxHabitPreservesCompletion() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+
+        let day = date(2026, 7, 24, calendar: calendar)
+        let direction = weeklyHabitDirection()
+        let active = Todo(title: "", direction: direction, scheduledDate: day, createdAt: day)
+        let completed = Todo(
+            title: "",
+            direction: direction,
+            scheduledDate: day.addingTimeInterval(9 * 3_600),
+            createdAt: day.addingTimeInterval(60)
+        )
+        completed.setCompleted(true, now: day.addingTimeInterval(10 * 3_600))
+
+        let result = HabitTodoReconciler(calendar: calendar).reconcile(
+            todos: [active, completed],
+            sessions: [],
+            segments: [],
+            now: day.addingTimeInterval(11 * 3_600)
+        )
+
+        #expect(result.changed)
+        #expect(completed.isCompleted)
+        #expect(active.isDeleted)
+        #expect(!completed.isDeleted)
+    }
+
     @Test func weeklyCountWithoutSelectedWeekdaysCreatesCurrentTodo() {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
