@@ -25,10 +25,18 @@ struct ThruFlowApp: App {
                 .appSettingsEnvironment(settings)
                 .onAppear {
                     activeFlowStore.clearNotificationBadge()
+                    activeFlowStore.beginSynchronization(
+                        modelContext: sharedModelContainer.mainContext
+                    )
                 }
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active {
                         activeFlowStore.clearNotificationBadge()
+                        activeFlowStore.beginSynchronization(
+                            modelContext: sharedModelContainer.mainContext
+                        )
+                    } else {
+                        activeFlowStore.endSynchronization()
                     }
                 }
         }

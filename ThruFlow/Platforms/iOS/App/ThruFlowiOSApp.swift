@@ -65,10 +65,18 @@ struct ThruFlowiOSApp: App {
                 .preferredColorScheme(settings.preferredColorScheme)
                 .onAppear {
                     activeFlowStore.clearNotificationBadge()
+                    activeFlowStore.beginSynchronization(
+                        modelContext: modelContainer.mainContext
+                    )
                 }
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active {
                         activeFlowStore.clearNotificationBadge()
+                        activeFlowStore.beginSynchronization(
+                            modelContext: modelContainer.mainContext
+                        )
+                    } else {
+                        activeFlowStore.endSynchronization()
                     }
                 }
                 .background {

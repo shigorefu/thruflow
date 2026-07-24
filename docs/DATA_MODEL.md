@@ -59,6 +59,10 @@ Persisted data includes:
 - Flow mode, phase, and status raw values;
 - start, planned end, actual end, and create/update timestamps;
 - planned and actual focus seconds, planned break seconds, pause duration, pause flag, and interruption count;
+- pause anchor, pre-pause phase, completion anchor, and break start anchor needed
+  to reconstruct the exact timer state on another device;
+- runtime revision and mutation UUID used to ignore stale cross-device state
+  and resolve concurrent active sessions deterministically;
 - a cascade relationship to its `FlowSegment` records.
 
 Existing records with no `seriesID` are treated as a one-session series whose ID is the session ID.
@@ -119,13 +123,16 @@ the selected start/end interval. Direction-only Flow keeps `todo` nil.
 
 The following are not separate database entities:
 
-- `FlowTimerState`: in-memory active timer state;
+- `FlowTimerState`: the in-memory value used by `FlowTimerEngine`; its canonical
+  reconstructable fields are projected to and from the active `FlowSession`;
 - dashboard stream shape, speed, palette, totals, and timeline geometry;
 - contribution-grid cells, calendar items, overlap lanes, and history sections;
 - Block display values derived from exact focused seconds;
 - the Flow series itself, which is reconstructed from `seriesID`, `FlowSession`, and `FlowBreak` records.
 
-The active timer is restored from absolute timestamps and persisted FlowSession fields where supported; decorative animation state is never persisted.
+The active timer is restored from absolute timestamps and persisted
+`FlowSession` runtime fields. Runtime revisions affect synchronization only and
+never change Flow credit. Decorative animation state is never persisted.
 
 `履歴` does not add a calendar table. `HistoryCalendarBuilder` projects `FlowSession`/`FlowSegment` as separate timed focus entries and `FlowBreak` as separate timed rest entries. Dragging a completed Flow changes the session's actual time fields and applies the same offset to every segment; creation timestamps, duration, and measured progress remain unchanged. The dashboard independently derives its continuous series spans from `seriesID`; it does not merge or rewrite persisted records. Completed and pending Todos are excluded from calendar projection; completion timestamps remain available to Task statistics and summaries. Calendar range, selected inspector item, filtering, responsive breakpoints, scroll position, compact rendering, minimum visual duration, and overlap lanes are presentation state.
 

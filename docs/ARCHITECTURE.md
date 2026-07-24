@@ -89,6 +89,11 @@ Each platform owns its composition root:
   platform-neutral `FlowLiveActivityContent` projection through
   `LiveActivityService`; the iOS adapter translates that projection into
   ActivityKit state.
+- `ActiveFlowSyncCoordinator` resolves the canonical active `FlowSession` from
+  SwiftData and reconstructs its `FlowTimerState`. It contains no timer
+  calculations. Both composition roots invoke the same reconciliation path on
+  launch, foreground entry, and a low-frequency active-scene cadence so
+  CloudKit imports are adopted without view-specific logic.
 - `AppSettings` owns typed local preferences and derives the effective
   `Calendar` and `Locale`. Platform composition roots inject those values into
   their scene environments; settings never enter SwiftData.
@@ -126,6 +131,13 @@ logic or tests.
 All derived progress must be reproducible from persisted history. Mutations to
 Flow history go through the shared reconciliation logic rather than applying
 view-local relative deltas.
+
+Active timer synchronization follows the same local-first rule. Every timer
+transition is written to the active `FlowSession` with absolute anchors and a
+new runtime revision. CloudKit is transport, not the timer authority.
+Concurrent active sessions are resolved in shared application code; platform
+views never choose a winner. The iOS Live Activity remains a projection started
+or updated after iOS adopts the persisted runtime.
 
 ## Test Boundaries
 

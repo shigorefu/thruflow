@@ -43,10 +43,30 @@ second model schema or different domain behavior.
    SwiftData model when the CloudKit-backed store starts.
 5. Create or edit a Direction/Task/Flow on one device and verify it arrives on
    the other after both apps have had network time to process CloudKit changes.
+6. Start Flow on one device while the other application is active. Verify that
+   Task, Direction, mode, phase, pause state, and remaining time are adopted
+   without restarting the timer. Repeat the command in the opposite direction.
 
 Simulator builds cannot validate CloudKit synchronization because Xcode strips
 the iCloud container entitlement for the simulator SDK. Use signed macOS and
 physical iPhone builds for synchronization diagnostics.
+
+## Active Flow Runtime
+
+The active timer is synchronized through the current `FlowSession`. Absolute
+timestamps, pause/break anchors, and a runtime revision allow another client to
+reconstruct the timer without transferring per-second ticks. Both apps
+reconcile on launch, foreground entry, and while active. The same mechanism
+works in local-only mode and is intended to be reused by a future watchOS
+client.
+
+CloudKit does not provide a guaranteed real-time wakeup channel for a suspended
+application. If the iPhone app is suspended when Flow starts on macOS, the
+session is adopted the next time iOS receives and processes the CloudKit change,
+typically when the app becomes active. Guaranteed background creation or
+updating of Dynamic Island requires ActivityKit push tokens and an APNs
+provider. That server-assisted transport is not part of the current private
+CloudKit implementation.
 
 ## Production Schema
 

@@ -30,12 +30,15 @@ final class ActiveFlowStore: ObservableObject {
     private let progressReconciler = FlowProgressReconciler()
     private let historyEditor = FlowHistoryEditor()
     private let seriesPolicy = FlowSeriesPolicy()
+    private let syncCoordinator = ActiveFlowSyncCoordinator()
     private let notifications: FlowNotificationService
     private let liveActivities: any LiveActivityService
     private let defaults: UserDefaults
     private var didApplyProgress = false
     private var stateBeforeResultPrompt: FlowTimerState?
     private var displayClock: AnyCancellable?
+    private var synchronizationClock: AnyCancellable?
+    private var lastAppliedRuntimeVersion: FlowRuntimeVersion?
 
     init(
         defaults: UserDefaults = .standard,
@@ -127,6 +130,7 @@ final class ActiveFlowStore: ObservableObject {
         notifications.requestAuthorizationIfNeeded()
         scheduleNotifications(for: state)
         try? modelContext.save()
+        lastAppliedRuntimeVersion = session.runtimeVersion
         startLiveActivity(now: now)
     }
 
@@ -161,13 +165,62 @@ final class ActiveFlowStore: ObservableObject {
                 }
                 session.direction = direction
                 session.todo = todo
-                session.updatedAt = now
+                session.recordRuntimeMutation(now: now)
             }
         }
 
         configure(direction: direction, todo: todo)
         try? modelContext.save()
+        lastAppliedRuntimeVersion = activeSession?.runtimeVersion
         synchronizeLiveActivity(now: now)
+    }
+
+    func beginSynchronization(modelContext: ModelContext, now: Date = .now) {
+        synchronizeFromPersistence(modelContext: modelContext, now: now)
+        guard synchronizationClock == nil else { return }
+
+        synchronizationClock = Timer.publish(every: 2, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] date in
+                self?.synchronizeFromPersistence(modelContext: modelContext, now: date)
+            }
+    }
+
+    func endSynchronization() {
+        synchronizationClock?.cancel()
+        synchronizationClock = nil
+    }
+
+    func synchronizeFromPersistence(modelContext: ModelContext, now: Date = .now) {
+        let resolution = syncCoordinator.resolve(modelContext: modelContext)
+
+        if let canonicalSession = resolution.canonicalSession,
+           !resolution.supersededSessions.isEmpty {
+            syncCoordinator.interruptSuperseded(
+                resolution.supersededSessions,
+                canonicalSession: canonicalSession,
+                now: now
+            )
+            try? modelContext.save()
+        }
+
+        guard let canonicalSession = resolution.canonicalSession,
+              let synchronizedState = canonicalSession.reconstructableTimerState else {
+            clearSynchronizedRuntimeIfNeeded()
+            return
+        }
+
+        let version = canonicalSession.runtimeVersion
+        guard canonicalSession.id != activeSession?.id ||
+                version != lastAppliedRuntimeVersion else {
+            return
+        }
+
+        adopt(
+            session: canonicalSession,
+            timerState: synchronizedState,
+            now: now
+        )
     }
 
     func refresh(modelContext: ModelContext, now: Date = .now) {
@@ -217,6 +270,7 @@ final class ActiveFlowStore: ObservableObject {
         didApplyProgress = false
         isAwaitingBreakMemo = false
         stateBeforeResultPrompt = nil
+        lastAppliedRuntimeVersion = nil
         liveActivities.end()
 
         if let completedSessionID {
@@ -361,6 +415,7 @@ final class ActiveFlowStore: ObservableObject {
         didApplyProgress = false
         isAwaitingBreakMemo = false
         stateBeforeResultPrompt = nil
+        lastAppliedRuntimeVersion = nil
         try? modelContext.save()
         liveActivities.end()
     }
@@ -396,6 +451,7 @@ final class ActiveFlowStore: ObservableObject {
         self.timerState = nil
         didApplyProgress = false
         isAwaitingBreakMemo = false
+        lastAppliedRuntimeVersion = nil
         try? modelContext.save()
         liveActivities.end()
     }
@@ -525,7 +581,45 @@ final class ActiveFlowStore: ObservableObject {
         }
 
         try? modelContext.save()
+        lastAppliedRuntimeVersion = activeSession?.runtimeVersion
         synchronizeLiveActivity(now: now)
+    }
+
+    private func adopt(
+        session: FlowSession,
+        timerState: FlowTimerState,
+        now: Date
+    ) {
+        notifications.cancelPendingFlowNotifications()
+        activeSession = session
+        self.timerState = timerState
+        selectedDirectionID = session.direction?.id
+        selectedTodoID = session.todo?.id
+        selectedMode = timerState.mode
+        intent = session.intent
+        didApplyProgress = timerState.phase == .breakTime ||
+            (timerState.phase == .paused && timerState.phaseBeforePause == .breakTime)
+        isAwaitingBreakMemo = false
+        stateBeforeResultPrompt = nil
+        lastAppliedRuntimeVersion = session.runtimeVersion
+        persistConfiguration()
+
+        if timerState.phase == .focusing || timerState.phase == .breakTime {
+            scheduleNotifications(for: timerState)
+        }
+        synchronizeLiveActivity(now: now)
+    }
+
+    private func clearSynchronizedRuntimeIfNeeded() {
+        guard timerState != nil else { return }
+        guard timerState?.phase != .awaitingResult, !isAwaitingBreakMemo else { return }
+
+        notifications.cancelPendingFlowNotifications()
+        activeSession = nil
+        timerState = nil
+        didApplyProgress = false
+        lastAppliedRuntimeVersion = nil
+        liveActivities.end()
     }
 
     private func scheduleNotifications(for state: FlowTimerState) {
@@ -614,6 +708,7 @@ final class ActiveFlowStore: ObservableObject {
         didApplyProgress = false
         isAwaitingBreakMemo = false
         stateBeforeResultPrompt = nil
+        lastAppliedRuntimeVersion = nil
         try? modelContext.save()
         liveActivities.end()
         return true

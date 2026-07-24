@@ -176,8 +176,14 @@ final class FlowSession {
     var actualFocusDurationSeconds: Int?
     var plannedBreakDurationSeconds: Int = 0
     var accumulatedPauseDurationSeconds: Int = 0
+    var pausedAt: Date?
+    var phaseBeforePauseRawValue: String?
+    var completedAt: Date?
+    var breakStartedAt: Date?
     var wasPaused: Bool = false
     var interruptionCount: Int = 0
+    var runtimeRevision: Int = 0
+    var runtimeMutationID: UUID = UUID()
     var createdAt: Date = Date.now
     var updatedAt: Date = Date.now
     @Relationship(deleteRule: .cascade, inverse: \FlowSegment.session)
@@ -200,8 +206,14 @@ final class FlowSession {
         actualFocusDurationSeconds: Int? = nil,
         plannedBreakDurationSeconds: Int,
         accumulatedPauseDurationSeconds: Int = 0,
+        pausedAt: Date? = nil,
+        phaseBeforePause: FlowPhase? = nil,
+        completedAt: Date? = nil,
+        breakStartedAt: Date? = nil,
         wasPaused: Bool = false,
         interruptionCount: Int = 0,
+        runtimeRevision: Int = 1,
+        runtimeMutationID: UUID = UUID(),
         createdAt: Date = .now,
         updatedAt: Date = .now
     ) {
@@ -221,8 +233,14 @@ final class FlowSession {
         self.actualFocusDurationSeconds = actualFocusDurationSeconds
         self.plannedBreakDurationSeconds = plannedBreakDurationSeconds
         self.accumulatedPauseDurationSeconds = accumulatedPauseDurationSeconds
+        self.pausedAt = pausedAt
+        self.phaseBeforePauseRawValue = phaseBeforePause?.rawValue
+        self.completedAt = completedAt
+        self.breakStartedAt = breakStartedAt
         self.wasPaused = wasPaused
         self.interruptionCount = interruptionCount
+        self.runtimeRevision = runtimeRevision
+        self.runtimeMutationID = runtimeMutationID
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
@@ -247,6 +265,71 @@ final class FlowSession {
         set { statusRawValue = newValue.rawValue }
     }
 
+    var phaseBeforePause: FlowPhase? {
+        get {
+            phaseBeforePauseRawValue.flatMap(FlowPhase.init(rawValue:))
+        }
+        set {
+            phaseBeforePauseRawValue = newValue?.rawValue
+        }
+    }
+
+    var runtimeVersion: FlowRuntimeVersion {
+        FlowRuntimeVersion(
+            updatedAt: updatedAt,
+            revision: runtimeRevision,
+            mutationID: runtimeMutationID
+        )
+    }
+
+    var reconstructableTimerState: FlowTimerState? {
+        guard status != .completed,
+              status != .interrupted,
+              phase == .focusing ||
+                phase == .paused ||
+                phase == .breakTime ||
+                phase == .awaitingExtensionDecision else {
+            return nil
+        }
+
+        let resolvedPhaseBeforePause: FlowPhase?
+        let resolvedPausedAt: Date?
+        if phase == .paused {
+            resolvedPhaseBeforePause = phaseBeforePause ?? .focusing
+            resolvedPausedAt = pausedAt ?? updatedAt
+        } else {
+            resolvedPhaseBeforePause = phaseBeforePause
+            resolvedPausedAt = pausedAt
+        }
+
+        let resolvedBreakStartedAt: Date?
+        if phase == .breakTime ||
+            (phase == .paused && resolvedPhaseBeforePause == .breakTime) {
+            resolvedBreakStartedAt = breakStartedAt ??
+                plannedEndAt.addingTimeInterval(-TimeInterval(plannedBreakDurationSeconds))
+        } else {
+            resolvedBreakStartedAt = breakStartedAt
+        }
+
+        return FlowTimerState(
+            mode: mode,
+            phase: phase,
+            startedAt: startedAt,
+            plannedEndAt: plannedEndAt,
+            pausedAt: resolvedPausedAt,
+            phaseBeforePause: resolvedPhaseBeforePause,
+            accumulatedPauseDurationSeconds: accumulatedPauseDurationSeconds,
+            completedAt: completedAt,
+            endedAt: endedAt,
+            plannedFocusDurationSeconds: plannedFocusDurationSeconds,
+            actualFocusDurationSeconds: actualFocusDurationSeconds,
+            plannedBreakDurationSeconds: plannedBreakDurationSeconds,
+            breakStartedAt: resolvedBreakStartedAt,
+            wasPaused: wasPaused,
+            interruptionCount: interruptionCount
+        )
+    }
+
     var resolvedActualFocusDurationSeconds: Int {
         if let actualFocusDurationSeconds {
             return actualFocusDurationSeconds
@@ -267,15 +350,42 @@ final class FlowSession {
         actualFocusDurationSeconds = timerState.actualFocusDurationSeconds
         plannedBreakDurationSeconds = timerState.plannedBreakDurationSeconds
         accumulatedPauseDurationSeconds = timerState.accumulatedPauseDurationSeconds
+        pausedAt = timerState.pausedAt
+        phaseBeforePause = timerState.phaseBeforePause
+        completedAt = timerState.completedAt
+        breakStartedAt = timerState.breakStartedAt
         wasPaused = timerState.wasPaused
         interruptionCount = timerState.interruptionCount
-        updatedAt = now
+        recordRuntimeMutation(now: now)
     }
 
     func complete(now: Date = .now) {
         phase = .completed
         status = .completed
+        completedAt = completedAt ?? now
+        recordRuntimeMutation(now: now)
+    }
+
+    func recordRuntimeMutation(now: Date = .now) {
+        runtimeRevision += 1
+        runtimeMutationID = UUID()
         updatedAt = now
+    }
+}
+
+struct FlowRuntimeVersion: Equatable, Comparable {
+    var updatedAt: Date
+    var revision: Int
+    var mutationID: UUID
+
+    static func < (lhs: FlowRuntimeVersion, rhs: FlowRuntimeVersion) -> Bool {
+        if lhs.updatedAt != rhs.updatedAt {
+            return lhs.updatedAt < rhs.updatedAt
+        }
+        if lhs.revision != rhs.revision {
+            return lhs.revision < rhs.revision
+        }
+        return lhs.mutationID.uuidString < rhs.mutationID.uuidString
     }
 }
 

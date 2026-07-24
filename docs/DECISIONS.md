@@ -258,6 +258,34 @@ Reason: forgotten completion and forgotten focused work are different facts.
 Reusing existing entities preserves that distinction and avoids a second
 history model or fabricated focus time.
 
+## D-027: Active Flow Runtime Synchronizes Through FlowSession
+
+The active Flow timer is persisted in the same `FlowSession` record that owns
+its history. `FlowSession` stores the complete reconstructable
+`FlowTimerState`, including pause and break anchors, plus a monotonically
+advanced runtime revision and mutation identifier. `ActiveFlowStore` remains
+the only timer state machine; a shared coordinator only resolves the newest
+active persisted session and adopts its absolute timestamp-based state.
+
+macOS and iOS reconcile on launch, foreground entry, and while their scene is
+active. A command made on either platform updates the shared session, and the
+other active application adopts that revision without restarting elapsed time.
+If concurrent offline starts produce multiple active sessions, the coordinator
+selects one deterministically and marks the others interrupted. Local-only and
+test stores use exactly the same reconciliation behavior without requiring
+CloudKit.
+
+CloudKit delivery is opportunistic. It can synchronize the active runtime and
+restore it when the receiving app runs, but it cannot guarantee waking a fully
+suspended iPhone or starting its Live Activity immediately. Guaranteed
+background Dynamic Island updates require ActivityKit push tokens and an APNs
+provider, which are a separate future transport and do not change this runtime
+contract.
+
+Reason: persisting the canonical runtime alongside its session avoids a second
+timer entity, preserves offline operation, and gives macOS, iOS, and future
+watchOS clients one conflict and restoration model.
+
 ## Open Questions
 
 - What measurement and planned amount should be used for an auto-created Task when Flow starts with only a Direction or with neither Direction nor Task?

@@ -851,6 +851,218 @@ struct FlowTests {
         #expect(liveActivities.endCount >= 1)
     }
 
+    @Test func persistedPausedFlowReconstructsExactTimerState() throws {
+        let start = Date(timeIntervalSince1970: 50_000)
+        let pausedAt = start.addingTimeInterval(8 * 60)
+        let direction = Direction(name: "開発", type: .neutral)
+        let session = FlowSession(
+            direction: direction,
+            mode: .twentyFiveFive,
+            phase: .paused,
+            status: .paused,
+            startedAt: start,
+            plannedEndAt: start.addingTimeInterval(25 * 60),
+            plannedFocusDurationSeconds: 25 * 60,
+            plannedBreakDurationSeconds: 5 * 60,
+            pausedAt: pausedAt,
+            phaseBeforePause: .focusing,
+            wasPaused: true,
+            updatedAt: pausedAt
+        )
+
+        let state = try #require(session.reconstructableTimerState)
+
+        #expect(state.phase == .paused)
+        #expect(state.pausedAt == pausedAt)
+        #expect(state.phaseBeforePause == .focusing)
+        #expect(state.plannedEndAt == start.addingTimeInterval(25 * 60))
+        #expect(FlowTimerEngine().remainingSeconds(
+            for: state,
+            now: pausedAt.addingTimeInterval(10 * 60)
+        ) == 17 * 60)
+    }
+
+    @Test @MainActor func activeFlowStoreAdoptsPersistedRuntimeFromAnotherClient() throws {
+        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let start = Date(timeIntervalSince1970: 60_000)
+        let direction = Direction(name: "開発", type: .neutral, symbolName: "💻")
+        let todo = Todo(title: "同期", direction: direction)
+        let session = FlowSession(
+            direction: direction,
+            todo: todo,
+            mode: .twentyFiveFive,
+            startedAt: start,
+            plannedEndAt: start.addingTimeInterval(25 * 60),
+            plannedFocusDurationSeconds: 25 * 60,
+            plannedBreakDurationSeconds: 5 * 60,
+            createdAt: start,
+            updatedAt: start
+        )
+        context.insert(direction)
+        context.insert(todo)
+        context.insert(session)
+        try context.save()
+
+        let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
+        let liveActivities = TestLiveActivityService()
+        let store = ActiveFlowStore(
+            defaults: defaults,
+            notifications: TestFlowNotificationService(),
+            liveActivities: liveActivities
+        )
+
+        store.synchronizeFromPersistence(
+            modelContext: context,
+            now: start.addingTimeInterval(4 * 60)
+        )
+
+        #expect(store.activeSession?.id == session.id)
+        #expect(store.timerState?.startedAt == start)
+        #expect(store.selectedDirectionID == direction.id)
+        #expect(store.selectedTodoID == todo.id)
+        #expect(store.selectedMode == .twentyFiveFive)
+        #expect(liveActivities.updated.last?.taskTitle == "同期")
+    }
+
+    @Test @MainActor func activeFlowStoreAppliesNewerRemotePauseRevision() throws {
+        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let start = Date(timeIntervalSince1970: 70_000)
+        let pausedAt = start.addingTimeInterval(6 * 60)
+        let direction = Direction(name: "開発", type: .neutral)
+        let session = FlowSession(
+            direction: direction,
+            mode: .twentyFiveFive,
+            startedAt: start,
+            plannedEndAt: start.addingTimeInterval(25 * 60),
+            plannedFocusDurationSeconds: 25 * 60,
+            plannedBreakDurationSeconds: 5 * 60,
+            createdAt: start,
+            updatedAt: start
+        )
+        context.insert(direction)
+        context.insert(session)
+        try context.save()
+
+        let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
+        let store = ActiveFlowStore(
+            defaults: defaults,
+            notifications: TestFlowNotificationService()
+        )
+        store.synchronizeFromPersistence(modelContext: context, now: start)
+
+        let pausedState = FlowTimerEngine().pause(
+            try #require(session.reconstructableTimerState),
+            now: pausedAt
+        )
+        session.apply(timerState: pausedState, now: pausedAt)
+        try context.save()
+
+        store.synchronizeFromPersistence(modelContext: context, now: pausedAt)
+
+        #expect(store.phase == .paused)
+        #expect(store.timerState?.pausedAt == pausedAt)
+        #expect(store.timerState?.phaseBeforePause == .focusing)
+    }
+
+    @Test @MainActor func activeFlowStoreClearsRuntimeAfterRemoteCompletion() throws {
+        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let start = Date(timeIntervalSince1970: 75_000)
+        let completedAt = start.addingTimeInterval(12 * 60)
+        let direction = Direction(name: "開発", type: .neutral)
+        let session = FlowSession(
+            direction: direction,
+            mode: .sprint,
+            startedAt: start,
+            plannedEndAt: completedAt,
+            plannedFocusDurationSeconds: 12 * 60,
+            plannedBreakDurationSeconds: 3 * 60,
+            createdAt: start,
+            updatedAt: start
+        )
+        context.insert(direction)
+        context.insert(session)
+        try context.save()
+
+        let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
+        let liveActivities = TestLiveActivityService()
+        let store = ActiveFlowStore(
+            defaults: defaults,
+            notifications: TestFlowNotificationService(),
+            liveActivities: liveActivities
+        )
+        store.synchronizeFromPersistence(modelContext: context, now: start)
+        #expect(store.activeSession?.id == session.id)
+
+        session.complete(now: completedAt)
+        try context.save()
+        store.synchronizeFromPersistence(modelContext: context, now: completedAt)
+
+        #expect(store.activeSession == nil)
+        #expect(store.timerState == nil)
+        #expect(liveActivities.endCount == 1)
+    }
+
+    @Test @MainActor func syncCoordinatorInterruptsOlderConcurrentActiveFlow() throws {
+        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let start = Date(timeIntervalSince1970: 80_000)
+        let conflictTime = start.addingTimeInterval(60)
+        let direction = Direction(name: "開発", type: .neutral)
+        let older = FlowSession(
+            direction: direction,
+            mode: .sprint,
+            startedAt: start,
+            plannedEndAt: start.addingTimeInterval(12 * 60),
+            plannedFocusDurationSeconds: 12 * 60,
+            plannedBreakDurationSeconds: 3 * 60,
+            runtimeRevision: 1,
+            createdAt: start,
+            updatedAt: start
+        )
+        let newer = FlowSession(
+            direction: direction,
+            mode: .fiftyTen,
+            startedAt: conflictTime,
+            plannedEndAt: conflictTime.addingTimeInterval(50 * 60),
+            plannedFocusDurationSeconds: 50 * 60,
+            plannedBreakDurationSeconds: 10 * 60,
+            runtimeRevision: 2,
+            createdAt: conflictTime,
+            updatedAt: conflictTime
+        )
+        context.insert(direction)
+        context.insert(older)
+        context.insert(newer)
+        try context.save()
+
+        let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
+        let store = ActiveFlowStore(
+            defaults: defaults,
+            notifications: TestFlowNotificationService()
+        )
+        let resolvedAt = conflictTime.addingTimeInterval(5)
+
+        store.synchronizeFromPersistence(modelContext: context, now: resolvedAt)
+
+        #expect(store.activeSession?.id == newer.id)
+        #expect(store.selectedMode == .fiftyTen)
+        #expect(older.status == .interrupted)
+        #expect(older.phase == .completed)
+        #expect(older.endedAt == conflictTime)
+        #expect(older.updatedAt == resolvedAt)
+    }
+
     @Test func liveActivityTimeFormatterClampsOvertime() {
         #expect(FlowLiveActivityFormatter.timeText(seconds: 65) == "01:05")
         #expect(FlowLiveActivityFormatter.timeText(seconds: -1) == "00:00")
