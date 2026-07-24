@@ -268,9 +268,9 @@ Ranges:
 
 The `その他` Direction may appear in statistics and filters because it represents real captured work.
 
-Selecting any contribution cell switches the app navigation to the single canonical `履歴` section for that day. Statistics never embeds a duplicate History view.
+On macOS, clicking a contribution cell switches the app navigation to the single canonical `履歴` section for that day. On iOS, the first tap selects and highlights the cell and reveals its day summary above the grid; tapping the selected cell again or tapping its summary opens `履歴` on that date. Statistics never embeds a duplicate History view.
 
-Hovering a cell shows its date, completed Task count, Flow count, Blocks, and focused duration. `今月` is arranged as a seven-column month calendar; `180日` uses larger contribution cells than the year view.
+The macOS hover card and iOS selected-day summary show the date, completed Task count, Flow count, Blocks, and focused duration. `今月` is arranged as a seven-column month calendar; `180日` uses larger contribution cells than the year view.
 
 ## History Calendar
 

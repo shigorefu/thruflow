@@ -11,6 +11,13 @@ struct IOSStatisticsView: View {
     @State private var mode = IOSStatisticsMode.flow
     @State private var range = StatisticsRange.currentMonth
     @State private var directionID: UUID?
+    @State private var selectedDate: Date?
+
+    let onOpenHistoryDate: (Date) -> Void
+
+    init(onOpenHistoryDate: @escaping (Date) -> Void = { _ in }) {
+        self.onOpenHistoryDate = onOpenHistoryDate
+    }
 
     private var filter: StatisticsFilter {
         StatisticsFilter(range: range, directionID: directionID)
@@ -53,6 +60,15 @@ struct IOSStatisticsView: View {
                 directionFilter
             }
         }
+        .onChange(of: mode) { _, _ in
+            selectedDate = nil
+        }
+        .onChange(of: range) { _, _ in
+            selectedDate = nil
+        }
+        .onChange(of: directionID) { _, _ in
+            selectedDate = nil
+        }
     }
 
     private var summaryCard: some View {
@@ -94,13 +110,15 @@ struct IOSStatisticsView: View {
                     .foregroundStyle(.secondary)
             }
 
+            if let selectedCell {
+                selectedDaySummary(selectedCell)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHGrid(rows: heatmapRows, spacing: 5) {
-                    ForEach(Array(days.enumerated()), id: \.offset) { _, day in
-                        RoundedRectangle(cornerRadius: 3)
-                            .fill(day.color)
-                            .frame(width: cellSize, height: cellSize)
-                            .accessibilityLabel(day.accessibilityLabel)
+                    ForEach(days) { day in
+                        statisticsCell(day)
                     }
                 }
                 .padding(.vertical, 2)
@@ -122,27 +140,117 @@ struct IOSStatisticsView: View {
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
     }
 
+    private func selectedDaySummary(_ day: IOSStatisticsCell) -> some View {
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(day.date.formatted(.dateTime.month().day().weekday(.abbreviated)))
+                    .font(.subheadline.weight(.semibold))
+
+                Text(String(localized: "タスク \(day.completedTaskCount) ・ Flow \(day.flowCount)"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer(minLength: 8)
+
+            VStack(alignment: .trailing, spacing: 3) {
+                Text(BlockUnit.displayText(forFocusedSeconds: day.flowSeconds))
+                    .font(.subheadline.weight(.semibold))
+                Text(focusText(day.flowSeconds))
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            onOpenHistoryDate(day.date)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityHint(String(localized: "この日の履歴を開く"))
+    }
+
+    private func statisticsCell(_ day: IOSStatisticsCell) -> some View {
+        let isSelected = selectedDate.map {
+            calendar.isDate($0, inSameDayAs: day.date)
+        } ?? false
+        let shape = RoundedRectangle(cornerRadius: 3)
+
+        return Button {
+            if isSelected {
+                onOpenHistoryDate(day.date)
+            } else {
+                withAnimation(.snappy(duration: 0.2)) {
+                    selectedDate = day.date
+                }
+            }
+        } label: {
+            shape
+                .fill(day.color)
+                .frame(width: cellSize, height: cellSize)
+                .overlay {
+                    if isSelected {
+                        shape
+                            .fill(Color.accentColor.opacity(0.18))
+                            .overlay {
+                                shape.strokeBorder(Color.accentColor, lineWidth: 2)
+                            }
+                    }
+                }
+                .scaleEffect(isSelected ? 1.08 : 1)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(day.accessibilityLabel)
+        .accessibilityHint(
+            isSelected
+                ? String(localized: "この日の履歴を開く")
+                : String(localized: "選択")
+        )
+    }
+
+    private var selectedCell: IOSStatisticsCell? {
+        guard let selectedDate else { return nil }
+        return days.first { calendar.isDate($0.date, inSameDayAs: selectedDate) }
+    }
+
+    private var flowDaysByDate: [Date: StatisticsDay] {
+        Dictionary(uniqueKeysWithValues: flowResult.days.map { ($0.date, $0) })
+    }
+
+    private var taskDaysByDate: [Date: AchievementDay] {
+        Dictionary(uniqueKeysWithValues: taskResult.days.map { ($0.date, $0) })
+    }
+
     private var days: [IOSStatisticsCell] {
         switch mode {
         case .flow:
             let maximum = max(1, flowResult.days.map(\.totalFocusSeconds).max() ?? 1)
             return flowResult.days.map { day in
-                IOSStatisticsCell(
+                let taskDay = taskDaysByDate[day.date]
+                return IOSStatisticsCell(
+                    date: day.date,
                     color: day.isEmpty
                         ? Color.primary.opacity(0.06)
                         : Color(hex: day.mixedColorHex ?? "#007AFF")
                             .opacity(0.25 + 0.75 * Double(day.totalFocusSeconds) / Double(maximum)),
+                    completedTaskCount: taskDay?.completedCount ?? 0,
+                    flowCount: day.sessionCount,
+                    flowSeconds: day.totalFocusSeconds,
                     accessibilityLabel: "\(day.date.formatted(date: .abbreviated, time: .omitted)), \(focusText(day.totalFocusSeconds))"
                 )
             }
         case .tasks:
             let maximum = max(1, taskResult.days.map(\.completedCount).max() ?? 1)
             return taskResult.days.map { day in
-                IOSStatisticsCell(
+                let flowDay = flowDaysByDate[day.date]
+                return IOSStatisticsCell(
+                    date: day.date,
                     color: day.isEmpty
                         ? Color.primary.opacity(0.06)
                         : Color(hex: day.mixedColorHex ?? "#34C759")
                             .opacity(0.25 + 0.75 * Double(day.completedCount) / Double(maximum)),
+                    completedTaskCount: day.completedCount,
+                    flowCount: flowDay?.sessionCount ?? 0,
+                    flowSeconds: flowDay?.totalFocusSeconds ?? 0,
                     accessibilityLabel: "\(day.date.formatted(date: .abbreviated, time: .omitted)), \(day.completedCount)"
                 )
             }
@@ -196,7 +304,13 @@ private enum IOSStatisticsMode: String, CaseIterable, Identifiable {
     }
 }
 
-private struct IOSStatisticsCell {
+private struct IOSStatisticsCell: Identifiable {
+    let date: Date
     let color: Color
+    let completedTaskCount: Int
+    let flowCount: Int
+    let flowSeconds: Int
     let accessibilityLabel: String
+
+    var id: Date { date }
 }

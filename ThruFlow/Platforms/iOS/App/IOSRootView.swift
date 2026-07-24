@@ -40,6 +40,7 @@ enum IOSAppRoute: Hashable, CaseIterable, Identifiable {
 struct IOSRootView: View {
     @State private var selection = IOSAppRoute.flow
     @State private var showsSettings = false
+    @State private var selectedHistoryDate = Date.now
 
     private var selectionBinding: Binding<IOSAppRoute> {
         Binding(
@@ -115,11 +116,14 @@ struct IOSRootView: View {
         case .tasks:
             IOSTasksView { open(.flow) }
         case .history:
-            IOSHistoryView()
+            IOSHistoryView(selectedDate: $selectedHistoryDate)
         case .directions:
             IOSDirectionsView()
         case .statistics:
-            IOSStatisticsView()
+            IOSStatisticsView { date in
+                selectedHistoryDate = date
+                selectionBinding.wrappedValue = .history
+            }
         case .settings:
             IOSSettingsView()
         }

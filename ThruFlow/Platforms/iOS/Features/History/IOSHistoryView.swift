@@ -9,12 +9,16 @@ struct IOSHistoryView: View {
     @Query(sort: \FlowBreak.startedAt) private var flowBreaks: [FlowBreak]
     @Query(sort: \Todo.updatedAt, order: .reverse) private var todos: [Todo]
 
-    @State private var selectedDate = Date.now
+    @Binding private var selectedDate: Date
     @State private var range = HistoryCalendarRange.day
     @State private var selectedMode = DayHistoryMode.calendar
     @State private var visibleKinds = Set(HistoryCalendarItemKind.allCases)
     @State private var selectedItem: HistoryCalendarItem?
     @State private var isAddingTaskRecord = false
+
+    init(selectedDate: Binding<Date>) {
+        _selectedDate = selectedDate
+    }
 
     var body: some View {
         VStack(spacing: 0) {
