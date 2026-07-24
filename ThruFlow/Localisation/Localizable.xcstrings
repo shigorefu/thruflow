@@ -2441,6 +2441,38 @@
         }
       }
     },
+    "この日の習慣はありません" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Habits for This Day"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "На этот день нет привычек"
+          }
+        }
+      }
+    },
+    "この日に記録なし" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Record on This Day"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет записи за этот день"
+          }
+        }
+      }
+    },
     "この日の履歴を開く" : {
       "localizations" : {
         "en" : {
@@ -2811,6 +2843,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Без задачи"
+          }
+        }
+      }
+    },
+    "タスク・習慣・方向を選択" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select a Task, Habit, or Direction"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите задачу, привычку или направление"
           }
         }
       }
@@ -4907,6 +4955,22 @@
         }
       }
     },
+    "選択した日にタスクを作成" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create a Task on the Selected Day"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Создать задачу на выбранный день"
+          }
+        }
+      }
+    },
     "新しい方向" : {
       "localizations" : {
         "en" : {
@@ -5351,6 +5415,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "На завтра"
+          }
+        }
+      }
+    },
+    "時刻" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Time"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Время"
+          }
+        }
+      }
+    },
+    "時刻を指定" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Specify Time"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Указать время"
           }
         }
       }
@@ -6647,6 +6743,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Записать"
+          }
+        }
+      }
+    },
+    "記録対象" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Record Target"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Объект записи"
           }
         }
       }

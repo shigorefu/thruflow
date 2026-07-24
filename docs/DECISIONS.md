@@ -244,12 +244,14 @@ terminating the widget process.
 
 ## D-026: Retrospective Task Records Reuse Todo And Flow
 
-`履歴 > タスク` exposes one shared macOS/iOS command for recording forgotten
-work on an exact date and time. It can select an existing Todo occurrence from
-that day even when it has no Flow, or create a Todo scheduled on that day.
-Recording Check writes manual completion at the selected timestamp and creates
-no Flow. Recording Block or Minute creates the normal completed manual
-FlowSession/FlowSegment pair and relies on standard history reconciliation for
+`履歴 > タスク` exposes one shared macOS/iOS `+` command for recording forgotten
+work. Its Flow-style picker separates Tasks, Habits, and Directions. It can
+select an existing Todo occurrence, create a new Task, materialize an eligible
+missing historical Habit occurrence from its Direction template, or record
+Direction-only Flow. Recording Check needs only a date, accepts optional time,
+writes manual completion, and creates no Flow. Recording Block, Minute, or
+Direction-only work requires start/end time, creates the normal completed manual
+FlowSession/FlowSegment pair, and relies on standard history reconciliation for
 measured progress. Zero-Flow Todos remain absent from actual History summaries.
 
 Reason: forgotten completion and forgotten focused work are different facts.

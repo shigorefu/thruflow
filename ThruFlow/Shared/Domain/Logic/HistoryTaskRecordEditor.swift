@@ -15,7 +15,7 @@ enum HistoryTaskRecordError: Error, Equatable {
 }
 
 struct HistoryTaskRecordResult {
-    let todo: Todo
+    let todo: Todo?
     let flowSession: FlowSession?
 }
 
@@ -66,6 +66,66 @@ struct HistoryTaskRecordEditor {
             now: now
         )
         return HistoryTaskRecordResult(todo: todo, flowSession: session)
+    }
+
+    @discardableResult
+    func record(
+        direction: Direction,
+        recordedAt: Date,
+        mode: FlowMode,
+        focusSeconds: Int,
+        modelContext: ModelContext,
+        now: Date = .now
+    ) -> HistoryTaskRecordResult {
+        let session = FlowHistoryEditor().createManual(
+            todo: nil,
+            direction: direction,
+            mode: mode,
+            startedAt: recordedAt,
+            focusSeconds: focusSeconds,
+            modelContext: modelContext,
+            now: now
+        )
+        return HistoryTaskRecordResult(todo: nil, flowSession: session)
+    }
+
+    @discardableResult
+    func createHabitOccurrenceAndRecord(
+        direction: Direction,
+        scheduledDate: Date,
+        recordedAt: Date,
+        mode: FlowMode,
+        focusSeconds: Int,
+        modelContext: ModelContext,
+        now: Date = .now
+    ) throws -> HistoryTaskRecordResult {
+        guard direction.type == .habit, let goalUnit = direction.goalUnit else {
+            throw HistoryTaskRecordError.missingDirection
+        }
+
+        let target = max(1, direction.goalTarget ?? 1)
+        let measurement = measurement(for: goalUnit)
+        let todo = Todo(
+            title: "",
+            direction: direction,
+            measurement: measurement,
+            priority: .high,
+            isRoomIfPossible: false,
+            plannedAmount: plannedAmount(for: goalUnit, target: target),
+            scheduledDate: calendar.startOfDay(for: scheduledDate),
+            createdAt: now,
+            updatedAt: now
+        )
+        modelContext.insert(todo)
+
+        return try record(
+            todo: todo,
+            recordedAt: recordedAt,
+            mode: mode,
+            focusSeconds: focusSeconds,
+            modelContext: modelContext,
+            now: now
+        )
     }
 
     @discardableResult
@@ -131,6 +191,28 @@ struct HistoryTaskRecordEditor {
         case .high: 0
         case .medium: 1
         case .low: 2
+        }
+    }
+
+    private func measurement(for goalUnit: GoalUnit) -> TodoMeasurement {
+        switch goalUnit {
+        case .occurrences:
+            .checkbox
+        case .focusBlocks:
+            .focusBlocks
+        case .minutes, .hours:
+            .minutes
+        }
+    }
+
+    private func plannedAmount(for goalUnit: GoalUnit, target: Int) -> Int? {
+        switch goalUnit {
+        case .occurrences:
+            nil
+        case .focusBlocks, .minutes:
+            target
+        case .hours:
+            target * 60
         }
     }
 }

@@ -104,6 +104,15 @@ Normal continuation windows are:
 
 A 20-minute Long Break is selected after each additional 4 accumulated Blocks in the same series. It still starts only when the user manually starts rest.
 
+## Retrospective Records
+
+Retrospective entry reuses `Todo`, `FlowSession`, and `FlowSegment`; it does not
+persist a separate history-record entity. A missing eligible historical Habit
+occurrence becomes a normal Todo linked to its Habit Direction and scheduled on
+the selected day. Check completion stores `completedAt` and creates no Flow.
+Block, Minute, and Direction-only records store an explicit completed Flow from
+the selected start/end interval. Direction-only Flow keeps `todo` nil.
+
 ## Transient And Derived Data
 
 The following are not separate database entities:

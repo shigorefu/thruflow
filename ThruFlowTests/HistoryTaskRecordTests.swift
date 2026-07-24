@@ -107,12 +107,13 @@ struct HistoryTaskRecordTests {
             focusSeconds: 12 * 60,
             modelContext: context
         )
+        let todo = try #require(result.todo)
 
         #expect(result.flowSession == nil)
-        #expect(result.todo.title == "提出")
-        #expect(result.todo.isCompleted)
-        #expect(result.todo.completedAt == recordedAt)
-        #expect(calendar.isDate(result.todo.scheduledDate!, inSameDayAs: day))
+        #expect(todo.title == "提出")
+        #expect(todo.isCompleted)
+        #expect(todo.completedAt == recordedAt)
+        #expect(calendar.isDate(todo.scheduledDate!, inSameDayAs: day))
     }
 
     @Test func creatingHistoricalBlockTaskCreatesLinkedFlow() throws {
@@ -136,11 +137,73 @@ struct HistoryTaskRecordTests {
             focusSeconds: 25 * 60,
             modelContext: context
         )
+        let todo = try #require(result.todo)
 
-        #expect(result.flowSession?.todo?.id == result.todo.id)
-        #expect(result.todo.actualProgress == 1)
-        #expect(result.todo.plannedAmount == 2)
-        #expect(!result.todo.isCompleted)
+        #expect(result.flowSession?.todo?.id == todo.id)
+        #expect(todo.actualProgress == 1)
+        #expect(todo.plannedAmount == 2)
+        #expect(!todo.isCompleted)
+    }
+
+    @Test func missingWeeklyHabitCanBeRecordedOnHistoricalDay() throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+        let direction = Direction(
+            name: "筋トレ",
+            type: .habit,
+            symbolName: "💪",
+            goalTarget: 1,
+            goalPeriod: .weekly,
+            goalUnit: .occurrences,
+            goalSchedule: .weeklyCount,
+            weeklyTargetCount: 3
+        )
+        let monday = calendar.startOfDay(for: Date(timeIntervalSince1970: 1_800_000_000))
+        let laterPendingTodo = Todo(
+            title: "",
+            direction: direction,
+            scheduledDate: monday.addingTimeInterval(2 * 86_400)
+        )
+        context.insert(direction)
+        context.insert(laterPendingTodo)
+
+        let result = try HistoryTaskRecordEditor(calendar: calendar).createHabitOccurrenceAndRecord(
+            direction: direction,
+            scheduledDate: monday,
+            recordedAt: monday.addingTimeInterval(12 * 3_600),
+            mode: .twentyFiveFive,
+            focusSeconds: 25 * 60,
+            modelContext: context
+        )
+        let todo = try #require(result.todo)
+
+        #expect(result.flowSession == nil)
+        #expect(todo.direction?.id == direction.id)
+        #expect(todo.measurement == .checkbox)
+        #expect(todo.isCompleted)
+        #expect(calendar.isDate(todo.scheduledDate!, inSameDayAs: monday))
+        #expect(try context.fetch(FetchDescriptor<Todo>()).count == 2)
+    }
+
+    @Test func directionOnlyRecordCreatesFlowWithoutTodo() throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+        let direction = Direction(name: "学習", type: .neutral)
+        let recordedAt = Date(timeIntervalSince1970: 1_800_000_000)
+        context.insert(direction)
+
+        let result = HistoryTaskRecordEditor(calendar: calendar).record(
+            direction: direction,
+            recordedAt: recordedAt,
+            mode: .sprint,
+            focusSeconds: 12 * 60,
+            modelContext: context
+        )
+
+        #expect(result.todo == nil)
+        #expect(result.flowSession?.todo == nil)
+        #expect(result.flowSession?.direction?.id == direction.id)
+        #expect(result.flowSession?.actualFocusDurationSeconds == 12 * 60)
     }
 
     private func makeContainer() throws -> ModelContainer {

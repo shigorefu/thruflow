@@ -344,11 +344,18 @@ private struct IOSHistoryTaskSummaryList: View {
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 10) {
-                Button(action: onAddRecord) {
-                    Label(String(localized: "記録を追加"), systemImage: "plus")
-                        .frame(maxWidth: .infinity)
+                HStack {
+                    Spacer()
+
+                    Button(action: onAddRecord) {
+                        Image(systemName: "plus")
+                            .font(.body.weight(.semibold))
+                            .frame(width: 34, height: 34)
+                    }
+                    .buttonStyle(.bordered)
+                    .buttonBorderShape(.circle)
+                    .accessibilityLabel(String(localized: "記録を追加"))
                 }
-                .buttonStyle(.borderedProminent)
 
                 if snapshot.taskSummaries.isEmpty {
                     ContentUnavailableView(

@@ -251,9 +251,12 @@ struct DayHistoryView: View {
                 Button {
                     isAddingTaskRecord = true
                 } label: {
-                    Label(String(localized: "記録を追加"), systemImage: "plus")
+                    Image(systemName: "plus")
                 }
                 .buttonStyle(.bordered)
+                .buttonBorderShape(.circle)
+                .help(String(localized: "記録を追加"))
+                .accessibilityLabel(String(localized: "記録を追加"))
             }
 
             if selectedRange == .week, !weeklyTaskSections.isEmpty {
