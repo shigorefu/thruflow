@@ -1,4 +1,5 @@
 import Foundation
+import Security
 import SwiftData
 
 enum AppModelContainerFactory {
@@ -22,7 +23,8 @@ enum AppModelContainerFactory {
         } else if !shouldUseCloudKit(
             isRunningTests: isRunningTests,
             isCloudKitDisabled: isCloudKitDisabled,
-            isRunningInSimulator: isRunningInSimulator
+            isRunningInSimulator: isRunningInSimulator,
+            hasCloudKitEntitlement: hasCloudKitEntitlement
         ) {
             configuration = ModelConfiguration(
                 schema: schema,
@@ -62,11 +64,28 @@ enum AppModelContainerFactory {
 #endif
     }
 
+    private static var hasCloudKitEntitlement: Bool {
+        guard let task = SecTaskCreateFromSelf(nil),
+              let containerIdentifiers = SecTaskCopyValueForEntitlement(
+                  task,
+                  "com.apple.developer.icloud-container-identifiers" as CFString,
+                  nil
+              ) as? [String] else {
+            return false
+        }
+
+        return containerIdentifiers.contains(cloudKitContainerIdentifier)
+    }
+
     static func shouldUseCloudKit(
         isRunningTests: Bool,
         isCloudKitDisabled: Bool,
-        isRunningInSimulator: Bool
+        isRunningInSimulator: Bool,
+        hasCloudKitEntitlement: Bool
     ) -> Bool {
-        !isRunningTests && !isCloudKitDisabled && !isRunningInSimulator
+        !isRunningTests &&
+            !isCloudKitDisabled &&
+            !isRunningInSimulator &&
+            hasCloudKitEntitlement
     }
 }

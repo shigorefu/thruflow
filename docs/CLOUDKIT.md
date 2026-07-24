@@ -19,6 +19,10 @@ uses the same SwiftData schema and private container on normal signed runs.
 - Unit/UI tests use an in-memory `ModelConfiguration` with CloudKit disabled.
 - iOS Simulator uses a persistent local SwiftData store with CloudKit disabled
   because simulator builds do not receive the iCloud container entitlement.
+- Unsigned and ad-hoc diagnostic builds use the persistent local store when the
+  running process does not contain the configured iCloud container entitlement.
+  This prevents Core Data's CloudKit setup from terminating the process while
+  preserving CloudKit for normally signed application builds.
 - Set `THRUFLOW_DISABLE_CLOUDKIT=1` for a persistent local-only development run.
 - Pass `--local-store` for the same local-only behavior from a scheme.
 

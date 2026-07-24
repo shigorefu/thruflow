@@ -10,14 +10,27 @@ struct PersistenceSchemaTests {
             !AppModelContainerFactory.shouldUseCloudKit(
                 isRunningTests: false,
                 isCloudKitDisabled: false,
-                isRunningInSimulator: true
+                isRunningInSimulator: true,
+                hasCloudKitEntitlement: true
             )
         )
         #expect(
             AppModelContainerFactory.shouldUseCloudKit(
                 isRunningTests: false,
                 isCloudKitDisabled: false,
-                isRunningInSimulator: false
+                isRunningInSimulator: false,
+                hasCloudKitEntitlement: true
+            )
+        )
+    }
+
+    @Test func unsignedBuildUsesLocalStoreWithoutCloudKitEntitlement() {
+        #expect(
+            !AppModelContainerFactory.shouldUseCloudKit(
+                isRunningTests: false,
+                isCloudKitDisabled: false,
+                isRunningInSimulator: false,
+                hasCloudKitEntitlement: false
             )
         )
     }
