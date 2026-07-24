@@ -110,11 +110,6 @@ struct IOSStatisticsView: View {
                     .foregroundStyle(.secondary)
             }
 
-            if let selectedCell {
-                selectedDaySummary(selectedCell)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-            }
-
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHGrid(rows: heatmapRows, spacing: 5) {
                     ForEach(days) { day in
@@ -140,8 +135,10 @@ struct IOSStatisticsView: View {
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
     }
 
-    private func selectedDaySummary(_ day: IOSStatisticsCell) -> some View {
-        HStack(alignment: .center, spacing: 12) {
+    private func selectedDayPopover(_ day: IOSStatisticsCell) -> some View {
+        Button {
+            openHistory(for: day.date)
+        } label: {
             VStack(alignment: .leading, spacing: 3) {
                 Text(day.date.formatted(.dateTime.month().day().weekday(.abbreviated)))
                     .font(.subheadline.weight(.semibold))
@@ -149,24 +146,28 @@ struct IOSStatisticsView: View {
                 Text(String(localized: "タスク \(day.completedTaskCount) ・ Flow \(day.flowCount)"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
-            }
 
-            Spacer(minLength: 8)
-
-            VStack(alignment: .trailing, spacing: 3) {
-                Text(BlockUnit.displayText(forFocusedSeconds: day.flowSeconds))
-                    .font(.subheadline.weight(.semibold))
-                Text(focusText(day.flowSeconds))
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
+                if day.flowSeconds > 0 {
+                    Text("\(BlockUnit.displayText(forFocusedSeconds: day.flowSeconds)) ・ \(focusText(day.flowSeconds))")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
             }
+            .padding(.horizontal, 4)
+            .padding(.vertical, 2)
+            .fixedSize()
+            .contentShape(Rectangle())
         }
-        .contentShape(Rectangle())
-        .onTapGesture {
-            onOpenHistoryDate(day.date)
-        }
+        .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
         .accessibilityHint(String(localized: "この日の履歴を開く"))
+    }
+
+    private func openHistory(for date: Date) {
+        selectedDate = nil
+        DispatchQueue.main.async {
+            onOpenHistoryDate(date)
+        }
     }
 
     private func statisticsCell(_ day: IOSStatisticsCell) -> some View {
@@ -177,7 +178,7 @@ struct IOSStatisticsView: View {
 
         return Button {
             if isSelected {
-                onOpenHistoryDate(day.date)
+                openHistory(for: day.date)
             } else {
                 withAnimation(.snappy(duration: 0.2)) {
                     selectedDate = day.date
@@ -205,11 +206,31 @@ struct IOSStatisticsView: View {
                 ? String(localized: "この日の履歴を開く")
                 : String(localized: "選択")
         )
+        .popover(
+            isPresented: selectionBinding(for: day),
+            attachmentAnchor: .rect(.bounds),
+            arrowEdge: .bottom
+        ) {
+            selectedDayPopover(day)
+                .padding(10)
+                .presentationCompactAdaptation(.popover)
+        }
     }
 
-    private var selectedCell: IOSStatisticsCell? {
-        guard let selectedDate else { return nil }
-        return days.first { calendar.isDate($0.date, inSameDayAs: selectedDate) }
+    private func selectionBinding(for day: IOSStatisticsCell) -> Binding<Bool> {
+        Binding(
+            get: {
+                selectedDate.map {
+                    calendar.isDate($0, inSameDayAs: day.date)
+                } ?? false
+            },
+            set: { isPresented in
+                if !isPresented,
+                   selectedDate.map({ calendar.isDate($0, inSameDayAs: day.date) }) == true {
+                    selectedDate = nil
+                }
+            }
+        )
     }
 
     private var flowDaysByDate: [Date: StatisticsDay] {
