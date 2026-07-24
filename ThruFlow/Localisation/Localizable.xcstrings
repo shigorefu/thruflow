@@ -359,23 +359,6 @@
         }
       }
     },
-    "%@ が完了しました。" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ completed."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ завершено."
-          }
-        }
-      }
-    },
     "%@–%@" : {
       "localizations" : {
         "en" : {
@@ -400,10 +383,22 @@
     },
     "%@, %lld %@" : {
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, %lld %@"
+          }
+        },
         "ja" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$@, %2$lld %3$@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, %lld %@"
           }
         }
       }
@@ -2836,23 +2831,6 @@
         }
       }
     },
-    "タイトル" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Title"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Название"
-          }
-        }
-      }
-    },
     "タグ" : {
       "localizations" : {
         "en" : {
@@ -3675,23 +3653,6 @@
         }
       }
     },
-    "予定量: %lld" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Target: %lld"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Цель: %lld"
-          }
-        }
-      }
-    },
     "予定量は1以上にしてください。" : {
       "localizations" : {
         "en" : {
@@ -3752,23 +3713,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Сегодня · %@"
-          }
-        }
-      }
-    },
-    "今日に入れる" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add to Today"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Добавить на сегодня"
           }
         }
       }
@@ -5001,40 +4945,6 @@
         }
       }
     },
-    "新しいタスクを作成" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Create New Task"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Создать новую задачу"
-          }
-        }
-      }
-    },
-    "新しいタスクを作成して記録できます。" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Create a new Task and record it."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Можно создать новую задачу и записать её."
-          }
-        }
-      }
-    },
     "新しい方向" : {
       "localizations" : {
         "en" : {
@@ -5319,23 +5229,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Название направления"
-          }
-        }
-      }
-    },
-    "既存のタスク" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Existing Task"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Существующая задача"
           }
         }
       }
@@ -5740,23 +5633,6 @@
         }
       }
     },
-    "期限を使う" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Use Due Date"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Указать срок"
-          }
-        }
-      }
-    },
     "期限切れ" : {
       "localizations" : {
         "en" : {
@@ -6073,23 +5949,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Дни активности"
-          }
-        }
-      }
-    },
-    "測定" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Measurement"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Измерение"
           }
         }
       }
@@ -6830,40 +6689,6 @@
         }
       }
     },
-    "記録方法" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Record Source"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Источник записи"
-          }
-        }
-      }
-    },
-    "記録日時" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Recorded At"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Время записи"
-          }
-        }
-      }
-    },
     "設定" : {
       "localizations" : {
         "en" : {
@@ -7068,23 +6893,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Прогресс"
-          }
-        }
-      }
-    },
-    "進捗: %lld" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Progress: %lld"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Прогресс: %lld"
           }
         }
       }
