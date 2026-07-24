@@ -25,6 +25,7 @@ struct DayHistoryView: View {
     @State private var expandedDirectionIDs: Set<UUID> = []
     @State private var editingTodo: Todo?
     @State private var manualFlowRequest: HistoryManualFlowRequest?
+    @State private var isAddingTaskRecord = false
     @State private var taskDirection: Direction?
 
     private let onClose: (() -> Void)?
@@ -71,6 +72,13 @@ struct DayHistoryView: View {
                 onDismiss: { manualFlowRequest = nil }
             )
             .frame(minWidth: 420, idealWidth: 480, minHeight: 430, idealHeight: 500)
+        }
+        .sheet(isPresented: $isAddingTaskRecord) {
+            HistoryTaskRecordForm(
+                startedAt: defaultManualFlowStart(on: selectedDate),
+                onDismiss: { isAddingTaskRecord = false }
+            )
+            .frame(minWidth: 460, idealWidth: 520, minHeight: 560, idealHeight: 650)
         }
         .sheet(item: $taskDirection) { direction in
             TodoFormView(
@@ -234,8 +242,19 @@ struct DayHistoryView: View {
 
     private var tasksContent: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(String(localized: "タスク別"))
-                .font(.headline)
+            HStack {
+                Text(String(localized: "タスク別"))
+                    .font(.headline)
+
+                Spacer()
+
+                Button {
+                    isAddingTaskRecord = true
+                } label: {
+                    Label(String(localized: "記録を追加"), systemImage: "plus")
+                }
+                .buttonStyle(.bordered)
+            }
 
             if selectedRange == .week, !weeklyTaskSections.isEmpty {
                 ForEach(weeklyTaskSections) { section in

@@ -14,6 +14,7 @@ struct IOSHistoryView: View {
     @State private var selectedMode = DayHistoryMode.calendar
     @State private var visibleKinds = Set(HistoryCalendarItemKind.allCases)
     @State private var selectedItem: HistoryCalendarItem?
+    @State private var isAddingTaskRecord = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -25,7 +26,10 @@ struct IOSHistoryView: View {
                 case .calendar:
                     calendarContent
                 case .tasks:
-                    IOSHistoryTaskSummaryList(snapshot: historySnapshot)
+                    IOSHistoryTaskSummaryList(
+                        snapshot: historySnapshot,
+                        onAddRecord: { isAddingTaskRecord = true }
+                    )
                 case .directions:
                     IOSHistoryDirectionSummaryList(snapshot: historySnapshot)
                 }
@@ -42,6 +46,12 @@ struct IOSHistoryView: View {
         .sheet(item: $selectedItem) { item in
             IOSHistoryItemDetail(item: item)
                 .presentationDetents([.medium])
+        }
+        .sheet(isPresented: $isAddingTaskRecord) {
+            HistoryTaskRecordForm(
+                startedAt: defaultTaskRecordStart,
+                onDismiss: { isAddingTaskRecord = false }
+            )
         }
     }
 
@@ -192,6 +202,13 @@ struct IOSHistoryView: View {
             }
         )
     }
+
+    private var defaultTaskRecordStart: Date {
+        if calendar.isDateInToday(selectedDate) {
+            return Date.now.addingTimeInterval(-25 * 60)
+        }
+        return calendar.date(bySettingHour: 9, minute: 0, second: 0, of: selectedDate) ?? selectedDate
+    }
 }
 
 private struct IOSHistoryDayStrip: View {
@@ -322,10 +339,17 @@ private struct IOSHistoryActivityDots: View {
 
 private struct IOSHistoryTaskSummaryList: View {
     let snapshot: DayHistorySnapshot
+    let onAddRecord: () -> Void
 
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 10) {
+                Button(action: onAddRecord) {
+                    Label(String(localized: "記録を追加"), systemImage: "plus")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+
                 if snapshot.taskSummaries.isEmpty {
                     ContentUnavailableView(
                         String(localized: "記録なし"),

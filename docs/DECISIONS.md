@@ -242,6 +242,20 @@ product projections in the application preserves one source of truth, keeps the
 extension deterministic, and prevents persistence or migration failures from
 terminating the widget process.
 
+## D-026: Retrospective Task Records Reuse Todo And Flow
+
+`履歴 > タスク` exposes one shared macOS/iOS command for recording forgotten
+work on an exact date and time. It can select an existing Todo occurrence from
+that day even when it has no Flow, or create a Todo scheduled on that day.
+Recording Check writes manual completion at the selected timestamp and creates
+no Flow. Recording Block or Minute creates the normal completed manual
+FlowSession/FlowSegment pair and relies on standard history reconciliation for
+measured progress. Zero-Flow Todos remain absent from actual History summaries.
+
+Reason: forgotten completion and forgotten focused work are different facts.
+Reusing existing entities preserves that distinction and avoids a second
+history model or fabricated focus time.
+
 ## Open Questions
 
 - What measurement and planned amount should be used for an auto-created Task when Flow starts with only a Direction or with neither Direction nor Task?
