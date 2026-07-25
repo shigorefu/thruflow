@@ -261,7 +261,8 @@ private struct IOSHistoryDayStrip: View {
             selectedDate: $selectedDate,
             unit: .day,
             visibleItemCount: 7,
-            spacing: 5
+            spacing: 5,
+            height: 55
         ) { date, isSelected in
             Button {
                 selectedDate = calendar.startOfDay(for: date)
@@ -312,7 +313,8 @@ private struct IOSHistoryWeekStrip: View {
             selectedDate: $selectedDate,
             unit: .week,
             visibleItemCount: 3,
-            spacing: 6
+            spacing: 6,
+            height: 58
         ) { anchor, isSelected in
             let interval = HistoryCalendarRange.week.interval(containing: anchor, calendar: calendar)
 

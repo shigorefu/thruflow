@@ -45,6 +45,7 @@ struct IOSScrollablePeriodStrip<Content: View>: View {
     private let unit: IOSPeriodStripUnit
     private let visibleItemCount: Int
     private let spacing: CGFloat
+    private let height: CGFloat
     private let content: (Date, Bool) -> Content
 
     @State private var anchorDate: Date
@@ -55,12 +56,14 @@ struct IOSScrollablePeriodStrip<Content: View>: View {
         unit: IOSPeriodStripUnit,
         visibleItemCount: Int,
         spacing: CGFloat,
+        height: CGFloat,
         @ViewBuilder content: @escaping (Date, Bool) -> Content
     ) {
         _selectedDate = selectedDate
         self.unit = unit
         self.visibleItemCount = visibleItemCount
         self.spacing = spacing
+        self.height = height
         self.content = content
         _anchorDate = State(initialValue: selectedDate.wrappedValue)
         _scrollTarget = State(initialValue: nil)
@@ -97,6 +100,7 @@ struct IOSScrollablePeriodStrip<Content: View>: View {
             }
             .scrollTargetLayout()
         }
+        .frame(height: height)
         .scrollIndicators(.hidden)
         .scrollTargetBehavior(.viewAligned)
         .scrollPosition(id: $scrollTarget, anchor: .center)
