@@ -280,6 +280,11 @@ private struct IOSHistoryDayStrip: View {
     let sessions: [FlowSession]
 
     var body: some View {
+        let activityIndex = IOSHistoryActivityColorIndex(
+            sessions: sessions,
+            calendar: calendar
+        )
+
         IOSScrollablePeriodStrip(
             selectedDate: $selectedDate,
             unit: .day,
@@ -295,7 +300,9 @@ private struct IOSHistoryDayStrip: View {
                         .font(.caption2.weight(.semibold))
                     Text(verbatim: String(calendar.component(.day, from: date)))
                         .font(.body.monospacedDigit().weight(.semibold))
-                    IOSHistoryActivityDots(colors: activityColors(on: date))
+                    IOSHistoryActivityDots(
+                        colors: activityIndex.byDay[calendar.startOfDay(for: date)] ?? []
+                    )
                 }
                 .foregroundStyle(isSelected ? Color.white : Color.primary)
                 .frame(maxWidth: .infinity, minHeight: 55)
@@ -310,18 +317,6 @@ private struct IOSHistoryDayStrip: View {
         }
     }
 
-    private func activityColors(on date: Date) -> [String] {
-        let interval = HistoryCalendarRange.day.interval(containing: date, calendar: calendar)
-        var seen = Set<String>()
-        return HistoryCalendarBuilder(calendar: calendar)
-            .build(interval: interval, sessions: sessions, breaks: [])
-            .items
-            .filter { $0.kind == .flow }
-            .map(\.colorHex)
-            .filter { seen.insert($0.lowercased()).inserted }
-            .prefix(4)
-            .map { $0 }
-    }
 }
 
 private struct IOSHistoryWeekStrip: View {
@@ -332,6 +327,11 @@ private struct IOSHistoryWeekStrip: View {
     let sessions: [FlowSession]
 
     var body: some View {
+        let activityIndex = IOSHistoryActivityColorIndex(
+            sessions: sessions,
+            calendar: calendar
+        )
+
         IOSScrollablePeriodStrip(
             selectedDate: $selectedDate,
             unit: .week,
@@ -349,7 +349,9 @@ private struct IOSHistoryWeekStrip: View {
                         .font(.caption.weight(.semibold))
                     Text(dayRangeText(interval))
                         .font(.body.monospacedDigit().weight(.semibold))
-                    IOSHistoryActivityDots(colors: activityColors(in: interval))
+                    IOSHistoryActivityDots(
+                        colors: activityIndex.byWeek[weekStart(for: anchor)] ?? []
+                    )
                 }
                 .foregroundStyle(isSelected ? Color.white : Color.primary)
                 .frame(maxWidth: .infinity, minHeight: 58)
@@ -369,16 +371,58 @@ private struct IOSHistoryWeekStrip: View {
         return "\(calendar.component(.day, from: interval.start))–\(calendar.component(.day, from: end))"
     }
 
-    private func activityColors(in interval: DateInterval) -> [String] {
-        var seen = Set<String>()
-        return HistoryCalendarBuilder(calendar: calendar)
-            .build(interval: interval, sessions: sessions, breaks: [])
-            .items
-            .filter { $0.kind == .flow }
-            .map(\.colorHex)
-            .filter { seen.insert($0.lowercased()).inserted }
-            .prefix(4)
-            .map { $0 }
+    private func weekStart(for date: Date) -> Date {
+        calendar.dateInterval(of: .weekOfYear, for: date)?.start
+            ?? calendar.startOfDay(for: date)
+    }
+}
+
+@MainActor
+private struct IOSHistoryActivityColorIndex {
+    private(set) var byDay: [Date: [String]] = [:]
+    private(set) var byWeek: [Date: [String]] = [:]
+    private var seenByDay: [Date: Set<String>] = [:]
+    private var seenByWeek: [Date: Set<String>] = [:]
+
+    init(sessions: [FlowSession], calendar: Calendar) {
+        for session in sessions
+        where session.status != .interrupted && session.resolvedActualFocusDurationSeconds > 0 {
+            if session.resolvedSegments.isEmpty {
+                append(
+                    colorHex: session.direction?.colorHex ?? "#8E8E93",
+                    at: session.startedAt,
+                    calendar: calendar
+                )
+                continue
+            }
+
+            for segment in session.resolvedSegments where segment.resolvedFocusSeconds > 0 {
+                append(
+                    colorHex: segment.direction?.colorHex ?? "#8E8E93",
+                    at: segment.startedAt,
+                    calendar: calendar
+                )
+            }
+        }
+    }
+
+    private mutating func append(
+        colorHex: String,
+        at date: Date,
+        calendar: Calendar
+    ) {
+        let normalizedColor = colorHex.lowercased()
+        let day = calendar.startOfDay(for: date)
+        let week = calendar.dateInterval(of: .weekOfYear, for: date)?.start ?? day
+
+        if seenByDay[day, default: []].insert(normalizedColor).inserted,
+           byDay[day, default: []].count < 4 {
+            byDay[day, default: []].append(colorHex)
+        }
+        if seenByWeek[week, default: []].insert(normalizedColor).inserted,
+           byWeek[week, default: []].count < 4 {
+            byWeek[week, default: []].append(colorHex)
+        }
     }
 }
 

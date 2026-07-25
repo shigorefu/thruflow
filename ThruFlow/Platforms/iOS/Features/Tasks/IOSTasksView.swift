@@ -136,21 +136,25 @@ struct IOSTasksView: View {
         .task {
             isClosing = false
             showsComposer = false
-            ensureRequiredTodos()
+            ensureRequiredTodos(reconcilesDuplicates: true)
             await presentComposer()
+        }
+        .task(id: requiredTodoMaterializationID) {
+            do {
+                try await Task.sleep(for: .milliseconds(180))
+            } catch {
+                return
+            }
+            guard !Task.isCancelled else { return }
+            ensureRequiredTodos(reconcilesDuplicates: false)
         }
         .onDisappear {
             showsComposer = false
             isClosing = false
         }
-        .onChange(of: range) { _, _ in
-            ensureRequiredTodos()
+        .onChange(of: directions.map(\.updatedAt)) { _, _ in
+            ensureRequiredTodos(reconcilesDuplicates: true)
         }
-        .onChange(of: selectedDate) { _, _ in
-            ensureRequiredTodos()
-        }
-        .onChange(of: directions.map(\.updatedAt)) { _, _ in ensureRequiredTodos() }
-        .onChange(of: todos.count) { _, _ in ensureRequiredTodos() }
     }
 
     @MainActor
@@ -517,7 +521,18 @@ struct IOSTasksView: View {
         }
     }
 
-    private func ensureRequiredTodos(now: Date = .now) {
+    private var requiredTodoMaterializationID: RequiredTodoMaterializationID {
+        RequiredTodoMaterializationID(
+            selectedDate: calendar.startOfDay(for: selectedDate),
+            rangeRawValue: range.rawValue,
+            todoCount: todos.count
+        )
+    }
+
+    private func ensureRequiredTodos(
+        now: Date = .now,
+        reconcilesDuplicates: Bool
+    ) {
         if DefaultDirections.existingTaskInbox(in: directions) == nil {
             modelContext.insert(DefaultDirections.makeTaskInbox())
         }
@@ -532,7 +547,9 @@ struct IOSTasksView: View {
             directions: activeDirections,
             dates: dates,
             modelContext: modelContext,
-            now: now
+            now: now,
+            knownTodos: todos,
+            reconcilesDuplicates: reconcilesDuplicates
         )
     }
 
@@ -560,6 +577,8 @@ private struct IOSWeekDateStrip: View {
     let filter: TaskCalendarFilter
 
     var body: some View {
+        let colorsByDay = indicatorColorsByDay
+
         IOSScrollablePeriodStrip(
             selectedDate: $selectedDate,
             unit: .day,
@@ -577,7 +596,7 @@ private struct IOSWeekDateStrip: View {
                         .font(.body.weight(.semibold))
                         .monospacedDigit()
                     HStack(spacing: 2) {
-                        ForEach(indicatorColors(on: date), id: \.self) { colorHex in
+                        ForEach(colorsByDay[calendar.startOfDay(for: date)] ?? [], id: \.self) { colorHex in
                             Circle()
                                 .fill(Color(hex: colorHex))
                                 .frame(width: 4, height: 4)
@@ -598,14 +617,24 @@ private struct IOSWeekDateStrip: View {
         }
     }
 
-    private func indicatorColors(on date: Date) -> [String] {
-        var seen = Set<String>()
-        return todos
-            .filter { TodayTodoFilter(calendar: calendar).includes($0, on: date) && filter.includes($0) }
-            .compactMap { $0.direction?.colorHex }
-            .filter { seen.insert($0.lowercased()).inserted }
-            .prefix(4)
-            .map { $0 }
+    private var indicatorColorsByDay: [Date: [String]] {
+        var colorsByDay: [Date: [String]] = [:]
+        var seenByDay: [Date: Set<String>] = [:]
+
+        for todo in todos where filter.includes(todo) && !todo.isArchived && !todo.isDeleted {
+            guard let scheduledDate = todo.scheduledDate,
+                  let colorHex = todo.direction?.colorHex else {
+                continue
+            }
+            let day = calendar.startOfDay(for: scheduledDate)
+            let normalizedColor = colorHex.lowercased()
+            guard seenByDay[day, default: []].insert(normalizedColor).inserted,
+                  colorsByDay[day, default: []].count < 4 else {
+                continue
+            }
+            colorsByDay[day, default: []].append(colorHex)
+        }
+        return colorsByDay
     }
 }
 
@@ -618,6 +647,8 @@ private struct IOSWeekCardStrip: View {
     let filter: TaskCalendarFilter
 
     var body: some View {
+        let colorsByWeek = indicatorColorsByWeek
+
         IOSScrollablePeriodStrip(
             selectedDate: $selectedDate,
             unit: .week,
@@ -637,7 +668,7 @@ private struct IOSWeekCardStrip: View {
                         .font(.body.monospacedDigit().weight(.semibold))
 
                     HStack(spacing: 2) {
-                        ForEach(indicatorColors(in: dates), id: \.self) { colorHex in
+                        ForEach(colorsByWeek[weekStart(for: anchor)] ?? [], id: \.self) { colorHex in
                             Circle()
                                 .fill(Color(hex: colorHex))
                                 .frame(width: 4, height: 4)
@@ -673,19 +704,36 @@ private struct IOSWeekCardStrip: View {
         return "\(calendar.component(.day, from: first))–\(calendar.component(.day, from: last))"
     }
 
-    private func indicatorColors(in dates: [Date]) -> [String] {
-        var seen = Set<String>()
-        return todos
-            .filter { todo in
-                filter.includes(todo) && dates.contains { date in
-                    TodayTodoFilter(calendar: calendar).includes(todo, on: date)
-                }
+    private var indicatorColorsByWeek: [Date: [String]] {
+        var colorsByWeek: [Date: [String]] = [:]
+        var seenByWeek: [Date: Set<String>] = [:]
+
+        for todo in todos where filter.includes(todo) && !todo.isArchived && !todo.isDeleted {
+            guard let scheduledDate = todo.scheduledDate,
+                  let colorHex = todo.direction?.colorHex else {
+                continue
             }
-            .compactMap { $0.direction?.colorHex }
-            .filter { seen.insert($0.lowercased()).inserted }
-            .prefix(4)
-            .map { $0 }
+            let week = weekStart(for: scheduledDate)
+            let normalizedColor = colorHex.lowercased()
+            guard seenByWeek[week, default: []].insert(normalizedColor).inserted,
+                  colorsByWeek[week, default: []].count < 4 else {
+                continue
+            }
+            colorsByWeek[week, default: []].append(colorHex)
+        }
+        return colorsByWeek
     }
+
+    private func weekStart(for date: Date) -> Date {
+        calendar.dateInterval(of: .weekOfYear, for: date)?.start
+            ?? calendar.startOfDay(for: date)
+    }
+}
+
+private struct RequiredTodoMaterializationID: Hashable {
+    let selectedDate: Date
+    let rangeRawValue: String
+    let todoCount: Int
 }
 
 private struct IOSGroupedTodos {

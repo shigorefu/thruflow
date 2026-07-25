@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftData
 import Testing
 @testable import ThruFlow
 
@@ -349,6 +350,48 @@ struct TodoTests {
 
         #expect(planner.shouldAppearToday(direction, on: monday))
         #expect(!planner.shouldAppearToday(direction, on: tuesday))
+    }
+
+    @Test @MainActor func lightweightHabitMaterializationDoesNotReconcileHistory() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let schema = Schema([
+            Direction.self,
+            Todo.self,
+            FlowSession.self,
+            FlowSegment.self,
+            FlowBreak.self,
+        ])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let date = Date(timeIntervalSince1970: 4 * 86_400)
+        let direction = Direction(
+            name: "読書",
+            type: .habit,
+            goalTarget: 1,
+            goalPeriod: .daily,
+            goalUnit: .occurrences,
+            goalSchedule: .everyDay
+        )
+        let first = Todo(title: "", direction: direction, scheduledDate: date)
+        let duplicate = Todo(title: "", direction: direction, scheduledDate: date)
+        context.insert(direction)
+        context.insert(first)
+        context.insert(duplicate)
+
+        let changed = try HabitTodoMaterializer(calendar: calendar).materialize(
+            directions: [direction],
+            dates: [date],
+            modelContext: context,
+            now: date,
+            knownTodos: [first, duplicate],
+            reconcilesDuplicates: false
+        )
+
+        #expect(!changed)
+        #expect(!first.isDeleted)
+        #expect(!duplicate.isDeleted)
     }
 
     private func weeklyHabitDirection(target: Int = 3) -> Direction {

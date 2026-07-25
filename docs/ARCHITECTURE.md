@@ -68,6 +68,9 @@ Platforms/iOS  ──┘              │
   integration, drag-and-drop presentation, and the current desktop layouts.
 - `Platforms/iOS` owns the Flow-first iPhone navigation shell and compact Flow,
   Tasks, History, Directions, Statistics, and Settings presentations.
+- iOS date navigation owns a bounded virtual window around the selected day or
+  week. It recenters only after scrolling settles, so infinite-feeling paging
+  does not retain thousands of date-card views.
 - `ThruFlowLiveActivity` owns Lock Screen, Dynamic Island, and Home Screen
   widget rendering. It does not open SwiftData or create another timer state
   machine.
@@ -107,6 +110,10 @@ Each platform owns its composition root:
 - Views transform user interaction into calls to application/domain operations.
 - Product calculations, validation, scheduling, reconciliation, statistics,
   and timer transitions belong in `Shared/Domain/Logic`.
+- High-frequency presentation state such as scroll position must not directly
+  start full-store reconciliation or persistence writes. iOS date strips index
+  visible markers once, debounce Habit materialization, and reserve duplicate
+  and Flow-history reconciliation for entry or structural data changes.
 - Persistence orchestration shared by platforms belongs in
   `Shared/Application`; direct platform presentation does not.
 - Reusable UI belongs in `Shared/UI` only when behavior and layout are genuinely

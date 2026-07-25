@@ -11,10 +11,10 @@ enum IOSPeriodStripUnit {
         }
     }
 
-    var itemRadius: Int {
+    var windowRadius: Int {
         switch self {
-        case .day: 3_650
-        case .week: 520
+        case .day: 21
+        case .week: 12
         }
     }
 
@@ -74,7 +74,7 @@ struct IOSScrollablePeriodStrip<Content: View>: View {
 
     private var dates: [Date] {
         let reference = unit.normalized(anchorDate, calendar: calendar)
-        return (-unit.itemRadius...unit.itemRadius).compactMap { offset in
+        return (-unit.windowRadius...unit.windowRadius).compactMap { offset in
             calendar.date(
                 byAdding: unit.calendarComponent,
                 value: offset,
@@ -131,6 +131,9 @@ struct IOSScrollablePeriodStrip<Content: View>: View {
         .onChange(of: selectedDate) { _, date in
             invalidatePendingSelection()
             let normalizedDate = unit.normalized(date, calendar: calendar)
+            if !dates.contains(normalizedDate) {
+                recenterWindow(around: normalizedDate)
+            }
             guard scrollTarget != normalizedDate else { return }
             scrollTarget = normalizedDate
         }
@@ -175,13 +178,27 @@ struct IOSScrollablePeriodStrip<Content: View>: View {
         guard let date = pendingSelection else { return }
         pendingSelection = nil
         guard !unit.contains(date, selectedDate: selectedDate, calendar: calendar) else {
+            recenterWindow(around: date)
             return
         }
         selectedDate = date
+        recenterWindow(around: date)
     }
 
     private func invalidatePendingSelection() {
         fallbackCommitRevision += 1
         pendingSelection = nil
+    }
+
+    private func recenterWindow(around date: Date) {
+        let normalizedDate = unit.normalized(date, calendar: calendar)
+        guard anchorDate != normalizedDate else { return }
+
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            anchorDate = normalizedDate
+            scrollTarget = normalizedDate
+        }
     }
 }

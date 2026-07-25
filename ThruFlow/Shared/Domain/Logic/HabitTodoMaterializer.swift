@@ -15,27 +15,38 @@ struct HabitTodoMaterializer {
         directions: [Direction],
         dates: [Date],
         modelContext: ModelContext,
-        now: Date = .now
+        now: Date = .now,
+        knownTodos: [Todo]? = nil,
+        reconcilesDuplicates: Bool = true
     ) throws -> Bool {
-        var todos = try modelContext.fetch(FetchDescriptor<Todo>())
-        let sessions = try modelContext.fetch(FetchDescriptor<FlowSession>())
-        let segments = try modelContext.fetch(FetchDescriptor<FlowSegment>())
-        let reconciliation = HabitTodoReconciler(calendar: calendar).reconcile(
-            todos: todos,
-            sessions: sessions,
-            segments: segments,
-            now: now
-        )
-        var changed = reconciliation.changed
+        var todos: [Todo]
+        if let knownTodos {
+            todos = knownTodos
+        } else {
+            todos = try modelContext.fetch(FetchDescriptor<Todo>())
+        }
+        var changed = false
 
-        if reconciliation.changed {
-            FlowProgressReconciler().reconcile(
-                todos: reconciliation.canonicalTodos.map(Optional.some),
-                directions: reconciliation.affectedDirections.map(Optional.some),
-                modelContext: modelContext,
+        if reconcilesDuplicates {
+            let sessions = try modelContext.fetch(FetchDescriptor<FlowSession>())
+            let segments = try modelContext.fetch(FetchDescriptor<FlowSegment>())
+            let reconciliation = HabitTodoReconciler(calendar: calendar).reconcile(
+                todos: todos,
+                sessions: sessions,
+                segments: segments,
                 now: now
             )
-            todos = try modelContext.fetch(FetchDescriptor<Todo>())
+            changed = reconciliation.changed
+
+            if reconciliation.changed {
+                FlowProgressReconciler().reconcile(
+                    todos: reconciliation.canonicalTodos.map(Optional.some),
+                    directions: reconciliation.affectedDirections.map(Optional.some),
+                    modelContext: modelContext,
+                    now: now
+                )
+                todos = try modelContext.fetch(FetchDescriptor<Todo>())
+            }
         }
 
         var knownTodos = todos.filter { !$0.isDeleted && !$0.isArchived }
