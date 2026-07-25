@@ -26,6 +26,9 @@ struct IOSHistoryView: View {
             calendarToolbar
             Divider()
             historyContent
+                .iosPeriodSwipeNavigation(isEnabled: allowsContentPeriodSwipe) { offset in
+                    navigatePeriod(by: offset)
+                }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .navigationTitle(String(localized: "履歴"))
@@ -246,6 +249,23 @@ struct IOSHistoryView: View {
             return Date.now.addingTimeInterval(-25 * 60)
         }
         return calendar.date(bySettingHour: 9, minute: 0, second: 0, of: selectedDate) ?? selectedDate
+    }
+
+    private var allowsContentPeriodSwipe: Bool {
+        guard range != .month else { return false }
+        return range != .week || selectedMode != .calendar
+    }
+
+    private func navigatePeriod(by offset: Int) {
+        let component: Calendar.Component = range == .week ? .weekOfYear : .day
+        guard let date = calendar.date(
+            byAdding: component,
+            value: offset,
+            to: selectedDate
+        ) else {
+            return
+        }
+        selectedDate = calendar.startOfDay(for: date)
     }
 }
 

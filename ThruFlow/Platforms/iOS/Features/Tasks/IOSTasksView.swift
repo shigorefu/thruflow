@@ -54,6 +54,9 @@ struct IOSTasksView: View {
             controls
             Divider()
             taskContent
+                .iosPeriodSwipeNavigation(isEnabled: range != .month) { offset in
+                    navigatePeriod(by: offset)
+                }
         }
         .background(Color.primary.opacity(0.025).ignoresSafeArea())
         .navigationTitle(String(localized: "タスク"))
@@ -168,6 +171,18 @@ struct IOSTasksView: View {
         isClosing = true
         showsComposer = false
         close()
+    }
+
+    private func navigatePeriod(by offset: Int) {
+        let component: Calendar.Component = range == .sevenDays ? .weekOfYear : .day
+        guard let date = calendar.date(
+            byAdding: component,
+            value: offset,
+            to: selectedDate
+        ) else {
+            return
+        }
+        selectedDate = calendar.startOfDay(for: date)
     }
 
     private var backlogMenuContent: some View {
