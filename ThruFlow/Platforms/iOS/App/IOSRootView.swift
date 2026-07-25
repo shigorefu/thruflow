@@ -97,7 +97,6 @@ struct IOSRootView: View {
                 NavigationStack {
                     destination(for: route)
                 }
-                .toolbar(route == .tasks ? .hidden : .visible, for: .tabBar)
                 .tabItem {
                     Label(route.title, systemImage: route.systemImage)
                 }
@@ -114,7 +113,7 @@ struct IOSRootView: View {
         case .flow:
             IOSFlowView(open: open)
         case .tasks:
-            IOSTasksView { open(.flow) }
+            IOSTasksView()
         case .history:
             IOSHistoryView(selectedDate: $selectedHistoryDate)
         case .directions:

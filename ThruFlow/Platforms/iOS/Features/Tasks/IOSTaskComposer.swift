@@ -6,6 +6,7 @@ struct IOSTaskComposer: View {
     @Environment(\.modelContext) private var modelContext
 
     let directions: [Direction]
+    var onClose: (() -> Void)? = nil
 
     @State private var title = ""
     @State private var directionID: UUID?
@@ -39,14 +40,31 @@ struct IOSTaskComposer: View {
             }
 
             VStack(spacing: 10) {
-                TextField(String(localized: "タスクを入力してください"), text: $title, axis: .vertical)
-                    .lineLimit(1...4)
-                    .focused($isFocused)
-                    .submitLabel(.send)
-                    .onSubmit(submit)
-                    .onChange(of: title) { _, _ in
-                        applyRecognizedQuickInput()
+                HStack(alignment: .top, spacing: 8) {
+                    TextField(String(localized: "タスクを入力してください"), text: $title, axis: .vertical)
+                        .lineLimit(1...4)
+                        .focused($isFocused)
+                        .submitLabel(.send)
+                        .onSubmit(submit)
+                        .onChange(of: title) { _, _ in
+                            applyRecognizedQuickInput()
+                        }
+
+                    if let onClose {
+                        Button {
+                            isFocused = false
+                            onClose()
+                        } label: {
+                            Image(systemName: "xmark")
+                                .font(.caption.weight(.bold))
+                                .frame(width: 28, height: 28)
+                                .contentShape(Circle())
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(.secondary)
+                        .accessibilityLabel(String(localized: "閉じる"))
                     }
+                }
 
                 HStack(spacing: 6) {
                     ScrollView(.horizontal) {
@@ -87,6 +105,8 @@ struct IOSTaskComposer: View {
         .task {
             directionID = nil
             scheduledDate = calendar.startOfDay(for: .now)
+            await Task.yield()
+            isFocused = true
         }
         .animation(.snappy(duration: 0.22), value: autocompleteSuggestions.map(\.id))
         .sheet(isPresented: $showsDatePicker) {

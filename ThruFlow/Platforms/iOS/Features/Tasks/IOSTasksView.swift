@@ -8,8 +8,6 @@ struct IOSTasksView: View {
     @Query(sort: \Todo.sortIndex) private var todos: [Todo]
     @Query(sort: \Direction.sortIndex) private var directions: [Direction]
 
-    let close: () -> Void
-
     @State private var selectedDate = Calendar.current.startOfDay(for: .now)
     @State private var range = TaskCalendarRange.oneDay
     @State private var filter = TaskCalendarFilter.all
@@ -19,12 +17,7 @@ struct IOSTasksView: View {
     @State private var showsBacklogMenu = false
     @State private var searchText = ""
     @State private var showsComposer = false
-    @State private var isClosing = false
     @State private var backlogMoveError: String?
-
-    init(close: @escaping () -> Void = {}) {
-        self.close = close
-    }
 
     private var calendarBuilder: TaskCalendarBuilder { TaskCalendarBuilder(calendar: calendar) }
     private var rescheduleService: TaskRescheduleService { TaskRescheduleService(calendar: calendar) }
@@ -69,12 +62,6 @@ struct IOSTasksView: View {
             prompt: Text(String(localized: "検索"))
         )
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Button(action: closeTasks) {
-                    Label(String(localized: "Flow"), systemImage: "chevron.left")
-                }
-            }
-
             ToolbarItem(placement: .topBarTrailing) {
                 ZStack(alignment: .topTrailing) {
                     Button {
@@ -98,8 +85,26 @@ struct IOSTasksView: View {
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if showsComposer {
-                IOSTaskComposer(directions: activeDirections)
+                IOSTaskComposer(
+                    directions: activeDirections,
+                    onClose: dismissComposer
+                )
                     .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .overlay(alignment: .bottomTrailing) {
+            if !showsComposer {
+                Button(action: presentComposer) {
+                    Image(systemName: "plus")
+                        .font(.title3.weight(.semibold))
+                        .frame(width: 48, height: 48)
+                }
+                .buttonStyle(.borderedProminent)
+                .buttonBorderShape(.circle)
+                .padding(.trailing, 16)
+                .padding(.bottom, 14)
+                .transition(.scale(scale: 0.85).combined(with: .opacity))
+                .accessibilityLabel(String(localized: "タスクを追加"))
             }
         }
         .sheet(item: $editorMode) { mode in
@@ -133,10 +138,7 @@ struct IOSTasksView: View {
             Text(backlogMoveError ?? "")
         }
         .task {
-            isClosing = false
-            showsComposer = false
             ensureRequiredTodos(reconcilesDuplicates: true)
-            await presentComposer()
         }
         .task(id: requiredTodoMaterializationID) {
             do {
@@ -149,34 +151,22 @@ struct IOSTasksView: View {
         }
         .onDisappear {
             showsComposer = false
-            isClosing = false
         }
         .onChange(of: directions.map(\.updatedAt)) { _, _ in
             ensureRequiredTodos(reconcilesDuplicates: true)
         }
     }
 
-    @MainActor
-    private func presentComposer() async {
-        guard !showsComposer, !isClosing else { return }
-
-        do {
-            try await Task.sleep(for: .milliseconds(220))
-        } catch {
-            return
-        }
-
-        guard !isClosing else { return }
-        withAnimation(.easeOut(duration: 0.28)) {
+    private func presentComposer() {
+        withAnimation(.snappy(duration: 0.28)) {
             showsComposer = true
         }
     }
 
-    private func closeTasks() {
-        guard !isClosing else { return }
-        isClosing = true
-        showsComposer = false
-        close()
+    private func dismissComposer() {
+        withAnimation(.snappy(duration: 0.24)) {
+            showsComposer = false
+        }
     }
 
     private func navigatePeriod(by offset: Int) {

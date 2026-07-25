@@ -141,10 +141,11 @@ remains visible and marks the active
 destination across five items: `Flow`, `タスク`, `履歴`, `方向`, and `統計`.
 On iOS 26 it uses the native Liquid Glass selection indicator and remains
 full-size while content scrolls; iOS 17–25 retain the system tab-bar appearance.
-When `タスク` opens,
-the system tab bar disappears first and the messenger composer then slides up
-from the bottom. On return, the composer slides down completely before the
-system tab bar reappears and `Flow` becomes active.
+The system tab bar remains visible in `タスク`, matching the other primary
+destinations. A separate circular `+` command in the lower trailing corner
+opens the messenger composer and focuses its input. The composer includes an
+explicit `×` command that dismisses the keyboard and returns to the task list
+without creating a Task.
 `設定` is reached from the trailing More menu.
 
 The first Flow viewport presents the softened animated stream and Elastic
@@ -161,8 +162,8 @@ cards in the vertical dashboard. The iPhone owns this presentation while reusing
 persistence, timer state, dashboard projections, progress logic, and
 localization.
 
-Opening `タスク` hides the system tab bar and then slides a material-backed
-messenger composer in from the same bottom edge. Shared quick-input tokens (`[ ]`, `[1b]`,
+Opening the `+` command in `タスク` slides a material-backed messenger composer
+in above the persistent system tab bar. Shared quick-input tokens (`[ ]`, `[1b]`,
 `[25m]`, `@`, `!`, `/`, and `#`) update the composer controls while typing, and
 contextual autocomplete is shown above the field. The date control supports
 Today, Tomorrow, No Date, and an arbitrary date through the native graphical
