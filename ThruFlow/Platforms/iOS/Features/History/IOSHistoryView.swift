@@ -26,7 +26,10 @@ struct IOSHistoryView: View {
             calendarToolbar
             Divider()
             historyContent
-                .iosPeriodSwipeNavigation(isEnabled: allowsContentPeriodSwipe) { offset in
+                .iosPeriodSwipeNavigation(
+                    pageID: selectedDate,
+                    isEnabled: allowsContentPeriodSwipe
+                ) { offset in
                     navigatePeriod(by: offset)
                 }
         }

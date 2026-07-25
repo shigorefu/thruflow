@@ -185,7 +185,8 @@ Task list below keeps independent vertical scrolling. Native search filters the
 visible period by Task title, Direction name/emoji, or hashtag. macOS exposes
 matching Task search in the toolbar. Days without visible Tasks for the current
 filter or search are omitted. A horizontal swipe over the Task content card
-changes to the adjacent day or week on release; the direction check prevents
+animates the current page out in the swipe direction and the adjacent day or
+week in from the opposite edge after release; the direction check prevents
 vertical list scrolling from triggering period navigation. The Flow
 player context is a
 visually bounded, Direction-tinted system button so its picker affordance stays
@@ -200,7 +201,7 @@ scrolling period strips across the `Flow`, `タスク`, and `方向` modes, whil
 timeline or aggregate content below keeps its own scrolling behavior. Their tap
 and settled-swipe selection semantics match `タスク`. Native History search
 filters the selected period by record title, Direction, emoji, hashtag, intent,
-or memo on both iPhone and macOS. Day content and week summaries can also move
+or memo on both iPhone and macOS. Day content and week summaries can also animate
 between adjacent periods with a horizontal swipe. Calendar-week content retains
 its own horizontal timeline gesture instead. Flow
 and rest remain separate calendar records and

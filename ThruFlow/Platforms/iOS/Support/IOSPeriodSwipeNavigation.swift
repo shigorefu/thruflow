@@ -1,13 +1,22 @@
 import SwiftUI
 
-private struct IOSPeriodSwipeNavigationModifier: ViewModifier {
+private struct IOSPeriodSwipeNavigationModifier<PageID: Hashable>: ViewModifier {
+    let pageID: PageID
     let isEnabled: Bool
     let onNavigate: (Int) -> Void
+
+    @State private var navigationDirection = 1
 
     @ViewBuilder
     func body(content: Content) -> some View {
         if isEnabled {
-            content
+            ZStack(alignment: .top) {
+                content
+                    .id(pageID)
+                    .transition(pageTransition)
+            }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .clipped()
                 .contentShape(Rectangle())
                 .simultaneousGesture(
                     DragGesture(minimumDistance: 24)
@@ -17,22 +26,37 @@ private struct IOSPeriodSwipeNavigationModifier: ViewModifier {
                             guard abs(horizontalDistance) >= 44 else { return }
                             guard abs(horizontalDistance) > abs(verticalDistance) * 1.25 else { return }
 
-                            onNavigate(horizontalDistance < 0 ? 1 : -1)
+                            let direction = horizontalDistance < 0 ? 1 : -1
+                            navigationDirection = direction
+                            withAnimation(.snappy(duration: 0.28)) {
+                                onNavigate(direction)
+                            }
                         }
                 )
         } else {
             content
         }
     }
+
+    private var pageTransition: AnyTransition {
+        let insertionEdge: Edge = navigationDirection > 0 ? .trailing : .leading
+        let removalEdge: Edge = navigationDirection > 0 ? .leading : .trailing
+        return .asymmetric(
+            insertion: .move(edge: insertionEdge).combined(with: .opacity),
+            removal: .move(edge: removalEdge).combined(with: .opacity)
+        )
+    }
 }
 
 extension View {
-    func iosPeriodSwipeNavigation(
+    func iosPeriodSwipeNavigation<PageID: Hashable>(
+        pageID: PageID,
         isEnabled: Bool = true,
         onNavigate: @escaping (Int) -> Void
     ) -> some View {
         modifier(
             IOSPeriodSwipeNavigationModifier(
+                pageID: pageID,
                 isEnabled: isEnabled,
                 onNavigate: onNavigate
             )

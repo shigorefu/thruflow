@@ -54,7 +54,10 @@ struct IOSTasksView: View {
             controls
             Divider()
             taskContent
-                .iosPeriodSwipeNavigation(isEnabled: range != .month) { offset in
+                .iosPeriodSwipeNavigation(
+                    pageID: selectedDate,
+                    isEnabled: range != .month
+                ) { offset in
                     navigatePeriod(by: offset)
                 }
         }
