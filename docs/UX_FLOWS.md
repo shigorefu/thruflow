@@ -174,15 +174,14 @@ progress, and native Task editing. Its compact header uses an icon-only system
 filter, centered `日 | 週 | 月`, a separate trailing `今日` action, and one
 vertical More button. More carries the combined nonzero inbox badge and opens
 `期限切れ N` and `日付なし N`; the same vertical More symbol is used throughout
-the iPhone app. Japanese day cells use bare numbers. Interactive horizontal
-paging reuses three pages indefinitely: the adjacent day follows the finger
-during the drag, then becomes the new center page. Week presents
-previous/current/next week cards (`月` and the seven-day range) above a vertical
-list of day sections; the complete list uses the same infinite paging by whole
-weeks. The swipe is recognized across the complete period surface while
-vertical Task scrolling remains independent. Native search filters the visible
-period by Task title, Direction name/emoji, or hashtag. Days without visible
-Tasks for the current filter or search are omitted. The Flow
+the iPhone app. Japanese day cells use bare numbers. The upper day strip is a
+native horizontally scrolling, view-aligned list of date cards. Week uses the
+same system behavior for cards containing the month and seven-day range. These
+strips continuously expose adjacent periods without installing a gesture on
+the full screen; the Task list below keeps independent vertical scrolling.
+Native search filters the visible period by Task title, Direction name/emoji,
+or hashtag. macOS exposes matching Task search in the toolbar. Days without
+visible Tasks for the current filter or search are omitted. The Flow
 player context is a
 visually bounded, Direction-tinted system button so its picker affordance stays
 clear. `履歴` provides touch-native `日 | 週 | 月` calendar ranges:
@@ -191,9 +190,11 @@ scrollable day columns, and month uses Apple Calendar-style numeric days with
 Direction-colored activity dots. Its period navigation matches `タスク`: `日`
 shows seven date cards, `週` shows previous/current/next week cards, and `月`
 shows the month calendar above the selected History mode. These controls mark
-only recorded Flow activity. Day and week use the same three-page interactive
-infinite paging across the `Flow`, `タスク`, and `方向` modes. Native History
-search filters the selected period by record title, Direction, or emoji. Flow
+only recorded Flow activity. Day and week use the same native horizontally
+scrolling period strips across the `Flow`, `タスク`, and `方向` modes, while the
+timeline or aggregate content below keeps its own scrolling behavior. Native
+History search filters the selected period by record title, Direction, emoji,
+hashtag, intent, or memo on both iPhone and macOS. Flow
 and rest remain separate calendar records and
 tapping one opens its details. `方向` edits its emoji through a dedicated
 searchable picker instead of a text-field leading icon. The standalone iPhone

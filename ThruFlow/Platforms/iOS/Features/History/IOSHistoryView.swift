@@ -15,27 +15,17 @@ struct IOSHistoryView: View {
     @State private var visibleKinds = Set(HistoryCalendarItemKind.allCases)
     @State private var selectedItem: HistoryCalendarItem?
     @State private var isAddingTaskRecord = false
-    @State private var periodPageAnchor = Calendar.current.startOfDay(for: .now)
-    @State private var periodDragOffset: CGFloat = 0
-    @State private var periodTransitionID = UUID()
     @State private var searchText = ""
 
     init(selectedDate: Binding<Date>) {
         _selectedDate = selectedDate
-        _periodPageAnchor = State(
-            initialValue: Calendar.current.startOfDay(for: selectedDate.wrappedValue)
-        )
     }
 
     var body: some View {
-        GeometryReader { proxy in
-            VStack(spacing: 0) {
-                calendarToolbar
-                Divider()
-                historyContent
-            }
-            .contentShape(Rectangle())
-            .simultaneousGesture(periodDragGesture(pageWidth: max(proxy.size.width, 1)))
+        VStack(spacing: 0) {
+            calendarToolbar
+            Divider()
+            historyContent
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .navigationTitle(String(localized: "履歴"))
@@ -43,7 +33,7 @@ struct IOSHistoryView: View {
         .searchable(
             text: $searchText,
             placement: .navigationBarDrawer(displayMode: .always),
-            prompt: Text("検索")
+            prompt: Text(String(localized: "検索"))
         )
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -59,14 +49,6 @@ struct IOSHistoryView: View {
                 startedAt: defaultTaskRecordStart,
                 onDismiss: { isAddingTaskRecord = false }
             )
-        }
-        .onChange(of: range) { _, _ in
-            recenterPeriodPager(on: selectedDate)
-        }
-        .onChange(of: selectedDate) { _, date in
-            if !calendar.isDate(date, inSameDayAs: periodPageAnchor) {
-                recenterPeriodPager(on: date)
-            }
         }
     }
 
@@ -101,13 +83,7 @@ struct IOSHistoryView: View {
 
     @ViewBuilder
     private var historyContent: some View {
-        if let component = periodComponent {
-            periodPager(component: component) { date in
-                historyPageContent(for: date)
-            }
-        } else {
-            historyPageContent(for: selectedDate)
-        }
+        historyPageContent(for: selectedDate)
     }
 
     @ViewBuilder
@@ -156,131 +132,6 @@ struct IOSHistoryView: View {
         guard !query.isEmpty else { return true }
         return [item.title, item.subtitle, item.symbol]
             .contains { $0.localizedCaseInsensitiveContains(query) }
-    }
-
-    private func periodPager<Page: View>(
-        component: Calendar.Component,
-        @ViewBuilder page: @escaping (Date) -> Page
-    ) -> some View {
-        GeometryReader { proxy in
-            let pageWidth = max(proxy.size.width, 1)
-
-            HStack(spacing: 0) {
-                ForEach(-1...1, id: \.self) { offset in
-                    if let date = pageDate(
-                        from: periodPageAnchor,
-                        byAdding: component,
-                        value: offset
-                    ) {
-                        page(date)
-                            .frame(width: pageWidth)
-                    }
-                }
-            }
-            .frame(width: pageWidth * 3, alignment: .leading)
-            .offset(x: -pageWidth + periodDragOffset)
-        }
-        .clipped()
-    }
-
-    private var periodComponent: Calendar.Component? {
-        switch range {
-        case .day: .day
-        case .week: .weekOfYear
-        case .month: nil
-        }
-    }
-
-    private func pageDate(
-        from anchor: Date,
-        byAdding component: Calendar.Component,
-        value: Int
-    ) -> Date? {
-        calendar.date(byAdding: component, value: value, to: anchor)
-            .map { calendar.startOfDay(for: $0) }
-    }
-
-    private func periodDragGesture(pageWidth: CGFloat) -> some Gesture {
-        DragGesture(minimumDistance: 10)
-            .onChanged { value in
-                guard periodComponent != nil else { return }
-                guard abs(value.translation.width) > abs(value.translation.height) else { return }
-                periodDragOffset = min(max(value.translation.width, -pageWidth), pageWidth)
-            }
-            .onEnded { value in
-                guard let component = periodComponent else { return }
-                guard abs(value.translation.width) > abs(value.translation.height) else {
-                    resetPeriodDrag()
-                    return
-                }
-
-                let distanceThreshold = min(max(pageWidth * 0.14, 36), 72)
-                let projectedThreshold = pageWidth * 0.32
-                let shouldAdvance =
-                    abs(value.translation.width) >= distanceThreshold
-                    || abs(value.predictedEndTranslation.width) >= projectedThreshold
-
-                guard shouldAdvance else {
-                    resetPeriodDrag()
-                    return
-                }
-
-                let offset = value.translation.width < 0 ? 1 : -1
-                settlePeriodDrag(
-                    to: offset,
-                    pageWidth: pageWidth,
-                    component: component
-                )
-            }
-    }
-
-    private func resetPeriodDrag() {
-        withAnimation(.snappy(duration: 0.22)) {
-            periodDragOffset = 0
-        }
-    }
-
-    private func settlePeriodDrag(
-        to offset: Int,
-        pageWidth: CGFloat,
-        component: Calendar.Component
-    ) {
-        let transitionID = UUID()
-        periodTransitionID = transitionID
-
-        withAnimation(.snappy(duration: 0.22)) {
-            periodDragOffset = offset > 0 ? -pageWidth : pageWidth
-        }
-
-        Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(220))
-            guard transitionID == periodTransitionID,
-                  let date = pageDate(
-                    from: periodPageAnchor,
-                    byAdding: component,
-                    value: offset
-                  ) else {
-                return
-            }
-
-            var transaction = Transaction()
-            transaction.disablesAnimations = true
-            withTransaction(transaction) {
-                periodPageAnchor = date
-                selectedDate = date
-                periodDragOffset = 0
-            }
-        }
-    }
-
-    private func recenterPeriodPager(on date: Date) {
-        periodTransitionID = UUID()
-        var transaction = Transaction()
-        transaction.disablesAnimations = true
-        withTransaction(transaction) {
-            periodPageAnchor = calendar.startOfDay(for: date)
-            periodDragOffset = 0
-        }
     }
 
     private var modeMenu: some View {
@@ -405,36 +256,33 @@ private struct IOSHistoryDayStrip: View {
     @Binding var selectedDate: Date
     let sessions: [FlowSession]
 
-    private var dates: [Date] {
-        guard let interval = calendar.dateInterval(of: .weekOfYear, for: selectedDate) else { return [] }
-        return (0..<7).compactMap { calendar.date(byAdding: .day, value: $0, to: interval.start) }
-    }
-
     var body: some View {
-        HStack(spacing: 5) {
-            ForEach(dates, id: \.self) { date in
-                let isSelected = calendar.isDate(date, inSameDayAs: selectedDate)
-                Button {
-                    selectedDate = calendar.startOfDay(for: date)
-                } label: {
-                    VStack(spacing: 4) {
-                        Text(date.formatted(.dateTime.locale(locale).weekday(.narrow)))
-                            .font(.caption2.weight(.semibold))
-                        Text(verbatim: String(calendar.component(.day, from: date)))
-                            .font(.body.monospacedDigit().weight(.semibold))
-                        IOSHistoryActivityDots(colors: activityColors(on: date))
-                    }
-                    .foregroundStyle(isSelected ? Color.white : Color.primary)
-                    .frame(maxWidth: .infinity, minHeight: 55)
-                    .background(
-                        isSelected ? Color.accentColor : Color.primary.opacity(0.04),
-                        in: RoundedRectangle(cornerRadius: 10)
-                    )
-                    .contentShape(Rectangle())
+        IOSScrollablePeriodStrip(
+            selectedDate: $selectedDate,
+            unit: .day,
+            visibleItemCount: 7,
+            spacing: 5
+        ) { date, isSelected in
+            Button {
+                selectedDate = calendar.startOfDay(for: date)
+            } label: {
+                VStack(spacing: 4) {
+                    Text(date.formatted(.dateTime.locale(locale).weekday(.narrow)))
+                        .font(.caption2.weight(.semibold))
+                    Text(verbatim: String(calendar.component(.day, from: date)))
+                        .font(.body.monospacedDigit().weight(.semibold))
+                    IOSHistoryActivityDots(colors: activityColors(on: date))
                 }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(isSelected ? .isSelected : [])
+                .foregroundStyle(isSelected ? Color.white : Color.primary)
+                .frame(maxWidth: .infinity, minHeight: 55)
+                .background(
+                    isSelected ? Color.accentColor : Color.primary.opacity(0.04),
+                    in: RoundedRectangle(cornerRadius: 10)
+                )
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            .accessibilityAddTraits(isSelected ? .isSelected : [])
         }
     }
 
@@ -460,34 +308,34 @@ private struct IOSHistoryWeekStrip: View {
     let sessions: [FlowSession]
 
     var body: some View {
-        HStack(spacing: 6) {
-            ForEach(-1...1, id: \.self) { offset in
-                let anchor = calendar.date(byAdding: .weekOfYear, value: offset, to: selectedDate) ?? selectedDate
-                let interval = HistoryCalendarRange.week.interval(containing: anchor, calendar: calendar)
-                let isSelected = offset == 0
+        IOSScrollablePeriodStrip(
+            selectedDate: $selectedDate,
+            unit: .week,
+            visibleItemCount: 3,
+            spacing: 6
+        ) { anchor, isSelected in
+            let interval = HistoryCalendarRange.week.interval(containing: anchor, calendar: calendar)
 
-                Button {
-                    guard offset != 0 else { return }
-                    selectedDate = calendar.startOfDay(for: anchor)
-                } label: {
-                    VStack(spacing: 3) {
-                        Text(interval.start.formatted(.dateTime.locale(locale).month(.abbreviated)))
-                            .font(.caption.weight(.semibold))
-                        Text(dayRangeText(interval))
-                            .font(.body.monospacedDigit().weight(.semibold))
-                        IOSHistoryActivityDots(colors: activityColors(in: interval))
-                    }
-                    .foregroundStyle(isSelected ? Color.white : Color.primary)
-                    .frame(maxWidth: .infinity, minHeight: 58)
-                    .background(
-                        isSelected ? Color.accentColor : Color.primary.opacity(0.04),
-                        in: RoundedRectangle(cornerRadius: 10)
-                    )
-                    .contentShape(Rectangle())
+            Button {
+                selectedDate = calendar.startOfDay(for: anchor)
+            } label: {
+                VStack(spacing: 3) {
+                    Text(interval.start.formatted(.dateTime.locale(locale).month(.abbreviated)))
+                        .font(.caption.weight(.semibold))
+                    Text(dayRangeText(interval))
+                        .font(.body.monospacedDigit().weight(.semibold))
+                    IOSHistoryActivityDots(colors: activityColors(in: interval))
                 }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(isSelected ? .isSelected : [])
+                .foregroundStyle(isSelected ? Color.white : Color.primary)
+                .frame(maxWidth: .infinity, minHeight: 58)
+                .background(
+                    isSelected ? Color.accentColor : Color.primary.opacity(0.04),
+                    in: RoundedRectangle(cornerRadius: 10)
+                )
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            .accessibilityAddTraits(isSelected ? .isSelected : [])
         }
     }
 

@@ -30,6 +30,7 @@ struct TasksView: View {
     @State private var selectedDate = Calendar.current.startOfDay(for: .now)
     @State private var calendarRange: TaskCalendarRange = .oneDay
     @State private var taskFilter: TaskCalendarFilter = .all
+    @State private var searchText = ""
     @State private var moveError: String?
     @State private var backlogInspectorMode: MacTaskBacklogMode?
     @AppStorage("today.groupOrder") private var groupOrderRaw = TasksTodoGroup.defaultOrderRaw
@@ -51,7 +52,9 @@ struct TasksView: View {
     }
 
     private var selectedDateTodos: [Todo] {
-        todos.filter { filter.includes($0, on: selectedDate) && taskFilter.includes($0) }
+        searchFilteredTodos.filter {
+            filter.includes($0, on: selectedDate) && taskFilter.includes($0)
+        }
     }
 
     private var selectedDateGroups: [TasksTodoGroup] {
@@ -71,7 +74,13 @@ struct TasksView: View {
     }
 
     private var visibleOverdueTodos: [Todo] {
-        backlogSnapshot.overdue.filter(taskFilter.includes)
+        backlogSnapshot.overdue
+            .filter(taskFilter.includes)
+            .filter(matchesSearch)
+    }
+
+    private var searchFilteredTodos: [Todo] {
+        todos.filter(matchesSearch)
     }
 
     var body: some View {
@@ -87,6 +96,11 @@ struct TasksView: View {
             tasksWorkspace
         }
         .navigationTitle(String(localized: "タスク"))
+        .searchable(
+            text: $searchText,
+            placement: .toolbar,
+            prompt: Text(String(localized: "検索"))
+        )
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 HStack(spacing: 10) {
@@ -175,7 +189,7 @@ struct TasksView: View {
             VStack(spacing: 0) {
                 TaskDayStrip(
                     selectedDate: selectedDateBinding,
-                    todos: todos.filter { !$0.isArchived && !$0.isDeleted },
+                    todos: searchFilteredTodos.filter { !$0.isArchived && !$0.isDeleted },
                     filter: taskFilter,
                     onDropPayload: moveTaskPayload
                 )
@@ -256,7 +270,7 @@ struct TasksView: View {
             TaskMultiDayBoard(
                 dates: visibleDates,
                 selectedDate: selectedDate,
-                todos: todos.filter { !$0.isArchived && !$0.isDeleted },
+                todos: searchFilteredTodos.filter { !$0.isArchived && !$0.isDeleted },
                 filter: taskFilter,
                 columnWidth: 238,
                 onSelectDate: selectDate,
@@ -273,7 +287,7 @@ struct TasksView: View {
                 anchorDate: anchorDate,
                 dates: visibleDates,
                 selectedDate: selectedDate,
-                todos: todos.filter { !$0.isArchived && !$0.isDeleted },
+                todos: searchFilteredTodos.filter { !$0.isArchived && !$0.isDeleted },
                 filter: taskFilter,
                 onSelectDate: openDay,
                 onMove: moveTodo
@@ -365,12 +379,25 @@ struct TasksView: View {
     private var backlogInspectorTodos: [Todo] {
         switch backlogInspectorMode {
         case .overdue:
-            backlogSnapshot.overdue
+            backlogSnapshot.overdue.filter(matchesSearch)
         case .unscheduled:
-            backlogSnapshot.unscheduled
+            backlogSnapshot.unscheduled.filter(matchesSearch)
         case nil:
             []
         }
+    }
+
+    private func matchesSearch(_ todo: Todo) -> Bool {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return true }
+
+        let candidates = [
+            TodoDisplay.title(for: todo),
+            todo.direction?.name ?? "",
+            todo.direction?.symbolName ?? ""
+        ] + todo.hashtags.flatMap { [$0, "#\($0)"] }
+
+        return candidates.contains { $0.localizedCaseInsensitiveContains(query) }
     }
 
     private var backlogInspectorTitle: String {

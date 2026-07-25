@@ -17,9 +17,6 @@ struct IOSTasksView: View {
     @State private var backlogMode: IOSBacklogMode?
     @State private var pendingBacklogMode: IOSBacklogMode?
     @State private var showsBacklogMenu = false
-    @State private var periodPageAnchor = Calendar.current.startOfDay(for: .now)
-    @State private var periodDragOffset: CGFloat = 0
-    @State private var periodTransitionID = UUID()
     @State private var searchText = ""
     @State private var showsComposer = false
     @State private var isClosing = false
@@ -53,14 +50,10 @@ struct IOSTasksView: View {
     }
 
     var body: some View {
-        GeometryReader { proxy in
-            VStack(spacing: 0) {
-                controls
-                Divider()
-                taskContent
-            }
-            .contentShape(Rectangle())
-            .simultaneousGesture(periodDragGesture(pageWidth: max(proxy.size.width, 1)))
+        VStack(spacing: 0) {
+            controls
+            Divider()
+            taskContent
         }
         .background(Color.primary.opacity(0.025).ignoresSafeArea())
         .navigationTitle(String(localized: "タスク"))
@@ -68,7 +61,7 @@ struct IOSTasksView: View {
         .searchable(
             text: $searchText,
             placement: .navigationBarDrawer(displayMode: .always),
-            prompt: Text("検索")
+            prompt: Text(String(localized: "検索"))
         )
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
@@ -145,13 +138,9 @@ struct IOSTasksView: View {
             isClosing = false
         }
         .onChange(of: range) { _, _ in
-            recenterPeriodPager(on: selectedDate)
             ensureRequiredTodos()
         }
-        .onChange(of: selectedDate) { _, date in
-            if !calendar.isDate(date, inSameDayAs: periodPageAnchor) {
-                recenterPeriodPager(on: date)
-            }
+        .onChange(of: selectedDate) { _, _ in
             ensureRequiredTodos()
         }
         .onChange(of: directions.map(\.updatedAt)) { _, _ in ensureRequiredTodos() }
@@ -279,7 +268,6 @@ struct IOSTasksView: View {
 
             if range == .oneDay {
                 IOSWeekDateStrip(
-                    anchorDate: selectedDate,
                     selectedDate: $selectedDate,
                     todos: searchFilteredTodos,
                     filter: filter
@@ -301,9 +289,9 @@ struct IOSTasksView: View {
     private var taskContent: some View {
         switch range {
         case .oneDay:
-            dayPager
+            groupedList(for: selectedDate, todos: selectedTodos)
         case .sevenDays:
-            weekPager
+            weekList(anchorDate: selectedDate)
         case .month:
             ScrollView {
                 VStack(spacing: 14) {
@@ -321,44 +309,6 @@ struct IOSTasksView: View {
                 .padding(12)
             }
         }
-    }
-
-    private var dayPager: some View {
-        periodPager(component: .day) { date in
-            groupedList(for: date, todos: todos(on: date))
-        }
-    }
-
-    private var weekPager: some View {
-        periodPager(component: .weekOfYear) { anchorDate in
-            weekList(anchorDate: anchorDate)
-        }
-    }
-
-    private func periodPager<Page: View>(
-        component: Calendar.Component,
-        @ViewBuilder page: @escaping (Date) -> Page
-    ) -> some View {
-        GeometryReader { proxy in
-            let pageWidth = max(proxy.size.width, 1)
-
-            HStack(spacing: 0) {
-                ForEach(-1...1, id: \.self) { offset in
-                    if let date = pageDate(
-                        from: periodPageAnchor,
-                        byAdding: component,
-                        value: offset
-                    ) {
-                        page(date)
-                            .frame(width: pageWidth)
-                    }
-                }
-            }
-            .frame(width: pageWidth * 3, alignment: .leading)
-            .offset(x: -pageWidth + periodDragOffset)
-            .contentShape(Rectangle())
-        }
-        .clipped()
     }
 
     private func weekList(anchorDate: Date) -> some View {
@@ -381,108 +331,6 @@ struct IOSTasksView: View {
                 }
             }
             .padding(12)
-        }
-    }
-
-    private func pageDate(
-        from anchor: Date,
-        byAdding component: Calendar.Component,
-        value: Int
-    ) -> Date? {
-        calendar.date(byAdding: component, value: value, to: anchor)
-            .map { calendar.startOfDay(for: $0) }
-    }
-
-    private func periodDragGesture(
-        pageWidth: CGFloat
-    ) -> some Gesture {
-        DragGesture(minimumDistance: 10)
-            .onChanged { value in
-                guard periodComponent != nil else { return }
-                guard abs(value.translation.width) > abs(value.translation.height) else { return }
-                periodDragOffset = min(max(value.translation.width, -pageWidth), pageWidth)
-            }
-            .onEnded { value in
-                guard let component = periodComponent else { return }
-                guard abs(value.translation.width) > abs(value.translation.height) else {
-                    resetPeriodDrag()
-                    return
-                }
-
-                let distanceThreshold = min(max(pageWidth * 0.14, 36), 72)
-                let projectedThreshold = pageWidth * 0.32
-                let shouldAdvance =
-                    abs(value.translation.width) >= distanceThreshold
-                    || abs(value.predictedEndTranslation.width) >= projectedThreshold
-
-                guard shouldAdvance else {
-                    resetPeriodDrag()
-                    return
-                }
-
-                let offset = value.translation.width < 0 ? 1 : -1
-                settlePeriodDrag(
-                    to: offset,
-                    pageWidth: pageWidth,
-                    component: component
-                )
-            }
-    }
-
-    private var periodComponent: Calendar.Component? {
-        switch range {
-        case .oneDay: .day
-        case .sevenDays: .weekOfYear
-        case .month: nil
-        }
-    }
-
-    private func resetPeriodDrag() {
-        withAnimation(.snappy(duration: 0.22)) {
-            periodDragOffset = 0
-        }
-    }
-
-    private func settlePeriodDrag(
-        to offset: Int,
-        pageWidth: CGFloat,
-        component: Calendar.Component
-    ) {
-        let transitionID = UUID()
-        periodTransitionID = transitionID
-
-        withAnimation(.snappy(duration: 0.22)) {
-            periodDragOffset = offset > 0 ? -pageWidth : pageWidth
-        }
-
-        Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(220))
-            guard transitionID == periodTransitionID,
-                  let date = pageDate(
-                    from: periodPageAnchor,
-                    byAdding: component,
-                    value: offset
-                  ) else {
-                return
-            }
-
-            var transaction = Transaction()
-            transaction.disablesAnimations = true
-            withTransaction(transaction) {
-                periodPageAnchor = date
-                selectedDate = date
-                periodDragOffset = 0
-            }
-        }
-    }
-
-    private func recenterPeriodPager(on date: Date) {
-        periodTransitionID = UUID()
-        var transaction = Transaction()
-        transaction.disablesAnimations = true
-        withTransaction(transaction) {
-            periodPageAnchor = calendar.startOfDay(for: date)
-            periodDragOffset = 0
         }
     }
 
@@ -689,44 +537,45 @@ private struct IOSWeekDateStrip: View {
     @Environment(\.calendar) private var calendar
     @Environment(\.locale) private var locale
 
-    let anchorDate: Date
     @Binding var selectedDate: Date
     let todos: [Todo]
     let filter: TaskCalendarFilter
 
-    private var dates: [Date] {
-        TaskCalendarBuilder(calendar: calendar).dates(for: .sevenDays, anchoredAt: anchorDate)
-    }
-
     var body: some View {
-        HStack(spacing: 5) {
-            ForEach(dates, id: \.self) { date in
-                let isSelected = calendar.isDate(date, inSameDayAs: selectedDate)
-                Button {
-                    selectedDate = calendar.startOfDay(for: date)
-                } label: {
-                    VStack(spacing: 4) {
-                        Text(date.formatted(.dateTime.locale(locale).weekday(.narrow)))
-                            .font(.caption2.weight(.semibold))
-                        Text("\(calendar.component(.day, from: date))")
-                            .font(.body.weight(.semibold))
-                            .monospacedDigit()
-                        HStack(spacing: 2) {
-                            ForEach(indicatorColors(on: date), id: \.self) { colorHex in
-                                Circle()
-                                    .fill(Color(hex: colorHex))
-                                    .frame(width: 4, height: 4)
-                            }
+        IOSScrollablePeriodStrip(
+            selectedDate: $selectedDate,
+            unit: .day,
+            visibleItemCount: 7,
+            spacing: 5
+        ) { date, isSelected in
+            Button {
+                selectedDate = calendar.startOfDay(for: date)
+            } label: {
+                VStack(spacing: 4) {
+                    Text(date.formatted(.dateTime.locale(locale).weekday(.narrow)))
+                        .font(.caption2.weight(.semibold))
+                    Text("\(calendar.component(.day, from: date))")
+                        .font(.body.weight(.semibold))
+                        .monospacedDigit()
+                    HStack(spacing: 2) {
+                        ForEach(indicatorColors(on: date), id: \.self) { colorHex in
+                            Circle()
+                                .fill(Color(hex: colorHex))
+                                .frame(width: 4, height: 4)
                         }
-                        .frame(height: 4)
                     }
-                    .foregroundStyle(isSelected ? Color.white : Color.primary)
-                    .frame(maxWidth: .infinity, minHeight: 55)
-                    .background(isSelected ? Color.accentColor : Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
-                    .contentShape(Rectangle())
+                    .frame(height: 4)
                 }
-                .buttonStyle(.plain)
+                .foregroundStyle(isSelected ? Color.white : Color.primary)
+                .frame(maxWidth: .infinity, minHeight: 55)
+                .background(
+                    isSelected ? Color.accentColor : Color.primary.opacity(0.04),
+                    in: RoundedRectangle(cornerRadius: 10)
+                )
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            .accessibilityAddTraits(isSelected ? .isSelected : [])
         }
     }
 
@@ -750,56 +599,49 @@ private struct IOSWeekCardStrip: View {
     let filter: TaskCalendarFilter
 
     var body: some View {
-        HStack(spacing: 6) {
-            ForEach(-1...1, id: \.self) { offset in
-                let anchor = weekDate(offset: offset)
-                let dates = weekDates(containing: anchor)
-                let isSelected = offset == 0
+        IOSScrollablePeriodStrip(
+            selectedDate: $selectedDate,
+            unit: .week,
+            visibleItemCount: 3,
+            spacing: 6
+        ) { anchor, isSelected in
+            let dates = weekDates(containing: anchor)
 
-                Button {
-                    moveWeek(by: offset)
-                } label: {
-                    VStack(spacing: 3) {
-                        Text(monthText(for: dates))
-                            .font(.caption.weight(.semibold))
-                        Text(dayRangeText(for: dates))
-                            .font(.body.monospacedDigit().weight(.semibold))
+            Button {
+                selectedDate = calendar.startOfDay(for: anchor)
+            } label: {
+                VStack(spacing: 3) {
+                    Text(monthText(for: dates))
+                        .font(.caption.weight(.semibold))
+                    Text(dayRangeText(for: dates))
+                        .font(.body.monospacedDigit().weight(.semibold))
 
-                        HStack(spacing: 2) {
-                            ForEach(indicatorColors(in: dates), id: \.self) { colorHex in
-                                Circle()
-                                    .fill(Color(hex: colorHex))
-                                    .frame(width: 4, height: 4)
-                            }
+                    HStack(spacing: 2) {
+                        ForEach(indicatorColors(in: dates), id: \.self) { colorHex in
+                            Circle()
+                                .fill(Color(hex: colorHex))
+                                .frame(width: 4, height: 4)
                         }
-                        .frame(height: 4)
                     }
-                    .foregroundStyle(isSelected ? Color.white : Color.primary)
-                    .frame(maxWidth: .infinity, minHeight: 58)
-                    .background(
-                        isSelected ? Color.accentColor : Color.primary.opacity(0.04),
-                        in: RoundedRectangle(cornerRadius: 10)
-                    )
-                    .contentShape(Rectangle())
+                    .frame(height: 4)
                 }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(isSelected ? .isSelected : [])
+                .foregroundStyle(isSelected ? Color.white : Color.primary)
+                .frame(maxWidth: .infinity, minHeight: 58)
+                .background(
+                    isSelected ? Color.accentColor : Color.primary.opacity(0.04),
+                    in: RoundedRectangle(cornerRadius: 10)
+                )
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            .accessibilityAddTraits(isSelected ? .isSelected : [])
         }
-    }
-
-    private func weekDate(offset: Int) -> Date {
-        calendar.date(byAdding: .weekOfYear, value: offset, to: selectedDate) ?? selectedDate
     }
 
     private func weekDates(containing date: Date) -> [Date] {
         TaskCalendarBuilder(calendar: calendar).dates(for: .sevenDays, anchoredAt: date)
     }
 
-    private func moveWeek(by offset: Int) {
-        guard offset != 0 else { return }
-        selectedDate = calendar.startOfDay(for: weekDate(offset: offset))
-    }
 
     private func monthText(for dates: [Date]) -> String {
         guard let first = dates.first else { return "" }

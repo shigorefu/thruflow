@@ -21,6 +21,7 @@ struct DayHistoryView: View {
     @State private var selectedMode: DayHistoryMode = .calendar
     @State private var selectedRange: HistoryCalendarRange = .week
     @State private var visibleCalendarKinds = Set(HistoryCalendarItemKind.allCases)
+    @State private var searchText = ""
     @State private var expandedTaskIDs: Set<String> = []
     @State private var expandedDirectionIDs: Set<UUID> = []
     @State private var editingTodo: Todo?
@@ -39,8 +40,8 @@ struct DayHistoryView: View {
     private var snapshot: DayHistorySnapshot {
         builder.build(
             interval: selectedRange.interval(containing: selectedDate, calendar: calendar),
-            sessions: sessions,
-            todos: todos
+            sessions: searchFilteredSessions,
+            todos: searchFilteredTodos
         )
     }
 
@@ -54,6 +55,11 @@ struct DayHistoryView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .navigationTitle(String(localized: "履歴"))
+        .searchable(
+            text: $searchText,
+            placement: .toolbar,
+            prompt: Text(String(localized: "検索"))
+        )
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 modePicker
@@ -177,8 +183,8 @@ struct DayHistoryView: View {
             HistoryCalendarView(
                 selectedDate: $selectedDate,
                 range: $selectedRange,
-                sessions: sessions,
-                breaks: breaks,
+                sessions: searchFilteredSessions,
+                breaks: searchFilteredBreaks,
                 visibleKinds: $visibleCalendarKinds
             )
         case .tasks:
@@ -382,10 +388,73 @@ struct DayHistoryView: View {
         let interval = selectedRange.interval(containing: selectedDate, calendar: calendar)
         return (0..<7).compactMap { offset in
             guard let date = calendar.date(byAdding: .day, value: offset, to: interval.start) else { return nil }
-            let daySnapshot = builder.build(date: date, sessions: sessions, todos: todos)
+            let daySnapshot = builder.build(
+                date: date,
+                sessions: searchFilteredSessions,
+                todos: searchFilteredTodos
+            )
             guard !daySnapshot.taskSummaries.isEmpty else { return nil }
             return HistoryTaskDaySection(date: date, snapshot: daySnapshot)
         }
+    }
+
+    private var searchFilteredTodos: [Todo] {
+        todos.filter(matchesSearch)
+    }
+
+    private var searchFilteredSessions: [FlowSession] {
+        sessions.filter(matchesSearch)
+    }
+
+    private var searchFilteredBreaks: [FlowBreak] {
+        let query = normalizedSearchQuery
+        guard !query.isEmpty else { return breaks }
+        if String(localized: "休憩").localizedCaseInsensitiveContains(query) {
+            return breaks
+        }
+
+        let sessionIDs = Set(searchFilteredSessions.map(\.id))
+        let seriesIDs = Set(searchFilteredSessions.compactMap(\.seriesID))
+        return breaks.filter { flowBreak in
+            sessionIDs.contains(flowBreak.previousSessionID)
+                || flowBreak.nextSessionID.map(sessionIDs.contains) == true
+                || seriesIDs.contains(flowBreak.seriesID)
+        }
+    }
+
+    private var normalizedSearchQuery: String {
+        searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func matchesSearch(_ todo: Todo) -> Bool {
+        let query = normalizedSearchQuery
+        guard !query.isEmpty else { return true }
+
+        let candidates = [
+            TodoDisplay.title(for: todo),
+            todo.direction?.name ?? "",
+            todo.direction?.symbolName ?? ""
+        ] + todo.hashtags.flatMap { [$0, "#\($0)"] }
+
+        return candidates.contains { $0.localizedCaseInsensitiveContains(query) }
+    }
+
+    private func matchesSearch(_ session: FlowSession) -> Bool {
+        let query = normalizedSearchQuery
+        guard !query.isEmpty else { return true }
+
+        let todo = session.todo
+        let direction = todo?.direction ?? session.direction
+        let todoTitle = todo.map { TodoDisplay.title(for: $0) } ?? ""
+        let candidates = [
+            todoTitle,
+            direction?.name ?? "",
+            direction?.symbolName ?? "",
+            session.intent,
+            session.result ?? ""
+        ] + (todo?.hashtags ?? []).flatMap { [$0, "#\($0)"] }
+
+        return candidates.contains { $0.localizedCaseInsensitiveContains(query) }
     }
 
     @ViewBuilder
