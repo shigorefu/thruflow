@@ -27,7 +27,7 @@ struct IOSHistoryView: View {
             Divider()
             historyContent
                 .iosPeriodSwipeNavigation(
-                    pageID: selectedDate,
+                    pageID: selectedPeriodPageID,
                     isEnabled: allowsContentPeriodSwipe
                 ) { offset in
                     navigatePeriod(by: offset)
@@ -212,6 +212,9 @@ struct IOSHistoryView: View {
                         range = .day
                     }
                 }
+                .iosHorizontalPeriodSwipe { offset in
+                    navigatePeriod(by: offset)
+                }
             }
         }
         .padding(.horizontal, 12)
@@ -255,12 +258,26 @@ struct IOSHistoryView: View {
     }
 
     private var allowsContentPeriodSwipe: Bool {
-        guard range != .month else { return false }
-        return range != .week || selectedMode != .calendar
+        switch range {
+        case .day:
+            true
+        case .week:
+            selectedMode != .calendar
+        case .month:
+            selectedMode != .calendar
+        }
     }
 
     private func navigatePeriod(by offset: Int) {
-        let component: Calendar.Component = range == .week ? .weekOfYear : .day
+        let component: Calendar.Component
+        switch range {
+        case .day:
+            component = .day
+        case .week:
+            component = .weekOfYear
+        case .month:
+            component = .month
+        }
         guard let date = calendar.date(
             byAdding: component,
             value: offset,
@@ -269,6 +286,10 @@ struct IOSHistoryView: View {
             return
         }
         selectedDate = calendar.startOfDay(for: date)
+    }
+
+    private var selectedPeriodPageID: Date {
+        range.interval(containing: selectedDate, calendar: calendar).start
     }
 }
 

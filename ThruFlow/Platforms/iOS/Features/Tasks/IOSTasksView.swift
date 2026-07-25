@@ -55,8 +55,7 @@ struct IOSTasksView: View {
             Divider()
             taskContent
                 .iosPeriodSwipeNavigation(
-                    pageID: selectedDate,
-                    isEnabled: range != .month
+                    pageID: selectedPeriodPageID
                 ) { offset in
                     navigatePeriod(by: offset)
                 }
@@ -181,15 +180,25 @@ struct IOSTasksView: View {
     }
 
     private func navigatePeriod(by offset: Int) {
-        let component: Calendar.Component = range == .sevenDays ? .weekOfYear : .day
-        guard let date = calendar.date(
-            byAdding: component,
-            value: offset,
-            to: selectedDate
-        ) else {
-            return
-        }
+        let date = calendarBuilder.advancedDate(
+            from: selectedDate,
+            range: range,
+            direction: offset
+        )
         selectedDate = calendar.startOfDay(for: date)
+    }
+
+    private var selectedPeriodPageID: Date {
+        switch range {
+        case .oneDay:
+            calendar.startOfDay(for: selectedDate)
+        case .sevenDays:
+            calendar.dateInterval(of: .weekOfYear, for: selectedDate)?.start
+                ?? calendar.startOfDay(for: selectedDate)
+        case .month:
+            calendar.dateInterval(of: .month, for: selectedDate)?.start
+                ?? calendar.startOfDay(for: selectedDate)
+        }
     }
 
     private var backlogMenuContent: some View {

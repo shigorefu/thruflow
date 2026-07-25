@@ -84,7 +84,8 @@ The iOS deployment target is 17.0 even when building with Xcode 26 and the iOS
   dots are indexed once per data snapshot rather than filtering complete Todo
   or Flow collections for every visible cell. Scrolling must not synchronously
   fetch complete Flow history, reconcile duplicates, save SwiftData, or trigger
-  CloudKit export work.
+  CloudKit export work. Month views advance one calendar month per horizontal
+  swipe without retaining a separate long-running month strip.
 
 ## Test Expectations
 

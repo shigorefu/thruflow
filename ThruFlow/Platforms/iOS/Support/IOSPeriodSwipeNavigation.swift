@@ -62,4 +62,24 @@ extension View {
             )
         )
     }
+
+    func iosHorizontalPeriodSwipe(
+        isEnabled: Bool = true,
+        onNavigate: @escaping (Int) -> Void
+    ) -> some View {
+        simultaneousGesture(
+            DragGesture(minimumDistance: 24)
+                .onEnded { value in
+                    guard isEnabled else { return }
+                    let horizontalDistance = value.predictedEndTranslation.width
+                    let verticalDistance = value.predictedEndTranslation.height
+                    guard abs(horizontalDistance) >= 44 else { return }
+                    guard abs(horizontalDistance) > abs(verticalDistance) * 1.25 else { return }
+
+                    withAnimation(.snappy(duration: 0.28)) {
+                        onNavigate(horizontalDistance < 0 ? 1 : -1)
+                    }
+                }
+        )
+    }
 }
