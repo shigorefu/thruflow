@@ -29,11 +29,12 @@ The screen is named `タスク`. There is no separate Inbox navigation item. Whe
 
 On iPhone, the compact day and week period strips scroll horizontally with
 native view-aligned snapping. Day advances one date card at a time and week
-advances one complete seven-day card at a time, while the Task list below keeps
-independent vertical scrolling. Native search filters the visible Tasks by
-title, Direction, emoji, and hashtag without changing stored records or Habit
-materialization. macOS exposes the same search semantics through its native
-toolbar search field.
+advances one complete seven-day card at a time. A direct tap selects a card
+immediately; a drag commits the selected period only after the finger is
+released and native snapping becomes idle. The Task list below keeps independent
+vertical scrolling. Native search filters the visible Tasks by title, Direction,
+emoji, and hashtag without changing stored records or Habit materialization.
+macOS exposes the same search semantics through its native toolbar search field.
 
 Weekly-count Habits create one pending Task at a time. Completion allows the next instance on a later day, while moving the pending Task never creates a duplicate or makes the weekly goal impossible.
 
@@ -88,9 +89,11 @@ It provides a primary `Flow` calendar mode with `日・週・月`, plus `タス�
 
 On iPhone, `日` and `週` use the same native horizontally scrolling period
 strips as Tasks across `Flow`, `タスク`, and `方向` History modes. The History
-content below remains independently scrollable. Native search filters the
-selected period by record title, Direction, emoji, hashtag, intent, or memo.
-macOS provides the same filtering through its native toolbar search field.
+content below remains independently scrollable. Card taps select immediately,
+while swipes commit only after native scrolling settles. Native search filters
+the selected period by record title, Direction, emoji, hashtag, intent, or
+memo. macOS provides the same filtering through its native toolbar search
+field.
 
 ## Settings
 

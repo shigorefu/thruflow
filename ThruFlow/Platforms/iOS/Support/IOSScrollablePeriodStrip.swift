@@ -50,6 +50,9 @@ struct IOSScrollablePeriodStrip<Content: View>: View {
 
     @State private var anchorDate: Date
     @State private var scrollTarget: Date?
+    @State private var pendingSelection: Date?
+    @State private var fallbackIsDragging = false
+    @State private var fallbackCommitRevision = 0
 
     init(
         selectedDate: Binding<Date>,
@@ -82,6 +85,24 @@ struct IOSScrollablePeriodStrip<Content: View>: View {
     }
 
     var body: some View {
+        periodStrip
+    }
+
+    @ViewBuilder
+    private var periodStrip: some View {
+        if #available(iOS 18.0, *) {
+            scrollView
+                .onScrollPhaseChange { _, phase in
+                    guard phase == .idle else { return }
+                    commitPendingSelection()
+                }
+        } else {
+            scrollView
+                .simultaneousGesture(fallbackDragGesture)
+        }
+    }
+
+    private var scrollView: some View {
         ScrollView(.horizontal) {
             LazyHStack(spacing: spacing) {
                 ForEach(dates, id: \.self) { date in
@@ -108,6 +129,7 @@ struct IOSScrollablePeriodStrip<Content: View>: View {
             scrollTarget = unit.normalized(selectedDate, calendar: calendar)
         }
         .onChange(of: selectedDate) { _, date in
+            invalidatePendingSelection()
             let normalizedDate = unit.normalized(date, calendar: calendar)
             guard scrollTarget != normalizedDate else { return }
             scrollTarget = normalizedDate
@@ -115,9 +137,51 @@ struct IOSScrollablePeriodStrip<Content: View>: View {
         .onChange(of: scrollTarget) { _, date in
             guard let date else { return }
             guard !unit.contains(date, selectedDate: selectedDate, calendar: calendar) else {
+                pendingSelection = nil
                 return
             }
-            selectedDate = date
+            pendingSelection = date
+            if #unavailable(iOS 18.0), !fallbackIsDragging {
+                scheduleFallbackCommit()
+            }
         }
+    }
+
+    private var fallbackDragGesture: some Gesture {
+        DragGesture(minimumDistance: 8)
+            .onChanged { _ in
+                guard !fallbackIsDragging else { return }
+                fallbackIsDragging = true
+                fallbackCommitRevision += 1
+            }
+            .onEnded { _ in
+                fallbackIsDragging = false
+                scheduleFallbackCommit()
+            }
+    }
+
+    private func scheduleFallbackCommit() {
+        fallbackCommitRevision += 1
+        let revision = fallbackCommitRevision
+
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(140))
+            guard revision == fallbackCommitRevision, !fallbackIsDragging else { return }
+            commitPendingSelection()
+        }
+    }
+
+    private func commitPendingSelection() {
+        guard let date = pendingSelection else { return }
+        pendingSelection = nil
+        guard !unit.contains(date, selectedDate: selectedDate, calendar: calendar) else {
+            return
+        }
+        selectedDate = date
+    }
+
+    private func invalidatePendingSelection() {
+        fallbackCommitRevision += 1
+        pendingSelection = nil
     }
 }
