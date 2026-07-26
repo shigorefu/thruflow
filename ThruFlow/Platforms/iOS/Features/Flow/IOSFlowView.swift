@@ -433,7 +433,8 @@ struct IOSFlowView: View {
             sessions: sessions,
             breaks: flowBreaks,
             activeSessionID: activeFlowStore.activeSession?.id,
-            activeFocusSeconds: activeFlowStore.actualFocusSeconds(now: date)
+            activeFocusSeconds: activeFlowStore.actualFocusSeconds(now: date),
+            visualIdentityID: DailyFlowIdentity.resolve(from: directions)
         )
     }
 

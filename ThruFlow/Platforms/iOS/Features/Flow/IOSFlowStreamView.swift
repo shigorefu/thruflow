@@ -10,6 +10,8 @@ struct IOSFlowStreamView: View {
             blocks: snapshot.blocks,
             flowCount: snapshot.flowCount,
             palette: snapshot.palette,
+            paletteWeights: snapshot.paletteWeights,
+            dailySeed: snapshot.dailyVisualSeed,
             isActive: isActive,
             mode: mode,
             isRenderingEnabled: true

@@ -93,7 +93,8 @@ struct FlowDashboardView: View {
             sessions: sessions,
             breaks: flowBreaks,
             activeSessionID: activeFlowStore.activeSession?.id,
-            activeFocusSeconds: activeFlowStore.actualFocusSeconds(now: now)
+            activeFocusSeconds: activeFlowStore.actualFocusSeconds(now: now),
+            visualIdentityID: DailyFlowIdentity.resolve(from: directions)
         )
     }
 
@@ -199,6 +200,8 @@ struct FlowDashboardView: View {
                 blocks: snapshot.blocks,
                 flowCount: snapshot.flowCount,
                 palette: snapshot.palette,
+                paletteWeights: snapshot.paletteWeights,
+                dailySeed: snapshot.dailyVisualSeed,
                 isActive: activeFlowStore.phase == .focusing,
                 mode: activeFlowStore.selectedMode
             )

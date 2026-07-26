@@ -41,6 +41,8 @@ struct FlowDashboardTests {
         #expect(snapshot.blocks == 3)
         #expect(snapshot.flowCount == 2)
         #expect(snapshot.palette == ["#0A84FF", "#34C759"])
+        #expect(abs(snapshot.paletteWeights[0] - (2.0 / 3.0)) < 0.0001)
+        #expect(abs(snapshot.paletteWeights[1] - (1.0 / 3.0)) < 0.0001)
         #expect(snapshot.directionSummaries.map(\.name) == ["執筆", "読書"])
         #expect(snapshot.directionSummaries.map(\.focusSeconds) == [50 * 60, 25 * 60])
         #expect(abs(snapshot.segments[0].startFraction - 0.25) < 0.0001)
@@ -264,7 +266,7 @@ struct FlowDashboardTests {
         #expect(full.speed == overflow.speed)
         #expect(full.volume == overflow.volume)
         #expect(full.detail == overflow.detail)
-        #expect(full.layerCount <= 8)
+        #expect(FlowVisualState.ribbonCount == 7)
     }
 
     @Test func visualOccupancyStopsGrowingBeforeDetailReachesMaximum() {
@@ -302,6 +304,55 @@ struct FlowDashboardTests {
         #expect(active.volume == idle.volume)
         #expect(active.speed > idle.speed)
         #expect(active.speed - idle.speed >= 0.5)
+    }
+
+    @Test func dailyAppearanceIsStableForOneProfileAndCalendarDay() {
+        let identity = UUID(uuidString: "A5220B23-7957-49AA-A796-65D20424BE06")!
+        let morning = Date(timeIntervalSince1970: 10 * 86_400 + 8 * 3_600)
+        let evening = Date(timeIntervalSince1970: 10 * 86_400 + 21 * 3_600)
+
+        let first = DailyFlowAppearance(date: morning, identityID: identity, calendar: calendar)
+        let second = DailyFlowAppearance(date: evening, identityID: identity, calendar: calendar)
+
+        #expect(first == second)
+    }
+
+    @Test func dailyAppearanceChangesForAnotherDayOrProfile() {
+        let firstIdentity = UUID(uuidString: "A5220B23-7957-49AA-A796-65D20424BE06")!
+        let secondIdentity = UUID(uuidString: "81F71AD5-9D05-4A99-892B-0F733D083EB4")!
+        let day = Date(timeIntervalSince1970: 10 * 86_400)
+        let nextDay = day.addingTimeInterval(86_400)
+
+        let baseline = DailyFlowAppearance(date: day, identityID: firstIdentity, calendar: calendar)
+        let anotherDay = DailyFlowAppearance(date: nextDay, identityID: firstIdentity, calendar: calendar)
+        let anotherProfile = DailyFlowAppearance(date: day, identityID: secondIdentity, calendar: calendar)
+
+        #expect(baseline.seed != anotherDay.seed)
+        #expect(baseline.seed != anotherProfile.seed)
+    }
+
+    @Test func dailyIdentityUsesOldestSyncedDirection() {
+        let firstID = UUID(uuidString: "A5220B23-7957-49AA-A796-65D20424BE06")!
+        let secondID = UUID(uuidString: "81F71AD5-9D05-4A99-892B-0F733D083EB4")!
+        let first = Direction(
+            id: firstID,
+            name: "First",
+            type: .neutral,
+            createdAt: Date(timeIntervalSince1970: 100)
+        )
+        let second = Direction(
+            id: secondID,
+            name: "Second",
+            type: .neutral,
+            createdAt: Date(timeIntervalSince1970: 200)
+        )
+
+        #expect(DailyFlowIdentity.resolve(from: [second, first]) == firstID)
+    }
+
+    @Test func renderCadenceUsesSixtyActiveAndThirtyIdleFramesPerSecond() {
+        #expect(FlowRenderCadence.frameInterval(isActive: true) == 1.0 / 60.0)
+        #expect(FlowRenderCadence.frameInterval(isActive: false) == 1.0 / 30.0)
     }
 
     @Test func animationClockKeepsPhaseContinuousWhenSpeedChanges() {

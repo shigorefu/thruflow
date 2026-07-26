@@ -11,6 +11,8 @@ struct FlowStreamView: View {
     let blocks: Double
     let flowCount: Int
     let palette: [String]
+    let paletteWeights: [Double]
+    let dailySeed: UInt64
     let isActive: Bool
     let mode: FlowMode
 
@@ -21,6 +23,8 @@ struct FlowStreamView: View {
             blocks: blocks,
             flowCount: flowCount,
             palette: palette,
+            paletteWeights: paletteWeights,
+            dailySeed: dailySeed,
             isActive: isActive,
             mode: mode,
             isRenderingEnabled: controlActiveState == .key

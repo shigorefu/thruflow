@@ -15,6 +15,8 @@ struct FlowDashboardSnapshot {
     let breaks: [FlowDashboardBreak]
     let seriesSpans: [FlowDashboardSeriesSpan]
     let palette: [String]
+    let paletteWeights: [Double]
+    let dailyVisualSeed: UInt64
 
     var blocks: Double {
         BlockUnit.blocks(forFocusedSeconds: totalFocusSeconds)
@@ -211,7 +213,8 @@ struct FlowDashboardBuilder {
         sessions: [FlowSession],
         breaks storedBreaks: [FlowBreak] = [],
         activeSessionID: UUID? = nil,
-        activeFocusSeconds: Int = 0
+        activeFocusSeconds: Int = 0,
+        visualIdentityID: UUID? = nil
     ) -> FlowDashboardSnapshot {
         let day = calendar.startOfDay(for: date)
         let nextDay = calendar.date(byAdding: .day, value: 1, to: day) ?? day.addingTimeInterval(86_400)
@@ -317,7 +320,18 @@ struct FlowDashboardBuilder {
             .map { colorHex, values in
                 (colorHex: colorHex, seconds: values.reduce(0) { $0 + $1.focusSeconds })
             }
-            .sorted { $0.seconds > $1.seconds }
+            .sorted {
+                if $0.seconds != $1.seconds {
+                    return $0.seconds > $1.seconds
+                }
+                return $0.colorHex < $1.colorHex
+            }
+        let paletteTotal = max(groupedColors.reduce(0) { $0 + $1.seconds }, 1)
+        let appearance = DailyFlowAppearance(
+            date: day,
+            identityID: visualIdentityID,
+            calendar: calendar
+        )
 
         return FlowDashboardSnapshot(
             date: day,
@@ -326,7 +340,9 @@ struct FlowDashboardBuilder {
             segments: segments,
             breaks: breaks,
             seriesSpans: seriesSpans,
-            palette: groupedColors.map(\.colorHex)
+            palette: groupedColors.map(\.colorHex),
+            paletteWeights: groupedColors.map { Double($0.seconds) / Double(paletteTotal) },
+            dailyVisualSeed: appearance.seed
         )
     }
 
