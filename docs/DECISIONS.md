@@ -283,8 +283,8 @@ provider, which are a separate future transport and do not change this runtime
 contract.
 
 Reason: persisting the canonical runtime alongside its session avoids a second
-timer entity, preserves offline operation, and gives macOS, iOS, and future
-watchOS clients one conflict and restoration model.
+timer entity, preserves offline operation, and gives macOS, iOS, and watchOS
+one conflict and restoration model.
 
 ## Open Questions
 

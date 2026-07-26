@@ -48,6 +48,15 @@ struct FlowStreamSurface: View {
         let appearance = DailyFlowAppearance(seed: dailySeed)
         let background = resolvedBackground(identityReveal: state.identityReveal)
 
+#if os(watchOS)
+        watchSurface(
+            state: state,
+            colors: colors,
+            weights: weights,
+            appearance: appearance,
+            background: background
+        )
+#else
         TimelineView(.animation(
             minimumInterval: FlowRenderCadence.frameInterval(isActive: isActive),
             paused: animationIsPaused
@@ -98,7 +107,164 @@ struct FlowStreamSurface: View {
             guard newValue > oldValue else { return }
             impulseStartedAt = .now
         }
+#endif
     }
+
+#if os(watchOS)
+    private func watchSurface(
+        state: FlowVisualState,
+        colors: [Color],
+        weights: [Double],
+        appearance: DailyFlowAppearance,
+        background: Color
+    ) -> some View {
+        TimelineView(.animation(
+            minimumInterval: FlowRenderCadence.frameInterval(isActive: isActive),
+            paused: animationIsPaused
+        )) { timeline in
+            Canvas { context, size in
+                context.fill(
+                    Path(CGRect(origin: .zero, size: size)),
+                    with: .color(background)
+                )
+
+                let phase = animationClock.phase(
+                    at: timeline.date,
+                    speed: state.speed,
+                    isPaused: animationIsPaused
+                )
+                drawWatchRibbons(
+                    in: &context,
+                    size: size,
+                    phase: phase,
+                    state: state,
+                    colors: colors,
+                    weights: weights,
+                    appearance: appearance
+                )
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(String(localized: "今日のFlow"))
+        .accessibilityValue(accessibilityValue(state))
+        .onChange(of: completedHalfBlocks) { oldValue, newValue in
+            guard newValue > oldValue else { return }
+            impulseStartedAt = .now
+        }
+    }
+
+    private func drawWatchRibbons(
+        in context: inout GraphicsContext,
+        size: CGSize,
+        phase: Double,
+        state: FlowVisualState,
+        colors: [Color],
+        weights: [Double],
+        appearance: DailyFlowAppearance
+    ) {
+        let ribbonCount = FlowVisualState.ribbonCount
+        let impulse = max(0, impulseProgress(at: .now))
+        let baseWidth = max(4, size.height * (0.055 + state.volume * 0.035))
+        let amplitude = size.height * (0.06 + state.detail * 0.035)
+
+        for ribbon in 0..<ribbonCount {
+            let progress = Double(ribbon) / Double(max(ribbonCount - 1, 1))
+            let color = watchRibbonColor(
+                at: progress,
+                colors: colors,
+                weights: weights,
+                rotation: appearance.paletteRotation
+            )
+            let path = watchRibbonPath(
+                ribbon: ribbon,
+                ribbonCount: ribbonCount,
+                size: size,
+                phase: phase,
+                amplitude: amplitude,
+                state: state,
+                appearance: appearance
+            )
+            let width = baseWidth * (0.86 + progress * 0.34)
+            let opacity = 0.42 + state.glow * 0.38 + impulse * 0.12
+
+            context.drawLayer { glowLayer in
+                glowLayer.addFilter(.blur(radius: max(1.5, width * 0.52)))
+                glowLayer.stroke(
+                    path,
+                    with: .color(color.opacity(opacity * 0.52)),
+                    style: StrokeStyle(lineWidth: width * 1.8, lineCap: .round)
+                )
+            }
+            context.stroke(
+                path,
+                with: .color(color.opacity(min(opacity, 0.92))),
+                style: StrokeStyle(lineWidth: width, lineCap: .round)
+            )
+        }
+    }
+
+    private func watchRibbonPath(
+        ribbon: Int,
+        ribbonCount: Int,
+        size: CGSize,
+        phase: Double,
+        amplitude: Double,
+        state: FlowVisualState,
+        appearance: DailyFlowAppearance
+    ) -> Path {
+        let ribbonProgress = Double(ribbon) / Double(max(ribbonCount - 1, 1))
+        let baseY = size.height * (0.14 + ribbonProgress * 0.72)
+        let phaseOffset = Double(ribbon) * (0.61 + appearance.spacing * 0.42)
+        let frequency = state.waveFrequency * (0.82 + appearance.topology * 0.28)
+        let bend = 0.72 + appearance.bend * 0.58
+        let stepCount = 28
+
+        var path = Path()
+        for step in 0...stepCount {
+            let xProgress = Double(step) / Double(stepCount)
+            let primary = sin(
+                xProgress * .pi * 2 * frequency
+                    + phase * bend
+                    + phaseOffset
+            )
+            let detail = sin(
+                xProgress * .pi * 4.6
+                    - phase * (0.38 + state.turbulence * 0.22)
+                    + phaseOffset * 1.7
+            )
+            let y = baseY + amplitude * (
+                primary * (0.72 + ribbonProgress * 0.18)
+                    + detail * state.turbulence * 0.18
+            )
+            let point = CGPoint(x: size.width * xProgress, y: y)
+
+            if step == 0 {
+                path.move(to: point)
+            } else {
+                path.addLine(to: point)
+            }
+        }
+        return path
+    }
+
+    private func watchRibbonColor(
+        at progress: Double,
+        colors: [Color],
+        weights: [Double],
+        rotation: Double
+    ) -> Color {
+        let sample = (progress + rotation).truncatingRemainder(dividingBy: 1)
+        var accumulated = 0.0
+
+        for index in colors.indices {
+            accumulated += weights[index]
+            if sample <= accumulated {
+                return colors[index]
+            }
+        }
+        return colors.last ?? .blue
+    }
+#endif
 
     private var resolvedColors: [Color] {
         let fallback = ["#0A84FF", "#30D5C8", "#BF5AF2", "#64D2FF"]

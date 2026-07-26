@@ -21,7 +21,8 @@
 - [x] Home Screen виджеты: активный Flow, сегодняшние Tasks и Flow Dots
   (месяц/180 дней).
 - [x] Базовая iOS версия (minimum iOS 17.0, сборка Xcode 26/iOS 26 SDK).
-- [ ] Поддержка Apple Watch.
+- [x] Базовый Apple Watch companion: vertical full-screen pager с Flow timer,
+  fullscreen stream, Today Tasks и compact Statistics.
 - [x] В Tasks добавить `期限切れ` в Today и inspector `日付なし`.
 - [ ] Таймлайн вне Flow.
 - [x] Добавить простые настройки.

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		6C3000013000000000000001 /* ThruFlow Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 6C3000023000000000000002 /* ThruFlow Watch App.app */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		5B2000013000000000000001 /* ThruFlowLiveActivityExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 5B2000023000000000000002 /* ThruFlowLiveActivityExtension.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		5B2000133000000000000013 /* ThruFlow/Shared/Domain/Services/LiveActivityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B20000F300000000000000F /* ThruFlow/Shared/Domain/Services/LiveActivityService.swift */; };
 		5B2000143000000000000014 /* ThruFlow/Shared/LiveActivity/FlowActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B2000103000000000000010 /* ThruFlow/Shared/LiveActivity/FlowActivityAttributes.swift */; };
@@ -38,6 +39,13 @@
 			remoteGlobalIDString = 5B2000083000000000000008;
 			remoteInfo = ThruFlowLiveActivityExtension;
 		};
+		6C30000B300000000000000B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2E1176E52FFE20CF0011219C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6C3000073000000000000007;
+			remoteInfo = "ThruFlow Watch App";
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -50,6 +58,17 @@
 				5B2000013000000000000001 /* ThruFlowLiveActivityExtension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6C30000D300000000000000D /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				6C3000013000000000000001 /* ThruFlow Watch App.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -66,6 +85,7 @@
 		5B2000123000000000000012 /* ThruFlow/Localisation/Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = ThruFlow/Localisation/Localizable.xcstrings; sourceTree = SOURCE_ROOT; };
 		5B2000183000000000000018 /* ThruFlow/Shared/Widget/FlowTimerWidgetSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThruFlow/Shared/Widget/FlowTimerWidgetSnapshot.swift; sourceTree = SOURCE_ROOT; };
 		5B20001A300000000000001A /* ThruFlow/Shared/Widget/ProductWidgetSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThruFlow/Shared/Widget/ProductWidgetSnapshot.swift; sourceTree = SOURCE_ROOT; };
+		6C3000023000000000000002 /* ThruFlow Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "ThruFlow Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -92,6 +112,14 @@
 			);
 			target = 5B2000083000000000000008 /* ThruFlowLiveActivityExtension */;
 		};
+		6C3000033000000000000003 /* Exceptions for "ThruFlow" folder in "ThruFlow Watch App" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+				Platforms/iOS/App/Info.plist,
+			);
+			target = 6C3000073000000000000007 /* ThruFlow Watch App */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -100,6 +128,7 @@
 			exceptions = (
 				2E1177102FFE20CF0011219C /* Exceptions for "ThruFlow" folder in "ThruFlow" target */,
 				4A1000023000000000000002 /* Exceptions for "ThruFlow" folder in "ThruFlow iOS" target */,
+				6C3000033000000000000003 /* Exceptions for "ThruFlow" folder in "ThruFlow Watch App" target */,
 			);
 			path = ThruFlow;
 			sourceTree = "<group>";
@@ -160,6 +189,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		6C3000053000000000000005 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -183,6 +219,7 @@
 				2E1176FE2FFE20CF0011219C /* ThruFlowTests.xctest */,
 				2E1177082FFE20CF0011219C /* ThruFlowUITests.xctest */,
 				5B2000023000000000000002 /* ThruFlowLiveActivityExtension.appex */,
+				6C3000023000000000000002 /* ThruFlow Watch App.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -279,11 +316,13 @@
 				4A1000043000000000000004 /* Frameworks */,
 				4A1000053000000000000005 /* Resources */,
 				5B20000C300000000000000C /* Embed Foundation Extensions */,
+				6C30000D300000000000000D /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				5B20000E300000000000000E /* PBXTargetDependency */,
+				6C30000C300000000000000C /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				2E1176EF2FFE20CF0011219C /* ThruFlow */,
@@ -317,6 +356,28 @@
 			productReference = 5B2000023000000000000002 /* ThruFlowLiveActivityExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		6C3000073000000000000007 /* ThruFlow Watch App */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6C30000A300000000000000A /* Build configuration list for PBXNativeTarget "ThruFlow Watch App" */;
+			buildPhases = (
+				6C3000043000000000000004 /* Sources */,
+				6C3000053000000000000005 /* Frameworks */,
+				6C3000063000000000000006 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				2E1176EF2FFE20CF0011219C /* ThruFlow */,
+			);
+			name = "ThruFlow Watch App";
+			packageProductDependencies = (
+			);
+			productName = "ThruFlow Watch App";
+			productReference = 6C3000023000000000000002 /* ThruFlow Watch App.app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -344,6 +405,9 @@
 					5B2000083000000000000008 = {
 						CreatedOnToolsVersion = 26.6;
 					};
+					6C3000073000000000000007 = {
+						CreatedOnToolsVersion = 26.6;
+					};
 				};
 			};
 			buildConfigurationList = 2E1176E82FFE20CF0011219C /* Build configuration list for PBXProject "ThruFlow" */;
@@ -364,6 +428,7 @@
 				2E1176EC2FFE20CF0011219C /* ThruFlow */,
 				4A1000083000000000000008 /* ThruFlow iOS */,
 				5B2000083000000000000008 /* ThruFlowLiveActivityExtension */,
+				6C3000073000000000000007 /* ThruFlow Watch App */,
 				2E1176FD2FFE20CF0011219C /* ThruFlowTests */,
 				2E1177072FFE20CF0011219C /* ThruFlowUITests */,
 			);
@@ -404,6 +469,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				5B2000163000000000000016 /* ThruFlow/Localisation/Localizable.xcstrings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6C3000063000000000000006 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -450,6 +522,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		6C3000043000000000000004 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -467,6 +546,11 @@
 			isa = PBXTargetDependency;
 			target = 5B2000083000000000000008 /* ThruFlowLiveActivityExtension */;
 			targetProxy = 5B20000D300000000000000D /* PBXContainerItemProxy */;
+		};
+		6C30000C300000000000000C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6C3000073000000000000007 /* ThruFlow Watch App */;
+			targetProxy = 6C30000B300000000000000B /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -498,6 +582,8 @@
 					IOSTaskEditorView.swift,
 					IOSTasksView.swift,
 					ThruFlowiOSApp.swift,
+					ThruFlowWatchApp.swift,
+					WatchFlowDashboardView.swift,
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ThruFlow/Info.plist;
@@ -559,6 +645,8 @@
 					IOSTaskEditorView.swift,
 					IOSTasksView.swift,
 					ThruFlowiOSApp.swift,
+					ThruFlowWatchApp.swift,
+					WatchFlowDashboardView.swift,
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ThruFlow/Info.plist;
@@ -838,7 +926,9 @@
 					TaskCalendarBoardView.swift,
 					TasksView.swift,
 					ThruFlowApp.swift,
+					ThruFlowWatchApp.swift,
 					TodoFormView.swift,
+					WatchFlowDashboardView.swift,
 				);
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ThruFlow/Platforms/iOS/App/Info.plist;
@@ -897,7 +987,9 @@
 					TaskCalendarBoardView.swift,
 					TasksView.swift,
 					ThruFlowApp.swift,
+					ThruFlowWatchApp.swift,
 					TodoFormView.swift,
+					WatchFlowDashboardView.swift,
 				);
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ThruFlow/Platforms/iOS/App/Info.plist;
@@ -989,6 +1081,176 @@
 			};
 			name = Release;
 		};
+		6C3000083000000000000008 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = ThruFlow/Platforms/watchOS/App/ThruFlowWatch.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = BR727PS795;
+				ENABLE_DEBUG_DYLIB = NO;
+				ENABLE_PREVIEWS = NO;
+				EXCLUDED_SOURCE_FILE_NAMES = (
+					CalendarTaskIndicators.swift,
+					DayHistoryMode.swift,
+					DayHistoryView.swift,
+					DirectionFormView.swift,
+					DirectionListView.swift,
+					EmojiPickerView.swift,
+					FlowDashboardView.swift,
+					FlowHistoryInspectorView.swift,
+					FlowMiniPlayerView.swift,
+					FlowModeSelector.swift,
+					FlowStream.metal,
+					FlowStreamView.swift,
+					HistoryCalendarView.swift,
+					HistoryDayWorkspaceView.swift,
+					HistoryTaskRecordForm.swift,
+					InboxView.swift,
+					IOSDirectionEditorView.swift,
+					IOSDirectionsView.swift,
+					IOSFlowContextPicker.swift,
+					IOSFlowLiveActivityService.swift,
+					IOSFlowMemoView.swift,
+					IOSFlowStreamView.swift,
+					IOSFlowView.swift,
+					IOSHistoryView.swift,
+					IOSMoreMenuLabel.swift,
+					IOSPeriodSwipeNavigation.swift,
+					IOSProductWidgetSnapshotSyncView.swift,
+					IOSRootView.swift,
+					IOSScrollablePeriodStrip.swift,
+					IOSSettingsView.swift,
+					IOSStatisticsView.swift,
+					IOSTaskComposer.swift,
+					IOSTaskEditorView.swift,
+					IOSTasksView.swift,
+					MacOSAppDelegate.swift,
+					MacOSFlowMenuBarLabel.swift,
+					MacOSFocusController.swift,
+					MacOSRootView.swift,
+					MacOSSettingsView.swift,
+					ManualFlowCreationView.swift,
+					StatisticsView.swift,
+					TaskCalendarBoardView.swift,
+					TasksView.swift,
+					ThruFlowApp.swift,
+					ThruFlowiOSApp.swift,
+					TodoFormView.swift,
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = ThruFlow;
+				INFOPLIST_KEY_WKApplication = YES;
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.shigorefu.thruflow;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.shigorefu.thruflow.watchapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+				WK_COMPANION_APP_BUNDLE_IDENTIFIER = com.shigorefu.thruflow;
+			};
+			name = Debug;
+		};
+		6C3000093000000000000009 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = ThruFlow/Platforms/watchOS/App/ThruFlowWatch.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = BR727PS795;
+				ENABLE_DEBUG_DYLIB = NO;
+				ENABLE_PREVIEWS = NO;
+				EXCLUDED_SOURCE_FILE_NAMES = (
+					CalendarTaskIndicators.swift,
+					DayHistoryMode.swift,
+					DayHistoryView.swift,
+					DirectionFormView.swift,
+					DirectionListView.swift,
+					EmojiPickerView.swift,
+					FlowDashboardView.swift,
+					FlowHistoryInspectorView.swift,
+					FlowMiniPlayerView.swift,
+					FlowModeSelector.swift,
+					FlowStream.metal,
+					FlowStreamView.swift,
+					HistoryCalendarView.swift,
+					HistoryDayWorkspaceView.swift,
+					HistoryTaskRecordForm.swift,
+					InboxView.swift,
+					IOSDirectionEditorView.swift,
+					IOSDirectionsView.swift,
+					IOSFlowContextPicker.swift,
+					IOSFlowLiveActivityService.swift,
+					IOSFlowMemoView.swift,
+					IOSFlowStreamView.swift,
+					IOSFlowView.swift,
+					IOSHistoryView.swift,
+					IOSMoreMenuLabel.swift,
+					IOSPeriodSwipeNavigation.swift,
+					IOSProductWidgetSnapshotSyncView.swift,
+					IOSRootView.swift,
+					IOSScrollablePeriodStrip.swift,
+					IOSSettingsView.swift,
+					IOSStatisticsView.swift,
+					IOSTaskComposer.swift,
+					IOSTaskEditorView.swift,
+					IOSTasksView.swift,
+					MacOSAppDelegate.swift,
+					MacOSFlowMenuBarLabel.swift,
+					MacOSFocusController.swift,
+					MacOSRootView.swift,
+					MacOSSettingsView.swift,
+					ManualFlowCreationView.swift,
+					StatisticsView.swift,
+					TaskCalendarBoardView.swift,
+					TasksView.swift,
+					ThruFlowApp.swift,
+					ThruFlowiOSApp.swift,
+					TodoFormView.swift,
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = ThruFlow;
+				INFOPLIST_KEY_WKApplication = YES;
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.shigorefu.thruflow;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.shigorefu.thruflow.watchapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+				WK_COMPANION_APP_BUNDLE_IDENTIFIER = com.shigorefu.thruflow;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1042,6 +1304,15 @@
 			buildConfigurations = (
 				5B2000093000000000000009 /* Debug */,
 				5B20000A300000000000000A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6C30000A300000000000000A /* Build configuration list for PBXNativeTarget "ThruFlow Watch App" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6C3000083000000000000008 /* Debug */,
+				6C3000093000000000000009 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

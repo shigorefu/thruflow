@@ -31,23 +31,26 @@ ThruFlow/
       App/          iPhone composition root, navigation, entitlements, and Info.plist
       Features/     Native iPhone Flow, Tasks, History, Directions, Statistics, and Settings
       Support/      ActivityKit and other iOS framework adapters
+    watchOS/
+      App/          Watch composition root and CloudKit entitlements
+      Features/     Native Watch Flow dashboard, player, Tasks, and Statistics
 ThruFlowLiveActivity/  Widget extension for Live Activity and Home Screen widgets
 ```
 
-`ThruFlow` and `ThruFlow iOS` are separate application targets. Explicit source
-exclusions keep AppKit, menu-bar, and Metal dashboard code out of iOS and keep
-UIKit/iPhone presentation out of macOS. Shared tests remain in the macOS test
-target because they verify the platform-neutral core.
+`ThruFlow`, `ThruFlow iOS`, and `ThruFlow Watch App` are separate application
+targets. Explicit source exclusions keep AppKit, UIKit, ActivityKit, and
+platform-owned presentation code out of incompatible targets. Shared tests
+remain in the macOS test target because they verify the platform-neutral core.
 
 ## Dependency Rules
 
 Dependencies point inward:
 
 ```text
-Platforms/macOS ─┐
-                 ├──> Shared/Application ──> Shared/Domain
-Platforms/iOS  ──┘              │
-                 └──────────────> Shared/UI
+Platforms/macOS  ─┐
+Platforms/iOS    ─┼──> Shared/Application ──> Shared/Domain
+Platforms/watchOS ─┘              │
+                  └──────────────> Shared/UI
 ```
 
 - `Shared/Domain/Models` owns persisted entities and stable raw values.
@@ -68,6 +71,8 @@ Platforms/iOS  ──┘              │
   integration, drag-and-drop presentation, and the current desktop layouts.
 - `Platforms/iOS` owns the Flow-first iPhone navigation shell and compact Flow,
   Tasks, History, Directions, Statistics, and Settings presentations.
+- `Platforms/watchOS` owns the four-page vertical Watch dashboard, compact
+  player, Tasks, Statistics, and fullscreen Flow stream presentations.
 - iOS date navigation owns a bounded virtual window around the selected day or
   week. It recenters only after scrolling settles, so infinite-feeling paging
   does not retain thousands of date-card views.
@@ -104,6 +109,10 @@ Each platform owns its composition root:
 - `Platforms/iOS/App/ThruFlowiOSApp.swift` declares the iPhone scene and injects
   the same `ActiveFlowStore`, `AppSettings`, calendar, locale, and model schema.
   It also registers the Live Activity control dependency used by system actions.
+- `Platforms/watchOS/App/ThruFlowWatchApp.swift` declares the Watch scene and
+  injects the same model schema, settings-derived calendar/locale, and
+  `ActiveFlowStore`. It reconciles persisted active Flow state on appearance
+  and foreground entry instead of creating a Watch-only timer.
 
 ## Feature Boundaries
 
@@ -117,8 +126,8 @@ Each platform owns its composition root:
 - Persistence orchestration shared by platforms belongs in
   `Shared/Application`; direct platform presentation does not.
 - Reusable UI belongs in `Shared/UI` only when behavior and layout are genuinely
-  the same on macOS and iOS. Sharing a large desktop screen to avoid writing an
-  iPhone presentation is not a valid abstraction.
+  the same across owning platforms. Sharing a large desktop screen to avoid a
+  platform-native presentation is not a valid abstraction.
 - `FlowStreamSurface` and `FlowStreamShader.metal` form one shared Metal render
   path for macOS and iOS. `DailyFlowAppearance` derives a deterministic daily
   seed from the local calendar date and the oldest synced Direction UUID, so
@@ -230,5 +239,28 @@ verify compact, minimal, expanded, and Lock Screen rendering independently.
 ## Non-Goals
 
 This cross-platform stage does not add new business rules or alter macOS
-behavior. It does not include advanced iPhone Statistics, full History/calendar
-editing, or Apple Watch.
+behavior. It does not include advanced iPhone Statistics or full
+History/calendar editing. The watchOS companion is a thin presentation client
+over the same shared models, calculations, active-Flow store, and CloudKit
+container.
+
+## watchOS Presentation
+
+`Platforms/watchOS` owns the Watch app entry point and its native
+`NavigationStack` presentation. The root is a system
+`VerticalPageTabViewStyle` pager with four full-screen pages:
+
+- `タイマー` is the initial complete Flow player;
+- `Flow` is a fullscreen stream without a timeline;
+- `タスク` presents today's Tasks and Habits;
+- `統計` presents today's completion and focus summary.
+
+The pages are ordered vertically and use the system page indicator and Digital
+Crown behavior. The timer page has no nested vertical scroll, so the page swipe
+is not intercepted by its controls. Off-screen Flow rendering is disabled.
+
+The Watch target reuses `ActiveFlowStore`, SwiftData models, domain builders,
+Task progress controls, and `FlowVisualState`. macOS and iOS render the stream
+with the shared Metal shader. watchOS uses a `Canvas` renderer because SwiftUI
+`ShaderLibrary` and `colorEffect` are unavailable there; both renderers consume
+the same palette, daily seed, growth, speed, and mode parameters.

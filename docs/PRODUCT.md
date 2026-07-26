@@ -107,3 +107,20 @@ regional calendar/clock preferences apply immediately to every app scene.
 Language follows the shared String Catalog and takes effect after relaunch;
 available languages are discovered from the bundle so contributors can add a
 locale without changing Settings code.
+
+## Apple Watch
+
+The watchOS companion provides a compact four-page vertical Flow dashboard:
+
+- `タイマー` is the first page and contains the complete Watch Flow player;
+- `Flow` presents the animated stream fullscreen without a timeline;
+- `タスク` presents today's Tasks and Habits;
+- `統計` presents today's completion, focus, Block, and Flow summary.
+
+The user moves between pages with the system vertical page gesture or Digital
+Crown. Each page occupies the display instead of acting as a navigation card.
+
+The Watch does not own a second timer or separate progress model. It restores
+the canonical active `FlowSession` from the shared SwiftData/CloudKit store and
+controls the same `ActiveFlowStore` operations as iPhone and macOS. Task Check
+completion is interactive; Block and Minute progress remains Flow-derived.

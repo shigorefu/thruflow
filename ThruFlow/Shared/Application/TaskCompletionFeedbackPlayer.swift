@@ -2,6 +2,8 @@ import AVFoundation
 import Foundation
 #if os(iOS)
 import UIKit
+#elseif os(watchOS)
+import WatchKit
 #endif
 
 @MainActor
@@ -40,6 +42,8 @@ final class TaskCompletionFeedbackPlayer {
 #if os(iOS)
         completionHaptic.prepare()
         completionHaptic.notificationOccurred(.success)
+#elseif os(watchOS)
+        WKInterfaceDevice.current().play(.success)
 #endif
     }
 

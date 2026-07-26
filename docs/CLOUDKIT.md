@@ -55,10 +55,9 @@ physical iPhone builds for synchronization diagnostics.
 
 The active timer is synchronized through the current `FlowSession`. Absolute
 timestamps, pause/break anchors, and a runtime revision allow another client to
-reconstruct the timer without transferring per-second ticks. Both apps
-reconcile on launch, foreground entry, and while active. The same mechanism
-works in local-only mode and is intended to be reused by a future watchOS
-client.
+reconstruct the timer without transferring per-second ticks. macOS, iOS, and
+watchOS reconcile on launch, foreground entry, and while active. The same
+mechanism works in local-only mode.
 
 CloudKit does not provide a guaranteed real-time wakeup channel for a suspended
 application. If the iPhone app is suspended when Flow starts on macOS, the

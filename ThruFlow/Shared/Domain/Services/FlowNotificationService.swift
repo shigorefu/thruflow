@@ -91,7 +91,11 @@ final class LocalFlowNotificationService: FlowNotificationService {
     }
 
     func clearBadge() {
+#if os(watchOS)
+        return
+#else
         center.setBadgeCount(0)
+#endif
     }
 
     private func schedule(id: String, title: String, fireDate: Date) {

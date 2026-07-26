@@ -220,6 +220,27 @@ changing the basic shared settings. Private CloudKit synchronization carries the
 same SwiftData records between devices signed into one Apple ID. Japanese is the
 default language for a fresh install.
 
+## Apple Watch Companion
+
+Watch opens on a native four-page vertical pager in this order: `タイマー`,
+fullscreen `Flow`, today's `タスク`, and today's `統計`. Every page occupies
+the display; the system vertical page gesture or Digital Crown moves between
+them. Task and mode pickers continue to use system `NavigationLink`
+destinations.
+
+The initial timer page keeps Task/Direction context selection, Flow mode
+selection, the focus/rest ring, `-5`, Play/Pause, `+5`, destroy, stop, and break
+actions on one non-scrolling screen. Memo confirmation uses a Watch sheet. The
+fullscreen Flow page contains only the stream and compact Block/Flow totals; it
+intentionally omits the dashboard timeline and stops rendering while off-screen.
+Tasks expose the same Check, Block-ring, and Minute-progress semantics as the
+other platforms. Statistics presents completion, focused time, Blocks, and Flow
+count.
+
+Opening or foregrounding Watch reconciles the canonical persisted active
+session. CloudKit transports the same Task, Direction, mode, phase, and absolute
+timer anchors; Watch never starts an independent timer state machine.
+
 ## System Notifications
 
 macOS and iOS request alert, sound, and badge permission from the shared Flow

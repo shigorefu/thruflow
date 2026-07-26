@@ -51,6 +51,11 @@ Current MVP goal:
   with Today ordering and Task measurement progress.
 - iPhone Home Screen `Flow Dots` widget: current month in Medium and the last
   180 days in Large, using canonical Flow statistics colors.
+- watchOS Flow companion with a native four-page vertical dashboard for
+  `タイマー`, fullscreen `Flow`, today's `タスク`, and compact `統計`.
+- Shared active-Flow restoration through the CloudKit-backed SwiftData store:
+  opening the Watch adopts the same Task, Direction, mode, phase, and elapsed
+  time as macOS or iPhone.
 
 ## Not Included
 
@@ -59,7 +64,6 @@ Current MVP goal:
 - Food/sleep/game classification.
 - Complex rewards.
 - Accounts/subscriptions.
-- Apple Watch.
 - Advanced iPhone `統計` beyond the compact contribution overview.
 - Full iPhone History/calendar editing.
 
