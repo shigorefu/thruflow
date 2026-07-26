@@ -258,6 +258,7 @@ struct FlowDashboardTests {
         let overflow = FlowVisualState(blocks: 12, flowCount: 20, isActive: false, mode: .twentyFiveFive)
 
         #expect(empty.progress == 0)
+        #expect(empty.identityReveal == 0)
         #expect(middle.progress == 0.5)
         #expect(full.progress == 1)
         #expect(overflow.progress == 1)
@@ -266,7 +267,20 @@ struct FlowDashboardTests {
         #expect(full.speed == overflow.speed)
         #expect(full.volume == overflow.volume)
         #expect(full.detail == overflow.detail)
+        #expect(FlowVisualState.baselineRibbonCount == 6)
         #expect(FlowVisualState.ribbonCount == 7)
+    }
+
+    @Test func dailyIdentityEmergesDuringFirstBlock() {
+        let empty = FlowVisualState(blocks: 0, flowCount: 0, isActive: false, mode: .twentyFiveFive)
+        let halfBlock = FlowVisualState(blocks: 0.5, flowCount: 1, isActive: false, mode: .twentyFiveFive)
+        let firstBlock = FlowVisualState(blocks: 1, flowCount: 1, isActive: false, mode: .twentyFiveFive)
+        let later = FlowVisualState(blocks: 4, flowCount: 4, isActive: false, mode: .twentyFiveFive)
+
+        #expect(empty.identityReveal == 0)
+        #expect(abs(halfBlock.identityReveal - 0.5) < 0.0001)
+        #expect(firstBlock.identityReveal == 1)
+        #expect(later.identityReveal == 1)
     }
 
     @Test func visualOccupancyStopsGrowingBeforeDetailReachesMaximum() {

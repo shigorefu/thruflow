@@ -125,7 +125,10 @@ Each platform owns its composition root:
   the same user's devices render the same daily topology without adding a new
   persisted setting. The topology is independent of time of day.
 - `FlowVisualState` maps actual daily focus into depth, glow, detail, and
-  motion while keeping seven fixed ribbons and a stable route.
+  motion. At zero progress the shader preserves the archived six-ribbon
+  neutral S-stream. `identityReveal` blends it into the seven-ribbon daily
+  topology over the first canonical Block; there is no renderer swap or phase
+  reset.
   `FlowRenderCadence` owns the explicit 30 FPS idle / 60 FPS active contract.
   Platform wrappers only decide when rendering pauses: macOS requires the key
   window, while iOS requires an active scene. Pausing freezes the shared

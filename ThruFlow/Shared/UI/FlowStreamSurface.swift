@@ -46,6 +46,7 @@ struct FlowStreamSurface: View {
         let colors = resolvedColors
         let weights = resolvedWeights
         let appearance = DailyFlowAppearance(seed: dailySeed)
+        let background = resolvedBackground(identityReveal: state.identityReveal)
 
         TimelineView(.animation(
             minimumInterval: FlowRenderCadence.frameInterval(isActive: isActive),
@@ -53,7 +54,7 @@ struct FlowStreamSurface: View {
         )) { timeline in
             GeometryReader { proxy in
                 Rectangle()
-                    .fill(backgroundColor)
+                    .fill(background)
                     .colorEffect(
                         ShaderLibrary.flowStream(
                             .float2(proxy.size),
@@ -63,6 +64,7 @@ struct FlowStreamSurface: View {
                                 isPaused: animationIsPaused
                             ))),
                             .float(Float(state.progress)),
+                            .float(Float(state.identityReveal)),
                             .float(Float(state.volume)),
                             .float(Float(state.detail)),
                             .float(Float(state.depth)),
@@ -82,7 +84,7 @@ struct FlowStreamSurface: View {
                             .float(Float(weights[1])),
                             .float(Float(weights[2])),
                             .float(Float(weights[3])),
-                            .color(backgroundColor),
+                            .color(background),
                             .float(colorScheme == .dark ? 1 : 0)
                         )
                     )
@@ -123,12 +125,22 @@ struct FlowStreamSurface: View {
         return repeated.map { $0 / total }
     }
 
-    private var backgroundColor: Color {
+    private func resolvedBackground(identityReveal: Double) -> Color {
+        let reveal = min(max(identityReveal, 0), 1)
+
         switch colorScheme {
         case .dark:
-            Color(red: 0.022, green: 0.029, blue: 0.048)
+            return Color(
+                red: 0.025 + (0.022 - 0.025) * reveal,
+                green: 0.032 + (0.029 - 0.032) * reveal,
+                blue: 0.052 + (0.048 - 0.052) * reveal
+            )
         default:
-            Color(red: 0.925, green: 0.94, blue: 0.965)
+            return Color(
+                red: 0.91 + (0.925 - 0.91) * reveal,
+                green: 0.93 + (0.94 - 0.93) * reveal,
+                blue: 0.96 + (0.965 - 0.96) * reveal
+            )
         }
     }
 

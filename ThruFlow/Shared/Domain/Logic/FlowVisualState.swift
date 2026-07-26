@@ -9,9 +9,12 @@ import Foundation
 
 struct FlowVisualState: Equatable {
     static let maximumGrowthBlocks = 6.0
+    static let identityRevealBlocks = 1.0
+    static let baselineRibbonCount = 6
     static let ribbonCount = 7
 
     let progress: Double
+    let identityReveal: Double
     let speed: Double
     let volume: Double
     let detail: Double
@@ -26,6 +29,8 @@ struct FlowVisualState: Equatable {
         let modeCharacter = Self.modeCharacter(for: mode)
 
         progress = linearProgress
+        let identityProgress = min(max(blocks / Self.identityRevealBlocks, 0), 1)
+        identityReveal = Self.smoothstep(identityProgress)
         speed = isActive
             ? 1.10 + easedProgress * 1.70
             : 0.06 + easedProgress * 0.22
