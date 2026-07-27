@@ -149,7 +149,9 @@ The Dashboard Task header `+` opens the shared messenger-style composer in a sep
 ## iPhone MVP
 
 The first iPhone surface is a Flow-first system `TabView`, with an independent
-`NavigationStack` inside each destination. `Flow` opens by default. The tab bar
+`NavigationStack` inside each destination. `Flow` opens by default. The Flow tab
+and macOS sidebar use the same three-wave template mark as the macOS menu bar,
+so primary Flow navigation has one icon across platforms. The tab bar
 remains visible and marks the active
 destination across five items: `Flow`, `タスク`, `履歴`, `方向`, and `統計`.
 On iOS 26 it uses the native Liquid Glass selection indicator and remains

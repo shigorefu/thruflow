@@ -6,11 +6,7 @@ struct MacOSFlowMenuBarLabel: View {
 
     var body: some View {
         if activeFlowStore.timerState == nil {
-            Image("FlowMenuBarIcon")
-                .renderingMode(.template)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 18, height: 13)
+            FlowMenuIcon(width: 18)
                 .accessibilityLabel(String(localized: "Flow"))
         } else {
             Text(menuTitle)

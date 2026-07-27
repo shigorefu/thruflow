@@ -20,7 +20,11 @@ struct MacOSRootView: View {
     var body: some View {
         NavigationSplitView {
             List(selection: $selection) {
-                Label(String(localized: "Flow"), systemImage: "waveform.path")
+                Label {
+                    Text(String(localized: "Flow"))
+                } icon: {
+                    FlowMenuIcon()
+                }
                     .tag(AppSection.flow)
 
                 Label(String(localized: "タスク"), systemImage: "checklist")
