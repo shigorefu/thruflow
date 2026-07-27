@@ -98,13 +98,22 @@ struct IOSRootView: View {
                     destination(for: route)
                 }
                 .tabItem {
-                    Label(route.title, systemImage: route.systemImage)
+                    if route == .flow {
+                        Label {
+                            Text(route.title)
+                        } icon: {
+                            FlowMenuIcon(width: 22)
+                        }
+                    } else {
+                        Label(route.title, systemImage: route.systemImage)
+                    }
                 }
                 .tag(route)
                 .accessibilityLabel(route.title)
             }
         }
         .tint(.accentColor)
+        .toolbarBackground(.hidden, for: .tabBar)
     }
 
     @ViewBuilder

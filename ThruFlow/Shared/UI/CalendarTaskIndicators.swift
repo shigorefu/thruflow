@@ -49,7 +49,8 @@ struct CalendarTaskIndicators: View {
                     .opacity(todo.isCompleted ? 0.38 : 1)
             }
         }
-        .frame(height: 4)
+        .padding(.horizontal, 2)
+        .frame(height: 6)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(String(localized: "この日のタスク、\(scheduledTodos.count)件"))
     }

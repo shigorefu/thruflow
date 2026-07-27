@@ -10,10 +10,12 @@ import SwiftUI
 
 struct FlowDashboardView: View {
     private static let topPanelHeight: CGFloat = 410
-    private static let wideLayoutMinimumWidth: CGFloat = 760
     private static let maximumDashboardWidth: CGFloat = 1320
+    private static let minimumFlowStageWidth: CGFloat = 340
     private static let widePlayerWidth: CGFloat = 320
     private static let panelSpacing: CGFloat = 16
+    private static let wideLayoutMinimumWidth =
+        minimumFlowStageWidth + widePlayerWidth + panelSpacing
 
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.calendar) private var calendar

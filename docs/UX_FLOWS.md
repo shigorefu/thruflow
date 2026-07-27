@@ -25,10 +25,19 @@ Filters are `すべて`, `タスク`, and `習慣`. Habit instances stay in the 
 Active normal Tasks can be dragged between dates in day, week, and month. Month still opens a day for detailed actions when its date header is selected. Completed Tasks and fixed daily/weekday Habit Tasks stay on their original date. Weekly-count Habit moves are validated against the remaining weekly target.
 
 Clicking a month cell opens that date in `日`. On macOS, the system title toolbar
-places `期限切れ N | 日付なし N` beside `タスク`; both counters open the same
-trailing backlog inspector with the corresponding records. The compact calendar
-control row uses the text segmented filter `すべて | タスク | 習慣`, centered `日 | 週 | 月`, and an explicit
-trailing `今日`. The quick composer follows the selected date or kanban column.
+centers the compact text segmented filter `すべて | タスク | 習慣`; its trailing
+actions contain `期限切れ N | 日付なし N` and an icon-only search action that
+expands on demand. Both counters open the same trailing backlog inspector with the
+corresponding records. The calendar header uses two rows: centered `日 | 週 | 月`
+first, then the active date or period on the left and `‹ 今日 ›` navigation on the
+right. The embedded month and year pickers do not repeat their own date title or
+previous/next controls; the shared header is the only period navigator and updates
+the complete Task workspace. On wide macOS layouts, changing `日 | 週 | 月`
+animates only the primary Task calendar content; the persistent calendar column
+stays visually stable to the right of the Task
+workspace in `日`, `週`, and `月`; the former seven-day card strip is not
+duplicated above the `日` list.
+The quick composer follows the selected date or kanban column.
 
 Sections:
 
@@ -112,6 +121,10 @@ At the planned focus end, Flow does not auto-switch. The timer continues. The us
 - start break;
 - stop.
 
+While focus overtime is running, the primary pause control becomes `休憩` on
+macOS and iOS. Selecting it opens the normal break-memo flow; the break still
+does not start automatically.
+
 Stopping focus or starting break opens the same square memo panel in the dashboard and macOS menu bar player. It shows `お疲れ様です。メモを追加しますか？`, a large editor, `キャンセル` on the left, and one checkmark submit button on the right. The submit label is `メモなしで送信` for an empty editor and `送信` when text exists. Focus keeps counting while a break memo is open. Submitting text writes it to Todo; submitting an empty editor continues without changing the memo. Cancelling returns to the state before the prompt: a pending break returns to focus, while a stop prompt restores the previous running or paused Flow and removes its provisional progress. Stopping or skipping an existing rest never asks for memo again.
 
 On iPhone, successfully submitting the stop memo or starting the requested rest
@@ -136,7 +149,9 @@ The Dashboard Task header `+` opens the shared messenger-style composer in a sep
 ## iPhone MVP
 
 The first iPhone surface is a Flow-first system `TabView`, with an independent
-`NavigationStack` inside each destination. `Flow` opens by default. The tab bar
+`NavigationStack` inside each destination. `Flow` opens by default. The Flow tab
+and macOS sidebar use the same three-wave template mark as the macOS menu bar,
+so primary Flow navigation has one icon across platforms. The tab bar
 remains visible and marks the active
 destination across five items: `Flow`, `タスク`, `履歴`, `方向`, and `統計`.
 On iOS 26 it uses the native Liquid Glass selection indicator and remains
@@ -153,7 +168,9 @@ timeline before the timer card. It keeps the Task selector, the shared
 `Sprint | Focus | Deep` segmented selector, timer controls, stream, and timeline
 together. The selector's Help button opens a native dimmed bottom sheet with
 mode icons, work/rest durations, and usage guidance; macOS keeps the same content
-in a popover. The timer exposes subtract five minutes, Play/Pause, add five minutes, destroy,
+in a popover. Changing the mode on either platform animates the shared Metal
+parameters through the same transition without resetting the stream phase.
+The timer exposes subtract five minutes, Play/Pause, add five minutes, destroy,
 stop, and break while preserving the established player size. iPhone and macOS
 share the same Metal stream renderer, including palette, speed, growth, glow,
 completion impulse, and a theme-aware light or dark background. Below the
@@ -193,7 +210,10 @@ week in from the opposite edge after release; the direction check prevents
 vertical list scrolling from triggering period navigation. The Flow
 player context is a
 visually bounded, Direction-tinted system button so its picker affordance stays
-clear. `履歴` provides touch-native `日 | 週 | 月` calendar ranges:
+clear. Editing an automatically generated Habit occurrence keeps its title,
+memo, and hashtags editable, while Direction, measurement, planned amount,
+priority, scheduled date, and deadline remain read-only values inherited from
+the Habit Direction. `履歴` provides touch-native `日 | 週 | 月` calendar ranges:
 day uses a vertically scrolling 24-hour timeline, week uses seven horizontally
 scrollable day columns, and month uses Apple Calendar-style numeric days with
 Direction-colored activity dots. Its period navigation matches `タスク`: `日`
@@ -338,10 +358,18 @@ The primary `カレンダー` mode provides:
 - `月`: a seven-column month overview.
 
 On macOS, History follows the same two-level hierarchy as Tasks. The system title
-toolbar places `Flow | タスク | 方向` beside `履歴`. The compact control row below
-uses an icon-only Flow/rest filter on the left, centered `日 | 週 | 月`, and an
-explicit trailing `今日`; the visible `表示` label and duplicate in-content
-filters are removed. `タスク` and `方向` use a wide two-column layout with
+toolbar centers the compact `Flow | タスク | 方向` selector, keeps the Flow/rest
+filter on the leading side, and places an icon-only expanding search action on
+the trailing side.
+The persistent calendar/inspector column owns a two-row header: centered
+`日 | 週 | 月` first, then the active date or period on the left and
+`‹ 今日 ›` navigation on the right. There is no duplicate full-width calendar
+control panel above the workspace, and the embedded month/year picker does not
+repeat its own arrows. The shared period state updates both the calendar workspace
+and its inspector. On wide macOS layouts, range changes animate only the primary
+calendar workspace; the persistent calendar/inspector column does not transition.
+The visible `表示` label and duplicate in-content filters are removed.
+`タスク` and `方向` use a wide two-column layout with
 aggregates on the left and a mini-calendar plus range summary on the right. At
 compact widths, the calendar and summary stack above the aggregate list.
 

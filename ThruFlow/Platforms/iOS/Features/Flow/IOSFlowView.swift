@@ -258,6 +258,7 @@ struct IOSFlowView: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(selectedDirection == nil)
+                .accessibilityLabel(primaryActionTitle)
 
                 controlButton("goforward.5") {
                     activeFlowStore.seekForward(modelContext: modelContext)
@@ -372,11 +373,11 @@ struct IOSFlowView: View {
                     systemImage: "checkmark.circle"
                 )
             } else {
-                ForEach(todayTodos.prefix(5)) { todo in
+                ForEach(todayTodos) { todo in
                     IOSTaskRow(todo: todo) {
                         editorMode = .edit(todo)
                     }
-                    if todo.id != todayTodos.prefix(5).last?.id {
+                    if todo.id != todayTodos.last?.id {
                         Divider()
                     }
                 }
@@ -391,7 +392,11 @@ struct IOSFlowView: View {
     private var modeBinding: Binding<FlowMode> {
         Binding(
             get: { activeFlowStore.selectedMode },
-            set: { activeFlowStore.selectMode($0, modelContext: modelContext) }
+            set: { mode in
+                withAnimation(.easeInOut(duration: 0.8)) {
+                    activeFlowStore.selectMode(mode, modelContext: modelContext)
+                }
+            }
         )
     }
 
@@ -399,7 +404,26 @@ struct IOSFlowView: View {
         guard let state = activeFlowStore.timerState else { return "play.fill" }
         if state.phase == .paused { return "play.fill" }
         if activeFlowStore.isBreakPhase { return "forward.fill" }
+        if activeFlowStore.isFocusOvertime(now: activeFlowStore.displayDate) {
+            return "cup.and.saucer.fill"
+        }
         return "pause.fill"
+    }
+
+    private var primaryActionTitle: String {
+        guard let state = activeFlowStore.timerState else {
+            return String(localized: "Flowを開始")
+        }
+        if state.phase == .paused {
+            return String(localized: "再開")
+        }
+        if activeFlowStore.isBreakPhase {
+            return String(localized: "Flowを開始")
+        }
+        if activeFlowStore.isFocusOvertime(now: activeFlowStore.displayDate) {
+            return String(localized: "休憩")
+        }
+        return String(localized: "一時停止")
     }
 
     private var canSeek: Bool {
@@ -469,9 +493,14 @@ struct IOSFlowView: View {
         }
 
         if let state = activeFlowStore.timerState {
-            state.phase == .paused
-                ? activeFlowStore.resume(modelContext: modelContext)
-                : activeFlowStore.pause(modelContext: modelContext)
+            if state.phase == .paused {
+                activeFlowStore.resume(modelContext: modelContext)
+            } else if activeFlowStore.isFocusOvertime(now: activeFlowStore.displayDate) {
+                activeFlowStore.requestBreakMemo(modelContext: modelContext)
+                presentMemoIfNeeded()
+            } else {
+                activeFlowStore.pause(modelContext: modelContext)
+            }
             return
         }
 

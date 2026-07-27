@@ -32,6 +32,7 @@ struct TasksView: View {
     @State private var calendarRange: TaskCalendarRange = .oneDay
     @State private var taskFilter: TaskCalendarFilter = .all
     @State private var searchText = ""
+    @State private var isSearchPresented = false
     @State private var moveError: String?
     @State private var backlogInspectorMode: MacTaskBacklogMode?
     @AppStorage("today.groupOrder") private var groupOrderRaw = TasksTodoGroup.defaultOrderRaw
@@ -106,24 +107,16 @@ struct TasksView: View {
             if isSearching {
                 globalSearchContent
             } else {
-                TaskCalendarToolbar(
-                    range: $calendarRange,
-                    filter: $taskFilter,
-                    onToday: moveToToday
-                )
-
-                Divider()
-
                 tasksWorkspace
             }
         }
         .navigationTitle(String(localized: "タスク"))
-        .searchable(
-            text: $searchText,
-            placement: .toolbar,
-            prompt: Text(String(localized: "検索"))
-        )
         .toolbar {
+            ToolbarItem(placement: .principal) {
+                taskFilterPicker
+                    .fixedSize(horizontal: true, vertical: false)
+            }
+
             ToolbarItem(placement: .primaryAction) {
                 HStack(spacing: 10) {
                     backlogToolbarButton(
@@ -145,6 +138,13 @@ struct TasksView: View {
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
                 .fixedSize(horizontal: true, vertical: true)
+            }
+
+            ToolbarItem(placement: .primaryAction) {
+                MacToolbarSearchControl(
+                    text: $searchText,
+                    isPresented: $isSearchPresented
+                )
             }
         }
         .safeAreaInset(edge: .bottom) {
@@ -206,50 +206,64 @@ struct TasksView: View {
         }
     }
 
+    private var taskFilterPicker: some View {
+        Picker(String(localized: "フィルター"), selection: $taskFilter) {
+            ForEach(TaskCalendarFilter.allCases) { option in
+                Text(option.displayName).tag(option)
+            }
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .accessibilityLabel(String(localized: "フィルター"))
+        .accessibilityValue(taskFilter.displayName)
+    }
+
     @ViewBuilder
     private var tasksWorkspace: some View {
-        if calendarRange == .oneDay {
-            VStack(spacing: 0) {
-                TaskDayStrip(
-                    selectedDate: selectedDateBinding,
-                    todos: searchFilteredTodos.filter { !$0.isArchived && !$0.isDeleted },
-                    filter: taskFilter,
-                    onDropPayload: moveTaskPayload
-                )
-                .padding(.horizontal, 12)
-                .padding(.vertical, 10)
+        GeometryReader { geometry in
+            HStack(spacing: 0) {
+                boardContent
+                    .id(calendarRange)
+                    .transition(.opacity.combined(with: .scale(scale: 0.995)))
+                    .animation(.easeInOut(duration: 0.22), value: calendarRange)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                 Divider()
 
-                oneDayList
-            }
-        } else {
-            GeometryReader { geometry in
-                if geometry.size.width >= 900 {
-                    HStack(spacing: 0) {
-                        boardContent
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                        Divider()
-
-                        VStack(spacing: 0) {
-                            taskPeriodPicker
-                                .padding(16)
-                            Spacer(minLength: 0)
-                        }
-                        .frame(width: min(390, max(310, geometry.size.width * 0.30)))
-                        .background(Color.secondary.opacity(0.035))
+                VStack(spacing: 0) {
+                    MacCalendarNavigationHeader(
+                        title: taskPeriodTitle,
+                        onPrevious: { moveTaskPeriod(by: -1) },
+                        onToday: moveToToday,
+                        onNext: { moveTaskPeriod(by: 1) }
+                    ) {
+                        taskRangePicker
                     }
-                } else {
-                    VStack(spacing: 0) {
+
+                    Divider()
+
+                    ScrollView {
                         taskPeriodPicker
-                            .padding(12)
-                        Divider()
-                        boardContent
+                            .padding(16)
                     }
+
+                    Spacer(minLength: 0)
                 }
+                .frame(width: min(390, max(300, geometry.size.width * 0.29)))
+                .background(Color.secondary.opacity(0.035))
             }
         }
+    }
+
+    private var taskRangePicker: some View {
+        Picker(String(localized: "表示範囲"), selection: $calendarRange) {
+            ForEach(TaskCalendarRange.allCases) { option in
+                Text(option.displayName).tag(option)
+            }
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .accessibilityLabel(String(localized: "表示範囲"))
     }
 
     @ViewBuilder
@@ -538,6 +552,38 @@ struct TasksView: View {
         let today = dayBoundary.day(containing: .now, calendar: calendar)
         anchorDate = today
         selectedDate = today
+    }
+
+    private func moveTaskPeriod(by direction: Int) {
+        let date = calendarBuilder.advancedDate(
+            from: anchorDate,
+            range: calendarRange,
+            direction: direction
+        )
+        anchorDate = calendar.startOfDay(for: date)
+        selectedDate = anchorDate
+    }
+
+    private var taskPeriodTitle: String {
+        switch calendarRange {
+        case .oneDay:
+            selectedDate.formatted(.dateTime.locale(locale).year().month(.wide).day().weekday(.wide))
+        case .sevenDays:
+            taskWeekTitle
+        case .month:
+            anchorDate.formatted(.dateTime.locale(locale).year().month(.wide))
+        }
+    }
+
+    private var taskWeekTitle: String {
+        guard let interval = calendar.dateInterval(of: .weekOfYear, for: anchorDate) else {
+            return anchorDate.formatted(.dateTime.locale(locale).year().month().day())
+        }
+        let end = interval.end.addingTimeInterval(-1)
+        let formatter = DateFormatter()
+        formatter.locale = locale
+        formatter.setLocalizedDateFormatFromTemplate("yMd")
+        return "\(formatter.string(from: interval.start)) – \(formatter.string(from: end))"
     }
 
     private func moveTodosToToday(_ candidates: [Todo]) {
