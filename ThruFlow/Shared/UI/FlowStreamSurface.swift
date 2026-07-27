@@ -97,6 +97,7 @@ struct FlowStreamSurface: View {
                             .float(colorScheme == .dark ? 1 : 0)
                         )
                     )
+                    .animation(.easeInOut(duration: 0.8), value: mode)
                     .compositingGroup()
             }
         }

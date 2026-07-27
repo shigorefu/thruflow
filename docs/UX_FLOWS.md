@@ -25,10 +25,15 @@ Filters are `すべて`, `タスク`, and `習慣`. Habit instances stay in the 
 Active normal Tasks can be dragged between dates in day, week, and month. Month still opens a day for detailed actions when its date header is selected. Completed Tasks and fixed daily/weekday Habit Tasks stay on their original date. Weekly-count Habit moves are validated against the remaining weekly target.
 
 Clicking a month cell opens that date in `日`. On macOS, the system title toolbar
-places `期限切れ N | 日付なし N` beside `タスク`; both counters open the same
-trailing backlog inspector with the corresponding records. The compact calendar
-control row uses the text segmented filter `すべて | タスク | 習慣`, centered `日 | 週 | 月`, and an explicit
-trailing `今日`. The quick composer follows the selected date or kanban column.
+centers the compact text segmented filter `すべて | タスク | 習慣`; its trailing
+actions contain `期限切れ N | 日付なし N` and an icon-only search action that
+expands on demand. Both counters open the same trailing backlog inspector with the
+corresponding records. The calendar header uses two rows: centered `日 | 週 | 月`
+first, then the active date or period on the left and `‹ 今日 ›` navigation on the
+right. A persistent calendar column stays visible to the right of the Task
+workspace in `日`, `週`, and `月`; the former seven-day card strip is not
+duplicated above the `日` list.
+The quick composer follows the selected date or kanban column.
 
 Sections:
 
@@ -338,10 +343,15 @@ The primary `カレンダー` mode provides:
 - `月`: a seven-column month overview.
 
 On macOS, History follows the same two-level hierarchy as Tasks. The system title
-toolbar places `Flow | タスク | 方向` beside `履歴`. The compact control row below
-uses an icon-only Flow/rest filter on the left, centered `日 | 週 | 月`, and an
-explicit trailing `今日`; the visible `表示` label and duplicate in-content
-filters are removed. `タスク` and `方向` use a wide two-column layout with
+toolbar centers the compact `Flow | タスク | 方向` selector, keeps the Flow/rest
+filter on the leading side, and places an icon-only expanding search action on
+the trailing side.
+The persistent calendar/inspector column owns a two-row header: centered
+`日 | 週 | 月` first, then the active date or period on the left and
+`‹ 今日 ›` navigation on the right. There is no duplicate full-width calendar
+control panel above the workspace. Range changes animate between calendar
+workspaces; the visible `表示` label and duplicate in-content filters are removed.
+`タスク` and `方向` use a wide two-column layout with
 aggregates on the left and a mini-calendar plus range summary on the right. At
 compact widths, the calendar and summary stack above the aggregate list.
 

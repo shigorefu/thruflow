@@ -23,6 +23,7 @@ struct DayHistoryView: View {
     @State private var selectedRange: HistoryCalendarRange = .week
     @State private var visibleCalendarKinds = Set(HistoryCalendarItemKind.allCases)
     @State private var searchText = ""
+    @State private var isSearchPresented = false
     @State private var expandedTaskIDs: Set<String> = []
     @State private var expandedDirectionIDs: Set<UUID> = []
     @State private var editingTodo: Todo?
@@ -77,24 +78,38 @@ struct DayHistoryView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if !isSearching {
-                historyToolbar
-                Divider()
-            }
-
             modeContent
+                .id(selectedRange)
+                .transition(.opacity.combined(with: .scale(scale: 0.995)))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .navigationTitle(String(localized: "履歴"))
-        .searchable(
-            text: $searchText,
-            placement: .toolbar,
-            prompt: Text(String(localized: "検索"))
-        )
+        .animation(.easeInOut(duration: 0.22), value: selectedRange)
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
+            ToolbarItem(placement: .navigation) {
+                HStack(spacing: 8) {
+                    if let onClose {
+                        Button(action: onClose) {
+                            Image(systemName: "chevron.left")
+                        }
+                        .help(String(localized: "統計に戻る"))
+                        .accessibilityLabel(String(localized: "統計に戻る"))
+                    }
+
+                    HistoryVisibilityMenu(visibleKinds: $visibleCalendarKinds)
+                }
+            }
+
+            ToolbarItem(placement: .principal) {
                 modePicker
                     .fixedSize(horizontal: true, vertical: false)
+            }
+
+            ToolbarItem(placement: .primaryAction) {
+                MacToolbarSearchControl(
+                    text: $searchText,
+                    isPresented: $isSearchPresented
+                )
             }
         }
         .sheet(item: $editingTodo) { todo in
@@ -128,38 +143,14 @@ struct DayHistoryView: View {
     }
 
     private var historyToolbar: some View {
-        ZStack {
-            HStack(spacing: 10) {
-                if let onClose {
-                    Button(action: onClose) {
-                        Image(systemName: "chevron.left")
-                    }
-                    .buttonStyle(.borderless)
-                    .help(String(localized: "統計に戻る"))
-                    .accessibilityLabel(String(localized: "統計に戻る"))
-                }
-
-                HistoryVisibilityMenu(visibleKinds: $visibleCalendarKinds)
-
-                Spacer(minLength: 0)
-
-                todayButton
-            }
-
+        MacCalendarNavigationHeader(
+            title: dateTitle,
+            onPrevious: { moveHistoryPeriod(by: -1) },
+            onToday: moveHistoryToToday,
+            onNext: { moveHistoryPeriod(by: 1) }
+        ) {
             rangePicker
-                .frame(width: 150)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(.bar)
-    }
-
-    private var todayButton: some View {
-        Button(String(localized: "今日")) {
-            selectedDate = dayBoundary.day(containing: .now, calendar: calendar)
-        }
-        .buttonStyle(.borderedProminent)
-        .fixedSize()
     }
 
     private var modePicker: some View {
@@ -219,7 +210,8 @@ struct DayHistoryView: View {
                     range: $selectedRange,
                     sessions: searchFilteredSessions,
                     breaks: searchFilteredBreaks,
-                    visibleKinds: $visibleCalendarKinds
+                    visibleKinds: $visibleCalendarKinds,
+                    sidebarHeader: AnyView(historyToolbar)
                 )
             case .tasks:
                 aggregateWorkspace { tasksContent }
@@ -284,6 +276,7 @@ struct DayHistoryView: View {
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 18) {
+                        historyToolbar
                         aggregatePeriodPicker
                         summary
                         content()
@@ -304,6 +297,10 @@ struct DayHistoryView: View {
 
     private var aggregateInspector: some View {
         VStack(spacing: 0) {
+            historyToolbar
+
+            Divider()
+
             aggregatePeriodPicker
                 .padding(16)
 
@@ -507,6 +504,14 @@ struct DayHistoryView: View {
 
     private var normalizedSearchQuery: String {
         searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func moveHistoryPeriod(by value: Int) {
+        selectedDate = selectedRange.moving(selectedDate, by: value, calendar: calendar)
+    }
+
+    private func moveHistoryToToday() {
+        selectedDate = dayBoundary.day(containing: .now, calendar: calendar)
     }
 
     private func matchesSearch(_ todo: Todo) -> Bool {

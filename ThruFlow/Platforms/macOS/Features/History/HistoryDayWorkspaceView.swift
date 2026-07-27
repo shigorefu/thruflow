@@ -19,6 +19,7 @@ struct HistoryDayWorkspaceView: View {
     @Binding var selectedItemID: String?
     @Binding var manualFlowDraft: HistoryFlowCreationDraft?
     @Binding var visibleKinds: Set<HistoryCalendarItemKind>
+    let sidebarHeader: AnyView
     let onEdit: (HistoryCalendarItem) -> Void
     let onMove: (HistoryCalendarItem, Date) -> Bool
     let onDropOnDay: (String, Date) -> Bool
@@ -55,6 +56,7 @@ struct HistoryDayWorkspaceView: View {
                         selectedDate: $selectedDate,
                         selectedItem: selectedItem,
                         manualFlowDraft: $manualFlowDraft,
+                        sidebarHeader: sidebarHeader,
                         onEdit: onEdit,
                         onDropOnDay: onDropOnDay
                     )
@@ -67,6 +69,7 @@ struct HistoryDayWorkspaceView: View {
                             selectedDate: $selectedDate,
                             selectedItem: item,
                             manualFlowDraft: $manualFlowDraft,
+                            sidebarHeader: sidebarHeader,
                             onEdit: onEdit,
                             onDropOnDay: onDropOnDay
                         )
@@ -358,6 +361,7 @@ enum HistoryMiniCalendarSelectionMode {
 
 struct HistoryYearMonthPicker: View {
     @Environment(\.calendar) private var calendar
+    @Environment(\.locale) private var locale
 
     @Binding var selectedDate: Date
 
@@ -374,7 +378,7 @@ struct HistoryYearMonthPicker: View {
 
                 Spacer()
 
-                Text(verbatim: String(localized: "\(selectedYear)年"))
+                Text(verbatim: yearTitle)
                     .font(.headline)
 
                 Spacer()
@@ -411,6 +415,14 @@ struct HistoryYearMonthPicker: View {
         calendar.component(.year, from: selectedDate)
     }
 
+    private var yearTitle: String {
+        String(
+            format: String(localized: "%lld年"),
+            locale: locale,
+            Int64(selectedYear)
+        )
+    }
+
     private var selectedMonth: Int {
         calendar.component(.month, from: selectedDate)
     }
@@ -436,11 +448,16 @@ private struct HistoryDayInspectorPane: View {
     @Binding var selectedDate: Date
     let selectedItem: HistoryCalendarItem?
     @Binding var manualFlowDraft: HistoryFlowCreationDraft?
+    let sidebarHeader: AnyView
     let onEdit: (HistoryCalendarItem) -> Void
     let onDropOnDay: (String, Date) -> Bool
 
     var body: some View {
         VStack(spacing: 0) {
+            sidebarHeader
+
+            Divider()
+
             HistoryMiniCalendar(selectedDate: $selectedDate, onDropPayload: onDropOnDay)
                 .padding(16)
 

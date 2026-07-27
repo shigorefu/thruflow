@@ -372,11 +372,11 @@ struct IOSFlowView: View {
                     systemImage: "checkmark.circle"
                 )
             } else {
-                ForEach(todayTodos.prefix(5)) { todo in
+                ForEach(todayTodos) { todo in
                     IOSTaskRow(todo: todo) {
                         editorMode = .edit(todo)
                     }
-                    if todo.id != todayTodos.prefix(5).last?.id {
+                    if todo.id != todayTodos.last?.id {
                         Divider()
                     }
                 }

@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "ja",
   "strings" : {
+    "" : {
+
+    },
     "–" : {
       "localizations" : {
         "en" : {
@@ -4961,22 +4964,6 @@
         }
       }
     },
-    "新しい日の開始" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "New Day Starts"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Начало нового дня"
-          }
-        }
-      }
-    },
     "新しいタスク" : {
       "localizations" : {
         "en" : {
@@ -5021,6 +5008,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Создать направление"
+          }
+        }
+      }
+    },
+    "新しい日の開始" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Day Starts"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Начало нового дня"
           }
         }
       }

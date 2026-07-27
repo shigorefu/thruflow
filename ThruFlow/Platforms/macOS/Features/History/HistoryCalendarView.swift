@@ -20,6 +20,7 @@ struct HistoryCalendarView: View {
     let sessions: [FlowSession]
     let breaks: [FlowBreak]
     @Binding var visibleKinds: Set<HistoryCalendarItemKind>
+    let sidebarHeader: AnyView
 
     @State private var inspectedSession: FlowSession?
     @State private var editedBreak: FlowBreak?
@@ -66,12 +67,13 @@ struct HistoryCalendarView: View {
                         selectedItemID: $selectedDayItemID,
                         manualFlowDraft: $manualFlowDraft,
                         visibleKinds: $visibleKinds,
+                        sidebarHeader: sidebarHeader,
                         onEdit: openEditor,
                         onMove: moveHistoryItem,
                         onDropOnDay: moveHistoryPayload
                     )
                 case .week:
-                    HistoryCalendarPeriodWorkspace {
+                    HistoryCalendarPeriodWorkspace(sidebarHeader: sidebarHeader) {
                         HistoryTimeGrid(
                             selectedDate: selectedDate,
                             range: range,
@@ -91,7 +93,7 @@ struct HistoryCalendarView: View {
                         )
                     }
                 case .month:
-                    HistoryCalendarPeriodWorkspace {
+                    HistoryCalendarPeriodWorkspace(sidebarHeader: sidebarHeader) {
                         HistoryMonthGrid(
                             selectedDate: $selectedDate,
                             items: filteredItems,
@@ -188,6 +190,7 @@ struct HistoryCalendarView: View {
 }
 
 private struct HistoryCalendarPeriodWorkspace<Content: View, Inspector: View>: View {
+    let sidebarHeader: AnyView
     @ViewBuilder let content: Content
     @ViewBuilder let inspector: Inspector
 
@@ -201,6 +204,10 @@ private struct HistoryCalendarPeriodWorkspace<Content: View, Inspector: View>: V
                     Divider()
 
                     VStack(spacing: 0) {
+                        sidebarHeader
+
+                        Divider()
+
                         inspector
                             .padding(16)
                         Spacer(minLength: 0)
@@ -209,7 +216,11 @@ private struct HistoryCalendarPeriodWorkspace<Content: View, Inspector: View>: V
                     .background(Color.secondary.opacity(0.035))
                 }
             } else {
-                content
+                VStack(spacing: 0) {
+                    sidebarHeader
+                    Divider()
+                    content
+                }
             }
         }
     }

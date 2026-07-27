@@ -111,21 +111,12 @@ struct IOSTasksView: View {
                     onClose: dismissComposer
                 )
                     .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .background(Color.primary.opacity(0.025).ignoresSafeArea())
             }
         }
         .overlay(alignment: .bottomTrailing) {
             if !showsComposer {
-                Button(action: presentComposer) {
-                    Image(systemName: "plus")
-                        .font(.title3.weight(.semibold))
-                        .frame(width: 48, height: 48)
-                }
-                .buttonStyle(.borderedProminent)
-                .buttonBorderShape(.circle)
-                .padding(.trailing, 16)
-                .padding(.bottom, 14)
-                .transition(.scale(scale: 0.85).combined(with: .opacity))
-                .accessibilityLabel(String(localized: "タスクを追加"))
+                addTaskButton
             }
         }
         .sheet(item: $editorMode) { mode in
@@ -177,6 +168,22 @@ struct IOSTasksView: View {
         .onChange(of: directions.map(\.updatedAt)) { _, _ in
             ensureRequiredTodos(reconcilesDuplicates: true)
         }
+    }
+
+    private var addTaskButton: some View {
+        Button(action: presentComposer) {
+            Image(systemName: "plus")
+                .font(.title3.weight(.semibold))
+                .frame(width: 48, height: 48)
+                .contentShape(Circle())
+        }
+        .buttonStyle(.bordered)
+        .buttonBorderShape(.circle)
+        .tint(.accentColor)
+        .padding(.trailing, 16)
+        .padding(.bottom, 14)
+        .transition(.scale(scale: 0.85).combined(with: .opacity))
+        .accessibilityLabel(String(localized: "タスクを追加"))
     }
 
     private func presentComposer() {

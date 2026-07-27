@@ -18,16 +18,57 @@ struct FlowModeSelector: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            Picker(String(localized: "Flowタイプ"), selection: selectionBinding) {
-                ForEach(modes) { mode in
-                    Text(mode.displayName).tag(mode)
-                }
-            }
-            .pickerStyle(.segmented)
-            .disabled(!isSelectionEnabled)
+            modePicker
 
             helpButton
         }
+    }
+
+    @ViewBuilder
+    private var modePicker: some View {
+#if os(macOS)
+        HStack(spacing: 0) {
+            ForEach(modes) { mode in
+                Button {
+                    selectionBinding.wrappedValue = mode
+                } label: {
+                    Text(mode.displayName)
+                        .font(.body.weight(selection == mode ? .semibold : .regular))
+                        .foregroundStyle(selection == mode ? .primary : .secondary)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 28)
+                        .background {
+                            if selection == mode {
+                                Capsule()
+                                    .fill(Color.primary.opacity(0.13))
+                            }
+                        }
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .disabled(!isSelectionEnabled)
+                .accessibilityAddTraits(selection == mode ? .isSelected : [])
+            }
+        }
+        .padding(3)
+        .glassEffect(
+            .regular.interactive(isSelectionEnabled),
+            in: Capsule()
+        )
+#else
+        segmentedPicker
+#endif
+    }
+
+    private var segmentedPicker: some View {
+        Picker(String(localized: "Flowタイプ"), selection: selectionBinding) {
+            ForEach(modes) { mode in
+                Text(mode.displayName).tag(mode)
+            }
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .disabled(!isSelectionEnabled)
     }
 
     @ViewBuilder

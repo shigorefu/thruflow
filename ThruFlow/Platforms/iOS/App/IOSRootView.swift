@@ -105,6 +105,7 @@ struct IOSRootView: View {
             }
         }
         .tint(.accentColor)
+        .toolbarBackground(.hidden, for: .tabBar)
     }
 
     @ViewBuilder
