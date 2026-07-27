@@ -31,6 +31,22 @@ struct DayHistoryView: View {
 
     private let onClose: (() -> Void)?
     private let builder = DayHistoryBuilder()
+    private var searchBuilder: DatabaseSearchBuilder {
+        DatabaseSearchBuilder(calendar: calendar)
+    }
+
+    private var isSearching: Bool {
+        DatabaseSearchQuery(text: searchText).isActive
+    }
+
+    private var globalCalendarSearchItems: [HistoryCalendarItem] {
+        searchBuilder.historyCalendarItems(
+            query: searchText,
+            sessions: sessions,
+            breaks: breaks
+        )
+        .filter { visibleCalendarKinds.contains($0.kind) }
+    }
 
     init(initialDate: Date = .now, onClose: (() -> Void)? = nil) {
         _selectedDate = State(initialValue: Calendar.current.startOfDay(for: initialDate))
@@ -38,7 +54,14 @@ struct DayHistoryView: View {
     }
 
     private var snapshot: DayHistorySnapshot {
-        builder.build(
+        if isSearching {
+            return searchBuilder.historySnapshot(
+                query: searchText,
+                sessions: sessions,
+                todos: todos
+            )
+        }
+        return builder.build(
             interval: selectedRange.interval(containing: selectedDate, calendar: calendar),
             sessions: searchFilteredSessions,
             todos: searchFilteredTodos
@@ -47,9 +70,10 @@ struct DayHistoryView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            historyToolbar
-
-            Divider()
+            if !isSearching {
+                historyToolbar
+                Divider()
+            }
 
             modeContent
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -178,19 +202,63 @@ struct DayHistoryView: View {
 
     @ViewBuilder
     private var modeContent: some View {
+        if isSearching {
+            globalSearchContent
+        } else {
+            switch selectedMode {
+            case .calendar:
+                HistoryCalendarView(
+                    selectedDate: $selectedDate,
+                    range: $selectedRange,
+                    sessions: searchFilteredSessions,
+                    breaks: searchFilteredBreaks,
+                    visibleKinds: $visibleCalendarKinds
+                )
+            case .tasks:
+                aggregateWorkspace { tasksContent }
+            case .directions:
+                aggregateWorkspace { directionsContent }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var globalSearchContent: some View {
         switch selectedMode {
         case .calendar:
-            HistoryCalendarView(
-                selectedDate: $selectedDate,
-                range: $selectedRange,
-                sessions: searchFilteredSessions,
-                breaks: searchFilteredBreaks,
-                visibleKinds: $visibleCalendarKinds
-            )
+            if globalCalendarSearchItems.isEmpty {
+                ContentUnavailableView.search(text: searchText)
+            } else {
+                List(globalCalendarSearchItems) { item in
+                    Button {
+                        openGlobalHistoryItem(item)
+                    } label: {
+                        MacHistoryGlobalSearchRow(item: item)
+                    }
+                    .buttonStyle(.plain)
+                    .listRowSeparator(.hidden)
+                }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+            }
         case .tasks:
-            aggregateWorkspace { tasksContent }
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    summary
+                    tasksContent
+                }
+                .frame(maxWidth: 920, alignment: .leading)
+                .padding(16)
+            }
         case .directions:
-            aggregateWorkspace { directionsContent }
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    summary
+                    directionsContent
+                }
+                .frame(maxWidth: 920, alignment: .leading)
+                .padding(16)
+            }
         }
     }
 
@@ -265,7 +333,7 @@ struct DayHistoryView: View {
                 .accessibilityLabel(String(localized: "記録を追加"))
             }
 
-            if selectedRange == .week, !weeklyTaskSections.isEmpty {
+            if !isSearching, selectedRange == .week, !weeklyTaskSections.isEmpty {
                 ForEach(weeklyTaskSections) { section in
                     VStack(alignment: .leading, spacing: 8) {
                         Text(taskSectionTitle(section.date))
@@ -384,7 +452,7 @@ struct DayHistoryView: View {
     }
 
     private var weeklyTaskSections: [HistoryTaskDaySection] {
-        guard selectedRange == .week else { return [] }
+        guard !isSearching, selectedRange == .week else { return [] }
         let interval = selectedRange.interval(containing: selectedDate, calendar: calendar)
         return (0..<7).compactMap { offset in
             guard let date = calendar.date(byAdding: .day, value: offset, to: interval.start) else { return nil }
@@ -427,34 +495,18 @@ struct DayHistoryView: View {
     }
 
     private func matchesSearch(_ todo: Todo) -> Bool {
-        let query = normalizedSearchQuery
-        guard !query.isEmpty else { return true }
-
-        let candidates = [
-            TodoDisplay.title(for: todo),
-            todo.direction?.name ?? "",
-            todo.direction?.symbolName ?? ""
-        ] + todo.hashtags.flatMap { [$0, "#\($0)"] }
-
-        return candidates.contains { $0.localizedCaseInsensitiveContains(query) }
+        DatabaseSearchQuery(text: searchText).matchesHistory(todo)
     }
 
     private func matchesSearch(_ session: FlowSession) -> Bool {
-        let query = normalizedSearchQuery
-        guard !query.isEmpty else { return true }
+        DatabaseSearchQuery(text: searchText).matchesHistory(session)
+    }
 
-        let todo = session.todo
-        let direction = todo?.direction ?? session.direction
-        let todoTitle = todo.map { TodoDisplay.title(for: $0) } ?? ""
-        let candidates = [
-            todoTitle,
-            direction?.name ?? "",
-            direction?.symbolName ?? "",
-            session.intent,
-            session.result ?? ""
-        ] + (todo?.hashtags ?? []).flatMap { [$0, "#\($0)"] }
-
-        return candidates.contains { $0.localizedCaseInsensitiveContains(query) }
+    private func openGlobalHistoryItem(_ item: HistoryCalendarItem) {
+        selectedDate = calendar.startOfDay(for: item.startedAt)
+        selectedRange = .day
+        selectedMode = .calendar
+        searchText = ""
     }
 
     @ViewBuilder
@@ -533,6 +585,45 @@ struct DayHistoryView: View {
             return Date().addingTimeInterval(-25 * 60)
         }
         return calendar.date(bySettingHour: 9, minute: 0, second: 0, of: date) ?? date
+    }
+}
+
+private struct MacHistoryGlobalSearchRow: View {
+    @Environment(\.locale) private var locale
+    let item: HistoryCalendarItem
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Text(item.symbol)
+                .font(.title3)
+                .frame(width: 38, height: 38)
+                .background(
+                    Color(hex: item.colorHex).opacity(0.16),
+                    in: RoundedRectangle(cornerRadius: 8)
+                )
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(item.title)
+                    .font(.body.weight(.semibold))
+                    .lineLimit(2)
+                Text(item.subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 8)
+
+            VStack(alignment: .trailing, spacing: 3) {
+                Text(item.startedAt, format: .dateTime.locale(locale).year().month().day())
+                    .font(.caption.weight(.semibold))
+                Text(item.startedAt, format: .dateTime.locale(locale).hour().minute())
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 8)
+        .contentShape(Rectangle())
     }
 }
 

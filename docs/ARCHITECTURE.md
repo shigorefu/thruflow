@@ -119,6 +119,9 @@ Each platform owns its composition root:
 - Views transform user interaction into calls to application/domain operations.
 - Product calculations, validation, scheduling, reconciliation, statistics,
   and timer transitions belong in `Shared/Domain/Logic`.
+- Database-wide Task and History search matching, date grouping, and aggregate
+  scope belong in `Shared/Domain/Logic`; platform views only select a mode and
+  render the resulting sections or snapshots.
 - High-frequency presentation state such as scroll position must not directly
   start full-store reconciliation or persistence writes. iOS date strips index
   visible markers once, debounce Habit materialization, and reserve duplicate

@@ -40,8 +40,21 @@ struct TasksView: View {
     private var calendarBuilder: TaskCalendarBuilder { TaskCalendarBuilder(calendar: calendar) }
     private var backlogBuilder: TaskBacklogBuilder { TaskBacklogBuilder(calendar: calendar) }
     private var rescheduleService: TaskRescheduleService { TaskRescheduleService(calendar: calendar) }
+    private var searchBuilder: DatabaseSearchBuilder { DatabaseSearchBuilder(calendar: calendar) }
     private let progress = TodoProgressCalculator()
     private let validator = TodoValidator()
+
+    private var isSearching: Bool {
+        DatabaseSearchQuery(text: searchText).isActive
+    }
+
+    private var searchSections: [DatabaseTaskSearchSection] {
+        searchBuilder.taskSections(
+            query: searchText,
+            todos: todos,
+            filter: taskFilter
+        )
+    }
 
     private var activeDirections: [Direction] {
         directions.filter { !$0.isArchived }
@@ -85,15 +98,19 @@ struct TasksView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            TaskCalendarToolbar(
-                range: $calendarRange,
-                filter: $taskFilter,
-                onToday: moveToToday
-            )
+            if isSearching {
+                globalSearchContent
+            } else {
+                TaskCalendarToolbar(
+                    range: $calendarRange,
+                    filter: $taskFilter,
+                    onToday: moveToToday
+                )
 
-            Divider()
+                Divider()
 
-            tasksWorkspace
+                tasksWorkspace
+            }
         }
         .navigationTitle(String(localized: "タスク"))
         .searchable(
@@ -342,6 +359,38 @@ struct TasksView: View {
         calendar.isDateInToday(selectedDate) && !visibleOverdueTodos.isEmpty
     }
 
+    @ViewBuilder
+    private var globalSearchContent: some View {
+        if searchSections.isEmpty {
+            ContentUnavailableView.search(text: searchText)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            List {
+                ForEach(searchSections) { section in
+                    Section {
+                        ForEach(section.todos) { todo in
+                            draggableTodoRow(todo)
+                        }
+                    } header: {
+                        searchSectionTitle(section)
+                    }
+                    .listSectionSeparator(.hidden)
+                }
+            }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+        }
+    }
+
+    @ViewBuilder
+    private func searchSectionTitle(_ section: DatabaseTaskSearchSection) -> some View {
+        if let date = section.date {
+            Text(date, format: .dateTime.locale(locale).year().month().day().weekday())
+        } else {
+            Label(String(localized: "日付なし"), systemImage: "tray")
+        }
+    }
+
     private var backlogInspectorIsPresented: Binding<Bool> {
         Binding(
             get: { backlogInspectorMode != nil },
@@ -388,16 +437,7 @@ struct TasksView: View {
     }
 
     private func matchesSearch(_ todo: Todo) -> Bool {
-        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !query.isEmpty else { return true }
-
-        let candidates = [
-            TodoDisplay.title(for: todo),
-            todo.direction?.name ?? "",
-            todo.direction?.symbolName ?? ""
-        ] + todo.hashtags.flatMap { [$0, "#\($0)"] }
-
-        return candidates.contains { $0.localizedCaseInsensitiveContains(query) }
+        DatabaseSearchQuery(text: searchText).matchesTask(todo)
     }
 
     private var backlogInspectorTitle: String {
