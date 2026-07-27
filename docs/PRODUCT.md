@@ -33,9 +33,11 @@ advances one complete seven-day card at a time. A direct tap selects a card
 immediately; a drag commits the selected period only after the finger is
 released and native snapping becomes idle. The Task list below keeps independent
 vertical scrolling, and a horizontal swipe across its content card animates to
-the previous or next day/week only after release. Native search filters the
-visible Tasks by title, Direction, emoji, and hashtag without changing stored
-records or Habit materialization. macOS exposes the same search semantics
+the previous or next day/week only after release. While native search is active,
+the calendar workspace is replaced by results from the complete Task database,
+grouped by scheduled date with a separate `日付なし` section. Matching uses
+Task title, Direction, emoji, and hashtag without changing stored records or
+Habit materialization. macOS exposes the same database-wide search semantics
 through its native toolbar search field.
 
 Weekly-count Habits create one pending Task at a time. Completion allows the next instance on a later day, while moving the pending Task never creates a duplicate or makes the weekly goal impossible.
@@ -92,12 +94,13 @@ It provides a primary `Flow` calendar mode with `日・週・月`, plus `タス�
 On iPhone, `日` and `週` use the same native horizontally scrolling period
 strips as Tasks across `Flow`, `タスク`, and `方向` History modes. The History
 content below remains independently scrollable. Card taps select immediately,
-while swipes commit only after native scrolling settles. Native search filters
-the selected period by record title, Direction, emoji, hashtag, intent, or
-memo. Day content and non-calendar week summaries also animate between adjacent
-periods with horizontal swipes; the week calendar keeps its own horizontal
-timeline scrolling. macOS provides the same filtering through its native toolbar
-search field.
+while swipes commit only after native scrolling settles. While native search is
+active, results come from the complete History database instead of the selected
+period. Matching uses record title, Direction, emoji, hashtag, intent, or memo
+in `Flow`, `タスク`, and `方向` modes. Day content and non-calendar week
+summaries also animate between adjacent periods with horizontal swipes; the week
+calendar keeps its own horizontal timeline scrolling. macOS provides the same
+database-wide filtering through its native toolbar search field.
 
 ## Settings
 

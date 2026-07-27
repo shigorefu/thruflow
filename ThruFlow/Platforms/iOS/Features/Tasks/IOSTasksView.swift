@@ -21,6 +21,19 @@ struct IOSTasksView: View {
 
     private var calendarBuilder: TaskCalendarBuilder { TaskCalendarBuilder(calendar: calendar) }
     private var rescheduleService: TaskRescheduleService { TaskRescheduleService(calendar: calendar) }
+    private var searchBuilder: DatabaseSearchBuilder { DatabaseSearchBuilder(calendar: calendar) }
+
+    private var isSearching: Bool {
+        DatabaseSearchQuery(text: searchText).isActive
+    }
+
+    private var searchSections: [DatabaseTaskSearchSection] {
+        searchBuilder.taskSections(
+            query: searchText,
+            todos: todos,
+            filter: filter
+        )
+    }
 
     private var activeDirections: [Direction] {
         directions.filter { !$0.isArchived }
@@ -44,14 +57,18 @@ struct IOSTasksView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            controls
-            Divider()
-            taskContent
-                .iosPeriodSwipeNavigation(
-                    pageID: selectedPeriodPageID
-                ) { offset in
-                    navigatePeriod(by: offset)
-                }
+            if isSearching {
+                globalSearchContent
+            } else {
+                controls
+                Divider()
+                taskContent
+                    .iosPeriodSwipeNavigation(
+                        pageID: selectedPeriodPageID
+                    ) { offset in
+                        navigatePeriod(by: offset)
+                    }
+            }
         }
         .background(Color.primary.opacity(0.025).ignoresSafeArea())
         .navigationTitle(String(localized: "タスク"))
@@ -462,6 +479,50 @@ struct IOSTasksView: View {
         }
     }
 
+    @ViewBuilder
+    private var globalSearchContent: some View {
+        if searchSections.isEmpty {
+            ContentUnavailableView.search(text: searchText)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            ScrollView {
+                LazyVStack(spacing: 14) {
+                    ForEach(searchSections) { section in
+                        VStack(alignment: .leading, spacing: 8) {
+                            searchSectionTitle(section)
+                                .font(.headline)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+
+                            ForEach(section.todos) { todo in
+                                IOSTaskRow(todo: todo) {
+                                    editorMode = .edit(todo)
+                                }
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 9)
+                                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+                            }
+                        }
+                        .padding(14)
+                        .background(
+                            Color.primary.opacity(0.035),
+                            in: RoundedRectangle(cornerRadius: 16)
+                        )
+                    }
+                }
+                .padding(12)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func searchSectionTitle(_ section: DatabaseTaskSearchSection) -> some View {
+        if let date = section.date {
+            Text(date, format: .dateTime.year().month().day().weekday())
+        } else {
+            Label(String(localized: "日付なし"), systemImage: "tray")
+        }
+    }
+
     private func todos(on date: Date) -> [Todo] {
         todos
             .filter { TodayTodoFilter(calendar: calendar).includes($0, on: date) }
@@ -483,17 +544,7 @@ struct IOSTasksView: View {
     }
 
     private func matchesSearch(_ todo: Todo) -> Bool {
-        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !query.isEmpty else { return true }
-
-        let direction = todo.direction
-        let candidates = [
-            TodoDisplay.title(for: todo),
-            direction?.name ?? "",
-            direction?.symbolName ?? ""
-        ] + todo.hashtags.flatMap { [$0, "#\($0)"] }
-
-        return candidates.contains { $0.localizedCaseInsensitiveContains(query) }
+        DatabaseSearchQuery(text: searchText).matchesTask(todo)
     }
 
     private func moveTodosToToday(_ candidates: [Todo]) {
