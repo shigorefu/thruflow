@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		6C3000013000000000000001 /* ThruFlow Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 6C3000023000000000000002 /* ThruFlow Watch App.app */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		5B2000013000000000000001 /* ThruFlowLiveActivityExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 5B2000023000000000000002 /* ThruFlowLiveActivityExtension.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		5B2000133000000000000013 /* ThruFlow/Shared/Domain/Services/LiveActivityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B20000F300000000000000F /* ThruFlow/Shared/Domain/Services/LiveActivityService.swift */; };
 		5B2000143000000000000014 /* ThruFlow/Shared/LiveActivity/FlowActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B2000103000000000000010 /* ThruFlow/Shared/LiveActivity/FlowActivityAttributes.swift */; };
@@ -15,6 +14,7 @@
 		5B2000163000000000000016 /* ThruFlow/Localisation/Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 5B2000123000000000000012 /* ThruFlow/Localisation/Localizable.xcstrings */; };
 		5B2000173000000000000017 /* ThruFlow/Shared/Widget/FlowTimerWidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B2000183000000000000018 /* ThruFlow/Shared/Widget/FlowTimerWidgetSnapshot.swift */; };
 		5B2000193000000000000019 /* ThruFlow/Shared/Widget/ProductWidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B20001A300000000000001A /* ThruFlow/Shared/Widget/ProductWidgetSnapshot.swift */; };
+		6C3000013000000000000001 /* ThruFlow Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 6C3000023000000000000002 /* ThruFlow Watch App.app */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
