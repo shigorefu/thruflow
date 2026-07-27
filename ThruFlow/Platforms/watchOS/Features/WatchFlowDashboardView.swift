@@ -90,6 +90,7 @@ private struct WatchFlowStreamView: View {
     @Query private var flowBreaks: [FlowBreak]
 
     let isVisible: Bool
+    @State private var isImmersive = false
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { timeline in
@@ -113,21 +114,54 @@ private struct WatchFlowStreamView: View {
                 isRenderingEnabled: isVisible
             )
             .ignoresSafeArea()
-            .overlay(alignment: .bottom) {
-                HStack {
-                    Text(
-                        "\(snapshot.blocks.formatted(.number.precision(.fractionLength(1)))) Block"
-                    )
-                    Spacer()
-                    Text("\(snapshot.flowCount) Flow")
+            .overlay {
+                if !isImmersive {
+                    VStack {
+                        HStack {
+                            Text(String(localized: "今日のFlow"))
+                                .font(.caption.weight(.semibold))
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 5)
+                                .background(.ultraThinMaterial, in: Capsule())
+                                .overlay {
+                                    Capsule()
+                                        .strokeBorder(Color.white.opacity(0.22))
+                                }
+                            Spacer()
+                        }
+
+                        Spacer()
+
+                        HStack {
+                            Text(BlockUnit.displayText(forFocusedSeconds: snapshot.totalFocusSeconds))
+                            Spacer()
+                            Text("\(snapshot.flowCount) Flow")
+                        }
+                        .font(.caption2.weight(.semibold))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 5)
+                        .background(.ultraThinMaterial, in: Capsule())
+                        .overlay {
+                            Capsule()
+                                .strokeBorder(Color.white.opacity(0.16))
+                        }
+                    }
+                    .padding(8)
+                    .transition(.opacity)
                 }
-                .font(.caption2.weight(.semibold))
-                .padding(8)
-                .background(.ultraThinMaterial)
+            }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                withAnimation(.easeInOut(duration: 0.18)) {
+                    isImmersive.toggle()
+                }
             }
         }
-        .navigationTitle(String(localized: "今日のFlow"))
-        .navigationBarTitleDisplayMode(.inline)
+        .accessibilityHint(
+            isImmersive
+                ? String(localized: "情報を表示")
+                : String(localized: "情報を隠す")
+        )
     }
 }
 
@@ -144,16 +178,21 @@ private struct WatchTimerView: View {
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { timeline in
             GeometryReader { proxy in
-                let ringSize = min(
-                    proxy.size.width * 0.48,
-                    max(72, proxy.size.height - 118)
-                )
+                let isCompact = proxy.size.width < 180
+                let ringSize = isCompact
+                    ? min(66, proxy.size.width * 0.41)
+                    : min(proxy.size.width * 0.44, max(76, proxy.size.height - 112))
 
                 VStack(spacing: 4) {
                     contextPicker
-                    modePicker
-                    timerRing(now: timeline.date, size: ringSize)
-                    controls
+                    modePicker(isCompact: isCompact)
+
+                    HStack(spacing: isCompact ? 3 : 6) {
+                        timerRing(now: timeline.date, size: ringSize)
+                        controls(isCompact: isCompact)
+                            .fixedSize(horizontal: true, vertical: false)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(.horizontal, 4)
@@ -187,7 +226,7 @@ private struct WatchTimerView: View {
                     .foregroundStyle(.secondary)
             }
             .padding(.horizontal, 7)
-            .frame(height: 34)
+            .frame(height: 32)
             .background(tint.opacity(0.09), in: RoundedRectangle(cornerRadius: 9))
             .overlay {
                 RoundedRectangle(cornerRadius: 9)
@@ -197,22 +236,24 @@ private struct WatchTimerView: View {
         .buttonStyle(.plain)
     }
 
-    private var modePicker: some View {
+    private func modePicker(isCompact: Bool) -> some View {
         NavigationLink {
             WatchFlowModePicker()
         } label: {
             HStack {
                 Text(activeFlowStore.selectedMode.displayName)
                 Spacer()
-                Text(activeFlowStore.selectedMode.compactDurationText)
-                    .foregroundStyle(.secondary)
+                if !isCompact {
+                    Text(activeFlowStore.selectedMode.compactDurationText)
+                        .foregroundStyle(.secondary)
+                }
                 Image(systemName: "chevron.right")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
             .font(.caption.weight(.semibold))
             .padding(.horizontal, 7)
-            .frame(height: 28)
+            .frame(height: 26)
             .background(Color.primary.opacity(0.055), in: RoundedRectangle(cornerRadius: 8))
         }
         .buttonStyle(.plain)
@@ -232,7 +273,7 @@ private struct WatchTimerView: View {
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                 Text(timerText(now: now))
-                    .font(.title3.weight(.semibold))
+                    .font(.system(size: max(18, size * 0.24), weight: .semibold, design: .rounded))
                     .monospacedDigit()
                 Text(activeFlowStore.selectedMode.displayName)
                     .font(.caption2)
@@ -242,48 +283,58 @@ private struct WatchTimerView: View {
         .frame(width: size, height: size)
     }
 
-    private var controls: some View {
-        HStack(spacing: 1) {
-            timerButton("trash.fill", role: .destructive, tint: .red) {
-                activeFlowStore.destroy(modelContext: modelContext)
-            }
-            .disabled(activeFlowStore.timerState == nil)
+    private func controls(isCompact: Bool) -> some View {
+        let secondarySize: CGFloat = isCompact ? 24 : 28
+        let primarySize: CGFloat = isCompact ? 36 : 44
+        let spacing: CGFloat = isCompact ? 2 : 3
 
-            timerButton("stop.fill") {
-                activeFlowStore.stop(modelContext: modelContext)
-                showsMemo = activeFlowStore.phase == .awaitingResult
-            }
-            .disabled(activeFlowStore.timerState == nil)
+        return VStack(spacing: isCompact ? 3 : 5) {
+            HStack(spacing: spacing) {
+                timerButton("gobackward.5", size: secondarySize) {
+                    activeFlowStore.seekBackward(modelContext: modelContext)
+                }
+                .disabled(!canSeek)
 
-            timerButton("gobackward.5") {
-                activeFlowStore.seekBackward(modelContext: modelContext)
-            }
-            .disabled(!canSeek)
+                Button(action: primaryAction) {
+                    Image(systemName: primarySymbol)
+                        .font(.body.weight(.bold))
+                        .foregroundStyle(.white)
+                        .frame(width: primarySize, height: primarySize)
+                        .background(tint, in: Circle())
+                }
+                .buttonStyle(.plain)
+                .disabled(selectedDirection == nil)
 
-            Button(action: primaryAction) {
-                Image(systemName: primarySymbol)
-                    .font(.body.weight(.bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 38, height: 38)
-                    .background(tint, in: Circle())
+                timerButton("goforward.5", size: secondarySize) {
+                    activeFlowStore.seekForward(modelContext: modelContext)
+                }
+                .disabled(!canSeek)
             }
-            .buttonStyle(.plain)
-            .disabled(selectedDirection == nil)
 
-            timerButton("goforward.5") {
-                activeFlowStore.seekForward(modelContext: modelContext)
-            }
-            .disabled(!canSeek)
+            HStack(spacing: spacing) {
+                timerButton(
+                    "trash.fill",
+                    role: .destructive,
+                    tint: .red,
+                    size: secondarySize
+                ) {
+                    activeFlowStore.destroy(modelContext: modelContext)
+                }
+                .disabled(activeFlowStore.timerState == nil)
 
-            timerButton("cup.and.saucer.fill") {
-                activeFlowStore.requestBreakMemo(modelContext: modelContext)
-                showsMemo = activeFlowStore.isAwaitingBreakMemo
+                timerButton("stop.fill", size: secondarySize) {
+                    activeFlowStore.stop(modelContext: modelContext)
+                    showsMemo = activeFlowStore.phase == .awaitingResult
+                }
+                .disabled(activeFlowStore.timerState == nil)
+
+                timerButton("cup.and.saucer.fill", size: secondarySize) {
+                    activeFlowStore.requestBreakMemo(modelContext: modelContext)
+                    showsMemo = activeFlowStore.isAwaitingBreakMemo
+                }
+                .disabled(activeFlowStore.timerState == nil || activeFlowStore.isBreakPhase)
             }
-            .disabled(activeFlowStore.timerState == nil || activeFlowStore.isBreakPhase)
         }
-        .frame(height: 40)
-        .padding(.horizontal, 3)
-        .background(Color.primary.opacity(0.055), in: Capsule())
     }
 
     private var activeDirections: [Direction] {
@@ -368,13 +419,15 @@ private struct WatchTimerView: View {
         _ systemName: String,
         role: ButtonRole? = nil,
         tint: Color = .secondary,
+        size: CGFloat = 28,
         action: @escaping () -> Void
     ) -> some View {
         Button(role: role, action: action) {
             Image(systemName: systemName)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(tint)
-                .frame(width: 27, height: 34)
+                .frame(width: size, height: size)
+                .background(Color.primary.opacity(0.055), in: Circle())
         }
         .buttonStyle(.plain)
     }
@@ -537,6 +590,7 @@ private struct WatchTasksView: View {
     @Environment(\.calendar) private var calendar
     @Environment(\.modelContext) private var modelContext
     @Query private var todos: [Todo]
+    @State private var showsTaskForm = false
 
     var body: some View {
         List {
@@ -567,6 +621,19 @@ private struct WatchTasksView: View {
             }
         }
         .navigationTitle(String(localized: "今日のタスク"))
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    showsTaskForm = true
+                } label: {
+                    Image(systemName: "plus")
+                }
+                .accessibilityLabel(String(localized: "タスクを追加"))
+            }
+        }
+        .sheet(isPresented: $showsTaskForm) {
+            WatchTaskCreationForm()
+        }
     }
 
     private var todayTodos: [Todo] {
@@ -639,7 +706,7 @@ private struct WatchStatisticsView: View {
                 .padding(.horizontal, 4)
             }
         }
-        .navigationTitle(String(localized: "今日の統計"))
+        .navigationTitle(String(localized: "統計"))
     }
 
     private var todayTodos: [Todo] {

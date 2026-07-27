@@ -228,13 +228,22 @@ the display; the system vertical page gesture or Digital Crown moves between
 them. Task and mode pickers continue to use system `NavigationLink`
 destinations.
 
-The initial timer page keeps Task/Direction context selection, Flow mode
-selection, the focus/rest ring, `-5`, Play/Pause, `+5`, destroy, stop, and break
-actions on one non-scrolling screen. Memo confirmation uses a Watch sheet. The
-fullscreen Flow page contains only the stream and compact Block/Flow totals; it
+The initial timer page keeps Task/Direction context selection and the Flow mode
+selector above the player. The focus/rest ring sits on the left; `-5`,
+Play/Pause, `+5`, destroy, stop, and break controls sit on the right, with the
+primary Play/Pause action visually larger than secondary actions. Everything
+remains on one non-scrolling screen. Memo confirmation uses a Watch sheet.
+
+The fullscreen Flow page contains the stream and compact, material-backed
+`今日のFlow` and Block/Flow overlays. Tapping anywhere on the stream toggles an
+immersive state that hides every overlay and leaves only the animation. It
 intentionally omits the dashboard timeline and stops rendering while off-screen.
+
 Tasks expose the same Check, Block-ring, and Minute-progress semantics as the
-other platforms. Statistics presents completion, focused time, Blocks, and Flow
+other platforms. A system `+` button opens a native form made only from pickers
+and steppers: Direction, Task type and target, priority, and date. It creates an
+untitled Task whose visible placeholder comes from its Direction, so Watch never
+opens a keyboard. Statistics presents completion, focused time, Blocks, and Flow
 count.
 
 Opening or foregrounding Watch reconciles the canonical persisted active

@@ -4875,6 +4875,38 @@
         }
       }
     },
+    "情報を表示" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show information"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показать информацию"
+          }
+        }
+      }
+    },
+    "情報を隠す" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide information"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скрыть информацию"
+          }
+        }
+      }
+    },
     "必要なときにタスクを計画する作業領域です。" : {
       "localizations" : {
         "en" : {

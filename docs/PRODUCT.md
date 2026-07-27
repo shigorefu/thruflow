@@ -112,9 +112,13 @@ locale without changing Settings code.
 
 The watchOS companion provides a compact four-page vertical Flow dashboard:
 
-- `タイマー` is the first page and contains the complete Watch Flow player;
-- `Flow` presents the animated stream fullscreen without a timeline;
-- `タスク` presents today's Tasks and Habits;
+- `タイマー` is the first page and contains the complete Watch Flow player,
+  with the mode selector above, timer ring on the left, and transport controls
+  on the right;
+- `Flow` presents the animated stream fullscreen without a timeline; one tap
+  hides or restores all informational overlays;
+- `タスク` presents today's Tasks and Habits and can create a Task through a
+  compact picker-based form that never opens a keyboard;
 - `統計` presents today's completion, focus, Block, and Flow summary.
 
 The user moves between pages with the system vertical page gesture or Digital

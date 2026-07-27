@@ -257,10 +257,15 @@ container.
 
 The pages are ordered vertically and use the system page indicator and Digital
 Crown behavior. The timer page has no nested vertical scroll, so the page swipe
-is not intercepted by its controls. Off-screen Flow rendering is disabled.
+is not intercepted by its controls. Its compact layout keeps context and mode
+selection above a two-column player: the timer ring on the left and transport
+controls on the right. Off-screen Flow rendering is disabled.
 
 The Watch target reuses `ActiveFlowStore`, SwiftData models, domain builders,
 Task progress controls, and `FlowVisualState`. macOS and iOS render the stream
 with the shared Metal shader. watchOS uses a `Canvas` renderer because SwiftUI
 `ShaderLibrary` and `colorEffect` are unavailable there; both renderers consume
-the same palette, daily seed, growth, speed, and mode parameters.
+the same palette, daily seed, growth, speed, and mode parameters. The Watch
+Tasks page creates new records through a platform form composed of system
+pickers and steppers; it inserts the same shared `Todo` model without adding a
+second task-creation service or watch-only business rules.

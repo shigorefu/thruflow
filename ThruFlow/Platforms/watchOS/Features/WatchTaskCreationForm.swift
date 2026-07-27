@@ -1,0 +1,165 @@
+import SwiftData
+import SwiftUI
+
+struct WatchTaskCreationForm: View {
+    @Environment(\.calendar) private var calendar
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+
+    @Query(sort: \Direction.sortIndex) private var directions: [Direction]
+    @Query private var todos: [Todo]
+
+    @State private var directionID: UUID?
+    @State private var measurement = TodoMeasurement.checkbox
+    @State private var plannedAmount = 1
+    @State private var priority = TodoPriority.medium
+    @State private var schedule = WatchTaskSchedule.today
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    Picker(String(localized: "方向"), selection: $directionID) {
+                        ForEach(activeDirections) { direction in
+                            Label {
+                                Text(direction.name)
+                            } icon: {
+                                Text(direction.symbolName)
+                            }
+                            .tag(Optional(direction.id))
+                        }
+                    }
+
+                    Picker(String(localized: "種類"), selection: $measurement) {
+                        ForEach(TodoMeasurement.allCases) { value in
+                            Text(value.displayName)
+                                .tag(value)
+                        }
+                    }
+
+                    if measurement != .checkbox {
+                        Stepper(
+                            value: $plannedAmount,
+                            in: amountRange,
+                            step: amountStep
+                        ) {
+                            LabeledContent(
+                                String(localized: "目標値"),
+                                value: amountText
+                            )
+                        }
+                    }
+                }
+
+                Section {
+                    Picker(String(localized: "優先度"), selection: $priority) {
+                        ForEach(TodoPriority.allCases) { value in
+                            Text(value.displayName)
+                                .tag(value)
+                        }
+                    }
+
+                    Picker(String(localized: "予定日"), selection: $schedule) {
+                        ForEach(WatchTaskSchedule.allCases) { value in
+                            Text(value.displayName)
+                                .tag(value)
+                        }
+                    }
+                }
+
+                Button {
+                    save()
+                } label: {
+                    Label(String(localized: "タスクを追加"), systemImage: "plus.circle.fill")
+                }
+                .disabled(selectedDirection == nil)
+            }
+            .navigationTitle(String(localized: "タスクを追加"))
+            .task {
+                guard directionID == nil else { return }
+                directionID = (
+                    DefaultDirections.existingTaskInbox(in: activeDirections)
+                        ?? activeDirections.first
+                )?.id
+            }
+        }
+    }
+
+    private var activeDirections: [Direction] {
+        directions.filter { !$0.isArchived }
+    }
+
+    private var selectedDirection: Direction? {
+        activeDirections.first { $0.id == directionID }
+    }
+
+    private var amountRange: ClosedRange<Int> {
+        measurement == .minutes ? 5...240 : 1...20
+    }
+
+    private var amountStep: Int {
+        measurement == .minutes ? 5 : 1
+    }
+
+    private var amountText: String {
+        switch measurement {
+        case .checkbox:
+            return ""
+        case .focusBlocks:
+            return "\(plannedAmount) \(String(localized: "ブロック"))"
+        case .minutes:
+            return "\(plannedAmount) \(String(localized: "分"))"
+        }
+    }
+
+    private func save() {
+        guard let direction = selectedDirection else { return }
+
+        let todo = Todo(
+            title: "",
+            direction: direction,
+            measurement: measurement,
+            priority: priority,
+            plannedAmount: measurement == .checkbox ? nil : plannedAmount,
+            scheduledDate: schedule.date(calendar: calendar),
+            sortIndex: (todos.map(\.sortIndex).max() ?? -1) + 1
+        )
+        modelContext.insert(todo)
+        try? modelContext.save()
+        dismiss()
+    }
+}
+
+private enum WatchTaskSchedule: String, CaseIterable, Identifiable {
+    case today
+    case tomorrow
+    case noDate
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .today:
+            String(localized: "今日")
+        case .tomorrow:
+            String(localized: "明日")
+        case .noDate:
+            String(localized: "日付なし")
+        }
+    }
+
+    func date(calendar: Calendar) -> Date? {
+        switch self {
+        case .today:
+            calendar.startOfDay(for: .now)
+        case .tomorrow:
+            calendar.date(
+                byAdding: .day,
+                value: 1,
+                to: calendar.startOfDay(for: .now)
+            )
+        case .noDate:
+            nil
+        }
+    }
+}
