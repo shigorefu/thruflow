@@ -49,6 +49,41 @@ struct FlowDashboardTests {
         #expect(abs(snapshot.segments[1].startFraction - 0.75) < 0.0001)
     }
 
+    @Test func dashboardKeepsEarlyMorningFlowInPreviousLogicalDay() {
+        let boundary = AppDayBoundary(hour: 2)
+        let july16 = calendar.date(
+            from: DateComponents(year: 2026, month: 7, day: 16)
+        )!
+        let earlyMorning = calendar.date(
+            from: DateComponents(year: 2026, month: 7, day: 17, hour: 1)
+        )!
+        let direction = Direction(name: "深夜作業", type: .neutral)
+        let session = makeSession(
+            direction: direction,
+            start: earlyMorning,
+            duration: 25 * 60
+        )
+        let builder = FlowDashboardBuilder(
+            calendar: calendar,
+            dayBoundary: boundary
+        )
+
+        let previousDay = builder.build(
+            date: earlyMorning,
+            sessions: [session]
+        )
+        #expect(previousDay.date == july16)
+        #expect(previousDay.totalFocusSeconds == 25 * 60)
+
+        let nextDay = builder.build(
+            date: calendar.date(
+                from: DateComponents(year: 2026, month: 7, day: 17, hour: 2)
+            )!,
+            sessions: [session]
+        )
+        #expect(nextDay.totalFocusSeconds == 0)
+    }
+
     @Test func elasticTimelineUsesCurrentAndFollowingHourWhenEmpty() {
         let now = Date(timeIntervalSince1970: 14 * 3_600 + 37 * 60)
         let range = FlowTimelineRange(

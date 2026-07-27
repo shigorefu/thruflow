@@ -22,16 +22,29 @@ enum HistoryCalendarRange: String, CaseIterable, Identifiable {
         }
     }
 
-    func interval(containing date: Date, calendar: Calendar) -> DateInterval {
+    func interval(
+        containing date: Date,
+        calendar: Calendar,
+        dayBoundary: AppDayBoundary = .midnight
+    ) -> DateInterval {
+        let calendarInterval: DateInterval
         switch self {
         case .day:
             let start = calendar.startOfDay(for: date)
-            return DateInterval(start: start, end: calendar.date(byAdding: .day, value: 1, to: start)!)
+            calendarInterval = DateInterval(
+                start: start,
+                end: calendar.date(byAdding: .day, value: 1, to: start)!
+            )
         case .week:
-            return calendar.dateInterval(of: .weekOfYear, for: date)!
+            calendarInterval = calendar.dateInterval(of: .weekOfYear, for: date)!
         case .month:
-            return calendar.dateInterval(of: .month, for: date)!
+            calendarInterval = calendar.dateInterval(of: .month, for: date)!
         }
+
+        return DateInterval(
+            start: dayBoundary.interval(for: calendarInterval.start, calendar: calendar).start,
+            end: dayBoundary.interval(for: calendarInterval.end, calendar: calendar).start
+        )
     }
 
     func moving(_ date: Date, by value: Int, calendar: Calendar) -> Date {
@@ -67,11 +80,16 @@ struct HistoryDayTimelineWindowBuilder {
         items: [HistoryCalendarItem],
         scale: HistoryDayTimelineScale,
         now: Date = .now,
-        calendar: Calendar = .current
+        calendar: Calendar = .current,
+        dayBoundary: AppDayBoundary = .midnight
     ) -> Range<Int> {
         guard scale == .elastic else { return 0..<24 }
 
-        let dayInterval = HistoryCalendarRange.day.interval(containing: date, calendar: calendar)
+        let dayInterval = HistoryCalendarRange.day.interval(
+            containing: date,
+            calendar: calendar,
+            dayBoundary: dayBoundary
+        )
         let timedItems = items.filter { item in
             item.startedAt < dayInterval.end
                 && item.endedAt > dayInterval.start

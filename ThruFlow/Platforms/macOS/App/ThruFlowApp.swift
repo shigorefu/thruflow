@@ -66,6 +66,7 @@ private extension View {
     func appSettingsEnvironment(_ settings: AppSettings) -> some View {
         environmentObject(settings)
             .environment(\.calendar, settings.effectiveCalendar)
+            .environment(\.appDayBoundary, settings.dayBoundary)
             .environment(\.locale, settings.effectiveLocale)
             .preferredColorScheme(settings.colorScheme)
     }

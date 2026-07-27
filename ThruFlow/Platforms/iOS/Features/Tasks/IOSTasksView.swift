@@ -3,6 +3,7 @@ import SwiftUI
 
 struct IOSTasksView: View {
     @Environment(\.calendar) private var calendar
+    @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.modelContext) private var modelContext
 
     @Query(sort: \Todo.sortIndex) private var todos: [Todo]
@@ -48,7 +49,10 @@ struct IOSTasksView: View {
     }
 
     private var backlog: TaskBacklogSnapshot {
-        TaskBacklogBuilder(calendar: calendar).build(todos: todos)
+        TaskBacklogBuilder(
+            calendar: calendar,
+            dayBoundary: dayBoundary
+        ).build(todos: todos)
     }
 
     private var backlogCount: Int {
@@ -155,6 +159,7 @@ struct IOSTasksView: View {
             Text(backlogMoveError ?? "")
         }
         .task {
+            alignInitialSelectionWithCurrentAppDay()
             ensureRequiredTodos(reconcilesDuplicates: true)
         }
         .task(id: requiredTodoMaterializationID) {
@@ -299,7 +304,7 @@ struct IOSTasksView: View {
                 Spacer(minLength: 0)
 
                 Button(String(localized: "今日")) {
-                    selectedDate = calendar.startOfDay(for: .now)
+                    selectedDate = dayBoundary.day(containing: .now, calendar: calendar)
                 }
                 .buttonStyle(.borderedProminent)
             }
@@ -532,7 +537,11 @@ struct IOSTasksView: View {
     }
 
     private func visibleOverdueTodos(on date: Date) -> [Todo] {
-        guard range == .oneDay, calendar.isDateInToday(date) else { return [] }
+        let today = dayBoundary.day(containing: .now, calendar: calendar)
+        guard range == .oneDay,
+              calendar.isDate(date, inSameDayAs: today) else {
+            return []
+        }
         return backlog.overdue
             .filter(filter.includes)
             .filter(matchesSearch)
@@ -548,7 +557,7 @@ struct IOSTasksView: View {
     }
 
     private func moveTodosToToday(_ candidates: [Todo]) {
-        let today = calendar.startOfDay(for: .now)
+        let today = dayBoundary.day(containing: .now, calendar: calendar)
         let movable = candidates.filter { todo in
             if case .success = rescheduleService.validate(todo, movingTo: today, among: todos) {
                 return true
@@ -587,13 +596,16 @@ struct IOSTasksView: View {
             modelContext.insert(DefaultDirections.makeTaskInbox())
         }
 
-        let today = calendar.startOfDay(for: now)
+        let today = dayBoundary.day(containing: now, calendar: calendar)
         let dates = visibleDates
             .filter { $0 >= today }
             .filter { range != .month || calendarBuilder.isDate($0, inMonthContaining: selectedDate) }
             .sorted()
 
-        _ = try? HabitTodoMaterializer(calendar: calendar).materialize(
+        _ = try? HabitTodoMaterializer(
+            calendar: calendar,
+            dayBoundary: dayBoundary
+        ).materialize(
             directions: activeDirections,
             dates: dates,
             modelContext: modelContext,
@@ -601,6 +613,12 @@ struct IOSTasksView: View {
             knownTodos: todos,
             reconcilesDuplicates: reconcilesDuplicates
         )
+    }
+
+    private func alignInitialSelectionWithCurrentAppDay(now: Date = .now) {
+        let calendarToday = calendar.startOfDay(for: now)
+        guard calendar.isDate(selectedDate, inSameDayAs: calendarToday) else { return }
+        selectedDate = dayBoundary.day(containing: now, calendar: calendar)
     }
 
     private func taskSort(_ lhs: Todo, _ rhs: Todo) -> Bool {

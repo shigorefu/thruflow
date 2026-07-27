@@ -9,6 +9,7 @@ import SwiftData
 @MainActor
 struct HabitTodoMaterializer {
     var calendar: Calendar = .current
+    var dayBoundary: AppDayBoundary = .midnight
 
     @discardableResult
     func materialize(
@@ -51,7 +52,7 @@ struct HabitTodoMaterializer {
 
         var knownTodos = todos.filter { !$0.isDeleted && !$0.isArchived }
         var nextSortIndex = (knownTodos.map(\.sortIndex).min() ?? 0) - 1
-        let today = calendar.startOfDay(for: now)
+        let today = dayBoundary.day(containing: now, calendar: calendar)
         let normalizedDates = uniqueDays(dates).sorted()
         let planner = RequiredTodoPlanner(calendar: calendar)
         let activeHabits = directions.filter { $0.type == .habit && !$0.isArchived }

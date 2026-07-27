@@ -14,6 +14,7 @@ struct ThruFlowWatchApp: App {
             WatchFlowDashboardView()
                 .environmentObject(activeFlowStore)
                 .environment(\.calendar, settings.effectiveCalendar)
+                .environment(\.appDayBoundary, settings.dayBoundary)
                 .environment(\.locale, settings.effectiveLocale)
                 .onAppear {
                     activeFlowStore.clearNotificationBadge()

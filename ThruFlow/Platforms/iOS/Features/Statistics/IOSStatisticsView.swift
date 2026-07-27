@@ -2,6 +2,7 @@ import SwiftData
 import SwiftUI
 
 struct IOSStatisticsView: View {
+    @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.calendar) private var calendar
 
     @Query(sort: \Direction.sortIndex) private var directions: [Direction]
@@ -24,11 +25,17 @@ struct IOSStatisticsView: View {
     }
 
     private var flowResult: StatisticsHeatmapResult {
-        StatisticsHeatmapBuilder(calendar: calendar).build(sessions: sessions, filter: filter)
+        StatisticsHeatmapBuilder(
+            calendar: calendar,
+            dayBoundary: dayBoundary
+        ).build(sessions: sessions, filter: filter)
     }
 
     private var taskResult: AchievementHeatmapResult {
-        AchievementHeatmapBuilder(calendar: calendar).build(todos: todos, filter: filter)
+        AchievementHeatmapBuilder(
+            calendar: calendar,
+            dayBoundary: dayBoundary
+        ).build(todos: todos, filter: filter)
     }
 
     var body: some View {

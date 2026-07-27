@@ -26,6 +26,7 @@ struct AppSettingsTests {
         settings.languageCode = "ja"
         settings.weekStart = .monday
         settings.clockFormat = .twentyFourHour
+        settings.dayStartHour = 2
         settings.showsTaskQuickInputLegend = false
 
         let restored = AppSettings(defaults: defaults)
@@ -33,6 +34,8 @@ struct AppSettingsTests {
         #expect(restored.languageCode == "ja")
         #expect(restored.weekStart == .monday)
         #expect(restored.clockFormat == .twentyFourHour)
+        #expect(restored.dayStartHour == 2)
+        #expect(restored.dayBoundary == AppDayBoundary(hour: 2))
         #expect(restored.showsTaskQuickInputLegend == false)
         #expect(defaults.stringArray(forKey: "AppleLanguages") == ["ja"])
     }

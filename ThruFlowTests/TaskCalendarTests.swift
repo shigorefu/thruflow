@@ -83,6 +83,23 @@ struct TaskCalendarTests {
         #expect(snapshot.unscheduled.map(\.id) == [unscheduled.id])
     }
 
+    @Test func backlogUsesConfiguredDayBoundary() {
+        let calendar = testCalendar()
+        let direction = Direction(name: "仕事", type: .neutral)
+        let july16 = date(2026, 7, 16, calendar: calendar)
+        let task = Todo(title: "深夜作業", direction: direction, scheduledDate: july16)
+        let builder = TaskBacklogBuilder(
+            calendar: calendar,
+            dayBoundary: AppDayBoundary(hour: 2)
+        )
+
+        let beforeBoundary = date(2026, 7, 17, hour: 1, minute: 59, calendar: calendar)
+        #expect(builder.build(todos: [task], now: beforeBoundary).overdue.isEmpty)
+
+        let atBoundary = date(2026, 7, 17, hour: 2, calendar: calendar)
+        #expect(builder.build(todos: [task], now: atBoundary).overdue.map(\.id) == [task.id])
+    }
+
     @Test func backlogExcludesHabitsAndInactiveTasks() {
         let calendar = testCalendar()
         let now = date(2026, 7, 17, calendar: calendar)
@@ -184,7 +201,22 @@ struct TaskCalendarTests {
         return calendar
     }
 
-    private func date(_ year: Int, _ month: Int, _ day: Int, calendar: Calendar) -> Date {
-        calendar.date(from: DateComponents(year: year, month: month, day: day))!
+    private func date(
+        _ year: Int,
+        _ month: Int,
+        _ day: Int,
+        hour: Int = 0,
+        minute: Int = 0,
+        calendar: Calendar
+    ) -> Date {
+        calendar.date(
+            from: DateComponents(
+                year: year,
+                month: month,
+                day: day,
+                hour: hour,
+                minute: minute
+            )
+        )!
     }
 }

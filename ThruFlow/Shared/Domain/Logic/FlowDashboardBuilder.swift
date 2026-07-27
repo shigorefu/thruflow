@@ -203,9 +203,14 @@ struct FlowDashboardTodoSorter {
 @MainActor
 struct FlowDashboardBuilder {
     private let calendar: Calendar
+    private let dayBoundary: AppDayBoundary
 
-    init(calendar: Calendar = .current) {
+    init(
+        calendar: Calendar = .current,
+        dayBoundary: AppDayBoundary = .midnight
+    ) {
         self.calendar = calendar
+        self.dayBoundary = dayBoundary
     }
 
     func build(
@@ -214,14 +219,18 @@ struct FlowDashboardBuilder {
         breaks storedBreaks: [FlowBreak] = [],
         activeSessionID: UUID? = nil,
         activeFocusSeconds: Int = 0,
-        visualIdentityID: UUID? = nil
+        visualIdentityID: UUID? = nil,
+        explicitDay: Date? = nil
     ) -> FlowDashboardSnapshot {
-        let day = calendar.startOfDay(for: date)
-        let nextDay = calendar.date(byAdding: .day, value: 1, to: day) ?? day.addingTimeInterval(86_400)
-        let dayDuration = max(nextDay.timeIntervalSince(day), 1)
+        let day = explicitDay.map(calendar.startOfDay(for:))
+            ?? dayBoundary.day(containing: date, calendar: calendar)
+        let dayInterval = dayBoundary.interval(for: day, calendar: calendar)
+        let dayStart = dayInterval.start
+        let nextDay = dayInterval.end
+        let dayDuration = max(dayInterval.duration, 1)
 
         let segments = sessions.flatMap { session -> [FlowDashboardSegment] in
-            guard calendar.isDate(session.startedAt, inSameDayAs: day),
+            guard dayBoundary.contains(session.startedAt, in: day, calendar: calendar),
                   session.status != .interrupted else {
                 return []
             }
@@ -247,7 +256,7 @@ struct FlowDashboardBuilder {
                         endedAt: segment.endedAt ?? (isActive ? date : nil),
                         focusSeconds: focusSeconds,
                         isActive: isActive && segment.endedAt == nil,
-                        day: day,
+                        day: dayStart,
                         dayDuration: dayDuration
                     )
                 }
@@ -268,7 +277,7 @@ struct FlowDashboardBuilder {
                 endedAt: isActive && session.endedAt == nil ? date : session.endedAt,
                 focusSeconds: focusSeconds,
                 isActive: isActive,
-                day: day,
+                day: dayStart,
                 dayDuration: dayDuration
             )]
         }
@@ -277,7 +286,7 @@ struct FlowDashboardBuilder {
         let sessionIDs = Set(segments.map { $0.session.id })
         let breaks = storedBreaks.compactMap { flowBreak -> FlowDashboardBreak? in
             guard !flowBreak.isDeleted,
-                  calendar.isDate(flowBreak.startedAt, inSameDayAs: day),
+                  dayBoundary.contains(flowBreak.startedAt, in: day, calendar: calendar),
                   sessionIDs.contains(flowBreak.previousSessionID) else {
                 return nil
             }

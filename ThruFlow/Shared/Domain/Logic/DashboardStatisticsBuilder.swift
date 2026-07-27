@@ -30,11 +30,19 @@ struct DashboardStatisticsComparison {
 
 struct DashboardStatisticsBuilder {
     private let calendar: Calendar
+    private let dayBoundary: AppDayBoundary
     private let dashboardBuilder: FlowDashboardBuilder
 
-    init(calendar: Calendar = .current) {
+    init(
+        calendar: Calendar = .current,
+        dayBoundary: AppDayBoundary = .midnight
+    ) {
         self.calendar = calendar
-        self.dashboardBuilder = FlowDashboardBuilder(calendar: calendar)
+        self.dayBoundary = dayBoundary
+        self.dashboardBuilder = FlowDashboardBuilder(
+            calendar: calendar,
+            dayBoundary: dayBoundary
+        )
     }
 
     func days(
@@ -44,13 +52,18 @@ struct DashboardStatisticsBuilder {
         breaks: [FlowBreak]
     ) -> [DashboardStatisticsDay] {
         let count = max(1, count)
-        let endDay = calendar.startOfDay(for: date)
+        let endDay = dayBoundary.day(containing: date, calendar: calendar)
 
         return (0..<count).reversed().compactMap { offset in
             guard let day = calendar.date(byAdding: .day, value: -offset, to: endDay) else {
                 return nil
             }
-            let snapshot = dashboardBuilder.build(date: day, sessions: sessions, breaks: breaks)
+            let snapshot = dashboardBuilder.build(
+                date: date,
+                sessions: sessions,
+                breaks: breaks,
+                explicitDay: day
+            )
             return DashboardStatisticsDay(
                 date: day,
                 focusSeconds: snapshot.totalFocusSeconds,
@@ -65,11 +78,21 @@ struct DashboardStatisticsBuilder {
         breaks: [FlowBreak],
         todos: [Todo]
     ) -> DashboardStatisticsComparison {
-        let day = calendar.startOfDay(for: date)
+        let day = dayBoundary.day(containing: date, calendar: calendar)
         let previousDay = calendar.date(byAdding: .day, value: -1, to: day)
             ?? day.addingTimeInterval(-86_400)
-        let current = dashboardBuilder.build(date: day, sessions: sessions, breaks: breaks)
-        let previous = dashboardBuilder.build(date: previousDay, sessions: sessions, breaks: breaks)
+        let current = dashboardBuilder.build(
+            date: date,
+            sessions: sessions,
+            breaks: breaks,
+            explicitDay: day
+        )
+        let previous = dashboardBuilder.build(
+            date: date,
+            sessions: sessions,
+            breaks: breaks,
+            explicitDay: previousDay
+        )
 
         let previousByDirection = Dictionary(
             uniqueKeysWithValues: previous.directionSummaries.map { ($0.id, $0.focusSeconds) }
@@ -100,7 +123,7 @@ struct DashboardStatisticsBuilder {
                   let completedAt = todo.completedAt else {
                 return false
             }
-            return calendar.isDate(completedAt, inSameDayAs: date)
+            return dayBoundary.contains(completedAt, in: date, calendar: calendar)
         }
         .count
     }

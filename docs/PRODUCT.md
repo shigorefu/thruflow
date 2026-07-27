@@ -104,9 +104,14 @@ database-wide filtering through its native toolbar search field.
 
 ## Settings
 
-The native macOS Settings window stores appearance, application language,
-first weekday, and 12/24-hour clock preferences locally. Appearance and
-regional calendar/clock preferences apply immediately to every app scene.
+The native Settings surfaces store appearance, application language, first
+weekday, 12/24-hour clock, and the configurable start hour of an app day
+locally. The default boundary is `00:00`. Choosing `02:00`, for example, keeps
+Tasks, generated Habits, Flow summaries, Statistics, History, and widgets on the
+previous logical day until 02:00. Stored Task dates remain calendar dates; the
+setting changes day assignment and does not migrate SwiftData records.
+Appearance and regional calendar/clock preferences apply immediately to every
+app scene.
 Language follows the shared String Catalog and takes effect after relaunch;
 available languages are discovered from the bundle so contributors can add a
 locale without changing Settings code.

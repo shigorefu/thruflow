@@ -3,6 +3,7 @@ import SwiftUI
 import UIKit
 
 struct IOSHistoryView: View {
+    @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.calendar) private var calendar
 
     @Query(sort: \FlowSession.startedAt) private var sessions: [FlowSession]
@@ -92,7 +93,11 @@ struct IOSHistoryView: View {
     }
 
     private func calendarSnapshot(for date: Date) -> HistoryCalendarSnapshot {
-        let interval = range.interval(containing: date, calendar: calendar)
+        let interval = range.interval(
+            containing: date,
+            calendar: calendar,
+            dayBoundary: dayBoundary
+        )
         return HistoryCalendarBuilder(calendar: calendar).build(
             interval: interval,
             sessions: sessions,
@@ -105,8 +110,12 @@ struct IOSHistoryView: View {
     }
 
     private func historySnapshot(for date: Date) -> DayHistorySnapshot {
-        DayHistoryBuilder(calendar: calendar).build(
-            interval: range.interval(containing: date, calendar: calendar),
+        DayHistoryBuilder(calendar: calendar, dayBoundary: dayBoundary).build(
+            interval: range.interval(
+                containing: date,
+                calendar: calendar,
+                dayBoundary: dayBoundary
+            ),
             sessions: sessions,
             todos: todos
         )
@@ -235,7 +244,7 @@ struct IOSHistoryView: View {
                 Spacer(minLength: 0)
 
                 Button(String(localized: "今日")) {
-                    selectedDate = calendar.startOfDay(for: .now)
+                    selectedDate = dayBoundary.day(containing: .now, calendar: calendar)
                 }
                 .buttonStyle(.borderedProminent)
             }
@@ -338,7 +347,11 @@ struct IOSHistoryView: View {
     }
 
     private var selectedPeriodPageID: Date {
-        range.interval(containing: selectedDate, calendar: calendar).start
+        range.interval(
+            containing: selectedDate,
+            calendar: calendar,
+            dayBoundary: dayBoundary
+        ).start
     }
 }
 
@@ -390,6 +403,7 @@ private struct IOSHistoryDayStrip: View {
 }
 
 private struct IOSHistoryWeekStrip: View {
+    @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.calendar) private var calendar
     @Environment(\.locale) private var locale
 
@@ -409,7 +423,11 @@ private struct IOSHistoryWeekStrip: View {
             spacing: 6,
             height: 58
         ) { anchor, isSelected in
-            let interval = HistoryCalendarRange.week.interval(containing: anchor, calendar: calendar)
+            let interval = HistoryCalendarRange.week.interval(
+                containing: anchor,
+                calendar: calendar,
+                dayBoundary: dayBoundary
+            )
 
             Button {
                 selectedDate = calendar.startOfDay(for: anchor)
@@ -839,6 +857,7 @@ private struct IOSHistoryTimelineGrid: View {
     let availableWidth: CGFloat?
     @Binding var selection: HistoryCalendarItem?
 
+    @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.calendar) private var calendar
 
     var body: some View {
@@ -942,7 +961,11 @@ private struct IOSHistoryTimelineGrid: View {
     }
 
     private func itemsForDay(_ day: Date) -> [HistoryCalendarItem] {
-        let interval = HistoryCalendarRange.day.interval(containing: day, calendar: calendar)
+        let interval = HistoryCalendarRange.day.interval(
+            containing: day,
+            calendar: calendar,
+            dayBoundary: dayBoundary
+        )
         return items.filter { $0.startedAt < interval.end && $0.endedAt > interval.start }
     }
 

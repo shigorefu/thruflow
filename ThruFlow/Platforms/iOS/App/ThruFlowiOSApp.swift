@@ -61,6 +61,7 @@ struct ThruFlowiOSApp: App {
                 .environmentObject(activeFlowStore)
                 .environmentObject(settings)
                 .environment(\.calendar, settings.effectiveCalendar)
+                .environment(\.appDayBoundary, settings.dayBoundary)
                 .environment(\.locale, settings.effectiveLocale)
                 .preferredColorScheme(settings.preferredColorScheme)
                 .onAppear {

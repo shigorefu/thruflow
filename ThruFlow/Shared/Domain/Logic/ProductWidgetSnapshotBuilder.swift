@@ -3,10 +3,15 @@ import Foundation
 @MainActor
 struct ProductWidgetSnapshotBuilder {
     private let calendar: Calendar
+    private let dayBoundary: AppDayBoundary
     private let todoSorter = FlowDashboardTodoSorter()
 
-    init(calendar: Calendar = .current) {
+    init(
+        calendar: Calendar = .current,
+        dayBoundary: AppDayBoundary = .midnight
+    ) {
         self.calendar = calendar
+        self.dayBoundary = dayBoundary
     }
 
     func tasksSnapshot(
@@ -14,13 +19,18 @@ struct ProductWidgetSnapshotBuilder {
         now: Date = .now
     ) -> TasksWidgetSnapshot {
         let items = todoSorter.sorted(
-            todos.filter { TodayTodoFilter(calendar: calendar).includes($0, on: now) }
+            todos.filter {
+                TodayTodoFilter(
+                    calendar: calendar,
+                    dayBoundary: dayBoundary
+                ).includes($0, now: now)
+            }
         )
         .map(makeTaskItem)
 
         return TasksWidgetSnapshot(
             generatedAt: now,
-            date: calendar.startOfDay(for: now),
+            date: dayBoundary.day(containing: now, calendar: calendar),
             items: items
         )
     }
@@ -29,7 +39,10 @@ struct ProductWidgetSnapshotBuilder {
         sessions: [FlowSession],
         now: Date = .now
     ) -> DotsWidgetSnapshot {
-        let result = StatisticsHeatmapBuilder(calendar: calendar).build(
+        let result = StatisticsHeatmapBuilder(
+            calendar: calendar,
+            dayBoundary: dayBoundary
+        ).build(
             sessions: sessions,
             filter: StatisticsFilter(range: .days180),
             now: now

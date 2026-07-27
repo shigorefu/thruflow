@@ -103,8 +103,12 @@ Each platform owns its composition root:
   launch, foreground entry, and a low-frequency active-scene cadence so
   CloudKit imports are adopted without view-specific logic.
 - `AppSettings` owns typed local preferences and derives the effective
-  `Calendar` and `Locale`. Platform composition roots inject those values into
-  their scene environments; settings never enter SwiftData.
+  `Calendar`, `Locale`, and `AppDayBoundary`. Platform composition roots inject
+  those values into their scene environments; settings never enter SwiftData.
+  `AppDayBoundary` is the shared, DST-aware authority for deciding which
+  logical day contains an instant. Domain builders accept it explicitly so
+  Tasks, Habits, Flow, History, Statistics, watchOS, and widgets cannot develop
+  platform-specific midnight rules.
 
 - `Platforms/iOS/App/ThruFlowiOSApp.swift` declares the iPhone scene and injects
   the same `ActiveFlowStore`, `AppSettings`, calendar, locale, and model schema.

@@ -14,9 +14,10 @@ struct TaskBacklogSnapshot {
 
 struct TaskBacklogBuilder {
     var calendar: Calendar = .current
+    var dayBoundary: AppDayBoundary = .midnight
 
     func build(todos: [Todo], now: Date = .now) -> TaskBacklogSnapshot {
-        let today = calendar.startOfDay(for: now)
+        let today = dayBoundary.day(containing: now, calendar: calendar)
         let actionable = todos.filter(isActionableTask)
 
         return TaskBacklogSnapshot(

@@ -3,6 +3,7 @@ import SwiftUI
 
 struct IOSFlowView: View {
     @Environment(\.calendar) private var calendar
+    @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
 
@@ -17,8 +18,11 @@ struct IOSFlowView: View {
     @State private var showsMemo = false
     @State private var editorMode: IOSTaskEditorMode?
 
-    private let dashboardBuilder = FlowDashboardBuilder()
     private let todoSorter = FlowDashboardTodoSorter()
+
+    private var dashboardBuilder: FlowDashboardBuilder {
+        FlowDashboardBuilder(calendar: calendar, dayBoundary: dayBoundary)
+    }
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { timeline in
@@ -107,7 +111,14 @@ struct IOSFlowView: View {
     }
 
     private var todayTodos: [Todo] {
-        todoSorter.sorted(todos.filter { TodayTodoFilter(calendar: calendar).includes($0) })
+        todoSorter.sorted(
+            todos.filter {
+                TodayTodoFilter(
+                    calendar: calendar,
+                    dayBoundary: dayBoundary
+                ).includes($0)
+            }
+        )
     }
 
     private var selectedTodo: Todo? {
@@ -475,10 +486,16 @@ struct IOSFlowView: View {
             return direction
         }()
         _ = inbox
-        _ = try? HabitTodoMaterializer(calendar: calendar).materialize(
+        let now = Date.now
+        let today = dayBoundary.day(containing: now, calendar: calendar)
+        _ = try? HabitTodoMaterializer(
+            calendar: calendar,
+            dayBoundary: dayBoundary
+        ).materialize(
             directions: directions,
-            dates: [.now],
-            modelContext: modelContext
+            dates: [today],
+            modelContext: modelContext,
+            now: now
         )
     }
 

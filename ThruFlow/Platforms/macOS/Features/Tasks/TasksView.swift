@@ -10,6 +10,7 @@ import SwiftUI
 
 struct TasksView: View {
     @Environment(\.calendar) private var calendar
+    @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.locale) private var locale
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
@@ -35,10 +36,14 @@ struct TasksView: View {
     @State private var backlogInspectorMode: MacTaskBacklogMode?
     @AppStorage("today.groupOrder") private var groupOrderRaw = TasksTodoGroup.defaultOrderRaw
 
-    private var filter: TodayTodoFilter { TodayTodoFilter(calendar: calendar) }
+    private var filter: TodayTodoFilter {
+        TodayTodoFilter(calendar: calendar, dayBoundary: dayBoundary)
+    }
     private var requiredPlanner: RequiredTodoPlanner { RequiredTodoPlanner(calendar: calendar) }
     private var calendarBuilder: TaskCalendarBuilder { TaskCalendarBuilder(calendar: calendar) }
-    private var backlogBuilder: TaskBacklogBuilder { TaskBacklogBuilder(calendar: calendar) }
+    private var backlogBuilder: TaskBacklogBuilder {
+        TaskBacklogBuilder(calendar: calendar, dayBoundary: dayBoundary)
+    }
     private var rescheduleService: TaskRescheduleService { TaskRescheduleService(calendar: calendar) }
     private var searchBuilder: DatabaseSearchBuilder { DatabaseSearchBuilder(calendar: calendar) }
     private let progress = TodoProgressCalculator()
@@ -171,6 +176,7 @@ struct TasksView: View {
             Text(moveError ?? "")
         }
         .onAppear {
+            alignInitialSelectionWithCurrentAppDay()
             selectComposerDate(selectedDate)
             ensureRequiredTodosForVisibleDates()
         }
@@ -529,13 +535,13 @@ struct TasksView: View {
     }
 
     private func moveToToday() {
-        let today = calendar.startOfDay(for: .now)
+        let today = dayBoundary.day(containing: .now, calendar: calendar)
         anchorDate = today
         selectedDate = today
     }
 
     private func moveTodosToToday(_ candidates: [Todo]) {
-        let today = calendar.startOfDay(for: .now)
+        let today = dayBoundary.day(containing: .now, calendar: calendar)
         let movable = candidates.filter { todo in
             if case .success = rescheduleService.validate(todo, movingTo: today, among: todos) {
                 return true
@@ -570,9 +576,11 @@ struct TasksView: View {
     }
 
     private func selectComposerDate(_ date: Date) {
-        if calendar.isDateInToday(date) {
+        let today = dayBoundary.day(containing: .now, calendar: calendar)
+        if calendar.isDate(date, inSameDayAs: today) {
             newTodoDateOption = .today
-        } else if calendar.isDateInTomorrow(date) {
+        } else if let tomorrow = calendar.date(byAdding: .day, value: 1, to: today),
+                  calendar.isDate(date, inSameDayAs: tomorrow) {
             newTodoDateOption = .tomorrow
         } else {
             newTodoDateOption = .custom(calendar.startOfDay(for: date))
@@ -770,7 +778,10 @@ struct TasksView: View {
             priority: newTodoPriority,
             isRoomIfPossible: newTodoPriority == .low && newTodoIsRoomIfPossible,
             plannedAmount: newTodoVolume.plannedAmount,
-            scheduledDate: newTodoDateOption.resolvedDate
+            scheduledDate: newTodoDateOption.resolvedDate(
+                calendar: calendar,
+                dayBoundary: dayBoundary
+            )
         )
         let errors = validator.validate(draft)
 
@@ -793,7 +804,10 @@ struct TasksView: View {
                 plannedAmount: newTodoVolume.plannedAmount,
                 actualProgress: 0
             ),
-            scheduledDate: newTodoDateOption.resolvedDate,
+            scheduledDate: newTodoDateOption.resolvedDate(
+                calendar: calendar,
+                dayBoundary: dayBoundary
+            ),
             sortIndex: (todos.map(\.sortIndex).min() ?? 0) - 1
         )
         modelContext.insert(todo)
@@ -808,7 +822,7 @@ struct TasksView: View {
     }
 
     private func ensureRequiredTodosForVisibleDates(now: Date = .now) {
-        let today = calendar.startOfDay(for: now)
+        let today = dayBoundary.day(containing: now, calendar: calendar)
         let dates = visibleDates
             .filter { $0 >= today }
             .filter { date in
@@ -818,12 +832,23 @@ struct TasksView: View {
 
         guard !dates.isEmpty else { return }
 
-        _ = try? HabitTodoMaterializer(calendar: calendar).materialize(
+        _ = try? HabitTodoMaterializer(
+            calendar: calendar,
+            dayBoundary: dayBoundary
+        ).materialize(
             directions: activeDirections,
             dates: dates,
             modelContext: modelContext,
             now: now
         )
+    }
+
+    private func alignInitialSelectionWithCurrentAppDay(now: Date = .now) {
+        let calendarToday = calendar.startOfDay(for: now)
+        guard calendar.isDate(selectedDate, inSameDayAs: calendarToday) else { return }
+        let appToday = dayBoundary.day(containing: now, calendar: calendar)
+        selectedDate = appToday
+        anchorDate = appToday
     }
 
     private func resolvedDirection(for id: UUID?) -> Direction {
@@ -913,16 +938,20 @@ enum QuickTodoDate: Hashable {
     case none
     case custom(Date)
 
-    var resolvedDate: Date? {
+    func resolvedDate(
+        calendar: Calendar,
+        dayBoundary: AppDayBoundary
+    ) -> Date? {
+        let today = dayBoundary.day(containing: .now, calendar: calendar)
         switch self {
         case .today:
-            return .now
+            return today
         case .tomorrow:
-            return Calendar.current.date(byAdding: .day, value: 1, to: .now)
+            return calendar.date(byAdding: .day, value: 1, to: today)
         case .none:
             return nil
         case .custom(let date):
-            return date
+            return calendar.startOfDay(for: date)
         }
     }
 
@@ -948,6 +977,9 @@ enum QuickTodoDate: Hashable {
 
 /// Compact, chip-based quick-add composer pinned to the bottom of Tasks.
 struct MessengerTodoComposer: View {
+    @Environment(\.appDayBoundary) private var dayBoundary
+    @Environment(\.calendar) private var calendar
+
     @Binding var title: String
     @Binding var selectedDirectionID: UUID?
     @Binding var volume: QuickTodoVolume
@@ -1177,7 +1209,13 @@ struct MessengerTodoComposer: View {
     }
 
     private func submit() {
-        let result = parser.parse(title, directions: parserDirections, consumeTrailingToken: true)
+        let result = parser.parse(
+            title,
+            directions: parserDirections,
+            anchorDate: dayBoundary.day(containing: .now, calendar: calendar),
+            calendar: calendar,
+            consumeTrailingToken: true
+        )
         apply(result)
         if let unresolved = result.unresolvedDirection, !unresolved.isEmpty {
             pendingDirectionName = unresolved
@@ -1514,7 +1552,13 @@ struct MessengerTodoComposer: View {
 
     private func parseCommittedTokens(in input: String) {
         guard !isApplyingParserResult else { return }
-        let result = parser.parse(input, directions: parserDirections, consumeTrailingToken: false)
+        let result = parser.parse(
+            input,
+            directions: parserDirections,
+            anchorDate: dayBoundary.day(containing: .now, calendar: calendar),
+            calendar: calendar,
+            consumeTrailingToken: false
+        )
         apply(result)
     }
 
@@ -1630,8 +1674,12 @@ struct MessengerTodoComposer: View {
     private func quickDate(for date: TaskQuickInputDate) -> QuickTodoDate {
         switch date {
         case .scheduled(let value):
-            if Calendar.current.isDateInToday(value) { return .today }
-            if Calendar.current.isDateInTomorrow(value) { return .tomorrow }
+            let today = dayBoundary.day(containing: .now, calendar: calendar)
+            if calendar.isDate(value, inSameDayAs: today) { return .today }
+            if let tomorrow = calendar.date(byAdding: .day, value: 1, to: today),
+               calendar.isDate(value, inSameDayAs: tomorrow) {
+                return .tomorrow
+            }
             return .custom(value)
         case .noDate:
             return .none
@@ -2121,6 +2169,9 @@ private struct VolumeChip: View {
 }
 
 private struct DateChip: View {
+    @Environment(\.appDayBoundary) private var dayBoundary
+    @Environment(\.calendar) private var calendar
+
     @Binding var dateOption: QuickTodoDate
     @Binding var isExplicit: Bool
 
@@ -2153,7 +2204,10 @@ private struct DateChip: View {
             Divider()
 
             Button(String(localized: "他の日付...")) {
-                customDate = dateOption.resolvedDate ?? .now
+                customDate = dateOption.resolvedDate(
+                    calendar: calendar,
+                    dayBoundary: dayBoundary
+                ) ?? .now
                 showingCustomPicker = true
             }
         } label: {

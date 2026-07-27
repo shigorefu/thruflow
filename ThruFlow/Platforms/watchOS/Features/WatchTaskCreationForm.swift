@@ -2,6 +2,7 @@ import SwiftData
 import SwiftUI
 
 struct WatchTaskCreationForm: View {
+    @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.calendar) private var calendar
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
@@ -121,7 +122,10 @@ struct WatchTaskCreationForm: View {
             measurement: measurement,
             priority: priority,
             plannedAmount: measurement == .checkbox ? nil : plannedAmount,
-            scheduledDate: schedule.date(calendar: calendar),
+            scheduledDate: schedule.date(
+                calendar: calendar,
+                dayBoundary: dayBoundary
+            ),
             sortIndex: (todos.map(\.sortIndex).max() ?? -1) + 1
         )
         modelContext.insert(todo)
@@ -148,15 +152,19 @@ private enum WatchTaskSchedule: String, CaseIterable, Identifiable {
         }
     }
 
-    func date(calendar: Calendar) -> Date? {
-        switch self {
+    func date(
+        calendar: Calendar,
+        dayBoundary: AppDayBoundary
+    ) -> Date? {
+        let today = dayBoundary.day(containing: .now, calendar: calendar)
+        return switch self {
         case .today:
-            calendar.startOfDay(for: .now)
+            today
         case .tomorrow:
             calendar.date(
                 byAdding: .day,
                 value: 1,
-                to: calendar.startOfDay(for: .now)
+                to: today
             )
         case .noDate:
             nil

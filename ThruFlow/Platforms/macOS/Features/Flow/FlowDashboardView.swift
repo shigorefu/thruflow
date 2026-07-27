@@ -17,6 +17,7 @@ struct FlowDashboardView: View {
 
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.calendar) private var calendar
+    @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.locale) private var locale
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
@@ -34,13 +35,21 @@ struct FlowDashboardView: View {
     @State private var statisticsPage = DashboardStatisticsPage.distribution
     @State private var distributionMode = DashboardDistributionMode.task
 
-    private let builder = FlowDashboardBuilder()
-    private let todayFilter = TodayTodoFilter()
     private let progressCalculator = TodoProgressCalculator()
     private let historyEditor = FlowHistoryEditor()
     private let breakEditor = FlowBreakEditor()
     private let todoSorter = FlowDashboardTodoSorter()
-    private let statisticsBuilder = DashboardStatisticsBuilder()
+    private var builder: FlowDashboardBuilder {
+        FlowDashboardBuilder(calendar: calendar, dayBoundary: dayBoundary)
+    }
+
+    private var todayFilter: TodayTodoFilter {
+        TodayTodoFilter(calendar: calendar, dayBoundary: dayBoundary)
+    }
+
+    private var statisticsBuilder: DashboardStatisticsBuilder {
+        DashboardStatisticsBuilder(calendar: calendar, dayBoundary: dayBoundary)
+    }
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { timeline in
@@ -888,9 +897,13 @@ struct FlowDashboardView: View {
     }
 
     private func ensureTodayHabits(now: Date = .now) {
-        _ = try? HabitTodoMaterializer(calendar: calendar).materialize(
+        let today = dayBoundary.day(containing: now, calendar: calendar)
+        _ = try? HabitTodoMaterializer(
+            calendar: calendar,
+            dayBoundary: dayBoundary
+        ).materialize(
             directions: directions,
-            dates: [now],
+            dates: [today],
             modelContext: modelContext,
             now: now
         )

@@ -373,6 +373,11 @@ the system language and clearly marks that changing it requires relaunching the
 app. `週の開始日` offers system, Sunday, Monday, and Saturday; it updates Task,
 History, and Statistics week layouts immediately. `時刻表示` offers system,
 12-hour, and 24-hour clocks and updates locale-aware time labels immediately.
+`新しい日の開始` selects an hour from `00:00` through `23:00`; the default is
+`00:00`. Before the selected boundary, Today, generated Habits, Flow daily
+summaries, History/Statistics grouping, watchOS, and widgets continue to use the
+previous logical day. Changing it takes effect immediately and does not rewrite
+stored Task dates or Flow timestamps.
 
 The Flow inspector limits its Task picker to Tasks scheduled on the Flow date plus the currently assigned Task. It edits time through linked `開始`, `終了`, and direct `分` fields: start/end changes recalculate minutes, and minute changes keep start fixed while moving end.
 

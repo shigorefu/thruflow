@@ -4875,6 +4875,22 @@
         }
       }
     },
+    "必要なときにタスクを計画する作業領域です。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A workspace for planning Tasks when needed."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Рабочая область для планирования задач по мере необходимости."
+          }
+        }
+      }
+    },
     "情報を表示" : {
       "localizations" : {
         "en" : {
@@ -4903,22 +4919,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Скрыть информацию"
-          }
-        }
-      }
-    },
-    "必要なときにタスクを計画する作業領域です。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A workspace for planning Tasks when needed."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Рабочая область для планирования задач по мере необходимости."
           }
         }
       }
@@ -4957,6 +4957,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Новый Flow, с %@ до %@"
+          }
+        }
+      }
+    },
+    "新しい日の開始" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Day Starts"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Начало нового дня"
           }
         }
       }
@@ -6733,6 +6749,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Настройки"
+          }
+        }
+      }
+    },
+    "設定した時刻までは前日のタスクとFlowとして扱います" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Until this time, Tasks and Flow count toward the previous day."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "До этого времени задачи и Flow относятся к предыдущему дню."
           }
         }
       }

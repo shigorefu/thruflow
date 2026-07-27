@@ -218,15 +218,23 @@ private struct DayHistoryTaskGroupKey: Hashable {
 @MainActor
 struct DayHistoryBuilder {
     private let calendar: Calendar
+    private let dayBoundary: AppDayBoundary
 
-    init(calendar: Calendar = .current) {
+    init(
+        calendar: Calendar = .current,
+        dayBoundary: AppDayBoundary = .midnight
+    ) {
         self.calendar = calendar
+        self.dayBoundary = dayBoundary
     }
 
     func build(date: Date, sessions: [FlowSession], todos: [Todo]) -> DayHistorySnapshot {
         let day = calendar.startOfDay(for: date)
-        let end = calendar.date(byAdding: .day, value: 1, to: day) ?? day.addingTimeInterval(86_400)
-        return build(interval: DateInterval(start: day, end: end), sessions: sessions, todos: todos)
+        return build(
+            interval: dayBoundary.interval(for: day, calendar: calendar),
+            sessions: sessions,
+            todos: todos
+        )
     }
 
     func build(interval: DateInterval, sessions: [FlowSession], todos: [Todo]) -> DayHistorySnapshot {

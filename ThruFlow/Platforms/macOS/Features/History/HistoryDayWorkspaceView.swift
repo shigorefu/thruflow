@@ -9,6 +9,7 @@ import SwiftData
 import SwiftUI
 
 struct HistoryDayWorkspaceView: View {
+    @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.calendar) private var calendar
     @Environment(\.locale) private var locale
 
@@ -31,7 +32,8 @@ struct HistoryDayWorkspaceView: View {
             for: selectedDate,
             items: items,
             scale: scale,
-            calendar: calendar
+            calendar: calendar,
+            dayBoundary: dayBoundary
         )
     }
 

@@ -3,6 +3,7 @@ import SwiftUI
 import WidgetKit
 
 struct IOSProductWidgetSnapshotSyncView: View {
+    @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.calendar) private var calendar
     @Environment(\.scenePhase) private var scenePhase
 
@@ -14,7 +15,7 @@ struct IOSProductWidgetSnapshotSyncView: View {
 
     private var contentVersion: Int {
         var hasher = Hasher()
-        hasher.combine(calendar.startOfDay(for: .now))
+        hasher.combine(dayBoundary.day(containing: .now, calendar: calendar))
         todos.forEach {
             hasher.combine($0.id)
             hasher.combine($0.updatedAt)
@@ -51,7 +52,10 @@ struct IOSProductWidgetSnapshotSyncView: View {
 
     @MainActor
     private func publish(now: Date = .now) {
-        let builder = ProductWidgetSnapshotBuilder(calendar: calendar)
+        let builder = ProductWidgetSnapshotBuilder(
+            calendar: calendar,
+            dayBoundary: dayBoundary
+        )
         snapshots.saveTasks(builder.tasksSnapshot(todos: todos, now: now))
         snapshots.saveDots(builder.dotsSnapshot(sessions: sessions, now: now))
         WidgetCenter.shared.reloadTimelines(ofKind: ProductWidgetSnapshotStore.tasksWidgetKind)

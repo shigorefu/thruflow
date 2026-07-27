@@ -9,6 +9,7 @@ import SwiftData
 import SwiftUI
 
 struct HistoryCalendarView: View {
+    @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.calendar) private var calendar
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
@@ -30,7 +31,11 @@ struct HistoryCalendarView: View {
     private let historyEditor = FlowHistoryEditor()
 
     private var snapshot: HistoryCalendarSnapshot {
-        let interval = range.interval(containing: selectedDate, calendar: calendar)
+        let interval = range.interval(
+            containing: selectedDate,
+            calendar: calendar,
+            dayBoundary: dayBoundary
+        )
         return builder.build(
             interval: interval,
             sessions: sessions,
@@ -241,6 +246,7 @@ struct HistoryVisibilityMenu: View {
 }
 
 struct HistoryTimeGrid: View {
+    @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.calendar) private var calendar
     @Environment(\.locale) private var locale
 
@@ -261,7 +267,11 @@ struct HistoryTimeGrid: View {
     private let minimumVisibleItemHeight: CGFloat = 12
 
     private var days: [Date] {
-        let interval = range.interval(containing: selectedDate, calendar: calendar)
+        let interval = range.interval(
+            containing: selectedDate,
+            calendar: calendar,
+            dayBoundary: dayBoundary
+        )
         let count = range == .day ? 1 : 7
         return (0..<count).compactMap { calendar.date(byAdding: .day, value: $0, to: interval.start) }
     }

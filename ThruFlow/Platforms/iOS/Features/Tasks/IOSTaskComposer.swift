@@ -2,6 +2,7 @@ import SwiftData
 import SwiftUI
 
 struct IOSTaskComposer: View {
+    @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.calendar) private var calendar
     @Environment(\.modelContext) private var modelContext
 
@@ -104,7 +105,7 @@ struct IOSTaskComposer: View {
         .padding(.bottom, 8)
         .task {
             directionID = nil
-            scheduledDate = calendar.startOfDay(for: .now)
+            scheduledDate = currentAppDay
             await Task.yield()
             isFocused = true
         }
@@ -259,11 +260,11 @@ struct IOSTaskComposer: View {
     private var dateMenu: some View {
         Menu {
             Button(String(localized: "今日")) {
-                scheduledDate = calendar.startOfDay(for: .now)
+                scheduledDate = currentAppDay
                 hasExplicitDate = true
             }
             Button(String(localized: "明日")) {
-                scheduledDate = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: .now))
+                scheduledDate = calendar.date(byAdding: .day, value: 1, to: currentAppDay)
                 hasExplicitDate = true
             }
             Button(String(localized: "日付なし")) {
@@ -519,7 +520,7 @@ struct IOSTaskComposer: View {
         let result = parser.parse(
             title,
             directions: directions.map { TaskQuickInputDirection(id: $0.id, name: $0.name) },
-            anchorDate: .now,
+            anchorDate: currentAppDay,
             calendar: calendar,
             consumeTrailingToken: false
         )
@@ -552,7 +553,7 @@ struct IOSTaskComposer: View {
         let result = parser.parse(
             title,
             directions: parserDirections,
-            anchorDate: .now,
+            anchorDate: currentAppDay,
             calendar: calendar
         )
         if let unresolved = result.unresolvedDirection {
@@ -585,7 +586,7 @@ struct IOSTaskComposer: View {
         plannedAmount = 1
         priority = .medium
         isRoomIfPossible = false
-        scheduledDate = calendar.startOfDay(for: .now)
+        scheduledDate = currentAppDay
         directionID = nil
         hasExplicitMeasurement = false
         hasExplicitDirection = false
@@ -603,6 +604,10 @@ struct IOSTaskComposer: View {
         }
 
         return scheduledDate
+    }
+
+    private var currentAppDay: Date {
+        dayBoundary.day(containing: .now, calendar: calendar)
     }
 
     private func useInboxForUnresolvedDirection() {

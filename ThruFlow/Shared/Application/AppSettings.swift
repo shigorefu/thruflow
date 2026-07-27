@@ -81,6 +81,12 @@ final class AppSettings: ObservableObject {
         didSet { defaults.set(clockFormat.rawValue, forKey: Keys.clockFormat) }
     }
 
+    @Published var dayStartHour: Int {
+        didSet {
+            defaults.set(Self.normalizedDayStartHour(dayStartHour), forKey: Keys.dayStartHour)
+        }
+    }
+
     @Published var showsTaskQuickInputLegend: Bool {
         didSet { defaults.set(showsTaskQuickInputLegend, forKey: Keys.showsTaskQuickInputLegend) }
     }
@@ -103,6 +109,9 @@ final class AppSettings: ObservableObject {
         clockFormat = AppClockFormat(
             rawValue: defaults.string(forKey: Keys.clockFormat) ?? ""
         ) ?? .system
+        dayStartHour = Self.normalizedDayStartHour(
+            defaults.object(forKey: Keys.dayStartHour) as? Int ?? 0
+        )
         showsTaskQuickInputLegend = defaults.object(forKey: Keys.showsTaskQuickInputLegend) as? Bool ?? true
         launchLanguageCode = storedLanguageCode
         applyLanguagePreference()
@@ -134,6 +143,27 @@ final class AppSettings: ObservableObject {
         return Locale(identifier: "\(baseIdentifier)\(separator)hours=\(hourCycle)")
     }
 
+    var dayBoundary: AppDayBoundary {
+        AppDayBoundary(hour: dayStartHour)
+    }
+
+    func dayStartLabel(for hour: Int) -> String {
+        var components = DateComponents()
+        components.calendar = effectiveCalendar
+        components.year = 2001
+        components.month = 1
+        components.day = 1
+        components.hour = Self.normalizedDayStartHour(hour)
+
+        let date = effectiveCalendar.date(from: components) ?? .distantPast
+        return date.formatted(
+            .dateTime
+                .locale(effectiveLocale)
+                .hour()
+                .minute()
+        )
+    }
+
     private func applyLanguagePreference() {
         if languageCode == Self.systemLanguageCode {
             defaults.removeObject(forKey: "AppleLanguages")
@@ -142,11 +172,16 @@ final class AppSettings: ObservableObject {
         }
     }
 
+    private static func normalizedDayStartHour(_ hour: Int) -> Int {
+        min(max(hour, 0), 23)
+    }
+
     private enum Keys {
         static let appearance = "settings.appearance"
         static let languageCode = "settings.languageCode"
         static let weekStart = "settings.weekStart"
         static let clockFormat = "settings.clockFormat"
+        static let dayStartHour = "settings.dayStartHour"
         static let showsTaskQuickInputLegend = "settings.showsTaskQuickInputLegend"
     }
 }

@@ -9,6 +9,7 @@ import SwiftData
 import SwiftUI
 
 struct StatisticsView: View {
+    @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.calendar) private var calendar
 
     @Query(sort: \FlowSession.startedAt, order: .reverse) private var sessions: [FlowSession]
@@ -20,8 +21,12 @@ struct StatisticsView: View {
     @State private var selectedDirectionID: UUID?
     let onSelectHistoryDate: (Date) -> Void
 
-    private var flowBuilder: StatisticsHeatmapBuilder { StatisticsHeatmapBuilder(calendar: calendar) }
-    private var achievementBuilder: AchievementHeatmapBuilder { AchievementHeatmapBuilder(calendar: calendar) }
+    private var flowBuilder: StatisticsHeatmapBuilder {
+        StatisticsHeatmapBuilder(calendar: calendar, dayBoundary: dayBoundary)
+    }
+    private var achievementBuilder: AchievementHeatmapBuilder {
+        AchievementHeatmapBuilder(calendar: calendar, dayBoundary: dayBoundary)
+    }
 
     init(onSelectHistoryDate: @escaping (Date) -> Void = { _ in }) {
         self.onSelectHistoryDate = onSelectHistoryDate

@@ -113,9 +113,14 @@ struct AchievementHeatmapResult: Equatable {
 
 struct StatisticsHeatmapBuilder {
     private let calendar: Calendar
+    private let dayBoundary: AppDayBoundary
 
-    init(calendar: Calendar = .current) {
+    init(
+        calendar: Calendar = .current,
+        dayBoundary: AppDayBoundary = .midnight
+    ) {
         self.calendar = calendar
+        self.dayBoundary = dayBoundary
     }
 
     func build(
@@ -127,14 +132,17 @@ struct StatisticsHeatmapBuilder {
         let startDate = interval.start
         let endDate = interval.end
         let contributions = sessions.flatMap(makeContributions).filter { contribution in
-            let contributionDate = calendar.startOfDay(for: contribution.startedAt)
+            let contributionDate = dayBoundary.day(
+                containing: contribution.startedAt,
+                calendar: calendar
+            )
             guard contributionDate >= startDate, contributionDate <= endDate else { return false }
             guard let directionID = filter.directionID else { return true }
             return contribution.direction?.id == directionID
         }
 
         let groupedByDay = Dictionary(grouping: contributions) { contribution in
-            calendar.startOfDay(for: contribution.startedAt)
+            dayBoundary.day(containing: contribution.startedAt, calendar: calendar)
         }
 
         let days = daysBetween(startDate, and: endDate).map { date in
@@ -151,7 +159,7 @@ struct StatisticsHeatmapBuilder {
     }
 
     private func dateInterval(for range: StatisticsRange, now: Date) -> (start: Date, end: Date) {
-        let today = calendar.startOfDay(for: now)
+        let today = dayBoundary.day(containing: now, calendar: calendar)
 
         switch range {
         case .currentMonth:
@@ -257,9 +265,14 @@ private struct FlowContribution {
 
 struct AchievementHeatmapBuilder {
     private let calendar: Calendar
+    private let dayBoundary: AppDayBoundary
 
-    init(calendar: Calendar = .current) {
+    init(
+        calendar: Calendar = .current,
+        dayBoundary: AppDayBoundary = .midnight
+    ) {
         self.calendar = calendar
+        self.dayBoundary = dayBoundary
     }
 
     func build(
@@ -271,7 +284,10 @@ struct AchievementHeatmapBuilder {
         let startDate = interval.start
         let endDate = interval.end
         let eligibleTodos = todos.filter { todo in
-            let completionDate = calendar.startOfDay(for: todo.completedAt ?? todo.updatedAt)
+            let completionDate = dayBoundary.day(
+                containing: todo.completedAt ?? todo.updatedAt,
+                calendar: calendar
+            )
             guard completionDate >= startDate, completionDate <= endDate else { return false }
             guard todo.status == .completed, !todo.isDeleted else { return false }
             guard let directionID = filter.directionID else { return true }
@@ -279,7 +295,10 @@ struct AchievementHeatmapBuilder {
         }
 
         let groupedByDay = Dictionary(grouping: eligibleTodos) { todo in
-            calendar.startOfDay(for: todo.completedAt ?? todo.updatedAt)
+            dayBoundary.day(
+                containing: todo.completedAt ?? todo.updatedAt,
+                calendar: calendar
+            )
         }
 
         let days = daysBetween(startDate, and: endDate).map { date in
@@ -297,7 +316,7 @@ struct AchievementHeatmapBuilder {
     }
 
     private func dateInterval(for range: StatisticsRange, now: Date) -> (start: Date, end: Date) {
-        let today = calendar.startOfDay(for: now)
+        let today = dayBoundary.day(containing: now, calendar: calendar)
 
         switch range {
         case .currentMonth:

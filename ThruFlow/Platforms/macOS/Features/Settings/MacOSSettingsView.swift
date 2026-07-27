@@ -46,6 +46,16 @@ struct MacOSSettingsView: View {
                     Text(String(localized: "12時間制")).tag(AppClockFormat.twelveHour)
                     Text(String(localized: "24時間制")).tag(AppClockFormat.twentyFourHour)
                 }
+
+                Picker(String(localized: "新しい日の開始"), selection: $settings.dayStartHour) {
+                    ForEach(0..<24, id: \.self) { hour in
+                        Text(settings.dayStartLabel(for: hour)).tag(hour)
+                    }
+                }
+
+                Text(String(localized: "設定した時刻までは前日のタスクとFlowとして扱います"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             Section(String(localized: "タスク")) {

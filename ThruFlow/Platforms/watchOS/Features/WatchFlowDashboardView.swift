@@ -3,6 +3,7 @@ import SwiftData
 import SwiftUI
 
 struct WatchFlowDashboardView: View {
+    @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.calendar) private var calendar
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
@@ -49,15 +50,24 @@ struct WatchFlowDashboardView: View {
 
     private var todayTodos: [Todo] {
         todoSorter.sorted(
-            todos.filter { TodayTodoFilter(calendar: calendar).includes($0) }
+            todos.filter {
+                TodayTodoFilter(
+                    calendar: calendar,
+                    dayBoundary: dayBoundary
+                ).includes($0)
+            }
         )
     }
 
     private func prepareToday() {
         guard !activeDirections.isEmpty else { return }
-        _ = try? HabitTodoMaterializer(calendar: calendar).materialize(
+        let today = dayBoundary.day(containing: .now, calendar: calendar)
+        _ = try? HabitTodoMaterializer(
+            calendar: calendar,
+            dayBoundary: dayBoundary
+        ).materialize(
             directions: activeDirections,
-            dates: [.now],
+            dates: [today],
             modelContext: modelContext
         )
     }
@@ -83,6 +93,7 @@ private enum WatchDashboardPage: Hashable {
 }
 
 private struct WatchFlowStreamView: View {
+    @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.calendar) private var calendar
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
     @Query(sort: \Direction.sortIndex) private var directions: [Direction]
@@ -94,7 +105,10 @@ private struct WatchFlowStreamView: View {
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { timeline in
-            let snapshot = FlowDashboardBuilder(calendar: calendar).build(
+            let snapshot = FlowDashboardBuilder(
+                calendar: calendar,
+                dayBoundary: dayBoundary
+            ).build(
                 date: timeline.date,
                 sessions: sessions,
                 breaks: flowBreaks,
@@ -166,6 +180,7 @@ private struct WatchFlowStreamView: View {
 }
 
 private struct WatchTimerView: View {
+    @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.calendar) private var calendar
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
@@ -343,7 +358,12 @@ private struct WatchTimerView: View {
 
     private var todayTodos: [Todo] {
         FlowDashboardTodoSorter().sorted(
-            todos.filter { TodayTodoFilter(calendar: calendar).includes($0) }
+            todos.filter {
+                TodayTodoFilter(
+                    calendar: calendar,
+                    dayBoundary: dayBoundary
+                ).includes($0)
+            }
         )
     }
 
@@ -434,6 +454,7 @@ private struct WatchTimerView: View {
 }
 
 private struct WatchFlowContextPicker: View {
+    @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.calendar) private var calendar
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
@@ -485,7 +506,12 @@ private struct WatchFlowContextPicker: View {
 
     private var todayTodos: [Todo] {
         FlowDashboardTodoSorter().sorted(
-            todos.filter { TodayTodoFilter(calendar: calendar).includes($0) }
+            todos.filter {
+                TodayTodoFilter(
+                    calendar: calendar,
+                    dayBoundary: dayBoundary
+                ).includes($0)
+            }
         )
     }
 
@@ -587,6 +613,7 @@ private struct WatchFlowMemoView: View {
 }
 
 private struct WatchTasksView: View {
+    @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.calendar) private var calendar
     @Environment(\.modelContext) private var modelContext
     @Query private var todos: [Todo]
@@ -638,7 +665,12 @@ private struct WatchTasksView: View {
 
     private var todayTodos: [Todo] {
         FlowDashboardTodoSorter().sorted(
-            todos.filter { TodayTodoFilter(calendar: calendar).includes($0) }
+            todos.filter {
+                TodayTodoFilter(
+                    calendar: calendar,
+                    dayBoundary: dayBoundary
+                ).includes($0)
+            }
         )
     }
 
@@ -653,6 +685,7 @@ private struct WatchTasksView: View {
 }
 
 private struct WatchStatisticsView: View {
+    @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.calendar) private var calendar
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
 
@@ -662,7 +695,10 @@ private struct WatchStatisticsView: View {
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { timeline in
-            let snapshot = FlowDashboardBuilder(calendar: calendar).build(
+            let snapshot = FlowDashboardBuilder(
+                calendar: calendar,
+                dayBoundary: dayBoundary
+            ).build(
                 date: timeline.date,
                 sessions: sessions,
                 breaks: flowBreaks,
@@ -710,7 +746,12 @@ private struct WatchStatisticsView: View {
     }
 
     private var todayTodos: [Todo] {
-        todos.filter { TodayTodoFilter(calendar: calendar).includes($0) }
+        todos.filter {
+            TodayTodoFilter(
+                calendar: calendar,
+                dayBoundary: dayBoundary
+            ).includes($0)
+        }
     }
 
     private var completionProgress: Double {

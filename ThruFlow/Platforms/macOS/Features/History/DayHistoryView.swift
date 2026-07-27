@@ -9,6 +9,7 @@ import SwiftData
 import SwiftUI
 
 struct DayHistoryView: View {
+    @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.calendar) private var calendar
     @Environment(\.locale) private var locale
     @Environment(\.modelContext) private var modelContext
@@ -30,7 +31,9 @@ struct DayHistoryView: View {
     @State private var taskDirection: Direction?
 
     private let onClose: (() -> Void)?
-    private let builder = DayHistoryBuilder()
+    private var builder: DayHistoryBuilder {
+        DayHistoryBuilder(calendar: calendar, dayBoundary: dayBoundary)
+    }
     private var searchBuilder: DatabaseSearchBuilder {
         DatabaseSearchBuilder(calendar: calendar)
     }
@@ -62,7 +65,11 @@ struct DayHistoryView: View {
             )
         }
         return builder.build(
-            interval: selectedRange.interval(containing: selectedDate, calendar: calendar),
+            interval: selectedRange.interval(
+                containing: selectedDate,
+                calendar: calendar,
+                dayBoundary: dayBoundary
+            ),
             sessions: searchFilteredSessions,
             todos: searchFilteredTodos
         )
@@ -149,7 +156,7 @@ struct DayHistoryView: View {
 
     private var todayButton: some View {
         Button(String(localized: "今日")) {
-            selectedDate = calendar.startOfDay(for: .now)
+            selectedDate = dayBoundary.day(containing: .now, calendar: calendar)
         }
         .buttonStyle(.borderedProminent)
         .fixedSize()
@@ -403,7 +410,11 @@ struct DayHistoryView: View {
             }
             return fullDateFormatter.string(from: selectedDate)
         case .week:
-            let interval = selectedRange.interval(containing: selectedDate, calendar: calendar)
+            let interval = selectedRange.interval(
+                containing: selectedDate,
+                calendar: calendar,
+                dayBoundary: dayBoundary
+            )
             let end = interval.end.addingTimeInterval(-1)
             return "\(shortDateFormatter.string(from: interval.start))–\(shortDateFormatter.string(from: end))"
         case .month:
@@ -453,7 +464,11 @@ struct DayHistoryView: View {
 
     private var weeklyTaskSections: [HistoryTaskDaySection] {
         guard !isSearching, selectedRange == .week else { return [] }
-        let interval = selectedRange.interval(containing: selectedDate, calendar: calendar)
+        let interval = selectedRange.interval(
+            containing: selectedDate,
+            calendar: calendar,
+            dayBoundary: dayBoundary
+        )
         return (0..<7).compactMap { offset in
             guard let date = calendar.date(byAdding: .day, value: offset, to: interval.start) else { return nil }
             let daySnapshot = builder.build(
