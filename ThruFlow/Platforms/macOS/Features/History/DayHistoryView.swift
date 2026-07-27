@@ -79,12 +79,9 @@ struct DayHistoryView: View {
     var body: some View {
         VStack(spacing: 0) {
             modeContent
-                .id(selectedRange)
-                .transition(.opacity.combined(with: .scale(scale: 0.995)))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .navigationTitle(String(localized: "履歴"))
-        .animation(.easeInOut(duration: 0.22), value: selectedRange)
         .toolbar {
             ToolbarItem(placement: .navigation) {
                 HStack(spacing: 8) {

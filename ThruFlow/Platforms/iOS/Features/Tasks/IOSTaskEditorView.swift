@@ -49,54 +49,58 @@ struct IOSTaskEditorView: View {
                     .textInputAutocapitalization(.never)
             }
 
-            Section {
-                Picker(String(localized: "方向"), selection: $directionID) {
-                    ForEach(directions) { direction in
-                        Text("\(direction.symbolName) \(direction.name)")
-                            .tag(Optional(direction.id))
-                    }
-                }
-
-                Picker(String(localized: "種類"), selection: $measurement) {
-                    ForEach(TodoMeasurement.allCases) { measurement in
-                        Text(measurement.displayName).tag(measurement)
-                    }
-                }
-
-                if measurement != .checkbox {
-                    Stepper(value: $plannedAmount, in: 1...999) {
-                        Text(targetText)
-                    }
-                }
-
-                Picker(String(localized: "優先度"), selection: $priority) {
-                    ForEach(TodoPriority.allCases) { priority in
-                        Text(priority.displayName).tag(priority)
-                    }
-                }
-
-                if priority == .low {
-                    Toggle(String(localized: "余裕があれば"), isOn: $isRoomIfPossible)
-                }
-
-                Toggle(
-                    String(localized: "日付なし"),
-                    isOn: Binding(
-                        get: { scheduledDate == nil },
-                        set: { hasNoDate in
-                            scheduledDate = hasNoDate ? nil : datePickerValue
+            if isHabitTodoEdit {
+                habitStructureSection
+            } else {
+                Section {
+                    Picker(String(localized: "方向"), selection: $directionID) {
+                        ForEach(directions) { direction in
+                            Text("\(direction.symbolName) \(direction.name)")
+                                .tag(Optional(direction.id))
                         }
-                    )
-                )
+                    }
 
-                if scheduledDate != nil {
-                    DatePicker(
-                        String(localized: "日付"),
-                        selection: $datePickerValue,
-                        displayedComponents: .date
+                    Picker(String(localized: "種類"), selection: $measurement) {
+                        ForEach(TodoMeasurement.allCases) { measurement in
+                            Text(measurement.displayName).tag(measurement)
+                        }
+                    }
+
+                    if measurement != .checkbox {
+                        Stepper(value: $plannedAmount, in: 1...999) {
+                            Text(targetText)
+                        }
+                    }
+
+                    Picker(String(localized: "優先度"), selection: $priority) {
+                        ForEach(TodoPriority.allCases) { priority in
+                            Text(priority.displayName).tag(priority)
+                        }
+                    }
+
+                    if priority == .low {
+                        Toggle(String(localized: "余裕があれば"), isOn: $isRoomIfPossible)
+                    }
+
+                    Toggle(
+                        String(localized: "日付なし"),
+                        isOn: Binding(
+                            get: { scheduledDate == nil },
+                            set: { hasNoDate in
+                                scheduledDate = hasNoDate ? nil : datePickerValue
+                            }
+                        )
                     )
-                    .onChange(of: datePickerValue) { _, newValue in
-                        scheduledDate = newValue
+
+                    if scheduledDate != nil {
+                        DatePicker(
+                            String(localized: "日付"),
+                            selection: $datePickerValue,
+                            displayedComponents: .date
+                        )
+                        .onChange(of: datePickerValue) { _, newValue in
+                            scheduledDate = newValue
+                        }
                     }
                 }
             }
@@ -119,8 +123,18 @@ struct IOSTaskEditorView: View {
         return false
     }
 
+    private var editedTodo: Todo? {
+        if case .edit(let todo) = mode { return todo }
+        return nil
+    }
+
+    private var isHabitTodoEdit: Bool {
+        editedTodo?.direction?.type == .habit
+    }
+
     private var selectedDirection: Direction? {
         directions.first { $0.id == directionID }
+            ?? (isHabitTodoEdit ? editedTodo?.direction : nil)
     }
 
     private var canSave: Bool {
@@ -135,8 +149,62 @@ struct IOSTaskEditorView: View {
         }
     }
 
+    @ViewBuilder
+    private var habitStructureSection: some View {
+        if let todo = editedTodo {
+            Section {
+                LabeledContent(String(localized: "方向")) {
+                    Text("\(todo.direction?.symbolName ?? "📝") \(todo.direction?.name ?? String(localized: "方向"))")
+                }
+
+                LabeledContent(String(localized: "種類"), value: todo.measurement.displayName)
+
+                if todo.measurement != .checkbox {
+                    LabeledContent(String(localized: "目標")) {
+                        Text(habitTargetText(todo))
+                            .monospacedDigit()
+                    }
+                }
+
+                LabeledContent(String(localized: "優先度"), value: todo.priority.displayName)
+
+                if todo.priority == .low, todo.isRoomIfPossible {
+                    LabeledContent(String(localized: "余裕があれば")) {
+                        Image(systemName: "checkmark")
+                    }
+                }
+
+                LabeledContent(String(localized: "日付")) {
+                    if let date = todo.scheduledDate {
+                        Text(date, format: .dateTime.year().month().day())
+                    } else {
+                        Text(String(localized: "日付なし"))
+                    }
+                }
+
+                if let deadline = todo.deadline {
+                    LabeledContent(String(localized: "期限")) {
+                        Text(deadline, format: .dateTime.year().month().day())
+                    }
+                }
+            }
+        }
+    }
+
+    private func habitTargetText(_ todo: Todo) -> String {
+        let amount = todo.plannedAmount ?? 1
+        switch todo.measurement {
+        case .checkbox:
+            return ""
+        case .focusBlocks:
+            return "\(amount) \(String(localized: "ブロック"))"
+        case .minutes:
+            return "\(amount) \(String(localized: "分"))"
+        }
+    }
+
     private func save() {
-        guard let direction = selectedDirection else { return }
+        guard let direction = isHabitTodoEdit ? editedTodo?.direction : selectedDirection else { return }
         let normalizedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
         let tags = hashtags
             .split(whereSeparator: { $0.isWhitespace || $0 == "," })
@@ -157,17 +225,27 @@ struct IOSTaskEditorView: View {
             )
             modelContext.insert(todo)
         case .edit(let todo):
+            let savedMeasurement = isHabitTodoEdit ? todo.measurement : measurement
+            let savedPriority = isHabitTodoEdit ? todo.priority : priority
+            let savedRoomIfPossible = isHabitTodoEdit
+                ? todo.isRoomIfPossible
+                : priority == .low && isRoomIfPossible
+            let savedPlannedAmount = isHabitTodoEdit
+                ? todo.plannedAmount
+                : measurement == .checkbox ? nil : plannedAmount
+            let savedDate = isHabitTodoEdit ? todo.scheduledDate : scheduledDate
+
             todo.update(
                 title: normalizedTitle,
                 notes: notes,
                 hashtags: tags,
                 direction: direction,
-                measurement: measurement,
-                priority: priority,
-                isRoomIfPossible: priority == .low && isRoomIfPossible,
-                plannedAmount: measurement == .checkbox ? nil : plannedAmount,
+                measurement: savedMeasurement,
+                priority: savedPriority,
+                isRoomIfPossible: savedRoomIfPossible,
+                plannedAmount: savedPlannedAmount,
                 actualProgress: todo.actualProgress,
-                scheduledDate: scheduledDate,
+                scheduledDate: savedDate,
                 deadline: todo.deadline
             )
         }

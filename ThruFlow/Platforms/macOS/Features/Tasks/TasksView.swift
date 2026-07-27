@@ -108,12 +108,9 @@ struct TasksView: View {
                 globalSearchContent
             } else {
                 tasksWorkspace
-                    .id(calendarRange)
-                    .transition(.opacity.combined(with: .scale(scale: 0.995)))
             }
         }
         .navigationTitle(String(localized: "タスク"))
-        .animation(.easeInOut(duration: 0.22), value: calendarRange)
         .toolbar {
             ToolbarItem(placement: .principal) {
                 taskFilterPicker
@@ -226,6 +223,9 @@ struct TasksView: View {
         GeometryReader { geometry in
             HStack(spacing: 0) {
                 boardContent
+                    .id(calendarRange)
+                    .transition(.opacity.combined(with: .scale(scale: 0.995)))
+                    .animation(.easeInOut(duration: 0.22), value: calendarRange)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                 Divider()

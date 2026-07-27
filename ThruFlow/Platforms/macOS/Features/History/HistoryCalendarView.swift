@@ -56,56 +56,24 @@ struct HistoryCalendarView: View {
     }
 
     var body: some View {
-        VStack(spacing: 8) {
-            Group {
-                switch range {
-                case .day:
-                    HistoryDayWorkspaceView(
-                        selectedDate: $selectedDate,
-                        scale: dayScaleBinding,
-                        items: filteredItems,
-                        selectedItemID: $selectedDayItemID,
-                        manualFlowDraft: $manualFlowDraft,
-                        visibleKinds: $visibleKinds,
-                        sidebarHeader: sidebarHeader,
-                        onEdit: openEditor,
-                        onMove: moveHistoryItem,
-                        onDropOnDay: moveHistoryPayload
-                    )
-                case .week:
-                    HistoryCalendarPeriodWorkspace(sidebarHeader: sidebarHeader) {
-                        HistoryTimeGrid(
-                            selectedDate: selectedDate,
-                            range: range,
-                            items: filteredItems,
-                            hourRange: 0..<24,
-                            hourHeight: 64,
-                            selectedItemID: nil,
-                            manualFlowDraft: $manualFlowDraft,
-                            onSelect: openEditor,
-                            onMove: moveHistoryItem
-                        )
-                    } inspector: {
-                        HistoryMiniCalendar(
-                            selectedDate: $selectedDate,
-                            selectionMode: .week,
-                            onDropPayload: moveHistoryPayload
-                        )
-                    }
-                case .month:
-                    HistoryCalendarPeriodWorkspace(sidebarHeader: sidebarHeader) {
-                        HistoryMonthGrid(
-                            selectedDate: $selectedDate,
-                            items: filteredItems,
-                            onSelect: openEditor,
-                            onMove: moveHistoryItem
-                        )
-                    } inspector: {
-                        HistoryYearMonthPicker(selectedDate: $selectedDate)
-                    }
+        GeometryReader { geometry in
+            if geometry.size.width >= 900 {
+                HStack(spacing: 0) {
+                    widePrimaryContent
+                        .id(range)
+                        .transition(.opacity.combined(with: .scale(scale: 0.995)))
+                        .animation(.easeInOut(duration: 0.22), value: range)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                    Divider()
+
+                    wideSidebarContent
+                        .frame(width: min(390, max(310, geometry.size.width * 0.30)))
                 }
+            } else {
+                compactContent
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .sheet(item: $inspectedSession) { session in
             FlowHistoryInspectorView(session: session)
@@ -130,6 +98,143 @@ struct HistoryCalendarView: View {
                 .id(draft.id)
             }
         }
+    }
+
+    private var selectedDayItem: HistoryCalendarItem? {
+        guard let selectedDayItemID else { return nil }
+        return filteredItems.first { $0.id == selectedDayItemID }
+    }
+
+    @ViewBuilder
+    private var widePrimaryContent: some View {
+        switch range {
+        case .day:
+            HistoryDayWorkspaceView(
+                selectedDate: $selectedDate,
+                scale: dayScaleBinding,
+                items: filteredItems,
+                selectedItemID: $selectedDayItemID,
+                manualFlowDraft: $manualFlowDraft,
+                visibleKinds: $visibleKinds,
+                sidebarHeader: sidebarHeader,
+                showsInspector: false,
+                onEdit: openEditor,
+                onMove: moveHistoryItem,
+                onDropOnDay: moveHistoryPayload
+            )
+        case .week:
+            HistoryTimeGrid(
+                selectedDate: selectedDate,
+                range: range,
+                items: filteredItems,
+                hourRange: 0..<24,
+                hourHeight: 64,
+                selectedItemID: nil,
+                manualFlowDraft: $manualFlowDraft,
+                onSelect: openEditor,
+                onMove: moveHistoryItem
+            )
+        case .month:
+            HistoryMonthGrid(
+                selectedDate: $selectedDate,
+                items: filteredItems,
+                onSelect: openEditor,
+                onMove: moveHistoryItem
+            )
+        }
+    }
+
+    @ViewBuilder
+    private var wideSidebarContent: some View {
+        switch range {
+        case .day:
+            HistoryDayInspectorPane(
+                selectedDate: $selectedDate,
+                selectedItem: selectedDayItem,
+                manualFlowDraft: $manualFlowDraft,
+                sidebarHeader: sidebarHeader,
+                onEdit: openEditor,
+                onDropOnDay: moveHistoryPayload
+            )
+        case .week:
+            historyPeriodSidebar {
+                HistoryMiniCalendar(
+                    selectedDate: $selectedDate,
+                    selectionMode: .week,
+                    onDropPayload: moveHistoryPayload
+                )
+            }
+        case .month:
+            historyPeriodSidebar {
+                HistoryYearMonthPicker(selectedDate: $selectedDate)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var compactContent: some View {
+        switch range {
+        case .day:
+            HistoryDayWorkspaceView(
+                selectedDate: $selectedDate,
+                scale: dayScaleBinding,
+                items: filteredItems,
+                selectedItemID: $selectedDayItemID,
+                manualFlowDraft: $manualFlowDraft,
+                visibleKinds: $visibleKinds,
+                sidebarHeader: sidebarHeader,
+                onEdit: openEditor,
+                onMove: moveHistoryItem,
+                onDropOnDay: moveHistoryPayload
+            )
+        case .week:
+            HistoryCalendarPeriodWorkspace(sidebarHeader: sidebarHeader) {
+                HistoryTimeGrid(
+                    selectedDate: selectedDate,
+                    range: range,
+                    items: filteredItems,
+                    hourRange: 0..<24,
+                    hourHeight: 64,
+                    selectedItemID: nil,
+                    manualFlowDraft: $manualFlowDraft,
+                    onSelect: openEditor,
+                    onMove: moveHistoryItem
+                )
+            } inspector: {
+                HistoryMiniCalendar(
+                    selectedDate: $selectedDate,
+                    selectionMode: .week,
+                    onDropPayload: moveHistoryPayload
+                )
+            }
+        case .month:
+            HistoryCalendarPeriodWorkspace(sidebarHeader: sidebarHeader) {
+                HistoryMonthGrid(
+                    selectedDate: $selectedDate,
+                    items: filteredItems,
+                    onSelect: openEditor,
+                    onMove: moveHistoryItem
+                )
+            } inspector: {
+                HistoryYearMonthPicker(selectedDate: $selectedDate)
+            }
+        }
+    }
+
+    private func historyPeriodSidebar<Content: View>(
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(spacing: 0) {
+            sidebarHeader
+
+            Divider()
+
+            content()
+                .padding(16)
+
+            Spacer(minLength: 0)
+        }
+        .background(Color.secondary.opacity(0.035))
     }
 
     private func openEditor(_ item: HistoryCalendarItem) {

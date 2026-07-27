@@ -20,6 +20,7 @@ struct HistoryDayWorkspaceView: View {
     @Binding var manualFlowDraft: HistoryFlowCreationDraft?
     @Binding var visibleKinds: Set<HistoryCalendarItemKind>
     let sidebarHeader: AnyView
+    var showsInspector = true
     let onEdit: (HistoryCalendarItem) -> Void
     let onMove: (HistoryCalendarItem, Date) -> Bool
     let onDropOnDay: (String, Date) -> Bool
@@ -45,7 +46,9 @@ struct HistoryDayWorkspaceView: View {
 
     var body: some View {
         GeometryReader { geometry in
-            if geometry.size.width >= 900 {
+            if !showsInspector {
+                timelinePanel(isCompact: false)
+            } else if geometry.size.width >= 900 {
                 HStack(spacing: 0) {
                     timelinePanel(isCompact: false)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -176,7 +179,8 @@ private struct HistoryCalendarFlowIndicators: View {
                     .frame(width: 4, height: 4)
             }
         }
-        .frame(height: 4)
+        .padding(.horizontal, 2)
+        .frame(height: 6)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(String(localized: "Flow"))
     }
@@ -222,28 +226,6 @@ struct HistoryMiniCalendar: View {
         let flowItems = historyItems
 
         VStack(spacing: 10) {
-            HStack {
-                Button {
-                    selectedDate = calendar.date(byAdding: .month, value: -1, to: selectedDate) ?? selectedDate
-                } label: {
-                    Image(systemName: "chevron.left")
-                }
-
-                Spacer()
-
-                Text(monthTitle)
-                    .font(.headline)
-
-                Spacer()
-
-                Button {
-                    selectedDate = calendar.date(byAdding: .month, value: 1, to: selectedDate) ?? selectedDate
-                } label: {
-                    Image(systemName: "chevron.right")
-                }
-            }
-            .buttonStyle(.borderless)
-
             LazyVGrid(columns: columns, spacing: 5) {
                 ForEach(weekdaySymbols, id: \.self) { symbol in
                     Text(symbol)
@@ -255,18 +237,7 @@ struct HistoryMiniCalendar: View {
                     Button {
                         selectedDate = calendar.startOfDay(for: date)
                     } label: {
-                        VStack(spacing: 2) {
-                            Text("\(calendar.component(.day, from: date))")
-                                .font(.caption)
-                                .frame(width: selectionMode == .week ? nil : 24, height: 20)
-                                .frame(maxWidth: selectionMode == .week ? .infinity : nil)
-                                .foregroundStyle(dayForeground(date))
-
-                            calendarIndicators(for: date, flowItems: flowItems)
-                        }
-                        .frame(minHeight: 28)
-                        .background(dayBackground(date))
-                        .clipShape(dayShape(date))
+                        calendarDayLabel(for: date, flowItems: flowItems)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(accessibilityDate(date))
@@ -276,6 +247,51 @@ struct HistoryMiniCalendar: View {
                     }
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private func calendarDayLabel(
+        for date: Date,
+        flowItems: [HistoryCalendarItem]
+    ) -> some View {
+        if selectionMode == .week {
+            dayContents(for: date, flowItems: flowItems)
+                .frame(maxWidth: .infinity, minHeight: 30)
+                .background(dayBackground(date))
+                .clipShape(dayShape(date))
+                .contentShape(Rectangle())
+        } else {
+            ZStack {
+                Color.clear
+
+                VStack(spacing: 2) {
+                    Text("\(calendar.component(.day, from: date))")
+                        .font(.caption)
+                        .frame(width: 24, height: 20)
+                        .foregroundStyle(dayForeground(date))
+                        .background(dayBackground(date))
+                        .clipShape(Capsule())
+
+                    calendarIndicators(for: date, flowItems: flowItems)
+                }
+            }
+            .frame(maxWidth: .infinity, minHeight: 30)
+            .contentShape(Rectangle())
+        }
+    }
+
+    private func dayContents(
+        for date: Date,
+        flowItems: [HistoryCalendarItem]
+    ) -> some View {
+        VStack(spacing: 2) {
+            Text("\(calendar.component(.day, from: date))")
+                .font(.caption)
+                .frame(height: 20)
+                .foregroundStyle(dayForeground(date))
+
+            calendarIndicators(for: date, flowItems: flowItems)
         }
     }
 
@@ -291,10 +307,6 @@ struct HistoryMiniCalendar: View {
                 maximumVisibleCount: 3
             )
         }
-    }
-
-    private var monthTitle: String {
-        selectedDate.formatted(.dateTime.locale(locale).year().month(.wide))
     }
 
     private var weekdaySymbols: [String] {
@@ -361,7 +373,6 @@ enum HistoryMiniCalendarSelectionMode {
 
 struct HistoryYearMonthPicker: View {
     @Environment(\.calendar) private var calendar
-    @Environment(\.locale) private var locale
 
     @Binding var selectedDate: Date
 
@@ -369,28 +380,6 @@ struct HistoryYearMonthPicker: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            HStack {
-                Button {
-                    moveYear(by: -1)
-                } label: {
-                    Image(systemName: "chevron.left")
-                }
-
-                Spacer()
-
-                Text(verbatim: yearTitle)
-                    .font(.headline)
-
-                Spacer()
-
-                Button {
-                    moveYear(by: 1)
-                } label: {
-                    Image(systemName: "chevron.right")
-                }
-            }
-            .buttonStyle(.borderless)
-
             LazyVGrid(columns: columns, spacing: 8) {
                 ForEach(1...12, id: \.self) { month in
                     Button {
@@ -415,20 +404,8 @@ struct HistoryYearMonthPicker: View {
         calendar.component(.year, from: selectedDate)
     }
 
-    private var yearTitle: String {
-        String(
-            format: String(localized: "%lld年"),
-            locale: locale,
-            Int64(selectedYear)
-        )
-    }
-
     private var selectedMonth: Int {
         calendar.component(.month, from: selectedDate)
-    }
-
-    private func moveYear(by value: Int) {
-        selectedDate = calendar.date(byAdding: .year, value: value, to: selectedDate) ?? selectedDate
     }
 
     private func select(month: Int) {
@@ -444,7 +421,7 @@ struct HistoryYearMonthPicker: View {
     }
 }
 
-private struct HistoryDayInspectorPane: View {
+struct HistoryDayInspectorPane: View {
     @Binding var selectedDate: Date
     let selectedItem: HistoryCalendarItem?
     @Binding var manualFlowDraft: HistoryFlowCreationDraft?

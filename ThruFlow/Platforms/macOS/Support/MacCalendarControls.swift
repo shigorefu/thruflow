@@ -1,5 +1,6 @@
 import SwiftUI
 
+#if os(macOS)
 struct MacCalendarNavigationHeader<RangePicker: View>: View {
     let title: String
     let onPrevious: () -> Void
@@ -78,7 +79,6 @@ struct MacToolbarSearchControl: View {
                 }
                 .padding(.horizontal, 9)
                 .frame(width: 220, height: 30)
-                .glassEffect(.regular.interactive(), in: Capsule())
                 .transition(.move(edge: .trailing).combined(with: .opacity))
                 .onAppear {
                     isFocused = true
@@ -106,3 +106,4 @@ struct MacToolbarSearchControl: View {
         .animation(.easeInOut(duration: 0.18), value: isPresented)
     }
 }
+#endif

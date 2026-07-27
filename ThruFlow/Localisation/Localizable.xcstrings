@@ -848,22 +848,6 @@
         }
       }
     },
-    "%lld年" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld г."
-          }
-        }
-      }
-    },
     "%lld年%lld月" : {
       "localizations" : {
         "en" : {
