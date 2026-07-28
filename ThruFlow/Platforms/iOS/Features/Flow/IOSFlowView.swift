@@ -614,7 +614,10 @@ private struct IOSDashboardStatisticsView: View {
                                     .overlay(alignment: .leading) {
                                         Capsule()
                                             .fill(Color(hex: summary.colorHex))
-                                            .frame(width: proxy.size.width * share(for: summary.focusSeconds))
+                                            .frame(
+                                                width: proxy.size.width
+                                                    * CGFloat(snapshot.focusShare(for: summary.focusSeconds))
+                                            )
                                     }
                             }
                             .frame(height: 5)
@@ -637,10 +640,5 @@ private struct IOSDashboardStatisticsView: View {
 
     private var primaryColor: Color {
         Color(hex: snapshot.directionSummaries.first?.colorHex ?? "#8E8E93")
-    }
-
-    private func share(for focusSeconds: Int) -> CGFloat {
-        guard snapshot.totalFocusSeconds > 0 else { return 0 }
-        return CGFloat(focusSeconds) / CGFloat(snapshot.totalFocusSeconds)
     }
 }

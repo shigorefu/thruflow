@@ -26,6 +26,11 @@ struct FlowDashboardSnapshot {
         min(max(blocks / FlowVisualState.maximumGrowthBlocks, 0), 1)
     }
 
+    func focusShare(for focusSeconds: Int) -> Double {
+        guard totalFocusSeconds > 0 else { return 0 }
+        return min(max(Double(focusSeconds) / Double(totalFocusSeconds), 0), 1)
+    }
+
     var directionSummaries: [FlowDashboardDirectionSummary] {
         Dictionary(grouping: segments, by: \FlowDashboardSegment.directionID)
             .values

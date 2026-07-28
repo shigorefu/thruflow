@@ -806,9 +806,7 @@ struct FlowDashboardView: View {
         _ row: DashboardDistributionRow,
         snapshot: FlowDashboardSnapshot
     ) -> Double {
-        let maximum = distributionRows(snapshot: snapshot).map(\.focusSeconds).max() ?? 0
-        guard maximum > 0 else { return 0 }
-        return Double(row.focusSeconds) / Double(maximum)
+        snapshot.focusShare(for: row.focusSeconds)
     }
 
     private func comparisonRow(_ title: String, value: String, systemImage: String) -> some View {
