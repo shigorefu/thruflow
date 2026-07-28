@@ -72,7 +72,7 @@ records, then normal writes use `sprint`.
 
 ## FlowSegment
 
-`FlowSegment` stores a Task/Direction interval inside one `FlowSession`. Switching Task during focus closes one segment and opens another without resetting the timer.
+`FlowSegment` stores a Task/Direction interval inside one `FlowSession`. Switching Task during focus does not create another FlowSession or reset the timer. A segment with at least 60 focused seconds is closed before the next segment opens. A shorter current segment is treated as a mistaken context selection and reassigned wholesale to the new Task/Direction; returning to the immediately preceding context merges those adjacent segments back together.
 
 Persisted data includes:
 

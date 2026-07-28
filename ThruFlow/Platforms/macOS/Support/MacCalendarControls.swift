@@ -1,6 +1,33 @@
 import SwiftUI
 
 #if os(macOS)
+import AppKit
+
+enum MacCalendarSidebarLayout {
+    static func width(
+        for title: String,
+        in containerWidth: CGFloat,
+        preferredFraction: CGFloat,
+        minimum: CGFloat = 310,
+        maximum: CGFloat = 480
+    ) -> CGFloat {
+        let headlineFont = NSFont.preferredFont(forTextStyle: .headline)
+        let bodyFont = NSFont.preferredFont(forTextStyle: .body)
+        let titleWidth = (title as NSString).size(withAttributes: [.font: headlineFont]).width
+        let todayWidth = (String(localized: "今日") as NSString)
+            .size(withAttributes: [.font: bodyFont])
+            .width
+        let intrinsicWidth = ceil(titleWidth + todayWidth + 148)
+        let preferredWidth = containerWidth * preferredFraction
+        let availableMaximum = min(maximum, containerWidth * 0.52)
+
+        return min(
+            availableMaximum,
+            max(minimum, max(preferredWidth, intrinsicWidth))
+        )
+    }
+}
+
 struct MacCalendarNavigationHeader<RangePicker: View>: View {
     let title: String
     let onPrevious: () -> Void
@@ -22,6 +49,8 @@ struct MacCalendarNavigationHeader<RangePicker: View>: View {
                 Text(title)
                     .font(.headline)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+                    .layoutPriority(1)
 
                 Spacer(minLength: 16)
 
@@ -40,6 +69,7 @@ struct MacCalendarNavigationHeader<RangePicker: View>: View {
                     .accessibilityLabel(String(localized: "次へ"))
                 }
                 .buttonStyle(.borderless)
+                .fixedSize(horizontal: true, vertical: false)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 10)

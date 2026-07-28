@@ -519,6 +519,102 @@ struct FlowTests {
         #expect(secondTodo.recordedFocusSeconds == 9 * 60)
     }
 
+    @Test @MainActor func subMinuteTaskSwitchTransfersElapsedTimeToNewTask() throws {
+        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let start = Date(timeIntervalSince1970: 8_250)
+        let firstDirection = Direction(name: "AWS", type: .neutral)
+        let secondDirection = Direction(name: "読書", type: .neutral)
+        let firstTodo = Todo(title: "AWS", direction: firstDirection, measurement: .minutes, plannedAmount: 30)
+        let secondTodo = Todo(title: "本を読む", direction: secondDirection, measurement: .minutes, plannedAmount: 20)
+        context.insert(firstDirection)
+        context.insert(secondDirection)
+        context.insert(firstTodo)
+        context.insert(secondTodo)
+
+        let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
+        let store = ActiveFlowStore(defaults: defaults, notifications: TestFlowNotificationService())
+        store.configure(direction: firstDirection, todo: firstTodo, mode: .twentyFiveFive)
+        store.start(direction: firstDirection, todo: firstTodo, modelContext: context, now: start)
+        let sessionID = try #require(store.activeSession?.id)
+
+        store.selectContext(
+            direction: secondDirection,
+            todo: secondTodo,
+            modelContext: context,
+            now: start.addingTimeInterval(30)
+        )
+
+        let activeSegment = try #require(store.activeSession?.resolvedSegments.first)
+        #expect(store.activeSession?.id == sessionID)
+        #expect(store.activeSession?.resolvedSegments.count == 1)
+        #expect(activeSegment.startedAt == start)
+        #expect(activeSegment.startFocusSeconds == 0)
+        #expect(activeSegment.todo?.id == secondTodo.id)
+        #expect(activeSegment.direction?.id == secondDirection.id)
+
+        store.stop(modelContext: context, now: start.addingTimeInterval(2 * 60))
+
+        #expect(firstTodo.recordedFocusSeconds == 0)
+        #expect(secondTodo.recordedFocusSeconds == 2 * 60)
+    }
+
+    @Test func contextSwitchTransfersOnlyWhenSegmentIsStrictlyUnderOneMinute() {
+        let policy = FlowContextSwitchPolicy()
+
+        #expect(policy.shouldTransferCurrentSegment(totalFocusSeconds: 59, segmentStartFocusSeconds: 0))
+        #expect(!policy.shouldTransferCurrentSegment(totalFocusSeconds: 60, segmentStartFocusSeconds: 0))
+    }
+
+    @Test @MainActor func returningWithinOneMinuteMergesBackIntoPreviousTaskSegment() throws {
+        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let start = Date(timeIntervalSince1970: 8_400)
+        let firstDirection = Direction(name: "AWS", type: .neutral)
+        let secondDirection = Direction(name: "読書", type: .neutral)
+        let firstTodo = Todo(title: "AWS", direction: firstDirection, measurement: .minutes, plannedAmount: 30)
+        let secondTodo = Todo(title: "本を読む", direction: secondDirection, measurement: .minutes, plannedAmount: 20)
+        context.insert(firstDirection)
+        context.insert(secondDirection)
+        context.insert(firstTodo)
+        context.insert(secondTodo)
+
+        let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
+        let store = ActiveFlowStore(defaults: defaults, notifications: TestFlowNotificationService())
+        store.configure(direction: firstDirection, todo: firstTodo, mode: .twentyFiveFive)
+        store.start(direction: firstDirection, todo: firstTodo, modelContext: context, now: start)
+        let sessionID = try #require(store.activeSession?.id)
+
+        store.selectContext(
+            direction: secondDirection,
+            todo: secondTodo,
+            modelContext: context,
+            now: start.addingTimeInterval(2 * 60)
+        )
+        store.selectContext(
+            direction: firstDirection,
+            todo: firstTodo,
+            modelContext: context,
+            now: start.addingTimeInterval(2 * 60 + 30)
+        )
+
+        let activeSegment = try #require(store.activeSession?.resolvedSegments.first)
+        #expect(store.activeSession?.id == sessionID)
+        #expect(store.activeSession?.resolvedSegments.count == 1)
+        #expect(activeSegment.todo?.id == firstTodo.id)
+        #expect(activeSegment.startedAt == start)
+        #expect(activeSegment.endedAt == nil)
+
+        store.stop(modelContext: context, now: start.addingTimeInterval(3 * 60))
+
+        #expect(firstTodo.recordedFocusSeconds == 3 * 60)
+        #expect(secondTodo.recordedFocusSeconds == 0)
+    }
+
     @Test @MainActor func cancellingResultMemoRestoresFlowAndRemovesProvisionalProgress() throws {
         let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)

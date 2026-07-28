@@ -65,7 +65,9 @@ static half4 weightedColor(
     float2 safeSize = max(size, float2(1.0));
     float2 uv = position / safeSize;
     float3 accumulated = float3(0.0);
+    float3 haloAccumulated = float3(0.0);
     float accumulatedWeight = 0.0;
+    float haloWeight = 0.0;
     float dailyReveal = smoothstep(0.0, 1.0, clamp(identityReveal, 0.0, 1.0));
 
     // A new profile opens on the familiar neutral S-stream. The date/profile
@@ -141,6 +143,12 @@ static half4 weightedColor(
         float dailyBand = 1.0 - smoothstep(thickness * 0.44, thickness, distanceToBand);
         float legacyGlow = 1.0 - smoothstep(thickness * 0.80, thickness * 1.90, distanceToBand);
         float dailyGlow = 1.0 - smoothstep(thickness * 0.72, thickness * 2.20, distanceToBand);
+        float squaredDistance = distanceToBand * distanceToBand;
+        float squaredThickness = max(thickness * thickness, 0.0001);
+        float legacyHalo = exp(-squaredDistance / (squaredThickness * 4.20));
+        float dailyHalo = exp(-squaredDistance / (squaredThickness * 5.00));
+        float legacyMist = exp(-squaredDistance / (squaredThickness * 12.0));
+        float dailyMist = exp(-squaredDistance / (squaredThickness * 14.0));
         float legacyEdgeLight = smoothstep(thickness * 0.62, thickness * 0.18, distanceToBand);
         float dailyEdgeLight = smoothstep(thickness * 0.66, thickness * 0.16, distanceToBand);
 
@@ -191,9 +199,22 @@ static half4 weightedColor(
         float contribution = mix(legacyContribution, dailyContribution, dailyReveal);
         float layerVisibility = index < 6 ? 1.0 : dailyReveal;
         contribution *= layerVisibility;
+        float band = mix(legacyBand, dailyBand, dailyReveal);
+        float halo = mix(legacyHalo, dailyHalo, dailyReveal);
+        float mist = mix(legacyMist, dailyMist, dailyReveal);
+        float haloReveal = mix(0.72, 1.0, progress);
+        float haloStrength = mix(0.105, 0.230, glowStrength)
+            * mix(0.86, 1.08, depth);
+        float mistStrength = mix(0.020, 0.060, glowStrength);
+        float haloContribution = (
+            max(halo - band * 0.56, 0.0) * haloStrength
+                + mist * mistStrength
+        ) * haloReveal * layerVisibility;
 
         accumulated += float3(selected.rgb) * brightness * contribution;
+        haloAccumulated += float3(selected.rgb) * brightness * haloContribution;
         accumulatedWeight += contribution;
+        haloWeight += haloContribution;
     }
 
     float legacyAmbientBlend = 0.5 + sin(uv.x * 3.4 - time * 0.045) * 0.5;
@@ -224,6 +245,7 @@ static half4 weightedColor(
     float shimmer = mix(legacyShimmer, dailyShimmer, dailyReveal);
     float3 rendered = (
         accumulated * envelope
+            + haloAccumulated * mix(1.08, 1.42, glowStrength)
             + ambientColor * ambientStrength * ambientField
     ) * shimmer;
 
@@ -249,12 +271,16 @@ static half4 weightedColor(
         composited = background + rendered;
     } else {
         float legacyCoverage = clamp(
-            accumulatedWeight * envelope * 1.18 + ambientStrength * ambientField * 0.22,
+            accumulatedWeight * envelope * 1.18
+                + haloWeight * 0.42
+                + ambientStrength * ambientField * 0.22,
             0.045,
             0.82
         );
         float dailyCoverage = clamp(
-            accumulatedWeight * envelope * 1.55 + ambientStrength * ambientField * 0.30,
+            accumulatedWeight * envelope * 1.55
+                + haloWeight * 0.52
+                + ambientStrength * ambientField * 0.30,
             0.035,
             0.80
         );

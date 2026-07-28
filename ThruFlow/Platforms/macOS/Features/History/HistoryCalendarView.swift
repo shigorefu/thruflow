@@ -20,6 +20,7 @@ struct HistoryCalendarView: View {
     let sessions: [FlowSession]
     let breaks: [FlowBreak]
     @Binding var visibleKinds: Set<HistoryCalendarItemKind>
+    let sidebarTitle: String
     let sidebarHeader: AnyView
 
     @State private var inspectedSession: FlowSession?
@@ -68,7 +69,13 @@ struct HistoryCalendarView: View {
                     Divider()
 
                     wideSidebarContent
-                        .frame(width: min(390, max(310, geometry.size.width * 0.30)))
+                        .frame(
+                            width: MacCalendarSidebarLayout.width(
+                                for: sidebarTitle,
+                                in: geometry.size.width,
+                                preferredFraction: 0.30
+                            )
+                        )
                 }
             } else {
                 compactContent

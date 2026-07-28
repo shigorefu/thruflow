@@ -208,6 +208,7 @@ struct DayHistoryView: View {
                     sessions: searchFilteredSessions,
                     breaks: searchFilteredBreaks,
                     visibleKinds: $visibleCalendarKinds,
+                    sidebarTitle: dateTitle,
                     sidebarHeader: AnyView(historyToolbar)
                 )
             case .tasks:
@@ -268,7 +269,13 @@ struct DayHistoryView: View {
                     Divider()
 
                     aggregateInspector
-                        .frame(width: min(390, max(310, geometry.size.width * 0.30)))
+                        .frame(
+                            width: MacCalendarSidebarLayout.width(
+                                for: dateTitle,
+                                in: geometry.size.width,
+                                preferredFraction: 0.30
+                            )
+                        )
                 }
             } else {
                 ScrollView {

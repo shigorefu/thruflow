@@ -249,7 +249,14 @@ struct TasksView: View {
 
                     Spacer(minLength: 0)
                 }
-                .frame(width: min(390, max(300, geometry.size.width * 0.29)))
+                .frame(
+                    width: MacCalendarSidebarLayout.width(
+                        for: taskPeriodTitle,
+                        in: geometry.size.width,
+                        preferredFraction: 0.29,
+                        minimum: 300
+                    )
+                )
                 .background(Color.secondary.opacity(0.035))
             }
         }

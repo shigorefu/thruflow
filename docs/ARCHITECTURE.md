@@ -144,7 +144,9 @@ Each platform owns its composition root:
   motion. At zero progress the shader preserves the archived six-ribbon
   neutral S-stream. `identityReveal` blends it into the seven-ribbon daily
   topology over the first canonical Block; there is no renderer swap or phase
-  reset.
+  reset. The shader accumulates colored ribbon cores and wider halos
+  independently, preserving visible diffusion without washing the ribbon
+  centers toward white.
   `FlowRenderCadence` owns the explicit 30 FPS idle / 60 FPS active contract.
   Platform wrappers only decide when rendering pauses: macOS requires the key
   window, while iOS requires an active scene. Pausing freezes the shared

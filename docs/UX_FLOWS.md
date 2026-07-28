@@ -36,7 +36,9 @@ the complete Task workspace. On wide macOS layouts, changing `日 | 週 | 月`
 animates only the primary Task calendar content; the persistent calendar column
 stays visually stable to the right of the Task
 workspace in `日`, `週`, and `月`; the former seven-day card strip is not
-duplicated above the `日` list.
+duplicated above the `日` list. The persistent column derives its width from the
+localized period title and `今日` action; text scales down only when the window
+cannot provide the preferred intrinsic width.
 The quick composer follows the selected date or kanban column.
 
 Sections:
@@ -138,7 +140,7 @@ Before the first Flow, the dashboard uses the familiar neutral six-ribbon S-stre
 
 The dashboard timeline always uses `Elastic` and has no `24時間` control. When empty, it covers the current full hour and the following hour. Once activity exists, it expands from the first Flow's full hour through the full hour after the last Flow, never below two hours; this keeps short sessions visually meaningful. Hovering a dashboard timeline segment shows an immediate compact card with Task, clock interval, and focused duration. Clicking resolves one selected segment ID and opens one popover anchored to that exact timeline position, with Task, Direction, interval, focused duration, and Flow size. A red trash button deletes only that completed segment after confirmation and subtracts its progress; deleting the only segment deletes the Flow. Completed segments can continue to the canonical Flow history inspector; the active segment is read-only and marked `実行中`.
 
-The dashboard timeline uses a neutral dark rail for time without Flow. Every series containing a persisted rest receives one continuous light-gray underlay from its first Block through its final rest. The underlay and FlowSession Blocks have the same height. Blocks are rounded Direction-colored capsules above that underlay, so exposed gray intervals read as rests without becoming thinner, while unrelated series remain separated by the dark rail. FlowSegments caused by switching Tasks divide the color inside a Block edge-to-edge while sharing one outer capsule; they never appear as separately rounded Blocks. If the next Flow begins within 1.5 times the planned rest from rest start, both sessions retain separate history records but share one series ID and therefore one continuous underlay. Continuation windows are Sprint 4:30, Focus 7:30, Deep 15:00, and Long Break 30:00. After every 4 accumulated Blocks in the series, the next manually started rest becomes a 20-minute Long Break. Missing the window simply starts a new series.
+The dashboard timeline uses a neutral dark rail for time without Flow. Every series containing a persisted rest receives one continuous light-gray underlay from its first Block through its final rest. The underlay and FlowSession Blocks have the same height. Blocks are rounded Direction-colored capsules above that underlay, so exposed gray intervals read as rests without becoming thinner, while unrelated series remain separated by the dark rail. FlowSegments caused by switching Tasks divide the color inside a Block edge-to-edge while sharing one outer capsule; they never appear as separately rounded Blocks or increment the Flow count. A context segment shorter than 60 focused seconds transfers wholesale to the newly selected Task/Direction; returning to the immediately preceding context during that window merges the adjacent segments. If the next Flow begins within 1.5 times the planned rest from rest start, both sessions retain separate history records but share one series ID and therefore one continuous underlay. Continuation windows are Sprint 4:30, Focus 7:30, Deep 15:00, and Long Break 30:00. After every 4 accumulated Blocks in the series, the next manually started rest becomes a 20-minute Long Break. Missing the window simply starts a new series.
 
 Hovering a rest shows its type, interval, and duration above the timeline. Clicking a completed rest opens a duration editor anchored to that rest. Start time is fixed. If the new end overlaps the next Flow, that Flow and all later Flow/rest records in the same series move forward by the overlap. Free space absorbs an extension without shifting, shortening does not pull history backward, and unrelated series never move.
 
@@ -368,7 +370,8 @@ control panel above the workspace, and the embedded month/year picker does not
 repeat its own arrows. The shared period state updates both the calendar workspace
 and its inspector. On wide macOS layouts, range changes animate only the primary
 calendar workspace; the persistent calendar/inspector column does not transition.
-The visible `表示` label and duplicate in-content filters are removed.
+Its width follows the localized period title and `今日` action rather than a
+fixed value. The visible `表示` label and duplicate in-content filters are removed.
 `タスク` and `方向` use a wide two-column layout with
 aggregates on the left and a mini-calendar plus range summary on the right. At
 compact widths, the calendar and summary stack above the aggregate list.

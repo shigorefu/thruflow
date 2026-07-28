@@ -30,6 +30,7 @@ final class ActiveFlowStore: ObservableObject {
     private let progressReconciler = FlowProgressReconciler()
     private let historyEditor = FlowHistoryEditor()
     private let seriesPolicy = FlowSeriesPolicy()
+    private let contextSwitchPolicy = FlowContextSwitchPolicy()
     private let syncCoordinator = ActiveFlowSyncCoordinator()
     private let notifications: FlowNotificationService
     private let liveActivities: any LiveActivityService
@@ -150,18 +151,28 @@ final class ActiveFlowStore: ObservableObject {
 
             if currentTodoID != todo?.id || currentDirectionID != direction.id {
                 let focusedSeconds = engine.actualFocusDuration(for: state, now: now)
-                closeCurrentSegment(at: now, totalFocusSeconds: focusedSeconds)
-
-                let segment = FlowSegment(
-                    session: session,
-                    direction: direction,
-                    todo: todo,
-                    startedAt: now,
-                    startFocusSeconds: focusedSeconds
-                )
-                modelContext.insert(segment)
-                if !session.resolvedSegments.contains(where: { $0.id == segment.id }) {
-                    session.resolvedSegments.append(segment)
+                if let currentSegment = session.resolvedSegments.last(where: { $0.endedAt == nil }),
+                   contextSwitchPolicy.shouldTransferCurrentSegment(
+                       totalFocusSeconds: focusedSeconds,
+                       segmentStartFocusSeconds: currentSegment.startFocusSeconds
+                   ) {
+                    transferCurrentSegment(
+                        currentSegment,
+                        to: direction,
+                        todo: todo,
+                        session: session,
+                        modelContext: modelContext
+                    )
+                } else {
+                    closeCurrentSegment(at: now, totalFocusSeconds: focusedSeconds)
+                    openSegment(
+                        direction: direction,
+                        todo: todo,
+                        session: session,
+                        modelContext: modelContext,
+                        now: now,
+                        startFocusSeconds: focusedSeconds
+                    )
                 }
                 session.direction = direction
                 session.todo = todo
@@ -688,6 +699,51 @@ final class ActiveFlowStore: ObservableObject {
         activeSession?.resolvedSegments
             .last(where: { $0.endedAt == nil })?
             .close(at: date, totalFocusSeconds: totalFocusSeconds)
+    }
+
+    private func openSegment(
+        direction: Direction,
+        todo: Todo?,
+        session: FlowSession,
+        modelContext: ModelContext,
+        now: Date,
+        startFocusSeconds: Int
+    ) {
+        let segment = FlowSegment(
+            session: session,
+            direction: direction,
+            todo: todo,
+            startedAt: now,
+            startFocusSeconds: startFocusSeconds
+        )
+        modelContext.insert(segment)
+        if !session.resolvedSegments.contains(where: { $0.id == segment.id }) {
+            session.resolvedSegments.append(segment)
+        }
+    }
+
+    private func transferCurrentSegment(
+        _ currentSegment: FlowSegment,
+        to direction: Direction,
+        todo: Todo?,
+        session: FlowSession,
+        modelContext: ModelContext
+    ) {
+        let previousSegment = session.resolvedSegments
+            .filter { $0.id != currentSegment.id && $0.endedAt != nil }
+            .max { $0.startedAt < $1.startedAt }
+
+        if previousSegment?.direction?.id == direction.id,
+           previousSegment?.todo?.id == todo?.id,
+           let previousSegment {
+            session.resolvedSegments.removeAll { $0.id == currentSegment.id }
+            modelContext.delete(currentSegment)
+            previousSegment.reopen()
+            return
+        }
+
+        currentSegment.direction = direction
+        currentSegment.todo = todo
     }
 
     private func discardShortFlowIfNeeded(
