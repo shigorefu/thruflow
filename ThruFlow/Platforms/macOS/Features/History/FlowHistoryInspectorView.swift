@@ -22,6 +22,8 @@ struct FlowHistoryInspectorView: View {
     @State private var selectedDirectionID: UUID?
     @State private var timeDraft: FlowHistoryTimeDraft
     @State private var memo: String
+    @State private var isCreatingTask = false
+    @State private var createdTodo: Todo?
     @State private var showsDeleteConfirmation = false
 
     private let editor = FlowHistoryEditor()
@@ -35,12 +37,13 @@ struct FlowHistoryInspectorView: View {
             endedAt: session.endedAt,
             focusSeconds: session.resolvedActualFocusDurationSeconds
         ))
-        _memo = State(initialValue: session.todo?.notes ?? "")
+        _memo = State(initialValue: session.result ?? session.todo?.notes ?? "")
     }
 
     private var selectedTodo: Todo? {
         guard let selectedTodoID else { return nil }
         return todos.first { $0.id == selectedTodoID }
+            ?? (createdTodo?.id == selectedTodoID ? createdTodo : nil)
     }
 
     private var selectedDirection: Direction? {
@@ -56,7 +59,12 @@ struct FlowHistoryInspectorView: View {
     }
 
     private var availableTodos: [Todo] {
-        todos
+        var candidates = todos
+        if let createdTodo, !candidates.contains(where: { $0.id == createdTodo.id }) {
+            candidates.append(createdTodo)
+        }
+
+        return candidates
             .filter { todo in
                 if todo.id == session.todo?.id { return true }
                 guard !todo.isDeleted, !todo.isArchived else { return false }
@@ -97,14 +105,24 @@ struct FlowHistoryInspectorView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     field(String(localized: "タスク")) {
-                        Picker(String(localized: "タスク"), selection: $selectedTodoID) {
-                            Text(String(localized: "タスクなし")).tag(UUID?.none)
-                            ForEach(availableTodos) { todo in
-                                Text("\(todo.direction?.symbolName ?? "📥") \(TodoDisplay.title(for: todo))")
-                                    .tag(Optional(todo.id))
+                        HStack(spacing: 10) {
+                            Picker(String(localized: "タスク"), selection: $selectedTodoID) {
+                                Text(String(localized: "タスクなし")).tag(UUID?.none)
+                                ForEach(availableTodos) { todo in
+                                    Text("\(todo.direction?.symbolName ?? "📥") \(TodoDisplay.title(for: todo))")
+                                        .tag(Optional(todo.id))
+                                }
                             }
+                            .labelsHidden()
+
+                            Button {
+                                isCreatingTask = true
+                            } label: {
+                                Label(String(localized: "タスクを追加"), systemImage: "plus")
+                            }
+                            .buttonStyle(.bordered)
+                            .disabled(selectedDirection == nil)
                         }
-                        .labelsHidden()
                     }
 
                     field(String(localized: "方向")) {
@@ -178,13 +196,6 @@ struct FlowHistoryInspectorView: View {
                             .padding(8)
                             .background(Color.secondary.opacity(0.08))
                             .clipShape(RoundedRectangle(cornerRadius: 8))
-                            .disabled(selectedTodo == nil)
-
-                        if selectedTodo == nil {
-                            Text(String(localized: "メモはタスクに保存されます。"))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
                     }
 
                     Button(role: .destructive) {
@@ -218,12 +229,13 @@ struct FlowHistoryInspectorView: View {
         .frame(minWidth: 460, idealWidth: 520, minHeight: 500, idealHeight: 560)
         .onChange(of: selectedTodoID) { _, newValue in
             guard let newValue, let todo = todos.first(where: { $0.id == newValue }) else {
-                memo = ""
                 return
             }
 
             selectedDirectionID = todo.direction?.id
-            memo = todo.notes ?? ""
+            if memo.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                memo = todo.notes ?? ""
+            }
         }
         .confirmationDialog(
             String(localized: "このFlowを削除しますか？"),
@@ -238,6 +250,20 @@ struct FlowHistoryInspectorView: View {
             Button(String(localized: "キャンセル"), role: .cancel) {}
         } message: {
             Text(String(localized: "方向とタスクの集中時間から、このFlowの分を差し引きます。"))
+        }
+        .sheet(isPresented: $isCreatingTask) {
+            if let selectedDirection {
+                TodoFormView(
+                    mode: .create,
+                    fixedDirection: selectedDirection,
+                    scheduledDate: session.startedAt
+                ) { todo in
+                    createdTodo = todo
+                    selectedTodoID = todo.id
+                    selectedDirectionID = todo.direction?.id
+                }
+                .frame(minWidth: 480, idealWidth: 540, minHeight: 620, idealHeight: 700)
+            }
         }
     }
 

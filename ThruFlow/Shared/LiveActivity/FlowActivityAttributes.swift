@@ -31,6 +31,27 @@ struct FlowActivityAttributes: ActivityAttributes {
             timerKind == .breakTime
         }
 
+        var presentationEmoji: String {
+            FlowLiveActivityPresentation.emoji(
+                taskEmoji: taskEmoji,
+                timerKind: timerKind
+            )
+        }
+
+        var presentationTitle: String {
+            FlowLiveActivityPresentation.title(
+                taskTitle: taskTitle,
+                timerKind: timerKind
+            )
+        }
+
+        var presentationDirectionName: String {
+            FlowLiveActivityPresentation.directionName(
+                directionName,
+                timerKind: timerKind
+            )
+        }
+
         var statusTitle: String {
             switch status {
             case .focus:

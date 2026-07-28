@@ -202,7 +202,8 @@ the next iPhone stage. Shared calculations are reused, but desktop views are
 never compiled into the iOS target.
 
 An active iPhone Flow publishes one system Live Activity. The Lock Screen and
-Dynamic Island show Task, Direction, mode, phase, remaining time, and progress.
+Dynamic Island show Task, Direction, remaining time, and progress. During a
+break, the task identity is replaced by `☕️ 休憩` and the Direction is hidden.
 Date-backed timer ranges let the system advance timer text and progress while
 the app is suspended. Compact Dynamic Island shows only the Task emoji and
 remaining `MM:SS`; minimal presentation shows circular progress. Expanded

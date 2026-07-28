@@ -124,6 +124,8 @@ struct FlowHistoryEditor {
         session.actualFocusDurationSeconds = adjustedSeconds
         session.endedAt = adjustedStart.addingTimeInterval(TimeInterval(adjustedSeconds))
         session.plannedEndAt = session.endedAt ?? adjustedStart
+        let trimmedMemo = memo?.trimmingCharacters(in: .whitespacesAndNewlines)
+        session.result = trimmedMemo?.isEmpty == true ? nil : trimmedMemo
         session.updatedAt = now
         todo?.setMemo(memo, now: now)
 

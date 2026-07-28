@@ -27,6 +27,7 @@ struct DayHistoryView: View {
     @State private var expandedTaskIDs: Set<String> = []
     @State private var expandedDirectionIDs: Set<UUID> = []
     @State private var editingTodo: Todo?
+    @State private var inspectedSession: FlowSession?
     @State private var manualFlowRequest: HistoryManualFlowRequest?
     @State private var isAddingTaskRecord = false
     @State private var taskDirection: Direction?
@@ -112,6 +113,9 @@ struct DayHistoryView: View {
         .sheet(item: $editingTodo) { todo in
             TodoFormView(mode: .edit(todo))
                 .frame(minWidth: 480, idealWidth: 540, minHeight: 620, idealHeight: 700)
+        }
+        .sheet(item: $inspectedSession) { session in
+            FlowHistoryInspectorView(session: session)
         }
         .sheet(item: $manualFlowRequest) { request in
             ManualFlowCreationView(
@@ -386,6 +390,10 @@ struct DayHistoryView: View {
                         onToggleExpansion: { toggleDirectionExpansion(direction.id) },
                         onToggleCheckbox: toggleCheckbox,
                         onEditTask: { todo in editingTodo = todo },
+                        directionOnlyFlows: snapshot.flows.filter {
+                            $0.directionID == direction.directionID && $0.todoID == nil
+                        },
+                        onEditFlow: { flow in inspectedSession = flow.session },
                         onAddTask: { taskDirection = self.direction(withID: direction.directionID) }
                     )
                 }
@@ -551,6 +559,7 @@ struct DayHistoryView: View {
                     ? { toggleCheckbox(task) }
                     : nil,
                 onEdit: { todo in editingTodo = todo },
+                onEditFlow: { flow in inspectedSession = flow.session },
                 onAddFlow: { todo in presentManualFlow(for: todo) }
             )
         }
@@ -700,6 +709,7 @@ private struct HistoryExpandableTaskRow: View {
     let onToggleExpansion: () -> Void
     let onToggleCheckbox: (() -> Void)?
     let onEdit: (Todo) -> Void
+    let onEditFlow: (DayHistoryFlow) -> Void
     let onAddFlow: (Todo) -> Void
 
     var body: some View {
@@ -769,7 +779,9 @@ private struct HistoryExpandableTaskRow: View {
                         .padding(.vertical, 10)
                 } else {
                     ForEach(flows) { flow in
-                        HistoryFlowDisclosureRow(flow: flow)
+                        HistoryFlowDisclosureRow(flow: flow) {
+                            onEditFlow(flow)
+                        }
                     }
                 }
             }
@@ -896,6 +908,8 @@ private struct HistoryExpandableDirectionRow: View {
     let onToggleExpansion: () -> Void
     let onToggleCheckbox: (DayHistoryTaskSummary) -> Void
     let onEditTask: (Todo) -> Void
+    let directionOnlyFlows: [DayHistoryFlow]
+    let onEditFlow: (DayHistoryFlow) -> Void
     let onAddTask: () -> Void
 
     var body: some View {
@@ -931,7 +945,7 @@ private struct HistoryExpandableDirectionRow: View {
 
             if isExpanded {
                 Divider().padding(.leading, 54)
-                if tasks.isEmpty {
+                if tasks.isEmpty && directionOnlyFlows.isEmpty {
                     Text(String(localized: "この期間のタスクはありません"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -965,6 +979,12 @@ private struct HistoryExpandableDirectionRow: View {
                     }
                 }
 
+                ForEach(directionOnlyFlows) { flow in
+                    HistoryFlowDisclosureRow(flow: flow) {
+                        onEditFlow(flow)
+                    }
+                }
+
                 Button(action: onAddTask) {
                     Label(String(localized: "タスクを追加"), systemImage: "plus")
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -990,31 +1010,41 @@ private struct HistoryFlowDisclosureRow: View {
     @Environment(\.locale) private var locale
 
     let flow: DayHistoryFlow
+    let onEdit: () -> Void
 
     var body: some View {
-        HStack(spacing: 10) {
-            RoundedRectangle(cornerRadius: 2)
-                .fill(Color(hex: flow.directionColorHex))
-                .frame(width: 4, height: 26)
+        Button(action: onEdit) {
+            HStack(spacing: 10) {
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(Color(hex: flow.directionColorHex))
+                    .frame(width: 4, height: 26)
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(flow.taskTitle)
-                    .font(.callout)
-                    .lineLimit(1)
-                Text("\(time(flow.startedAt))–\(time(flow.endedAt))")
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(flow.taskTitle)
+                        .font(.callout)
+                        .lineLimit(1)
+                    Text("\(time(flow.startedAt))–\(time(flow.endedAt))")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Text(duration(flow.focusSeconds))
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(.secondary)
+
+                Image(systemName: "chevron.right")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.tertiary)
             }
-
-            Spacer()
-
-            Text(duration(flow.focusSeconds))
-                .font(.caption.monospacedDigit())
-                .foregroundStyle(.secondary)
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
         .padding(.leading, 56)
         .padding(.trailing, 12)
         .padding(.vertical, 7)
+        .accessibilityLabel(String(localized: "Flowを編集"))
     }
 
     private func time(_ date: Date) -> String {

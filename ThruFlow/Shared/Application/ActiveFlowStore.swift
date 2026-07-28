@@ -269,6 +269,7 @@ final class ActiveFlowStore: ObservableObject {
 
     func completeResult(_ result: String?, modelContext: ModelContext, now: Date = .now) {
         let completedSessionID = activeSession?.id
+        activeSession?.result = normalizedResult(result)
         activeSession?.todo?.setMemo(result, now: now)
         activeSession?.complete(now: now)
 
@@ -345,10 +346,16 @@ final class ActiveFlowStore: ObservableObject {
         }
 
         guard !discardShortFlowIfNeeded(timerState, modelContext: modelContext, now: now) else { return }
+        activeSession?.result = normalizedResult(result)
         activeSession?.todo?.setMemo(result, now: now)
         isAwaitingBreakMemo = false
         notifications.cancelPendingFlowNotifications()
         beginBreak(from: timerState, modelContext: modelContext, now: now)
+    }
+
+    private func normalizedResult(_ result: String?) -> String? {
+        let trimmed = result?.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed?.isEmpty == true ? nil : trimmed
     }
 
     func cancelBreakMemo() {

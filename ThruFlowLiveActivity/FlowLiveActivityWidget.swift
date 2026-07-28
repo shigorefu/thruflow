@@ -36,10 +36,10 @@ struct FlowLiveActivityWidget: Widget {
                     .padding(.bottom, 4)
                 }
             } compactLeading: {
-                Text(context.state.taskEmoji)
+                Text(context.state.presentationEmoji)
                     .font(.caption)
                     .frame(width: 20, height: 20)
-                    .accessibilityLabel(context.state.taskTitle)
+                    .accessibilityLabel(context.state.presentationTitle)
             } compactTrailing: {
                 FlowActivityTimeLabel(state: context.state)
                     .font(.caption2.monospacedDigit().weight(.semibold))
@@ -90,7 +90,7 @@ private struct FlowActivityIdentity: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            Text(state.taskEmoji)
+            Text(state.presentationEmoji)
                 .font(.system(size: iconSize * 0.62))
                 .frame(width: iconSize, height: iconSize)
                 .background(
@@ -99,12 +99,12 @@ private struct FlowActivityIdentity: View {
                 )
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(state.taskTitle)
+                Text(state.presentationTitle)
                     .font(.headline)
                     .lineLimit(1)
 
-                if !state.directionName.isEmpty {
-                    Text(state.directionName)
+                if !state.presentationDirectionName.isEmpty {
+                    Text(state.presentationDirectionName)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
@@ -121,15 +121,13 @@ private struct FlowActivityClock: View {
     let width: CGFloat
 
     var body: some View {
-        VStack(alignment: .trailing, spacing: 2) {
+        HStack(spacing: 0) {
+            Spacer(minLength: 0)
+
             FlowActivityTimeLabel(state: state)
                 .font(.title2.monospacedDigit().weight(.bold))
                 .lineLimit(1)
-
-            Text("\(state.statusTitle) · \(state.modeName)")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
+                .multilineTextAlignment(.trailing)
         }
         .frame(width: width, alignment: .trailing)
     }
@@ -140,7 +138,31 @@ private struct FlowActivityTimeLabel: View {
 
     var body: some View {
         if state.isPaused {
-            Text(FlowLiveActivityFormatter.timeText(seconds: state.remainingSeconds))
+            Text(
+                FlowLiveActivityFormatter.timeText(
+                    seconds: state.remainingSeconds,
+                    allowsOvertime: true
+                )
+            )
+        } else if #available(iOS 18.0, *) {
+            Text(
+                .currentDate,
+                format: FlowLiveActivityRunningTimeFormatStyle(
+                    plannedEndAt: state.plannedEndAt
+                )
+            )
+        } else {
+            legacyRunningTime
+        }
+    }
+
+    @ViewBuilder
+    private var legacyRunningTime: some View {
+        if state.remainingSeconds < 0 {
+            HStack(spacing: 0) {
+                Text("+")
+                Text(state.plannedEndAt, style: .timer)
+            }
         } else {
             Text(timerInterval: state.timerRange, countsDown: true, showsHours: false)
                 .environment(\.locale, Locale(identifier: "en_US_POSIX"))

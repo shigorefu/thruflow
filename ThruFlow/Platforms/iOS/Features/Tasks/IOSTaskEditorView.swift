@@ -7,6 +7,8 @@ struct IOSTaskEditorView: View {
 
     let mode: IOSTaskEditorMode
     let directions: [Direction]
+    private let fixedDirection: Direction?
+    private let onSave: ((Todo) -> Void)?
 
     @State private var title: String
     @State private var notes: String
@@ -19,9 +21,17 @@ struct IOSTaskEditorView: View {
     @State private var scheduledDate: Date?
     @State private var datePickerValue: Date
 
-    init(mode: IOSTaskEditorMode, directions: [Direction]) {
+    init(
+        mode: IOSTaskEditorMode,
+        directions: [Direction],
+        fixedDirection: Direction? = nil,
+        scheduledDate: Date? = nil,
+        onSave: ((Todo) -> Void)? = nil
+    ) {
         self.mode = mode
         self.directions = directions
+        self.fixedDirection = fixedDirection
+        self.onSave = onSave
 
         let todo: Todo?
         if case .edit(let value) = mode { todo = value } else { todo = nil }
@@ -29,13 +39,13 @@ struct IOSTaskEditorView: View {
         _title = State(initialValue: todo?.title ?? "")
         _notes = State(initialValue: todo?.notes ?? "")
         _hashtags = State(initialValue: todo?.hashtags.map { "#\($0)" }.joined(separator: " ") ?? "")
-        _directionID = State(initialValue: todo?.direction?.id ?? directions.first?.id)
+        _directionID = State(initialValue: todo?.direction?.id ?? fixedDirection?.id ?? directions.first?.id)
         _measurement = State(initialValue: todo?.measurement ?? .checkbox)
         _priority = State(initialValue: todo?.priority ?? .medium)
         _isRoomIfPossible = State(initialValue: todo?.isRoomIfPossible ?? false)
         _plannedAmount = State(initialValue: max(1, todo?.plannedAmount ?? 1))
-        _scheduledDate = State(initialValue: todo?.scheduledDate ?? .now)
-        _datePickerValue = State(initialValue: todo?.scheduledDate ?? .now)
+        _scheduledDate = State(initialValue: todo?.scheduledDate ?? scheduledDate ?? .now)
+        _datePickerValue = State(initialValue: todo?.scheduledDate ?? scheduledDate ?? .now)
     }
 
     var body: some View {
@@ -59,6 +69,7 @@ struct IOSTaskEditorView: View {
                                 .tag(Optional(direction.id))
                         }
                     }
+                    .disabled(fixedDirection != nil)
 
                     Picker(String(localized: "種類"), selection: $measurement) {
                         ForEach(TodoMeasurement.allCases) { measurement in
@@ -224,6 +235,7 @@ struct IOSTaskEditorView: View {
                 scheduledDate: scheduledDate
             )
             modelContext.insert(todo)
+            onSave?(todo)
         case .edit(let todo):
             let savedMeasurement = isHabitTodoEdit ? todo.measurement : measurement
             let savedPriority = isHabitTodoEdit ? todo.priority : priority
@@ -248,6 +260,7 @@ struct IOSTaskEditorView: View {
                 scheduledDate: savedDate,
                 deadline: todo.deadline
             )
+            onSave?(todo)
         }
 
         try? modelContext.save()

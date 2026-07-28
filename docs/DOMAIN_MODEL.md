@@ -74,7 +74,10 @@ rest calculation. Rest is 3 minutes below 24 focused minutes, 5 minutes from 24
 through 48:59, and 10 minutes from 49 minutes onward. Boundary credit normalizes
 24 to 25 and 49 to 50 focused minutes; longer actual durations remain exact.
 
-Todo memo is not stored in FlowSession. The current model may keep legacy `result` storage for migration compatibility, but new memo writes go to `Todo.notes`.
+`FlowSession.result` stores the result/memo of that exact Flow recording. This
+keeps Direction-only Flow editable and descriptive without inventing a Todo.
+When a Flow is linked to a Todo, the current completion/editor workflow also
+mirrors the text to `Todo.notes` for the Task-level memo.
 
 ## FlowSegment
 

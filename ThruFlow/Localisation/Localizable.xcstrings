@@ -940,6 +940,9 @@
         }
       }
     },
+    "+" : {
+
+    },
     "+%lld分" : {
       "localizations" : {
         "en" : {
@@ -3465,6 +3468,7 @@
       }
     },
     "メモはタスクに保存されます。" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

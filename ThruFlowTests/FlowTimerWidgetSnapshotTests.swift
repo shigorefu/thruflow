@@ -10,6 +10,46 @@ import Testing
 @testable import ThruFlow
 
 struct FlowTimerWidgetSnapshotTests {
+    @Test func liveActivityBreakPresentationReplacesTaskContext() {
+        #expect(
+            FlowLiveActivityPresentation.emoji(
+                taskEmoji: "📚",
+                timerKind: .focus
+            ) == "📚"
+        )
+        #expect(
+            FlowLiveActivityPresentation.title(
+                taskTitle: "Swift",
+                timerKind: .focus
+            ) == "Swift"
+        )
+        #expect(
+            FlowLiveActivityPresentation.directionName(
+                "学習",
+                timerKind: .focus
+            ) == "学習"
+        )
+
+        #expect(
+            FlowLiveActivityPresentation.emoji(
+                taskEmoji: "📚",
+                timerKind: .breakTime
+            ) == "☕️"
+        )
+        #expect(
+            FlowLiveActivityPresentation.title(
+                taskTitle: "Swift",
+                timerKind: .breakTime
+            ) == String(localized: "休憩")
+        )
+        #expect(
+            FlowLiveActivityPresentation.directionName(
+                "学習",
+                timerKind: .breakTime
+            ).isEmpty
+        )
+    }
+
     @Test func liveActivityContentMapsToTimerWidgetSnapshot() {
         let sessionID = UUID(uuidString: "D0CC6DB2-BD54-475C-A76F-7BCE974DB1A4")!
         let startedAt = Date(timeIntervalSince1970: 1_000)

@@ -426,11 +426,54 @@ struct DayHistoryTests {
         #expect(newTodo.recordedFocusSeconds == 12 * 60)
         #expect(newTodo.actualProgress == 12)
         #expect(newTodo.notes == "型を復習")
+        #expect(session.result == "型を復習")
         #expect(session.todo?.id == newTodo.id)
         #expect(session.direction?.id == newDirection.id)
         #expect(session.startedAt == adjustedStart)
         #expect(session.endedAt == adjustedStart.addingTimeInterval(12 * 60))
         #expect(session.plannedEndAt == session.endedAt)
+    }
+
+    @Test func editingDirectionOnlyFlowKeepsItIndependentAndStoresItsResult() throws {
+        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let originalDirection = Direction(name: "読書", type: .neutral)
+        let updatedDirection = Direction(name: "学習", type: .neutral)
+        let start = Date(timeIntervalSince1970: 30_000)
+        let session = FlowSession(
+            direction: originalDirection,
+            mode: .twentyFiveFive,
+            phase: .completed,
+            status: .completed,
+            startedAt: start,
+            plannedEndAt: start.addingTimeInterval(25 * 60),
+            endedAt: start.addingTimeInterval(25 * 60),
+            plannedFocusDurationSeconds: 25 * 60,
+            actualFocusDurationSeconds: 25 * 60,
+            plannedBreakDurationSeconds: 5 * 60
+        )
+        context.insert(originalDirection)
+        context.insert(updatedDirection)
+        context.insert(session)
+
+        FlowHistoryEditor().update(
+            session: session,
+            todo: nil,
+            direction: updatedDirection,
+            startedAt: start.addingTimeInterval(60),
+            focusSeconds: 20 * 60,
+            memo: "第3章を読んだ",
+            modelContext: context
+        )
+
+        #expect(session.todo == nil)
+        #expect(session.direction?.id == updatedDirection.id)
+        #expect(session.result == "第3章を読んだ")
+        #expect(session.actualFocusDurationSeconds == 20 * 60)
+        #expect(updatedDirection.recordedFocusSeconds == 20 * 60)
+        #expect(originalDirection.recordedFocusSeconds == 0)
     }
 
     @Test func deletingFlowRebuildsStaleBlockProgressFromRemainingHistory() throws {

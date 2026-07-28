@@ -30,6 +30,7 @@ struct TodoFormView: View {
 
     let mode: Mode
     private let fixedDirection: Direction?
+    private let onSave: ((Todo) -> Void)?
 
     @State private var draft: TodoDraft
     @State private var selectedDirectionID: UUID?
@@ -60,9 +61,15 @@ struct TodoFormView: View {
         editedTodo?.direction?.type == .habit
     }
 
-    init(mode: Mode, fixedDirection: Direction? = nil, scheduledDate: Date? = nil) {
+    init(
+        mode: Mode,
+        fixedDirection: Direction? = nil,
+        scheduledDate: Date? = nil,
+        onSave: ((Todo) -> Void)? = nil
+    ) {
         self.mode = mode
         self.fixedDirection = fixedDirection
+        self.onSave = onSave
 
         switch mode {
         case .create:
@@ -527,6 +534,7 @@ struct TodoFormView: View {
                 deadline: deadline
             )
             modelContext.insert(todo)
+            onSave?(todo)
         case .edit(let todo):
             todo.update(
                 title: draft.trimmedTitle,
@@ -541,6 +549,7 @@ struct TodoFormView: View {
                 scheduledDate: scheduledDate,
                 deadline: deadline
             )
+            onSave?(todo)
         }
 
         dismiss()

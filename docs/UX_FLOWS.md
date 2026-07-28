@@ -293,19 +293,24 @@ opening or foregrounding either app clears it.
 
 Starting an iPhone Flow creates one system Live Activity. It remains visible on
 the Lock Screen and supported Dynamic Island devices until the Flow or its
-connected break ends. The presentation includes Task title and emoji, optional
-Direction, Sprint/Focus/Deep mode, focus/break/paused status, remaining time,
-and timer progress.
+connected break ends. Focus presentation includes Task title and emoji,
+optional Direction, remaining time, and timer progress. Break presentation
+replaces that identity with `☕️ 休憩` and hides the Direction. The clock is the
+only content in the trailing column; mode and phase are not repeated below it.
 
 Compact Island uses the Task emoji on the leading side and remaining time on
-the trailing side. Minimal Island uses a circular progress indicator. Expanded
-Island shows Task and Direction context, mode and status, progress, and three
+the trailing side; during a break it uses the coffee emoji instead. Minimal
+Island uses a circular progress indicator. Expanded Island shows Task and
+Direction context, progress, and three
 transport actions in the same order as the in-app player: subtract five minutes,
 pause/resume, and add five minutes. Seek is disabled during a break. Lock Screen
-content shows the same session identity, timer, status, and progress without
+content shows the same session identity, timer, and progress without
 action buttons. Opening any activity routes to the Flow tab. ActivityKit
 advances date-backed timer text and progress while the app is suspended; state
-transitions still originate from `ActiveFlowStore`.
+transitions still originate from `ActiveFlowStore`. The date-backed clock
+crosses zero without stopping and uses the same overtime notation as the macOS
+menu bar: `00:00 → +00:01`. A paused activity freezes the signed value captured
+in its content state.
 
 ## Home Screen Widgets
 
@@ -390,7 +395,23 @@ Flow and FlowSegment records remain separate calendar blocks colored by Directio
 
 Lane assignment uses exact stored start/end intervals. Contiguous Flow and rest records stay in one vertical lane, and only actual time overlap creates side-by-side lanes. Entries below 15 minutes use compact title-only rendering; short rests become thin gray bars and expose exact time through hover and accessibility.
 
-Selecting an entry reuses `FlowHistoryInspectorView` or `FlowBreakEditor`. A completed Flow can be dragged to another exact day/time in day and week, or to another date in month; the complete session and its task-switch segments move together without changing duration or measured progress. Active Flow and rest records are not draggable. Double-clicking empty time inserts a selected `新しいFlow` draft block directly into the calendar. The clicked time is rounded to five minutes and the default duration is 25 minutes. In wide day view, `Flowを追加` occupies the right inspector; Task, Direction, Sprint/Focus/Deep, linked start/end, and minutes update the visible draft block immediately. Compact day and week use a sheet while retaining the draft block in the grid. Saving creates a completed independent Flow series and applies normal Direction/Todo progress without completing the Task; manual rest creation is intentionally unavailable.
+Selecting an entry reuses the Flow history inspector or `FlowBreakEditor` on
+both macOS and iOS. Direction-only Flow is also selectable: its result, Direction,
+and exact time can be edited without creating a Task. The inspector can
+optionally link an existing Task or open explicit `タスクを追加` with the
+Flow's Direction and date preselected; finishing or editing Flow never creates
+a Task automatically. A completed Flow can be dragged to another exact day/time
+in day and week, or to another date in month; the complete session and its
+task-switch segments move together without changing duration or measured
+progress. Active Flow and rest records are not draggable. Double-clicking empty
+time inserts a selected `新しいFlow` draft block directly into the calendar.
+The clicked time is rounded to five minutes and the default duration is 25
+minutes. In wide day view, `Flowを追加` occupies the right inspector; Task,
+Direction, Sprint/Focus/Deep, linked start/end, and minutes update the visible
+draft block immediately. Compact day and week use a sheet while retaining the
+draft block in the grid. Saving creates a completed independent Flow series and
+applies normal Direction/Todo progress without completing the Task; manual rest
+creation is intentionally unavailable.
 
 On macOS and iOS, `履歴 > タスク` exposes an icon-only `+` command. It opens the shared Flow-style target picker with `タスク`, `習慣`, and `方向` tabs. Task lists existing occurrences for the selected day and offers new Task creation. Habit lists every eligible Habit Direction for that day; when no Todo occurrence exists, saving materializes the historical occurrence from the Direction template. Direction records focused work without a linked Todo. The selected Task/Habit card previews its unit and resulting progress before saving.
 

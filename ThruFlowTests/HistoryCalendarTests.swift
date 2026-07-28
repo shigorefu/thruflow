@@ -80,6 +80,9 @@ struct HistoryCalendarTests {
         #expect(snapshot.items.count == 3)
         #expect(snapshot.items.allSatisfy { $0.kind == .flow || $0.kind == .rest })
         #expect(snapshot.items.first { $0.kind == .rest }?.durationSeconds == 5 * 60)
+        let directionOnlyItem = snapshot.items.first { $0.session?.id == separateSession.id }
+        #expect(directionOnlyItem?.todo == nil)
+        #expect(directionOnlyItem?.session?.direction?.id == direction.id)
     }
 
     @Test func overlapLayoutSharesLanesOnlyInsideConnectedCluster() {

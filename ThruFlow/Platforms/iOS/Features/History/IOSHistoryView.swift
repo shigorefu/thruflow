@@ -78,7 +78,7 @@ struct IOSHistoryView: View {
         }
         .sheet(item: $selectedItem) { item in
             IOSHistoryItemDetail(item: item)
-                .presentationDetents([.medium])
+                .presentationDetents(item.kind == .flow ? [.large] : [.medium])
         }
         .sheet(isPresented: $isAddingTaskRecord) {
             HistoryTaskRecordForm(
@@ -1129,27 +1129,231 @@ private struct IOSHistoryMonthGrid: View {
 
 private struct IOSHistoryItemDetail: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+
+    @Query(sort: \Direction.sortIndex) private var directions: [Direction]
+    @Query(sort: \Todo.updatedAt, order: .reverse) private var todos: [Todo]
 
     let item: HistoryCalendarItem
 
+    @State private var selectedTodoID: UUID?
+    @State private var selectedDirectionID: UUID?
+    @State private var timeDraft: FlowHistoryTimeDraft
+    @State private var memo: String
+    @State private var createdTodo: Todo?
+    @State private var isCreatingTask = false
+    @State private var showsDeleteConfirmation = false
+
+    private let editor = FlowHistoryEditor()
+
+    init(item: HistoryCalendarItem) {
+        self.item = item
+        let session = item.session
+        _selectedTodoID = State(initialValue: session?.todo?.id)
+        _selectedDirectionID = State(initialValue: session?.direction?.id)
+        _timeDraft = State(initialValue: FlowHistoryTimeDraft(
+            startedAt: item.startedAt,
+            endedAt: item.endedAt,
+            focusSeconds: item.durationSeconds
+        ))
+        _memo = State(initialValue: session?.result ?? session?.todo?.notes ?? "")
+    }
+
     var body: some View {
         NavigationStack {
-            List {
-                Section {
-                    Label(item.title, systemImage: item.kind == .rest ? "cup.and.saucer.fill" : "waveform.path")
-                    LabeledContent(String(localized: "方向"), value: item.subtitle)
-                    LabeledContent(String(localized: "時間"), value: timeRange)
-                    LabeledContent(String(localized: "長さ"), value: durationText)
+            Group {
+                if let session = item.session {
+                    flowEditor(session: session)
+                } else {
+                    List {
+                        Section {
+                            Label(item.title, systemImage: "cup.and.saucer.fill")
+                            LabeledContent(String(localized: "時間"), value: timeRange)
+                            LabeledContent(String(localized: "長さ"), value: durationText)
+                        }
+                    }
                 }
             }
             .navigationTitle(item.kind == .rest ? String(localized: "休憩") : String(localized: "Flow"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
+                ToolbarItem(placement: .cancellationAction) {
                     Button(String(localized: "閉じる")) { dismiss() }
+                }
+
+                if let session = item.session {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button(String(localized: "保存")) {
+                            save(session: session)
+                        }
+                        .disabled(selectedDirection == nil)
+                    }
                 }
             }
         }
+        .onChange(of: selectedTodoID) { _, newValue in
+            guard let newValue, let todo = todo(withID: newValue) else { return }
+            selectedDirectionID = todo.direction?.id
+            if memo.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                memo = todo.notes ?? ""
+            }
+        }
+        .sheet(isPresented: $isCreatingTask) {
+            if let selectedDirection {
+                NavigationStack {
+                    IOSTaskEditorView(
+                        mode: .create,
+                        directions: availableDirections,
+                        fixedDirection: selectedDirection,
+                        scheduledDate: item.startedAt
+                    ) { todo in
+                        createdTodo = todo
+                        selectedTodoID = todo.id
+                        selectedDirectionID = todo.direction?.id
+                    }
+                }
+            }
+        }
+        .confirmationDialog(
+            String(localized: "このFlowを削除しますか？"),
+            isPresented: $showsDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button(String(localized: "削除"), role: .destructive) {
+                guard let session = item.session else { return }
+                editor.delete(session: session, modelContext: modelContext)
+                try? modelContext.save()
+                dismiss()
+            }
+            Button(String(localized: "キャンセル"), role: .cancel) {}
+        } message: {
+            Text(String(localized: "方向とタスクの集中時間から、このFlowの分を差し引きます。"))
+        }
+    }
+
+    private var selectedTodo: Todo? {
+        guard let selectedTodoID else { return nil }
+        return todo(withID: selectedTodoID)
+    }
+
+    private var selectedDirection: Direction? {
+        selectedTodo?.direction
+            ?? selectedDirectionID.flatMap { id in
+                availableDirections.first { $0.id == id }
+            }
+    }
+
+    private var availableDirections: [Direction] {
+        directions.filter { !$0.isArchived }
+    }
+
+    private var availableTodos: [Todo] {
+        var candidates = todos
+        if let createdTodo, !candidates.contains(where: { $0.id == createdTodo.id }) {
+            candidates.append(createdTodo)
+        }
+
+        return candidates
+            .filter { todo in
+                if todo.id == item.session?.todo?.id { return true }
+                guard !todo.isDeleted, !todo.isArchived else { return false }
+                return TodayTodoFilter().includes(todo, on: item.startedAt)
+            }
+            .sorted {
+                if $0.isCompleted != $1.isCompleted { return !$0.isCompleted }
+                if $0.sortIndex != $1.sortIndex { return $0.sortIndex < $1.sortIndex }
+                return $0.createdAt < $1.createdAt
+            }
+    }
+
+    private func todo(withID id: UUID) -> Todo? {
+        todos.first { $0.id == id }
+            ?? (createdTodo?.id == id ? createdTodo : nil)
+    }
+
+    @ViewBuilder
+    private func flowEditor(session: FlowSession) -> some View {
+        Form {
+            Section(String(localized: "タスク")) {
+                Picker(String(localized: "タスク"), selection: $selectedTodoID) {
+                    Text(String(localized: "タスクなし")).tag(UUID?.none)
+                    ForEach(availableTodos) { todo in
+                        Text("\(todo.direction?.symbolName ?? "📥") \(TodoDisplay.title(for: todo))")
+                            .tag(Optional(todo.id))
+                    }
+                }
+
+                Button {
+                    isCreatingTask = true
+                } label: {
+                    Label(String(localized: "タスクを追加"), systemImage: "plus")
+                }
+                .disabled(selectedDirection == nil)
+            }
+
+            Section(String(localized: "方向")) {
+                Picker(String(localized: "方向"), selection: $selectedDirectionID) {
+                    ForEach(availableDirections) { direction in
+                        Text("\(direction.symbolName) \(direction.name)")
+                            .tag(Optional(direction.id))
+                    }
+                }
+                .disabled(selectedTodo != nil)
+            }
+
+            Section(String(localized: "時間")) {
+                DatePicker(
+                    String(localized: "開始"),
+                    selection: Binding(
+                        get: { timeDraft.startedAt },
+                        set: { timeDraft.setStartedAt($0) }
+                    )
+                )
+
+                DatePicker(
+                    String(localized: "終了"),
+                    selection: Binding(
+                        get: { timeDraft.endedAt },
+                        set: { timeDraft.setEndedAt($0) }
+                    )
+                )
+
+                Stepper(
+                    "\(timeDraft.focusMinutes) \(String(localized: "分"))",
+                    value: Binding(
+                        get: { timeDraft.focusMinutes },
+                        set: { timeDraft.setFocusMinutes($0) }
+                    ),
+                    in: 1...720
+                )
+            }
+
+            Section(String(localized: "メモ")) {
+                TextEditor(text: $memo)
+                    .frame(minHeight: 110)
+            }
+
+            Section {
+                Button(String(localized: "このFlowを削除"), role: .destructive) {
+                    showsDeleteConfirmation = true
+                }
+            }
+        }
+    }
+
+    private func save(session: FlowSession) {
+        guard let selectedDirection else { return }
+        editor.update(
+            session: session,
+            todo: selectedTodo,
+            direction: selectedDirection,
+            startedAt: timeDraft.startedAt,
+            focusSeconds: timeDraft.focusSeconds,
+            memo: memo,
+            modelContext: modelContext
+        )
+        try? modelContext.save()
+        dismiss()
     }
 
     private var timeRange: String {

@@ -1159,9 +1159,27 @@ struct FlowTests {
         #expect(older.updatedAt == resolvedAt)
     }
 
-    @Test func liveActivityTimeFormatterClampsOvertime() {
+    @Test func liveActivityTimeFormatterSupportsOvertime() {
         #expect(FlowLiveActivityFormatter.timeText(seconds: 65) == "01:05")
         #expect(FlowLiveActivityFormatter.timeText(seconds: -1) == "00:00")
+        #expect(
+            FlowLiveActivityFormatter.timeText(
+                seconds: -1,
+                allowsOvertime: true
+            ) == "+00:01"
+        )
+    }
+
+    @Test
+    @available(macOS 15.0, iOS 18.0, *)
+    func liveActivityRunningTimeFormatCrossesIntoOvertime() {
+        let plannedEndAt = Date(timeIntervalSinceReferenceDate: 10_000)
+        let style = FlowLiveActivityRunningTimeFormatStyle(plannedEndAt: plannedEndAt)
+
+        #expect(style.format(plannedEndAt.addingTimeInterval(-65)) == "01:05")
+        #expect(style.format(plannedEndAt) == "00:00")
+        #expect(style.format(plannedEndAt.addingTimeInterval(1)) == "+00:01")
+        #expect(style.discreteInput(after: plannedEndAt) == plannedEndAt.addingTimeInterval(1))
     }
 }
 

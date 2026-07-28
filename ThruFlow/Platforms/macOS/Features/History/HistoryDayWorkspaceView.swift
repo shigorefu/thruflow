@@ -528,7 +528,8 @@ struct HistoryDayInspectorPane: View {
                 }
             }
 
-            if let memo = item.todo?.notes, !memo.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            if let memo = item.session?.result ?? item.todo?.notes,
+               !memo.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 VStack(alignment: .leading, spacing: 6) {
                     Label(String(localized: "メモ"), systemImage: "note.text")
                         .font(.caption.weight(.semibold))

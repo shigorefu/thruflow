@@ -387,7 +387,8 @@ struct HistoryTimeGrid: View {
 
     private let timeAxisWidth: CGFloat = 72
     private let minimumDayWidth: CGFloat = 132
-    private let minimumVisibleItemHeight: CGFloat = 12
+    private let minimumVisibleSegmentHeight: CGFloat = 2
+    private let minimumVisibleDraftHeight: CGFloat = 12
 
     private var days: [Date] {
         let interval = range.interval(
@@ -515,16 +516,35 @@ struct HistoryTimeGrid: View {
     private func timedItems(dayWidth: CGFloat) -> some View {
         ForEach(Array(days.enumerated()), id: \.offset) { dayIndex, day in
             let dayItems = timedItems(on: day)
-            let placements = placementMap(for: dayItems, day: day)
+            let seriesBlocks = HistoryCalendarSeriesProjector().project(dayItems)
+            let placements = seriesPlacementMap(for: seriesBlocks, day: day)
+
+            ForEach(seriesBlocks) { block in
+                let placement = placements[block.id]
+                    ?? HistoryOverlapPlacement(id: block.id, lane: 0, laneCount: 1)
+                let width = (dayWidth - 8) / CGFloat(placement.laneCount)
+                let frame = frame(from: block.startedAt, to: block.endedAt, on: day)
+
+                HistorySeriesBackdrop()
+                    .frame(width: max(32, width - 3), height: frame.height)
+                    .offset(
+                        x: timeAxisWidth + CGFloat(dayIndex) * dayWidth + 4
+                            + CGFloat(placement.lane) * width,
+                        y: frame.y
+                    )
+                    .allowsHitTesting(false)
+            }
 
             ForEach(dayItems) { item in
-                let placement = placements[item.id] ?? HistoryOverlapPlacement(id: item.id, lane: 0, laneCount: 1)
+                let placement = placements[item.seriesBlockID]
+                    ?? HistoryOverlapPlacement(id: item.seriesBlockID, lane: 0, laneCount: 1)
                 let width = (dayWidth - 8) / CGFloat(placement.laneCount)
                 let frame = frame(for: item, on: day)
 
                 HistoryTimedItemView(
                     item: item,
-                    isCompact: item.durationSeconds < 15 * 60,
+                    isCompact: item.durationSeconds < 15 * 60 || frame.height < 24,
+                    isMicro: frame.height < 12,
                     isSelected: selectedItemID == item.id,
                     previewStartedAt: dragState?.itemID == item.id ? dragState?.targetDate : nil
                 ) {
@@ -600,7 +620,7 @@ struct HistoryTimeGrid: View {
 
             if end > start {
                 let y = CGFloat(start.timeIntervalSince(interval.start) / 3600) * hourHeight
-                let height = max(minimumVisibleItemHeight, CGFloat(end.timeIntervalSince(start) / 3600) * hourHeight)
+                let height = max(minimumVisibleDraftHeight, CGFloat(end.timeIntervalSince(start) / 3600) * hourHeight)
 
                 HistoryManualFlowDraftView(startedAt: draft.startedAt, endedAt: draft.endedAt)
                     .frame(width: dayWidth - 8, height: height, alignment: .topLeading)
@@ -637,24 +657,40 @@ struct HistoryTimeGrid: View {
         return items.filter { $0.startedAt < end && $0.endedAt > start }
     }
 
-    private func placementMap(for items: [HistoryCalendarItem], day: Date) -> [String: HistoryOverlapPlacement] {
+    private func seriesPlacementMap(
+        for blocks: [HistoryCalendarSeriesBlock],
+        day: Date
+    ) -> [String: HistoryOverlapPlacement] {
         let interval = visibleInterval(on: day)
-        let inputs = items.map {
-            HistoryOverlapInput(id: $0.id, start: max($0.startedAt, interval.start), end: min($0.endedAt, interval.end))
+        let clippedBlocks = blocks.map { block in
+            HistoryCalendarSeriesBlock(
+                id: block.id,
+                seriesID: block.seriesID,
+                startedAt: max(block.startedAt, interval.start),
+                endedAt: min(block.endedAt, interval.end),
+                items: block.items
+            )
         }
-        let placements = HistoryOverlapLayout().place(inputs)
-        return Dictionary(uniqueKeysWithValues: placements.map { ($0.id, $0) })
+        return HistoryCalendarSeriesProjector().placements(for: clippedBlocks)
     }
 
     private func frame(for item: HistoryCalendarItem, on day: Date) -> (y: CGFloat, height: CGFloat) {
+        frame(from: item.startedAt, to: item.endedAt, on: day)
+    }
+
+    private func frame(
+        from startedAt: Date,
+        to endedAt: Date,
+        on day: Date
+    ) -> (y: CGFloat, height: CGFloat) {
         let interval = visibleInterval(on: day)
-        let start = max(item.startedAt, interval.start)
-        let end = min(item.endedAt, interval.end)
+        let start = max(startedAt, interval.start)
+        let end = min(endedAt, interval.end)
         let startSeconds = max(0, start.timeIntervalSince(interval.start))
         let duration = max(0, end.timeIntervalSince(start))
         return (
             CGFloat(startSeconds / 3600) * hourHeight,
-            max(minimumVisibleItemHeight, CGFloat(duration / 3600) * hourHeight)
+            max(minimumVisibleSegmentHeight, CGFloat(duration / 3600) * hourHeight)
         )
     }
 
@@ -812,6 +848,7 @@ private struct HistoryManualFlowDraftView: View {
 private struct HistoryTimedItemView: View {
     let item: HistoryCalendarItem
     let isCompact: Bool
+    let isMicro: Bool
     let isSelected: Bool
     let previewStartedAt: Date?
     let action: () -> Void
@@ -819,7 +856,9 @@ private struct HistoryTimedItemView: View {
     var body: some View {
         Button(action: action) {
             Group {
-                if isCompact {
+                if isMicro {
+                    Color.clear
+                } else if isCompact {
                     HStack(spacing: 4) {
                         Text(item.symbol)
                         Text(item.title)
@@ -850,11 +889,11 @@ private struct HistoryTimedItemView: View {
             .foregroundStyle(item.kind == .rest ? Color.primary : Color.white)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .padding(.horizontal, isCompact ? 4 : 5)
-            .padding(.vertical, isCompact ? 2 : 5)
+            .padding(.vertical, isMicro ? 0 : (isCompact ? 2 : 5))
             .background(background)
-            .clipShape(RoundedRectangle(cornerRadius: 5))
+            .clipShape(RoundedRectangle(cornerRadius: isMicro ? 1 : 5))
             .overlay {
-                RoundedRectangle(cornerRadius: 5)
+                RoundedRectangle(cornerRadius: isMicro ? 1 : 5)
                     .stroke(isSelected ? Color.accentColor : borderColor, lineWidth: isSelected ? 2 : 1)
             }
         }
@@ -876,6 +915,17 @@ private struct HistoryTimedItemView: View {
         let start = previewStartedAt ?? item.startedAt
         let end = start.addingTimeInterval(TimeInterval(item.durationSeconds))
         return "\(start.formatted(date: .omitted, time: .shortened))–\(end.formatted(date: .omitted, time: .shortened))"
+    }
+}
+
+private struct HistorySeriesBackdrop: View {
+    var body: some View {
+        RoundedRectangle(cornerRadius: 6)
+            .fill(Color.secondary.opacity(0.09))
+            .overlay {
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(Color.secondary.opacity(0.16), lineWidth: 1)
+            }
     }
 }
 

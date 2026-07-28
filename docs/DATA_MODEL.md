@@ -38,7 +38,9 @@ Persisted data includes:
 - active/completed status, completion timestamp, generation metadata, and sort order;
 - creation/update timestamps and deletion state.
 
-User-facing Flow memo is stored on `Todo`, not on a new memo entity. `FlowSession.result` remains only for migration compatibility.
+`Todo.notes` stores the Task-level memo. A Flow-specific result is stored on
+`FlowSession.result`; linked Flow currently mirrors that text to `Todo.notes`,
+while Direction-only Flow remains fully descriptive without a Todo.
 
 An automatically generated Habit Todo is uniquely identified at the domain level by its Direction UUID and local calendar day. SwiftData does not provide a compound uniqueness constraint for this relationship/date projection, so `HabitTodoMaterializer` enforces the invariant before generation on both platforms. A duplicate reconciliation retains one active Todo, reconnects its FlowSession and FlowSegment relationships, merges progress and user-authored fields, and soft-deletes the redundant rows. This repair is safe to repeat after CloudKit imports.
 
@@ -55,7 +57,7 @@ Persisted data includes:
 
 - `id` and optional migration-safe `seriesID`;
 - current Direction and optional Todo;
-- intent and legacy result text;
+- intent and optional result/memo text for that exact Flow;
 - Flow mode, phase, and status raw values;
 - start, planned end, actual end, and create/update timestamps;
 - planned and actual focus seconds, planned break seconds, pause duration, pause flag, and interruption count;
@@ -140,4 +142,10 @@ A manually added calendar Flow uses the existing FlowSession and FlowSegment sch
 
 Retrospective Task recording introduces no new persistence entity. `HistoryTaskRecordEditor` either updates an existing Todo occurrence from the selected calendar day or inserts a normal Todo whose `scheduledDate` is that day. A Check record stores `isManuallyCompleted`/`completedAt` at the selected timestamp and creates no FlowSession. A Block or Minute record creates the same completed FlowSession/FlowSegment pair used by manual calendar Flow and relies on the standard reconciliation projection for progress. Scheduled zero-Flow Todos are selectable by this command but remain excluded from History aggregates and calendar projection until actual Flow exists.
 
-Starting Flow with only a Direction currently leaves `FlowSession.todo` and `FlowSegment.todo` nil; it does not create a Todo implicitly. The Direction relationship and focus history are still persisted. Automatic Todo creation is deferred until measurement and planned-amount defaults are defined.
+Starting Flow with only a Direction leaves `FlowSession.todo` and
+`FlowSegment.todo` nil; it does not create a Todo implicitly. The Direction,
+focus history, and optional Flow result remain persisted and editable. In
+History the user may explicitly link an existing Task or invoke
+`タスクを追加`, which opens normal Task creation with Direction and date
+preselected. Creating a Task is never an automatic side effect of finishing or
+editing Direction-only Flow.

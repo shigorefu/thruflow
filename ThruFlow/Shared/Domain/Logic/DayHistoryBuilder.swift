@@ -342,7 +342,7 @@ struct DayHistoryBuilder {
             directionSymbol: direction?.symbolName ?? "📥",
             directionName: direction?.name ?? fallbackName,
             directionColorHex: direction?.colorHex ?? "#8E8E93",
-            memo: todo?.notes
+            memo: session.result ?? todo?.notes
         )
     }
 

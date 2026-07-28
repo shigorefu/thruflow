@@ -154,11 +154,58 @@ struct HistoryCalendarItem: Identifiable {
         max(0, Int(endedAt.timeIntervalSince(startedAt)))
     }
 
+    var seriesID: UUID? {
+        flowBreak?.seriesID ?? session.map { $0.seriesID ?? $0.id }
+    }
+
+    var seriesBlockID: String {
+        seriesID.map { "series-\($0.uuidString)" } ?? "item-\(id)"
+    }
 }
 
 struct HistoryCalendarSnapshot {
     let interval: DateInterval
     let items: [HistoryCalendarItem]
+}
+
+struct HistoryCalendarSeriesBlock: Identifiable {
+    let id: String
+    let seriesID: UUID?
+    let startedAt: Date
+    let endedAt: Date
+    let items: [HistoryCalendarItem]
+}
+
+struct HistoryCalendarSeriesProjector {
+    func project(_ items: [HistoryCalendarItem]) -> [HistoryCalendarSeriesBlock] {
+        Dictionary(grouping: items, by: \.seriesBlockID)
+            .map { id, values in
+                let sorted = values.sorted {
+                    if $0.startedAt == $1.startedAt { return $0.id < $1.id }
+                    return $0.startedAt < $1.startedAt
+                }
+                return HistoryCalendarSeriesBlock(
+                    id: id,
+                    seriesID: sorted.first?.seriesID,
+                    startedAt: sorted.map(\.startedAt).min() ?? .distantPast,
+                    endedAt: sorted.map(\.endedAt).max() ?? .distantPast,
+                    items: sorted
+                )
+            }
+            .sorted {
+                if $0.startedAt == $1.startedAt { return $0.id < $1.id }
+                return $0.startedAt < $1.startedAt
+            }
+    }
+
+    func placements(
+        for blocks: [HistoryCalendarSeriesBlock]
+    ) -> [String: HistoryOverlapPlacement] {
+        let placements = HistoryOverlapLayout().place(blocks.map {
+            HistoryOverlapInput(id: $0.id, start: $0.startedAt, end: $0.endedAt)
+        })
+        return Dictionary(uniqueKeysWithValues: placements.map { ($0.id, $0) })
+    }
 }
 
 @MainActor
