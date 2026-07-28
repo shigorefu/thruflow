@@ -89,7 +89,9 @@ static half4 weightedColor(
     float legacyEnvelope = 1.0 - smoothstep(0.30, 0.46, envelopeDistance);
     float dailyEnvelope = 1.0 - smoothstep(0.31, 0.46, envelopeDistance);
     float envelope = mix(legacyEnvelope, dailyEnvelope, dailyReveal);
-    float laneSpan = mix(0.37, 0.46, dailySpacing);
+    // Keep the daily lanes close enough that every ribbon remains inside the
+    // visible flow envelope while preserving clear gaps between their cores.
+    float laneSpan = mix(0.33, 0.40, dailySpacing);
 
     for (int index = 0; index < ribbonCount; index++) {
         float layer = float(index);
@@ -135,8 +137,11 @@ static half4 weightedColor(
 
         float legacyDepthScale = depthIndex == 0 ? 1.30 : (depthIndex == 1 ? 0.92 : 0.58);
         float legacyThickness = mix(0.070, 0.105, volume) * legacyDepthScale;
-        float dailyDepthScale = depthIndex == 0 ? 1.18 : (depthIndex == 1 ? 0.88 : 0.62);
-        float dailyThickness = mix(0.032, 0.052, volume) * dailyDepthScale;
+        // Daily ribbons should read as broad streams rather than hairlines.
+        // Foreground lanes get the largest correction because their former
+        // depth scale made them visually disappear on compact displays.
+        float dailyDepthScale = depthIndex == 0 ? 1.20 : (depthIndex == 1 ? 0.98 : 0.78);
+        float dailyThickness = mix(0.044, 0.066, volume) * dailyDepthScale;
         float thickness = mix(legacyThickness, dailyThickness, dailyReveal);
         float distanceToBand = abs(uv.y - center);
         float legacyBand = 1.0 - smoothstep(thickness * 0.52, thickness, distanceToBand);

@@ -165,7 +165,7 @@ struct FlowStreamSurface: View {
     ) {
         let ribbonCount = FlowVisualState.ribbonCount
         let impulse = max(0, impulseProgress(at: .now))
-        let baseWidth = max(4, size.height * (0.055 + state.volume * 0.035))
+        let baseWidth = max(5, size.height * (0.070 + state.volume * 0.044))
         let amplitude = size.height * (0.06 + state.detail * 0.035)
 
         for ribbon in 0..<ribbonCount {
