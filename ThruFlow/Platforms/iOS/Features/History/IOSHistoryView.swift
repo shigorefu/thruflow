@@ -18,9 +18,9 @@ struct IOSHistoryView: View {
     @State private var visibleDirectionTypes = Set(DirectionType.allCases)
     @State private var selectedItem: HistoryCalendarItem?
     @State private var selectedSeries: HistoryCalendarSeriesBlock?
-    @State private var selectedDayTimeline: IOSHistoryDayTimelineSelection?
     @State private var isAddingTaskRecord = false
     @State private var searchText = ""
+    @State private var isSearchPresented = false
 
     init(selectedDate: Binding<Date>) {
         _selectedDate = selectedDate
@@ -72,7 +72,8 @@ struct IOSHistoryView: View {
         .navigationBarTitleDisplayMode(.inline)
         .searchable(
             text: $searchText,
-            placement: .navigationBarDrawer(displayMode: .always),
+            isPresented: $isSearchPresented,
+            placement: .toolbar,
             prompt: Text(String(localized: "検索"))
         )
         .toolbar {
@@ -87,13 +88,6 @@ struct IOSHistoryView: View {
         .sheet(item: $selectedSeries) { block in
             IOSHistorySeriesTimelineSheet(block: block)
                 .presentationDetents([.large])
-        }
-        .sheet(item: $selectedDayTimeline) { selection in
-            IOSHistoryDayTimelineSheet(
-                date: selection.date,
-                items: selection.items
-            )
-            .presentationDetents([.large])
         }
         .sheet(isPresented: $isAddingTaskRecord) {
             HistoryTaskRecordForm(
@@ -187,16 +181,26 @@ struct IOSHistoryView: View {
 
                         Divider()
 
-                        IOSHistoryMonthDaySummary(
-                            date: date,
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(String(localized: "この日の記録"))
+                                .font(.headline)
+                            Text(date, format: .dateTime.month().day().weekday(.wide))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 16)
+                        .padding(.top, 16)
+
+                        IOSHistoryChronologicalTimeline(
                             items: dayItems,
-                            onSelect: { selectedItem = $0 },
-                            onShowDay: {
-                                selectedDayTimeline = IOSHistoryDayTimelineSelection(
-                                    date: date,
-                                    items: dayItems
-                                )
-                            }
+                            gapInterval: HistoryCalendarRange.day.interval(
+                                containing: date,
+                                calendar: calendar,
+                                dayBoundary: dayBoundary
+                            ),
+                            isEmbedded: true,
+                            onSelect: { selectedItem = $0 }
                         )
                     }
                 }

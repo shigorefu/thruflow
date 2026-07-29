@@ -8,18 +8,10 @@
 
 import SwiftUI
 
-struct IOSHistoryDayTimelineSelection: Identifiable {
-    let date: Date
-    let items: [HistoryCalendarItem]
-
-    var id: TimeInterval {
-        date.timeIntervalSinceReferenceDate
-    }
-}
-
 struct IOSHistoryChronologicalTimeline: View {
     let items: [HistoryCalendarItem]
     let gapInterval: DateInterval?
+    var isEmbedded = false
     let onSelect: (HistoryCalendarItem) -> Void
 
     private var entries: [HistoryVerticalTimelineEntry] {
@@ -39,27 +31,33 @@ struct IOSHistoryChronologicalTimeline: View {
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(.vertical, 56)
+        } else if isEmbedded {
+            timelineRows
         } else {
             ScrollView {
-                LazyVStack(spacing: 0) {
-                    ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
-                        switch entry {
-                        case .item(let item):
-                            IOSHistoryTimelineItemRow(
-                                item: item,
-                                isFirst: !connectsPrevious(item, at: index),
-                                isLast: !connectsNext(item, at: index),
-                                onSelect: onSelect
-                            )
-                        case .gap(let gap):
-                            IOSHistoryTimelineGapRow(gap: gap)
-                        }
-                    }
-                }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 16)
+                timelineRows
             }
         }
+    }
+
+    private var timelineRows: some View {
+        LazyVStack(spacing: 0) {
+            ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
+                switch entry {
+                case .item(let item):
+                    IOSHistoryTimelineItemRow(
+                        item: item,
+                        isFirst: !connectsPrevious(item, at: index),
+                        isLast: !connectsNext(item, at: index),
+                        onSelect: onSelect
+                    )
+                case .gap(let gap):
+                    IOSHistoryTimelineGapRow(gap: gap)
+                }
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 16)
     }
 
     private func connectsPrevious(
@@ -534,139 +532,4 @@ struct IOSHistorySeriesTimelineSheet: View {
     }
 }
 
-struct IOSHistoryDayTimelineSheet: View {
-    @Environment(\.dismiss) private var dismiss
-
-    let date: Date
-    let items: [HistoryCalendarItem]
-    @State private var selectedItem: HistoryCalendarItem?
-
-    var body: some View {
-        NavigationStack {
-            IOSHistoryChronologicalTimeline(
-                items: items,
-                gapInterval: nil,
-                onSelect: { selectedItem = $0 }
-            )
-            .navigationTitle(
-                date.formatted(.dateTime.month().day().weekday(.wide))
-            )
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(String(localized: "閉じる")) {
-                        dismiss()
-                    }
-                }
-            }
-        }
-        .sheet(item: $selectedItem) { item in
-            IOSHistoryItemDetail(item: item)
-                .presentationDetents(item.kind == .flow ? [.large] : [.medium])
-        }
-    }
-}
-
-struct IOSHistoryMonthDaySummary: View {
-    let date: Date
-    let items: [HistoryCalendarItem]
-    let onSelect: (HistoryCalendarItem) -> Void
-    let onShowDay: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(String(localized: "この日の記録"))
-                        .font(.headline)
-                    Text(date, format: .dateTime.month().day().weekday(.wide))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-
-                if items.count > 3 {
-                    Button {
-                        onShowDay()
-                    } label: {
-                        Text(String(localized: "詳細"))
-                        Image(systemName: "chevron.right")
-                            .font(.caption.weight(.semibold))
-                    }
-                }
-            }
-
-            if items.isEmpty {
-                ContentUnavailableView(
-                    String(localized: "この日に記録なし"),
-                    systemImage: "clock.badge.questionmark"
-                )
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 36)
-            } else {
-                ForEach(items.prefix(3)) { item in
-                    Button {
-                        onSelect(item)
-                    } label: {
-                        HStack(spacing: 10) {
-                            Text(item.symbol)
-                                .font(.title3)
-                                .frame(width: 34, height: 34)
-                                .background(
-                                    itemColor(item).opacity(0.16),
-                                    in: RoundedRectangle(cornerRadius: 8)
-                                )
-
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text(item.title)
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(.primary)
-                                    .lineLimit(1)
-                                Text(
-                                    verbatim: "\(item.startedAt.formatted(date: .omitted, time: .shortened))–\(item.endedAt.formatted(date: .omitted, time: .shortened))"
-                                )
-                                .font(.caption.monospacedDigit())
-                                .foregroundStyle(.secondary)
-                            }
-
-                            Spacer()
-
-                            Image(systemName: "chevron.right")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.tertiary)
-                        }
-                        .padding(12)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(
-                            itemColor(item).opacity(0.1),
-                            in: RoundedRectangle(cornerRadius: 12)
-                        )
-                    }
-                    .buttonStyle(.plain)
-                }
-
-                if items.count > 3 {
-                    Button {
-                        onShowDay()
-                    } label: {
-                        Text(
-                            String.localizedStringWithFormat(
-                                String(localized: "ほか%lld件"),
-                                Int64(items.count - 3)
-                            )
-                        )
-                        .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.bordered)
-                }
-            }
-        }
-        .padding(16)
-    }
-
-    private func itemColor(_ item: HistoryCalendarItem) -> Color {
-        item.kind == .rest ? .secondary : Color(hex: item.colorHex)
-    }
-}
 #endif

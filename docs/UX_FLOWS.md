@@ -365,8 +365,8 @@ The primary `カレンダー` mode provides:
 - `月`: a single vertically scrolling surface with the seven-column month overview
   followed immediately by the selected day's records. Scrolling down naturally
   moves the calendar offscreen; scrolling back to the top restores it. The
-  `詳細` action opens the complete selected day in the same vertical timeline and
-  record editors as `日`.
+  records use the complete vertical timeline and the same record editors as `日`;
+  no intermediate summary or separate day sheet is used.
 
 On macOS, History follows the same two-level hierarchy as Tasks. The system title
 toolbar centers the compact `Flow | タスク | 方向` selector, keeps the Flow/rest
@@ -386,14 +386,15 @@ aggregates on the left and a mini-calendar plus range summary on the right. At
 compact widths, the calendar and summary stack above the aggregate list.
 
 On iPhone, the trailing History dropdown switches between the same `Flow`,
-`タスク`, and `方向` modes without duplicating date navigation. Task and Direction
-aggregates use the active `日 | 週 | 月` interval. Task History only lists items
-with recorded focused time; scheduled or completed Tasks with `0分` are omitted on
-both platforms.
+`タスク`, and `方向` modes without duplicating date navigation. The system Search
+toolbar item is an icon-only magnifying glass and expands only when selected.
+Task and Direction aggregates use the active `日 | 週 | 月` interval. Task History
+only lists items with recorded focused time; scheduled or completed Tasks with
+`0分` are omitted on both platforms.
 
 In `日`, the right pane keeps the only wide-layout mini-calendar and no longer duplicates selected Flow or rest properties below it. Flow/rest visibility uses the shared icon-only control row filter; there is no separate filter rail or timeline-header filter. The main area immediately shows the whole selected app day's saved records in chronological order rather than requiring a series selection first. Selecting a Flow or rest opens its canonical editor in a separate system sheet, leaving the Day timeline structurally unchanged. Changing the day clears the selected record. A record's card remains comfortably clickable even when its actual duration is very short. The vertical rail connects only adjacent persisted records with the same series ID and continuous timestamps; an unrecorded interval starts a new chain even if later data retains the old series ID. Internal gaps of at least one hour are shown between neighboring records as a centered time range with `記録なし` and extra vertical spacing; leading and trailing empty hours are omitted.
 
-Week keeps date headers fixed while hours scroll. Its right mini-calendar highlights the complete selected week, and choosing any date selects that week. Opening a day/week grid scrolls near the current time when today is visible, otherwise near the first Flow. A red line marks the current time. Month keeps a minimum full-grid width and a right `1月...12月` year picker. A crowded day replaces the old `ほか…件` summary with a `詳細` command and total count; selecting it presents the complete day timeline in a separate sheet, with push navigation to the standard Flow/rest editors. Medium/narrow layouts preserve stable calendar widths through horizontal scrolling.
+Week keeps date headers fixed while hours scroll. Its right mini-calendar highlights the complete selected week, and choosing any date selects that week. Opening a day/week grid scrolls near the current time when today is visible, otherwise near the first Flow. A red line marks the current time. On macOS, Month keeps a minimum full-grid width and a right `1月...12月` year picker; a crowded day uses `詳細` to open its complete timeline. On iPhone, Month instead keeps the calendar and selected day's full timeline in one vertical scroll surface, so no second sheet or summary list interrupts navigation. Medium/narrow layouts preserve stable calendar widths through horizontal scrolling.
 
 Flow and FlowSegment records remain separate persisted records colored by Direction. FlowBreak records remain separate light-gray records. In `週`, `seriesID` is used only to draw a composite series block; clicking it reveals each persisted Flow and rest record in a vertical detail timeline. Selecting a detail pushes its canonical editor inside that sheet, and the leading Back control returns to the series timeline rather than replacing the sheet. The Flow editor uses the same `タスク・習慣・方向` picker and Task composer as the player, while the rest editor uses a smaller content-fitted presentation. The sheet animates its window size while moving between the series timeline, Flow editor, and compact rest editor. The Flow dashboard independently uses `seriesID` for its continuous rail. Todo completions and pending Tasks never become independent History Calendar blocks.
 
