@@ -1,42 +1,89 @@
 # Roadmap
 
-## MVP 1.0
+## 1.0 — Первый стабильный релиз
 
-### Реализованно
-- Ежедневно использовать приложение и довести до стабильного состояния основной цикл `Направление -> Задача -> Flow -> прогресс -> статистика`.
+Цель 1.0 — не расширять продукт, а выпустить надёжный основной цикл:
 
-- Поддерживать согласованность панели Flow, календаря задач, канонической Истории, управления Направлениями и статистики вкладов.
+```text
+方向 -> Task -> Flow -> focused time -> progress -> statistics
+```
 
-- Сохранять точную историю Flow, сегментов и отдыха, одновременно отображая связанные серии на панели Flow.
+### Реализовано
 
-- Обеспечить, чтобы исправление истории, генерация привычек, распределение прогресса и статистика панели были детерминированными и легко тестируемыми.
+- [x] Общий SwiftData domain и private CloudKit store для macOS и iOS.
+- [x] Основной macOS-продукт: Flow, Tasks, History, Directions и Statistics.
+- [x] Flow-first iPhone-приложение с Tasks, History, Directions, Statistics и
+  Settings.
+- [x] Базовый Apple Watch companion.
+- [x] Live Activity, Dynamic Island и Home Screen widgets.
+- [x] Точная история Flow, переключения Tasks, перерывов и Flow series.
+- [x] Пересчёт Task/Direction progress после создания, изменения и удаления
+  истории.
+- [x] Японская, английская и русская локализации.
+- [x] Настройки темы, языка, недели, формата времени и границы нового дня.
 
-- Поддерживать документацию в актуальном состоянии и синхронизированной с фактическим поведением приложения.
+### Release gate
 
-### Далее
-- [x] Настроить private CloudKit для общего SwiftData store macOS и iOS.
-- [x] Добавить Flow-first iPhone MVP: Flow dashboard, Tasks/Habits, базовый `履歴`, Directions и Settings.
-- [ ] После стабилизации MVP добавить на iPhone расширенную `統計` и полную редакцию `履歴`/календаря.
-- [x] Live Activities и Dynamic Island для активного Flow.
-- [x] Home Screen виджеты: активный Flow, сегодняшние Tasks и Flow Dots
-  (месяц/180 дней).
-- [x] Базовая iOS версия (minimum iOS 17.0, сборка Xcode 26/iOS 26 SDK).
-- [x] Базовый Apple Watch companion: vertical full-screen pager с Flow timer,
-  fullscreen stream, Today Tasks и compact Statistics.
-- [x] В Tasks добавить `期限切れ` в Today и inspector `日付なし`.
-- [ ] Таймлайн вне Flow.
-- [x] Добавить простые настройки.
-- [x] Добавить английскую и русскую локализацию.
-- [ ] Экспорт данных в csv
-- [ ] Улучшить чат
+Все пункты ниже обязательны перед публикацией 1.0:
 
+- [ ] Провести минимум недельный daily-use burn-in без потери или дублирования
+  Tasks, Habits, Flow segments, breaks и completion progress.
+- [ ] Пройти матрицу реальных устройств: signed macOS + физический iPhone +
+  Apple Watch; проверить запуск, pause/resume, break, восстановление после
+  force-quit/reboot и принятие активного Flow с другого устройства.
+- [ ] Проверить CloudKit conflict/reconciliation: одновременное изменение на
+  двух устройствах, offline -> online, удаление/редактирование истории и
+  отсутствие дубликатов Habits.
+- [ ] Проверить миграцию копии текущей пользовательской SwiftData базы на
+  release build без очистки store.
+- [ ] Завершить целевые unit-тесты для timer restoration, history mutation,
+  progress reconciliation, Habit materialization и CloudKit runtime revision;
+  устранить воспроизводимые crashes и UI freezes.
+- [ ] Проверить Live Activity, Dynamic Island, widgets и Watch на release build,
+  включая системное завершение extension и временно недоступный App Group.
+- [ ] Завершить проверку `ja`, `en`, `ru`: обрезание текста, Dynamic Type,
+  VoiceOver labels, светлая/тёмная тема и узкие размеры окон/экранов.
+- [ ] Добавить и проверить `PrivacyInfo.xcprivacy`, App Store privacy answers,
+  privacy policy/support URL и описание использования iCloud.
+- [ ] Развернуть проверенную CloudKit Development schema в Production и
+  подтвердить чистую установку против Production environment.
+- [ ] Установить app/extension/watch версии `1.0`, согласованные build numbers,
+  Release signing, icons и архив без validation errors.
+- [ ] Провести закрытый TestFlight/внешний smoke test и только после него
+  отправлять App Store build.
 
-## В далеком будущем
+### Не блокирует 1.0
 
+- Экспорт CSV.
+- Дополнительная визуальная полировка, не мешающая основному сценарию.
+- Расширение быстрого ввода Tasks.
+- Непотоковый непрерывный timeline.
+- Новые награды, AI и внешние connectors.
+
+## 1.1 — Надёжная фоновая доставка
+
+- [ ] Добавить небольшой serverless APNs backend:
+  `API Gateway -> Lambda -> EventBridge Scheduler -> APNs`.
+- [ ] Регистрировать и обновлять ActivityKit push tokens без хранения Apple
+  `.p8`-ключа в приложении.
+- [ ] Обновлять Live Activity через APNs в момент перехода через `00:00`, чтобы
+  suspended iPhone надёжно показывал overtime `+MM:SS`.
+- [ ] Добавить серверное напоминание о Flow/перерыве, который продолжается
+  больше часа.
+- [ ] Добавить retry/idempotency, удаление одноразовых schedules, минимальные
+  CloudWatch logs и AWS Budget alerts.
+- [ ] Сохранить локальный timer и CloudKit как source of truth: отсутствие
+  backend или сети не должно мешать запуску и сохранению Flow.
+
+## После 1.1
+
+- Экспорт данных в CSV.
+- Более подробная iPhone/Watch Statistics.
+- Дальнейшее улучшение quick Task composer.
 - Более продуманная система наград для `ナイス`.
 
+## 2.0 и исследования
+
+- Connectors: Toggl, Strava, Jira и другие OAuth/webhook-интеграции.
 - AI-сводки.
-
-- Добавление Connectors (Toggl, Jiraなど)
-
-- Добавление Pets
+- Pets.
