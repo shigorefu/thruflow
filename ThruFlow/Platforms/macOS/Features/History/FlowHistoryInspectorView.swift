@@ -17,6 +17,7 @@ struct FlowHistoryInspectorView: View {
     @Query(sort: \Todo.updatedAt, order: .reverse) private var todos: [Todo]
 
     let session: FlowSession
+    let onClose: (() -> Void)?
 
     @State private var selectedTodoID: UUID?
     @State private var selectedDirectionID: UUID?
@@ -28,8 +29,9 @@ struct FlowHistoryInspectorView: View {
 
     private let editor = FlowHistoryEditor()
 
-    init(session: FlowSession) {
+    init(session: FlowSession, onClose: (() -> Void)? = nil) {
         self.session = session
+        self.onClose = onClose
         _selectedTodoID = State(initialValue: session.todo?.id)
         _selectedDirectionID = State(initialValue: session.direction?.id)
         _timeDraft = State(initialValue: FlowHistoryTimeDraft(
@@ -91,12 +93,12 @@ struct FlowHistoryInspectorView: View {
                 Spacer()
 
                 Button {
-                    dismiss()
+                    close()
                 } label: {
-                    Image(systemName: "xmark")
+                    Image(systemName: onClose == nil ? "xmark" : "chevron.left")
                 }
                 .buttonStyle(.borderless)
-                .accessibilityLabel(String(localized: "閉じる"))
+                .accessibilityLabel(String(localized: onClose == nil ? "閉じる" : "戻る"))
             }
             .padding(18)
 
@@ -213,7 +215,7 @@ struct FlowHistoryInspectorView: View {
 
             HStack {
                 Button(String(localized: "キャンセル")) {
-                    dismiss()
+                    close()
                 }
 
                 Spacer()
@@ -245,7 +247,7 @@ struct FlowHistoryInspectorView: View {
             Button(String(localized: "削除"), role: .destructive) {
                 editor.delete(session: session, modelContext: modelContext)
                 try? modelContext.save()
-                dismiss()
+                close()
             }
             Button(String(localized: "キャンセル"), role: .cancel) {}
         } message: {
@@ -306,6 +308,14 @@ struct FlowHistoryInspectorView: View {
             modelContext: modelContext
         )
         try? modelContext.save()
-        dismiss()
+        close()
+    }
+
+    private func close() {
+        if let onClose {
+            onClose()
+        } else {
+            dismiss()
+        }
     }
 }

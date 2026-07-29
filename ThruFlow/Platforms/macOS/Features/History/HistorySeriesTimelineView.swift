@@ -82,20 +82,36 @@ struct HistorySeriesTimelineView: View {
     @Environment(\.locale) private var locale
 
     let block: HistoryCalendarSeriesBlock
-    let onSelect: (HistoryCalendarItem) -> Void
+    @State private var selectedItem: HistoryCalendarItem?
 
     var body: some View {
-        VStack(spacing: 0) {
-            header
-            Divider()
+        ZStack {
+            if let selectedItem {
+                HistoryRecordEditorView(item: selectedItem) {
+                    withAnimation(.easeInOut(duration: 0.24)) {
+                        self.selectedItem = nil
+                    }
+                }
+                .transition(.move(edge: .trailing))
+            } else {
+                VStack(spacing: 0) {
+                    header
+                    Divider()
 
-            HistoryVerticalTimelineView(
-                items: block.items,
-                selectedItemID: nil,
-                gapInterval: nil,
-                onSelect: onSelect
-            )
+                    HistoryVerticalTimelineView(
+                        items: block.items,
+                        selectedItemID: nil,
+                        gapInterval: nil
+                    ) { item in
+                        withAnimation(.easeInOut(duration: 0.24)) {
+                            selectedItem = item
+                        }
+                    }
+                }
+                .transition(.move(edge: .leading))
+            }
         }
+        .clipped()
         .frame(minWidth: 440, idealWidth: 500, minHeight: 480, idealHeight: 620)
     }
 
@@ -126,6 +142,28 @@ struct HistorySeriesTimelineView: View {
         let date = block.startedAt.formatted(.dateTime.locale(locale).month().day().weekday(.abbreviated))
         let time = "\(block.startedAt.formatted(date: .omitted, time: .shortened))–\(block.endedAt.formatted(date: .omitted, time: .shortened))"
         return "\(date) · \(time)"
+    }
+}
+
+struct HistoryRecordEditorView: View {
+    @EnvironmentObject private var activeFlowStore: ActiveFlowStore
+
+    let item: HistoryCalendarItem
+    let onClose: () -> Void
+
+    @ViewBuilder
+    var body: some View {
+        switch item.kind {
+        case .flow:
+            if let session = item.session {
+                FlowHistoryInspectorView(session: session, onClose: onClose)
+            }
+        case .rest:
+            if let flowBreak = item.flowBreak {
+                HistoryBreakEditorView(flowBreak: flowBreak, onClose: onClose)
+                    .environmentObject(activeFlowStore)
+            }
+        }
     }
 }
 
@@ -300,7 +338,7 @@ private struct HistoryTimelineGapRow: View {
                     .frame(width: 2)
             }
             .frame(width: 12)
-            .frame(height: 52)
+            .frame(height: 82)
 
             HStack(spacing: 8) {
                 Rectangle()
@@ -316,6 +354,7 @@ private struct HistoryTimelineGapRow: View {
                     .fill(Color.secondary.opacity(0.16))
                     .frame(height: 1)
             }
+            .padding(.vertical, 14)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(verbatim: "\(timeRange), \(String(localized: "記録なし"))"))

@@ -26,7 +26,6 @@ struct HistoryCalendarView: View {
     @State private var inspectedSession: FlowSession?
     @State private var editedBreak: FlowBreak?
     @State private var inspectedSeries: HistoryCalendarSeriesBlock?
-    @State private var pendingSeriesItem: HistoryCalendarItem?
     @State private var selectedDayItemID: String?
     @State private var manualFlowDraft: HistoryFlowCreationDraft?
 
@@ -83,11 +82,9 @@ struct HistoryCalendarView: View {
             HistoryBreakEditorView(flowBreak: flowBreak)
                 .environmentObject(activeFlowStore)
         }
-        .sheet(item: $inspectedSeries, onDismiss: openPendingSeriesItem) { block in
-            HistorySeriesTimelineView(block: block) { item in
-                pendingSeriesItem = item
-                inspectedSeries = nil
-            }
+        .sheet(item: $inspectedSeries) { block in
+            HistorySeriesTimelineView(block: block)
+                .environmentObject(activeFlowStore)
         }
         .sheet(
             isPresented: Binding(
@@ -258,14 +255,7 @@ struct HistoryCalendarView: View {
 
     private func openSeries(_ block: HistoryCalendarSeriesBlock) {
         manualFlowDraft = nil
-        pendingSeriesItem = nil
         inspectedSeries = block
-    }
-
-    private func openPendingSeriesItem() {
-        guard let item = pendingSeriesItem else { return }
-        pendingSeriesItem = nil
-        openEditor(item)
     }
 
     private func updateManualFlowDraft(startedAt: Date, endedAt: Date) {
@@ -1124,19 +1114,21 @@ private struct HistoryMonthGrid: View {
     }
 }
 
-private struct HistoryBreakEditorView: View {
+struct HistoryBreakEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
 
     let flowBreak: FlowBreak
+    let onClose: (() -> Void)?
     @State private var minutes: Int
     @State private var errorMessage: String?
 
     private let editor = FlowBreakEditor()
 
-    init(flowBreak: FlowBreak) {
+    init(flowBreak: FlowBreak, onClose: (() -> Void)? = nil) {
         self.flowBreak = flowBreak
+        self.onClose = onClose
         let duration = flowBreak.resolvedEndAt(referenceDate: .now).timeIntervalSince(flowBreak.startedAt)
         _minutes = State(initialValue: max(1, Int(ceil(duration / 60))))
     }
@@ -1152,8 +1144,11 @@ private struct HistoryBreakEditorView: View {
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
-                Button { dismiss() } label: { Image(systemName: "xmark") }
+                Button { close() } label: {
+                    Image(systemName: onClose == nil ? "xmark" : "chevron.left")
+                }
                     .buttonStyle(.borderless)
+                    .accessibilityLabel(String(localized: onClose == nil ? "閉じる" : "戻る"))
             }
 
             HStack {
@@ -1174,7 +1169,7 @@ private struct HistoryBreakEditorView: View {
             }
 
             HStack {
-                Button(String(localized: "キャンセル")) { dismiss() }
+                Button(String(localized: "キャンセル")) { close() }
                 Spacer()
                 Button(String(localized: "保存")) { save() }
                     .buttonStyle(.borderedProminent)
@@ -1193,11 +1188,19 @@ private struct HistoryBreakEditorView: View {
                 modelContext: modelContext,
                 protectedSessionID: activeFlowStore.activeSession?.id
             )
-            dismiss()
+            close()
         } catch FlowBreakEditorError.activeFlowWouldMove {
             errorMessage = String(localized: "実行中のFlowは移動できません。")
         } catch {
             errorMessage = String(localized: "休憩を保存できませんでした。")
+        }
+    }
+
+    private func close() {
+        if let onClose {
+            onClose()
+        } else {
+            dismiss()
         }
     }
 }

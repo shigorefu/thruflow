@@ -24,7 +24,7 @@ struct HistoryDayWorkspaceView: View {
     let onMove: (HistoryCalendarItem, Date) -> Bool
     let onDropOnDay: (String, Date) -> Bool
 
-    @State private var compactInspectorItem: HistoryCalendarItem?
+    @State private var navigatedItem: HistoryCalendarItem?
 
     private var dayInterval: DateInterval {
         dayBoundary.interval(for: selectedDate, calendar: calendar)
@@ -38,10 +38,10 @@ struct HistoryDayWorkspaceView: View {
     var body: some View {
         GeometryReader { geometry in
             if !showsInspector {
-                timelinePanel(isCompact: false)
+                timelinePanel
             } else if geometry.size.width >= 900 {
                 HStack(spacing: 0) {
-                    timelinePanel(isCompact: false)
+                    timelinePanel
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                     Divider()
@@ -57,18 +57,7 @@ struct HistoryDayWorkspaceView: View {
                     .frame(width: min(390, max(310, geometry.size.width * 0.34)))
                 }
             } else {
-                timelinePanel(isCompact: true)
-                    .sheet(item: $compactInspectorItem) { item in
-                        HistoryDayInspectorPane(
-                            selectedDate: $selectedDate,
-                            selectedItem: item,
-                            manualFlowDraft: $manualFlowDraft,
-                            sidebarHeader: sidebarHeader,
-                            onEdit: onEdit,
-                            onDropOnDay: onDropOnDay
-                        )
-                        .frame(minWidth: 340, idealWidth: 380, minHeight: 560)
-                    }
+                timelinePanel
                     .sheet(
                         isPresented: Binding(
                             get: { manualFlowDraft != nil },
@@ -89,41 +78,54 @@ struct HistoryDayWorkspaceView: View {
         }
         .onChange(of: selectedDate) { _, _ in
             selectedItemID = nil
-            compactInspectorItem = nil
+            navigatedItem = nil
             manualFlowDraft = nil
         }
     }
 
-    private func timelinePanel(isCompact: Bool) -> some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(selectedDate.formatted(.dateTime.locale(locale).month().day()))
-                        .font(.headline)
-                    Text(selectedDate.formatted(.dateTime.locale(locale).weekday(.wide)))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+    private var timelinePanel: some View {
+        ZStack {
+            if let navigatedItem {
+                HistoryRecordEditorView(item: navigatedItem) {
+                    withAnimation(.easeInOut(duration: 0.24)) {
+                        self.navigatedItem = nil
+                    }
                 }
+                .transition(.move(edge: .trailing))
+            } else {
+                VStack(spacing: 0) {
+                    HStack(spacing: 12) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(selectedDate.formatted(.dateTime.locale(locale).month().day()))
+                                .font(.headline)
+                            Text(selectedDate.formatted(.dateTime.locale(locale).weekday(.wide)))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
 
-                Spacer()
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 14)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 14)
 
-            Divider()
+                    Divider()
 
-            HistoryVerticalTimelineView(
-                items: items,
-                selectedItemID: selectedItemID,
-                gapInterval: dayInterval
-            ) { item in
-                manualFlowDraft = nil
-                selectedItemID = item.id
-                if isCompact {
-                    compactInspectorItem = item
+                    HistoryVerticalTimelineView(
+                        items: items,
+                        selectedItemID: selectedItemID,
+                        gapInterval: dayInterval
+                    ) { item in
+                        manualFlowDraft = nil
+                        selectedItemID = item.id
+                        withAnimation(.easeInOut(duration: 0.24)) {
+                            navigatedItem = item
+                        }
+                    }
                 }
+                .transition(.move(edge: .leading))
             }
         }
+        .clipped()
     }
 
     private func updateManualFlowDraft(startedAt: Date, endedAt: Date) {
