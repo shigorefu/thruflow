@@ -79,8 +79,9 @@ The iOS deployment target is 17.0 even when building with Xcode 26 and the iOS
   changes in the iOS application. `ProductWidgetSnapshotBuilder` produces the
   canonical Today Tasks and 180-day Flow Dots projections, then stores Codable
   snapshots in the same App Group and reloads `TasksWidget` and
-  `FlowDotsWidget`. The Widget Extension only renders those snapshots and
-  schedules a next-day refresh.
+  `FlowDotsWidget`. The Widget Extension renders the latest 30, 60, or 90 days
+  from that single snapshot according to Widget family and schedules a
+  next-day refresh.
 - iOS day/week paging uses a bounded, recentering `IOSScrollablePeriodStrip`
   window instead of constructing years of SwiftUI cells. Day and week activity
   dots are indexed once per data snapshot rather than filtering complete Todo

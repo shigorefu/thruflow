@@ -323,8 +323,11 @@ The iPhone exposes three read-only WidgetKit configurations:
 - `今日のタスク` in Small, Medium, and Large shows the canonical Today list in
   priority order, completion count, and the same Check, Block-ring, or
   minute-fill progress semantics as the application. Tapping opens Tasks.
-- `Flow Dots` in Medium shows the current month. Large shows the last 180 days
-  with Direction-mixed color and relative intensity. Tapping opens Statistics.
+- `Flow Dots` uses a GitHub-style contribution grid: Small shows the latest 30
+  days in `5 × 6`, Medium 60 days in `12 × 5`, and Large 90 days in `9 × 10`.
+  Cells expand to the full widget content area without empty alignment cells,
+  retain Direction-mixed color, and use four relative intensity levels.
+  Tapping opens Statistics.
 
 Home Screen widgets intentionally have no transport or mutation controls. Live
 Activity owns quick Flow controls, while regular widgets remain reliable

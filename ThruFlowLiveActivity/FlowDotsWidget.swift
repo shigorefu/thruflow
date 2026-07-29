@@ -9,13 +9,13 @@ struct FlowDotsWidget: Widget {
         ) { entry in
             FlowDotsWidgetView(entry: entry)
                 .containerBackground(for: .widget) {
-                    Color.accentColor.opacity(0.04)
+                    Color.primary.opacity(0.04)
                 }
                 .widgetURL(URL(string: "thruflow://statistics"))
         }
         .configurationDisplayName(String(localized: "Flow Dots"))
-        .description(String(localized: "Flowの積み重ねを月または180日で確認できます。"))
-        .supportedFamilies([.systemMedium, .systemLarge])
+        .description(String(localized: "Flowの積み重ねを30日、60日、90日で確認できます。"))
+        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
 }
 
@@ -67,186 +67,155 @@ private struct FlowDotsWidgetView: View {
     let entry: FlowDotsWidgetEntry
 
     var body: some View {
+        FlowDotsGrid(
+            snapshot: entry.snapshot,
+            endDate: entry.date,
+            dayCount: dayCount,
+            rowCount: rowCount,
+            spacing: spacing
+        )
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(String(localized: "Flow Dots"))
+    }
+
+    private var dayCount: Int {
         switch family {
+        case .systemSmall:
+            30
         case .systemLarge:
-            Days180DotsView(snapshot: entry.snapshot)
+            90
         default:
-            MonthDotsView(snapshot: entry.snapshot, date: entry.date)
+            60
+        }
+    }
+
+    private var spacing: CGFloat {
+        switch family {
+        case .systemSmall:
+            5
+        case .systemLarge:
+            6
+        default:
+            5
+        }
+    }
+
+    private var rowCount: Int {
+        switch family {
+        case .systemMedium:
+            5
+        case .systemLarge:
+            10
+        default:
+            6
         }
     }
 }
 
-private struct MonthDotsView: View {
+private struct FlowDotsGrid: View {
     let snapshot: DotsWidgetSnapshot
-    let date: Date
+    let endDate: Date
+    let dayCount: Int
+    let rowCount: Int
+    let spacing: CGFloat
 
     private let calendar = Calendar.current
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 7)
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Label(String(localized: "Flow Dots"), systemImage: "circle.grid.3x3.fill")
-                    .font(.headline)
-                Spacer()
-                Text(date.formatted(.dateTime.year().month(.wide)))
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-            }
+        GeometryReader { proxy in
+            let days = visibleDays
+            let maximumSeconds = max(1, days.map(\.focusedSeconds).max() ?? 1)
+            let metrics = GridMetrics(
+                size: proxy.size,
+                columnCount: max(1, dayCount / rowCount),
+                rowCount: rowCount,
+                spacing: spacing
+            )
 
-            LazyVGrid(columns: columns, spacing: 4) {
-                ForEach(weekdaySymbols, id: \.self) { symbol in
-                    Text(symbol)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity)
-                }
-
-                ForEach(Array(monthCells.enumerated()), id: \.offset) { _, day in
-                    if let day {
-                        VStack(spacing: 2) {
-                            Text("\(calendar.component(.day, from: day.date))")
-                                .font(.caption2.monospacedDigit())
-                                .foregroundStyle(.secondary)
-                            DotCell(day: day, maximumSeconds: maximumSeconds)
-                                .frame(width: 13, height: 13)
+            HStack(spacing: spacing) {
+                ForEach(0..<metrics.columnCount, id: \.self) { column in
+                    VStack(spacing: spacing) {
+                        ForEach(0..<metrics.rowCount, id: \.self) { row in
+                            let day = days[column * metrics.rowCount + row]
+                            DotCell(
+                                day: day,
+                                maximumSeconds: maximumSeconds,
+                                cornerRadius: metrics.cornerRadius
+                            )
+                            .frame(
+                                width: metrics.cellWidth,
+                                height: metrics.cellHeight
+                            )
                         }
-                        .frame(maxWidth: .infinity)
-                    } else {
-                        Color.clear
-                            .frame(height: 27)
                     }
                 }
             }
-
-            Spacer(minLength: 0)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 
-    private var monthCells: [DotsWidgetDaySnapshot?] {
-        let month = calendar.dateInterval(of: .month, for: date)
-        let days = snapshot.days.filter { day in
-            guard let month else { return false }
-            return month.contains(day.date)
+    private var visibleDays: [DotsWidgetDaySnapshot] {
+        let normalizedEndDate = calendar.startOfDay(
+            for: snapshot.days.last?.date ?? endDate
+        )
+        let daysByDate = Dictionary(
+            snapshot.days.map { (calendar.startOfDay(for: $0.date), $0) },
+            uniquingKeysWith: { _, latest in latest }
+        )
+
+        return (0..<dayCount).compactMap { index in
+            guard let date = calendar.date(
+                byAdding: .day,
+                value: index - dayCount + 1,
+                to: normalizedEndDate
+            ) else {
+                return nil
+            }
+            return daysByDate[date] ?? DotsWidgetDaySnapshot(
+                date: date,
+                focusedSeconds: 0,
+                mixedColorHex: nil
+            )
         }
-        guard let first = days.first else { return [] }
-        let weekday = calendar.component(.weekday, from: first.date)
-        let leading = (weekday - calendar.firstWeekday + 7) % 7
-        return Array(repeating: nil, count: leading) + days.map(Optional.some)
-    }
-
-    private var maximumSeconds: Int {
-        max(1, monthCells.compactMap { $0?.focusedSeconds }.max() ?? 1)
-    }
-
-    private var weekdaySymbols: [String] {
-        let symbols = calendar.veryShortStandaloneWeekdaySymbols
-        let offset = max(0, calendar.firstWeekday - 1)
-        return Array(symbols[offset...] + symbols[..<offset])
     }
 }
 
-private struct Days180DotsView: View {
-    let snapshot: DotsWidgetSnapshot
+private struct GridMetrics {
+    let cellWidth: CGFloat
+    let cellHeight: CGFloat
+    let cornerRadius: CGFloat
+    let columnCount: Int
+    let rowCount: Int
 
-    private let calendar = Calendar.current
-    private let rows = Array(repeating: GridItem(.fixed(10), spacing: 3), count: 7)
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Label(String(localized: "Flow Dots"), systemImage: "circle.grid.3x3.fill")
-                    .font(.headline)
-                Spacer()
-                Text(String(localized: "過去180日"))
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-            }
-
-            HStack(alignment: .top, spacing: 7) {
-                VStack(spacing: 3) {
-                    ForEach(rotatedWeekdaySymbols.indices, id: \.self) { index in
-                        Text(index.isMultiple(of: 2) ? rotatedWeekdaySymbols[index] : "")
-                            .font(.system(size: 8))
-                            .foregroundStyle(.secondary)
-                            .frame(width: 12, height: 10)
-                    }
-                }
-
-                LazyHGrid(rows: rows, spacing: 3) {
-                    ForEach(Array(paddedDays.enumerated()), id: \.offset) { _, day in
-                        if let day {
-                            DotCell(day: day, maximumSeconds: maximumSeconds)
-                                .frame(width: 10, height: 10)
-                        } else {
-                            Color.clear
-                                .frame(width: 10, height: 10)
-                        }
-                    }
-                }
-            }
-
-            HStack {
-                Text(totalFocusText)
-                    .font(.title3.monospacedDigit().weight(.semibold))
-                Text(String(localized: "集中時間"))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Spacer()
-                intensityLegend
-            }
-
-            Spacer(minLength: 0)
-        }
-    }
-
-    private var paddedDays: [DotsWidgetDaySnapshot?] {
-        guard let first = snapshot.days.first else { return [] }
-        let weekday = calendar.component(.weekday, from: first.date)
-        let leading = (weekday - calendar.firstWeekday + 7) % 7
-        return Array(repeating: nil, count: leading) + snapshot.days.map(Optional.some)
-    }
-
-    private var maximumSeconds: Int {
-        max(1, snapshot.days.map(\.focusedSeconds).max() ?? 1)
-    }
-
-    private var rotatedWeekdaySymbols: [String] {
-        let symbols = calendar.veryShortStandaloneWeekdaySymbols
-        let offset = max(0, calendar.firstWeekday - 1)
-        return Array(symbols[offset...] + symbols[..<offset])
-    }
-
-    private var totalFocusText: String {
-        let minutes = snapshot.days.reduce(0) { $0 + $1.focusedSeconds } / 60
-        if minutes >= 60 {
-            return "\(minutes / 60)\(String(localized: "時間")) \(minutes % 60)\(String(localized: "分"))"
-        }
-        return "\(minutes)\(String(localized: "分"))"
-    }
-
-    private var intensityLegend: some View {
-        HStack(spacing: 3) {
-            Text(String(localized: "少ない"))
-            ForEach(1...4, id: \.self) { level in
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(Color.accentColor.opacity(0.2 + 0.2 * Double(level)))
-                    .frame(width: 10, height: 10)
-            }
-            Text(String(localized: "多い"))
-        }
-        .font(.caption2)
-        .foregroundStyle(.secondary)
+    init(size: CGSize, columnCount: Int, rowCount: Int, spacing: CGFloat) {
+        self.columnCount = columnCount
+        self.rowCount = rowCount
+        cellWidth = max(
+            1,
+            (size.width - spacing * CGFloat(max(0, columnCount - 1))) /
+                CGFloat(columnCount)
+        )
+        cellHeight = max(
+            1,
+            (size.height - spacing * CGFloat(max(0, rowCount - 1))) /
+                CGFloat(rowCount)
+        )
+        cornerRadius = min(6, min(cellWidth, cellHeight) * 0.2)
     }
 }
 
 private struct DotCell: View {
     let day: DotsWidgetDaySnapshot
     let maximumSeconds: Int
+    let cornerRadius: CGFloat
 
     var body: some View {
-        RoundedRectangle(cornerRadius: 3)
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
             .fill(color)
+            .overlay {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .strokeBorder(Color.primary.opacity(0.04), lineWidth: 0.5)
+            }
             .accessibilityLabel(
                 "\(day.date.formatted(date: .abbreviated, time: .omitted)), \(day.focusedSeconds / 60) \(String(localized: "分"))"
             )
@@ -256,7 +225,18 @@ private struct DotCell: View {
         guard day.focusedSeconds > 0 else {
             return Color.primary.opacity(0.07)
         }
-        let intensity = 0.28 + 0.72 * Double(day.focusedSeconds) / Double(maximumSeconds)
+        let ratio = Double(day.focusedSeconds) / Double(maximumSeconds)
+        let intensity: Double
+        switch ratio {
+        case ..<0.25:
+            intensity = 0.36
+        case ..<0.5:
+            intensity = 0.56
+        case ..<0.75:
+            intensity = 0.76
+        default:
+            intensity = 1
+        }
         return Color(productHex: day.mixedColorHex ?? "#007AFF").opacity(intensity)
     }
 }

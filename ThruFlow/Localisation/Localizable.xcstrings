@@ -1509,18 +1509,18 @@
         }
       }
     },
-    "Flowの積み重ねを月または180日で確認できます。" : {
+    "Flowの積み重ねを30日、60日、90日で確認できます。" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "See your Flow activity by month or across 180 days."
+            "value" : "See your Flow activity across 30, 60, or 90 days."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Смотрите активность Flow за месяц или последние 180 дней."
+            "value" : "Смотрите активность Flow за 30, 60 или 90 дней."
           }
         }
       }

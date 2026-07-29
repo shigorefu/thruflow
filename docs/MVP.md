@@ -49,8 +49,9 @@ Current MVP goal:
   state, and deep-link return to Flow.
 - iPhone Home Screen `今日のタスク` widget in Small, Medium, and Large sizes,
   with Today ordering and Task measurement progress.
-- iPhone Home Screen `Flow Dots` widget: current month in Medium and the last
-  180 days in Large, using canonical Flow statistics colors.
+- iPhone Home Screen `Flow Dots` widget in Small, Medium, and Large sizes:
+  GitHub-style `5 × 6`, `12 × 5`, and `9 × 10` grids show the latest 30, 60,
+  or 90 days using canonical Flow statistics colors.
 - watchOS Flow companion with a native four-page vertical dashboard for
   `タイマー`, fullscreen `Flow`, today's `タスク`, and compact `統計`.
 - Shared active-Flow restoration through the CloudKit-backed SwiftData store:

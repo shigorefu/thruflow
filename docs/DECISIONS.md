@@ -240,8 +240,10 @@ snapshots into the shared App Group and requests targeted WidgetKit reloads.
 
 The extension is presentation-only: it does not open SwiftData or CloudKit and
 does not reproduce filtering, sorting, progress, color-mixing, or timer rules.
-Small/Medium/Large Tasks and Medium/Large Dots are different layouts over the
-same snapshots, not separate data pipelines.
+Small/Medium/Large Tasks and Small/Medium/Large Dots are different layouts over
+the same snapshots, not separate data pipelines. Dots use exact family-sized
+grids (`5 × 6`, `12 × 5`, `9 × 10`) with 30, 60, or 90 visible days, four
+relative activity levels, and no placeholder cells.
 
 Reason: WidgetKit has a constrained execution and refresh budget. Computing
 product projections in the application preserves one source of truth, keeps the

@@ -234,8 +234,10 @@ Home Screen widgets are read-only projections delivered through App Group
   without a second timer engine or per-second application wakeups.
 - `今日のタスク` supports Small, Medium, and Large. The iOS application builds
   its immutable snapshot with the canonical Today filter and dashboard sorter.
-- `Flow Dots` supports Medium for the current month and Large for the canonical
-  180-day Flow heatmap.
+- `Flow Dots` renders one GitHub-style contribution grid from the canonical
+  180-day snapshot: Small uses `5 × 6` for 30 days, Medium `12 × 5` for 60
+  days, and Large `9 × 10` for 90 days. Every family fills its content area
+  without calendar-alignment placeholders.
 
 `IOSProductWidgetSnapshotSyncView` observes SwiftData in the application
 process, builds Task and Dots snapshots through shared domain logic, stores
