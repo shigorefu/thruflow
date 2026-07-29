@@ -307,10 +307,11 @@ pause/resume, and add five minutes. Seek is disabled during a break. Lock Screen
 content shows the same session identity, timer, and progress without
 action buttons. Opening any activity routes to the Flow tab. ActivityKit
 advances date-backed timer text and progress while the app is suspended; state
-transitions still originate from `ActiveFlowStore`. The date-backed clock
-crosses zero without stopping and uses the same overtime notation as the macOS
-menu bar: `00:00 → +00:01`. A paused activity freezes the signed value captured
-in its content state.
+transitions still originate from `ActiveFlowStore`. The running surface uses
+only WidgetKit-safe system timer text. After the canonical content state enters
+overtime, it uses the same notation as the macOS menu bar:
+`00:00 → +00:01`. A paused activity freezes the signed value captured in its
+content state.
 
 ## Home Screen Widgets
 

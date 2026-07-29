@@ -1170,17 +1170,6 @@ struct FlowTests {
         )
     }
 
-    @Test
-    @available(macOS 15.0, iOS 18.0, *)
-    func liveActivityRunningTimeFormatCrossesIntoOvertime() {
-        let plannedEndAt = Date(timeIntervalSinceReferenceDate: 10_000)
-        let style = FlowLiveActivityRunningTimeFormatStyle(plannedEndAt: plannedEndAt)
-
-        #expect(style.format(plannedEndAt.addingTimeInterval(-65)) == "01:05")
-        #expect(style.format(plannedEndAt) == "00:00")
-        #expect(style.format(plannedEndAt.addingTimeInterval(1)) == "+00:01")
-        #expect(style.discreteInput(after: plannedEndAt) == plannedEndAt.addingTimeInterval(1))
-    }
 }
 
 private final class TestFlowNotificationService: FlowNotificationService {

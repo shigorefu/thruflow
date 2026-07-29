@@ -144,20 +144,13 @@ private struct FlowActivityTimeLabel: View {
                     allowsOvertime: true
                 )
             )
-        } else if #available(iOS 18.0, *) {
-            Text(
-                .currentDate,
-                format: FlowLiveActivityRunningTimeFormatStyle(
-                    plannedEndAt: state.plannedEndAt
-                )
-            )
         } else {
-            legacyRunningTime
+            runningTime
         }
     }
 
     @ViewBuilder
-    private var legacyRunningTime: some View {
+    private var runningTime: some View {
         if state.remainingSeconds < 0 {
             HStack(spacing: 0) {
                 Text("+")

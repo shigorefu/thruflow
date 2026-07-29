@@ -65,49 +65,6 @@ enum FlowLiveActivityFormatter {
     }
 }
 
-@available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
-struct FlowLiveActivityRunningTimeFormatStyle: DiscreteFormatStyle {
-    var plannedEndAt: Date
-
-    nonisolated func format(_ value: Date) -> String {
-        let remainingInterval = plannedEndAt.timeIntervalSince(value)
-        let seconds: Int
-
-        if remainingInterval > 0 {
-            seconds = Int(ceil(remainingInterval))
-        } else {
-            seconds = -Int(floor(abs(remainingInterval)))
-        }
-
-        return FlowLiveActivityFormatter.timeText(
-            seconds: seconds,
-            allowsOvertime: true
-        )
-    }
-
-    nonisolated func discreteInput(after input: Date) -> Date? {
-        boundary(after: input)
-    }
-
-    nonisolated func discreteInput(before input: Date) -> Date? {
-        boundary(before: input)
-    }
-
-    nonisolated func locale(_ locale: Locale) -> Self {
-        self
-    }
-
-    private nonisolated func boundary(after input: Date) -> Date {
-        let offset = input.timeIntervalSince(plannedEndAt)
-        return plannedEndAt.addingTimeInterval(floor(offset) + 1)
-    }
-
-    private nonisolated func boundary(before input: Date) -> Date {
-        let offset = input.timeIntervalSince(plannedEndAt)
-        return plannedEndAt.addingTimeInterval(ceil(offset) - 1)
-    }
-}
-
 enum FlowLiveActivityPresentation {
     nonisolated static func emoji(
         taskEmoji: String,

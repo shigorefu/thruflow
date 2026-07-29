@@ -206,6 +206,12 @@ Dynamic Island regions remain self-sizing: an unbounded `.infinity` frame inside
 an expanded region produced a `NaN` layout origin and terminated Apple's
 `WidgetRenderer_Activities` process on iOS 26.5. A static action registry is also
 prohibited because it cannot bridge the application and extension processes.
+The archived ActivityKit view tree must use system date-backed `Text` and
+`ProgressView` implementations. A custom `DiscreteFormatStyle` in the running
+clock caused WidgetRenderer to replace the whole activity with gray placeholder
+redaction even though the extension compiled successfully. Overtime switches to
+the signed frozen/system-timer presentation from the latest canonical content
+update; custom per-second formatting is not allowed in the extension.
 
 ## D-024: Home Screen Timer Widget Is A Read-Only Snapshot
 

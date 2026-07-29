@@ -251,6 +251,12 @@ region. The iOS 26.5 renderer can pass an unbounded proposal there; propagating
 it into the archived SwiftUI tree caused `WidgetRenderer_Activities` to trap on
 an invalid `NaN` view origin. Add presentation changes one surface at a time and
 verify compact, minimal, expanded, and Lock Screen rendering independently.
+The running clock must also remain a system-supported archived view:
+`Text(timerInterval:countsDown:showsHours:)`, `Text(_:style: .timer)`, and
+date-backed `ProgressView` are allowed. Do not place a custom
+`FormatStyle`/`DiscreteFormatStyle` in a Live Activity view tree. It can compile
+and pass unit tests while WidgetRenderer fails to restore the tree and redacts
+all text and symbols as gray placeholders at runtime.
 
 ## Migration Strategy
 
