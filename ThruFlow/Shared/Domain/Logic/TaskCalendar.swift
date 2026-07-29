@@ -56,6 +56,60 @@ enum TaskCalendarFilter: String, CaseIterable, Identifiable {
     }
 }
 
+struct TaskCalendarIndicatorPalette {
+    var calendar: Calendar = .current
+
+    func colors(
+        for interval: DateInterval,
+        todos: [Todo],
+        filter: TaskCalendarFilter,
+        limit: Int = 4
+    ) -> [String] {
+        guard limit > 0 else { return [] }
+
+        var seenColors: Set<String> = []
+        var colors: [String] = []
+
+        for todo in todos where filter.includes(todo) && !todo.isArchived && !todo.isDeleted {
+            guard let scheduledDate = todo.scheduledDate,
+                  interval.contains(scheduledDate),
+                  let colorHex = todo.direction?.colorHex else {
+                continue
+            }
+
+            let normalizedColor = colorHex.lowercased()
+            guard seenColors.insert(normalizedColor).inserted else { continue }
+
+            colors.append(colorHex)
+            if colors.count == limit {
+                break
+            }
+        }
+
+        return colors
+    }
+
+    func colors(
+        on date: Date,
+        todos: [Todo],
+        filter: TaskCalendarFilter,
+        limit: Int = 4
+    ) -> [String] {
+        guard let interval = calendar.dateInterval(of: .day, for: date) else { return [] }
+        return colors(for: interval, todos: todos, filter: filter, limit: limit)
+    }
+
+    func colors(
+        inWeekContaining date: Date,
+        todos: [Todo],
+        filter: TaskCalendarFilter,
+        limit: Int = 4
+    ) -> [String] {
+        guard let interval = calendar.dateInterval(of: .weekOfYear, for: date) else { return [] }
+        return colors(for: interval, todos: todos, filter: filter, limit: limit)
+    }
+}
+
 struct TaskCalendarBuilder {
     var calendar: Calendar = .current
 

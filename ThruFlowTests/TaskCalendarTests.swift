@@ -57,6 +57,37 @@ struct TaskCalendarTests {
         #expect(!TaskCalendarFilter.habits.includes(task))
     }
 
+    @Test func calendarIndicatorsFollowTaskFilter() {
+        let calendar = testCalendar()
+        let selectedDate = date(2026, 7, 29, calendar: calendar)
+        let taskDirection = Direction(
+            name: "仕事",
+            type: .neutral,
+            colorHex: "#FF0000"
+        )
+        let habitDirection = Direction(
+            name: "運動",
+            type: .habit,
+            colorHex: "#00FF00"
+        )
+        let task = Todo(title: "資料", direction: taskDirection, scheduledDate: selectedDate)
+        let habit = Todo(title: "", direction: habitDirection, scheduledDate: selectedDate)
+        let palette = TaskCalendarIndicatorPalette(calendar: calendar)
+
+        #expect(
+            palette.colors(on: selectedDate, todos: [task, habit], filter: .all)
+                == ["#FF0000", "#00FF00"]
+        )
+        #expect(
+            palette.colors(on: selectedDate, todos: [task, habit], filter: .tasks)
+                == ["#FF0000"]
+        )
+        #expect(
+            palette.colors(on: selectedDate, todos: [task, habit], filter: .habits)
+                == ["#00FF00"]
+        )
+    }
+
     @Test func backlogSeparatesOverdueAndUnscheduledTasks() {
         let calendar = testCalendar()
         let now = date(2026, 7, 17, calendar: calendar)

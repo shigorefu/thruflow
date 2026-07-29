@@ -7195,22 +7195,6 @@
         }
       }
     },
-    "開始 %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Start %@"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Начало: %@"
-          }
-        }
-      }
-    },
     "開始時刻は固定されます" : {
       "localizations" : {
         "en" : {
