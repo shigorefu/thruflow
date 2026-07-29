@@ -24,7 +24,7 @@ struct HistoryCalendarView: View {
     let sidebarHeader: AnyView
     let sidebarSummary: AnyView?
 
-    @State private var inspectedSession: FlowSession?
+    @State private var inspectedItem: HistoryCalendarItem?
     @State private var editedBreak: FlowBreak?
     @State private var inspectedSeries: HistoryCalendarSeriesBlock?
     @State private var inspectedDay: HistoryDayTimelineSelection?
@@ -77,8 +77,13 @@ struct HistoryCalendarView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .sheet(item: $inspectedSession) { session in
-            FlowHistoryInspectorView(session: session)
+        .sheet(item: $inspectedItem) { item in
+            if let session = item.session {
+                FlowHistoryInspectorView(
+                    session: session,
+                    segment: item.flowSegment
+                )
+            }
         }
         .sheet(item: $editedBreak) { flowBreak in
             HistoryBreakEditorView(flowBreak: flowBreak)
@@ -258,7 +263,7 @@ struct HistoryCalendarView: View {
         case .flow:
             guard let session = item.session,
                   activeFlowStore.activeSession?.id != session.id else { return }
-            inspectedSession = session
+            inspectedItem = item
         case .rest:
             editedBreak = item.flowBreak
         }

@@ -94,6 +94,57 @@ struct DatabaseSearchTests {
         #expect(snapshot.taskSummaries.map(\.todoID) == [todo.id])
     }
 
+    @Test func historySearchMatchesOnlyTheSegmentThatOwnsTheDirection() {
+        let ankiDirection = Direction(name: "Anki", type: .neutral, symbolName: "📄")
+        let hiroconDirection = Direction(name: "広コン", type: .neutral, symbolName: "💻")
+        let ankiTodo = Todo(title: "単語を復習", direction: ankiDirection)
+        let hiroconTodo = Todo(title: "ゲーム特別版のプレゼンを作成", direction: hiroconDirection)
+        let start = date(2026, 7, 28)
+        let session = completedSession(
+            direction: hiroconDirection,
+            todo: hiroconTodo,
+            startedAt: start
+        )
+        session.actualFocusDurationSeconds = 18 * 60
+        session.endedAt = start.addingTimeInterval(18 * 60)
+
+        let ankiSegment = FlowSegment(
+            session: session,
+            direction: ankiDirection,
+            todo: ankiTodo,
+            startedAt: start,
+            startFocusSeconds: 0
+        )
+        ankiSegment.close(
+            at: start.addingTimeInterval(10 * 60),
+            totalFocusSeconds: 10 * 60
+        )
+        let hiroconSegment = FlowSegment(
+            session: session,
+            direction: hiroconDirection,
+            todo: hiroconTodo,
+            startedAt: start.addingTimeInterval(10 * 60),
+            startFocusSeconds: 10 * 60
+        )
+        hiroconSegment.close(
+            at: start.addingTimeInterval(18 * 60),
+            totalFocusSeconds: 18 * 60
+        )
+        session.resolvedSegments = [ankiSegment, hiroconSegment]
+
+        let items = DatabaseSearchBuilder(calendar: calendar).historyCalendarItems(
+            query: "広コン",
+            sessions: [session],
+            breaks: [],
+            referenceDate: start
+        )
+
+        #expect(items.count == 1)
+        #expect(items.first?.flowSegment?.id == hiroconSegment.id)
+        #expect(items.first?.todo?.id == hiroconTodo.id)
+        #expect(items.first?.title == "ゲーム特別版のプレゼンを作成")
+    }
+
     private func completedSession(
         direction: Direction,
         todo: Todo,

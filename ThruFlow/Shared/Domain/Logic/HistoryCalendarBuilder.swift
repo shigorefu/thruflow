@@ -150,6 +150,37 @@ struct HistoryCalendarItem: Identifiable {
     let session: FlowSession?
     let flowBreak: FlowBreak?
     let todo: Todo?
+    let flowSegment: FlowSegment?
+
+    init(
+        id: String,
+        kind: HistoryCalendarItemKind,
+        startedAt: Date,
+        endedAt: Date,
+        title: String,
+        subtitle: String,
+        symbol: String,
+        colorHex: String,
+        directionType: DirectionType,
+        session: FlowSession?,
+        flowBreak: FlowBreak?,
+        todo: Todo?,
+        flowSegment: FlowSegment? = nil
+    ) {
+        self.id = id
+        self.kind = kind
+        self.startedAt = startedAt
+        self.endedAt = endedAt
+        self.title = title
+        self.subtitle = subtitle
+        self.symbol = symbol
+        self.colorHex = colorHex
+        self.directionType = directionType
+        self.session = session
+        self.flowBreak = flowBreak
+        self.todo = todo
+        self.flowSegment = flowSegment
+    }
 
     var durationSeconds: Int {
         max(0, Int(endedAt.timeIntervalSince(startedAt)))
@@ -371,6 +402,7 @@ struct HistoryCalendarBuilder {
                 return makeFlowItem(
                     id: segment.id,
                     session: session,
+                    segment: segment,
                     direction: segment.direction,
                     todo: segment.todo,
                     start: segment.startedAt,
@@ -382,6 +414,7 @@ struct HistoryCalendarBuilder {
         return [makeFlowItem(
             id: session.id,
             session: session,
+            segment: nil,
             direction: session.direction,
             todo: session.todo,
             start: session.startedAt,
@@ -392,6 +425,7 @@ struct HistoryCalendarBuilder {
     private func makeFlowItem(
         id: UUID,
         session: FlowSession,
+        segment: FlowSegment?,
         direction: Direction?,
         todo: Todo?,
         start: Date,
@@ -410,7 +444,8 @@ struct HistoryCalendarBuilder {
             directionType: direction?.type ?? .neutral,
             session: session,
             flowBreak: nil,
-            todo: todo
+            todo: todo,
+            flowSegment: segment
         )
     }
 

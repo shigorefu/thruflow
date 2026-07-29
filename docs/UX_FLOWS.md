@@ -358,6 +358,12 @@ The macOS hover card and iOS anchored popover show the date, completed Task coun
 
 The History mini-calendar marks only days that contain recorded Flow history, using the corresponding Direction colors. Scheduled, pending, and future Task or Habit dates do not create History dots. On macOS and iOS, the History `タスク` and `方向` filters apply to both aggregate rows and the `日 | 週 | 月` calendar indicators. A Flow that switched context is filtered per persisted segment, so each indicator follows that segment's Task/Direction type. Task calendars keep their separate indicators and apply the active `すべて | タスク | 習慣` filter.
 
+History search follows the same segment boundary. A query that matches one
+segment's Task or Direction returns that segment only; it must not surface a
+sibling segment merely because both belong to the same FlowSession. Opening,
+editing, or deleting that result targets the exact displayed segment while
+preserving the other Task/Direction intervals in the session.
+
 The primary `カレンダー` mode provides:
 
 - `日`: a chronological vertical timeline of every actual Flow and rest record for the selected app day, with stable-size cards, chain rails only across continuous persisted records of the same series, spacious internal `記録なし` gaps, and a separate system sheet for the canonical editor;

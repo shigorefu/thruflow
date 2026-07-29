@@ -1036,14 +1036,16 @@ struct IOSHistoryItemDetail: View {
     init(item: HistoryCalendarItem) {
         self.item = item
         let session = item.session
-        _selectedTodoID = State(initialValue: session?.todo?.id)
-        _selectedDirectionID = State(initialValue: session?.direction?.id)
+        let selectedTodo = item.todo ?? session?.todo
+        let selectedDirection = item.flowSegment?.direction ?? selectedTodo?.direction ?? session?.direction
+        _selectedTodoID = State(initialValue: selectedTodo?.id)
+        _selectedDirectionID = State(initialValue: selectedDirection?.id)
         _timeDraft = State(initialValue: FlowHistoryTimeDraft(
             startedAt: item.startedAt,
             endedAt: item.endedAt,
             focusSeconds: item.durationSeconds
         ))
-        _memo = State(initialValue: session?.result ?? session?.todo?.notes ?? "")
+        _memo = State(initialValue: session?.result ?? selectedTodo?.notes ?? "")
         _breakDurationMinutes = State(
             initialValue: max(
                 FlowBreakEditor.minimumDurationMinutes,
@@ -1124,7 +1126,15 @@ struct IOSHistoryItemDetail: View {
         ) {
             Button(String(localized: "削除"), role: .destructive) {
                 guard let session = item.session else { return }
-                editor.delete(session: session, modelContext: modelContext)
+                if let segment = item.flowSegment {
+                    editor.delete(
+                        segment: segment,
+                        from: session,
+                        modelContext: modelContext
+                    )
+                } else {
+                    editor.delete(session: session, modelContext: modelContext)
+                }
                 try? modelContext.save()
                 dismiss()
             }
@@ -1171,7 +1181,9 @@ struct IOSHistoryItemDetail: View {
 
         return candidates
             .filter { todo in
-                if todo.id == item.session?.todo?.id { return true }
+                if todo.id == item.todo?.id || todo.id == item.session?.todo?.id {
+                    return true
+                }
                 guard !todo.isDeleted, !todo.isArchived else { return false }
                 return TodayTodoFilter().includes(todo, on: item.startedAt)
             }
@@ -1308,15 +1320,28 @@ struct IOSHistoryItemDetail: View {
 
     private func save(session: FlowSession) {
         guard let selectedDirection else { return }
-        editor.update(
-            session: session,
-            todo: selectedTodo,
-            direction: selectedDirection,
-            startedAt: timeDraft.startedAt,
-            focusSeconds: timeDraft.focusSeconds,
-            memo: memo,
-            modelContext: modelContext
-        )
+        if let segment = item.flowSegment {
+            editor.update(
+                segment: segment,
+                in: session,
+                todo: selectedTodo,
+                direction: selectedDirection,
+                startedAt: timeDraft.startedAt,
+                focusSeconds: timeDraft.focusSeconds,
+                memo: memo,
+                modelContext: modelContext
+            )
+        } else {
+            editor.update(
+                session: session,
+                todo: selectedTodo,
+                direction: selectedDirection,
+                startedAt: timeDraft.startedAt,
+                focusSeconds: timeDraft.focusSeconds,
+                memo: memo,
+                modelContext: modelContext
+            )
+        }
         try? modelContext.save()
         dismiss()
     }

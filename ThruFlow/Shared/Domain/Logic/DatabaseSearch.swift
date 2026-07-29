@@ -51,7 +51,8 @@ struct DatabaseSearchQuery {
         if let todo = item.todo, matchesHistory(todo) {
             return true
         }
-        if let session = item.session, matchesHistory(session) {
+        if let session = item.session,
+           matches([session.intent, session.result ?? ""]) {
             return true
         }
         return false

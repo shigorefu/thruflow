@@ -577,6 +577,96 @@ struct DayHistoryTests {
         #expect(todo.actualProgress == 15)
     }
 
+    @Test func editingOneFlowSegmentPreservesSiblingContextAndReconcilesProgress() throws {
+        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let ankiDirection = Direction(name: "Anki", type: .neutral)
+        let hiroconDirection = Direction(name: "広コン", type: .neutral)
+        let ankiTodo = Todo(
+            title: "単語を復習",
+            direction: ankiDirection,
+            measurement: .minutes,
+            plannedAmount: 30
+        )
+        let hiroconTodo = Todo(
+            title: "ゲーム特別版のプレゼンを作成",
+            direction: hiroconDirection,
+            measurement: .minutes,
+            plannedAmount: 30
+        )
+        let start = Date(timeIntervalSince1970: 50_000)
+        let session = FlowSession(
+            direction: hiroconDirection,
+            todo: hiroconTodo,
+            mode: .twentyFiveFive,
+            phase: .completed,
+            status: .completed,
+            startedAt: start,
+            plannedEndAt: start.addingTimeInterval(18 * 60),
+            endedAt: start.addingTimeInterval(18 * 60),
+            plannedFocusDurationSeconds: 25 * 60,
+            actualFocusDurationSeconds: 18 * 60,
+            plannedBreakDurationSeconds: 5 * 60
+        )
+        let ankiSegment = FlowSegment(
+            session: session,
+            direction: ankiDirection,
+            todo: ankiTodo,
+            startedAt: start,
+            startFocusSeconds: 0
+        )
+        ankiSegment.close(
+            at: start.addingTimeInterval(10 * 60),
+            totalFocusSeconds: 10 * 60
+        )
+        let hiroconSegment = FlowSegment(
+            session: session,
+            direction: hiroconDirection,
+            todo: hiroconTodo,
+            startedAt: start.addingTimeInterval(10 * 60),
+            startFocusSeconds: 10 * 60
+        )
+        hiroconSegment.close(
+            at: start.addingTimeInterval(18 * 60),
+            totalFocusSeconds: 18 * 60
+        )
+        session.resolvedSegments = [ankiSegment, hiroconSegment]
+        context.insert(ankiDirection)
+        context.insert(hiroconDirection)
+        context.insert(ankiTodo)
+        context.insert(hiroconTodo)
+        context.insert(session)
+
+        let editor = FlowHistoryEditor()
+        editor.update(
+            segment: ankiSegment,
+            in: session,
+            todo: hiroconTodo,
+            direction: hiroconDirection,
+            focusSeconds: 8 * 60,
+            memo: nil,
+            modelContext: context,
+            now: start.addingTimeInterval(20 * 60)
+        )
+
+        #expect(session.resolvedSegments.count == 2)
+        #expect(session.resolvedSegments.contains { $0.id == hiroconSegment.id })
+        #expect(ankiSegment.todo?.id == hiroconTodo.id)
+        #expect(ankiSegment.direction?.id == hiroconDirection.id)
+        #expect(ankiSegment.resolvedFocusSeconds == 8 * 60)
+        #expect(hiroconSegment.todo?.id == hiroconTodo.id)
+        #expect(hiroconSegment.resolvedFocusSeconds == 8 * 60)
+        #expect(session.todo?.id == hiroconTodo.id)
+        #expect(session.direction?.id == hiroconDirection.id)
+        #expect(session.actualFocusDurationSeconds == 16 * 60)
+        #expect(ankiTodo.recordedFocusSeconds == 0)
+        #expect(hiroconTodo.recordedFocusSeconds == 16 * 60)
+        #expect(ankiDirection.recordedFocusSeconds == 0)
+        #expect(hiroconDirection.recordedFocusSeconds == 16 * 60)
+    }
+
     @Test func deletingFlowSessionSoftDeletesRelatedBreaks() throws {
         let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)

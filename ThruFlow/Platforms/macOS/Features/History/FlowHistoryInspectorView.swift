@@ -17,6 +17,7 @@ struct FlowHistoryInspectorView: View {
     @Query(sort: \Todo.updatedAt, order: .reverse) private var todos: [Todo]
 
     let session: FlowSession
+    let segment: FlowSegment?
     let onClose: (() -> Void)?
 
     @State private var selectedTodoID: UUID?
@@ -31,17 +32,24 @@ struct FlowHistoryInspectorView: View {
 
     private let editor = FlowHistoryEditor()
 
-    init(session: FlowSession, onClose: (() -> Void)? = nil) {
+    init(
+        session: FlowSession,
+        segment: FlowSegment? = nil,
+        onClose: (() -> Void)? = nil
+    ) {
         self.session = session
+        self.segment = segment
         self.onClose = onClose
-        _selectedTodoID = State(initialValue: session.todo?.id)
-        _selectedDirectionID = State(initialValue: session.direction?.id)
+        let selectedTodo = segment?.todo ?? session.todo
+        let selectedDirection = segment?.direction ?? selectedTodo?.direction ?? session.direction
+        _selectedTodoID = State(initialValue: selectedTodo?.id)
+        _selectedDirectionID = State(initialValue: selectedDirection?.id)
         _timeDraft = State(initialValue: FlowHistoryTimeDraft(
-            startedAt: session.startedAt,
-            endedAt: session.endedAt,
-            focusSeconds: session.resolvedActualFocusDurationSeconds
+            startedAt: segment?.startedAt ?? session.startedAt,
+            endedAt: segment?.endedAt ?? session.endedAt,
+            focusSeconds: segment?.resolvedFocusSeconds ?? session.resolvedActualFocusDurationSeconds
         ))
-        _memo = State(initialValue: session.result ?? session.todo?.notes ?? "")
+        _memo = State(initialValue: session.result ?? selectedTodo?.notes ?? "")
     }
 
     private var selectedTodo: Todo? {
@@ -70,9 +78,11 @@ struct FlowHistoryInspectorView: View {
 
         return candidates
             .filter { todo in
-                if todo.id == session.todo?.id { return true }
+                if todo.id == segment?.todo?.id || todo.id == session.todo?.id {
+                    return true
+                }
                 guard !todo.isDeleted, !todo.isArchived else { return false }
-                return TodayTodoFilter().includes(todo, on: session.startedAt)
+                return TodayTodoFilter().includes(todo, on: segment?.startedAt ?? session.startedAt)
             }
             .sorted {
                 if $0.isCompleted != $1.isCompleted { return !$0.isCompleted }
@@ -198,7 +208,15 @@ struct FlowHistoryInspectorView: View {
             titleVisibility: .visible
         ) {
             Button(String(localized: "削除"), role: .destructive) {
-                editor.delete(session: session, modelContext: modelContext)
+                if let segment {
+                    editor.delete(
+                        segment: segment,
+                        from: session,
+                        modelContext: modelContext
+                    )
+                } else {
+                    editor.delete(session: session, modelContext: modelContext)
+                }
                 try? modelContext.save()
                 close()
             }
@@ -222,7 +240,7 @@ struct FlowHistoryInspectorView: View {
         .popover(isPresented: $showsTaskComposer, arrowEdge: .trailing) {
             QuickTodoCreationPopover(
                 directions: availableDirections,
-                scheduledDate: session.startedAt,
+                scheduledDate: segment?.startedAt ?? session.startedAt,
                 showsQuickInputLegend: false
             ) { todo in
                 createdTodo = todo
@@ -361,20 +379,33 @@ struct FlowHistoryInspectorView: View {
         let formatter = DateFormatter()
         formatter.locale = locale
         formatter.setLocalizedDateFormatFromTemplate("yMdHm")
-        return formatter.string(from: session.startedAt)
+        return formatter.string(from: segment?.startedAt ?? session.startedAt)
     }
 
     private func save() {
         guard let selectedDirection else { return }
-        editor.update(
-            session: session,
-            todo: selectedTodo,
-            direction: selectedDirection,
-            startedAt: timeDraft.startedAt,
-            focusSeconds: timeDraft.focusSeconds,
-            memo: memo,
-            modelContext: modelContext
-        )
+        if let segment {
+            editor.update(
+                segment: segment,
+                in: session,
+                todo: selectedTodo,
+                direction: selectedDirection,
+                startedAt: timeDraft.startedAt,
+                focusSeconds: timeDraft.focusSeconds,
+                memo: memo,
+                modelContext: modelContext
+            )
+        } else {
+            editor.update(
+                session: session,
+                todo: selectedTodo,
+                direction: selectedDirection,
+                startedAt: timeDraft.startedAt,
+                focusSeconds: timeDraft.focusSeconds,
+                memo: memo,
+                modelContext: modelContext
+            )
+        }
         try? modelContext.save()
         close()
     }

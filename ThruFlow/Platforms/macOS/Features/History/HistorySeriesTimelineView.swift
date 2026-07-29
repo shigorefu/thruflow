@@ -325,7 +325,11 @@ struct HistoryRecordEditorView: View {
         switch item.kind {
         case .flow:
             if let session = item.session {
-                FlowHistoryInspectorView(session: session, onClose: onClose)
+                FlowHistoryInspectorView(
+                    session: session,
+                    segment: item.flowSegment,
+                    onClose: onClose
+                )
             }
         case .rest:
             if let flowBreak = item.flowBreak {
