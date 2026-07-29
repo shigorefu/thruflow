@@ -208,6 +208,56 @@ struct HistoryCalendarSeriesProjector {
     }
 }
 
+struct HistoryTimelineGap: Equatable {
+    let startedAt: Date
+    let endedAt: Date
+
+    var duration: TimeInterval {
+        endedAt.timeIntervalSince(startedAt)
+    }
+}
+
+struct HistoryTimelineGapBuilder {
+    func internalGaps(
+        in interval: DateInterval,
+        items: [HistoryCalendarItem],
+        minimumDuration: TimeInterval = 60 * 60
+    ) -> [HistoryTimelineGap] {
+        let occupied = items
+            .compactMap { item -> DateInterval? in
+                let start = max(interval.start, item.startedAt)
+                let end = min(interval.end, item.endedAt)
+                guard end > start else { return nil }
+                return DateInterval(start: start, end: end)
+            }
+            .sorted { $0.start < $1.start }
+
+        guard occupied.count >= 2 else { return [] }
+
+        var merged: [DateInterval] = []
+        for candidate in occupied {
+            guard let last = merged.last else {
+                merged.append(candidate)
+                continue
+            }
+
+            if candidate.start <= last.end {
+                merged[merged.count - 1] = DateInterval(
+                    start: last.start,
+                    end: max(last.end, candidate.end)
+                )
+            } else {
+                merged.append(candidate)
+            }
+        }
+
+        return zip(merged, merged.dropFirst()).compactMap { previous, next in
+            let gap = HistoryTimelineGap(startedAt: previous.end, endedAt: next.start)
+            return gap.duration >= minimumDuration ? gap : nil
+        }
+    }
+}
+
 @MainActor
 struct HistoryCalendarBuilder {
     private let calendar: Calendar

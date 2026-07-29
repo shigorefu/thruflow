@@ -92,15 +92,15 @@ Reason: calendar planning must not silently invalidate historical completion or 
 
 Reason: starting focused work and seeing its accumulated shape should be the primary app experience, while Tasks, History, Directions, and Statistics remain dedicated supporting surfaces.
 
-## D-014: Day History Uses Timeline And Inspector
+## D-014: Day History Uses A Direct Record Timeline
 
-The `日` History range uses a narrow Apple Calendar-style timeline with a persisted `Elastic | 24時間` scale. A right pane contains the only wide-layout date mini-calendar and properties for the selected actual record or manual Flow draft. Flow/rest filters live in a compact `表示` menu instead of a separate rail. Compact windows present those properties in a sheet.
+The `日` History range directly renders every actual Flow and rest record for the selected app day as a chronological vertical timeline. Cards have a stable interactive size independent of recorded duration, and internal gaps of at least one hour are represented by a quiet `記録なし` row. There is no `Elastic | 24時間` choice in this view. A right pane contains the wide-layout date mini-calendar and properties for the selected record or manual Flow draft; compact windows present those properties in a sheet.
 
 Reason: day history needs enough vertical and horizontal space to inspect short Flow records without duplicating editors or compressing the timeline into an unreadable calendar column.
 
 `タスク` and `方向` reuse the two-column History workspace: aggregates on the left, mini-calendar and daily totals on the right. This keeps date navigation and visual hierarchy stable when switching modes.
 
-Wide `週` keeps a week-selecting mini-calendar on the right; wide `月` replaces it with a twelve-month year picker. Calendar lanes use exact stored intervals rather than minimum visual height, so contiguous Flow and rest records stay in one lane while true overlaps remain side by side.
+Wide `週` keeps a week-selecting mini-calendar on the right; wide `月` replaces it with a twelve-month year picker. Week projects each connected Flow series as one composite block positioned by its exact outer interval. Selecting the block opens a vertical series timeline whose underlying Flow and rest records remain individually editable. The projection does not merge persistence records or alter progress calculations.
 
 ## D-015: Dashboard Timeline Shows Flow Series
 

@@ -14,7 +14,6 @@ struct HistoryDayWorkspaceView: View {
     @Environment(\.locale) private var locale
 
     @Binding var selectedDate: Date
-    @Binding var scale: HistoryDayTimelineScale
     let items: [HistoryCalendarItem]
     @Binding var selectedItemID: String?
     @Binding var manualFlowDraft: HistoryFlowCreationDraft?
@@ -27,16 +26,8 @@ struct HistoryDayWorkspaceView: View {
 
     @State private var compactInspectorItem: HistoryCalendarItem?
 
-    private let windowBuilder = HistoryDayTimelineWindowBuilder()
-
-    private var hourRange: Range<Int> {
-        windowBuilder.hourRange(
-            for: selectedDate,
-            items: items,
-            scale: scale,
-            calendar: calendar,
-            dayBoundary: dayBoundary
-        )
+    private var dayInterval: DateInterval {
+        dayBoundary.interval(for: selectedDate, calendar: calendar)
     }
 
     private var selectedItem: HistoryCalendarItem? {
@@ -104,7 +95,7 @@ struct HistoryDayWorkspaceView: View {
     }
 
     private func timelinePanel(isCompact: Bool) -> some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 0) {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(selectedDate.formatted(.dateTime.locale(locale).month().day()))
@@ -115,34 +106,22 @@ struct HistoryDayWorkspaceView: View {
                 }
 
                 Spacer()
-
-                Picker(String(localized: "時間軸"), selection: $scale) {
-                    ForEach(HistoryDayTimelineScale.allCases) { option in
-                        Text(option.displayName).tag(option)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .frame(width: 170)
-                .accessibilityLabel(String(localized: "日の時間軸"))
             }
-            .padding(.horizontal, 10)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 14)
 
-            HistoryTimeGrid(
-                selectedDate: selectedDate,
-                range: .day,
+            Divider()
+
+            HistoryVerticalTimelineView(
                 items: items,
-                hourRange: hourRange,
-                hourHeight: scale == .elastic ? 82 : 64,
                 selectedItemID: selectedItemID,
-                manualFlowDraft: $manualFlowDraft
+                gapInterval: dayInterval
             ) { item in
                 manualFlowDraft = nil
                 selectedItemID = item.id
                 if isCompact {
                     compactInspectorItem = item
                 }
-            } onMove: { item, date in
-                onMove(item, date)
             }
         }
     }

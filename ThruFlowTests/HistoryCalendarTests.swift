@@ -192,4 +192,101 @@ struct HistoryCalendarTests {
 
         #expect(range == 0..<4)
     }
+
+    @Test func seriesProjectorGroupsConnectedFlowAndBreakRecords() {
+        let base = Date(timeIntervalSince1970: 10_000)
+        let firstSeriesID = UUID()
+        let secondSeriesID = UUID()
+        let direction = Direction(name: "仕事", type: .neutral)
+        let firstSession = FlowSession(
+            seriesID: firstSeriesID,
+            direction: direction,
+            mode: .twentyFiveFive,
+            phase: .completed,
+            status: .completed,
+            startedAt: base,
+            plannedEndAt: base.addingTimeInterval(12 * 60),
+            endedAt: base.addingTimeInterval(12 * 60),
+            plannedFocusDurationSeconds: 12 * 60,
+            actualFocusDurationSeconds: 12 * 60,
+            plannedBreakDurationSeconds: 3 * 60
+        )
+        let flowBreak = FlowBreak(
+            seriesID: firstSeriesID,
+            previousSessionID: firstSession.id,
+            startedAt: base.addingTimeInterval(12 * 60),
+            timerStoppedAt: base.addingTimeInterval(15 * 60),
+            plannedDurationSeconds: 3 * 60
+        )
+        let secondSession = FlowSession(
+            seriesID: secondSeriesID,
+            direction: direction,
+            mode: .twentyFiveFive,
+            phase: .completed,
+            status: .completed,
+            startedAt: base.addingTimeInterval(60 * 60),
+            plannedEndAt: base.addingTimeInterval(72 * 60),
+            endedAt: base.addingTimeInterval(72 * 60),
+            plannedFocusDurationSeconds: 12 * 60,
+            actualFocusDurationSeconds: 12 * 60,
+            plannedBreakDurationSeconds: 3 * 60
+        )
+        let interval = DateInterval(start: base, end: base.addingTimeInterval(2 * 3600))
+        let snapshot = HistoryCalendarBuilder(calendar: calendar).build(
+            interval: interval,
+            sessions: [firstSession, secondSession],
+            breaks: [flowBreak],
+            referenceDate: interval.end
+        )
+
+        let blocks = HistoryCalendarSeriesProjector().project(snapshot.items)
+
+        #expect(blocks.count == 2)
+        #expect(blocks.first { $0.seriesID == firstSeriesID }?.items.count == 2)
+        #expect(blocks.first { $0.seriesID == secondSeriesID }?.items.count == 1)
+    }
+
+    @Test func timelineGapBuilderReturnsOnlyInternalLongGaps() {
+        let base = Date(timeIntervalSince1970: 10_000)
+        let interval = DateInterval(start: base, end: base.addingTimeInterval(6 * 3600))
+        let first = HistoryCalendarItem(
+            id: "first",
+            kind: .flow,
+            startedAt: base.addingTimeInterval(30 * 60),
+            endedAt: base.addingTimeInterval(60 * 60),
+            title: "First",
+            subtitle: "",
+            symbol: "1",
+            colorHex: "#007AFF",
+            session: nil,
+            flowBreak: nil,
+            todo: nil
+        )
+        let second = HistoryCalendarItem(
+            id: "second",
+            kind: .flow,
+            startedAt: base.addingTimeInterval(3 * 3600),
+            endedAt: base.addingTimeInterval(3.5 * 3600),
+            title: "Second",
+            subtitle: "",
+            symbol: "2",
+            colorHex: "#007AFF",
+            session: nil,
+            flowBreak: nil,
+            todo: nil
+        )
+
+        let gaps = HistoryTimelineGapBuilder().internalGaps(
+            in: interval,
+            items: [second, first],
+            minimumDuration: 60 * 60
+        )
+
+        #expect(gaps == [
+            HistoryTimelineGap(
+                startedAt: base.addingTimeInterval(60 * 60),
+                endedAt: base.addingTimeInterval(3 * 3600)
+            )
+        ])
+    }
 }

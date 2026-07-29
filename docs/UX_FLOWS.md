@@ -360,8 +360,8 @@ The History mini-calendar marks only days that contain recorded Flow history, us
 
 The primary `カレンダー` mode provides:
 
-- `日`: a narrow scrollable timeline with `Elastic | 24時間` scale and a right inspector;
-- `週`: seven synchronized day columns in one vertically scrollable 24-hour grid;
+- `日`: a chronological vertical timeline of every actual Flow and rest record for the selected app day, with stable-size cards, long internal `記録なし` gaps, and a right inspector;
+- `週`: seven synchronized day columns in one vertically scrollable hour grid; each connected Flow series is one composite block that opens a detailed vertical series timeline;
 - `月`: a seven-column month overview.
 
 On macOS, History follows the same two-level hierarchy as Tasks. The system title
@@ -387,11 +387,11 @@ aggregates use the active `日 | 週 | 月` interval. Task History only lists it
 with recorded focused time; scheduled or completed Tasks with `0分` are omitted on
 both platforms.
 
-In `日`, the right pane keeps the only wide-layout mini-calendar above the selected record properties. Flow/rest visibility uses the shared icon-only control row filter; there is no separate filter rail or timeline-header filter. Selecting a Flow or rest updates the right pane; changing the day clears the selection. Elastic includes the day's timed records and current hour with one-hour context and a four-hour minimum. `24時間` shows the full day, and the preference persists locally. At compact widths, selection opens the same inspector as a sheet so the timeline retains useful width.
+In `日`, the right pane keeps the only wide-layout mini-calendar above the selected record properties. Flow/rest visibility uses the shared icon-only control row filter; there is no separate filter rail or timeline-header filter. The main area immediately shows the whole selected app day's saved records in chronological order rather than requiring a series selection first. Selecting a Flow or rest updates the right pane; changing the day clears the selection. A record's card remains comfortably clickable even when its actual duration is very short. Internal gaps of at least one hour are shown between neighboring records as a centered time range with `記録なし`; leading and trailing empty hours are omitted. At compact widths, selection opens the same inspector as a sheet.
 
 Week keeps date headers fixed while hours scroll. Its right mini-calendar highlights the complete selected week, and choosing any date selects that week. Opening a day/week grid scrolls near the current time when today is visible, otherwise near the first Flow. A red line marks the current time. Month keeps a minimum full-grid width and a right `1月...12月` year picker. Medium/narrow layouts preserve stable calendar widths through horizontal scrolling.
 
-Flow and FlowSegment records remain separate calendar blocks colored by Direction. FlowBreak records remain separate light-gray calendar blocks. Only the Flow dashboard timeline uses `seriesID` to place one continuous light-gray line beneath the colored work and rest segments of a connected series. Todo completions and pending Tasks never become independent History Calendar blocks.
+Flow and FlowSegment records remain separate persisted records colored by Direction. FlowBreak records remain separate light-gray records. In `週`, `seriesID` is used only to draw a composite series block; clicking it reveals each persisted Flow and rest record in a vertical detail timeline and each detail opens its canonical editor. The Flow dashboard independently uses `seriesID` for its continuous rail. Todo completions and pending Tasks never become independent History Calendar blocks.
 
 Lane assignment uses exact stored start/end intervals. Contiguous Flow and rest records stay in one vertical lane, and only actual time overlap creates side-by-side lanes. Entries below 15 minutes use compact title-only rendering; short rests become thin gray bars and expose exact time through hover and accessibility.
 

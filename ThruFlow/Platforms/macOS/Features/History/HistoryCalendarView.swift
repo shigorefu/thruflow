@@ -25,9 +25,10 @@ struct HistoryCalendarView: View {
 
     @State private var inspectedSession: FlowSession?
     @State private var editedBreak: FlowBreak?
+    @State private var inspectedSeries: HistoryCalendarSeriesBlock?
+    @State private var pendingSeriesItem: HistoryCalendarItem?
     @State private var selectedDayItemID: String?
     @State private var manualFlowDraft: HistoryFlowCreationDraft?
-    @AppStorage("history.dayTimelineScale") private var dayScaleRawValue = HistoryDayTimelineScale.elastic.rawValue
 
     private let builder = HistoryCalendarBuilder()
     private let historyEditor = FlowHistoryEditor()
@@ -47,13 +48,6 @@ struct HistoryCalendarView: View {
 
     private var filteredItems: [HistoryCalendarItem] {
         snapshot.items.filter { visibleKinds.contains($0.kind) }
-    }
-
-    private var dayScaleBinding: Binding<HistoryDayTimelineScale> {
-        Binding(
-            get: { HistoryDayTimelineScale(rawValue: dayScaleRawValue) ?? .elastic },
-            set: { dayScaleRawValue = $0.rawValue }
-        )
     }
 
     var body: some View {
@@ -89,6 +83,12 @@ struct HistoryCalendarView: View {
             HistoryBreakEditorView(flowBreak: flowBreak)
                 .environmentObject(activeFlowStore)
         }
+        .sheet(item: $inspectedSeries, onDismiss: openPendingSeriesItem) { block in
+            HistorySeriesTimelineView(block: block) { item in
+                pendingSeriesItem = item
+                inspectedSeries = nil
+            }
+        }
         .sheet(
             isPresented: Binding(
                 get: { range == .week && manualFlowDraft != nil },
@@ -118,7 +118,6 @@ struct HistoryCalendarView: View {
         case .day:
             HistoryDayWorkspaceView(
                 selectedDate: $selectedDate,
-                scale: dayScaleBinding,
                 items: filteredItems,
                 selectedItemID: $selectedDayItemID,
                 manualFlowDraft: $manualFlowDraft,
@@ -138,6 +137,7 @@ struct HistoryCalendarView: View {
                 hourHeight: 64,
                 selectedItemID: nil,
                 manualFlowDraft: $manualFlowDraft,
+                onSelectSeries: openSeries,
                 onSelect: openEditor,
                 onMove: moveHistoryItem
             )
@@ -184,7 +184,6 @@ struct HistoryCalendarView: View {
         case .day:
             HistoryDayWorkspaceView(
                 selectedDate: $selectedDate,
-                scale: dayScaleBinding,
                 items: filteredItems,
                 selectedItemID: $selectedDayItemID,
                 manualFlowDraft: $manualFlowDraft,
@@ -204,6 +203,7 @@ struct HistoryCalendarView: View {
                     hourHeight: 64,
                     selectedItemID: nil,
                     manualFlowDraft: $manualFlowDraft,
+                    onSelectSeries: openSeries,
                     onSelect: openEditor,
                     onMove: moveHistoryItem
                 )
@@ -254,6 +254,18 @@ struct HistoryCalendarView: View {
         case .rest:
             editedBreak = item.flowBreak
         }
+    }
+
+    private func openSeries(_ block: HistoryCalendarSeriesBlock) {
+        manualFlowDraft = nil
+        pendingSeriesItem = nil
+        inspectedSeries = block
+    }
+
+    private func openPendingSeriesItem() {
+        guard let item = pendingSeriesItem else { return }
+        pendingSeriesItem = nil
+        openEditor(item)
     }
 
     private func updateManualFlowDraft(startedAt: Date, endedAt: Date) {
@@ -380,6 +392,7 @@ struct HistoryTimeGrid: View {
     let hourHeight: CGFloat
     let selectedItemID: String?
     @Binding var manualFlowDraft: HistoryFlowCreationDraft?
+    let onSelectSeries: (HistoryCalendarSeriesBlock) -> Void
     let onSelect: (HistoryCalendarItem) -> Void
     let onMove: (HistoryCalendarItem, Date) -> Bool
 
@@ -519,63 +532,125 @@ struct HistoryTimeGrid: View {
             let seriesBlocks = HistoryCalendarSeriesProjector().project(dayItems)
             let placements = seriesPlacementMap(for: seriesBlocks, day: day)
 
-            ForEach(seriesBlocks) { block in
-                let placement = placements[block.id]
-                    ?? HistoryOverlapPlacement(id: block.id, lane: 0, laneCount: 1)
-                let width = (dayWidth - 8) / CGFloat(placement.laneCount)
-                let frame = frame(from: block.startedAt, to: block.endedAt, on: day)
-
-                HistorySeriesBackdrop()
-                    .frame(width: max(32, width - 3), height: frame.height)
-                    .offset(
-                        x: timeAxisWidth + CGFloat(dayIndex) * dayWidth + 4
-                            + CGFloat(placement.lane) * width,
-                        y: frame.y
+            if range == .week {
+                ForEach(seriesBlocks) { block in
+                    weekSeriesBlock(
+                        block,
+                        placement: placements[block.id]
+                            ?? HistoryOverlapPlacement(id: block.id, lane: 0, laneCount: 1),
+                        day: day,
+                        dayIndex: dayIndex,
+                        dayWidth: dayWidth
                     )
-                    .allowsHitTesting(false)
-            }
-
-            ForEach(dayItems) { item in
-                let placement = placements[item.seriesBlockID]
-                    ?? HistoryOverlapPlacement(id: item.seriesBlockID, lane: 0, laneCount: 1)
-                let width = (dayWidth - 8) / CGFloat(placement.laneCount)
-                let frame = frame(for: item, on: day)
-
-                HistoryTimedItemView(
-                    item: item,
-                    isCompact: item.durationSeconds < 15 * 60 || frame.height < 24,
-                    isMicro: frame.height < 12,
-                    isSelected: selectedItemID == item.id,
-                    previewStartedAt: dragState?.itemID == item.id ? dragState?.targetDate : nil
-                ) {
-                    manualFlowDraft = nil
-                    onSelect(item)
                 }
-                    .frame(width: max(32, width - 3), height: frame.height, alignment: .topLeading)
-                    .clipped()
-                    .offset(
-                        x: timeAxisWidth + CGFloat(dayIndex) * dayWidth + 4 + CGFloat(placement.lane) * width
-                            + dragTranslation(for: item).width,
-                        y: frame.y + dragTranslation(for: item).height
+            } else {
+                ForEach(seriesBlocks) { block in
+                    seriesBackdrop(
+                        block,
+                        placement: placements[block.id]
+                            ?? HistoryOverlapPlacement(id: block.id, lane: 0, laneCount: 1),
+                        day: day,
+                        dayIndex: dayIndex,
+                        dayWidth: dayWidth
                     )
-                    .zIndex(dragState?.itemID == item.id ? 10 : 0)
-                    .shadow(
-                        color: .black.opacity(dragState?.itemID == item.id ? 0.28 : 0),
-                        radius: dragState?.itemID == item.id ? 8 : 0,
-                        y: dragState?.itemID == item.id ? 4 : 0
+                }
+
+                ForEach(dayItems) { item in
+                    timedItem(
+                        item,
+                        placement: placements[item.seriesBlockID]
+                            ?? HistoryOverlapPlacement(id: item.seriesBlockID, lane: 0, laneCount: 1),
+                        day: day,
+                        dayIndex: dayIndex,
+                        dayWidth: dayWidth
                     )
-                    .highPriorityGesture(
-                        calendarDragGesture(
-                            for: item,
-                            dayIndex: dayIndex,
-                            dayWidth: dayWidth,
-                            itemWidth: max(32, width - 3),
-                            frame: frame
-                        ),
-                        including: canMove(item) ? .all : .none
-                    )
+                }
             }
         }
+    }
+
+    private func seriesBackdrop(
+        _ block: HistoryCalendarSeriesBlock,
+        placement: HistoryOverlapPlacement,
+        day: Date,
+        dayIndex: Int,
+        dayWidth: CGFloat
+    ) -> some View {
+        let width = (dayWidth - 8) / CGFloat(placement.laneCount)
+        let itemFrame = frame(from: block.startedAt, to: block.endedAt, on: day)
+        return HistorySeriesBackdrop()
+            .frame(width: max(32, width - 3), height: itemFrame.height)
+            .offset(
+                x: timeAxisWidth + CGFloat(dayIndex) * dayWidth + 4
+                    + CGFloat(placement.lane) * width,
+                y: itemFrame.y
+            )
+            .allowsHitTesting(false)
+    }
+
+    private func timedItem(
+        _ item: HistoryCalendarItem,
+        placement: HistoryOverlapPlacement,
+        day: Date,
+        dayIndex: Int,
+        dayWidth: CGFloat
+    ) -> some View {
+        let width = (dayWidth - 8) / CGFloat(placement.laneCount)
+        let itemFrame = frame(for: item, on: day)
+        return HistoryTimedItemView(
+            item: item,
+            isCompact: item.durationSeconds < 15 * 60 || itemFrame.height < 24,
+            isMicro: itemFrame.height < 12,
+            isSelected: selectedItemID == item.id,
+            previewStartedAt: dragState?.itemID == item.id ? dragState?.targetDate : nil
+        ) {
+            manualFlowDraft = nil
+            onSelect(item)
+        }
+        .frame(width: max(32, width - 3), height: itemFrame.height, alignment: .topLeading)
+        .clipped()
+        .offset(
+            x: timeAxisWidth + CGFloat(dayIndex) * dayWidth + 4 + CGFloat(placement.lane) * width
+                + dragTranslation(for: item).width,
+            y: itemFrame.y + dragTranslation(for: item).height
+        )
+        .zIndex(dragState?.itemID == item.id ? 10 : 0)
+        .shadow(
+            color: .black.opacity(dragState?.itemID == item.id ? 0.28 : 0),
+            radius: dragState?.itemID == item.id ? 8 : 0,
+            y: dragState?.itemID == item.id ? 4 : 0
+        )
+        .highPriorityGesture(
+            calendarDragGesture(
+                for: item,
+                dayIndex: dayIndex,
+                dayWidth: dayWidth,
+                itemWidth: max(32, width - 3),
+                frame: itemFrame
+            ),
+            including: canMove(item) ? .all : .none
+        )
+    }
+
+    private func weekSeriesBlock(
+        _ block: HistoryCalendarSeriesBlock,
+        placement: HistoryOverlapPlacement,
+        day: Date,
+        dayIndex: Int,
+        dayWidth: CGFloat
+    ) -> some View {
+        let width = (dayWidth - 8) / CGFloat(placement.laneCount)
+        let itemFrame = frame(from: block.startedAt, to: block.endedAt, on: day)
+        return HistoryWeekSeriesBlockView(block: block) {
+            manualFlowDraft = nil
+            onSelectSeries(block)
+        }
+        .frame(width: max(32, width - 3), height: max(18, itemFrame.height))
+        .offset(
+            x: timeAxisWidth + CGFloat(dayIndex) * dayWidth + 4
+                + CGFloat(placement.lane) * width,
+            y: itemFrame.y
+        )
     }
 
     @ViewBuilder
