@@ -85,6 +85,8 @@ struct DayHistoryView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .navigationTitle(String(localized: "履歴"))
+        .toolbarBackground(.bar, for: .windowToolbar)
+        .toolbarBackgroundVisibility(.visible, for: .windowToolbar)
         .toolbar {
             ToolbarItem(placement: .navigation) {
                 if let onClose {
