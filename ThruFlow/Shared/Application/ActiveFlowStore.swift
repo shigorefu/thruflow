@@ -40,6 +40,7 @@ final class ActiveFlowStore: ObservableObject {
     private var displayClock: AnyCancellable?
     private var synchronizationClock: AnyCancellable?
     private var lastAppliedRuntimeVersion: FlowRuntimeVersion?
+    private var lastPublishedLiveActivityWasOvertime: Bool?
 
     init(
         defaults: UserDefaults = .standard,
@@ -686,6 +687,7 @@ final class ActiveFlowStore: ObservableObject {
             .autoconnect()
             .sink { [weak self] date in
                 self?.displayDate = date
+                self?.refreshLiveActivityTimeBoundary(now: date)
             }
     }
 
@@ -779,17 +781,34 @@ final class ActiveFlowStore: ObservableObject {
 
     private func startLiveActivity(now: Date) {
         guard let content = liveActivityContent(now: now) else {
+            lastPublishedLiveActivityWasOvertime = nil
             liveActivities.end()
             return
         }
+        lastPublishedLiveActivityWasOvertime = content.remainingSeconds < 0
         liveActivities.start(content: content)
     }
 
     private func synchronizeLiveActivity(now: Date) {
         guard let content = liveActivityContent(now: now) else {
+            lastPublishedLiveActivityWasOvertime = nil
             liveActivities.end()
             return
         }
+        lastPublishedLiveActivityWasOvertime = content.remainingSeconds < 0
+        liveActivities.update(content: content)
+    }
+
+    func refreshLiveActivityTimeBoundary(now: Date = .now) {
+        guard let content = liveActivityContent(now: now) else {
+            lastPublishedLiveActivityWasOvertime = nil
+            return
+        }
+
+        let isOvertime = content.remainingSeconds < 0
+        guard lastPublishedLiveActivityWasOvertime != isOvertime else { return }
+
+        lastPublishedLiveActivityWasOvertime = isOvertime
         liveActivities.update(content: content)
     }
 

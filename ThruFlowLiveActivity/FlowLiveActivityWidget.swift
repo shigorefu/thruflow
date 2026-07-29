@@ -157,7 +157,7 @@ private struct FlowActivityTimeLabel: View {
                 Text(state.plannedEndAt, style: .timer)
             }
         } else {
-            Text(timerInterval: state.timerRange, countsDown: true, showsHours: false)
+            Text(state.plannedEndAt, style: .timer)
                 .environment(\.locale, Locale(identifier: "en_US_POSIX"))
         }
     }

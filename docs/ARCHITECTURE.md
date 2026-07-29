@@ -258,7 +258,11 @@ The running clock must also remain a system-supported archived view:
 date-backed `ProgressView` are allowed. Do not place a custom
 `FormatStyle`/`DiscreteFormatStyle` in a Live Activity view tree. It can compile
 and pass unit tests while WidgetRenderer fails to restore the tree and redacts
-all text and symbols as gray placeholders at runtime.
+all text and symbols as gray placeholders at runtime. Running time uses
+`Text(_:style: .timer)` so the system clock continues through zero. While the
+application process is active, `ActiveFlowStore` publishes one additional
+content update when the sign changes; that update adds the explicit overtime
+`+` without sending per-second ActivityKit updates.
 
 ## Migration Strategy
 

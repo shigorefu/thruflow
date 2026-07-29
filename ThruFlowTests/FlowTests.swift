@@ -947,6 +947,37 @@ struct FlowTests {
         #expect(liveActivities.endCount >= 1)
     }
 
+    @Test @MainActor func activeFlowPublishesLiveActivityOvertimeBoundaryOnce() throws {
+        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let start = Date(timeIntervalSince1970: 45_000)
+        let direction = Direction(name: "開発", type: .neutral, symbolName: "💻")
+        let liveActivities = TestLiveActivityService()
+        context.insert(direction)
+
+        let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
+        let store = ActiveFlowStore(
+            defaults: defaults,
+            notifications: TestFlowNotificationService(),
+            liveActivities: liveActivities
+        )
+        store.configure(direction: direction, todo: nil, mode: .sprint)
+        store.start(direction: direction, todo: nil, modelContext: context, now: start)
+
+        let plannedEndAt = start.addingTimeInterval(12 * 60)
+        store.refreshLiveActivityTimeBoundary(now: plannedEndAt)
+        #expect(liveActivities.updated.isEmpty)
+
+        store.refreshLiveActivityTimeBoundary(now: plannedEndAt.addingTimeInterval(1))
+        let overtime = try #require(liveActivities.updated.last)
+        #expect(overtime.remainingSeconds == -1)
+
+        store.refreshLiveActivityTimeBoundary(now: plannedEndAt.addingTimeInterval(2))
+        #expect(liveActivities.updated.count == 1)
+    }
+
     @Test func persistedPausedFlowReconstructsExactTimerState() throws {
         let start = Date(timeIntervalSince1970: 50_000)
         let pausedAt = start.addingTimeInterval(8 * 60)

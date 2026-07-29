@@ -209,9 +209,11 @@ prohibited because it cannot bridge the application and extension processes.
 The archived ActivityKit view tree must use system date-backed `Text` and
 `ProgressView` implementations. A custom `DiscreteFormatStyle` in the running
 clock caused WidgetRenderer to replace the whole activity with gray placeholder
-redaction even though the extension compiled successfully. Overtime switches to
-the signed frozen/system-timer presentation from the latest canonical content
-update; custom per-second formatting is not allowed in the extension.
+redaction even though the extension compiled successfully. The system
+`Text(_:style: .timer)` continues the clock through zero. `ActiveFlowStore`
+publishes one boundary update when an active app observes the sign change so
+the extension can add the explicit overtime `+`; custom per-second formatting
+and per-second ActivityKit updates are not allowed in the extension.
 
 ## D-024: Home Screen Timer Widget Is A Read-Only Snapshot
 
