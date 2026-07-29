@@ -172,17 +172,34 @@ struct IOSHistoryView: View {
                     on: date,
                     from: visibleCalendarItems(for: date)
                 )
-                IOSHistoryMonthDaySummary(
-                    date: date,
-                    items: dayItems,
-                    onSelect: { selectedItem = $0 },
-                    onShowDay: {
-                        selectedDayTimeline = IOSHistoryDayTimelineSelection(
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        IOSHistoryMonthGrid(
+                            interval: snapshot.interval,
+                            items: visibleCalendarItems(for: date),
+                            selectedDate: $selectedDate
+                        )
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 12)
+                        .iosHorizontalPeriodSwipe { offset in
+                            navigatePeriod(by: offset)
+                        }
+
+                        Divider()
+
+                        IOSHistoryMonthDaySummary(
                             date: date,
-                            items: dayItems
+                            items: dayItems,
+                            onSelect: { selectedItem = $0 },
+                            onShowDay: {
+                                selectedDayTimeline = IOSHistoryDayTimelineSelection(
+                                    date: date,
+                                    items: dayItems
+                                )
+                            }
                         )
                     }
-                )
+                }
             }
         case .tasks:
             IOSHistoryTaskSummaryList(
@@ -322,13 +339,15 @@ struct IOSHistoryView: View {
                     visibleDirectionTypes: selectedIndicatorTypes
                 )
             case .month:
-                IOSHistoryMonthGrid(
-                    interval: calendarSnapshot.interval,
-                    items: visibleCalendarItems,
-                    selectedDate: $selectedDate
-                )
-                .iosHorizontalPeriodSwipe { offset in
-                    navigatePeriod(by: offset)
+                if selectedMode != .calendar {
+                    IOSHistoryMonthGrid(
+                        interval: calendarSnapshot.interval,
+                        items: visibleCalendarItems,
+                        selectedDate: $selectedDate
+                    )
+                    .iosHorizontalPeriodSwipe { offset in
+                        navigatePeriod(by: offset)
+                    }
                 }
             }
         }

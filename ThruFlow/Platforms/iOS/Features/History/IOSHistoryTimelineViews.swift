@@ -574,97 +574,95 @@ struct IOSHistoryMonthDaySummary: View {
     let onShowDay: () -> Void
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(String(localized: "この日の記録"))
-                            .font(.headline)
-                        Text(date, format: .dateTime.month().day().weekday(.wide))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Spacer()
-
-                    if items.count > 3 {
-                        Button {
-                            onShowDay()
-                        } label: {
-                            Text(String(localized: "詳細"))
-                            Image(systemName: "chevron.right")
-                                .font(.caption.weight(.semibold))
-                        }
-                    }
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(String(localized: "この日の記録"))
+                        .font(.headline)
+                    Text(date, format: .dateTime.month().day().weekday(.wide))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
 
-                if items.isEmpty {
-                    ContentUnavailableView(
-                        String(localized: "この日に記録なし"),
-                        systemImage: "clock.badge.questionmark"
-                    )
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 36)
-                } else {
-                    ForEach(items.prefix(3)) { item in
-                        Button {
-                            onSelect(item)
-                        } label: {
-                            HStack(spacing: 10) {
-                                Text(item.symbol)
-                                    .font(.title3)
-                                    .frame(width: 34, height: 34)
-                                    .background(
-                                        itemColor(item).opacity(0.16),
-                                        in: RoundedRectangle(cornerRadius: 8)
-                                    )
+                Spacer()
 
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Text(item.title)
-                                        .font(.subheadline.weight(.semibold))
-                                        .foregroundStyle(.primary)
-                                        .lineLimit(1)
-                                    Text(
-                                        verbatim: "\(item.startedAt.formatted(date: .omitted, time: .shortened))–\(item.endedAt.formatted(date: .omitted, time: .shortened))"
-                                    )
-                                    .font(.caption.monospacedDigit())
-                                    .foregroundStyle(.secondary)
-                                }
-
-                                Spacer()
-
-                                Image(systemName: "chevron.right")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(.tertiary)
-                            }
-                            .padding(12)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(
-                                itemColor(item).opacity(0.1),
-                                in: RoundedRectangle(cornerRadius: 12)
-                            )
-                        }
-                        .buttonStyle(.plain)
-                    }
-
-                    if items.count > 3 {
-                        Button {
-                            onShowDay()
-                        } label: {
-                            Text(
-                                String.localizedStringWithFormat(
-                                    String(localized: "ほか%lld件"),
-                                    Int64(items.count - 3)
-                                )
-                            )
-                            .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.bordered)
+                if items.count > 3 {
+                    Button {
+                        onShowDay()
+                    } label: {
+                        Text(String(localized: "詳細"))
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
                     }
                 }
             }
-            .padding(16)
+
+            if items.isEmpty {
+                ContentUnavailableView(
+                    String(localized: "この日に記録なし"),
+                    systemImage: "clock.badge.questionmark"
+                )
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 36)
+            } else {
+                ForEach(items.prefix(3)) { item in
+                    Button {
+                        onSelect(item)
+                    } label: {
+                        HStack(spacing: 10) {
+                            Text(item.symbol)
+                                .font(.title3)
+                                .frame(width: 34, height: 34)
+                                .background(
+                                    itemColor(item).opacity(0.16),
+                                    in: RoundedRectangle(cornerRadius: 8)
+                                )
+
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(item.title)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(.primary)
+                                    .lineLimit(1)
+                                Text(
+                                    verbatim: "\(item.startedAt.formatted(date: .omitted, time: .shortened))–\(item.endedAt.formatted(date: .omitted, time: .shortened))"
+                                )
+                                .font(.caption.monospacedDigit())
+                                .foregroundStyle(.secondary)
+                            }
+
+                            Spacer()
+
+                            Image(systemName: "chevron.right")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.tertiary)
+                        }
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(
+                            itemColor(item).opacity(0.1),
+                            in: RoundedRectangle(cornerRadius: 12)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                if items.count > 3 {
+                    Button {
+                        onShowDay()
+                    } label: {
+                        Text(
+                            String.localizedStringWithFormat(
+                                String(localized: "ほか%lld件"),
+                                Int64(items.count - 3)
+                            )
+                        )
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                }
+            }
         }
+        .padding(16)
     }
 
     private func itemColor(_ item: HistoryCalendarItem) -> Color {

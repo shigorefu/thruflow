@@ -362,7 +362,11 @@ The primary `カレンダー` mode provides:
 
 - `日`: a chronological vertical timeline of every actual Flow and rest record for the selected app day, with stable-size cards, chain rails only across continuous persisted records of the same series, spacious internal `記録なし` gaps, and a separate system sheet for the canonical editor;
 - `週`: seven synchronized day columns in one vertically scrollable hour grid; each connected Flow series is one composite block that opens a detailed vertical series timeline with push navigation to each record editor;
-- `月`: a seven-column month overview whose `詳細` action opens the complete selected day in the same vertical timeline and record editors as `日`.
+- `月`: a single vertically scrolling surface with the seven-column month overview
+  followed immediately by the selected day's records. Scrolling down naturally
+  moves the calendar offscreen; scrolling back to the top restores it. The
+  `詳細` action opens the complete selected day in the same vertical timeline and
+  record editors as `日`.
 
 On macOS, History follows the same two-level hierarchy as Tasks. The system title
 toolbar centers the compact `Flow | タスク | 方向` selector, keeps the Flow/rest
