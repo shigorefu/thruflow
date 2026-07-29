@@ -186,12 +186,59 @@ struct HistoryCalendarItem: Identifiable {
         max(0, Int(endedAt.timeIntervalSince(startedAt)))
     }
 
+    @MainActor
+    var displayTitle: String {
+        guard kind == .flow else { return title }
+        return currentTodo.map(TodoDisplay.title(for:))
+            ?? "(\(currentDirection?.name ?? String(localized: "その他")))"
+    }
+
+    @MainActor
+    var displaySubtitle: String {
+        guard kind == .flow else { return subtitle }
+        return currentDirection?.name ?? String(localized: "その他")
+    }
+
+    @MainActor
+    var displaySymbol: String {
+        guard kind == .flow else { return symbol }
+        return currentDirection?.symbolName ?? "📝"
+    }
+
+    @MainActor
+    var displayColorHex: String {
+        guard kind == .flow else { return colorHex }
+        return currentDirection?.colorHex ?? "#8E8E93"
+    }
+
+    @MainActor
+    var displayDirectionType: DirectionType {
+        guard kind == .flow else { return directionType }
+        return currentDirection?.type ?? .neutral
+    }
+
     var seriesID: UUID? {
         flowBreak?.seriesID ?? session.map { $0.seriesID ?? $0.id }
     }
 
     var seriesBlockID: String {
         seriesID.map { "series-\($0.uuidString)" } ?? "item-\(id)"
+    }
+
+    @MainActor
+    private var currentTodo: Todo? {
+        if let flowSegment {
+            return flowSegment.todo
+        }
+        return session?.todo ?? todo
+    }
+
+    @MainActor
+    private var currentDirection: Direction? {
+        if let flowSegment {
+            return flowSegment.todo?.direction ?? flowSegment.direction
+        }
+        return session?.todo?.direction ?? session?.direction
     }
 }
 
@@ -460,12 +507,13 @@ struct HistoryCalendarBuilder {
 }
 
 struct HistoryCalendarIndicatorFilter {
+    @MainActor
     func items(
         from items: [HistoryCalendarItem],
         visibleDirectionTypes: Set<DirectionType>
     ) -> [HistoryCalendarItem] {
         items.filter {
-            $0.kind == .flow && visibleDirectionTypes.contains($0.directionType)
+            $0.kind == .flow && visibleDirectionTypes.contains($0.displayDirectionType)
         }
     }
 }

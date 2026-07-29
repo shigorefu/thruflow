@@ -93,6 +93,70 @@ struct DayHistoryTests {
         #expect(todo.completedAt == nil)
     }
 
+    @Test func attachingCreatedTaskUpdatesOpenHistoryItemWithoutRebuild() throws {
+        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let direction = Direction(
+            name: "筋トレ",
+            type: .habit,
+            symbolName: "💪",
+            colorHex: "#FFCC00"
+        )
+        let start = Date(timeIntervalSince1970: 30_000)
+        context.insert(direction)
+
+        let editor = FlowHistoryEditor()
+        let session = editor.createManual(
+            todo: nil,
+            direction: direction,
+            mode: .twentyFiveFive,
+            startedAt: start,
+            focusSeconds: 25 * 60,
+            modelContext: context,
+            now: start.addingTimeInterval(25 * 60)
+        )
+        let item = try #require(
+            HistoryCalendarBuilder(calendar: calendar)
+                .build(
+                    interval: DateInterval(
+                        start: start.addingTimeInterval(-60),
+                        end: start.addingTimeInterval(30 * 60)
+                    ),
+                    sessions: [session],
+                    breaks: []
+                )
+                .items
+                .first
+        )
+        #expect(item.displayTitle == "(筋トレ)")
+
+        let todo = Todo(
+            title: "スクワット",
+            direction: direction,
+            measurement: .minutes,
+            plannedAmount: 30
+        )
+        context.insert(todo)
+        let segment = try #require(session.resolvedSegments.first)
+
+        editor.attach(
+            todo: todo,
+            to: segment,
+            in: session,
+            modelContext: context,
+            now: start.addingTimeInterval(25 * 60)
+        )
+
+        #expect(segment.todo?.id == todo.id)
+        #expect(session.todo?.id == todo.id)
+        #expect(item.displayTitle == "スクワット")
+        #expect(item.displaySubtitle == "筋トレ")
+        #expect(todo.recordedFocusSeconds == 25 * 60)
+        #expect(todo.actualProgress == 25)
+    }
+
     @Test func movingFlowShiftsSessionAndSegmentsWithoutChangingProgress() throws {
         let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)

@@ -106,7 +106,7 @@ private struct IOSHistoryTimelineItemRow: View {
                 onSelect(item)
             } label: {
                 HStack(spacing: 10) {
-                    Text(item.symbol)
+                    Text(item.displaySymbol)
                         .font(.title3)
                         .frame(width: 34, height: 34)
                         .background(
@@ -115,7 +115,7 @@ private struct IOSHistoryTimelineItemRow: View {
                         )
 
                     VStack(alignment: .leading, spacing: 3) {
-                        Text(item.title)
+                        Text(item.displayTitle)
                             .font(.subheadline.weight(.semibold))
                             .lineLimit(1)
                         Text(
@@ -124,8 +124,8 @@ private struct IOSHistoryTimelineItemRow: View {
                         .font(.caption2.monospacedDigit())
                         .foregroundStyle(.secondary)
 
-                        if !item.subtitle.isEmpty {
-                            Text(item.subtitle)
+                        if !item.displaySubtitle.isEmpty {
+                            Text(item.displaySubtitle)
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
@@ -177,7 +177,7 @@ private struct IOSHistoryTimelineItemRow: View {
     }
 
     private var itemColor: Color {
-        item.kind == .rest ? .secondary : Color(hex: item.colorHex)
+        item.kind == .rest ? .secondary : Color(hex: item.displayColorHex)
     }
 
     private var durationText: String {
@@ -458,8 +458,8 @@ private struct IOSHistoryWeekSeriesBlock: View {
 
                     if geometry.size.height >= 24 {
                         HStack(spacing: 3) {
-                            Text(flowItems.first?.symbol ?? "☕️")
-                            Text(flowItems.first?.title ?? String(localized: "Flowシリーズ"))
+                            Text(flowItems.first?.displaySymbol ?? "☕️")
+                            Text(flowItems.first?.displayTitle ?? String(localized: "Flowシリーズ"))
                                 .lineLimit(1)
                             if flowItems.count > 1 {
                                 Text(verbatim: "· \(flowItems.count)")
@@ -495,7 +495,7 @@ private struct IOSHistoryWeekSeriesBlock: View {
             .fill(
                 item.kind == .rest
                     ? Color.secondary.opacity(0.55)
-                    : Color(hex: item.colorHex)
+                    : Color(hex: item.displayColorHex)
             )
             .frame(height: max(2, CGFloat(itemRatio) * height))
             .offset(y: max(0, CGFloat(startRatio) * height))

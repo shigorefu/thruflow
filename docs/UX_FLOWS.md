@@ -415,7 +415,11 @@ both macOS and iOS. Direction-only Flow is also selectable: its result, Directio
 and exact time can be edited without creating a Task. The inspector can
 optionally link an existing Task or open explicit `タスクを追加` with the
 Flow's Direction and date preselected; finishing or editing Flow never creates
-a Task automatically. A completed Flow can be dragged to another exact day/time
+a Task automatically. Completing `タスクを追加` from the Flow inspector
+immediately attaches the created Task to the edited Flow or task-switch segment,
+reconciles measured progress, and refreshes an already open `Flowシリーズ`
+timeline without closing and reopening it. Other inspector draft changes still
+use the explicit Save action. A completed Flow can be dragged to another exact day/time
 in day and week, or to another date in month; the complete session and its
 task-switch segments move together without changing duration or measured
 progress. Active Flow and rest records are not draggable. Double-clicking empty

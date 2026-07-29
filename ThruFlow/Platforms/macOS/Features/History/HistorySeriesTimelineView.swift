@@ -18,7 +18,7 @@ struct HistoryWeekSeriesBlockView: View {
     }
 
     private var title: String {
-        flowItems.first?.title ?? String(localized: "Flowシリーズ")
+        flowItems.first?.displayTitle ?? String(localized: "Flowシリーズ")
     }
 
     var body: some View {
@@ -33,7 +33,7 @@ struct HistoryWeekSeriesBlockView: View {
 
                     if geometry.size.height >= 24 {
                         HStack(spacing: 4) {
-                            Text(flowItems.first?.symbol ?? "☕️")
+                            Text(flowItems.first?.displaySymbol ?? "☕️")
                             Text(title)
                                 .lineLimit(1)
                             if flowItems.count > 1 {
@@ -68,7 +68,7 @@ struct HistoryWeekSeriesBlockView: View {
         let segmentHeight = max(2, CGFloat(itemRatio) * height)
 
         return Rectangle()
-            .fill(item.kind == .rest ? Color.secondary.opacity(0.55) : Color(hex: item.colorHex))
+            .fill(item.kind == .rest ? Color.secondary.opacity(0.55) : Color(hex: item.displayColorHex))
             .frame(height: segmentHeight)
             .offset(y: y)
     }
@@ -424,20 +424,20 @@ private struct HistoryTimelineItemRow: View {
                 onSelect(item)
             } label: {
                 HStack(spacing: 12) {
-                    Text(item.symbol)
+                    Text(item.displaySymbol)
                         .font(.title3)
                         .frame(width: 30, height: 30)
                         .background(itemColor.opacity(0.16), in: RoundedRectangle(cornerRadius: 6))
 
                     VStack(alignment: .leading, spacing: 3) {
-                        Text(item.title)
+                        Text(item.displayTitle)
                             .font(.body.weight(.semibold))
                             .lineLimit(1)
                         Text(verbatim: "\(item.startedAt.formatted(date: .omitted, time: .shortened))–\(item.endedAt.formatted(date: .omitted, time: .shortened)) · \(durationText)")
                             .font(.caption.monospacedDigit())
                             .foregroundStyle(.secondary)
-                        if !item.subtitle.isEmpty {
-                            Text(item.subtitle)
+                        if !item.displaySubtitle.isEmpty {
+                            Text(item.displaySubtitle)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
@@ -489,7 +489,7 @@ private struct HistoryTimelineItemRow: View {
     }
 
     private var itemColor: Color {
-        item.kind == .rest ? .secondary : Color(hex: item.colorHex)
+        item.kind == .rest ? .secondary : Color(hex: item.displayColorHex)
     }
 
     private var durationText: String {

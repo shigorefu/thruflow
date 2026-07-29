@@ -243,9 +243,7 @@ struct FlowHistoryInspectorView: View {
                 scheduledDate: segment?.startedAt ?? session.startedAt,
                 showsQuickInputLegend: false
             ) { todo in
-                createdTodo = todo
-                selectedTodoID = todo.id
-                selectedDirectionID = todo.direction?.id
+                attachCreatedTodo(todo)
             }
         }
         .onChange(of: showsTaskPicker) { _, isPresented in
@@ -257,6 +255,28 @@ struct FlowHistoryInspectorView: View {
                 showsTaskComposer = true
             }
         }
+    }
+
+    private func attachCreatedTodo(_ todo: Todo) {
+        createdTodo = todo
+        selectedTodoID = todo.id
+        selectedDirectionID = todo.direction?.id
+
+        if let segment {
+            editor.attach(
+                todo: todo,
+                to: segment,
+                in: session,
+                modelContext: modelContext
+            )
+        } else {
+            editor.attach(
+                todo: todo,
+                to: session,
+                modelContext: modelContext
+            )
+        }
+        try? modelContext.save()
     }
 
     private var header: some View {

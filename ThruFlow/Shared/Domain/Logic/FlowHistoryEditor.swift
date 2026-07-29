@@ -55,6 +55,50 @@ struct FlowHistoryTimeDraft: Equatable {
 struct FlowHistoryEditor {
     private let reconciler = FlowProgressReconciler()
 
+    func attach(
+        todo: Todo,
+        to session: FlowSession,
+        modelContext: ModelContext,
+        now: Date = .now
+    ) {
+        let previousTodos = [session.todo] + session.resolvedSegments.map(\.todo)
+        let previousDirections = [session.direction] + session.resolvedSegments.map(\.direction)
+
+        session.todo = todo
+        session.direction = todo.direction ?? session.direction
+        session.updatedAt = now
+
+        reconciler.reconcile(
+            todos: previousTodos + [todo],
+            directions: previousDirections + [session.direction],
+            modelContext: modelContext,
+            now: session.endedAt ?? now
+        )
+    }
+
+    func attach(
+        todo: Todo,
+        to segment: FlowSegment,
+        in session: FlowSession,
+        modelContext: ModelContext,
+        now: Date = .now
+    ) {
+        let previousTodos = [segment.todo, session.todo] + session.resolvedSegments.map(\.todo)
+        let previousDirections = [segment.direction, session.direction] + session.resolvedSegments.map(\.direction)
+
+        segment.todo = todo
+        segment.direction = todo.direction ?? segment.direction
+        session.updatedAt = now
+        synchronizeSessionFromSegments(session)
+
+        reconciler.reconcile(
+            todos: previousTodos + [todo],
+            directions: previousDirections + [segment.direction, session.direction],
+            modelContext: modelContext,
+            now: segment.endedAt ?? now
+        )
+    }
+
     @discardableResult
     func createManual(
         todo: Todo?,

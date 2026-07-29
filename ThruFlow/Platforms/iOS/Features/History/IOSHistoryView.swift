@@ -1112,9 +1112,7 @@ struct IOSHistoryItemDetail: View {
                         fixedDirection: selectedDirection,
                         scheduledDate: item.startedAt
                     ) { todo in
-                        createdTodo = todo
-                        selectedTodoID = todo.id
-                        selectedDirectionID = todo.direction?.id
+                        attachCreatedTodo(todo)
                     }
                 }
             }
@@ -1155,6 +1153,29 @@ struct IOSHistoryItemDetail: View {
         } message: {
             Text(breakEditError ?? "")
         }
+    }
+
+    private func attachCreatedTodo(_ todo: Todo) {
+        guard let session = item.session else { return }
+        createdTodo = todo
+        selectedTodoID = todo.id
+        selectedDirectionID = todo.direction?.id
+
+        if let segment = item.flowSegment {
+            editor.attach(
+                todo: todo,
+                to: segment,
+                in: session,
+                modelContext: modelContext
+            )
+        } else {
+            editor.attach(
+                todo: todo,
+                to: session,
+                modelContext: modelContext
+            )
+        }
+        try? modelContext.save()
     }
 
     private var selectedTodo: Todo? {
