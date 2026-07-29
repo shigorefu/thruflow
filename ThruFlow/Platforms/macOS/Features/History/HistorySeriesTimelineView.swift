@@ -112,7 +112,21 @@ struct HistorySeriesTimelineView: View {
             }
         }
         .clipped()
-        .frame(minWidth: 440, idealWidth: 500, minHeight: 480, idealHeight: 620)
+        .frame(width: contentSize.width, height: contentSize.height)
+        .animation(.easeInOut(duration: 0.24), value: selectedItem?.id)
+    }
+
+    private var contentSize: CGSize {
+        guard let selectedItem else {
+            return CGSize(width: 500, height: 620)
+        }
+
+        switch selectedItem.kind {
+        case .flow:
+            return CGSize(width: 540, height: 580)
+        case .rest:
+            return CGSize(width: 360, height: 220)
+        }
     }
 
     private var header: some View {
@@ -183,6 +197,7 @@ struct HistoryVerticalTimelineView: View {
                 String(localized: "この日に記録なし"),
                 systemImage: "clock.badge.questionmark"
             )
+            .padding(.vertical, 56)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
             ScrollView {

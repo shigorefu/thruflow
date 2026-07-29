@@ -24,8 +24,6 @@ struct HistoryDayWorkspaceView: View {
     let onMove: (HistoryCalendarItem, Date) -> Bool
     let onDropOnDay: (String, Date) -> Bool
 
-    @State private var navigatedItem: HistoryCalendarItem?
-
     private var dayInterval: DateInterval {
         dayBoundary.interval(for: selectedDate, calendar: calendar)
     }
@@ -78,54 +76,38 @@ struct HistoryDayWorkspaceView: View {
         }
         .onChange(of: selectedDate) { _, _ in
             selectedItemID = nil
-            navigatedItem = nil
             manualFlowDraft = nil
         }
     }
 
     private var timelinePanel: some View {
-        ZStack {
-            if let navigatedItem {
-                HistoryRecordEditorView(item: navigatedItem) {
-                    withAnimation(.easeInOut(duration: 0.24)) {
-                        self.navigatedItem = nil
-                    }
+        VStack(spacing: 0) {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(selectedDate.formatted(.dateTime.locale(locale).month().day()))
+                        .font(.headline)
+                    Text(selectedDate.formatted(.dateTime.locale(locale).weekday(.wide)))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
-                .transition(.move(edge: .trailing))
-            } else {
-                VStack(spacing: 0) {
-                    HStack(spacing: 12) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(selectedDate.formatted(.dateTime.locale(locale).month().day()))
-                                .font(.headline)
-                            Text(selectedDate.formatted(.dateTime.locale(locale).weekday(.wide)))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
 
-                        Spacer()
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 14)
+                Spacer()
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 14)
 
-                    Divider()
+            Divider()
 
-                    HistoryVerticalTimelineView(
-                        items: items,
-                        selectedItemID: selectedItemID,
-                        gapInterval: dayInterval
-                    ) { item in
-                        manualFlowDraft = nil
-                        selectedItemID = item.id
-                        withAnimation(.easeInOut(duration: 0.24)) {
-                            navigatedItem = item
-                        }
-                    }
-                }
-                .transition(.move(edge: .leading))
+            HistoryVerticalTimelineView(
+                items: items,
+                selectedItemID: selectedItemID,
+                gapInterval: dayInterval
+            ) { item in
+                manualFlowDraft = nil
+                selectedItemID = item.id
+                onEdit(item)
             }
         }
-        .clipped()
     }
 
     private func updateManualFlowDraft(startedAt: Date, endedAt: Date) {

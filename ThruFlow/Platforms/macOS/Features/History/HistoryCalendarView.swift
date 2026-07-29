@@ -1135,7 +1135,16 @@ struct HistoryBreakEditorView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            HStack {
+            HStack(spacing: 12) {
+                if onClose != nil {
+                    Button { close() } label: {
+                        Image(systemName: "chevron.left")
+                            .frame(width: 24, height: 24)
+                    }
+                    .buttonStyle(.borderless)
+                    .accessibilityLabel(String(localized: "戻る"))
+                }
+
                 VStack(alignment: .leading, spacing: 2) {
                     Label(flowBreak.isLongBreak ? String(localized: "Long Break") : String(localized: "休憩"), systemImage: "cup.and.saucer")
                         .font(.title3.weight(.semibold))
@@ -1144,11 +1153,14 @@ struct HistoryBreakEditorView: View {
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
-                Button { close() } label: {
-                    Image(systemName: onClose == nil ? "xmark" : "chevron.left")
-                }
+
+                if onClose == nil {
+                    Button { close() } label: {
+                        Image(systemName: "xmark")
+                    }
                     .buttonStyle(.borderless)
-                    .accessibilityLabel(String(localized: onClose == nil ? "閉じる" : "戻る"))
+                    .accessibilityLabel(String(localized: "閉じる"))
+                }
             }
 
             HStack {
@@ -1176,8 +1188,8 @@ struct HistoryBreakEditorView: View {
                     .disabled(minutes < FlowBreakEditor.minimumDurationMinutes || minutes > FlowBreakEditor.maximumDurationMinutes)
             }
         }
-        .padding(20)
-        .frame(width: 360)
+        .padding(18)
+        .frame(width: 360, height: 220)
     }
 
     private func save() {

@@ -1859,6 +1859,7 @@ struct QuickTodoCreationPopover: View {
     @Query(sort: \Todo.sortIndex, order: .forward) private var allTodos: [Todo]
 
     let directions: [Direction]
+    var scheduledDate: Date = .now
     var showsQuickInputLegend = true
     var onCreated: ((Todo) -> Void)?
 
@@ -1914,7 +1915,7 @@ struct QuickTodoCreationPopover: View {
             priority: priority,
             isRoomIfPossible: priority == .low && isRoomIfPossible,
             plannedAmount: volume.plannedAmount,
-            scheduledDate: .now
+            scheduledDate: scheduledDate
         )
         let errors = validator.validate(draft)
 
@@ -1937,7 +1938,7 @@ struct QuickTodoCreationPopover: View {
                 plannedAmount: volume.plannedAmount,
                 actualProgress: 0
             ),
-            scheduledDate: .now,
+            scheduledDate: scheduledDate,
             sortIndex: (allTodos.map(\.sortIndex).min() ?? 0) - 1
         )
         modelContext.insert(todo)

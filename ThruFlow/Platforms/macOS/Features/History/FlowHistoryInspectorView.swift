@@ -23,7 +23,9 @@ struct FlowHistoryInspectorView: View {
     @State private var selectedDirectionID: UUID?
     @State private var timeDraft: FlowHistoryTimeDraft
     @State private var memo: String
-    @State private var isCreatingTask = false
+    @State private var showsTaskPicker = false
+    @State private var showsTaskComposer = false
+    @State private var presentsTaskComposerAfterPicker = false
     @State private var createdTodo: Todo?
     @State private var showsDeleteConfirmation = false
 
@@ -81,62 +83,13 @@ struct FlowHistoryInspectorView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(String(localized: "Flowを編集"))
-                        .font(.title3.weight(.semibold))
-                    Text(dateText)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-
-                Button {
-                    close()
-                } label: {
-                    Image(systemName: onClose == nil ? "xmark" : "chevron.left")
-                }
-                .buttonStyle(.borderless)
-                .accessibilityLabel(String(localized: onClose == nil ? "閉じる" : "戻る"))
-            }
-            .padding(18)
+            header
 
             Divider()
 
             ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    field(String(localized: "タスク")) {
-                        HStack(spacing: 10) {
-                            Picker(String(localized: "タスク"), selection: $selectedTodoID) {
-                                Text(String(localized: "タスクなし")).tag(UUID?.none)
-                                ForEach(availableTodos) { todo in
-                                    Text("\(todo.direction?.symbolName ?? "📥") \(TodoDisplay.title(for: todo))")
-                                        .tag(Optional(todo.id))
-                                }
-                            }
-                            .labelsHidden()
-
-                            Button {
-                                isCreatingTask = true
-                            } label: {
-                                Label(String(localized: "タスクを追加"), systemImage: "plus")
-                            }
-                            .buttonStyle(.bordered)
-                            .disabled(selectedDirection == nil)
-                        }
-                    }
-
-                    field(String(localized: "方向")) {
-                        Picker(String(localized: "方向"), selection: $selectedDirectionID) {
-                            ForEach(availableDirections) { direction in
-                                Text("\(direction.symbolName) \(direction.name)")
-                                    .tag(Optional(direction.id))
-                            }
-                        }
-                        .labelsHidden()
-                        .disabled(selectedTodo != nil)
-                    }
+                VStack(alignment: .leading, spacing: 20) {
+                    taskSelectionButton
 
                     field(String(localized: "時間")) {
                         HStack(alignment: .bottom, spacing: 12) {
@@ -208,7 +161,7 @@ struct FlowHistoryInspectorView: View {
                     }
                     .buttonStyle(.bordered)
                 }
-                .padding(18)
+                .padding(20)
             }
 
             Divider()
@@ -226,9 +179,9 @@ struct FlowHistoryInspectorView: View {
                 .buttonStyle(.borderedProminent)
                 .disabled(selectedDirection == nil)
             }
-            .padding(18)
+            .padding(20)
         }
-        .frame(minWidth: 460, idealWidth: 520, minHeight: 500, idealHeight: 560)
+        .frame(width: 540, height: 580)
         .onChange(of: selectedTodoID) { _, newValue in
             guard let newValue, let todo = todos.first(where: { $0.id == newValue }) else {
                 return
@@ -253,20 +206,135 @@ struct FlowHistoryInspectorView: View {
         } message: {
             Text(String(localized: "方向とタスクの集中時間から、このFlowの分を差し引きます。"))
         }
-        .sheet(isPresented: $isCreatingTask) {
-            if let selectedDirection {
-                TodoFormView(
-                    mode: .create,
-                    fixedDirection: selectedDirection,
-                    scheduledDate: session.startedAt
-                ) { todo in
-                    createdTodo = todo
-                    selectedTodoID = todo.id
-                    selectedDirectionID = todo.direction?.id
-                }
-                .frame(minWidth: 480, idealWidth: 540, minHeight: 620, idealHeight: 700)
+        .popover(isPresented: $showsTaskPicker, arrowEdge: .bottom) {
+            FlowTaskPickerView(
+                directions: availableDirections,
+                todos: availableTodos,
+                selectedDirectionID: selectedDirectionID,
+                selectedTodoID: selectedTodoID,
+                onCreateTask: presentTaskComposer
+            ) { direction, todo in
+                selectedTodoID = todo?.id
+                selectedDirectionID = todo?.direction?.id ?? direction?.id
+            }
+            .frame(width: 520, height: 460)
+        }
+        .popover(isPresented: $showsTaskComposer, arrowEdge: .trailing) {
+            QuickTodoCreationPopover(
+                directions: availableDirections,
+                scheduledDate: session.startedAt,
+                showsQuickInputLegend: false
+            ) { todo in
+                createdTodo = todo
+                selectedTodoID = todo.id
+                selectedDirectionID = todo.direction?.id
             }
         }
+        .onChange(of: showsTaskPicker) { _, isPresented in
+            guard !isPresented, presentsTaskComposerAfterPicker else { return }
+            presentsTaskComposerAfterPicker = false
+
+            Task { @MainActor in
+                await Task.yield()
+                showsTaskComposer = true
+            }
+        }
+    }
+
+    private var header: some View {
+        HStack(spacing: 12) {
+            if onClose != nil {
+                Button(action: close) {
+                    Image(systemName: "chevron.left")
+                        .frame(width: 24, height: 24)
+                }
+                .buttonStyle(.borderless)
+                .accessibilityLabel(String(localized: "戻る"))
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(String(localized: "Flowを編集"))
+                    .font(.title3.weight(.semibold))
+                Text(dateText)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            if onClose == nil {
+                Button(action: close) {
+                    Image(systemName: "xmark")
+                }
+                .buttonStyle(.borderless)
+                .accessibilityLabel(String(localized: "閉じる"))
+            }
+        }
+        .padding(20)
+    }
+
+    private var taskSelectionButton: some View {
+        Button {
+            showsTaskPicker = true
+        } label: {
+            HStack(spacing: 12) {
+                Text(selectedDirection?.symbolName ?? DefaultDirections.taskInboxSymbol)
+                    .font(.title2)
+                    .frame(width: 44, height: 44)
+                    .background(selectionTint.opacity(0.16))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(selectionTitle)
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+
+                    Text(selectionSubtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 0)
+
+                Image(systemName: "chevron.down")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 11)
+            .contentShape(Rectangle())
+            .background(Color.primary.opacity(0.05))
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .overlay {
+                RoundedRectangle(cornerRadius: 14)
+                    .strokeBorder(Color.primary.opacity(0.08))
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(String(localized: "Flowタスクを選択"))
+    }
+
+    private var selectionTitle: String {
+        if let selectedTodo {
+            return TodoDisplay.title(for: selectedTodo)
+        }
+        return selectedDirection?.name ?? String(localized: "タスクなし")
+    }
+
+    private var selectionSubtitle: String {
+        if let selectedTodo {
+            return selectedTodo.direction?.name ?? String(localized: "その他")
+        }
+        return String(localized: "タスクなし")
+    }
+
+    private var selectionTint: Color {
+        guard let selectedDirection, !DefaultDirections.isTaskInbox(selectedDirection) else {
+            return .secondary
+        }
+        return Color(hex: selectedDirection.colorHex)
     }
 
     @ViewBuilder
@@ -309,6 +377,11 @@ struct FlowHistoryInspectorView: View {
         )
         try? modelContext.save()
         close()
+    }
+
+    private func presentTaskComposer() {
+        presentsTaskComposerAfterPicker = true
+        showsTaskPicker = false
     }
 
     private func close() {

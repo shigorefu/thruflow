@@ -984,7 +984,7 @@ struct FlowMiniPlayerView: View {
     }
 }
 
-private struct FlowTaskPickerView: View {
+struct FlowTaskPickerView: View {
     let directions: [Direction]
     let todos: [Todo]
     let selectedDirectionID: UUID?
