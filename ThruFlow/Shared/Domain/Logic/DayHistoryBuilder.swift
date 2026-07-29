@@ -41,6 +41,7 @@ struct DayHistorySnapshot {
                 guard let direction = directionTodos.first?.direction else { return nil }
                 return DayHistoryDirectionSummary(
                     directionID: direction.id,
+                    directionType: direction.type,
                     symbol: direction.symbolName,
                     name: direction.name,
                     colorHex: direction.colorHex,
@@ -51,6 +52,7 @@ struct DayHistorySnapshot {
             }
             return DayHistoryDirectionSummary(
                 directionID: firstFlow.directionID,
+                directionType: firstFlow.directionType,
                 symbol: firstFlow.directionSymbol,
                 name: firstFlow.directionName,
                 colorHex: firstFlow.directionColorHex,
@@ -93,6 +95,7 @@ struct DayHistorySnapshot {
                 todos: [representative] + displayedTodos.filter { $0.id != representative.id },
                 linkedTodoIDs: todoIDs,
                 directionID: direction?.id,
+                directionType: direction?.type ?? .neutral,
                 title: TodoDisplay.title(for: representative),
                 directionSymbol: direction?.symbolName ?? "📥",
                 directionName: direction?.name ?? String(localized: "その他"),
@@ -112,6 +115,7 @@ struct DayHistorySnapshot {
                 todos: [],
                 linkedTodoIDs: [],
                 directionID: first.directionID,
+                directionType: first.directionType,
                 title: first.taskTitle,
                 directionSymbol: first.directionSymbol,
                 directionName: first.directionName,
@@ -143,6 +147,7 @@ struct DayHistoryFlow: Identifiable {
     let todoID: UUID?
     let taskTitle: String
     let directionID: UUID
+    let directionType: DirectionType
     let directionSymbol: String
     let directionName: String
     let directionColorHex: String
@@ -169,6 +174,7 @@ struct DayHistoryTaskSummary: Identifiable {
     let todos: [Todo]
     let linkedTodoIDs: Set<UUID>
     let directionID: UUID?
+    let directionType: DirectionType
     let title: String
     let directionSymbol: String
     let directionName: String
@@ -192,6 +198,7 @@ struct DayHistoryTaskSummary: Identifiable {
 
 struct DayHistoryDirectionSummary: Identifiable {
     let directionID: UUID
+    let directionType: DirectionType
     let symbol: String
     let name: String
     let colorHex: String
@@ -339,6 +346,7 @@ struct DayHistoryBuilder {
             todoID: todo?.id,
             taskTitle: taskTitle,
             directionID: direction?.id ?? session.id,
+            directionType: direction?.type ?? .neutral,
             directionSymbol: direction?.symbolName ?? "📥",
             directionName: direction?.name ?? fallbackName,
             directionColorHex: direction?.colorHex ?? "#8E8E93",

@@ -128,7 +128,7 @@ struct HistorySeriesTimelineView: View {
         case .flow:
             return CGSize(width: 540, height: 580)
         case .rest:
-            return CGSize(width: 360, height: 220)
+            return CGSize(width: 360, height: 280)
         }
     }
 
@@ -213,7 +213,7 @@ struct HistoryDayTimelineSheet: View {
         case .flow:
             return CGSize(width: 540, height: 580)
         case .rest:
-            return CGSize(width: 360, height: 220)
+            return CGSize(width: 360, height: 280)
         }
     }
 

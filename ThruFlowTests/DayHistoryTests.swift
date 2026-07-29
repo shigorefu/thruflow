@@ -737,4 +737,32 @@ struct DayHistoryTests {
         #expect(editedBreak.adjustedEndAt == start.addingTimeInterval(27 * 60))
         #expect(second.startedAt == start.addingTimeInterval(35 * 60))
     }
+
+    @Test
+    func breakEndTimeConvertsClockSelectionToDurationAcrossMidnight() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let start = calendar.date(
+            from: DateComponents(year: 2026, month: 7, day: 29, hour: 23, minute: 55)
+        )!
+        let selectedClock = calendar.date(
+            from: DateComponents(year: 2026, month: 7, day: 29, hour: 0, minute: 10)
+        )!
+        let flowBreak = FlowBreak(
+            seriesID: UUID(),
+            previousSessionID: UUID(),
+            startedAt: start,
+            plannedDurationSeconds: 5 * 60
+        )
+        let editor = FlowBreakEditor()
+
+        let normalizedEnd = editor.normalizedEndTime(
+            for: flowBreak,
+            selectedTime: selectedClock,
+            calendar: calendar
+        )
+
+        #expect(normalizedEnd == start.addingTimeInterval(15 * 60))
+        #expect(editor.durationMinutes(from: start, to: normalizedEnd) == 15)
+    }
 }

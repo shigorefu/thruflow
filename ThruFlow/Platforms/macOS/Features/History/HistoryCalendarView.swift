@@ -22,6 +22,7 @@ struct HistoryCalendarView: View {
     @Binding var visibleKinds: Set<HistoryCalendarItemKind>
     let sidebarTitle: String
     let sidebarHeader: AnyView
+    let sidebarSummary: AnyView?
 
     @State private var inspectedSession: FlowSession?
     @State private var editedBreak: FlowBreak?
@@ -156,7 +157,7 @@ struct HistoryCalendarView: View {
     private var wideSidebarContent: some View {
         switch range {
         case .day:
-            historyPeriodSidebar {
+            historyPeriodSidebar(summary: sidebarSummary) {
                 HistoryMiniCalendar(
                     selectedDate: $selectedDate,
                     onDropPayload: moveHistoryPayload
@@ -229,6 +230,7 @@ struct HistoryCalendarView: View {
     }
 
     private func historyPeriodSidebar<Content: View>(
+        summary: AnyView? = nil,
         @ViewBuilder content: () -> Content
     ) -> some View {
         VStack(spacing: 0) {
@@ -238,6 +240,12 @@ struct HistoryCalendarView: View {
 
             content()
                 .padding(16)
+
+            if let summary {
+                Divider()
+                summary
+                    .padding(16)
+            }
 
             Spacer(minLength: 0)
         }
@@ -1152,6 +1160,7 @@ private struct HistoryMonthGrid: View {
 }
 
 struct HistoryBreakEditorView: View {
+    @Environment(\.calendar) private var calendar
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
@@ -1159,6 +1168,7 @@ struct HistoryBreakEditorView: View {
     let flowBreak: FlowBreak
     let onClose: (() -> Void)?
     @State private var minutes: Int
+    @State private var endTime: Date
     @State private var errorMessage: String?
 
     private let editor = FlowBreakEditor()
@@ -1166,8 +1176,10 @@ struct HistoryBreakEditorView: View {
     init(flowBreak: FlowBreak, onClose: (() -> Void)? = nil) {
         self.flowBreak = flowBreak
         self.onClose = onClose
-        let duration = flowBreak.resolvedEndAt(referenceDate: .now).timeIntervalSince(flowBreak.startedAt)
+        let resolvedEnd = flowBreak.resolvedEndAt(referenceDate: .now)
+        let duration = resolvedEnd.timeIntervalSince(flowBreak.startedAt)
         _minutes = State(initialValue: max(1, Int(ceil(duration / 60))))
+        _endTime = State(initialValue: resolvedEnd)
     }
 
     var body: some View {
@@ -1185,9 +1197,6 @@ struct HistoryBreakEditorView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Label(flowBreak.isLongBreak ? String(localized: "Long Break") : String(localized: "休憩"), systemImage: "cup.and.saucer")
                         .font(.title3.weight(.semibold))
-                    Text(String(localized: "開始 \(flowBreak.startedAt.formatted(date: .omitted, time: .shortened))"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
                 }
                 Spacer()
 
@@ -1200,13 +1209,45 @@ struct HistoryBreakEditorView: View {
                 }
             }
 
+            HStack(spacing: 16) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(String(localized: "開始"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(flowBreak.startedAt.formatted(date: .omitted, time: .shortened))
+                        .monospacedDigit()
+                }
+
+                Image(systemName: "arrow.right")
+                    .foregroundStyle(.tertiary)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(String(localized: "終了"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    DatePicker(
+                        String(localized: "終了"),
+                        selection: endTimeBinding,
+                        displayedComponents: .hourAndMinute
+                    )
+                    .labelsHidden()
+                }
+
+                Spacer(minLength: 8)
+            }
+
             HStack {
-                Text(String(localized: "時間"))
+                Text(String(localized: "長さ"))
                 Spacer()
                 TextField(String(localized: "分"), value: $minutes, format: .number)
                     .textFieldStyle(.roundedBorder)
                     .frame(width: 76)
                     .multilineTextAlignment(.trailing)
+                    .onChange(of: minutes) { _, newValue in
+                        guard (FlowBreakEditor.minimumDurationMinutes...FlowBreakEditor.maximumDurationMinutes)
+                            .contains(newValue) else { return }
+                        endTime = flowBreak.startedAt.addingTimeInterval(TimeInterval(newValue * 60))
+                    }
                 Text(String(localized: "分"))
                     .foregroundStyle(.secondary)
             }
@@ -1226,7 +1267,25 @@ struct HistoryBreakEditorView: View {
             }
         }
         .padding(18)
-        .frame(width: 360, height: 220)
+        .frame(width: 360, height: 280)
+    }
+
+    private var endTimeBinding: Binding<Date> {
+        Binding(
+            get: { endTime },
+            set: { selectedEnd in
+                let normalizedEnd = editor.normalizedEndTime(
+                    for: flowBreak,
+                    selectedTime: selectedEnd,
+                    calendar: calendar
+                )
+                endTime = normalizedEnd
+                minutes = editor.durationMinutes(
+                    from: flowBreak.startedAt,
+                    to: normalizedEnd
+                )
+            }
+        )
     }
 
     private func save() {

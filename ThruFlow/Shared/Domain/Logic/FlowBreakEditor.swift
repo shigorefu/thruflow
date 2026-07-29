@@ -21,6 +21,39 @@ struct FlowBreakEditor {
     static let minimumDurationMinutes = 1
     static let maximumDurationMinutes = 720
 
+    func normalizedEndTime(
+        for flowBreak: FlowBreak,
+        selectedTime: Date,
+        calendar: Calendar
+    ) -> Date {
+        let components = calendar.dateComponents([.hour, .minute], from: selectedTime)
+        var candidate = calendar.date(
+            bySettingHour: components.hour ?? 0,
+            minute: components.minute ?? 0,
+            second: 0,
+            of: flowBreak.startedAt
+        ) ?? selectedTime
+
+        if candidate <= flowBreak.startedAt {
+            candidate = calendar.date(byAdding: .day, value: 1, to: candidate) ?? candidate
+        }
+
+        let maximumEnd = flowBreak.startedAt.addingTimeInterval(
+            TimeInterval(Self.maximumDurationMinutes * 60)
+        )
+        return min(candidate, maximumEnd)
+    }
+
+    func durationMinutes(from start: Date, to end: Date) -> Int {
+        min(
+            Self.maximumDurationMinutes,
+            max(
+                Self.minimumDurationMinutes,
+                Int(ceil(end.timeIntervalSince(start) / 60))
+            )
+        )
+    }
+
     func updateDuration(
         of flowBreak: FlowBreak,
         minutes: Int,

@@ -22,6 +22,8 @@ struct DayHistoryView: View {
     @State private var selectedMode: DayHistoryMode = .calendar
     @State private var selectedRange: HistoryCalendarRange = .week
     @State private var visibleCalendarKinds = Set(HistoryCalendarItemKind.allCases)
+    @State private var visibleTaskTypes = Set(DirectionType.allCases)
+    @State private var visibleDirectionTypes = Set(DirectionType.allCases)
     @State private var searchText = ""
     @State private var isSearchPresented = false
     @State private var expandedTaskIDs: Set<String> = []
@@ -85,16 +87,12 @@ struct DayHistoryView: View {
         .navigationTitle(String(localized: "履歴"))
         .toolbar {
             ToolbarItem(placement: .navigation) {
-                HStack(spacing: 8) {
-                    if let onClose {
-                        Button(action: onClose) {
-                            Image(systemName: "chevron.left")
-                        }
-                        .help(String(localized: "統計に戻る"))
-                        .accessibilityLabel(String(localized: "統計に戻る"))
+                if let onClose {
+                    Button(action: onClose) {
+                        Image(systemName: "chevron.left")
                     }
-
-                    HistoryVisibilityMenu(visibleKinds: $visibleCalendarKinds)
+                    .help(String(localized: "統計に戻る"))
+                    .accessibilityLabel(String(localized: "統計に戻る"))
                 }
             }
 
@@ -104,10 +102,13 @@ struct DayHistoryView: View {
             }
 
             ToolbarItem(placement: .primaryAction) {
-                MacToolbarSearchControl(
-                    text: $searchText,
-                    isPresented: $isSearchPresented
-                )
+                HStack(spacing: 8) {
+                    contextualFilterMenu
+                    MacToolbarSearchControl(
+                        text: $searchText,
+                        isPresented: $isSearchPresented
+                    )
+                }
             }
         }
         .sheet(item: $editingTodo) { todo in
@@ -176,6 +177,24 @@ struct DayHistoryView: View {
         .accessibilityLabel(String(localized: "履歴の期間"))
     }
 
+    @ViewBuilder
+    private var contextualFilterMenu: some View {
+        switch selectedMode {
+        case .calendar:
+            HistoryVisibilityMenu(visibleKinds: $visibleCalendarKinds)
+        case .tasks:
+            HistoryAggregateFilterMenu(
+                visibleTypes: $visibleTaskTypes,
+                neutralLabel: String(localized: "タスク")
+            )
+        case .directions:
+            HistoryAggregateFilterMenu(
+                visibleTypes: $visibleDirectionTypes,
+                neutralLabel: String(localized: "通常")
+            )
+        }
+    }
+
     private var summary: some View {
         LazyVGrid(columns: [
             GridItem(.flexible(), spacing: 10),
@@ -213,7 +232,10 @@ struct DayHistoryView: View {
                     breaks: searchFilteredBreaks,
                     visibleKinds: $visibleCalendarKinds,
                     sidebarTitle: dateTitle,
-                    sidebarHeader: AnyView(historyToolbar)
+                    sidebarHeader: AnyView(historyToolbar),
+                    sidebarSummary: selectedRange == .day
+                        ? AnyView(daySidebarSummary)
+                        : nil
                 )
             case .tasks:
                 aggregateWorkspace { tasksContent }
@@ -326,6 +348,14 @@ struct DayHistoryView: View {
         .background(Color.secondary.opacity(0.035))
     }
 
+    private var daySidebarSummary: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(String(localized: "この日の記録"))
+                .font(.headline)
+            summary
+        }
+    }
+
     private var tasksContent: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -354,18 +384,18 @@ struct DayHistoryView: View {
                             .padding(.top, 6)
 
                         taskRows(
-                            section.snapshot.taskSummaries,
+                            filteredTasks(in: section.snapshot),
                             snapshot: section.snapshot,
                             expansionPrefix: section.id,
                             allowsGroupedCheckboxToggle: true
                         )
                     }
                 }
-            } else if snapshot.taskSummaries.isEmpty {
+            } else if filteredTaskSummaries.isEmpty {
                 emptyState
             } else {
                 taskRows(
-                    snapshot.taskSummaries,
+                    filteredTaskSummaries,
                     snapshot: snapshot,
                     expansionPrefix: "range",
                     allowsGroupedCheckboxToggle: selectedRange == .day
@@ -379,10 +409,10 @@ struct DayHistoryView: View {
             Text(String(localized: "方向別"))
                 .font(.headline)
 
-            if snapshot.directionSummaries.isEmpty {
+            if filteredDirectionSummaries.isEmpty {
                 emptyState
             } else {
-                ForEach(snapshot.directionSummaries) { direction in
+                ForEach(filteredDirectionSummaries) { direction in
                     HistoryExpandableDirectionRow(
                         direction: direction,
                         tasks: tasks(for: direction),
@@ -485,9 +515,21 @@ struct DayHistoryView: View {
                 sessions: searchFilteredSessions,
                 todos: searchFilteredTodos
             )
-            guard !daySnapshot.taskSummaries.isEmpty else { return nil }
+            guard !filteredTasks(in: daySnapshot).isEmpty else { return nil }
             return HistoryTaskDaySection(date: date, snapshot: daySnapshot)
         }
+    }
+
+    private var filteredTaskSummaries: [DayHistoryTaskSummary] {
+        filteredTasks(in: snapshot)
+    }
+
+    private var filteredDirectionSummaries: [DayHistoryDirectionSummary] {
+        snapshot.directionSummaries.filter { visibleDirectionTypes.contains($0.directionType) }
+    }
+
+    private func filteredTasks(in snapshot: DayHistorySnapshot) -> [DayHistoryTaskSummary] {
+        snapshot.taskSummaries.filter { visibleTaskTypes.contains($0.directionType) }
     }
 
     private var searchFilteredTodos: [Todo] {
@@ -699,6 +741,42 @@ private struct HistorySummaryTile: View {
         .padding(11)
         .background(Color.secondary.opacity(0.09))
         .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+}
+
+private struct HistoryAggregateFilterMenu: View {
+    @Binding var visibleTypes: Set<DirectionType>
+    let neutralLabel: String
+
+    var body: some View {
+        Menu {
+            filterToggle(neutralLabel, type: .neutral)
+            filterToggle(String(localized: "習慣"), type: .habit)
+            filterToggle(String(localized: "ナイス"), type: .nice)
+        } label: {
+            Image(systemName: "line.3.horizontal.decrease")
+                .frame(width: 24, height: 24)
+        }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
+        .accessibilityLabel(String(localized: "表示内容"))
+    }
+
+    private func filterToggle(_ title: String, type: DirectionType) -> some View {
+        Toggle(
+            title,
+            isOn: Binding(
+                get: { visibleTypes.contains(type) },
+                set: { isVisible in
+                    if isVisible {
+                        visibleTypes.insert(type)
+                    } else {
+                        visibleTypes.remove(type)
+                    }
+                }
+            )
+        )
+        .toggleStyle(.checkbox)
     }
 }
 
