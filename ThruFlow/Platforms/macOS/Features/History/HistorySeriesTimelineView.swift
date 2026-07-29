@@ -5,6 +5,7 @@
 //  Created by Codex on 2026/07/29.
 //
 
+import AppKit
 import SwiftUI
 
 struct HistoryWeekSeriesBlockView: View {
@@ -113,7 +114,9 @@ struct HistorySeriesTimelineView: View {
         }
         .clipped()
         .frame(width: contentSize.width, height: contentSize.height)
-        .animation(.easeInOut(duration: 0.24), value: selectedItem?.id)
+        .background {
+            AnimatedSheetWindowSize(size: contentSize)
+        }
     }
 
     private var contentSize: CGSize {
@@ -156,6 +159,78 @@ struct HistorySeriesTimelineView: View {
         let date = block.startedAt.formatted(.dateTime.locale(locale).month().day().weekday(.abbreviated))
         let time = "\(block.startedAt.formatted(date: .omitted, time: .shortened))–\(block.endedAt.formatted(date: .omitted, time: .shortened))"
         return "\(date) · \(time)"
+    }
+}
+
+private struct AnimatedSheetWindowSize: NSViewRepresentable {
+    let size: CGSize
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        context.coordinator.targetSize = size
+        DispatchQueue.main.async {
+            context.coordinator.captureInitialWindow(from: view)
+        }
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        guard context.coordinator.targetSize != size else { return }
+
+        let previousSize = context.coordinator.targetSize
+        context.coordinator.targetSize = size
+
+        DispatchQueue.main.async {
+            context.coordinator.animateWindow(
+                from: previousSize,
+                to: size,
+                attachedTo: nsView
+            )
+        }
+    }
+
+    final class Coordinator {
+        var targetSize: CGSize = .zero
+        private weak var window: NSWindow?
+
+        func captureInitialWindow(from view: NSView) {
+            window = view.window
+        }
+
+        func animateWindow(from previousSize: CGSize, to targetSize: CGSize, attachedTo view: NSView) {
+            guard previousSize != .zero,
+                  previousSize != targetSize,
+                  let window = view.window ?? window else {
+                self.window = view.window
+                return
+            }
+
+            self.window = window
+            let targetFrame = frame(for: targetSize, preservingTopOf: window.frame, in: window)
+            let previousFrame = frame(for: previousSize, preservingTopOf: window.frame, in: window)
+
+            window.setFrame(previousFrame, display: false)
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.24
+                context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+                window.animator().setFrame(targetFrame, display: true)
+            }
+        }
+
+        private func frame(for contentSize: CGSize, preservingTopOf currentFrame: NSRect, in window: NSWindow) -> NSRect {
+            let contentRect = NSRect(origin: .zero, size: contentSize)
+            let frameSize = window.frameRect(forContentRect: contentRect).size
+            return NSRect(
+                x: currentFrame.midX - (frameSize.width / 2),
+                y: currentFrame.maxY - frameSize.height,
+                width: frameSize.width,
+                height: frameSize.height
+            )
+        }
     }
 }
 

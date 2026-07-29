@@ -104,11 +104,6 @@ struct HistoryCalendarView: View {
         }
     }
 
-    private var selectedDayItem: HistoryCalendarItem? {
-        guard let selectedDayItemID else { return nil }
-        return filteredItems.first { $0.id == selectedDayItemID }
-    }
-
     @ViewBuilder
     private var widePrimaryContent: some View {
         switch range {
@@ -152,14 +147,12 @@ struct HistoryCalendarView: View {
     private var wideSidebarContent: some View {
         switch range {
         case .day:
-            HistoryDayInspectorPane(
-                selectedDate: $selectedDate,
-                selectedItem: selectedDayItem,
-                manualFlowDraft: $manualFlowDraft,
-                sidebarHeader: sidebarHeader,
-                onEdit: openEditor,
-                onDropOnDay: moveHistoryPayload
-            )
+            historyPeriodSidebar {
+                HistoryMiniCalendar(
+                    selectedDate: $selectedDate,
+                    onDropPayload: moveHistoryPayload
+                )
+            }
         case .week:
             historyPeriodSidebar {
                 HistoryMiniCalendar(

@@ -94,7 +94,7 @@ Reason: starting focused work and seeing its accumulated shape should be the pri
 
 ## D-014: Day History Uses A Direct Record Timeline
 
-The `日` History range directly renders every actual Flow and rest record for the selected app day as a chronological vertical timeline. Cards have a stable interactive size independent of recorded duration, and internal gaps of at least one hour are represented by a quiet, vertically spacious `記録なし` row. There is no `Elastic | 24時間` choice in this view. Selecting a record opens its canonical editor in a separate system sheet so the Day timeline remains stable. A right pane retains the wide-layout date mini-calendar and selected-record context. Inside a Week series sheet, record editing remains an animated push transition with a leading Back control.
+The `日` History range directly renders every actual Flow and rest record for the selected app day as a chronological vertical timeline. Cards have a stable interactive size independent of recorded duration, and internal gaps of at least one hour are represented by a quiet, vertically spacious `記録なし` row. There is no `Elastic | 24時間` choice in this view. Selecting a record opens its canonical editor in a separate system sheet so the Day timeline remains stable. A right pane retains only the wide-layout date mini-calendar; record properties are not duplicated below it. Inside a Week series sheet, record editing remains an animated push transition with a leading Back control, and the sheet animates between the timeline, Flow editor, and compact rest editor sizes.
 
 Reason: day history needs enough vertical and horizontal space to inspect short Flow records without duplicating editors or compressing the timeline into an unreadable calendar column.
 
