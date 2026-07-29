@@ -162,6 +162,85 @@ struct HistorySeriesTimelineView: View {
     }
 }
 
+struct HistoryDayTimelineSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.locale) private var locale
+
+    let date: Date
+    let items: [HistoryCalendarItem]
+    @State private var selectedItem: HistoryCalendarItem?
+
+    var body: some View {
+        ZStack {
+            if let selectedItem {
+                HistoryRecordEditorView(item: selectedItem) {
+                    withAnimation(.easeInOut(duration: 0.24)) {
+                        self.selectedItem = nil
+                    }
+                }
+                .transition(.move(edge: .trailing))
+            } else {
+                VStack(spacing: 0) {
+                    header
+                    Divider()
+
+                    HistoryVerticalTimelineView(
+                        items: items,
+                        selectedItemID: nil,
+                        gapInterval: nil
+                    ) { item in
+                        withAnimation(.easeInOut(duration: 0.24)) {
+                            selectedItem = item
+                        }
+                    }
+                }
+                .transition(.move(edge: .leading))
+            }
+        }
+        .clipped()
+        .frame(width: contentSize.width, height: contentSize.height)
+        .background {
+            AnimatedSheetWindowSize(size: contentSize)
+        }
+    }
+
+    private var contentSize: CGSize {
+        guard let selectedItem else {
+            return CGSize(width: 500, height: 620)
+        }
+
+        switch selectedItem.kind {
+        case .flow:
+            return CGSize(width: 540, height: 580)
+        case .rest:
+            return CGSize(width: 360, height: 220)
+        }
+    }
+
+    private var header: some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(date.formatted(.dateTime.locale(locale).month().day().weekday(.wide)))
+                    .font(.title3.weight(.semibold))
+                Text(String(localized: "この日の記録"))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            Button {
+                dismiss()
+            } label: {
+                Image(systemName: "xmark")
+            }
+            .buttonStyle(.borderless)
+            .accessibilityLabel(String(localized: "閉じる"))
+        }
+        .padding(20)
+    }
+}
+
 private struct AnimatedSheetWindowSize: NSViewRepresentable {
     let size: CGSize
 
@@ -266,6 +345,8 @@ struct HistoryVerticalTimelineView: View {
         HistoryVerticalTimelineEntry.build(items: items, gapInterval: gapInterval)
     }
 
+    private let chainPolicy = HistoryTimelineChainPolicy()
+
     var body: some View {
         if entries.isEmpty {
             ContentUnavailableView(
@@ -282,23 +363,36 @@ struct HistoryVerticalTimelineView: View {
                         case .item(let item):
                             HistoryTimelineItemRow(
                                 item: item,
-                                isFirst: index == entries.startIndex,
-                                isLast: index == entries.index(before: entries.endIndex),
+                                isFirst: !connectsPrevious(item, at: index),
+                                isLast: !connectsNext(item, at: index),
                                 isSelected: item.id == selectedItemID,
                                 onSelect: onSelect
                             )
                         case .gap(let gap):
-                            HistoryTimelineGapRow(
-                                gap: gap,
-                                isFirst: index == entries.startIndex,
-                                isLast: index == entries.index(before: entries.endIndex)
-                            )
+                            HistoryTimelineGapRow(gap: gap)
                         }
                     }
                 }
                 .padding(20)
             }
         }
+    }
+
+    private func connectsPrevious(_ item: HistoryCalendarItem, at index: Int) -> Bool {
+        guard index > entries.startIndex,
+              case .item(let previous) = entries[index - 1] else {
+            return false
+        }
+        return chainPolicy.connects(previous, to: item)
+    }
+
+    private func connectsNext(_ item: HistoryCalendarItem, at index: Int) -> Bool {
+        let nextIndex = index + 1
+        guard nextIndex < entries.endIndex,
+              case .item(let next) = entries[nextIndex] else {
+            return false
+        }
+        return chainPolicy.connects(item, to: next)
     }
 }
 
@@ -404,8 +498,6 @@ private struct HistoryTimelineGapRow: View {
     @Environment(\.locale) private var locale
 
     let gap: HistoryTimelineGap
-    let isFirst: Bool
-    let isLast: Bool
 
     var body: some View {
         HStack(spacing: 12) {
@@ -414,19 +506,9 @@ private struct HistoryTimelineGapRow: View {
                 .foregroundStyle(.tertiary)
                 .frame(width: 54, alignment: .trailing)
 
-            VStack(spacing: 0) {
-                Rectangle()
-                    .fill(isFirst ? Color.clear : Color.secondary.opacity(0.18))
-                    .frame(width: 2)
-
-                Circle()
-                    .strokeBorder(Color.secondary.opacity(0.35), lineWidth: 1)
-                    .frame(width: 8, height: 8)
-
-                Rectangle()
-                    .fill(isLast ? Color.clear : Color.secondary.opacity(0.18))
-                    .frame(width: 2)
-            }
+            Circle()
+                .strokeBorder(Color.secondary.opacity(0.35), lineWidth: 1)
+                .frame(width: 8, height: 8)
             .frame(width: 12)
             .frame(height: 82)
 

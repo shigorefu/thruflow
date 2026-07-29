@@ -208,6 +208,15 @@ struct HistoryCalendarSeriesProjector {
     }
 }
 
+struct HistoryTimelineChainPolicy {
+    var continuityTolerance: TimeInterval = 1
+
+    func connects(_ previous: HistoryCalendarItem, to next: HistoryCalendarItem) -> Bool {
+        guard previous.seriesBlockID == next.seriesBlockID else { return false }
+        return next.startedAt <= previous.endedAt.addingTimeInterval(continuityTolerance)
+    }
+}
+
 struct HistoryTimelineGap: Equatable {
     let startedAt: Date
     let endedAt: Date

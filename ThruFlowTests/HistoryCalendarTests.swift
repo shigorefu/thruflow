@@ -246,6 +246,75 @@ struct HistoryCalendarTests {
         #expect(blocks.first { $0.seriesID == secondSeriesID }?.items.count == 1)
     }
 
+    @Test func dayTimelineConnectsOnlyContinuousRecordsFromTheSameSeries() throws {
+        let base = Date(timeIntervalSince1970: 10_000)
+        let firstSeriesID = UUID()
+        let secondSeriesID = UUID()
+        let direction = Direction(name: "仕事", type: .neutral)
+        let firstSession = FlowSession(
+            seriesID: firstSeriesID,
+            direction: direction,
+            mode: .twentyFiveFive,
+            phase: .completed,
+            status: .completed,
+            startedAt: base,
+            plannedEndAt: base.addingTimeInterval(25 * 60),
+            endedAt: base.addingTimeInterval(25 * 60),
+            plannedFocusDurationSeconds: 25 * 60,
+            actualFocusDurationSeconds: 25 * 60,
+            plannedBreakDurationSeconds: 5 * 60
+        )
+        let recordedBreak = FlowBreak(
+            seriesID: firstSeriesID,
+            previousSessionID: firstSession.id,
+            startedAt: base.addingTimeInterval(25 * 60),
+            timerStoppedAt: base.addingTimeInterval(30 * 60),
+            plannedDurationSeconds: 5 * 60
+        )
+        let sameSeriesAfterMissingRecord = FlowSession(
+            seriesID: firstSeriesID,
+            direction: direction,
+            mode: .twentyFiveFive,
+            phase: .completed,
+            status: .completed,
+            startedAt: base.addingTimeInterval(40 * 60),
+            plannedEndAt: base.addingTimeInterval(65 * 60),
+            endedAt: base.addingTimeInterval(65 * 60),
+            plannedFocusDurationSeconds: 25 * 60,
+            actualFocusDurationSeconds: 25 * 60,
+            plannedBreakDurationSeconds: 5 * 60
+        )
+        let nextSeries = FlowSession(
+            seriesID: secondSeriesID,
+            direction: direction,
+            mode: .twentyFiveFive,
+            phase: .completed,
+            status: .completed,
+            startedAt: base.addingTimeInterval(65 * 60),
+            plannedEndAt: base.addingTimeInterval(90 * 60),
+            endedAt: base.addingTimeInterval(90 * 60),
+            plannedFocusDurationSeconds: 25 * 60,
+            actualFocusDurationSeconds: 25 * 60,
+            plannedBreakDurationSeconds: 5 * 60
+        )
+        let interval = DateInterval(start: base, end: base.addingTimeInterval(2 * 3600))
+        let items = HistoryCalendarBuilder(calendar: calendar).build(
+            interval: interval,
+            sessions: [firstSession, sameSeriesAfterMissingRecord, nextSeries],
+            breaks: [recordedBreak],
+            referenceDate: interval.end
+        ).items
+        let policy = HistoryTimelineChainPolicy()
+        let firstFlow = try #require(items.first { $0.session?.id == firstSession.id })
+        let breakItem = try #require(items.first { $0.flowBreak?.id == recordedBreak.id })
+        let flowAfterGap = try #require(items.first { $0.session?.id == sameSeriesAfterMissingRecord.id })
+        let flowFromNextSeries = try #require(items.first { $0.session?.id == nextSeries.id })
+
+        #expect(policy.connects(firstFlow, to: breakItem))
+        #expect(!policy.connects(breakItem, to: flowAfterGap))
+        #expect(!policy.connects(flowAfterGap, to: flowFromNextSeries))
+    }
+
     @Test func timelineGapBuilderReturnsOnlyInternalLongGaps() {
         let base = Date(timeIntervalSince1970: 10_000)
         let interval = DateInterval(start: base, end: base.addingTimeInterval(6 * 3600))

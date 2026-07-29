@@ -42,7 +42,7 @@ The iOS deployment target is 17.0 even when building with Xcode 26 and the iOS
 - `DayHistoryBuilder` creates daily Task/Direction aggregates and legacy day projections.
 - `HistoryCalendarBuilder` creates day/week/month calendar projections from actual Flow and break records; Todo completion never creates a calendar item. `FlowHistoryEditor` moves a completed FlowSession and all of its segments by one shared time offset for calendar drag-and-drop.
 - `FlowDashboardBuilder` groups connected records by `seriesID` into continuous dashboard series spans without mutating calendar history.
-- `HistoryTimelineGapBuilder` derives long internal gaps for the macOS chronological day timeline independently from SwiftUI.
+- `HistoryTimelineGapBuilder` derives long internal gaps for the macOS chronological day timeline independently from SwiftUI, while `HistoryTimelineChainPolicy` connects its rail only across continuous persisted records of the same Flow series.
 - `HistoryCalendarSeriesProjector` groups connected Flow/rest records into week-only composite presentation blocks while preserving the underlying records for editing.
 - `HistoryOverlapLayout` assigns deterministic side-by-side lanes using actual and minimum visual duration so short records cannot overlap in rendering.
 - `FlowHistoryEditor` creates independent completed manual Flow records and delegates affected progress rebuilding to `FlowProgressReconciler` when history changes.

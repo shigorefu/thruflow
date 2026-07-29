@@ -3388,6 +3388,7 @@
       }
     },
     "ほか%lld件" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4914,6 +4915,22 @@
         }
       }
     },
+    "戻る" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Back"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Назад"
+          }
+        }
+      }
+    },
     "新しいFlow" : {
       "localizations" : {
         "en" : {
@@ -5289,6 +5306,7 @@
       }
     },
     "日の時間軸" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5529,6 +5547,7 @@
       }
     },
     "時間軸" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6756,6 +6775,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "До этого времени задачи и Flow относятся к предыдущему дню."
+          }
+        }
+      }
+    },
+    "詳細" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Details"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подробнее"
           }
         }
       }

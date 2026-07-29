@@ -26,6 +26,7 @@ struct HistoryCalendarView: View {
     @State private var inspectedSession: FlowSession?
     @State private var editedBreak: FlowBreak?
     @State private var inspectedSeries: HistoryCalendarSeriesBlock?
+    @State private var inspectedDay: HistoryDayTimelineSelection?
     @State private var selectedDayItemID: String?
     @State private var manualFlowDraft: HistoryFlowCreationDraft?
 
@@ -86,6 +87,13 @@ struct HistoryCalendarView: View {
             HistorySeriesTimelineView(block: block)
                 .environmentObject(activeFlowStore)
         }
+        .sheet(item: $inspectedDay) { selection in
+            HistoryDayTimelineSheet(
+                date: selection.date,
+                items: selection.items
+            )
+            .environmentObject(activeFlowStore)
+        }
         .sheet(
             isPresented: Binding(
                 get: { range == .week && manualFlowDraft != nil },
@@ -138,6 +146,7 @@ struct HistoryCalendarView: View {
                 selectedDate: $selectedDate,
                 items: filteredItems,
                 onSelect: openEditor,
+                onShowDay: openDayTimeline,
                 onMove: moveHistoryItem
             )
         }
@@ -210,6 +219,7 @@ struct HistoryCalendarView: View {
                     selectedDate: $selectedDate,
                     items: filteredItems,
                     onSelect: openEditor,
+                    onShowDay: openDayTimeline,
                     onMove: moveHistoryItem
                 )
             } inspector: {
@@ -249,6 +259,18 @@ struct HistoryCalendarView: View {
     private func openSeries(_ block: HistoryCalendarSeriesBlock) {
         manualFlowDraft = nil
         inspectedSeries = block
+    }
+
+    private func openDayTimeline(_ date: Date) {
+        manualFlowDraft = nil
+        let day = calendar.startOfDay(for: date)
+        selectedDate = day
+        inspectedDay = HistoryDayTimelineSelection(
+            date: day,
+            items: filteredItems.filter {
+                calendar.isDate($0.startedAt, inSameDayAs: day)
+            }
+        )
     }
 
     private func updateManualFlowDraft(startedAt: Date, endedAt: Date) {
@@ -294,6 +316,13 @@ struct HistoryCalendarView: View {
         guard payload.hasPrefix("history-flow:") else { return nil }
         return filteredItems.first { "history-flow:\($0.id)" == payload }
     }
+}
+
+private struct HistoryDayTimelineSelection: Identifiable {
+    let date: Date
+    let items: [HistoryCalendarItem]
+
+    var id: Date { date }
 }
 
 private struct HistoryCalendarPeriodWorkspace<Content: View, Inspector: View>: View {
@@ -993,6 +1022,7 @@ private struct HistoryMonthGrid: View {
     @Binding var selectedDate: Date
     let items: [HistoryCalendarItem]
     let onSelect: (HistoryCalendarItem) -> Void
+    let onShowDay: (Date) -> Void
     let onMove: (HistoryCalendarItem, Date) -> Bool
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 0), count: 7)
@@ -1071,9 +1101,23 @@ private struct HistoryMonthGrid: View {
             }
 
             if dayItems.count > 3 {
-                Text(String(localized: "ほか\(dayItems.count - 3)件"))
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                Button {
+                    onShowDay(day)
+                } label: {
+                    HStack(spacing: 5) {
+                        Text(String(localized: "詳細"))
+
+                        Text("\(dayItems.count)")
+                            .font(.caption2.monospacedDigit().weight(.semibold))
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 1)
+                            .background(Color.secondary.opacity(0.12), in: Capsule())
+                    }
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(Color.accentColor)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
             }
             Spacer(minLength: 0)
         }
