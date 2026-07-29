@@ -118,6 +118,7 @@ struct HistoryDayWorkspaceView: View {
 
 enum HistoryMiniCalendarIndicatorSource {
     case flowHistory
+    case filteredFlowHistory(Set<DirectionType>)
     case tasks(TaskCalendarFilter)
 }
 
@@ -172,7 +173,7 @@ struct HistoryMiniCalendar: View {
     }
 
     private var historyItems: [HistoryCalendarItem] {
-        guard case .flowHistory = indicatorSource,
+        guard showsFlowHistoryIndicators,
               let firstDay = monthDays.first,
               let lastDay = monthDays.last,
               let intervalEnd = calendar.date(byAdding: .day, value: 1, to: lastDay) else {
@@ -183,6 +184,15 @@ struct HistoryMiniCalendar: View {
             sessions: sessions,
             breaks: []
         ).items
+    }
+
+    private var showsFlowHistoryIndicators: Bool {
+        switch indicatorSource {
+        case .flowHistory, .filteredFlowHistory:
+            true
+        case .tasks:
+            false
+        }
     }
 
     var body: some View {
@@ -263,6 +273,15 @@ struct HistoryMiniCalendar: View {
         switch indicatorSource {
         case .flowHistory:
             HistoryCalendarFlowIndicators(items: flowItems, date: date, maximumVisibleCount: 3)
+        case .filteredFlowHistory(let visibleTypes):
+            HistoryCalendarFlowIndicators(
+                items: HistoryCalendarIndicatorFilter().items(
+                    from: flowItems,
+                    visibleDirectionTypes: visibleTypes
+                ),
+                date: date,
+                maximumVisibleCount: 3
+            )
         case .tasks(let filter):
             CalendarTaskIndicators(
                 todos: todos.filter(filter.includes),

@@ -85,6 +85,59 @@ struct HistoryCalendarTests {
         #expect(directionOnlyItem?.session?.direction?.id == direction.id)
     }
 
+    @Test func indicatorFilterUsesVisibleDirectionTypesAndExcludesBreaks() {
+        let base = Date(timeIntervalSince1970: 10_000)
+        let neutralFlow = HistoryCalendarItem(
+            id: "neutral",
+            kind: .flow,
+            startedAt: base,
+            endedAt: base.addingTimeInterval(60),
+            title: "Task",
+            subtitle: "Direction",
+            symbol: "📝",
+            colorHex: "#007AFF",
+            directionType: .neutral,
+            session: nil,
+            flowBreak: nil,
+            todo: nil
+        )
+        let habitFlow = HistoryCalendarItem(
+            id: "habit",
+            kind: .flow,
+            startedAt: base.addingTimeInterval(120),
+            endedAt: base.addingTimeInterval(180),
+            title: "Habit",
+            subtitle: "Direction",
+            symbol: "🔁",
+            colorHex: "#34C759",
+            directionType: .habit,
+            session: nil,
+            flowBreak: nil,
+            todo: nil
+        )
+        let habitBreak = HistoryCalendarItem(
+            id: "break",
+            kind: .rest,
+            startedAt: base.addingTimeInterval(180),
+            endedAt: base.addingTimeInterval(240),
+            title: "Break",
+            subtitle: "Direction",
+            symbol: "☕️",
+            colorHex: "#8E8E93",
+            directionType: .habit,
+            session: nil,
+            flowBreak: nil,
+            todo: nil
+        )
+
+        let filtered = HistoryCalendarIndicatorFilter().items(
+            from: [neutralFlow, habitFlow, habitBreak],
+            visibleDirectionTypes: [.habit]
+        )
+
+        #expect(filtered.map(\.id) == ["habit"])
+    }
+
     @Test func overlapLayoutSharesLanesOnlyInsideConnectedCluster() {
         let base = Date(timeIntervalSince1970: 10_000)
         let placements = HistoryOverlapLayout().place([
@@ -177,6 +230,7 @@ struct HistoryCalendarTests {
             subtitle: "仕事",
             symbol: "🌙",
             colorHex: "#007AFF",
+            directionType: .neutral,
             session: nil,
             flowBreak: nil,
             todo: nil
@@ -327,6 +381,7 @@ struct HistoryCalendarTests {
             subtitle: "",
             symbol: "1",
             colorHex: "#007AFF",
+            directionType: .neutral,
             session: nil,
             flowBreak: nil,
             todo: nil
@@ -340,6 +395,7 @@ struct HistoryCalendarTests {
             subtitle: "",
             symbol: "2",
             colorHex: "#007AFF",
+            directionType: .neutral,
             session: nil,
             flowBreak: nil,
             todo: nil

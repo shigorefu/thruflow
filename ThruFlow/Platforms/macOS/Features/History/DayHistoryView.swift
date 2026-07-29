@@ -485,11 +485,22 @@ struct DayHistoryView: View {
 
     @ViewBuilder
     private var aggregatePeriodPicker: some View {
+        let indicatorSource = HistoryMiniCalendarIndicatorSource.filteredFlowHistory(
+            selectedMode == .tasks ? visibleTaskTypes : visibleDirectionTypes
+        )
+
         switch selectedRange {
         case .day:
-            HistoryMiniCalendar(selectedDate: $selectedDate)
+            HistoryMiniCalendar(
+                selectedDate: $selectedDate,
+                indicatorSource: indicatorSource
+            )
         case .week:
-            HistoryMiniCalendar(selectedDate: $selectedDate, selectionMode: .week)
+            HistoryMiniCalendar(
+                selectedDate: $selectedDate,
+                selectionMode: .week,
+                indicatorSource: indicatorSource
+            )
         case .month:
             HistoryYearMonthPicker(selectedDate: $selectedDate)
         }

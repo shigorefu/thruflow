@@ -356,7 +356,7 @@ The macOS hover card and iOS anchored popover show the date, completed Task coun
 
 `履歴` is available directly below `タスク`, owns the canonical History presentation, and initially opens today. It preserves the date selected from Statistics. The user can move backward or forward by the selected range, choose a date, or use the mini-calendar on wide macOS windows. On macOS the filter sits immediately left of Search and changes with the active tab: Flow visibility, `タスク / 習慣 / ナイス`, or `通常 / 習慣 / ナイス`. In `Flow > 日`, `この日の記録` appears below the mini-calendar and reuses the canonical day totals.
 
-The History mini-calendar marks only days that contain recorded Flow history, using the corresponding Direction colors. Scheduled, pending, and future Task or Habit dates do not create History dots. Task calendars keep their separate indicators and apply the active `すべて | タスク | 習慣` filter.
+The History mini-calendar marks only days that contain recorded Flow history, using the corresponding Direction colors. Scheduled, pending, and future Task or Habit dates do not create History dots. In the History `タスク` and `方向` modes, the mini-calendar applies the active Direction-type filter to those historical dots. Task calendars keep their separate indicators and apply the active `すべて | タスク | 習慣` filter.
 
 The primary `カレンダー` mode provides:
 

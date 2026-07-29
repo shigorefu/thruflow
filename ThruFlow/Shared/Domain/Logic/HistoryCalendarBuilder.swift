@@ -146,6 +146,7 @@ struct HistoryCalendarItem: Identifiable {
     let subtitle: String
     let symbol: String
     let colorHex: String
+    let directionType: DirectionType
     let session: FlowSession?
     let flowBreak: FlowBreak?
     let todo: Todo?
@@ -305,6 +306,7 @@ struct HistoryCalendarBuilder {
                 subtitle: direction?.name ?? String(localized: "Flowシリーズ"),
                 symbol: "☕️",
                 colorHex: "#8E8E93",
+                directionType: direction?.type ?? .neutral,
                 session: previousSession,
                 flowBreak: flowBreak,
                 todo: nil
@@ -364,6 +366,7 @@ struct HistoryCalendarBuilder {
             subtitle: directionName,
             symbol: direction?.symbolName ?? "📝",
             colorHex: direction?.colorHex ?? "#8E8E93",
+            directionType: direction?.type ?? .neutral,
             session: session,
             flowBreak: nil,
             todo: todo
@@ -377,6 +380,17 @@ struct HistoryCalendarBuilder {
 
     private func overlaps(start: Date, end: Date, interval: DateInterval) -> Bool {
         start < interval.end && end > interval.start
+    }
+}
+
+struct HistoryCalendarIndicatorFilter {
+    func items(
+        from items: [HistoryCalendarItem],
+        visibleDirectionTypes: Set<DirectionType>
+    ) -> [HistoryCalendarItem] {
+        items.filter {
+            $0.kind == .flow && visibleDirectionTypes.contains($0.directionType)
+        }
     }
 }
 
