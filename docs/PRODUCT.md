@@ -93,16 +93,15 @@ Completed breaks are edited with synchronized end-time and minute-duration contr
 
 It provides a primary `Flow` calendar mode with `日・週・月`, plus `タスク` and `方向` aggregates. Day directly presents the selected day's actual Flow and rest records as one vertically ordered timeline; long internal gaps are labeled as having no records with deliberate vertical spacing, while short records retain a full-size interactive card. Selecting a Day record opens its canonical editor in a separate system sheet. Week uses a vertically scrolling seven-column hour grid and projects each connected Flow series as one composite block. Opening that block shows the same vertical record timeline in a separate sheet, where every underlying Flow or rest remains independently editable and Back returns to the series timeline. The Flow editor reuses the player's Task, Habit, and Direction picker, including inline Task creation, so Direction is derived from the selected item rather than edited in a second control. Rest editing uses a compact, content-fitted sheet. Month is an overview. These are UI projections only: the persisted Flow and rest records remain separate. Completed Flow records can be moved between exact day/time positions where the calendar editor supports it; the session and all task-switch segments preserve their duration and progress. Active Flow and rest records remain fixed. Todo completion remains in Task summaries and Statistics. Manual History creation creates an independent Flow, never a manual rest. Historical Flow changes must adjust Direction totals and measured Todo progress by the same delta. Linking a manual Flow to a Task does not automatically complete it.
 
-On iPhone, `日` and `週` use the same native horizontally scrolling period
-strips as Tasks across `Flow`, `タスク`, and `方向` History modes. The History
-content below remains independently scrollable. Card taps select immediately,
-while swipes commit only after native scrolling settles. While native search is
-active, results come from the complete History database instead of the selected
-period. Matching uses record title, Direction, emoji, hashtag, intent, or memo
-in `Flow`, `タスク`, and `方向` modes. Day content and non-calendar week
-summaries also animate between adjacent periods with horizontal swipes; the week
-calendar keeps its own horizontal timeline scrolling. macOS provides the same
-database-wide filtering through its native toolbar search field.
+On iPhone, `日`, `週`, and `月` consume the same chronology, connected-series,
+gap, and aggregate projections as macOS. Day is the complete vertical
+Flow/rest timeline, Week is the seven-column elastic series grid, and Month can
+open the selected day's complete timeline. iOS keeps touch-native period
+navigation and system sheets instead of compiling the desktop views. While
+native search is active, results come from the complete History database
+instead of the selected period. Matching uses record title, Direction, emoji,
+hashtag, intent, or memo in `Flow`, `タスク`, and `方向` modes. macOS provides
+the same database-wide filtering through its native toolbar search field.
 
 ## Settings
 

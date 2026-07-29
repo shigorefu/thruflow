@@ -414,4 +414,54 @@ struct HistoryCalendarTests {
             )
         ])
     }
+
+    @Test func verticalTimelineEntriesInterleaveInternalGapsChronologically() {
+        let base = Date(timeIntervalSince1970: 10_000)
+        let interval = DateInterval(start: base, end: base.addingTimeInterval(6 * 3_600))
+        let first = HistoryCalendarItem(
+            id: "first",
+            kind: .flow,
+            startedAt: base.addingTimeInterval(30 * 60),
+            endedAt: base.addingTimeInterval(60 * 60),
+            title: "First",
+            subtitle: "",
+            symbol: "1",
+            colorHex: "#007AFF",
+            directionType: .neutral,
+            session: nil,
+            flowBreak: nil,
+            todo: nil
+        )
+        let second = HistoryCalendarItem(
+            id: "second",
+            kind: .flow,
+            startedAt: base.addingTimeInterval(3 * 3_600),
+            endedAt: base.addingTimeInterval(3.5 * 3_600),
+            title: "Second",
+            subtitle: "",
+            symbol: "2",
+            colorHex: "#007AFF",
+            directionType: .neutral,
+            session: nil,
+            flowBreak: nil,
+            todo: nil
+        )
+
+        let entries = HistoryVerticalTimelineEntry.build(
+            items: [second, first],
+            gapInterval: interval
+        )
+
+        #expect(entries.count == 3)
+        guard case .item(let firstEntry) = entries[0],
+              case .gap(let gap) = entries[1],
+              case .item(let secondEntry) = entries[2] else {
+            Issue.record("Expected item, gap, item ordering")
+            return
+        }
+        #expect(firstEntry.id == "first")
+        #expect(gap.startedAt == first.endedAt)
+        #expect(gap.endedAt == second.startedAt)
+        #expect(secondEntry.id == "second")
+    }
 }

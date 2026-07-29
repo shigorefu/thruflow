@@ -126,6 +126,16 @@ Each platform owns its composition root:
 - Database-wide Task and History search matching, date grouping, and aggregate
   scope belong in `Shared/Domain/Logic`; platform views only select a mode and
   render the resulting sections or snapshots.
+- History chronology and series projection are shared domain projections.
+  `HistoryCalendarSeriesProjector` builds connected Flow/rest series,
+  `HistoryTimelineChainPolicy` decides whether adjacent records share a rail,
+  and `HistoryVerticalTimelineEntry` interleaves persisted records with
+  presentation-only internal gaps. macOS and iOS must consume these projections
+  instead of independently inferring series, gaps, or ordering in SwiftUI.
+- Flow and rest editors operate on the same persisted entities on both
+  platforms. Rest duration changes go through `FlowBreakEditor`; platform views
+  may present that editor as a macOS window or iOS sheet but may not implement a
+  second mutation path.
 - High-frequency presentation state such as scroll position must not directly
   start full-store reconciliation or persistence writes. iOS date strips index
   visible markers once, debounce Habit materialization, and reserve duplicate
@@ -190,16 +200,20 @@ or updated after iOS adopts the persisted runtime.
 ## iPhone MVP Boundary
 
 The first iPhone release includes the Flow dashboard, Tasks/Habits across
-day/week/month ranges, Direction management and ordering, basic day/week/month
-History browsing, a compact contribution Statistics screen, basic settings,
-and CloudKit synchronization. Its persistent five-item navigation contains
+day/week/month ranges, Direction management and ordering, day/week/month
+History with the same chronology and editing semantics as macOS, a compact
+contribution Statistics screen, basic settings, and CloudKit synchronization.
+Its persistent five-item navigation contains
 `Flow`, `タスク`, `履歴`, `方向`, and `統計`. The shell uses the system `TabView`
 so iOS owns selection, accessibility, and Liquid Glass while the tab bar remains
 full-size during scrolling; Tasks temporarily hides the tab bar and animates in
 the quick-capture composer.
-Advanced Statistics and full calendar/history editing remain macOS-only until
-the next iPhone stage. Shared calculations are reused, but desktop views are
-never compiled into the iOS target.
+Advanced Statistics and drag-based calendar rescheduling remain macOS-only
+until the next iPhone stage. Shared calculations are reused, but desktop views
+are never compiled into the iOS target. iOS uses native sheets and navigation
+for record details while macOS uses its window/sheet hierarchy; this
+presentation difference must not change which records, gaps, series, progress,
+or filters the user sees.
 
 An active iPhone Flow publishes one system Live Activity. The Lock Screen and
 Dynamic Island show Task, Direction, remaining time, and progress. During a

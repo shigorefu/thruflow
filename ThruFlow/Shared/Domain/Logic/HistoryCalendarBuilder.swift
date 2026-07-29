@@ -268,6 +268,47 @@ struct HistoryTimelineGapBuilder {
     }
 }
 
+enum HistoryVerticalTimelineEntry: Identifiable {
+    case item(HistoryCalendarItem)
+    case gap(HistoryTimelineGap)
+
+    var id: String {
+        switch self {
+        case .item(let item):
+            "item-\(item.id)"
+        case .gap(let gap):
+            "gap-\(gap.startedAt.timeIntervalSinceReferenceDate)-\(gap.endedAt.timeIntervalSinceReferenceDate)"
+        }
+    }
+
+    var startedAt: Date {
+        switch self {
+        case .item(let item):
+            item.startedAt
+        case .gap(let gap):
+            gap.startedAt
+        }
+    }
+
+    static func build(
+        items: [HistoryCalendarItem],
+        gapInterval: DateInterval?
+    ) -> [HistoryVerticalTimelineEntry] {
+        var result = items.map(HistoryVerticalTimelineEntry.item)
+
+        if let gapInterval {
+            result.append(contentsOf: HistoryTimelineGapBuilder()
+                .internalGaps(in: gapInterval, items: items)
+                .map(HistoryVerticalTimelineEntry.gap))
+        }
+
+        return result.sorted {
+            if $0.startedAt == $1.startedAt { return $0.id < $1.id }
+            return $0.startedAt < $1.startedAt
+        }
+    }
+}
+
 @MainActor
 struct HistoryCalendarBuilder {
     private let calendar: Calendar

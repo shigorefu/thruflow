@@ -17,6 +17,8 @@ struct IOSHistoryView: View {
     @State private var visibleTaskTypes = Set(DirectionType.allCases)
     @State private var visibleDirectionTypes = Set(DirectionType.allCases)
     @State private var selectedItem: HistoryCalendarItem?
+    @State private var selectedSeries: HistoryCalendarSeriesBlock?
+    @State private var selectedDayTimeline: IOSHistoryDayTimelineSelection?
     @State private var isAddingTaskRecord = false
     @State private var searchText = ""
 
@@ -82,6 +84,17 @@ struct IOSHistoryView: View {
             IOSHistoryItemDetail(item: item)
                 .presentationDetents(item.kind == .flow ? [.large] : [.medium])
         }
+        .sheet(item: $selectedSeries) { block in
+            IOSHistorySeriesTimelineSheet(block: block)
+                .presentationDetents([.large])
+        }
+        .sheet(item: $selectedDayTimeline) { selection in
+            IOSHistoryDayTimelineSheet(
+                date: selection.date,
+                items: selection.items
+            )
+            .presentationDetents([.large])
+        }
         .sheet(isPresented: $isAddingTaskRecord) {
             HistoryTaskRecordForm(
                 startedAt: defaultTaskRecordStart,
@@ -139,19 +152,37 @@ struct IOSHistoryView: View {
             let snapshot = calendarSnapshot(for: date)
             switch range {
             case .day:
-                IOSHistoryDayTimeline(
-                    date: date,
+                IOSHistoryChronologicalTimeline(
                     items: visibleCalendarItems(for: date),
-                    selection: $selectedItem
+                    gapInterval: HistoryCalendarRange.day.interval(
+                        containing: date,
+                        calendar: calendar,
+                        dayBoundary: dayBoundary
+                    ),
+                    onSelect: { selectedItem = $0 }
                 )
             case .week:
-                IOSHistoryWeekTimeline(
+                IOSHistorySeriesWeekTimeline(
                     interval: snapshot.interval,
                     items: visibleCalendarItems(for: date),
-                    selection: $selectedItem
+                    onSelectSeries: { selectedSeries = $0 }
                 )
             case .month:
-                EmptyView()
+                let dayItems = calendarItems(
+                    on: date,
+                    from: visibleCalendarItems(for: date)
+                )
+                IOSHistoryMonthDaySummary(
+                    date: date,
+                    items: dayItems,
+                    onSelect: { selectedItem = $0 },
+                    onShowDay: {
+                        selectedDayTimeline = IOSHistoryDayTimelineSelection(
+                            date: date,
+                            items: dayItems
+                        )
+                    }
+                )
             }
         case .tasks:
             IOSHistoryTaskSummaryList(
@@ -174,6 +205,20 @@ struct IOSHistoryView: View {
             .filter { visibleKinds.contains($0.kind) }
             .filter(matchesSelectedType)
             .filter(matchesSearch)
+    }
+
+    private func calendarItems(
+        on date: Date,
+        from items: [HistoryCalendarItem]
+    ) -> [HistoryCalendarItem] {
+        let interval = HistoryCalendarRange.day.interval(
+            containing: date,
+            calendar: calendar,
+            dayBoundary: dayBoundary
+        )
+        return items.filter {
+            $0.startedAt < interval.end && $0.endedAt > interval.start
+        }
     }
 
     @ViewBuilder
@@ -281,11 +326,7 @@ struct IOSHistoryView: View {
                     interval: calendarSnapshot.interval,
                     items: visibleCalendarItems,
                     selectedDate: $selectedDate
-                ) {
-                    if selectedMode == .calendar {
-                        range = .day
-                    }
-                }
+                )
                 .iosHorizontalPeriodSwipe { offset in
                     navigatePeriod(by: offset)
                 }
@@ -841,290 +882,10 @@ private struct IOSHistorySummaryRow: View {
     }
 }
 
-private struct IOSHistoryDayTimeline: View {
-    let date: Date
-    let items: [HistoryCalendarItem]
-    @Binding var selection: HistoryCalendarItem?
-
-    @Environment(\.calendar) private var calendar
-
-    var body: some View {
-        GeometryReader { geometry in
-            ScrollView(.vertical) {
-                IOSHistoryTimelineGrid(
-                    days: [calendar.startOfDay(for: date)],
-                    items: items,
-                    columnWidth: nil,
-                    availableWidth: geometry.size.width,
-                    selection: $selection
-                )
-                .background {
-                    IOSHistoryInitialScrollPosition(
-                        identity: calendar.startOfDay(for: date),
-                        offset: CGFloat(max(0, relevantHour - 1)) * 64
-                    )
-                }
-            }
-        }
-    }
-
-    private var relevantHour: Int {
-        let firstHour = items.map { calendar.component(.hour, from: $0.startedAt) }.min()
-        return calendar.isDateInToday(date)
-            ? calendar.component(.hour, from: .now)
-            : firstHour ?? 9
-    }
-}
-
-private struct IOSHistoryInitialScrollPosition: UIViewRepresentable {
-    let identity: Date
-    let offset: CGFloat
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator()
-    }
-
-    func makeUIView(context: Context) -> UIView {
-        UIView(frame: .zero)
-    }
-
-    func updateUIView(_ view: UIView, context: Context) {
-        guard context.coordinator.appliedIdentity != identity else { return }
-        context.coordinator.appliedIdentity = identity
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            guard let scrollView = enclosingScrollView(for: view) else { return }
-            let maximumOffset = max(
-                -scrollView.adjustedContentInset.top,
-                scrollView.contentSize.height - scrollView.bounds.height
-                    + scrollView.adjustedContentInset.bottom
-            )
-            scrollView.setContentOffset(
-                CGPoint(x: scrollView.contentOffset.x, y: min(offset, maximumOffset)),
-                animated: false
-            )
-        }
-    }
-
-    private func enclosingScrollView(for view: UIView) -> UIScrollView? {
-        var current = view.superview
-        while let candidate = current {
-            if let scrollView = candidate as? UIScrollView { return scrollView }
-            current = candidate.superview
-        }
-        return nil
-    }
-
-    final class Coordinator {
-        var appliedIdentity: Date?
-    }
-}
-
-private struct IOSHistoryWeekTimeline: View {
-    let interval: DateInterval
-    let items: [HistoryCalendarItem]
-    @Binding var selection: HistoryCalendarItem?
-
-    @Environment(\.calendar) private var calendar
-
-    var body: some View {
-        ScrollView([.horizontal, .vertical]) {
-            IOSHistoryTimelineGrid(
-                days: weekDays,
-                items: items,
-                columnWidth: 132,
-                availableWidth: nil,
-                selection: $selection
-            )
-        }
-    }
-
-    private var weekDays: [Date] {
-        (0..<7).compactMap { calendar.date(byAdding: .day, value: $0, to: interval.start) }
-    }
-}
-
-private struct IOSHistoryTimelineGrid: View {
-    private static let hourHeight: CGFloat = 64
-    private static let headerHeight: CGFloat = 48
-    private static let timeGutter: CGFloat = 44
-
-    let days: [Date]
-    let items: [HistoryCalendarItem]
-    let columnWidth: CGFloat?
-    let availableWidth: CGFloat?
-    @Binding var selection: HistoryCalendarItem?
-
-    @Environment(\.appDayBoundary) private var dayBoundary
-    @Environment(\.calendar) private var calendar
-
-    var body: some View {
-        let usableWidth = max((availableWidth ?? 0) - Self.timeGutter, 1)
-        let resolvedColumnWidth = columnWidth ?? usableWidth / CGFloat(max(days.count, 1))
-        let contentWidth = Self.timeGutter + resolvedColumnWidth * CGFloat(days.count)
-
-            ZStack(alignment: .topLeading) {
-                timelineBackground(columnWidth: resolvedColumnWidth)
-                timelineItems(columnWidth: resolvedColumnWidth)
-                currentTimeLine(columnWidth: resolvedColumnWidth)
-        }
-        .frame(width: contentWidth, height: Self.headerHeight + Self.hourHeight * 24)
-        .frame(
-            minWidth: Self.timeGutter + (columnWidth ?? 0) * CGFloat(days.count),
-            minHeight: Self.headerHeight + Self.hourHeight * 24
-        )
-    }
-
-    private func timelineBackground(columnWidth: CGFloat) -> some View {
-        ZStack(alignment: .topLeading) {
-            ForEach(Array(days.enumerated()), id: \.offset) { index, day in
-                VStack(spacing: 1) {
-                    Text(day, format: .dateTime.weekday(.abbreviated).day())
-                        .font(.caption.weight(calendar.isDateInToday(day) ? .bold : .medium))
-                        .foregroundStyle(calendar.isDateInToday(day) ? Color.accentColor : Color.secondary)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-                .frame(width: columnWidth, height: Self.headerHeight)
-                .background(calendar.isDateInToday(day) ? Color.accentColor.opacity(0.08) : Color.clear)
-                .offset(x: Self.timeGutter + CGFloat(index) * columnWidth)
-            }
-
-            ForEach(0..<24, id: \.self) { hour in
-                HStack(spacing: 4) {
-                    Text(hour, format: .number)
-                        .font(.caption2.monospacedDigit())
-                        .foregroundStyle(.tertiary)
-                        .frame(width: Self.timeGutter - 6, alignment: .trailing)
-                    Rectangle()
-                        .fill(Color.primary.opacity(0.08))
-                        .frame(height: 1)
-                }
-                .offset(y: Self.headerHeight + CGFloat(hour) * Self.hourHeight)
-            }
-
-            ForEach(0...days.count, id: \.self) { index in
-                Rectangle()
-                    .fill(Color.primary.opacity(0.06))
-                    .frame(width: 1, height: Self.hourHeight * 24)
-                    .offset(
-                        x: Self.timeGutter + CGFloat(index) * columnWidth,
-                        y: Self.headerHeight
-                    )
-            }
-        }
-    }
-
-    private func timelineItems(columnWidth: CGFloat) -> some View {
-        ForEach(Array(days.enumerated()), id: \.offset) { dayIndex, day in
-            let dayItems = itemsForDay(day)
-            let placements = placementMap(for: dayItems)
-
-            ForEach(dayItems) { item in
-                let placement = placements[item.id]
-                let laneCount = CGFloat(max(placement?.laneCount ?? 1, 1))
-                let lane = CGFloat(placement?.lane ?? 0)
-                let width = max((columnWidth - 6) / laneCount, 24)
-
-                Button {
-                    selection = item
-                } label: {
-                    IOSHistoryEventBlock(item: item)
-                }
-                .buttonStyle(.plain)
-                .frame(width: width, height: itemHeight(item), alignment: .topLeading)
-                .offset(
-                    x: Self.timeGutter + CGFloat(dayIndex) * columnWidth + 3 + lane * width,
-                    y: itemY(item)
-                )
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func currentTimeLine(columnWidth: CGFloat) -> some View {
-        if let dayIndex = days.firstIndex(where: calendar.isDateInToday) {
-            let components = calendar.dateComponents([.hour, .minute, .second], from: .now)
-            let minute = Double((components.hour ?? 0) * 60 + (components.minute ?? 0))
-                + Double(components.second ?? 0) / 60
-            HStack(spacing: 0) {
-                Circle().fill(Color.red).frame(width: 7, height: 7)
-                Rectangle().fill(Color.red).frame(height: 1)
-            }
-            .frame(width: columnWidth + 4)
-            .offset(
-                x: Self.timeGutter + CGFloat(dayIndex) * columnWidth - 3,
-                y: Self.headerHeight + Self.hourHeight * CGFloat(minute / 60) - 3
-            )
-        }
-    }
-
-    private func itemsForDay(_ day: Date) -> [HistoryCalendarItem] {
-        let interval = HistoryCalendarRange.day.interval(
-            containing: day,
-            calendar: calendar,
-            dayBoundary: dayBoundary
-        )
-        return items.filter { $0.startedAt < interval.end && $0.endedAt > interval.start }
-    }
-
-    private func placementMap(for dayItems: [HistoryCalendarItem]) -> [String: HistoryOverlapPlacement] {
-        let placements = HistoryOverlapLayout().place(dayItems.map {
-            HistoryOverlapInput(id: $0.id, start: $0.startedAt, end: $0.endedAt)
-        }, minimumDuration: 15 * 60)
-        return Dictionary(uniqueKeysWithValues: placements.map { ($0.id, $0) })
-    }
-
-    private func itemY(_ item: HistoryCalendarItem) -> CGFloat {
-        let components = calendar.dateComponents([.hour, .minute, .second], from: item.startedAt)
-        let minute = Double((components.hour ?? 0) * 60 + (components.minute ?? 0))
-            + Double(components.second ?? 0) / 60
-        return Self.headerHeight + Self.hourHeight * CGFloat(minute / 60) + 1
-    }
-
-    private func itemHeight(_ item: HistoryCalendarItem) -> CGFloat {
-        max(Self.hourHeight * CGFloat(Double(item.durationSeconds) / 3_600), item.kind == .rest ? 16 : 24)
-    }
-}
-
-private struct IOSHistoryEventBlock: View {
-    let item: HistoryCalendarItem
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 1) {
-            Text("\(item.symbol) \(item.title)")
-                .font(.caption2.weight(.semibold))
-                .lineLimit(1)
-            if item.durationSeconds >= 15 * 60 {
-                Text(timeRange)
-                    .font(.caption2.monospacedDigit())
-                    .lineLimit(1)
-            }
-        }
-        .foregroundStyle(item.kind == .rest ? Color.primary : Color.white)
-        .padding(.horizontal, 5)
-        .padding(.vertical, 3)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(backgroundColor, in: RoundedRectangle(cornerRadius: 5))
-        .overlay {
-            RoundedRectangle(cornerRadius: 5)
-                .strokeBorder(Color.primary.opacity(0.08))
-        }
-    }
-
-    private var backgroundColor: Color {
-        item.kind == .rest ? Color.secondary.opacity(0.23) : Color(hex: item.colorHex).opacity(0.92)
-    }
-
-    private var timeRange: String {
-        "\(item.startedAt.formatted(date: .omitted, time: .shortened))–\(item.endedAt.formatted(date: .omitted, time: .shortened))"
-    }
-}
-
 private struct IOSHistoryMonthGrid: View {
     let interval: DateInterval
     let items: [HistoryCalendarItem]
     @Binding var selectedDate: Date
-    let openDay: () -> Void
 
     @Environment(\.calendar) private var calendar
 
@@ -1166,7 +927,6 @@ private struct IOSHistoryMonthGrid: View {
                     let isSelected = calendar.isDate(date, inSameDayAs: selectedDate)
                     Button {
                         selectedDate = date
-                        openDay()
                     } label: {
                         VStack(spacing: 5) {
                             Text(verbatim: String(calendar.component(.day, from: date)))
@@ -1225,9 +985,11 @@ private struct IOSHistoryMonthGrid: View {
     }
 }
 
-private struct IOSHistoryItemDetail: View {
+struct IOSHistoryItemDetail: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.calendar) private var calendar
+    @EnvironmentObject private var activeFlowStore: ActiveFlowStore
 
     @Query(sort: \Direction.sortIndex) private var directions: [Direction]
     @Query(sort: \Todo.updatedAt, order: .reverse) private var todos: [Todo]
@@ -1241,8 +1003,12 @@ private struct IOSHistoryItemDetail: View {
     @State private var createdTodo: Todo?
     @State private var isCreatingTask = false
     @State private var showsDeleteConfirmation = false
+    @State private var breakDurationMinutes: Int
+    @State private var breakEndAt: Date
+    @State private var breakEditError: String?
 
     private let editor = FlowHistoryEditor()
+    private let breakEditor = FlowBreakEditor()
 
     init(item: HistoryCalendarItem) {
         self.item = item
@@ -1255,20 +1021,27 @@ private struct IOSHistoryItemDetail: View {
             focusSeconds: item.durationSeconds
         ))
         _memo = State(initialValue: session?.result ?? session?.todo?.notes ?? "")
+        _breakDurationMinutes = State(
+            initialValue: max(
+                FlowBreakEditor.minimumDurationMinutes,
+                item.durationSeconds / 60
+            )
+        )
+        _breakEndAt = State(initialValue: item.endedAt)
+        _breakEditError = State(initialValue: nil)
     }
 
     var body: some View {
         NavigationStack {
             Group {
-                if let session = item.session {
-                    flowEditor(session: session)
-                } else {
-                    List {
-                        Section {
-                            Label(item.title, systemImage: "cup.and.saucer.fill")
-                            LabeledContent(String(localized: "時間"), value: timeRange)
-                            LabeledContent(String(localized: "長さ"), value: durationText)
-                        }
+                switch item.kind {
+                case .flow:
+                    if let session = item.session {
+                        flowEditor(session: session)
+                    }
+                case .rest:
+                    if let flowBreak = item.flowBreak {
+                        breakEditorView(flowBreak: flowBreak)
                     }
                 }
             }
@@ -1279,12 +1052,21 @@ private struct IOSHistoryItemDetail: View {
                     Button(String(localized: "閉じる")) { dismiss() }
                 }
 
-                if let session = item.session {
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button(String(localized: "保存")) {
-                            save(session: session)
+                ToolbarItem(placement: .confirmationAction) {
+                    switch item.kind {
+                    case .flow:
+                        if let session = item.session {
+                            Button(String(localized: "保存")) {
+                                save(session: session)
+                            }
+                            .disabled(selectedDirection == nil)
                         }
-                        .disabled(selectedDirection == nil)
+                    case .rest:
+                        if let flowBreak = item.flowBreak {
+                            Button(String(localized: "保存")) {
+                                save(flowBreak: flowBreak)
+                            }
+                        }
                     }
                 }
             }
@@ -1326,6 +1108,19 @@ private struct IOSHistoryItemDetail: View {
             Button(String(localized: "キャンセル"), role: .cancel) {}
         } message: {
             Text(String(localized: "方向とタスクの集中時間から、このFlowの分を差し引きます。"))
+        }
+        .alert(
+            String(localized: "移動できません"),
+            isPresented: Binding(
+                get: { breakEditError != nil },
+                set: { if !$0 { breakEditError = nil } }
+            )
+        ) {
+            Button(String(localized: "OK")) {
+                breakEditError = nil
+            }
+        } message: {
+            Text(breakEditError ?? "")
         }
     }
 
@@ -1439,6 +1234,55 @@ private struct IOSHistoryItemDetail: View {
         }
     }
 
+    private func breakEditorView(flowBreak: FlowBreak) -> some View {
+        Form {
+            Section(String(localized: "時間")) {
+                LabeledContent(
+                    String(localized: "開始"),
+                    value: flowBreak.startedAt.formatted(
+                        date: .abbreviated,
+                        time: .shortened
+                    )
+                )
+
+                DatePicker(
+                    String(localized: "終了"),
+                    selection: Binding(
+                        get: { breakEndAt },
+                        set: { selectedTime in
+                            let normalized = breakEditor.normalizedEndTime(
+                                for: flowBreak,
+                                selectedTime: selectedTime,
+                                calendar: calendar
+                            )
+                            breakEndAt = normalized
+                            breakDurationMinutes = breakEditor.durationMinutes(
+                                from: flowBreak.startedAt,
+                                to: normalized
+                            )
+                        }
+                    ),
+                    displayedComponents: [.hourAndMinute]
+                )
+
+                Stepper(
+                    "\(breakDurationMinutes) \(String(localized: "分"))",
+                    value: Binding(
+                        get: { breakDurationMinutes },
+                        set: { minutes in
+                            breakDurationMinutes = minutes
+                            breakEndAt = flowBreak.startedAt.addingTimeInterval(
+                                TimeInterval(minutes * 60)
+                            )
+                        }
+                    ),
+                    in: FlowBreakEditor.minimumDurationMinutes
+                        ... FlowBreakEditor.maximumDurationMinutes
+                )
+            }
+        }
+    }
+
     private func save(session: FlowSession) {
         guard let selectedDirection else { return }
         editor.update(
@@ -1452,6 +1296,22 @@ private struct IOSHistoryItemDetail: View {
         )
         try? modelContext.save()
         dismiss()
+    }
+
+    private func save(flowBreak: FlowBreak) {
+        do {
+            _ = try breakEditor.updateDuration(
+                of: flowBreak,
+                minutes: breakDurationMinutes,
+                modelContext: modelContext,
+                protectedSessionID: activeFlowStore.activeSession?.id
+            )
+            dismiss()
+        } catch FlowBreakEditorError.activeFlowWouldMove {
+            breakEditError = String(localized: "実行中のFlowは移動できません。")
+        } catch {
+            breakEditError = error.localizedDescription
+        }
     }
 
     private var timeRange: String {
