@@ -14,6 +14,8 @@ struct IOSHistoryView: View {
     @State private var range = HistoryCalendarRange.day
     @State private var selectedMode = DayHistoryMode.calendar
     @State private var visibleKinds = Set(HistoryCalendarItemKind.allCases)
+    @State private var visibleTaskTypes = Set(DirectionType.allCases)
+    @State private var visibleDirectionTypes = Set(DirectionType.allCases)
     @State private var selectedItem: HistoryCalendarItem?
     @State private var isAddingTaskRecord = false
     @State private var searchText = ""
@@ -155,12 +157,14 @@ struct IOSHistoryView: View {
             IOSHistoryTaskSummaryList(
                 snapshot: historySnapshot(for: date),
                 searchText: searchText,
+                visibleTypes: visibleTaskTypes,
                 onAddRecord: { isAddingTaskRecord = true }
             )
         case .directions:
             IOSHistoryDirectionSummaryList(
                 snapshot: historySnapshot(for: date),
-                searchText: searchText
+                searchText: searchText,
+                visibleTypes: visibleDirectionTypes
             )
         }
     }
@@ -168,6 +172,7 @@ struct IOSHistoryView: View {
     private func visibleCalendarItems(for date: Date) -> [HistoryCalendarItem] {
         calendarSnapshot(for: date).items
             .filter { visibleKinds.contains($0.kind) }
+            .filter(matchesSelectedType)
             .filter(matchesSearch)
     }
 
@@ -184,13 +189,27 @@ struct IOSHistoryView: View {
             IOSHistoryTaskSummaryList(
                 snapshot: globalHistorySnapshot,
                 searchText: "",
+                visibleTypes: visibleTaskTypes,
                 onAddRecord: { isAddingTaskRecord = true }
             )
         case .directions:
             IOSHistoryDirectionSummaryList(
                 snapshot: globalHistorySnapshot,
-                searchText: ""
+                searchText: "",
+                visibleTypes: visibleDirectionTypes
             )
+        }
+    }
+
+    private func matchesSelectedType(_ item: HistoryCalendarItem) -> Bool {
+        guard item.kind == .flow else { return selectedMode == .calendar }
+        switch selectedMode {
+        case .calendar:
+            return true
+        case .tasks:
+            return visibleTaskTypes.contains(item.directionType)
+        case .directions:
+            return visibleDirectionTypes.contains(item.directionType)
         }
     }
 
@@ -224,12 +243,7 @@ struct IOSHistoryView: View {
     private var calendarToolbar: some View {
         VStack(spacing: 10) {
             HStack(spacing: 10) {
-                if selectedMode == .calendar {
-                    historyVisibilityMenu
-                } else {
-                    Color.clear
-                        .frame(width: 30, height: 30)
-                }
+                contextualFilterMenu
 
                 Spacer(minLength: 0)
 
@@ -253,12 +267,14 @@ struct IOSHistoryView: View {
             case .day:
                 IOSHistoryDayStrip(
                     selectedDate: $selectedDate,
-                    sessions: sessions
+                    sessions: sessions,
+                    visibleDirectionTypes: selectedIndicatorTypes
                 )
             case .week:
                 IOSHistoryWeekStrip(
                     selectedDate: $selectedDate,
-                    sessions: sessions
+                    sessions: sessions,
+                    visibleDirectionTypes: selectedIndicatorTypes
                 )
             case .month:
                 IOSHistoryMonthGrid(
@@ -278,6 +294,35 @@ struct IOSHistoryView: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
         .background(.bar)
+    }
+
+    @ViewBuilder
+    private var contextualFilterMenu: some View {
+        switch selectedMode {
+        case .calendar:
+            historyVisibilityMenu
+        case .tasks:
+            IOSHistoryAggregateFilterMenu(
+                visibleTypes: $visibleTaskTypes,
+                neutralLabel: String(localized: "タスク")
+            )
+        case .directions:
+            IOSHistoryAggregateFilterMenu(
+                visibleTypes: $visibleDirectionTypes,
+                neutralLabel: String(localized: "通常")
+            )
+        }
+    }
+
+    private var selectedIndicatorTypes: Set<DirectionType>? {
+        switch selectedMode {
+        case .calendar:
+            nil
+        case .tasks:
+            visibleTaskTypes
+        case .directions:
+            visibleDirectionTypes
+        }
     }
 
     private var historyVisibilityMenu: some View {
@@ -361,10 +406,12 @@ private struct IOSHistoryDayStrip: View {
 
     @Binding var selectedDate: Date
     let sessions: [FlowSession]
+    let visibleDirectionTypes: Set<DirectionType>?
 
     var body: some View {
         let activityIndex = IOSHistoryActivityColorIndex(
             sessions: sessions,
+            visibleDirectionTypes: visibleDirectionTypes,
             calendar: calendar
         )
 
@@ -409,10 +456,12 @@ private struct IOSHistoryWeekStrip: View {
 
     @Binding var selectedDate: Date
     let sessions: [FlowSession]
+    let visibleDirectionTypes: Set<DirectionType>?
 
     var body: some View {
         let activityIndex = IOSHistoryActivityColorIndex(
             sessions: sessions,
+            visibleDirectionTypes: visibleDirectionTypes,
             calendar: calendar
         )
 
@@ -472,10 +521,16 @@ private struct IOSHistoryActivityColorIndex {
     private var seenByDay: [Date: Set<String>] = [:]
     private var seenByWeek: [Date: Set<String>] = [:]
 
-    init(sessions: [FlowSession], calendar: Calendar) {
+    init(
+        sessions: [FlowSession],
+        visibleDirectionTypes: Set<DirectionType>?,
+        calendar: Calendar
+    ) {
         for session in sessions
         where session.status != .interrupted && session.resolvedActualFocusDurationSeconds > 0 {
             if session.resolvedSegments.isEmpty {
+                let directionType = session.direction?.type ?? .neutral
+                guard visibleDirectionTypes?.contains(directionType) != false else { continue }
                 append(
                     colorHex: session.direction?.colorHex ?? "#8E8E93",
                     at: session.startedAt,
@@ -485,6 +540,8 @@ private struct IOSHistoryActivityColorIndex {
             }
 
             for segment in session.resolvedSegments where segment.resolvedFocusSeconds > 0 {
+                let directionType = segment.direction?.type ?? session.direction?.type ?? .neutral
+                guard visibleDirectionTypes?.contains(directionType) != false else { continue }
                 append(
                     colorHex: segment.direction?.colorHex ?? "#8E8E93",
                     at: segment.startedAt,
@@ -599,13 +656,15 @@ private struct IOSHistoryGlobalSearchRow: View {
 private struct IOSHistoryTaskSummaryList: View {
     let snapshot: DayHistorySnapshot
     let searchText: String
+    let visibleTypes: Set<DirectionType>
     let onAddRecord: () -> Void
 
     private var visibleTasks: [DayHistoryTaskSummary] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !query.isEmpty else { return snapshot.taskSummaries }
         return snapshot.taskSummaries.filter { task in
-            [task.title, task.directionName, task.directionSymbol]
+            guard visibleTypes.contains(task.directionType) else { return false }
+            guard !query.isEmpty else { return true }
+            return [task.title, task.directionName, task.directionSymbol]
                 .contains { $0.localizedCaseInsensitiveContains(query) }
         }
     }
@@ -654,11 +713,13 @@ private struct IOSHistoryTaskSummaryList: View {
 private struct IOSHistoryDirectionSummaryList: View {
     let snapshot: DayHistorySnapshot
     let searchText: String
+    let visibleTypes: Set<DirectionType>
 
     private var recordedDirections: [DayHistoryDirectionSummary] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         return snapshot.directionSummaries.filter { direction in
             guard direction.focusSeconds > 0 else { return false }
+            guard visibleTypes.contains(direction.directionType) else { return false }
             guard !query.isEmpty else { return true }
             return [direction.name, direction.symbol]
                 .contains { $0.localizedCaseInsensitiveContains(query) }
@@ -690,6 +751,43 @@ private struct IOSHistoryDirectionSummaryList: View {
             }
             .padding(16)
         }
+    }
+}
+
+private struct IOSHistoryAggregateFilterMenu: View {
+    @Binding var visibleTypes: Set<DirectionType>
+    let neutralLabel: String
+
+    var body: some View {
+        Menu {
+            filterToggle(neutralLabel, type: .neutral)
+            filterToggle(String(localized: "習慣"), type: .habit)
+            filterToggle(String(localized: "ナイス"), type: .nice)
+        } label: {
+            Image(
+                systemName: visibleTypes.count == DirectionType.allCases.count
+                    ? "line.3.horizontal.decrease"
+                    : "line.3.horizontal.decrease.circle.fill"
+            )
+            .frame(width: 30, height: 30)
+        }
+        .accessibilityLabel(String(localized: "表示内容"))
+    }
+
+    private func filterToggle(_ title: String, type: DirectionType) -> some View {
+        Toggle(
+            title,
+            isOn: Binding(
+                get: { visibleTypes.contains(type) },
+                set: { isVisible in
+                    if isVisible {
+                        visibleTypes.insert(type)
+                    } else {
+                        visibleTypes.remove(type)
+                    }
+                }
+            )
+        )
     }
 }
 

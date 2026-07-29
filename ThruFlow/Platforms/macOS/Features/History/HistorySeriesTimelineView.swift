@@ -1,3 +1,4 @@
+#if os(macOS)
 //
 //  HistorySeriesTimelineView.swift
 //  ThruFlow
@@ -579,3 +580,4 @@ private enum HistoryVerticalTimelineEntry: Identifiable {
         }
     }
 }
+#endif
