@@ -254,8 +254,10 @@ terminating the widget process.
 
 ## D-026: Retrospective Task Records Reuse Todo And Flow
 
-`履歴 > タスク` exposes one shared macOS/iOS `+` command for recording forgotten
-work. Its Flow-style picker separates Tasks, Habits, and Directions. It can
+History exposes one shared macOS/iOS `+` command for recording forgotten work.
+On macOS it remains in `履歴 > タスク`; on iOS it is a persistent bottom-trailing
+action across History modes so Flow recording remains reachable from the Flow
+timeline. Its Flow-style picker separates Tasks, Habits, and Directions. It can
 select an existing Todo occurrence, create a new Task, materialize an eligible
 missing historical Habit occurrence from its Direction template, or record
 Direction-only Flow. Recording Check needs only a date, accepts optional time,

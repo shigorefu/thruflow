@@ -81,6 +81,9 @@ struct IOSHistoryView: View {
                 modeMenu
             }
         }
+        .overlay(alignment: .bottomTrailing) {
+            addHistoryRecordButton
+        }
         .sheet(item: $selectedItem) { item in
             IOSHistoryItemDetail(item: item)
                 .presentationDetents(item.kind == .flow ? [.large] : [.medium])
@@ -209,8 +212,7 @@ struct IOSHistoryView: View {
             IOSHistoryTaskSummaryList(
                 snapshot: historySnapshot(for: date),
                 searchText: searchText,
-                visibleTypes: visibleTaskTypes,
-                onAddRecord: { isAddingTaskRecord = true }
+                visibleTypes: visibleTaskTypes
             )
         case .directions:
             IOSHistoryDirectionSummaryList(
@@ -255,8 +257,7 @@ struct IOSHistoryView: View {
             IOSHistoryTaskSummaryList(
                 snapshot: globalHistorySnapshot,
                 searchText: "",
-                visibleTypes: visibleTaskTypes,
-                onAddRecord: { isAddingTaskRecord = true }
+                visibleTypes: visibleTaskTypes
             )
         case .directions:
             IOSHistoryDirectionSummaryList(
@@ -422,6 +423,23 @@ struct IOSHistoryView: View {
             return Date.now.addingTimeInterval(-25 * 60)
         }
         return calendar.date(bySettingHour: 9, minute: 0, second: 0, of: selectedDate) ?? selectedDate
+    }
+
+    private var addHistoryRecordButton: some View {
+        Button {
+            isAddingTaskRecord = true
+        } label: {
+            Image(systemName: "plus")
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(.white)
+                .frame(width: 48, height: 48)
+                .background(Color.accentColor, in: Circle())
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .padding(.trailing, 16)
+        .padding(.bottom, 14)
+        .accessibilityLabel(String(localized: "記録を追加"))
     }
 
     private var allowsContentPeriodSwipe: Bool {
@@ -721,7 +739,6 @@ private struct IOSHistoryTaskSummaryList: View {
     let snapshot: DayHistorySnapshot
     let searchText: String
     let visibleTypes: Set<DirectionType>
-    let onAddRecord: () -> Void
 
     private var visibleTasks: [DayHistoryTaskSummary] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -736,19 +753,6 @@ private struct IOSHistoryTaskSummaryList: View {
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 10) {
-                HStack {
-                    Spacer()
-
-                    Button(action: onAddRecord) {
-                        Image(systemName: "plus")
-                            .font(.body.weight(.semibold))
-                            .frame(width: 34, height: 34)
-                    }
-                    .buttonStyle(.bordered)
-                    .buttonBorderShape(.circle)
-                    .accessibilityLabel(String(localized: "記録を追加"))
-                }
-
                 if visibleTasks.isEmpty {
                     ContentUnavailableView(
                         String(localized: "記録なし"),

@@ -174,12 +174,12 @@ struct IOSTasksView: View {
         Button(action: presentComposer) {
             Image(systemName: "plus")
                 .font(.title3.weight(.semibold))
+                .foregroundStyle(.white)
                 .frame(width: 48, height: 48)
+                .background(Color.accentColor, in: Circle())
                 .contentShape(Circle())
         }
-        .buttonStyle(.bordered)
-        .buttonBorderShape(.circle)
-        .tint(.accentColor)
+        .buttonStyle(.plain)
         .padding(.trailing, 16)
         .padding(.bottom, 14)
         .transition(.scale(scale: 0.85).combined(with: .opacity))
