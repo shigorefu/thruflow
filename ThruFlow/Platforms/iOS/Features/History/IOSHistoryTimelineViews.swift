@@ -181,15 +181,13 @@ private struct IOSHistoryTimelineItemRow: View {
     }
 
     private var durationText: String {
-        let totalSeconds = max(item.durationSeconds, 0)
-        let hours = totalSeconds / 3_600
-        let minutes = (totalSeconds % 3_600) / 60
-        let seconds = totalSeconds % 60
-
-        if hours > 0 {
-            return String(format: "%d:%02d:%02d", hours, minutes, seconds)
-        }
-        return String(format: "%02d:%02d", minutes, seconds)
+        Duration.seconds(Double(item.durationSeconds)).formatted(
+            .units(
+                allowed: [.hours, .minutes],
+                width: .abbreviated,
+                maximumUnitCount: 2
+            )
+        )
     }
 }
 

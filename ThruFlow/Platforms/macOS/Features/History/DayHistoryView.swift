@@ -113,9 +113,6 @@ struct DayHistoryView: View {
                 }
             }
         }
-        .overlay(alignment: .bottomTrailing) {
-            addHistoryRecordButton
-        }
         .sheet(item: $editingTodo) { todo in
             TodoFormView(mode: .edit(todo))
                 .frame(minWidth: 480, idealWidth: 540, minHeight: 620, idealHeight: 700)
@@ -363,8 +360,22 @@ struct DayHistoryView: View {
 
     private var tasksContent: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(String(localized: "タスク別"))
-                .font(.headline)
+            HStack {
+                Text(String(localized: "タスク別"))
+                    .font(.headline)
+
+                Spacer()
+
+                Button {
+                    isAddingTaskRecord = true
+                } label: {
+                    Image(systemName: "plus")
+                }
+                .buttonStyle(.bordered)
+                .buttonBorderShape(.circle)
+                .help(String(localized: "記録を追加"))
+                .accessibilityLabel(String(localized: "記録を追加"))
+            }
 
             if !isSearching, selectedRange == .week, !weeklyTaskSections.isEmpty {
                 ForEach(weeklyTaskSections) { section in
@@ -393,24 +404,6 @@ struct DayHistoryView: View {
                 )
             }
         }
-    }
-
-    private var addHistoryRecordButton: some View {
-        Button {
-            isAddingTaskRecord = true
-        } label: {
-            Image(systemName: "plus")
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(.white)
-                .frame(width: 48, height: 48)
-                .background(Color.accentColor, in: Circle())
-                .contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .padding(.trailing, 16)
-        .padding(.bottom, 14)
-        .help(String(localized: "記録を追加"))
-        .accessibilityLabel(String(localized: "記録を追加"))
     }
 
     private var directionsContent: some View {

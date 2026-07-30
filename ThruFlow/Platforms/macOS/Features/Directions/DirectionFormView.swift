@@ -287,17 +287,9 @@ struct DirectionFormView: View {
     }
 
     private var habitPauseDatePopover: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            VStack(alignment: .leading, spacing: 4) {
-                Label(String(localized: "期間を指定"), systemImage: "calendar")
-                    .font(.headline)
-
-                Text(String(localized: "終了日"))
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
-
-            Divider()
+        VStack(alignment: .leading, spacing: 16) {
+            Text(String(localized: "期間を指定"))
+                .font(.headline)
 
             DatePicker(
                 String(localized: "終了日"),
@@ -307,15 +299,13 @@ struct DirectionFormView: View {
             )
             .datePickerStyle(.graphical)
             .labelsHidden()
-            .frame(width: 286)
-            .frame(maxWidth: .infinity, alignment: .center)
 
-            HStack(spacing: 8) {
-                Spacer(minLength: 0)
-
+            HStack {
                 Button(String(localized: "キャンセル")) {
                     isShowingHabitPauseDateSheet = false
                 }
+
+                Spacer()
 
                 Button(String(localized: "一時停止")) {
                     guard case .edit(let direction) = mode else { return }
@@ -325,8 +315,8 @@ struct DirectionFormView: View {
                 .buttonStyle(.borderedProminent)
             }
         }
-        .padding(16)
-        .frame(width: 318)
+        .padding(18)
+        .frame(width: 330)
     }
 
     @ViewBuilder

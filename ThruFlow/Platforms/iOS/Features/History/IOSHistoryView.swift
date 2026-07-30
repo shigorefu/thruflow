@@ -430,11 +430,13 @@ struct IOSHistoryView: View {
             isAddingTaskRecord = true
         } label: {
             Image(systemName: "plus")
-                .font(.body.weight(.semibold))
-                .frame(width: 34, height: 34)
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(.white)
+                .frame(width: 48, height: 48)
+                .background(Color.accentColor, in: Circle())
+                .contentShape(Circle())
         }
-        .buttonStyle(.borderedProminent)
-        .buttonBorderShape(.circle)
+        .buttonStyle(.plain)
         .padding(.trailing, 16)
         .padding(.bottom, 14)
         .accessibilityLabel(String(localized: "記録を追加"))
