@@ -24,6 +24,8 @@ struct DirectionFormView: View {
     }
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.calendar) private var calendar
+    @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.modelContext) private var modelContext
 
     let mode: Mode
@@ -33,6 +35,8 @@ struct DirectionFormView: View {
     @State private var validationErrors: [DirectionValidationError] = []
     @State private var isShowingEmojiPicker = false
     @State private var isShowingDeleteConfirmation = false
+    @State private var isShowingHabitPauseDateSheet = false
+    @State private var habitPauseEndDate = Date.now
 
     private let validator = DirectionValidator()
 
@@ -63,6 +67,10 @@ struct DirectionFormView: View {
 
                     if draft.type == .habit {
                         goalCard
+
+                        if case .edit(let direction) = mode {
+                            habitPauseCard(direction)
+                        }
                     }
 
                     colorCard
@@ -218,6 +226,99 @@ struct DirectionFormView: View {
         }
     }
 
+    private func habitPauseCard(_ direction: Direction) -> some View {
+        let period = activePausePeriod(for: direction)
+
+        return DirectionSectionCard(title: String(localized: "習慣の状態")) {
+            HStack(spacing: 12) {
+                Image(systemName: period == nil ? "checkmark.circle.fill" : "pause.circle.fill")
+                    .font(.title2)
+                    .foregroundStyle(period == nil ? Color.green : Color.orange)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(period == nil ? String(localized: "有効") : String(localized: "一時停止中"))
+                        .font(.body.weight(.semibold))
+
+                    if let period {
+                        Text(pauseDescription(for: period))
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Spacer()
+
+                if period == nil {
+                    Menu {
+                        Button(String(localized: "今日は休む")) {
+                            pauseToday(direction)
+                        }
+
+                        Button(String(localized: "期間を指定…")) {
+                            habitPauseEndDate = logicalToday
+                            isShowingHabitPauseDateSheet = true
+                        }
+
+                        Divider()
+
+                        Button(String(localized: "再開するまで一時停止")) {
+                            pauseIndefinitely(direction)
+                        }
+                    } label: {
+                        Label(String(localized: "一時停止"), systemImage: "pause.circle")
+                    }
+                    .menuStyle(.borderlessButton)
+                    .fixedSize()
+                    .popover(isPresented: $isShowingHabitPauseDateSheet, arrowEdge: .bottom) {
+                        habitPauseDatePopover
+                    }
+                } else {
+                    Button(String(localized: "再開")) {
+                        resume(direction)
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+            }
+
+            Text(String(localized: "一時停止中は予定タスクと達成率の対象から外れます。Flowの記録は残ります。"))
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var habitPauseDatePopover: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text(String(localized: "期間を指定"))
+                .font(.headline)
+
+            DatePicker(
+                String(localized: "終了日"),
+                selection: $habitPauseEndDate,
+                in: logicalToday...,
+                displayedComponents: .date
+            )
+            .datePickerStyle(.graphical)
+            .labelsHidden()
+
+            HStack {
+                Button(String(localized: "キャンセル")) {
+                    isShowingHabitPauseDateSheet = false
+                }
+
+                Spacer()
+
+                Button(String(localized: "一時停止")) {
+                    guard case .edit(let direction) = mode else { return }
+                    pause(direction, through: habitPauseEndDate)
+                    isShowingHabitPauseDateSheet = false
+                }
+                .buttonStyle(.borderedProminent)
+            }
+        }
+        .padding(18)
+        .frame(width: 330)
+    }
+
     @ViewBuilder
     private var validationCard: some View {
         if !validationErrors.isEmpty {
@@ -362,6 +463,74 @@ struct DirectionFormView: View {
 
         direction.archive()
         dismiss()
+    }
+
+    private var logicalToday: Date {
+        dayBoundary.day(containing: .now, calendar: calendar)
+    }
+
+    private func activePausePeriod(for direction: Direction) -> HabitPausePeriod? {
+        HabitPauseService(calendar: calendar, dayBoundary: dayBoundary)
+            .activePeriod(for: direction, on: logicalToday)
+    }
+
+    private func pauseDescription(for period: HabitPausePeriod) -> String {
+        guard let endsBefore = period.endsBefore else {
+            return String(localized: "再開するまで休み")
+        }
+
+        let finalDay = calendar.date(byAdding: .day, value: -1, to: endsBefore) ?? endsBefore
+        if calendar.isDate(finalDay, inSameDayAs: logicalToday) {
+            return String(localized: "今日のみ休み")
+        }
+
+        let date = finalDay.formatted(date: .abbreviated, time: .omitted)
+        return String(localized: "\(date)まで休み")
+    }
+
+    private func pauseToday(_ direction: Direction) {
+        withHabitTodos { todos in
+            _ = HabitPauseService(calendar: calendar, dayBoundary: dayBoundary)
+                .pauseToday(direction, todos: todos)
+        }
+    }
+
+    private func pause(_ direction: Direction, through date: Date) {
+        withHabitTodos { todos in
+            _ = HabitPauseService(calendar: calendar, dayBoundary: dayBoundary)
+                .pause(direction, through: date, todos: todos)
+        }
+    }
+
+    private func pauseIndefinitely(_ direction: Direction) {
+        withHabitTodos { todos in
+            _ = HabitPauseService(calendar: calendar, dayBoundary: dayBoundary)
+                .pauseIndefinitely(direction, todos: todos)
+        }
+    }
+
+    private func resume(_ direction: Direction) {
+        let service = HabitPauseService(calendar: calendar, dayBoundary: dayBoundary)
+        guard service.resume(direction) else { return }
+
+        let todos = (try? modelContext.fetch(FetchDescriptor<Todo>())) ?? []
+        try? modelContext.save()
+        _ = try? HabitTodoMaterializer(
+            calendar: calendar,
+            dayBoundary: dayBoundary
+        ).materialize(
+            directions: [direction],
+            dates: [logicalToday],
+            modelContext: modelContext,
+            knownTodos: todos,
+            reconcilesDuplicates: false
+        )
+    }
+
+    private func withHabitTodos(_ action: ([Todo]) -> Void) {
+        let todos = (try? modelContext.fetch(FetchDescriptor<Todo>())) ?? []
+        action(todos)
+        try? modelContext.save()
     }
 
     private func normalizeGoalState(for type: DirectionType) {

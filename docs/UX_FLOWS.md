@@ -10,6 +10,14 @@ The Direction screen manages only user-editable Directions:
 
 The system Direction `その他` is not shown here and cannot be edited from this screen.
 
+On macOS, editing a Habit Direction includes `習慣の状態`. An active Habit can
+use `今日は休む`, `期間を指定…`, or `再開するまで一時停止`; a paused Habit
+shows its effective period and a single `再開` action. While paused, the app
+does not generate scheduled Habit Tasks and excludes those days from completion
+rate. Existing history and actual Flow remain unchanged. `期間を指定…` opens a
+compact calendar popover anchored to the pause control rather than a separate
+sheet.
+
 ## タスク
 
 タスク shows scheduled tasks for the current day.

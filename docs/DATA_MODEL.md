@@ -21,10 +21,17 @@ Persisted data includes:
 - identity, name, emoji, color, and sort order;
 - type (`neutral`, `habit`, or `nice`);
 - goal unit, target, period, and schedule configuration;
+- optional `habitPausePeriodsRawValue`, a JSON array of normalized pause
+  intervals with inclusive start and exclusive optional end dates;
 - accumulated occurrences, focused seconds, and supporting progress state;
 - creation/update timestamps and archive state.
 
 System Direction `その他` is stored like other Directions but hidden from Direction management.
+
+Habit pause periods stay inside `Direction` rather than introducing another
+SwiftData entity. The optional scalar keeps existing stores and CloudKit
+lightweight migration compatible. Pausing changes future planning only:
+completed/progressed Todos and persisted Flow records are never removed.
 
 ## Todo
 

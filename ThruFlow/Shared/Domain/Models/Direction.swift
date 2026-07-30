@@ -162,6 +162,7 @@ final class Direction {
     var weeklyTargetCount: Int?
     var weekdayMask: Int?
     var focusDurationSeconds: Int?
+    var habitPausePeriodsRawValue: String?
     var sortIndex: Int = 0
     var createdAt: Date = Date.now
     var updatedAt: Date = Date.now
@@ -253,6 +254,11 @@ final class Direction {
 
     var hasGoal: Bool {
         goalTarget != nil && goalPeriod != nil && goalUnit != nil && goalSchedule != nil
+    }
+
+    var habitPausePeriods: [HabitPausePeriod] {
+        get { HabitPausePeriodCodec.decode(habitPausePeriodsRawValue) }
+        set { habitPausePeriodsRawValue = HabitPausePeriodCodec.encode(newValue) }
     }
 
     func update(

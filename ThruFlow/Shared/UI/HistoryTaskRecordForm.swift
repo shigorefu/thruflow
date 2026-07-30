@@ -10,6 +10,7 @@ import SwiftUI
 
 struct HistoryTaskRecordForm: View {
     @Environment(\.calendar) private var calendar
+    @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Direction.sortIndex) private var directions: [Direction]
     @Query(sort: \Todo.updatedAt, order: .reverse) private var todos: [Todo]
@@ -30,7 +31,6 @@ struct HistoryTaskRecordForm: View {
     @State private var errorMessage: String?
 
     private let editor = HistoryTaskRecordEditor()
-    private let habitPlanner = RequiredTodoPlanner()
 
     init(startedAt: Date, onDismiss: @escaping () -> Void) {
         self.onDismiss = onDismiss
@@ -125,7 +125,10 @@ struct HistoryTaskRecordForm: View {
                     && direction.goalUnit != nil
                     && (
                         existingByDirection[direction.id] != nil
-                            || habitPlanner.shouldAppearToday(direction, on: timeDraft.startedAt)
+                            || RequiredTodoPlanner(calendar: calendar).shouldAppearToday(
+                                direction,
+                                on: dayBoundary.day(containing: timeDraft.startedAt, calendar: calendar)
+                            )
                     )
             }
             .map { direction in

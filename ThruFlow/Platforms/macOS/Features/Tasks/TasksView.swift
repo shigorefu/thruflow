@@ -45,7 +45,9 @@ struct TasksView: View {
     private var backlogBuilder: TaskBacklogBuilder {
         TaskBacklogBuilder(calendar: calendar, dayBoundary: dayBoundary)
     }
-    private var rescheduleService: TaskRescheduleService { TaskRescheduleService(calendar: calendar) }
+    private var rescheduleService: TaskRescheduleService {
+        TaskRescheduleService(calendar: calendar, dayBoundary: dayBoundary)
+    }
     private var searchBuilder: DatabaseSearchBuilder { DatabaseSearchBuilder(calendar: calendar) }
     private let progress = TodoProgressCalculator()
     private let validator = TodoValidator()

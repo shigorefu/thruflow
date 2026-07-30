@@ -20,6 +20,12 @@ Habit Directions may have:
 - target amount;
 - goal unit: occurrences, focus blocks, minutes, or hours.
 
+A Habit Direction may also contain one or more paused local-day intervals.
+Paused days are ineligible for automatic Todo generation and weekly rescheduling.
+Pausing soft-deletes only generated occurrences that have not been completed and
+have no measured progress or Flow history. Existing completed/progressed records
+remain intact. Resuming re-enables planning from the current logical day.
+
 ## Todo
 
 `Todo` is the task model used by the daily `タスク` screen.
@@ -108,6 +114,12 @@ Weekly-count Habit Directions create one pending Todo at a time. A completed Tod
 
 Every Habit Direction has at most one active Todo occurrence per local calendar day. `HabitTodoMaterializer` is the shared macOS/iOS entry point: it fetches current persisted state, normalizes occurrence dates to the start of day, reconciles duplicates, and only then asks `RequiredTodoPlanner` to create missing occurrences. `HabitTodoReconciler` deterministically preserves the occurrence with history or completion state, reassigns related FlowSession and FlowSegment records, merges user data and progress, and soft-deletes the redundant occurrences. This makes repeated calls and CloudKit race recovery idempotent.
 
+`HabitPauseService` owns pause/resume behavior outside SwiftUI. Pause intervals
+use the configured logical-day boundary at their command edge and persist as
+normalized local calendar days. Supported commands are one-day rest, inclusive
+date-range pause, indefinite pause, and resume. Overlapping or adjacent periods
+are merged deterministically.
+
 ## Task Calendar
 
 `TaskCalendarBuilder` creates deterministic day, seven-day week, and month-grid date ranges. `TaskRescheduleService` validates calendar drag-and-drop independently from SwiftUI.
@@ -119,5 +131,10 @@ Normal active Tasks may change `scheduledDate`. Completed Tasks and fixed daily/
 ## Statistics
 
 Flow statistics and day history are derived from FlowSession actual focus seconds. Task statistics use `Todo.completedAt`, with `updatedAt` as a legacy date fallback. Legacy completed Todos without `completedAt` are displayed without an invented clock time.
+
+Paused Habit days do not contribute a planned Todo, so they are excluded from
+the completion-rate denominator and never count as missed. Previously completed
+Todos and actual Flow recorded for that Habit remain visible in history and
+focused-time statistics.
 
 `DayHistoryBuilder` produces daily Task/Direction aggregates. Its Task summaries require positive recorded focused time, so scheduled or completed Todos with `0分` never appear as worked History on either platform. `HistoryTaskRecordEditor` separately resolves eligible Todo occurrences for one exact day, including zero-Flow occurrences, and owns cross-platform retrospective recording. It can materialize a missing historical Habit occurrence directly from an eligible Habit Direction without disturbing the planner's current pending occurrence. A Check record updates manual completion at an optional historical timestamp without creating Flow. A Block or Minute record delegates to `FlowHistoryEditor`, requires a concrete time interval, creates a completed independent Flow, and lets reconciliation rebuild measured progress. It can first create a Todo scheduled on the selected day and then apply the same rule. A Direction-only record creates Flow without a Todo. `HistoryCalendarBuilder` projects actual FlowSession, FlowSegment, and FlowBreak records into separate date-range calendar items without persistence; Todo completion remains aggregate data rather than a calendar item. `FlowDashboardBuilder` derives connected `seriesSpans` from `seriesID` for the dashboard's continuous line without changing calendar records. `DashboardStatisticsBuilder` derives Task/Direction time distribution, seven-day Flow values, previous-day deltas, completion status, and Direction growth without persistence. `HistoryDayTimelineWindowBuilder` derives the day view's Elastic/full-day hour range, while `HistoryOverlapLayout` assigns lanes to colliding actual or minimum-visual intervals independently from SwiftUI. `FlowHistoryEditor` creates independent manual Flow records and corrects Direction and measured Todo totals when a historical Flow is changed or deleted; linking a manual Flow never marks its Task complete.

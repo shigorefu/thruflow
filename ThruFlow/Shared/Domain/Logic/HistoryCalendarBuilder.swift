@@ -214,7 +214,7 @@ struct HistoryCalendarItem: Identifiable {
     @MainActor
     var displayDirectionType: DirectionType {
         guard kind == .flow else { return directionType }
-        return currentDirection?.type ?? .neutral
+        return currentDirection?.type ?? directionType
     }
 
     var seriesID: UUID? {

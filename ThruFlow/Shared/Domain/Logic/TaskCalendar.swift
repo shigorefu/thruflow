@@ -185,6 +185,7 @@ enum TaskRescheduleFailure: Error, Equatable {
 
 struct TaskRescheduleService {
     var calendar: Calendar = .current
+    var dayBoundary: AppDayBoundary = .midnight
 
     func validate(
         _ todo: Todo,
@@ -205,7 +206,8 @@ struct TaskRescheduleService {
         }
 
         let planner = RequiredTodoPlanner(calendar: calendar)
-        let referenceDate = todo.scheduledDate ?? now
+        let referenceDate = todo.scheduledDate
+            ?? dayBoundary.day(containing: now, calendar: calendar)
         let option = planner.weeklyRescheduleOptions(for: todo, in: todos, now: referenceDate)
             .first { calendar.isDate($0.date, inSameDayAs: date) }
 

@@ -19,7 +19,8 @@ struct RequiredTodoPlanner {
         guard direction.type == .habit,
               !direction.isArchived,
               direction.hasGoal,
-              direction.goalUnit != nil else {
+              direction.goalUnit != nil,
+              !HabitPauseService(calendar: calendar).isPaused(direction, on: date) else {
             return false
         }
 
@@ -142,10 +143,10 @@ struct RequiredTodoPlanner {
         let remainingCount = max(1, max(1, direction.weeklyTargetCount ?? 1) - completedCount)
 
         return dates(from: now, before: weekInterval.end)
-            .filter { isEligibleWeeklyDate($0, for: direction) }
+            .filter { isEligibleWeeklyDate($0, for: direction) && !isPaused(direction, on: $0) }
             .map { date in
                 let availableDates = dates(from: date, before: weekInterval.end)
-                    .filter { isEligibleWeeklyDate($0, for: direction) }
+                    .filter { isEligibleWeeklyDate($0, for: direction) && !isPaused(direction, on: $0) }
 
                 return RescheduleOption(
                     date: date,
@@ -193,6 +194,10 @@ struct RequiredTodoPlanner {
         }
 
         return isSelectedWeekday(date, in: weekdayMask)
+    }
+
+    private func isPaused(_ direction: Direction, on date: Date) -> Bool {
+        HabitPauseService(calendar: calendar).isPaused(direction, on: date)
     }
 
     private func todosForCurrentWeek(

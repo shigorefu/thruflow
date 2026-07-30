@@ -298,6 +298,24 @@ Reason: persisting the canonical runtime alongside its session avoids a second
 timer entity, preserves offline operation, and gives macOS, iOS, and watchOS
 one conflict and restoration model.
 
+## D-028: Habit Pause Removes Expectations, Not History
+
+A Habit Direction can be paused for today, through an inclusive date, or until
+the user resumes it. Pause periods are optional JSON-backed scalar data on the
+Direction and are interpreted by shared `HabitPauseService` and
+`RequiredTodoPlanner` logic. They do not add a second schedule entity.
+
+Paused days cannot generate or receive a Habit Todo. When a pause begins, only
+uncompleted occurrences with zero measured progress and zero focused seconds
+are soft-deleted. Completed occurrences, partial progress, and Flow history are
+preserved. Because no planned Todo exists for a paused day, that day is excluded
+from the completion denominator and cannot count as a failure; actual Flow
+continues to count in focused-time statistics.
+
+Reason: a deliberate break changes what the user intended to do, not what the
+user already did. Keeping planning and actual history separate avoids false
+failures without rewriting historical records.
+
 ## Open Questions
 
 - What measurement and planned amount should be used for an auto-created Task when Flow starts with only a Direction or with neither Direction nor Task?

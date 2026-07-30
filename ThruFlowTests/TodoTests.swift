@@ -352,6 +352,73 @@ struct TodoTests {
         #expect(!planner.shouldAppearToday(direction, on: tuesday))
     }
 
+    @Test func pausedDailyHabitDoesNotAppearUntilPauseEnds() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let monday = date(2026, 7, 6, calendar: calendar)
+        let tuesday = date(2026, 7, 7, calendar: calendar)
+        let direction = Direction(
+            name: "読書",
+            type: .habit,
+            goalTarget: 1,
+            goalPeriod: .daily,
+            goalUnit: .occurrences,
+            goalSchedule: .everyDay
+        )
+        let pauseService = HabitPauseService(calendar: calendar)
+        let planner = RequiredTodoPlanner(calendar: calendar)
+
+        #expect(pauseService.pauseToday(direction, todos: [], now: monday))
+        #expect(!planner.shouldAppearToday(direction, on: monday))
+        #expect(planner.makeRequiredTodo(for: direction, on: monday) == nil)
+        #expect(planner.shouldAppearToday(direction, on: tuesday))
+    }
+
+    @Test func indefinitelyPausedHabitCanResumeOnCurrentDay() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let monday = date(2026, 7, 6, calendar: calendar)
+        let direction = weeklyHabitDirection()
+        let pauseService = HabitPauseService(calendar: calendar)
+
+        #expect(pauseService.pauseIndefinitely(direction, todos: [], now: monday))
+        #expect(pauseService.isPaused(direction, on: monday))
+        #expect(pauseService.resume(direction, now: monday))
+        #expect(!pauseService.isPaused(direction, on: monday))
+    }
+
+    @Test func pausingHabitSuppressesOnlyUnstartedGeneratedTodos() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let monday = date(2026, 7, 6, calendar: calendar)
+        let direction = weeklyHabitDirection()
+        let pending = Todo(title: "", direction: direction, scheduledDate: monday)
+        let completed = Todo(title: "", direction: direction, scheduledDate: monday)
+        completed.setCompleted(true, now: monday)
+        let progressed = Todo(
+            title: "",
+            direction: direction,
+            measurement: .minutes,
+            plannedAmount: 30,
+            actualProgress: 5,
+            scheduledDate: monday
+        )
+        let recorded = Todo(title: "", direction: direction, scheduledDate: monday)
+        recorded.recordedFocusSeconds = 60
+
+        #expect(
+            HabitPauseService(calendar: calendar).pauseToday(
+                direction,
+                todos: [pending, completed, progressed, recorded],
+                now: monday
+            )
+        )
+        #expect(pending.isDeleted)
+        #expect(!completed.isDeleted)
+        #expect(!progressed.isDeleted)
+        #expect(!recorded.isDeleted)
+    }
+
     @Test @MainActor func lightweightHabitMaterializationDoesNotReconcileHistory() throws {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!

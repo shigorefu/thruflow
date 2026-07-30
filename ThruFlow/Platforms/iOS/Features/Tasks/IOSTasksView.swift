@@ -21,7 +21,9 @@ struct IOSTasksView: View {
     @State private var backlogMoveError: String?
 
     private var calendarBuilder: TaskCalendarBuilder { TaskCalendarBuilder(calendar: calendar) }
-    private var rescheduleService: TaskRescheduleService { TaskRescheduleService(calendar: calendar) }
+    private var rescheduleService: TaskRescheduleService {
+        TaskRescheduleService(calendar: calendar, dayBoundary: dayBoundary)
+    }
     private var searchBuilder: DatabaseSearchBuilder { DatabaseSearchBuilder(calendar: calendar) }
 
     private var isSearching: Bool {

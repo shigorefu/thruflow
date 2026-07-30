@@ -532,6 +532,22 @@
         }
       }
     },
+    "%@まで休み" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rest until %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пауза до %@"
+          }
+        }
+      }
+    },
     "%@を今日へ移動" : {
       "localizations" : {
         "en" : {
@@ -939,9 +955,6 @@
           }
         }
       }
-    },
-    "+" : {
-
     },
     "+%lld分" : {
       "localizations" : {
@@ -3565,6 +3578,38 @@
         }
       }
     },
+    "一時停止中" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paused"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Приостановлена"
+          }
+        }
+      }
+    },
+    "一時停止中は予定タスクと達成率の対象から外れます。Flowの記録は残ります。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "While paused, scheduled tasks and completion rate exclude this habit. Flow history is preserved."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Во время паузы привычка исключается из запланированных задач и процента выполнения. История Flow сохраняется."
+          }
+        }
+      }
+    },
     "並び替え" : {
       "localizations" : {
         "en" : {
@@ -3789,6 +3834,22 @@
         }
       }
     },
+    "今日のみ休み" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resting today"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отдых сегодня"
+          }
+        }
+      }
+    },
     "今日の習慣はありません" : {
       "localizations" : {
         "en" : {
@@ -3855,6 +3916,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Сегодня ничего нет"
+          }
+        }
+      }
+    },
+    "今日は休む" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rest Today"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отдохнуть сегодня"
           }
         }
       }
@@ -4254,7 +4331,39 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Продолжить"
+            "value" : "Возобновить"
+          }
+        }
+      }
+    },
+    "再開するまで一時停止" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pause Until Resumed"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Приостановить до возобновления"
+          }
+        }
+      }
+    },
+    "再開するまで休み" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paused until resumed"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пауза до возобновления"
           }
         }
       }
@@ -5659,6 +5768,22 @@
         }
       }
     },
+    "有効" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Active"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Активна"
+          }
+        }
+      }
+    },
     "期間" : {
       "localizations" : {
         "en" : {
@@ -5671,6 +5796,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Период"
+          }
+        }
+      }
+    },
+    "期間を指定" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose Period"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбрать период"
+          }
+        }
+      }
+    },
+    "期間を指定…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose period…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Указать период…"
           }
         }
       }
@@ -6251,6 +6408,22 @@
         }
       }
     },
+    "終了日" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "End date"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дата окончания"
+          }
+        }
+      }
+    },
     "結果を入力" : {
       "localizations" : {
         "en" : {
@@ -6503,6 +6676,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Выберите частоту для направления-привычки."
+          }
+        }
+      }
+    },
+    "習慣の状態" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Habit status"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Статус привычки"
           }
         }
       }
