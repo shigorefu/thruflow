@@ -254,15 +254,16 @@ it into the archived SwiftUI tree caused `WidgetRenderer_Activities` to trap on
 an invalid `NaN` view origin. Add presentation changes one surface at a time and
 verify compact, minimal, expanded, and Lock Screen rendering independently.
 The running clock must also remain a system-supported archived view:
-`Text(timerInterval:countsDown:showsHours:)`, `Text(_:style: .timer)`, and
-date-backed `ProgressView` are allowed. Do not place a custom
+`Text(timerInterval:countsDown:showsHours:)` and date-backed `ProgressView` are
+allowed. Do not place a custom
 `FormatStyle`/`DiscreteFormatStyle` in a Live Activity view tree. It can compile
 and pass unit tests while WidgetRenderer fails to restore the tree and redacts
-all text and symbols as gray placeholders at runtime. Running time uses
-`Text(_:style: .timer)` so the system clock continues through zero. While the
-application process is active, `ActiveFlowStore` publishes one additional
-content update when the sign changes; that update adds the explicit overtime
-`+` without sending per-second ActivityKit updates.
+all text and symbols as gray placeholders at runtime. Running time uses a
+countdown interval before zero and a count-up interval after zero so every
+surface stays numeric `MM:SS` instead of changing to localized unit text. While
+the application process is active, `ActiveFlowStore` publishes one additional
+content update when the sign changes; that update switches intervals and adds
+the explicit overtime `+` without sending per-second ActivityKit updates.
 
 ## Migration Strategy
 

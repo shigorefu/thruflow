@@ -210,10 +210,13 @@ The archived ActivityKit view tree must use system date-backed `Text` and
 `ProgressView` implementations. A custom `DiscreteFormatStyle` in the running
 clock caused WidgetRenderer to replace the whole activity with gray placeholder
 redaction even though the extension compiled successfully. The system
-`Text(_:style: .timer)` continues the clock through zero. `ActiveFlowStore`
-publishes one boundary update when an active app observes the sign change so
-the extension can add the explicit overtime `+`; custom per-second formatting
-and per-second ActivityKit updates are not allowed in the extension.
+`Text(timerInterval:countsDown:showsHours:)` keeps the clock numeric instead of
+adaptively replacing short values with localized unit text such as `1分` or
+`<1 min`. Countdown uses the planned timer range; overtime uses a count-up range
+beginning at `plannedEndAt`. `ActiveFlowStore` publishes one boundary update
+when an active app observes the sign change so the extension can switch ranges
+and add the explicit overtime `+`; custom per-second formatting and per-second
+ActivityKit updates are not allowed in the extension.
 
 ## D-024: Home Screen Timer Widget Is A Read-Only Snapshot
 

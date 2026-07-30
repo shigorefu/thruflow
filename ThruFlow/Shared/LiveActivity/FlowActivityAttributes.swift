@@ -23,6 +23,10 @@ struct FlowActivityAttributes: ActivityAttributes {
             timerStartedAt...max(timerStartedAt.addingTimeInterval(1), plannedEndAt)
         }
 
+        var overtimeRange: ClosedRange<Date> {
+            plannedEndAt...plannedEndAt.addingTimeInterval(24 * 60 * 60)
+        }
+
         var isPaused: Bool {
             status == .paused
         }

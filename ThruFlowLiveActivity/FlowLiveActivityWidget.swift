@@ -153,12 +153,23 @@ private struct FlowActivityTimeLabel: View {
     private var runningTime: some View {
         if state.remainingSeconds < 0 {
             HStack(spacing: 0) {
-                Text("+")
-                Text(state.plannedEndAt, style: .timer)
+                Text(verbatim: "+")
+                Text(
+                    timerInterval: state.overtimeRange,
+                    countsDown: false,
+                    showsHours: false
+                )
             }
+            .environment(\.locale, Locale(identifier: "en_US_POSIX"))
+            .fixedSize(horizontal: true, vertical: false)
         } else {
-            Text(state.plannedEndAt, style: .timer)
+            Text(
+                timerInterval: state.timerRange,
+                countsDown: true,
+                showsHours: false
+            )
                 .environment(\.locale, Locale(identifier: "en_US_POSIX"))
+                .fixedSize(horizontal: true, vertical: false)
         }
     }
 }
