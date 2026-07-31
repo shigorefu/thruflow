@@ -15,6 +15,7 @@ struct HistoryTaskRecordForm: View {
     @Query(sort: \Direction.sortIndex) private var directions: [Direction]
     @Query(sort: \Todo.updatedAt, order: .reverse) private var todos: [Todo]
 
+    let context: HistoryRecordContext
     let onDismiss: () -> Void
 
     @State private var selectedTarget: HistoryRecordTarget?
@@ -32,7 +33,12 @@ struct HistoryTaskRecordForm: View {
 
     private let editor = HistoryTaskRecordEditor()
 
-    init(startedAt: Date, onDismiss: @escaping () -> Void) {
+    init(
+        startedAt: Date,
+        context: HistoryRecordContext,
+        onDismiss: @escaping () -> Void
+    ) {
+        self.context = context
         self.onDismiss = onDismiss
         _timeDraft = State(initialValue: FlowHistoryTimeDraft(
             startedAt: startedAt,
@@ -44,7 +50,7 @@ struct HistoryTaskRecordForm: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section(String(localized: "記録対象")) {
+                Section(context.targetSectionTitle) {
                     targetPickerButton
                 }
 
@@ -86,6 +92,9 @@ struct HistoryTaskRecordForm: View {
             }
             .onChange(of: mode) { _, newMode in
                 timeDraft.setFocusMinutes(newMode.initialFocusDurationSeconds / 60)
+            }
+            .task {
+                applyDefaultTargetIfNeeded()
             }
         }
     }
@@ -215,6 +224,9 @@ struct HistoryTaskRecordForm: View {
     }
 
     private var requiresFlow: Bool {
+        if context != .task {
+            return selectedTarget != nil
+        }
         if case .direction = selectedTarget {
             return true
         }
@@ -224,6 +236,15 @@ struct HistoryTaskRecordForm: View {
 
     private var canSave: Bool {
         guard selectedTarget != nil else { return false }
+
+        if context == .flow {
+            return selectedDirection != nil && selectedTarget != .newTask
+        }
+
+        if context == .direction {
+            guard case .direction = selectedTarget else { return false }
+            return selectedDirection != nil
+        }
 
         if selectedTarget == .newTask {
             return !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -283,6 +304,7 @@ struct HistoryTaskRecordForm: View {
         .buttonStyle(.plain)
         .popover(isPresented: $isChoosingTarget, arrowEdge: .bottom) {
             HistoryRecordTargetPicker(
+                context: context,
                 taskTodos: taskTodos,
                 habitOptions: habitOptions,
                 directions: availableDirections,
@@ -298,12 +320,13 @@ struct HistoryTaskRecordForm: View {
             .presentationCompactAdaptation(.sheet)
 #endif
         }
-        .accessibilityLabel(String(localized: "タスク・習慣・方向を選択"))
+        .accessibilityLabel(context.targetPickerLabel)
     }
 
     @ViewBuilder
     private var targetProgress: some View {
-        if let activeMeasurement {
+        if let activeMeasurement,
+           !(context == .flow && activeMeasurement == .checkbox) {
             HistoryRecordProgressPreview(
                 measurement: activeMeasurement,
                 plannedAmount: activePlannedAmount,
@@ -428,6 +451,9 @@ struct HistoryTaskRecordForm: View {
             }
             return "(\(direction.name))"
         case let .direction(directionID):
+            if context == .flow {
+                return String(localized: "タスクなし")
+            }
             guard let direction = availableDirections.first(where: { $0.id == directionID }) else {
                 return String(localized: "方向")
             }
@@ -438,7 +464,7 @@ struct HistoryTaskRecordForm: View {
         case .todo:
             return String(localized: "タスク")
         case nil:
-            return String(localized: "タスク・習慣・方向を選択")
+            return context.emptyTargetTitle
         }
     }
 
@@ -459,6 +485,9 @@ struct HistoryTaskRecordForm: View {
 
     private var targetProgressText: String? {
         guard let activeMeasurement else { return nil }
+        if context == .flow, activeMeasurement == .checkbox {
+            return nil
+        }
 
         let currentFocusSeconds = selectedTodo?.recordedFocusSeconds ?? 0
         let addedFocusSeconds = requiresFlow ? timeDraft.focusSeconds : 0
@@ -528,6 +557,20 @@ struct HistoryTaskRecordForm: View {
         }
     }
 
+    private func applyDefaultTargetIfNeeded() {
+        guard selectedTarget == nil else { return }
+
+        switch context {
+        case .flow:
+            if let direction = DefaultDirections.existingTaskInbox(in: availableDirections)
+                ?? availableDirections.first {
+                selectedTarget = .direction(direction.id)
+            }
+        case .task, .direction:
+            break
+        }
+    }
+
     private func save() {
         errorMessage = nil
         let recordedAt = requiresFlow ? timeDraft.startedAt : checkboxRecordedAt
@@ -536,16 +579,17 @@ struct HistoryTaskRecordForm: View {
             switch selectedTarget {
             case let .todo(id):
                 guard let todo = dayTodos.first(where: { $0.id == id }) else { return }
-                try editor.record(
-                    todo: todo,
-                    recordedAt: recordedAt,
-                    mode: mode,
-                    focusSeconds: timeDraft.focusSeconds,
-                    modelContext: modelContext
-                )
-            case let .habit(directionID):
-                guard let option = habitOptions.first(where: { $0.id == directionID }) else { return }
-                if let todo = option.todo {
+                if context == .flow {
+                    guard let direction = todo.direction else { return }
+                    editor.recordFlow(
+                        todo: todo,
+                        direction: direction,
+                        recordedAt: recordedAt,
+                        mode: mode,
+                        focusSeconds: timeDraft.focusSeconds,
+                        modelContext: modelContext
+                    )
+                } else {
                     try editor.record(
                         todo: todo,
                         recordedAt: recordedAt,
@@ -553,15 +597,48 @@ struct HistoryTaskRecordForm: View {
                         focusSeconds: timeDraft.focusSeconds,
                         modelContext: modelContext
                     )
+                }
+            case let .habit(directionID):
+                guard let option = habitOptions.first(where: { $0.id == directionID }) else { return }
+                if let todo = option.todo {
+                    if context == .flow {
+                        editor.recordFlow(
+                            todo: todo,
+                            direction: option.direction,
+                            recordedAt: recordedAt,
+                            mode: mode,
+                            focusSeconds: timeDraft.focusSeconds,
+                            modelContext: modelContext
+                        )
+                    } else {
+                        try editor.record(
+                            todo: todo,
+                            recordedAt: recordedAt,
+                            mode: mode,
+                            focusSeconds: timeDraft.focusSeconds,
+                            modelContext: modelContext
+                        )
+                    }
                 } else {
-                    try editor.createHabitOccurrenceAndRecord(
-                        direction: option.direction,
-                        scheduledDate: timeDraft.startedAt,
-                        recordedAt: recordedAt,
-                        mode: mode,
-                        focusSeconds: timeDraft.focusSeconds,
-                        modelContext: modelContext
-                    )
+                    if context == .flow {
+                        try editor.createHabitOccurrenceAndRecordFlow(
+                            direction: option.direction,
+                            scheduledDate: timeDraft.startedAt,
+                            recordedAt: recordedAt,
+                            mode: mode,
+                            focusSeconds: timeDraft.focusSeconds,
+                            modelContext: modelContext
+                        )
+                    } else {
+                        try editor.createHabitOccurrenceAndRecord(
+                            direction: option.direction,
+                            scheduledDate: timeDraft.startedAt,
+                            recordedAt: recordedAt,
+                            mode: mode,
+                            focusSeconds: timeDraft.focusSeconds,
+                            modelContext: modelContext
+                        )
+                    }
                 }
             case let .direction(directionID):
                 guard let direction = availableDirections.first(where: { $0.id == directionID }) else { return }
@@ -625,6 +702,54 @@ struct HistoryTaskRecordForm: View {
     }
 }
 
+enum HistoryRecordContext: Equatable {
+    case flow
+    case task
+    case direction
+
+    init(_ mode: DayHistoryMode) {
+        switch mode {
+        case .calendar:
+            self = .flow
+        case .tasks:
+            self = .task
+        case .directions:
+            self = .direction
+        }
+    }
+
+    var targetSectionTitle: String {
+        switch self {
+        case .flow, .task:
+            String(localized: "タスク")
+        case .direction:
+            String(localized: "方向")
+        }
+    }
+
+    var targetPickerLabel: String {
+        switch self {
+        case .flow:
+            String(localized: "タスク・習慣・方向を選択")
+        case .task:
+            String(localized: "タスクを選択")
+        case .direction:
+            String(localized: "方向を選択")
+        }
+    }
+
+    var emptyTargetTitle: String {
+        switch self {
+        case .flow:
+            String(localized: "タスクなし")
+        case .task:
+            String(localized: "タスクを選択")
+        case .direction:
+            String(localized: "方向を選択")
+        }
+    }
+}
+
 private enum HistoryRecordTarget: Equatable {
     case todo(UUID)
     case habit(UUID)
@@ -659,6 +784,7 @@ private enum HistoryRecordPickerTab: String, CaseIterable, Identifiable {
 }
 
 private struct HistoryRecordTargetPicker: View {
+    let context: HistoryRecordContext
     let taskTodos: [Todo]
     let habitOptions: [HistoryHabitOption]
     let directions: [Direction]
@@ -666,7 +792,34 @@ private struct HistoryRecordTargetPicker: View {
     let onSelect: (HistoryRecordTarget) -> Void
 
     @Environment(\.dismiss) private var dismiss
-    @State private var selectedTab = HistoryRecordPickerTab.tasks
+    @State private var selectedTab: HistoryRecordPickerTab
+
+    init(
+        context: HistoryRecordContext,
+        taskTodos: [Todo],
+        habitOptions: [HistoryHabitOption],
+        directions: [Direction],
+        selectedTarget: HistoryRecordTarget?,
+        onSelect: @escaping (HistoryRecordTarget) -> Void
+    ) {
+        self.context = context
+        self.taskTodos = taskTodos
+        self.habitOptions = habitOptions
+        self.directions = directions
+        self.selectedTarget = selectedTarget
+        self.onSelect = onSelect
+
+        let initialTab: HistoryRecordPickerTab
+        switch selectedTarget {
+        case .habit:
+            initialTab = .habits
+        case .direction:
+            initialTab = .directions
+        case .todo, .newTask, nil:
+            initialTab = context == .direction ? .directions : .tasks
+        }
+        _selectedTab = State(initialValue: initialTab)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -685,13 +838,15 @@ private struct HistoryRecordTargetPicker: View {
                 .foregroundStyle(.secondary)
             }
 
-            Picker(String(localized: "記録対象"), selection: $selectedTab) {
-                ForEach(HistoryRecordPickerTab.allCases) { tab in
-                    Text(tab.title).tag(tab)
+            if availableTabs.count > 1 {
+                Picker(String(localized: "記録対象"), selection: $selectedTab) {
+                    ForEach(availableTabs) { tab in
+                        Text(tab.title).tag(tab)
+                    }
                 }
+                .pickerStyle(.segmented)
+                .labelsHidden()
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
 
             ScrollView {
                 switch selectedTab {
@@ -709,16 +864,29 @@ private struct HistoryRecordTargetPicker: View {
         .background(.bar)
     }
 
+    private var availableTabs: [HistoryRecordPickerTab] {
+        switch context {
+        case .flow:
+            [.tasks, .habits, .directions]
+        case .task:
+            [.tasks, .habits]
+        case .direction:
+            [.directions]
+        }
+    }
+
     private var taskTab: some View {
         VStack(spacing: 8) {
-            targetRow(
-                emoji: "＋",
-                title: String(localized: "新しいタスク"),
-                subtitle: String(localized: "選択した日にタスクを作成"),
-                tint: .accentColor,
-                isSelected: selectedTarget == .newTask
-            ) {
-                onSelect(.newTask)
+            if context == .task {
+                targetRow(
+                    emoji: "＋",
+                    title: String(localized: "新しいタスク"),
+                    subtitle: String(localized: "選択した日にタスクを作成"),
+                    tint: .accentColor,
+                    isSelected: selectedTarget == .newTask
+                ) {
+                    onSelect(.newTask)
+                }
             }
 
             if taskTodos.isEmpty {

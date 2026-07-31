@@ -90,6 +90,28 @@ struct HistoryTaskRecordEditor {
     }
 
     @discardableResult
+    func recordFlow(
+        todo: Todo?,
+        direction: Direction,
+        recordedAt: Date,
+        mode: FlowMode,
+        focusSeconds: Int,
+        modelContext: ModelContext,
+        now: Date = .now
+    ) -> HistoryTaskRecordResult {
+        let session = FlowHistoryEditor().createManual(
+            todo: todo,
+            direction: direction,
+            mode: mode,
+            startedAt: recordedAt,
+            focusSeconds: focusSeconds,
+            modelContext: modelContext,
+            now: now
+        )
+        return HistoryTaskRecordResult(todo: todo, flowSession: session)
+    }
+
+    @discardableResult
     func createHabitOccurrenceAndRecord(
         direction: Direction,
         scheduledDate: Date,
@@ -103,23 +125,48 @@ struct HistoryTaskRecordEditor {
             throw HistoryTaskRecordError.missingDirection
         }
 
-        let target = max(1, direction.goalTarget ?? 1)
-        let measurement = measurement(for: goalUnit)
-        let todo = Todo(
-            title: "",
+        let todo = makeHabitOccurrence(
             direction: direction,
-            measurement: measurement,
-            priority: .high,
-            isRoomIfPossible: false,
-            plannedAmount: plannedAmount(for: goalUnit, target: target),
-            scheduledDate: calendar.startOfDay(for: scheduledDate),
-            createdAt: now,
-            updatedAt: now
+            goalUnit: goalUnit,
+            scheduledDate: scheduledDate,
+            modelContext: modelContext,
+            now: now
         )
-        modelContext.insert(todo)
 
         return try record(
             todo: todo,
+            recordedAt: recordedAt,
+            mode: mode,
+            focusSeconds: focusSeconds,
+            modelContext: modelContext,
+            now: now
+        )
+    }
+
+    @discardableResult
+    func createHabitOccurrenceAndRecordFlow(
+        direction: Direction,
+        scheduledDate: Date,
+        recordedAt: Date,
+        mode: FlowMode,
+        focusSeconds: Int,
+        modelContext: ModelContext,
+        now: Date = .now
+    ) throws -> HistoryTaskRecordResult {
+        guard direction.type == .habit, let goalUnit = direction.goalUnit else {
+            throw HistoryTaskRecordError.missingDirection
+        }
+
+        let todo = makeHabitOccurrence(
+            direction: direction,
+            goalUnit: goalUnit,
+            scheduledDate: scheduledDate,
+            modelContext: modelContext,
+            now: now
+        )
+        return recordFlow(
+            todo: todo,
+            direction: direction,
             recordedAt: recordedAt,
             mode: mode,
             focusSeconds: focusSeconds,
@@ -184,6 +231,29 @@ struct HistoryTaskRecordEditor {
         }
         if lhs.sortIndex != rhs.sortIndex { return lhs.sortIndex < rhs.sortIndex }
         return lhs.createdAt < rhs.createdAt
+    }
+
+    private func makeHabitOccurrence(
+        direction: Direction,
+        goalUnit: GoalUnit,
+        scheduledDate: Date,
+        modelContext: ModelContext,
+        now: Date
+    ) -> Todo {
+        let target = max(1, direction.goalTarget ?? 1)
+        let todo = Todo(
+            title: "",
+            direction: direction,
+            measurement: measurement(for: goalUnit),
+            priority: .high,
+            isRoomIfPossible: false,
+            plannedAmount: plannedAmount(for: goalUnit, target: target),
+            scheduledDate: calendar.startOfDay(for: scheduledDate),
+            createdAt: now,
+            updatedAt: now
+        )
+        modelContext.insert(todo)
+        return todo
     }
 
     private func priorityRank(_ priority: TodoPriority) -> Int {

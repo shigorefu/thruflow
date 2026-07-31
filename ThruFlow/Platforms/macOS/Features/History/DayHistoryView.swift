@@ -124,9 +124,10 @@ struct DayHistoryView: View {
         .inspector(isPresented: $isAddingTaskRecord) {
             HistoryTaskRecordForm(
                 startedAt: historyRecordStart,
+                context: HistoryRecordContext(selectedMode),
                 onDismiss: { isAddingTaskRecord = false }
             )
-            .id(historyRecordStart)
+            .id("\(historyRecordStart.timeIntervalSinceReferenceDate)-\(selectedMode.rawValue)")
             .inspectorColumnWidth(min: 420, ideal: 480, max: 560)
         }
         .sheet(item: $editingTodo) { todo in

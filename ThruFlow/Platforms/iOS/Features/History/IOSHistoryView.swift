@@ -99,9 +99,10 @@ struct IOSHistoryView: View {
         .sheet(isPresented: $isAddingTaskRecord) {
             HistoryTaskRecordForm(
                 startedAt: historyRecordStart,
+                context: HistoryRecordContext(selectedMode),
                 onDismiss: { isAddingTaskRecord = false }
             )
-            .id(historyRecordStart)
+            .id("\(historyRecordStart.timeIntervalSinceReferenceDate)-\(selectedMode.rawValue)")
         }
     }
 

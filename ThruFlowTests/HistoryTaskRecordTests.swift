@@ -86,6 +86,31 @@ struct HistoryTaskRecordTests {
         #expect(!todo.isCompleted)
     }
 
+    @Test func flowContextCanLinkCheckboxTaskWithoutCompletingIt() throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+        let direction = Direction(name: "仕事", type: .neutral)
+        let day = calendar.startOfDay(for: Date(timeIntervalSince1970: 1_800_000_000))
+        let recordedAt = day.addingTimeInterval(11 * 3_600)
+        let todo = Todo(title: "確認", direction: direction, scheduledDate: day)
+        context.insert(direction)
+        context.insert(todo)
+
+        let result = HistoryTaskRecordEditor(calendar: calendar).recordFlow(
+            todo: todo,
+            direction: direction,
+            recordedAt: recordedAt,
+            mode: .sprint,
+            focusSeconds: 12 * 60,
+            modelContext: context
+        )
+
+        #expect(result.flowSession?.todo?.id == todo.id)
+        #expect(result.flowSession?.direction?.id == direction.id)
+        #expect(!todo.isCompleted)
+        #expect(todo.actualProgress == 0)
+    }
+
     @Test func creatingHistoricalCheckboxCreatesAndCompletesTaskOnSelectedDate() throws {
         let container = try makeContainer()
         let context = container.mainContext
@@ -183,6 +208,38 @@ struct HistoryTaskRecordTests {
         #expect(todo.isCompleted)
         #expect(calendar.isDate(todo.scheduledDate!, inSameDayAs: monday))
         #expect(try context.fetch(FetchDescriptor<Todo>()).count == 2)
+    }
+
+    @Test func flowContextCanCreateMissingHabitOccurrenceWithoutCompletingCheckbox() throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+        let direction = Direction(
+            name: "筋トレ",
+            type: .habit,
+            symbolName: "💪",
+            goalTarget: 1,
+            goalPeriod: .weekly,
+            goalUnit: .occurrences,
+            goalSchedule: .weeklyCount,
+            weeklyTargetCount: 3
+        )
+        let day = calendar.startOfDay(for: Date(timeIntervalSince1970: 1_800_000_000))
+        context.insert(direction)
+
+        let result = try HistoryTaskRecordEditor(calendar: calendar).createHabitOccurrenceAndRecordFlow(
+            direction: direction,
+            scheduledDate: day,
+            recordedAt: day.addingTimeInterval(9 * 3_600),
+            mode: .sprint,
+            focusSeconds: 12 * 60,
+            modelContext: context
+        )
+        let todo = try #require(result.todo)
+
+        #expect(result.flowSession?.todo?.id == todo.id)
+        #expect(todo.measurement == .checkbox)
+        #expect(!todo.isCompleted)
+        #expect(calendar.isDate(todo.scheduledDate!, inSameDayAs: day))
     }
 
     @Test func directionOnlyRecordCreatesFlowWithoutTodo() throws {
