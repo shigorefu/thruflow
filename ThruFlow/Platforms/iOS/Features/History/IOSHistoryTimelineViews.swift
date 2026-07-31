@@ -245,6 +245,7 @@ struct IOSHistorySeriesWeekTimeline: View {
     let interval: DateInterval
     let items: [HistoryCalendarItem]
     let onSelectSeries: (HistoryCalendarSeriesBlock) -> Void
+    let onAddRecord: (Date) -> Void
 
     private let hourHeight: CGFloat = 64
     private let headerHeight: CGFloat = 48
@@ -256,6 +257,7 @@ struct IOSHistorySeriesWeekTimeline: View {
         ScrollView([.horizontal, .vertical]) {
             ZStack(alignment: .topLeading) {
                 timelineBackground
+                emptyTimeSelectionLayer
                 seriesBlocks
                 currentTimeLine
             }
@@ -378,6 +380,27 @@ struct IOSHistorySeriesWeekTimeline: View {
         }
     }
 
+    private var emptyTimeSelectionLayer: some View {
+        let height = hourHeight * CGFloat(hourRange.count)
+
+        return ForEach(Array(days.enumerated()), id: \.offset) { dayIndex, day in
+            Color.clear
+                .contentShape(Rectangle())
+                .frame(width: columnWidth, height: height)
+                .offset(
+                    x: timeGutter + CGFloat(dayIndex) * columnWidth,
+                    y: headerHeight
+                )
+                .gesture(
+                    SpatialTapGesture()
+                        .onEnded { value in
+                            let y = min(max(0, value.location.y), height)
+                            onAddRecord(date(on: day, y: y))
+                        }
+                )
+        }
+    }
+
     @ViewBuilder
     private var currentTimeLine: some View {
         if let dayIndex = days.firstIndex(where: calendar.isDateInToday) {
@@ -437,6 +460,21 @@ struct IOSHistorySeriesWeekTimeline: View {
             CGFloat(block.endedAt.timeIntervalSince(block.startedAt) / 3_600)
                 * hourHeight
         )
+    }
+
+    private func date(on day: Date, y: CGFloat) -> Date {
+        let dayInterval = HistoryCalendarRange.day.interval(
+            containing: day,
+            calendar: calendar,
+            dayBoundary: dayBoundary
+        )
+        let hours = Double(hourRange.lowerBound) + Double(y / hourHeight)
+        let snappedMinutes = (Int((hours * 60).rounded()) / 5) * 5
+        return calendar.date(
+            byAdding: .minute,
+            value: snappedMinutes,
+            to: dayInterval.start
+        ) ?? dayInterval.start
     }
 }
 

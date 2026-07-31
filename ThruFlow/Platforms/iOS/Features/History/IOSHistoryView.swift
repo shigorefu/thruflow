@@ -19,6 +19,7 @@ struct IOSHistoryView: View {
     @State private var selectedItem: HistoryCalendarItem?
     @State private var selectedSeries: HistoryCalendarSeriesBlock?
     @State private var isAddingTaskRecord = false
+    @State private var historyRecordStart = Date.now
     @State private var searchText = ""
     @State private var isSearchPresented = false
 
@@ -77,12 +78,15 @@ struct IOSHistoryView: View {
             prompt: Text(String(localized: "検索"))
         )
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItemGroup(placement: .topBarTrailing) {
                 modeMenu
+                Button {
+                    presentHistoryRecord(at: defaultTaskRecordStart)
+                } label: {
+                    Image(systemName: "plus")
+                }
+                .accessibilityLabel(String(localized: "記録を追加"))
             }
-        }
-        .overlay(alignment: .bottomTrailing) {
-            addHistoryRecordButton
         }
         .sheet(item: $selectedItem) { item in
             IOSHistoryItemDetail(item: item)
@@ -94,9 +98,10 @@ struct IOSHistoryView: View {
         }
         .sheet(isPresented: $isAddingTaskRecord) {
             HistoryTaskRecordForm(
-                startedAt: defaultTaskRecordStart,
+                startedAt: historyRecordStart,
                 onDismiss: { isAddingTaskRecord = false }
             )
+            .id(historyRecordStart)
         }
     }
 
@@ -162,7 +167,8 @@ struct IOSHistoryView: View {
                 IOSHistorySeriesWeekTimeline(
                     interval: snapshot.interval,
                     items: visibleCalendarItems(for: date),
-                    onSelectSeries: { selectedSeries = $0 }
+                    onSelectSeries: { selectedSeries = $0 },
+                    onAddRecord: presentHistoryRecord
                 )
             case .month:
                 let dayItems = calendarItems(
@@ -425,19 +431,9 @@ struct IOSHistoryView: View {
         return calendar.date(bySettingHour: 9, minute: 0, second: 0, of: selectedDate) ?? selectedDate
     }
 
-    private var addHistoryRecordButton: some View {
-        Button {
-            isAddingTaskRecord = true
-        } label: {
-            Image(systemName: "plus")
-                .font(.body.weight(.semibold))
-                .frame(width: 34, height: 34)
-        }
-        .buttonStyle(.borderedProminent)
-        .buttonBorderShape(.circle)
-        .padding(.trailing, 16)
-        .padding(.bottom, 14)
-        .accessibilityLabel(String(localized: "記録を追加"))
+    private func presentHistoryRecord(at startedAt: Date) {
+        historyRecordStart = startedAt
+        isAddingTaskRecord = true
     }
 
     private var allowsContentPeriodSwipe: Bool {
