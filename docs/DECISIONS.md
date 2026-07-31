@@ -217,6 +217,9 @@ beginning at `plannedEndAt`. `ActiveFlowStore` publishes one boundary update
 when an active app observes the sign change so the extension can switch ranges
 and add the explicit overtime `+`; custom per-second formatting and per-second
 ActivityKit updates are not allowed in the extension.
+The dynamic timer text must remain flexible inside ActivityKit's compact,
+expanded, and Lock Screen regions; `fixedSize()` is prohibited because it can
+collapse the archived timer label at runtime.
 
 ## D-024: Home Screen Timer Widget Is A Read-Only Snapshot
 

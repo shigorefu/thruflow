@@ -161,15 +161,13 @@ private struct FlowActivityTimeLabel: View {
                 )
             }
             .environment(\.locale, Locale(identifier: "en_US_POSIX"))
-            .fixedSize(horizontal: true, vertical: false)
         } else {
             Text(
                 timerInterval: state.timerRange,
                 countsDown: true,
                 showsHours: false
             )
-                .environment(\.locale, Locale(identifier: "en_US_POSIX"))
-                .fixedSize(horizontal: true, vertical: false)
+            .environment(\.locale, Locale(identifier: "en_US_POSIX"))
         }
     }
 }

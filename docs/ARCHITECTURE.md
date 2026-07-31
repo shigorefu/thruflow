@@ -264,6 +264,9 @@ surface stays numeric `MM:SS` instead of changing to localized unit text. While
 the application process is active, `ActiveFlowStore` publishes one additional
 content update when the sign changes; that update switches intervals and adds
 the explicit overtime `+` without sending per-second ActivityKit updates.
+Do not apply `fixedSize()` to the dynamic interval text: ActivityKit supplies a
+bounded region for each presentation, and forcing the archived text's intrinsic
+width can collapse it instead of rendering the clock.
 
 ## Migration Strategy
 
