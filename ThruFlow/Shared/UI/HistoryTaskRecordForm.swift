@@ -69,14 +69,8 @@ struct HistoryTaskRecordForm: View {
             }
             .formStyle(.grouped)
             .navigationTitle(String(localized: "記録を追加"))
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(String(localized: "キャンセル"), action: onDismiss)
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(String(localized: "記録"), action: save)
-                        .disabled(!canSave)
-                }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                recordActions
             }
             .onChange(of: timeDraft.startedAt) { _, _ in
                 validateSelectionForCurrentDay()
@@ -93,6 +87,24 @@ struct HistoryTaskRecordForm: View {
             .onChange(of: mode) { _, newMode in
                 timeDraft.setFocusMinutes(newMode.initialFocusDurationSeconds / 60)
             }
+        }
+    }
+
+    private var recordActions: some View {
+        HStack(spacing: 12) {
+            Button(String(localized: "キャンセル"), role: .cancel, action: onDismiss)
+
+            Spacer(minLength: 0)
+
+            Button(String(localized: "記録"), action: save)
+                .buttonStyle(.borderedProminent)
+                .disabled(!canSave)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(.bar)
+        .overlay(alignment: .top) {
+            Divider()
         }
     }
 

@@ -81,7 +81,7 @@ struct IOSHistoryView: View {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 modeMenu
                 Button {
-                    presentHistoryRecord(at: defaultTaskRecordStart)
+                    toggleHistoryRecord()
                 } label: {
                     Image(systemName: "plus")
                 }
@@ -434,6 +434,14 @@ struct IOSHistoryView: View {
     private func presentHistoryRecord(at startedAt: Date) {
         historyRecordStart = startedAt
         isAddingTaskRecord = true
+    }
+
+    private func toggleHistoryRecord() {
+        if isAddingTaskRecord {
+            isAddingTaskRecord = false
+        } else {
+            presentHistoryRecord(at: defaultTaskRecordStart)
+        }
     }
 
     private var allowsContentPeriodSwipe: Bool {

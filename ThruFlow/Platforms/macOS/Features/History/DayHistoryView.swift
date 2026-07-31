@@ -112,7 +112,7 @@ struct DayHistoryView: View {
                         isPresented: $isSearchPresented
                     )
                     Button {
-                        presentHistoryRecord(at: defaultManualFlowStart(on: selectedDate))
+                        toggleHistoryRecord()
                     } label: {
                         Image(systemName: "plus")
                     }
@@ -667,6 +667,14 @@ struct DayHistoryView: View {
     private func presentHistoryRecord(at startedAt: Date) {
         historyRecordStart = startedAt
         isAddingTaskRecord = true
+    }
+
+    private func toggleHistoryRecord() {
+        if isAddingTaskRecord {
+            isAddingTaskRecord = false
+        } else {
+            presentHistoryRecord(at: defaultManualFlowStart(on: selectedDate))
+        }
     }
 
     private func defaultManualFlowStart(on date: Date) -> Date {
