@@ -319,7 +319,12 @@ transitions still originate from `ActiveFlowStore`. The running surface uses
 only WidgetKit-safe system timer text. After the canonical content state enters
 overtime, it uses the same notation as the macOS menu bar:
 `00:00 → +00:01`. A paused activity freezes the signed value captured in its
-content state.
+content state. If iOS suspends the application before the zero boundary, the
+system countdown may remain visually at `00:00` until the next launch,
+foreground transition, or other ActivityKit content update. The canonical Flow
+continues from absolute timestamps. Version 1.x accepts this limitation;
+guaranteed suspended-state overtime updates require the optional APNs transport
+planned for 2.0.
 
 ## Home Screen Widgets
 

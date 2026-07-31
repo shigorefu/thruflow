@@ -61,6 +61,9 @@ Current MVP goal:
 ## Not Included
 
 - AI.
+- Author-operated APNs backend; reliable suspended-state Live Activity updates
+  are planned for 2.0.
+- External Connectors such as Toggl, Strava, and Jira; they are planned for 2.0.
 - Non-Flow continuous timeline.
 - Food/sleep/game classification.
 - Complex rewards.
@@ -70,5 +73,8 @@ Current MVP goal:
 
 ## Known Product Gaps
 
+- If iOS suspends the application before a Flow crosses zero, Live Activity can
+  remain visually at `00:00` until the next application launch or foreground
+  update. Canonical Flow time still advances from persisted absolute dates.
 - Automatic Task creation for Flow without a selected Task needs measurement and planned-amount defaults.
 - Product-level deletion of an arbitrary amount from a complete Flow series needs clarification; exact sessions and segments can already be corrected or deleted in History.

@@ -65,7 +65,10 @@ session is adopted the next time iOS receives and processes the CloudKit change,
 typically when the app becomes active. Guaranteed background creation or
 updating of Dynamic Island requires ActivityKit push tokens and an APNs
 provider. That server-assisted transport is not part of the current private
-CloudKit implementation.
+CloudKit implementation and is deferred to 2.0 together with external
+Connectors. In 1.x, a suspended iPhone Live Activity may remain at `00:00`
+until the application next launches or becomes active; the canonical Flow still
+advances from its absolute timestamps.
 
 ## Production Schema
 

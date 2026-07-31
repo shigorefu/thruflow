@@ -60,30 +60,31 @@
 - Непотоковый непрерывный timeline.
 - Новые награды, AI и внешние connectors.
 
-## 1.1 — Надёжная фоновая доставка
-
-- [ ] Добавить небольшой serverless APNs backend:
-  `API Gateway -> Lambda -> EventBridge Scheduler -> APNs`.
-- [ ] Регистрировать и обновлять ActivityKit push tokens без хранения Apple
-  `.p8`-ключа в приложении.
-- [ ] Обновлять Live Activity через APNs в момент перехода через `00:00`, чтобы
-  suspended iPhone надёжно показывал overtime `+MM:SS`.
-- [ ] Добавить серверное напоминание о Flow/перерыве, который продолжается
-  больше часа.
-- [ ] Добавить retry/idempotency, удаление одноразовых schedules, минимальные
-  CloudWatch logs и AWS Budget alerts.
-- [ ] Сохранить локальный timer и CloudKit как source of truth: отсутствие
-  backend или сети не должно мешать запуску и сохранению Flow.
-
-## После 1.1
+## После 1.0
 
 - Экспорт данных в CSV.
 - Более подробная iPhone/Watch Statistics.
 - Дальнейшее улучшение quick Task composer.
 - Более продуманная система наград для `ナイス`.
 
-## 2.0 и исследования
+## 2.0 — Server Transport и Connectors
 
-- Connectors: Toggl, Strava, Jira и другие OAuth/webhook-интеграции.
+- [ ] Добавить опциональный serverless APNs backend:
+  `API Gateway -> Lambda -> EventBridge Scheduler -> APNs`.
+- [ ] Регистрировать и обновлять ActivityKit push tokens без хранения Apple
+  `.p8`-ключа в приложении.
+- [ ] Обновлять Live Activity через APNs в момент перехода через `00:00`, чтобы
+  полностью приостановленный iPhone надёжно показывал overtime `+MM:SS`.
+- [ ] Добавить серверное напоминание о Flow/перерыве, который продолжается
+  больше часа.
+- [ ] Добавить retry/idempotency, удаление одноразовых schedules, минимальные
+  CloudWatch logs и AWS Budget alerts.
+- [ ] Сохранить локальный timer и CloudKit как source of truth: отсутствие
+  backend или сети не должно мешать запуску и сохранению Flow.
+- [ ] Добавить Connectors: Toggl, Strava, Jira и другие
+  OAuth/webhook-интеграции.
+
+## После 2.0
+
 - AI-сводки.
 - Pets.

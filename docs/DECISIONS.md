@@ -327,6 +327,26 @@ Reason: a deliberate break changes what the user intended to do, not what the
 user already did. Keeping planning and actual history separate avoids false
 failures without rewriting historical records.
 
+## D-029: Version 1.x Does Not Require An APNs Backend
+
+ThruFlow 1.x remains fully usable without an author-operated server. The
+canonical active Flow continues to use absolute timestamps in SwiftData and
+CloudKit even while an application is suspended. However, if iOS suspends the
+application before the planned boundary, its Live Activity can remain visually
+at `00:00` until the application next launches, enters the foreground, or
+otherwise publishes new ActivityKit content. This is an accepted presentation
+limitation of 1.x, not a loss or pause of canonical timer state.
+
+An ActivityKit APNs provider and all external Connectors are deferred together
+to 2.0. The future provider must remain optional: local Flow recording and
+CloudKit synchronization stay the source of truth and must continue working
+without the provider, its credentials, AWS, or network access.
+
+Reason: an open-source core release should not depend on the maintainer running
+and funding a backend. APNs transport and OAuth/webhook Connectors introduce
+operational cost, secret management, abuse protection, and privacy obligations
+that belong to a separate product stage.
+
 ## Open Questions
 
 - What measurement and planned amount should be used for an auto-created Task when Flow starts with only a Direction or with neither Direction nor Task?

@@ -269,7 +269,11 @@ continue to render `00:00`, but SwiftUI cannot switch to the overtime branch
 until new ActivityKit content arrives. A guaranteed `00:00 -> +00:01`
 transition while the app is suspended requires an ActivityKit push update
 through APNs; `staleDate`, widget timelines, background tasks, and local
-notifications are not reliable substitutes.
+notifications are not reliable substitutes. Version 1.x explicitly accepts
+this presentation limitation and does not require an APNs provider. Remote
+ActivityKit transport and external Connectors are deferred to 2.0; the future
+transport must remain optional and must not replace SwiftData/CloudKit as the
+source of truth.
 Do not apply `fixedSize()` to the dynamic interval text: ActivityKit supplies a
 bounded region for each presentation, and forcing the archived text's intrinsic
 width can collapse it instead of rendering the clock.
