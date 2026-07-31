@@ -32,6 +32,7 @@ struct DayHistoryView: View {
     @State private var inspectedSession: FlowSession?
     @State private var manualFlowRequest: HistoryManualFlowRequest?
     @State private var isAddingTaskRecord = false
+    @State private var historyRecordStart = Date.now
     @State private var taskDirection: Direction?
 
     private let onClose: (() -> Void)?
@@ -110,11 +111,23 @@ struct DayHistoryView: View {
                         text: $searchText,
                         isPresented: $isSearchPresented
                     )
+                    Button {
+                        presentHistoryRecord(at: defaultManualFlowStart(on: selectedDate))
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                    .help(String(localized: "記録を追加"))
+                    .accessibilityLabel(String(localized: "記録を追加"))
                 }
             }
         }
-        .overlay(alignment: .bottomTrailing) {
-            addHistoryRecordButton
+        .inspector(isPresented: $isAddingTaskRecord) {
+            HistoryTaskRecordForm(
+                startedAt: historyRecordStart,
+                onDismiss: { isAddingTaskRecord = false }
+            )
+            .id(historyRecordStart)
+            .inspectorColumnWidth(min: 420, ideal: 480, max: 560)
         }
         .sheet(item: $editingTodo) { todo in
             TodoFormView(mode: .edit(todo))
@@ -131,13 +144,6 @@ struct DayHistoryView: View {
                 onDismiss: { manualFlowRequest = nil }
             )
             .frame(minWidth: 420, idealWidth: 480, minHeight: 430, idealHeight: 500)
-        }
-        .sheet(isPresented: $isAddingTaskRecord) {
-            HistoryTaskRecordForm(
-                startedAt: defaultManualFlowStart(on: selectedDate),
-                onDismiss: { isAddingTaskRecord = false }
-            )
-            .frame(minWidth: 460, idealWidth: 520, minHeight: 560, idealHeight: 650)
         }
         .sheet(item: $taskDirection) { direction in
             TodoFormView(
@@ -240,7 +246,8 @@ struct DayHistoryView: View {
                     sidebarHeader: AnyView(historyToolbar),
                     sidebarSummary: selectedRange == .day
                         ? AnyView(daySidebarSummary)
-                        : nil
+                        : nil,
+                    onAddRecord: presentHistoryRecord
                 )
             case .tasks:
                 aggregateWorkspace { tasksContent }
@@ -393,24 +400,6 @@ struct DayHistoryView: View {
                 )
             }
         }
-    }
-
-    private var addHistoryRecordButton: some View {
-        Button {
-            isAddingTaskRecord = true
-        } label: {
-            Image(systemName: "plus")
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(.white)
-                .frame(width: 48, height: 48)
-                .background(Color.accentColor, in: Circle())
-                .contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .padding(.trailing, 16)
-        .padding(.bottom, 14)
-        .help(String(localized: "記録を追加"))
-        .accessibilityLabel(String(localized: "記録を追加"))
     }
 
     private var directionsContent: some View {
@@ -673,6 +662,11 @@ struct DayHistoryView: View {
             todo: todo,
             startedAt: defaultManualFlowStart(on: todo.scheduledDate ?? selectedDate)
         )
+    }
+
+    private func presentHistoryRecord(at startedAt: Date) {
+        historyRecordStart = startedAt
+        isAddingTaskRecord = true
     }
 
     private func defaultManualFlowStart(on date: Date) -> Date {

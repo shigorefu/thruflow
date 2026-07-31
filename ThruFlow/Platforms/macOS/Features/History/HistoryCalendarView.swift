@@ -23,6 +23,7 @@ struct HistoryCalendarView: View {
     let sidebarTitle: String
     let sidebarHeader: AnyView
     let sidebarSummary: AnyView?
+    let onAddRecord: (Date) -> Void
 
     @State private var inspectedItem: HistoryCalendarItem?
     @State private var editedBreak: FlowBreak?
@@ -145,7 +146,8 @@ struct HistoryCalendarView: View {
                 manualFlowDraft: $manualFlowDraft,
                 onSelectSeries: openSeries,
                 onSelect: openEditor,
-                onMove: moveHistoryItem
+                onMove: moveHistoryItem,
+                onAddRecord: onAddRecord
             )
         case .month:
             HistoryMonthGrid(
@@ -210,7 +212,8 @@ struct HistoryCalendarView: View {
                     manualFlowDraft: $manualFlowDraft,
                     onSelectSeries: openSeries,
                     onSelect: openEditor,
-                    onMove: moveHistoryItem
+                    onMove: moveHistoryItem,
+                    onAddRecord: onAddRecord
                 )
             } inspector: {
                 HistoryMiniCalendar(
@@ -420,6 +423,7 @@ struct HistoryTimeGrid: View {
     let onSelectSeries: (HistoryCalendarSeriesBlock) -> Void
     let onSelect: (HistoryCalendarItem) -> Void
     let onMove: (HistoryCalendarItem, Date) -> Bool
+    let onAddRecord: (Date) -> Void
 
     @State private var dragState: HistoryCalendarDragState?
 
@@ -481,7 +485,7 @@ struct HistoryTimeGrid: View {
                         ZStack(alignment: .topLeading) {
                             hourGrid(dayWidth: dayWidth, contentWidth: contentWidth)
                                 .allowsHitTesting(false)
-                            emptyDoubleClickLayer(dayWidth: dayWidth)
+                            emptyTimeSelectionLayer(dayWidth: dayWidth)
                             timedItems(dayWidth: dayWidth)
                             manualFlowDraftBlock(dayWidth: dayWidth)
                             currentTimeLine(dayWidth: dayWidth)
@@ -679,7 +683,7 @@ struct HistoryTimeGrid: View {
     }
 
     @ViewBuilder
-    private func emptyDoubleClickLayer(dayWidth: CGFloat) -> some View {
+    private func emptyTimeSelectionLayer(dayWidth: CGFloat) -> some View {
         let height = hourHeight * CGFloat(hourRange.count)
         ForEach(Array(days.enumerated()), id: \.offset) { dayIndex, day in
             Color.clear
@@ -687,14 +691,11 @@ struct HistoryTimeGrid: View {
                 .frame(width: dayWidth, height: height)
                 .offset(x: timeAxisWidth + CGFloat(dayIndex) * dayWidth)
                 .gesture(
-                    SpatialTapGesture(count: 2)
+                    SpatialTapGesture()
                         .onEnded { value in
                             let y = min(max(0, value.location.y), height)
-                            let startedAt = date(on: day, y: y)
-                            manualFlowDraft = HistoryFlowCreationDraft(
-                                startedAt: startedAt,
-                                endedAt: startedAt.addingTimeInterval(25 * 60)
-                            )
+                            manualFlowDraft = nil
+                            onAddRecord(date(on: day, y: y))
                         }
                 )
                 .dropDestination(for: String.self) { payloads, location in
