@@ -264,6 +264,12 @@ surface stays numeric `MM:SS` instead of changing to localized unit text. While
 the application process is active, `ActiveFlowStore` publishes one additional
 content update when the sign changes; that update switches intervals and adds
 the explicit overtime `+` without sending per-second ActivityKit updates.
+If iOS suspends the application before the boundary, the system countdown can
+continue to render `00:00`, but SwiftUI cannot switch to the overtime branch
+until new ActivityKit content arrives. A guaranteed `00:00 -> +00:01`
+transition while the app is suspended requires an ActivityKit push update
+through APNs; `staleDate`, widget timelines, background tasks, and local
+notifications are not reliable substitutes.
 Do not apply `fixedSize()` to the dynamic interval text: ActivityKit supplies a
 bounded region for each presentation, and forcing the archived text's intrinsic
 width can collapse it instead of rendering the clock.

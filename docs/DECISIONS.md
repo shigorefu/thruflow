@@ -217,6 +217,11 @@ beginning at `plannedEndAt`. `ActiveFlowStore` publishes one boundary update
 when an active app observes the sign change so the extension can switch ranges
 and add the explicit overtime `+`; custom per-second formatting and per-second
 ActivityKit updates are not allowed in the extension.
+When the app is suspended at the boundary, the system timer can reach `00:00`
+without reevaluating the conditional overtime view. Guaranteeing the switch to
+`+00:01` in that state requires an ActivityKit push update through APNs.
+`staleDate`, WidgetKit timelines, background tasks, and local notifications do
+not provide an exact or guaranteed boundary update.
 The dynamic timer text must remain flexible inside ActivityKit's compact,
 expanded, and Lock Screen regions; `fixedSize()` is prohibited because it can
 collapse the archived timer label at runtime.

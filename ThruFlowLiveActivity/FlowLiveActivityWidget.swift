@@ -152,14 +152,14 @@ private struct FlowActivityTimeLabel: View {
     @ViewBuilder
     private var runningTime: some View {
         if state.remainingSeconds < 0 {
-            HStack(spacing: 0) {
+            (
                 Text(verbatim: "+")
-                Text(
+                + Text(
                     timerInterval: state.overtimeRange,
                     countsDown: false,
                     showsHours: false
                 )
-            }
+            )
             .environment(\.locale, Locale(identifier: "en_US_POSIX"))
         } else {
             Text(
