@@ -94,11 +94,6 @@ struct IOSTaskComposer: View {
             }
             .padding(12)
             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
-            .overlay {
-                RoundedRectangle(cornerRadius: 18)
-                    .strokeBorder(Color.primary.opacity(0.08))
-            }
-            .shadow(color: .black.opacity(0.08), radius: 12, y: 4)
         }
         .padding(.horizontal, 12)
         .padding(.top, 8)
@@ -323,10 +318,6 @@ struct IOSTaskComposer: View {
         .foregroundStyle(.secondary)
         .padding(11)
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
-        .overlay {
-            RoundedRectangle(cornerRadius: 14)
-                .strokeBorder(Color.primary.opacity(0.09))
-        }
     }
 
     private func legendItem(_ shortcut: String, _ label: String) -> some View {
@@ -372,11 +363,6 @@ struct IOSTaskComposer: View {
             }
         }
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
-        .overlay {
-            RoundedRectangle(cornerRadius: 14)
-                .strokeBorder(Color.primary.opacity(0.09))
-        }
-        .shadow(color: .black.opacity(0.10), radius: 14, y: 5)
     }
 
     private func compactLabel(
