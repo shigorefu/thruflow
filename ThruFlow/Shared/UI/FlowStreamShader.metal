@@ -7,29 +7,25 @@ static float hash21(float2 value) {
     return fract(value.x * value.y);
 }
 
-static half4 weightedColor(
-    float coordinate,
+static half4 ribbonColor(
+    int index,
     half4 color0,
     half4 color1,
     half4 color2,
     half4 color3,
-    float weight0,
-    float weight1,
-    float weight2,
-    float weight3
+    half4 color4,
+    half4 color5,
+    half4 color6
 ) {
-    float total = max(weight0 + weight1 + weight2 + weight3, 0.0001);
-    float value = fract(coordinate) * total;
-    if (value < weight0) {
-        return color0;
+    switch (index) {
+        case 0: return color0;
+        case 1: return color1;
+        case 2: return color2;
+        case 3: return color3;
+        case 4: return color4;
+        case 5: return color5;
+        default: return color6;
     }
-    if (value < weight0 + weight1) {
-        return color1;
-    }
-    if (value < weight0 + weight1 + weight2) {
-        return color2;
-    }
-    return color3;
 }
 
 [[ stitchable ]] half4 flowStream(
@@ -54,10 +50,9 @@ static half4 weightedColor(
     half4 color1,
     half4 color2,
     half4 color3,
-    float weight0,
-    float weight1,
-    float weight2,
-    float weight3,
+    half4 color4,
+    half4 color5,
+    half4 color6,
     half4 backgroundColor,
     float darkMode
 ) {
@@ -166,16 +161,16 @@ static half4 weightedColor(
             secondPair,
             half(fract(legacyLane + progress * 0.45))
         );
-        half4 dailySelected = weightedColor(
-            dailyLane * 0.82 + dailySeed * 0.18 + paletteRotation,
+        int colorIndex = (index + int(paletteRotation * float(ribbonCount))) % ribbonCount;
+        half4 dailySelected = ribbonColor(
+            colorIndex,
             color0,
             color1,
             color2,
             color3,
-            weight0,
-            weight1,
-            weight2,
-            weight3
+            color4,
+            color5,
+            color6
         );
         half4 selected = mix(legacySelected, dailySelected, half(dailyReveal));
 

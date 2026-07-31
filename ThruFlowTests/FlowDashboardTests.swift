@@ -17,6 +17,18 @@ struct FlowDashboardTests {
         return calendar
     }
 
+    @Test func streamPaletteKeepsEveryActiveColorVisible() {
+        let ribbons = FlowStreamPaletteLayout.ribbonColorHexes(
+            palette: ["#FF9500", "#FFD60A", "#0A84FF", "#30D158"],
+            weights: [0.50, 0.30, 0.15, 0.05],
+            ribbonCount: 7
+        )
+
+        #expect(ribbons.count == 7)
+        #expect(Set(ribbons) == Set(["#FF9500", "#FFD60A", "#0A84FF", "#30D158"]))
+        #expect(ribbons.filter { $0 == "#FF9500" }.count > 1)
+    }
+
     @Test func dashboardBuildsDailyTotalsPaletteAndTimelineFractions() {
         let day = Date(timeIntervalSince1970: 86_400)
         let reading = Direction(name: "読書", type: .neutral, symbolName: "📚", colorHex: "#34C759")

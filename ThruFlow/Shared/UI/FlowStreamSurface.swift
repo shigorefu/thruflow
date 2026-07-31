@@ -43,8 +43,7 @@ struct FlowStreamSurface: View {
             isActive: isActive,
             mode: mode
         )
-        let colors = resolvedColors
-        let weights = resolvedWeights
+        let colors = resolvedRibbonColors
         let appearance = DailyFlowAppearance(seed: dailySeed)
         let background = resolvedBackground(identityReveal: state.identityReveal)
 
@@ -52,7 +51,6 @@ struct FlowStreamSurface: View {
         watchSurface(
             state: state,
             colors: colors,
-            weights: weights,
             appearance: appearance,
             background: background
         )
@@ -89,10 +87,9 @@ struct FlowStreamSurface: View {
                             .color(colors[1]),
                             .color(colors[2]),
                             .color(colors[3]),
-                            .float(Float(weights[0])),
-                            .float(Float(weights[1])),
-                            .float(Float(weights[2])),
-                            .float(Float(weights[3])),
+                            .color(colors[4]),
+                            .color(colors[5]),
+                            .color(colors[6]),
                             .color(background),
                             .float(colorScheme == .dark ? 1 : 0)
                         )
@@ -115,7 +112,6 @@ struct FlowStreamSurface: View {
     private func watchSurface(
         state: FlowVisualState,
         colors: [Color],
-        weights: [Double],
         appearance: DailyFlowAppearance,
         background: Color
     ) -> some View {
@@ -140,7 +136,6 @@ struct FlowStreamSurface: View {
                     phase: phase,
                     state: state,
                     colors: colors,
-                    weights: weights,
                     appearance: appearance
                 )
             }
@@ -160,7 +155,6 @@ struct FlowStreamSurface: View {
         phase: Double,
         state: FlowVisualState,
         colors: [Color],
-        weights: [Double],
         appearance: DailyFlowAppearance
     ) {
         let ribbonCount = FlowVisualState.ribbonCount
@@ -170,12 +164,7 @@ struct FlowStreamSurface: View {
 
         for ribbon in 0..<ribbonCount {
             let progress = Double(ribbon) / Double(max(ribbonCount - 1, 1))
-            let color = watchRibbonColor(
-                at: progress,
-                colors: colors,
-                weights: weights,
-                rotation: appearance.paletteRotation
-            )
+            let color = colors[ribbon]
             let path = watchRibbonPath(
                 ribbon: ribbon,
                 ribbonCount: ribbonCount,
@@ -248,48 +237,15 @@ struct FlowStreamSurface: View {
         return path
     }
 
-    private func watchRibbonColor(
-        at progress: Double,
-        colors: [Color],
-        weights: [Double],
-        rotation: Double
-    ) -> Color {
-        let sample = (progress + rotation).truncatingRemainder(dividingBy: 1)
-        var accumulated = 0.0
-
-        for index in colors.indices {
-            accumulated += weights[index]
-            if sample <= accumulated {
-                return colors[index]
-            }
-        }
-        return colors.last ?? .blue
-    }
 #endif
 
-    private var resolvedColors: [Color] {
-        let fallback = ["#0A84FF", "#30D5C8", "#BF5AF2", "#64D2FF"]
-        let values = palette.isEmpty ? fallback : palette
-        return (0..<4).map { Color(hex: values[$0 % values.count]) }
-    }
-
-    private var resolvedWeights: [Double] {
-        guard !palette.isEmpty else {
-            return [0.25, 0.25, 0.25, 0.25]
-        }
-
-        let provided = (0..<4).map { index -> Double in
-            guard index < paletteWeights.count else { return 0 }
-            return max(0, paletteWeights[index])
-        }
-        let repeated = (0..<4).map { index -> Double in
-            if provided.reduce(0, +) > 0 {
-                return provided[index]
-            }
-            return index < palette.count ? 1 : 0
-        }
-        let total = max(repeated.reduce(0, +), 1)
-        return repeated.map { $0 / total }
+    private var resolvedRibbonColors: [Color] {
+        FlowStreamPaletteLayout.ribbonColorHexes(
+            palette: palette,
+            weights: paletteWeights,
+            ribbonCount: FlowVisualState.ribbonCount
+        )
+        .map { Color(hex: $0) }
     }
 
     private func resolvedBackground(identityReveal: Double) -> Color {
