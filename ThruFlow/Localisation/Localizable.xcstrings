@@ -1866,6 +1866,12 @@
             "value" : "Long Break"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "長休憩"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
