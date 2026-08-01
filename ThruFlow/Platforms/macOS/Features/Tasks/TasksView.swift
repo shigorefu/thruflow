@@ -16,7 +16,8 @@ struct TasksView: View {
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
 
     @Query(sort: \Direction.name, order: .forward) private var directions: [Direction]
-    @Query(sort: \Todo.sortIndex, order: .forward) private var todos: [Todo]
+    let todos: [Todo]
+    @ObservedObject var taskWindowCache: TaskWindowCache
 
     @State private var editingTodo: Todo?
     @State private var newTodoTitle = ""
@@ -42,9 +43,6 @@ struct TasksView: View {
     }
     private var requiredPlanner: RequiredTodoPlanner { RequiredTodoPlanner(calendar: calendar) }
     private var calendarBuilder: TaskCalendarBuilder { TaskCalendarBuilder(calendar: calendar) }
-    private var backlogBuilder: TaskBacklogBuilder {
-        TaskBacklogBuilder(calendar: calendar, dayBoundary: dayBoundary)
-    }
     private var rescheduleService: TaskRescheduleService {
         TaskRescheduleService(calendar: calendar, dayBoundary: dayBoundary)
     }
@@ -73,9 +71,9 @@ struct TasksView: View {
     }
 
     private var selectedDateTodos: [Todo] {
-        searchFilteredTodos.filter {
-            filter.includes($0, on: selectedDate) && taskFilter.includes($0)
-        }
+        taskWindowCache.todos(on: selectedDate)
+            .filter(taskFilter.includes)
+            .filter(matchesSearch)
     }
 
     private var selectedDateGroups: [TasksTodoGroup] {
@@ -90,8 +88,14 @@ struct TasksView: View {
         calendarBuilder.dates(for: calendarRange, anchoredAt: anchorDate)
     }
 
+    private var visiblePeriodTodos: [Todo] {
+        taskWindowCache.todos(in: visibleDates)
+            .filter { !$0.isArchived && !$0.isDeleted }
+            .filter(matchesSearch)
+    }
+
     private var backlogSnapshot: TaskBacklogSnapshot {
-        backlogBuilder.build(todos: todos)
+        taskWindowCache.backlogSnapshot()
     }
 
     private var visibleOverdueTodos: [Todo] {
@@ -100,8 +104,13 @@ struct TasksView: View {
             .filter(matchesSearch)
     }
 
-    private var searchFilteredTodos: [Todo] {
-        todos.filter(matchesSearch)
+    private var requiredTodoMaterializationID: MacRequiredTodoMaterializationID {
+        MacRequiredTodoMaterializationID(
+            anchorDate: calendar.startOfDay(for: anchorDate),
+            rangeRawValue: calendarRange.rawValue,
+            todoCount: todos.count,
+            latestDirectionUpdate: directions.lazy.map(\.updatedAt).max()
+        )
     }
 
     var body: some View {
@@ -180,26 +189,28 @@ struct TasksView: View {
         .onAppear {
             alignInitialSelectionWithCurrentAppDay()
             selectComposerDate(selectedDate)
-            ensureRequiredTodosForVisibleDates()
         }
-        .onChange(of: calendarRange) { _, _ in
-            anchorDate = selectedDate
-            ensureRequiredTodosForVisibleDates()
-        }
-        .onChange(of: anchorDate) { _, _ in
-            ensureRequiredTodosForVisibleDates()
-        }
+        .onChange(of: calendarRange) { _, _ in anchorDate = selectedDate }
         .onChange(of: selectedDate) { _, newDate in
             selectComposerDate(newDate)
         }
-        .onChange(of: directions.map(\.updatedAt)) { _, _ in
-            ensureRequiredTodosForVisibleDates()
+        .task(id: requiredTodoMaterializationID) {
+            do {
+                try await Task.sleep(for: .milliseconds(180))
+            } catch {
+                return
+            }
+            guard !Task.isCancelled else { return }
+            ensureRequiredTodosForVisibleDates(reconcilesDuplicates: false)
         }
-        .onChange(of: todos.count) { _, _ in
-            ensureRequiredTodosForVisibleDates()
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) { _ in
-            ensureRequiredTodosForVisibleDates()
+        .task {
+            do {
+                try await Task.sleep(for: .milliseconds(750))
+            } catch {
+                return
+            }
+            guard !Task.isCancelled else { return }
+            ensureRequiredTodosForVisibleDates(reconcilesDuplicates: true)
         }
         .onTapGesture {
 #if os(macOS)
@@ -316,7 +327,7 @@ struct TasksView: View {
             TaskMultiDayBoard(
                 dates: visibleDates,
                 selectedDate: selectedDate,
-                todos: searchFilteredTodos.filter { !$0.isArchived && !$0.isDeleted },
+                todos: visiblePeriodTodos,
                 filter: taskFilter,
                 columnWidth: 238,
                 onSelectDate: selectDate,
@@ -333,7 +344,7 @@ struct TasksView: View {
                 anchorDate: anchorDate,
                 dates: visibleDates,
                 selectedDate: selectedDate,
-                todos: searchFilteredTodos.filter { !$0.isArchived && !$0.isDeleted },
+                todos: visiblePeriodTodos,
                 filter: taskFilter,
                 onSelectDate: openDay,
                 onMove: moveTodo
@@ -876,7 +887,10 @@ struct TasksView: View {
         newTodoError = nil
     }
 
-    private func ensureRequiredTodosForVisibleDates(now: Date = .now) {
+    private func ensureRequiredTodosForVisibleDates(
+        now: Date = .now,
+        reconcilesDuplicates: Bool
+    ) {
         let today = dayBoundary.day(containing: now, calendar: calendar)
         let dates = visibleDates
             .filter { $0 >= today }
@@ -894,7 +908,9 @@ struct TasksView: View {
             directions: activeDirections,
             dates: dates,
             modelContext: modelContext,
-            now: now
+            now: now,
+            knownTodos: todos,
+            reconcilesDuplicates: reconcilesDuplicates
         )
     }
 
@@ -929,6 +945,13 @@ struct TasksView: View {
 private enum MacTaskBacklogMode {
     case overdue
     case unscheduled
+}
+
+private struct MacRequiredTodoMaterializationID: Hashable {
+    let anchorDate: Date
+    let rangeRawValue: String
+    let todoCount: Int
+    let latestDirectionUpdate: Date?
 }
 
 /// Quick-add volume selection for the composer. `checkbox` means "no target amount",
@@ -2620,7 +2643,7 @@ private struct EmptyRow: View {
 }
 
 #Preview {
-    TasksView()
+    TasksView(todos: [], taskWindowCache: TaskWindowCache())
         .environmentObject(ActiveFlowStore())
         .modelContainer(for: [Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self], inMemory: true)
 }

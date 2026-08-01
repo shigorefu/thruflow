@@ -1,3 +1,4 @@
+#if os(iOS)
 import SwiftData
 import SwiftUI
 import UIKit
@@ -1401,3 +1402,4 @@ struct IOSHistoryItemDetail: View {
             : "\(minutes)\(String(localized: "分"))"
     }
 }
+#endif

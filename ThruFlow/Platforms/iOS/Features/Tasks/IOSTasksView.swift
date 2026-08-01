@@ -6,8 +6,9 @@ struct IOSTasksView: View {
     @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.modelContext) private var modelContext
 
-    @Query(sort: \Todo.sortIndex) private var todos: [Todo]
     @Query(sort: \Direction.sortIndex) private var directions: [Direction]
+    let todos: [Todo]
+    @ObservedObject var taskWindowCache: TaskWindowCache
 
     @State private var selectedDate = Calendar.current.startOfDay(for: .now)
     @State private var range = TaskCalendarRange.oneDay
@@ -51,10 +52,23 @@ struct IOSTasksView: View {
     }
 
     private var backlog: TaskBacklogSnapshot {
-        TaskBacklogBuilder(
-            calendar: calendar,
-            dayBoundary: dayBoundary
-        ).build(todos: todos)
+        taskWindowCache.backlogSnapshot()
+    }
+
+    private var visiblePeriodTodos: [Todo] {
+        let dates: [Date]
+        switch range {
+        case .oneDay:
+            dates = (-7...7).compactMap {
+                calendar.date(byAdding: .day, value: $0, to: selectedDate)
+            }
+        case .sevenDays, .month:
+            dates = visibleDates
+        }
+
+        return taskWindowCache.todos(in: dates)
+            .filter { !$0.isArchived && !$0.isDeleted }
+            .filter(matchesSearch)
     }
 
     private var backlogCount: Int {
@@ -153,6 +167,12 @@ struct IOSTasksView: View {
         }
         .task {
             alignInitialSelectionWithCurrentAppDay()
+            do {
+                try await Task.sleep(for: .milliseconds(750))
+            } catch {
+                return
+            }
+            guard !Task.isCancelled else { return }
             ensureRequiredTodos(reconcilesDuplicates: true)
         }
         .task(id: requiredTodoMaterializationID) {
@@ -166,9 +186,6 @@ struct IOSTasksView: View {
         }
         .onDisappear {
             showsComposer = false
-        }
-        .onChange(of: directions.map(\.updatedAt)) { _, _ in
-            ensureRequiredTodos(reconcilesDuplicates: true)
         }
     }
 
@@ -321,13 +338,13 @@ struct IOSTasksView: View {
             if range == .oneDay {
                 IOSWeekDateStrip(
                     selectedDate: $selectedDate,
-                    todos: searchFilteredTodos,
+                    todos: visiblePeriodTodos,
                     filter: filter
                 )
             } else if range == .sevenDays {
                 IOSWeekCardStrip(
                     selectedDate: $selectedDate,
-                    todos: searchFilteredTodos,
+                    todos: visiblePeriodTodos,
                     filter: filter
                 )
             }
@@ -349,7 +366,7 @@ struct IOSTasksView: View {
                 VStack(spacing: 14) {
                     IOSTaskMonthCalendar(
                         selectedDate: $selectedDate,
-                        todos: searchFilteredTodos,
+                        todos: visiblePeriodTodos,
                         filter: filter
                     )
 
@@ -535,8 +552,7 @@ struct IOSTasksView: View {
     }
 
     private func todos(on date: Date) -> [Todo] {
-        todos
-            .filter { TodayTodoFilter(calendar: calendar).includes($0, on: date) }
+        taskWindowCache.todos(on: date)
             .filter(filter.includes)
             .filter(matchesSearch)
             .sorted(by: taskSort)
@@ -552,10 +568,6 @@ struct IOSTasksView: View {
             .filter(filter.includes)
             .filter(matchesSearch)
             .sorted(by: taskSort)
-    }
-
-    private var searchFilteredTodos: [Todo] {
-        todos.filter(matchesSearch)
     }
 
     private func matchesSearch(_ todo: Todo) -> Bool {
@@ -590,7 +602,8 @@ struct IOSTasksView: View {
         RequiredTodoMaterializationID(
             selectedDate: calendar.startOfDay(for: selectedDate),
             rangeRawValue: range.rawValue,
-            todoCount: todos.count
+            todoCount: todos.count,
+            latestDirectionUpdate: directions.lazy.map(\.updatedAt).max()
         )
     }
 
@@ -896,6 +909,7 @@ private struct RequiredTodoMaterializationID: Hashable {
     let selectedDate: Date
     let rangeRawValue: String
     let todoCount: Int
+    let latestDirectionUpdate: Date?
 }
 
 private struct IOSGroupedTodos {

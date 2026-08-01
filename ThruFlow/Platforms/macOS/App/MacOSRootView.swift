@@ -14,6 +14,7 @@ struct MacOSRootView: View {
     @Environment(\.modelContext) private var modelContext
 
     @Query(sort: \Direction.updatedAt, order: .reverse) private var directions: [Direction]
+    @Query(sort: \Todo.updatedAt, order: .reverse) private var todos: [Todo]
     @State private var selection: AppSection? = .flow
     @State private var historyDate = Calendar.current.startOfDay(for: .now)
     @State private var didReconcileFlowProgress = false
@@ -21,6 +22,7 @@ struct MacOSRootView: View {
     @State private var flowTodoGroupsCache: FlowDashboardTodoGroups?
     @State private var statisticsFlowCache: StatisticsHeatmapResult?
     @State private var statisticsAchievementCache: AchievementHeatmapResult?
+    @StateObject private var taskWindowCache = TaskWindowCache()
 
     var body: some View {
         NavigationSplitView {
@@ -59,6 +61,20 @@ struct MacOSRootView: View {
             let reconciler = FlowProgressReconciliationActor(modelContainer: modelContainer)
             try? await reconciler.reconcileAll()
         }
+        .task(id: taskCacheSourceRevision) {
+            taskWindowCache.refresh(
+                todos: todos,
+                calendar: calendar,
+                dayBoundary: dayBoundary
+            )
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) { _ in
+            taskWindowCache.refresh(
+                todos: todos,
+                calendar: calendar,
+                dayBoundary: dayBoundary
+            )
+        }
     }
 
     @ViewBuilder
@@ -77,7 +93,7 @@ struct MacOSRootView: View {
                 )
             }
         case .tasks:
-            TasksView()
+            TasksView(todos: todos, taskWindowCache: taskWindowCache)
         case .history:
             DayHistoryView(initialDate: historyDate)
                 .id(historyDate)
@@ -99,6 +115,15 @@ struct MacOSRootView: View {
                 }
             }
         }
+    }
+
+    private var taskCacheSourceRevision: TaskWindowCache.SourceRevision {
+        TaskWindowCache.sourceRevision(
+            todoCount: todos.count,
+            latestUpdate: todos.first?.updatedAt,
+            calendar: calendar,
+            dayBoundary: dayBoundary
+        )
     }
 }
 

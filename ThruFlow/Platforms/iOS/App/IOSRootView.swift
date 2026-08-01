@@ -1,3 +1,4 @@
+import SwiftData
 import SwiftUI
 
 enum IOSAppRoute: Hashable, CaseIterable, Identifiable {
@@ -38,6 +39,10 @@ enum IOSAppRoute: Hashable, CaseIterable, Identifiable {
 }
 
 struct IOSRootView: View {
+    @Environment(\.calendar) private var calendar
+    @Environment(\.appDayBoundary) private var dayBoundary
+
+    @Query(sort: \Todo.updatedAt, order: .reverse) private var todos: [Todo]
     @State private var selection = IOSAppRoute.flow
     @State private var showsSettings = false
     @State private var selectedHistoryDate = Date.now
@@ -45,6 +50,7 @@ struct IOSRootView: View {
     @State private var flowTodoGroupsCache: FlowDashboardTodoGroups?
     @State private var statisticsFlowCache: StatisticsHeatmapResult?
     @State private var statisticsTaskCache: AchievementHeatmapResult?
+    @StateObject private var taskWindowCache = TaskWindowCache()
 
     private var selectionBinding: Binding<IOSAppRoute> {
         Binding(
@@ -93,6 +99,20 @@ struct IOSRootView: View {
                 break
             }
         }
+        .task(id: taskCacheSourceRevision) {
+            taskWindowCache.refresh(
+                todos: todos,
+                calendar: calendar,
+                dayBoundary: dayBoundary
+            )
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) { _ in
+            taskWindowCache.refresh(
+                todos: todos,
+                calendar: calendar,
+                dayBoundary: dayBoundary
+            )
+        }
     }
 
     private var tabs: some View {
@@ -136,7 +156,7 @@ struct IOSRootView: View {
                 )
             }
         case .tasks:
-            IOSTasksView()
+            IOSTasksView(todos: todos, taskWindowCache: taskWindowCache)
         case .history:
             IOSHistoryView(selectedDate: $selectedHistoryDate)
         case .directions:
@@ -166,5 +186,14 @@ struct IOSRootView: View {
         } else {
             selectionBinding.wrappedValue = route
         }
+    }
+
+    private var taskCacheSourceRevision: TaskWindowCache.SourceRevision {
+        TaskWindowCache.sourceRevision(
+            todoCount: todos.count,
+            latestUpdate: todos.first?.updatedAt,
+            calendar: calendar,
+            dayBoundary: dayBoundary
+        )
     }
 }
