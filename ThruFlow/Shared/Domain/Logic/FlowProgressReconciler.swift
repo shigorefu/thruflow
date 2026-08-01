@@ -7,7 +7,9 @@ import Foundation
 import SwiftData
 
 struct FlowProgressReconciler {
-    func reconcileAll(modelContext: ModelContext, now: Date = .now) {
+    nonisolated init() {}
+
+    nonisolated func reconcileAll(modelContext: ModelContext, now: Date = .now) {
         guard let todos = try? modelContext.fetch(FetchDescriptor<Todo>()),
               let directions = try? modelContext.fetch(FetchDescriptor<Direction>()) else {
             return
@@ -20,7 +22,7 @@ struct FlowProgressReconciler {
         )
     }
 
-    func reconcile(
+    nonisolated func reconcile(
         session: FlowSession,
         modelContext: ModelContext,
         excludingSessionIDs: Set<UUID> = [],
@@ -37,7 +39,7 @@ struct FlowProgressReconciler {
         )
     }
 
-    func reconcile(
+    nonisolated func reconcile(
         todos: [Todo?],
         directions: [Direction?],
         modelContext: ModelContext,
@@ -86,7 +88,7 @@ struct FlowProgressReconciler {
         }
     }
 
-    private func contributesToProgress(_ session: FlowSession) -> Bool {
+    nonisolated private func contributesToProgress(_ session: FlowSession) -> Bool {
         switch session.status {
         case .breakTime, .awaitingResult, .completed:
             true
@@ -95,7 +97,7 @@ struct FlowProgressReconciler {
         }
     }
 
-    private func focusSeconds(
+    nonisolated private func focusSeconds(
         in session: FlowSession,
         todoID: UUID,
         excludingSegmentIDs: Set<UUID>
@@ -112,7 +114,7 @@ struct FlowProgressReconciler {
         return session.todo?.id == todoID ? session.resolvedActualFocusDurationSeconds : 0
     }
 
-    private func focusSeconds(
+    nonisolated private func focusSeconds(
         in session: FlowSession,
         directionID: UUID,
         excludingSegmentIDs: Set<UUID>
@@ -129,7 +131,7 @@ struct FlowProgressReconciler {
         return session.direction?.id == directionID ? session.resolvedActualFocusDurationSeconds : 0
     }
 
-    private func unique<Model: AnyObject & Identifiable>(_ models: [Model]) -> [Model] where Model.ID == UUID {
+    nonisolated private func unique<Model: AnyObject & Identifiable>(_ models: [Model]) -> [Model] where Model.ID == UUID {
         var seen = Set<UUID>()
         return models.filter { seen.insert($0.id).inserted }
     }

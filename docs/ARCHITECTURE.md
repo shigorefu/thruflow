@@ -286,6 +286,62 @@ width can collapse it instead of rendering the clock.
 4. Run the complete macOS test suite before merging.
 5. Build and smoke-test both application targets after shared changes.
 
+## Navigation And Rendering Lifecycle
+
+The macOS split-view shell mounts only the selected feature. This keeps hidden
+calendar grids, charts, toolbars, sheets, and Metal surfaces out of the render
+tree. Root navigation views must not own an all-history `@Query` for Flow
+sessions, segments, breaks, or Statistics input. Materializing those persistent
+model graphs is main-actor work and can block the first frame even when the
+visible calculation itself is deferred.
+
+Flow and Statistics use a two-stage feature mount. Navigation selection and
+the destination title commit first; the heavy feature tree is constructed on a
+later run-loop turn. This prevents eager SwiftData query initialization and
+cached chart construction from delaying the selection response. On iOS the
+same boundary unmounts the heavy contents of retained, hidden `TabView` roots
+while preserving their projections in root-owned cache state.
+
+The Flow dashboard owns bounded rolling queries for the recent 16-day session,
+break, and scheduled-task window needed by its daily presentation and weekly
+habit planning. Habit materialization receives that bounded task set and does
+not repeat the all-history duplicate reconciliation during navigation. It keeps
+the derived dashboard projection in root-owned cache state, so returning to
+Flow paints the previous projection immediately and refreshes it after the
+navigation transaction.
+
+Statistics uses `StatisticsProjectionActor`, a dedicated SwiftData
+`@ModelActor`. It fetches only the selected range, converts persistent models to
+Sendable value records inside the actor, and returns a ready heatmap projection
+to the UI. No `PersistentModel` crosses that actor boundary. Statistics paints
+its cached or empty shell first and starts the actor request after a short
+navigation grace period. This keeps navigation responsive without changing
+persisted data semantics or duplicating calculation rules.
+
+The launch-wide Flow progress repair follows the same rule. The composition
+root waits until the first presentation has settled, then
+`FlowProgressReconciliationActor` performs the full-store reconciliation in its
+own SwiftData model context and saves only when values changed. It is not part
+of feature view creation or a navigation transaction.
+
+Query results used as change feeds are sorted by `updatedAt` descending. Their
+refresh identifiers read the first timestamp instead of scanning the complete
+history on every SwiftUI body evaluation. User-visible ordering is applied by
+the relevant shared sorter or feature projection, independently of query
+ordering.
+
+The Flow dashboard creates its one-second `TimelineView` only while selected,
+and its Metal stream renders only while both selected and in the key window.
+The iOS shell retains tab roots through the system `TabView`; it passes the same
+visibility signal to Flow and Statistics so hidden tabs suspend periodic
+refresh, projection building, habit materialization, and Metal rendering. Scene
+inactivity continues to stop rendering on every platform.
+
+While Statistics remains visible, it refreshes its bounded actor projection on
+a five-second cadence. This preserves live updates from local edits and
+CloudKit imports without putting persistent-model queries or heatmap work back
+on the navigation transaction.
+
 ## Non-Goals
 
 This cross-platform stage does not add new business rules or alter macOS

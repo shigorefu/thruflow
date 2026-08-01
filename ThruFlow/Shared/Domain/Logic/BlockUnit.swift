@@ -8,18 +8,18 @@
 import Foundation
 
 enum BlockUnit {
-    static let secondsPerBlock = 25 * 60
-    static let secondsPerHalfBlock = 12 * 60
+    nonisolated static let secondsPerBlock = 25 * 60
+    nonisolated static let secondsPerHalfBlock = 12 * 60
 
-    static func blocks(forFocusedSeconds seconds: Int) -> Double {
+    nonisolated static func blocks(forFocusedSeconds seconds: Int) -> Double {
         Double(halfBlocks(forFocusedSeconds: seconds)) * 0.5
     }
 
-    static func wholeBlocks(forFocusedSeconds seconds: Int) -> Int {
+    nonisolated static func wholeBlocks(forFocusedSeconds seconds: Int) -> Int {
         halfBlocks(forFocusedSeconds: seconds) / 2
     }
 
-    static func halfBlocks(forFocusedSeconds seconds: Int) -> Int {
+    nonisolated static func halfBlocks(forFocusedSeconds seconds: Int) -> Int {
         max(0, seconds) / secondsPerHalfBlock
     }
 

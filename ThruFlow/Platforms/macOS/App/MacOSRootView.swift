@@ -13,9 +13,14 @@ struct MacOSRootView: View {
     @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.modelContext) private var modelContext
 
+    @Query(sort: \Direction.updatedAt, order: .reverse) private var directions: [Direction]
     @State private var selection: AppSection? = .flow
     @State private var historyDate = Calendar.current.startOfDay(for: .now)
     @State private var didReconcileFlowProgress = false
+    @State private var flowSnapshotCache: FlowDashboardSnapshot?
+    @State private var flowTodoGroupsCache: FlowDashboardTodoGroups?
+    @State private var statisticsFlowCache: StatisticsHeatmapResult?
+    @State private var statisticsAchievementCache: AchievementHeatmapResult?
 
     var body: some View {
         NavigationSplitView {
@@ -48,8 +53,11 @@ struct MacOSRootView: View {
             historyDate = dayBoundary.day(containing: .now, calendar: calendar)
             guard !didReconcileFlowProgress else { return }
             didReconcileFlowProgress = true
-            FlowProgressReconciler().reconcileAll(modelContext: modelContext)
-            try? modelContext.save()
+            let modelContainer = modelContext.container
+            try? await Task.sleep(for: .milliseconds(750))
+            guard !Task.isCancelled else { return }
+            let reconciler = FlowProgressReconciliationActor(modelContainer: modelContainer)
+            try? await reconciler.reconcileAll()
         }
     }
 
@@ -57,7 +65,17 @@ struct MacOSRootView: View {
     private var detailContent: some View {
         switch selection ?? .flow {
         case .flow:
-            FlowDashboardView()
+            DeferredFeatureMount(
+                isActive: (selection ?? .flow) == .flow,
+                title: String(localized: "Flow")
+            ) {
+                FlowDashboardView(
+                    isVisible: true,
+                    directions: directions,
+                    cachedSnapshot: $flowSnapshotCache,
+                    cachedTodoGroups: $flowTodoGroupsCache
+                )
+            }
         case .tasks:
             TasksView()
         case .history:
@@ -66,9 +84,19 @@ struct MacOSRootView: View {
         case .directions:
             DirectionListView()
         case .statistics:
-            StatisticsView { date in
-                historyDate = calendar.startOfDay(for: date)
-                selection = .history
+            DeferredFeatureMount(
+                isActive: selection == .statistics,
+                title: String(localized: "統計")
+            ) {
+                StatisticsView(
+                    isVisible: true,
+                    directions: directions,
+                    cachedFlowResult: $statisticsFlowCache,
+                    cachedAchievementResult: $statisticsAchievementCache
+                ) { date in
+                    historyDate = calendar.startOfDay(for: date)
+                    selection = .history
+                }
             }
         }
     }

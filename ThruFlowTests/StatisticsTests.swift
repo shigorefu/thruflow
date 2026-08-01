@@ -6,9 +6,11 @@
 //
 
 import Foundation
+import SwiftData
 import Testing
 @testable import ThruFlow
 
+@MainActor
 struct StatisticsTests {
     @Test func mixedColorUsesFocusDurationWeights() {
         let color = StatisticsHeatmapBuilder.mixedHexColor([
@@ -121,6 +123,82 @@ struct StatisticsTests {
         #expect(writingOnly.summary.sessionCount == 1)
         #expect(writingOnly.summary.totalFocusSeconds == 10 * 60)
         #expect(writingOnly.days.last?.mixedColorHex == "#FF0000")
+    }
+
+    @Test func projectionActorFetchesOnlyTheRequestedPeriod() async throws {
+        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let now = Date(timeIntervalSince1970: 1_735_689_600)
+        let direction = Direction(name: "読書", type: .habit, colorHex: "#00FF00")
+        let currentSession = session(direction: direction, startedAt: now, seconds: 25 * 60)
+        let oldSession = session(
+            direction: direction,
+            startedAt: calendar.date(byAdding: .day, value: -200, to: now)!,
+            seconds: 25 * 60
+        )
+        let completedTodo = Todo(
+            title: "本を読む",
+            direction: direction,
+            status: .completed,
+            completedAt: now,
+            updatedAt: calendar.date(byAdding: .day, value: 30, to: now)!
+        )
+        context.insert(direction)
+        context.insert(currentSession)
+        context.insert(oldSession)
+        context.insert(completedTodo)
+        try context.save()
+
+        let projection = try await StatisticsProjectionActor(modelContainer: container).load(
+            filter: StatisticsFilter(range: .days180),
+            calendar: calendar,
+            dayBoundary: AppDayBoundary(hour: 0),
+            now: now
+        )
+
+        #expect(projection.flow.summary.sessionCount == 1)
+        #expect(projection.flow.summary.totalFocusSeconds == 25 * 60)
+        #expect(projection.achievement.summary.completedCount == 1)
+    }
+
+    @Test func projectionActorUsesTheConfiguredDayBoundary() async throws {
+        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let now = calendar.date(from: DateComponents(
+            year: 2026,
+            month: 8,
+            day: 31,
+            hour: 23
+        ))!
+        let sessionStart = calendar.date(from: DateComponents(
+            year: 2026,
+            month: 9,
+            day: 1,
+            hour: 1,
+            minute: 45
+        ))!
+        let direction = Direction(name: "読書", type: .habit, colorHex: "#00FF00")
+        context.insert(direction)
+        context.insert(session(direction: direction, startedAt: sessionStart, seconds: 25 * 60))
+        try context.save()
+
+        let projection = try await StatisticsProjectionActor(modelContainer: container).load(
+            filter: StatisticsFilter(range: .currentMonth),
+            calendar: calendar,
+            dayBoundary: AppDayBoundary(hour: 2),
+            now: now
+        )
+
+        #expect(projection.flow.summary.sessionCount == 1)
+        #expect(projection.flow.summary.totalFocusSeconds == 25 * 60)
     }
 
     private func session(direction: Direction, startedAt: Date, seconds: Int) -> FlowSession {

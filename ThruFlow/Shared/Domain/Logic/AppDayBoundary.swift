@@ -5,11 +5,11 @@ struct AppDayBoundary: Equatable, Sendable {
 
     let hour: Int
 
-    init(hour: Int) {
+    nonisolated init(hour: Int) {
         self.hour = min(max(hour, 0), 23)
     }
 
-    func day(containing instant: Date, calendar: Calendar) -> Date {
+    nonisolated func day(containing instant: Date, calendar: Calendar) -> Date {
         let calendarDay = calendar.startOfDay(for: instant)
         guard hour > 0 else { return calendarDay }
 
@@ -20,7 +20,7 @@ struct AppDayBoundary: Equatable, Sendable {
             ?? calendarDay.addingTimeInterval(-86_400)
     }
 
-    func interval(for day: Date, calendar: Calendar) -> DateInterval {
+    nonisolated func interval(for day: Date, calendar: Calendar) -> DateInterval {
         let normalizedDay = calendar.startOfDay(for: day)
         let intervalStart = start(of: normalizedDay, calendar: calendar)
         let nextCalendarDay = calendar.date(byAdding: .day, value: 1, to: normalizedDay)
@@ -29,12 +29,12 @@ struct AppDayBoundary: Equatable, Sendable {
         return DateInterval(start: intervalStart, end: intervalEnd)
     }
 
-    func contains(_ instant: Date, in day: Date, calendar: Calendar) -> Bool {
+    nonisolated func contains(_ instant: Date, in day: Date, calendar: Calendar) -> Bool {
         let dayInterval = interval(for: day, calendar: calendar)
         return instant >= dayInterval.start && instant < dayInterval.end
     }
 
-    private func start(of calendarDay: Date, calendar: Calendar) -> Date {
+    nonisolated private func start(of calendarDay: Date, calendar: Calendar) -> Date {
         calendar.date(
             bySettingHour: hour,
             minute: 0,

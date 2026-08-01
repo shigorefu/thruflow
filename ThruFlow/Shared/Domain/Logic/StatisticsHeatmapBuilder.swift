@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum StatisticsRange: String, CaseIterable, Identifiable {
+enum StatisticsRange: String, CaseIterable, Identifiable, Sendable {
     case currentMonth
     case days180
     case calendarYear
@@ -37,7 +37,7 @@ enum StatisticsRange: String, CaseIterable, Identifiable {
     }
 }
 
-enum StatisticsMode: String, CaseIterable, Identifiable {
+enum StatisticsMode: String, CaseIterable, Identifiable, Sendable {
     case achievement
     case flow
 
@@ -53,12 +53,12 @@ enum StatisticsMode: String, CaseIterable, Identifiable {
     }
 }
 
-struct StatisticsFilter: Equatable {
+struct StatisticsFilter: Equatable, Sendable {
     var range: StatisticsRange = .calendarYear
     var directionID: UUID?
 }
 
-struct StatisticsDay: Identifiable, Equatable {
+struct StatisticsDay: Identifiable, Equatable, Sendable {
     let date: Date
     let totalFocusSeconds: Int
     let mixedColorHex: String?
@@ -67,12 +67,12 @@ struct StatisticsDay: Identifiable, Equatable {
 
     var id: Date { date }
 
-    var isEmpty: Bool {
+    nonisolated var isEmpty: Bool {
         totalFocusSeconds <= 0
     }
 }
 
-struct StatisticsSummary: Equatable {
+struct StatisticsSummary: Equatable, Sendable {
     let totalFocusSeconds: Int
     let activeDayCount: Int
     let sessionCount: Int
@@ -82,12 +82,12 @@ struct StatisticsSummary: Equatable {
     }
 }
 
-struct StatisticsHeatmapResult: Equatable {
+struct StatisticsHeatmapResult: Equatable, Sendable {
     let days: [StatisticsDay]
     let summary: StatisticsSummary
 }
 
-struct AchievementDay: Identifiable, Equatable {
+struct AchievementDay: Identifiable, Equatable, Sendable {
     let date: Date
     let completedCount: Int
     let mixedColorHex: String?
@@ -95,27 +95,41 @@ struct AchievementDay: Identifiable, Equatable {
 
     var id: Date { date }
 
-    var isEmpty: Bool {
+    nonisolated var isEmpty: Bool {
         completedCount <= 0
     }
 }
 
-struct AchievementSummary: Equatable {
+struct AchievementSummary: Equatable, Sendable {
     let completedCount: Int
     let activeDayCount: Int
     let directionCount: Int
 }
 
-struct AchievementHeatmapResult: Equatable {
+struct AchievementHeatmapResult: Equatable, Sendable {
     let days: [AchievementDay]
     let summary: AchievementSummary
 }
 
-struct StatisticsHeatmapBuilder {
+struct StatisticsFlowRecord: Sendable {
+    let sessionID: UUID
+    let startedAt: Date
+    let directionID: UUID?
+    let directionColorHex: String?
+    let focusSeconds: Int
+}
+
+struct StatisticsAchievementRecord: Sendable {
+    let completedAt: Date
+    let directionID: UUID?
+    let directionColorHex: String?
+}
+
+struct StatisticsHeatmapBuilder: Sendable {
     private let calendar: Calendar
     private let dayBoundary: AppDayBoundary
 
-    init(
+    nonisolated init(
         calendar: Calendar = .current,
         dayBoundary: AppDayBoundary = .midnight
     ) {
@@ -123,22 +137,35 @@ struct StatisticsHeatmapBuilder {
         self.dayBoundary = dayBoundary
     }
 
+    @MainActor
     func build(
         sessions: [FlowSession],
+        filter: StatisticsFilter,
+        now: Date = .now
+    ) -> StatisticsHeatmapResult {
+        build(
+            records: sessions.flatMap(Self.makeRecords),
+            filter: filter,
+            now: now
+        )
+    }
+
+    nonisolated func build(
+        records: [StatisticsFlowRecord],
         filter: StatisticsFilter,
         now: Date = .now
     ) -> StatisticsHeatmapResult {
         let interval = dateInterval(for: filter.range, now: now)
         let startDate = interval.start
         let endDate = interval.end
-        let contributions = sessions.flatMap(makeContributions).filter { contribution in
+        let contributions = records.filter { contribution in
             let contributionDate = dayBoundary.day(
                 containing: contribution.startedAt,
                 calendar: calendar
             )
             guard contributionDate >= startDate, contributionDate <= endDate else { return false }
             guard let directionID = filter.directionID else { return true }
-            return contribution.direction?.id == directionID
+            return contribution.directionID == directionID
         }
 
         let groupedByDay = Dictionary(grouping: contributions) { contribution in
@@ -158,7 +185,7 @@ struct StatisticsHeatmapBuilder {
         return StatisticsHeatmapResult(days: days, summary: summary)
     }
 
-    private func dateInterval(for range: StatisticsRange, now: Date) -> (start: Date, end: Date) {
+    nonisolated private func dateInterval(for range: StatisticsRange, now: Date) -> (start: Date, end: Date) {
         let today = dayBoundary.day(containing: now, calendar: calendar)
 
         switch range {
@@ -178,7 +205,7 @@ struct StatisticsHeatmapBuilder {
         }
     }
 
-    private func daysBetween(_ startDate: Date, and endDate: Date) -> [Date] {
+    nonisolated private func daysBetween(_ startDate: Date, and endDate: Date) -> [Date] {
         guard startDate <= endDate else { return [] }
 
         var days: [Date] = []
@@ -193,12 +220,12 @@ struct StatisticsHeatmapBuilder {
         return days
     }
 
-    private func makeDay(date: Date, contributions: [FlowContribution]) -> StatisticsDay {
+    nonisolated private func makeDay(date: Date, contributions: [StatisticsFlowRecord]) -> StatisticsDay {
         let totalSeconds = contributions.reduce(0) { $0 + $1.focusSeconds }
         let weightedColors = contributions.compactMap { contribution -> WeightedHexColor? in
-            guard let direction = contribution.direction else { return nil }
+            guard let colorHex = contribution.directionColorHex else { return nil }
             return WeightedHexColor(
-                hex: direction.colorHex,
+                hex: colorHex,
                 weight: contribution.focusSeconds
             )
         }
@@ -207,36 +234,39 @@ struct StatisticsHeatmapBuilder {
             date: date,
             totalFocusSeconds: totalSeconds,
             mixedColorHex: Self.mixedHexColor(weightedColors),
-            directionCount: Set(contributions.compactMap { $0.direction?.id }).count,
+            directionCount: Set(contributions.compactMap(\.directionID)).count,
             sessionCount: Set(contributions.map(\.sessionID)).count
         )
     }
 
-    private func makeContributions(_ session: FlowSession) -> [FlowContribution] {
+    @MainActor
+    static func makeRecords(_ session: FlowSession) -> [StatisticsFlowRecord] {
         guard session.status != .interrupted else { return [] }
 
         if !session.resolvedSegments.isEmpty {
             return session.resolvedSegments.compactMap { segment in
                 guard segment.resolvedFocusSeconds > 0 else { return nil }
-                return FlowContribution(
+                return StatisticsFlowRecord(
                     sessionID: session.id,
                     startedAt: segment.startedAt,
-                    direction: segment.direction,
+                    directionID: segment.direction?.id,
+                    directionColorHex: segment.direction?.colorHex,
                     focusSeconds: segment.resolvedFocusSeconds
                 )
             }
         }
 
         guard session.resolvedActualFocusDurationSeconds > 0 else { return [] }
-        return [FlowContribution(
+        return [StatisticsFlowRecord(
             sessionID: session.id,
             startedAt: session.startedAt,
-            direction: session.direction,
+            directionID: session.direction?.id,
+            directionColorHex: session.direction?.colorHex,
             focusSeconds: session.resolvedActualFocusDurationSeconds
         )]
     }
 
-    static func mixedHexColor(_ colors: [WeightedHexColor]) -> String? {
+    nonisolated static func mixedHexColor(_ colors: [WeightedHexColor]) -> String? {
         let parsed = colors.compactMap { color -> (rgb: RGBColor, weight: Int)? in
             guard color.weight > 0, let rgb = RGBColor(hex: color.hex) else { return nil }
             return (rgb, color.weight)
@@ -256,18 +286,11 @@ struct StatisticsHeatmapBuilder {
     }
 }
 
-private struct FlowContribution {
-    let sessionID: UUID
-    let startedAt: Date
-    let direction: Direction?
-    let focusSeconds: Int
-}
-
-struct AchievementHeatmapBuilder {
+struct AchievementHeatmapBuilder: Sendable {
     private let calendar: Calendar
     private let dayBoundary: AppDayBoundary
 
-    init(
+    nonisolated init(
         calendar: Calendar = .current,
         dayBoundary: AppDayBoundary = .midnight
     ) {
@@ -275,28 +298,40 @@ struct AchievementHeatmapBuilder {
         self.dayBoundary = dayBoundary
     }
 
+    @MainActor
     func build(
         todos: [Todo],
+        filter: StatisticsFilter,
+        now: Date = .now
+    ) -> AchievementHeatmapResult {
+        build(
+            records: todos.compactMap(Self.makeRecord),
+            filter: filter,
+            now: now
+        )
+    }
+
+    nonisolated func build(
+        records: [StatisticsAchievementRecord],
         filter: StatisticsFilter,
         now: Date = .now
     ) -> AchievementHeatmapResult {
         let interval = dateInterval(for: filter.range, now: now)
         let startDate = interval.start
         let endDate = interval.end
-        let eligibleTodos = todos.filter { todo in
+        let eligibleTodos = records.filter { todo in
             let completionDate = dayBoundary.day(
-                containing: todo.completedAt ?? todo.updatedAt,
+                containing: todo.completedAt,
                 calendar: calendar
             )
             guard completionDate >= startDate, completionDate <= endDate else { return false }
-            guard todo.status == .completed, !todo.isDeleted else { return false }
             guard let directionID = filter.directionID else { return true }
-            return todo.direction?.id == directionID
+            return todo.directionID == directionID
         }
 
         let groupedByDay = Dictionary(grouping: eligibleTodos) { todo in
             dayBoundary.day(
-                containing: todo.completedAt ?? todo.updatedAt,
+                containing: todo.completedAt,
                 calendar: calendar
             )
         }
@@ -305,7 +340,7 @@ struct AchievementHeatmapBuilder {
             makeDay(date: date, todos: groupedByDay[date] ?? [])
         }
 
-        let directionIDs = Set(eligibleTodos.compactMap { $0.direction?.id })
+        let directionIDs = Set(eligibleTodos.compactMap(\.directionID))
         let summary = AchievementSummary(
             completedCount: eligibleTodos.count,
             activeDayCount: days.filter { !$0.isEmpty }.count,
@@ -315,7 +350,7 @@ struct AchievementHeatmapBuilder {
         return AchievementHeatmapResult(days: days, summary: summary)
     }
 
-    private func dateInterval(for range: StatisticsRange, now: Date) -> (start: Date, end: Date) {
+    nonisolated private func dateInterval(for range: StatisticsRange, now: Date) -> (start: Date, end: Date) {
         let today = dayBoundary.day(containing: now, calendar: calendar)
 
         switch range {
@@ -335,7 +370,7 @@ struct AchievementHeatmapBuilder {
         }
     }
 
-    private func daysBetween(_ startDate: Date, and endDate: Date) -> [Date] {
+    nonisolated private func daysBetween(_ startDate: Date, and endDate: Date) -> [Date] {
         guard startDate <= endDate else { return [] }
 
         var days: [Date] = []
@@ -350,38 +385,48 @@ struct AchievementHeatmapBuilder {
         return days
     }
 
-    private func makeDay(date: Date, todos: [Todo]) -> AchievementDay {
+    nonisolated private func makeDay(date: Date, todos: [StatisticsAchievementRecord]) -> AchievementDay {
         let weightedColors = todos.compactMap { todo -> WeightedHexColor? in
-            guard let direction = todo.direction else { return nil }
-            return WeightedHexColor(hex: direction.colorHex, weight: 1)
+            guard let colorHex = todo.directionColorHex else { return nil }
+            return WeightedHexColor(hex: colorHex, weight: 1)
         }
 
         return AchievementDay(
             date: date,
             completedCount: todos.count,
             mixedColorHex: StatisticsHeatmapBuilder.mixedHexColor(weightedColors),
-            directionCount: Set(todos.compactMap { $0.direction?.id }).count
+            directionCount: Set(todos.compactMap(\.directionID)).count
+        )
+    }
+
+    @MainActor
+    static func makeRecord(_ todo: Todo) -> StatisticsAchievementRecord? {
+        guard todo.status == .completed, !todo.isDeleted else { return nil }
+        return StatisticsAchievementRecord(
+            completedAt: todo.completedAt ?? todo.updatedAt,
+            directionID: todo.direction?.id,
+            directionColorHex: todo.direction?.colorHex
         )
     }
 }
 
-struct WeightedHexColor: Equatable {
+struct WeightedHexColor: Equatable, Sendable {
     let hex: String
     let weight: Int
 }
 
-private struct RGBColor: Equatable {
+private struct RGBColor: Equatable, Sendable {
     let red: Int
     let green: Int
     let blue: Int
 
-    init(red: Int, green: Int, blue: Int) {
+    nonisolated init(red: Int, green: Int, blue: Int) {
         self.red = min(max(red, 0), 255)
         self.green = min(max(green, 0), 255)
         self.blue = min(max(blue, 0), 255)
     }
 
-    init?(hex: String) {
+    nonisolated init?(hex: String) {
         var value = hex.trimmingCharacters(in: .whitespacesAndNewlines)
         if value.hasPrefix("#") {
             value.removeFirst()
@@ -394,7 +439,7 @@ private struct RGBColor: Equatable {
         blue = intValue & 0xFF
     }
 
-    var hex: String {
+    nonisolated var hex: String {
         String(format: "#%02X%02X%02X", red, green, blue)
     }
 }

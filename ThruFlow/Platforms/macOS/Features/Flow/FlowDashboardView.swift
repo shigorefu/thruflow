@@ -24,10 +24,10 @@ struct FlowDashboardView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
 
-    @Query(sort: \Direction.name, order: .forward) private var directions: [Direction]
-    @Query(sort: \Todo.sortIndex, order: .forward) private var todos: [Todo]
-    @Query(sort: \FlowSession.startedAt, order: .forward) private var sessions: [FlowSession]
-    @Query(sort: \FlowBreak.startedAt, order: .forward) private var flowBreaks: [FlowBreak]
+    let directions: [Direction]
+    @Query private var todos: [Todo]
+    @Query private var sessions: [FlowSession]
+    @Query private var flowBreaks: [FlowBreak]
 
     @State private var inspectedSession: FlowSession?
     @State private var hoveredTimelineItem: TimelineItem?
@@ -36,84 +36,201 @@ struct FlowDashboardView: View {
     @State private var showsQuickComposer = false
     @State private var statisticsPage = DashboardStatisticsPage.distribution
     @State private var distributionMode = DashboardDistributionMode.task
+    @State private var habitPreparationRevision = 0
+
+    @Binding private var cachedSnapshot: FlowDashboardSnapshot?
+    @Binding private var cachedTodoGroups: FlowDashboardTodoGroups?
+    let isVisible: Bool
 
     private let progressCalculator = TodoProgressCalculator()
     private let historyEditor = FlowHistoryEditor()
     private let breakEditor = FlowBreakEditor()
-    private let todoSorter = FlowDashboardTodoSorter()
     private var builder: FlowDashboardBuilder {
         FlowDashboardBuilder(calendar: calendar, dayBoundary: dayBoundary)
-    }
-
-    private var todayFilter: TodayTodoFilter {
-        TodayTodoFilter(calendar: calendar, dayBoundary: dayBoundary)
     }
 
     private var statisticsBuilder: DashboardStatisticsBuilder {
         DashboardStatisticsBuilder(calendar: calendar, dayBoundary: dayBoundary)
     }
 
+    init(
+        isVisible: Bool = true,
+        directions: [Direction],
+        cachedSnapshot: Binding<FlowDashboardSnapshot?>,
+        cachedTodoGroups: Binding<FlowDashboardTodoGroups?>
+    ) {
+        let cutoff = Calendar.current.date(byAdding: .day, value: -16, to: .now) ?? .distantPast
+        let todoUpperBound = Calendar.current.date(byAdding: .day, value: 2, to: .now) ?? .distantFuture
+        let missingScheduledDate = Date.distantPast
+        self.isVisible = isVisible
+        self.directions = directions
+        _todos = Query(
+            filter: #Predicate<Todo> { todo in
+                (todo.scheduledDate ?? missingScheduledDate) >= cutoff &&
+                    (todo.scheduledDate ?? missingScheduledDate) < todoUpperBound
+            },
+            sort: \Todo.updatedAt,
+            order: .reverse
+        )
+        _sessions = Query(
+            filter: #Predicate<FlowSession> { $0.startedAt >= cutoff },
+            sort: \FlowSession.updatedAt,
+            order: .reverse
+        )
+        _flowBreaks = Query(
+            filter: #Predicate<FlowBreak> { $0.startedAt >= cutoff },
+            sort: \FlowBreak.updatedAt,
+            order: .reverse
+        )
+        _cachedSnapshot = cachedSnapshot
+        _cachedTodoGroups = cachedTodoGroups
+    }
+
     var body: some View {
-        TimelineView(.periodic(from: .now, by: 1)) { timeline in
-            let snapshot = snapshot(now: timeline.date)
-
-            GeometryReader { viewport in
-                let availableWidth = min(
-                    max(0, viewport.size.width - 40),
-                    Self.maximumDashboardWidth
-                )
-
-                ScrollView {
-                    dashboardLayout(
-                        snapshot: snapshot,
-                        availableWidth: availableWidth,
-                        availableHeight: max(0, viewport.size.height - 40),
-                        now: timeline.date
-                    )
-                    .frame(width: availableWidth)
-                    .padding(20)
-                    .frame(maxWidth: .infinity)
-                }
-            }
-            .background(modeBackgroundTint.ignoresSafeArea())
-        }
-        .navigationTitle(String(localized: "Flow"))
+        dashboardContent
+        .navigationTitle(isVisible ? String(localized: "Flow") : "")
         .sheet(item: $inspectedSession) { session in
             FlowHistoryInspectorView(session: session)
         }
         .sheet(item: $editingTodo) { todo in
             TodoFormView(mode: .edit(todo))
         }
-        .onAppear {
-            ensureTodayHabits()
-        }
-        .onChange(of: directions.map(\.updatedAt)) { _, _ in
-            ensureTodayHabits()
-        }
-        .onChange(of: todos.count) { _, _ in
-            ensureTodayHabits()
+        .onChange(of: isVisible) { _, newValue in
+            guard !newValue else { return }
+            inspectedSession = nil
+            editingTodo = nil
+            showsQuickComposer = false
         }
         .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) { _ in
-            ensureTodayHabits()
+            habitPreparationRevision += 1
+        }
+        .task(id: habitPreparationID) {
+            await prepareTodayHabitsAfterPresentation()
+        }
+        .task(id: snapshotRefreshID) {
+            await refreshDashboardCache()
+        }
+        .task(id: todoGroupsRefreshID) {
+            await refreshTodoGroupsCache()
         }
     }
 
-    private func snapshot(now: Date) -> FlowDashboardSnapshot {
-        builder.build(
+    private var dashboardContent: some View {
+        GeometryReader { viewport in
+            let availableWidth = min(
+                max(0, viewport.size.width - 40),
+                Self.maximumDashboardWidth
+            )
+            let snapshot = cachedSnapshot ?? .empty()
+
+            ScrollView {
+                dashboardLayout(
+                    snapshot: snapshot,
+                    availableWidth: availableWidth,
+                    availableHeight: max(0, viewport.size.height - 40)
+                )
+                .frame(width: availableWidth)
+                .padding(20)
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .background(modeBackgroundTint.ignoresSafeArea())
+    }
+
+    private func makeSnapshot(now: Date) -> FlowDashboardSnapshot {
+        let day = dayBoundary.day(containing: now, calendar: calendar)
+        let interval = dayBoundary.interval(for: day, calendar: calendar)
+        let daySessions = sessions.filter { interval.contains($0.startedAt) }
+        let dayBreaks = flowBreaks.filter { interval.contains($0.startedAt) }
+
+        return builder.build(
             date: now,
-            sessions: sessions,
-            breaks: flowBreaks,
+            sessions: daySessions,
+            breaks: dayBreaks,
             activeSessionID: activeFlowStore.activeSession?.id,
             activeFocusSeconds: activeFlowStore.actualFocusSeconds(now: now),
             visualIdentityID: DailyFlowIdentity.resolve(from: directions)
         )
     }
 
+    private var snapshotRefreshID: FlowDashboardRefreshID {
+        FlowDashboardRefreshID(
+            isVisible: isVisible,
+            sessionCount: sessions.count,
+            latestSessionUpdate: sessions.first?.updatedAt,
+            breakCount: flowBreaks.count,
+            latestBreakUpdate: flowBreaks.first?.updatedAt,
+            directionCount: directions.count,
+            latestDirectionUpdate: directions.first?.updatedAt,
+            activeSessionID: activeFlowStore.activeSession?.id,
+            phase: activeFlowStore.timerState?.phase.rawValue
+        )
+    }
+
+    private var habitPreparationID: FlowDashboardHabitPreparationID {
+        FlowDashboardHabitPreparationID(
+            isVisible: isVisible,
+            directionCount: directions.count,
+            latestDirectionUpdate: directions.first?.updatedAt,
+            todoCount: todos.count,
+            latestTodoUpdate: todos.first?.updatedAt,
+            revision: habitPreparationRevision
+        )
+    }
+
+    private var todoGroupsRefreshID: FlowDashboardTodoRefreshID {
+        FlowDashboardTodoRefreshID(
+            isVisible: isVisible,
+            todoCount: todos.count,
+            latestTodoUpdate: todos.first?.updatedAt
+        )
+    }
+
+    @MainActor
+    private func prepareTodayHabitsAfterPresentation() async {
+        guard isVisible else { return }
+        try? await Task.sleep(for: .milliseconds(220))
+        guard !Task.isCancelled, isVisible else { return }
+        ensureTodayHabits()
+    }
+
+    @MainActor
+    private func refreshDashboardCache() async {
+        guard isVisible else { return }
+
+        // Let navigation and the cached first frame finish before touching
+        // SwiftData-backed models for a fresh dashboard projection.
+        try? await Task.sleep(for: .milliseconds(cachedSnapshot == nil ? 300 : 450))
+        guard !Task.isCancelled, isVisible else { return }
+
+        cachedSnapshot = makeSnapshot(now: .now)
+
+        while !Task.isCancelled, isVisible, activeFlowStore.timerState != nil {
+            try? await Task.sleep(for: .seconds(5))
+            guard !Task.isCancelled, isVisible else { return }
+            cachedSnapshot = makeSnapshot(now: .now)
+        }
+    }
+
+    @MainActor
+    private func refreshTodoGroupsCache() async {
+        guard isVisible else { return }
+
+        // Task cards are secondary dashboard content. Keep navigation responsive
+        // by projecting the SwiftData archive only after the first frame.
+        try? await Task.sleep(for: .milliseconds(cachedTodoGroups == nil ? 180 : 300))
+        guard !Task.isCancelled, isVisible else { return }
+
+        cachedTodoGroups = FlowDashboardTodoGroupBuilder(
+            calendar: calendar,
+            dayBoundary: dayBoundary
+        ).build(from: todos)
+    }
+
     private func dashboardLayout(
         snapshot: FlowDashboardSnapshot,
         availableWidth: CGFloat,
-        availableHeight: CGFloat,
-        now: Date
+        availableHeight: CGFloat
     ) -> some View {
         let lowerPanelHeight = max(340, availableHeight - Self.topPanelHeight - Self.panelSpacing)
         let leftColumnWidth = max(
@@ -125,7 +242,7 @@ struct FlowDashboardView: View {
             if availableWidth >= Self.wideLayoutMinimumWidth {
                 VStack(spacing: Self.panelSpacing) {
                     HStack(alignment: .top, spacing: Self.panelSpacing) {
-                        flowStage(snapshot: snapshot, now: now)
+                        flowStage(snapshot: snapshot)
                             .frame(width: leftColumnWidth)
                             .frame(height: Self.topPanelHeight)
 
@@ -151,7 +268,7 @@ struct FlowDashboardView: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: 360)
 
-                    flowStage(snapshot: snapshot, now: now)
+                    flowStage(snapshot: snapshot)
                         .frame(height: 340)
 
                     taskColumns
@@ -162,7 +279,7 @@ struct FlowDashboardView: View {
         }
     }
 
-    private func flowStage(snapshot: FlowDashboardSnapshot, now: Date) -> some View {
+    private func flowStage(snapshot: FlowDashboardSnapshot) -> some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .firstTextBaseline, spacing: 16) {
                 VStack(alignment: .leading, spacing: 3) {
@@ -181,7 +298,13 @@ struct FlowDashboardView: View {
             }
 
             streamSurface(snapshot: snapshot)
-            timelineSurface(snapshot: snapshot, now: now)
+            if isVisible {
+                TimelineView(.periodic(from: .now, by: 1)) { timeline in
+                    timelineSurface(snapshot: snapshot, now: timeline.date)
+                }
+            } else {
+                timelineSurface(snapshot: snapshot, now: .now)
+            }
         }
         .padding(18)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -214,7 +337,8 @@ struct FlowDashboardView: View {
                 paletteWeights: snapshot.paletteWeights,
                 dailySeed: snapshot.dailyVisualSeed,
                 isActive: activeFlowStore.phase == .focusing,
-                mode: activeFlowStore.selectedMode
+                mode: activeFlowStore.selectedMode,
+                isRenderingEnabled: isVisible
             )
 
             if snapshot.totalFocusSeconds == 0 {
@@ -716,23 +840,25 @@ struct FlowDashboardView: View {
     }
 
     private var todayTodos: [Todo] {
-        todoSorter.sorted(todos.filter { todayFilter.includes($0) })
+        cachedTodoGroups?.all ?? []
     }
 
     private var standardTodos: [Todo] {
-        todayTodos.filter { ($0.direction?.type ?? .neutral) == .neutral }
+        cachedTodoGroups?.standard ?? []
     }
 
     private var habitTodos: [Todo] {
-        todayTodos.filter { $0.direction?.type == .habit }
+        cachedTodoGroups?.habits ?? []
     }
 
     private var niceTodos: [Todo] {
-        todayTodos.filter { $0.direction?.type == .nice }
+        cachedTodoGroups?.nice ?? []
     }
 
     private var activeDirections: [Direction] {
-        directions.filter { !$0.isArchived }
+        directions
+            .filter { !$0.isArchived }
+            .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 
     private var dashboardAddButton: some View {
@@ -905,7 +1031,9 @@ struct FlowDashboardView: View {
             directions: directions,
             dates: [today],
             modelContext: modelContext,
-            now: now
+            now: now,
+            knownTodos: todos,
+            reconcilesDuplicates: false
         )
     }
 
@@ -1578,7 +1706,47 @@ private struct DashboardTodoColumn: View {
 }
 
 #Preview {
-    FlowDashboardView()
+    FlowDashboardPreviewHost()
+}
+
+private struct FlowDashboardPreviewHost: View {
+    @State private var snapshot: FlowDashboardSnapshot?
+    @State private var todoGroups: FlowDashboardTodoGroups?
+
+    var body: some View {
+        FlowDashboardView(
+            directions: [],
+            cachedSnapshot: $snapshot,
+            cachedTodoGroups: $todoGroups
+        )
         .environmentObject(ActiveFlowStore())
         .modelContainer(for: [Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self], inMemory: true)
+    }
+}
+
+private struct FlowDashboardRefreshID: Hashable {
+    let isVisible: Bool
+    let sessionCount: Int
+    let latestSessionUpdate: Date?
+    let breakCount: Int
+    let latestBreakUpdate: Date?
+    let directionCount: Int
+    let latestDirectionUpdate: Date?
+    let activeSessionID: UUID?
+    let phase: String?
+}
+
+private struct FlowDashboardTodoRefreshID: Hashable {
+    let isVisible: Bool
+    let todoCount: Int
+    let latestTodoUpdate: Date?
+}
+
+private struct FlowDashboardHabitPreparationID: Hashable {
+    let isVisible: Bool
+    let directionCount: Int
+    let latestDirectionUpdate: Date?
+    let todoCount: Int
+    let latestTodoUpdate: Date?
+    let revision: Int
 }

@@ -4,6 +4,7 @@ struct IOSFlowStreamView: View {
     let snapshot: FlowDashboardSnapshot
     let isActive: Bool
     let mode: FlowMode
+    let isRenderingEnabled: Bool
 
     var body: some View {
         FlowStreamSurface(
@@ -14,7 +15,7 @@ struct IOSFlowStreamView: View {
             dailySeed: snapshot.dailyVisualSeed,
             isActive: isActive,
             mode: mode,
-            isRenderingEnabled: true
+            isRenderingEnabled: isRenderingEnabled
         )
     }
 }

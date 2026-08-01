@@ -11,29 +11,36 @@ import SwiftUI
 struct StatisticsView: View {
     @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.calendar) private var calendar
+    @Environment(\.modelContext) private var modelContext
 
-    @Query(sort: \FlowSession.startedAt, order: .reverse) private var sessions: [FlowSession]
-    @Query(sort: \Direction.name, order: .forward) private var directions: [Direction]
-    @Query(sort: \Todo.updatedAt, order: .reverse) private var todos: [Todo]
+    let directions: [Direction]
 
     @State private var selectedMode: StatisticsMode = .achievement
     @State private var selectedRange: StatisticsRange = .calendarYear
     @State private var selectedDirectionID: UUID?
+    @Binding private var cachedFlowResult: StatisticsHeatmapResult?
+    @Binding private var cachedAchievementResult: AchievementHeatmapResult?
+    let isVisible: Bool
     let onSelectHistoryDate: (Date) -> Void
 
-    private var flowBuilder: StatisticsHeatmapBuilder {
-        StatisticsHeatmapBuilder(calendar: calendar, dayBoundary: dayBoundary)
-    }
-    private var achievementBuilder: AchievementHeatmapBuilder {
-        AchievementHeatmapBuilder(calendar: calendar, dayBoundary: dayBoundary)
-    }
-
-    init(onSelectHistoryDate: @escaping (Date) -> Void = { _ in }) {
+    init(
+        isVisible: Bool = true,
+        directions: [Direction],
+        cachedFlowResult: Binding<StatisticsHeatmapResult?>,
+        cachedAchievementResult: Binding<AchievementHeatmapResult?>,
+        onSelectHistoryDate: @escaping (Date) -> Void = { _ in }
+    ) {
+        self.isVisible = isVisible
+        self.directions = directions
+        _cachedFlowResult = cachedFlowResult
+        _cachedAchievementResult = cachedAchievementResult
         self.onSelectHistoryDate = onSelectHistoryDate
     }
 
     private var activeDirections: [Direction] {
-        directions.filter { !$0.isArchived }
+        directions
+            .filter { !$0.isArchived }
+            .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 
     private var selectedDirection: Direction? {
@@ -42,17 +49,11 @@ struct StatisticsView: View {
     }
 
     private var flowResult: StatisticsHeatmapResult {
-        flowBuilder.build(
-            sessions: sessions,
-            filter: StatisticsFilter(range: selectedRange, directionID: selectedDirectionID)
-        )
+        cachedFlowResult ?? Self.emptyFlowResult
     }
 
     private var achievementResult: AchievementHeatmapResult {
-        achievementBuilder.build(
-            todos: todos,
-            filter: StatisticsFilter(range: selectedRange, directionID: selectedDirectionID)
-        )
+        cachedAchievementResult ?? Self.emptyAchievementResult
     }
 
     private var flowDaysByDate: [Date: StatisticsDay] {
@@ -65,6 +66,63 @@ struct StatisticsView: View {
 
     var body: some View {
         statisticsContent
+            .task(id: statisticsRefreshID) {
+                await refreshStatisticsWhileVisible()
+            }
+    }
+
+    @MainActor
+    private func refreshStatisticsWhileVisible() async {
+        while isVisible, !Task.isCancelled {
+            await refreshStatisticsCache()
+            try? await Task.sleep(for: .seconds(5))
+        }
+    }
+
+    private static let emptyFlowResult = StatisticsHeatmapResult(
+        days: [],
+        summary: StatisticsSummary(totalFocusSeconds: 0, activeDayCount: 0, sessionCount: 0)
+    )
+
+    private static let emptyAchievementResult = AchievementHeatmapResult(
+        days: [],
+        summary: AchievementSummary(completedCount: 0, activeDayCount: 0, directionCount: 0)
+    )
+
+    private var statisticsRefreshID: StatisticsRefreshID {
+        StatisticsRefreshID(
+            isVisible: isVisible,
+            range: selectedRange.rawValue,
+            directionID: selectedDirectionID,
+            directionCount: directions.count,
+            latestDirectionUpdate: directions.first?.updatedAt
+        )
+    }
+
+    @MainActor
+    private func refreshStatisticsCache() async {
+        guard isVisible else { return }
+
+        // The cached projection paints first; database work starts after the
+        // navigation transaction and runs in a dedicated SwiftData actor.
+        try? await Task.sleep(for: .milliseconds(100))
+        guard !Task.isCancelled, isVisible else { return }
+
+        let filter = StatisticsFilter(
+            range: selectedRange,
+            directionID: selectedDirectionID
+        )
+        let loader = StatisticsProjectionActor(modelContainer: modelContext.container)
+        guard let projection = try? await loader.load(
+            filter: filter,
+            calendar: calendar,
+            dayBoundary: dayBoundary,
+            now: .now
+        ) else { return }
+
+        guard !Task.isCancelled, isVisible else { return }
+        cachedFlowResult = projection.flow
+        cachedAchievementResult = projection.achievement
     }
 
     private var statisticsContent: some View {
@@ -84,7 +142,7 @@ struct StatisticsView: View {
             }
             .padding(20)
         }
-        .navigationTitle(String(localized: "統計"))
+        .navigationTitle(isVisible ? String(localized: "統計") : "")
     }
 
     private var header: some View {
@@ -750,8 +808,29 @@ private struct ContributionHoverCard: View {
 }
 
 #Preview {
-    NavigationStack {
-        StatisticsView()
+    StatisticsPreviewHost()
+}
+
+private struct StatisticsPreviewHost: View {
+    @State private var flowResult: StatisticsHeatmapResult?
+    @State private var achievementResult: AchievementHeatmapResult?
+
+    var body: some View {
+        NavigationStack {
+            StatisticsView(
+                directions: [],
+                cachedFlowResult: $flowResult,
+                cachedAchievementResult: $achievementResult
+            )
+        }
+        .modelContainer(for: [Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self], inMemory: true)
     }
-    .modelContainer(for: [Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self], inMemory: true)
+}
+
+private struct StatisticsRefreshID: Hashable {
+    let isVisible: Bool
+    let range: String
+    let directionID: UUID?
+    let directionCount: Int
+    let latestDirectionUpdate: Date?
 }

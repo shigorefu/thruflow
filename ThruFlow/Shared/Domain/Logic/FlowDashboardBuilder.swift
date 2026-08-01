@@ -18,6 +18,20 @@ struct FlowDashboardSnapshot {
     let paletteWeights: [Double]
     let dailyVisualSeed: UInt64
 
+    static func empty(at date: Date = .now) -> FlowDashboardSnapshot {
+        FlowDashboardSnapshot(
+            date: date,
+            totalFocusSeconds: 0,
+            flowCount: 0,
+            segments: [],
+            breaks: [],
+            seriesSpans: [],
+            palette: ["#0A84FF", "#30D158", "#64D2FF"],
+            paletteWeights: [1, 1, 1],
+            dailyVisualSeed: 0
+        )
+    }
+
     var blocks: Double {
         BlockUnit.blocks(forFocusedSeconds: totalFocusSeconds)
     }
@@ -202,6 +216,39 @@ struct FlowDashboardTodoSorter {
         case .low:
             todo.isRoomIfPossible ? 3 : 2
         }
+    }
+}
+
+@MainActor
+struct FlowDashboardTodoGroups {
+    let all: [Todo]
+    let standard: [Todo]
+    let habits: [Todo]
+    let nice: [Todo]
+
+    static let empty = FlowDashboardTodoGroups(
+        all: [],
+        standard: [],
+        habits: [],
+        nice: []
+    )
+}
+
+@MainActor
+struct FlowDashboardTodoGroupBuilder {
+    let calendar: Calendar
+    let dayBoundary: AppDayBoundary
+
+    func build(from todos: [Todo]) -> FlowDashboardTodoGroups {
+        let filter = TodayTodoFilter(calendar: calendar, dayBoundary: dayBoundary)
+        let sorted = FlowDashboardTodoSorter().sorted(todos.filter { filter.includes($0) })
+
+        return FlowDashboardTodoGroups(
+            all: sorted,
+            standard: sorted.filter { ($0.direction?.type ?? .neutral) == .neutral },
+            habits: sorted.filter { $0.direction?.type == .habit },
+            nice: sorted.filter { $0.direction?.type == .nice }
+        )
     }
 }
 

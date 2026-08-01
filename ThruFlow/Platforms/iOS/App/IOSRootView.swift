@@ -41,6 +41,10 @@ struct IOSRootView: View {
     @State private var selection = IOSAppRoute.flow
     @State private var showsSettings = false
     @State private var selectedHistoryDate = Date.now
+    @State private var flowSnapshotCache: FlowDashboardSnapshot?
+    @State private var flowTodoGroupsCache: FlowDashboardTodoGroups?
+    @State private var statisticsFlowCache: StatisticsHeatmapResult?
+    @State private var statisticsTaskCache: AchievementHeatmapResult?
 
     private var selectionBinding: Binding<IOSAppRoute> {
         Binding(
@@ -120,7 +124,17 @@ struct IOSRootView: View {
     private func destination(for route: IOSAppRoute) -> some View {
         switch route {
         case .flow:
-            IOSFlowView(open: open)
+            DeferredFeatureMount(
+                isActive: selection == .flow,
+                title: IOSAppRoute.flow.title
+            ) {
+                IOSFlowView(
+                    isVisible: true,
+                    cachedSnapshot: $flowSnapshotCache,
+                    cachedTodoGroups: $flowTodoGroupsCache,
+                    open: open
+                )
+            }
         case .tasks:
             IOSTasksView()
         case .history:
@@ -128,9 +142,18 @@ struct IOSRootView: View {
         case .directions:
             IOSDirectionsView()
         case .statistics:
-            IOSStatisticsView { date in
-                selectedHistoryDate = date
-                selectionBinding.wrappedValue = .history
+            DeferredFeatureMount(
+                isActive: selection == .statistics,
+                title: IOSAppRoute.statistics.title
+            ) {
+                IOSStatisticsView(
+                    isVisible: true,
+                    cachedFlowResult: $statisticsFlowCache,
+                    cachedTaskResult: $statisticsTaskCache
+                ) { date in
+                    selectedHistoryDate = date
+                    selectionBinding.wrappedValue = .history
+                }
             }
         case .settings:
             IOSSettingsView()

@@ -4,19 +4,29 @@ import SwiftUI
 struct IOSStatisticsView: View {
     @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.calendar) private var calendar
+    @Environment(\.modelContext) private var modelContext
 
-    @Query(sort: \Direction.sortIndex) private var directions: [Direction]
-    @Query(sort: \Todo.updatedAt) private var todos: [Todo]
-    @Query(sort: \FlowSession.startedAt) private var sessions: [FlowSession]
+    @Query(sort: \Direction.updatedAt, order: .reverse) private var directions: [Direction]
 
     @State private var mode = IOSStatisticsMode.flow
     @State private var range = StatisticsRange.currentMonth
     @State private var directionID: UUID?
     @State private var selectedDate: Date?
 
+    @Binding private var cachedFlowResult: StatisticsHeatmapResult?
+    @Binding private var cachedTaskResult: AchievementHeatmapResult?
+    let isVisible: Bool
     let onOpenHistoryDate: (Date) -> Void
 
-    init(onOpenHistoryDate: @escaping (Date) -> Void = { _ in }) {
+    init(
+        isVisible: Bool = true,
+        cachedFlowResult: Binding<StatisticsHeatmapResult?>,
+        cachedTaskResult: Binding<AchievementHeatmapResult?>,
+        onOpenHistoryDate: @escaping (Date) -> Void = { _ in }
+    ) {
+        self.isVisible = isVisible
+        _cachedFlowResult = cachedFlowResult
+        _cachedTaskResult = cachedTaskResult
         self.onOpenHistoryDate = onOpenHistoryDate
     }
 
@@ -25,17 +35,22 @@ struct IOSStatisticsView: View {
     }
 
     private var flowResult: StatisticsHeatmapResult {
-        StatisticsHeatmapBuilder(
-            calendar: calendar,
-            dayBoundary: dayBoundary
-        ).build(sessions: sessions, filter: filter)
+        cachedFlowResult ?? Self.emptyFlowResult
     }
 
     private var taskResult: AchievementHeatmapResult {
-        AchievementHeatmapBuilder(
-            calendar: calendar,
-            dayBoundary: dayBoundary
-        ).build(todos: todos, filter: filter)
+        cachedTaskResult ?? Self.emptyTaskResult
+    }
+
+    private var activeDirections: [Direction] {
+        directions
+            .filter { !$0.isArchived }
+            .sorted {
+                if $0.sortIndex != $1.sortIndex {
+                    return $0.sortIndex < $1.sortIndex
+                }
+                return $0.name.localizedStandardCompare($1.name) == .orderedAscending
+            }
     }
 
     var body: some View {
@@ -76,6 +91,57 @@ struct IOSStatisticsView: View {
         .onChange(of: directionID) { _, _ in
             selectedDate = nil
         }
+        .task(id: statisticsRefreshID) {
+            await refreshStatisticsWhileVisible()
+        }
+    }
+
+    @MainActor
+    private func refreshStatisticsWhileVisible() async {
+        while isVisible, !Task.isCancelled {
+            await refreshStatisticsCache()
+            try? await Task.sleep(for: .seconds(5))
+        }
+    }
+
+    private static let emptyFlowResult = StatisticsHeatmapResult(
+        days: [],
+        summary: StatisticsSummary(totalFocusSeconds: 0, activeDayCount: 0, sessionCount: 0)
+    )
+
+    private static let emptyTaskResult = AchievementHeatmapResult(
+        days: [],
+        summary: AchievementSummary(completedCount: 0, activeDayCount: 0, directionCount: 0)
+    )
+
+    private var statisticsRefreshID: IOSStatisticsRefreshID {
+        IOSStatisticsRefreshID(
+            isVisible: isVisible,
+            range: range.rawValue,
+            directionID: directionID,
+            directionCount: directions.count,
+            latestDirectionUpdate: directions.first?.updatedAt
+        )
+    }
+
+    @MainActor
+    private func refreshStatisticsCache() async {
+        guard isVisible else { return }
+
+        try? await Task.sleep(for: .milliseconds(100))
+        guard !Task.isCancelled, isVisible else { return }
+
+        let loader = StatisticsProjectionActor(modelContainer: modelContext.container)
+        guard let projection = try? await loader.load(
+            filter: filter,
+            calendar: calendar,
+            dayBoundary: dayBoundary,
+            now: .now
+        ) else { return }
+
+        guard !Task.isCancelled, isVisible else { return }
+        cachedFlowResult = projection.flow
+        cachedTaskResult = projection.achievement
     }
 
     private var summaryCard: some View {
@@ -297,7 +363,7 @@ struct IOSStatisticsView: View {
         Menu {
             Button(String(localized: "すべて")) { directionID = nil }
             Divider()
-            ForEach(directions.filter { !$0.isArchived }) { direction in
+            ForEach(activeDirections) { direction in
                 Button("\(direction.symbolName) \(direction.name)") {
                     directionID = direction.id
                 }
@@ -330,6 +396,14 @@ private enum IOSStatisticsMode: String, CaseIterable, Identifiable {
         case .tasks: String(localized: "タスク")
         }
     }
+}
+
+private struct IOSStatisticsRefreshID: Hashable {
+    let isVisible: Bool
+    let range: String
+    let directionID: UUID?
+    let directionCount: Int
+    let latestDirectionUpdate: Date?
 }
 
 private struct IOSStatisticsCell: Identifiable {
