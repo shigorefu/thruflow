@@ -330,17 +330,6 @@ history on every SwiftUI body evaluation. User-visible ordering is applied by
 the relevant shared sorter or feature projection, independently of query
 ordering.
 
-The Tasks feature receives its task feed and `TaskWindowCache` from the
-platform composition root. The cache synchronously prepares the current
-application day plus the seven preceding and fourteen following days, together
-with overdue and undated task groups. Opening Tasks therefore paints the common
-day and week ranges without rebuilding a date index or filtering the complete
-task collection. An immutable full-date index is then built at utility priority
-and published for distant month or manually selected periods. Cache invalidation
-uses task count, the latest `updatedAt` value, and the configured application
-day boundary. Habit generation runs its visible-date pass first; full-history
-duplicate reconciliation is delayed until after the initial Tasks frame.
-
 The Flow dashboard creates its one-second `TimelineView` only while selected,
 and its Metal stream renders only while both selected and in the key window.
 The iOS shell retains tab roots through the system `TabView`; it passes the same
