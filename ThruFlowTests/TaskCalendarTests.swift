@@ -88,6 +88,64 @@ struct TaskCalendarTests {
         )
     }
 
+    @MainActor
+    @Test func calendarSnapshotIndexesOnlyActiveScheduledTasks() {
+        let calendar = testCalendar()
+        let selectedDate = date(2026, 7, 29, calendar: calendar)
+        let direction = Direction(name: "仕事", type: .neutral)
+        let active = Todo(title: "資料", direction: direction, scheduledDate: selectedDate)
+        let undated = Todo(title: "受信箱", direction: direction)
+        let archived = Todo(title: "保管", direction: direction, scheduledDate: selectedDate)
+        archived.archive(now: selectedDate)
+        let deleted = Todo(title: "削除", direction: direction, scheduledDate: selectedDate)
+        deleted.softDelete(now: selectedDate)
+
+        let snapshot = TaskCalendarSnapshot(
+            todos: [active, undated, archived, deleted],
+            calendar: calendar,
+            now: selectedDate
+        )
+
+        #expect(snapshot.activeTodos.map(\.id) == [active.id, undated.id])
+        #expect(snapshot.todos(on: selectedDate).map(\.id) == [active.id])
+        #expect(snapshot.todo(id: active.id) === active)
+        #expect(snapshot.todo(id: archived.id) == nil)
+    }
+
+    @MainActor
+    @Test func calendarSnapshotIndicatorsRespectFilterSearchAndLimit() {
+        let calendar = testCalendar()
+        let selectedDate = date(2026, 7, 29, calendar: calendar)
+        let work = Direction(name: "AWS", type: .neutral, colorHex: "#FF0000")
+        let duplicateColor = Direction(name: "資料", type: .neutral, colorHex: "#ff0000")
+        let habitDirection = Direction(name: "運動", type: .habit, colorHex: "#00FF00")
+        let aws = Todo(title: "VPC", direction: work, scheduledDate: selectedDate)
+        let document = Todo(title: "設計", direction: duplicateColor, scheduledDate: selectedDate)
+        let habit = Todo(title: "", direction: habitDirection, scheduledDate: selectedDate)
+        let snapshot = TaskCalendarSnapshot(
+            todos: [aws, document, habit],
+            calendar: calendar,
+            now: selectedDate
+        )
+
+        #expect(
+            snapshot.indicatorColors(on: selectedDate, filter: .all)
+                == ["#FF0000", "#00FF00"]
+        )
+        #expect(
+            snapshot.indicatorColors(on: selectedDate, filter: .habits)
+                == ["#00FF00"]
+        )
+        #expect(
+            snapshot.indicatorColors(
+                on: selectedDate,
+                filter: .all,
+                matching: DatabaseSearchQuery(text: "VPC"),
+                limit: 1
+            ) == ["#FF0000"]
+        )
+    }
+
     @Test func backlogSeparatesOverdueAndUnscheduledTasks() {
         let calendar = testCalendar()
         let now = date(2026, 7, 17, calendar: calendar)

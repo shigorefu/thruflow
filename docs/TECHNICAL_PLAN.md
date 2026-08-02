@@ -27,10 +27,11 @@ The iOS deployment target is 17.0 even when building with Xcode 26 and the iOS
 - `DefaultDirections` resolves system `その他`.
 - `TodayTodoFilter` includes only scheduled tasks for the selected day.
 - `TaskCalendarBuilder` creates deterministic visible date ranges and month grids.
+- `TaskCalendarSnapshot` creates the render-scoped day/UUID/backlog index shared by Tasks day, week, month, and mini-calendar projections. SwiftData remains the only source of truth; this is not an app-lifetime cache.
 - `TaskRescheduleService` validates kanban and month-grid drag-and-drop.
 - `TaskBacklogBuilder` derives overdue and undated active normal Tasks for the Today section and Tasks inspector without adding persistence state.
 - `RequiredTodoPlanner` decides whether a scheduled Habit Task is eligible.
-- `HabitTodoMaterializer` is the only macOS/iOS persistence entry point for automatic Habit generation. Its full path fetches fresh SwiftData state, normalizes dates, runs `HabitTodoReconciler`, and invokes the planner. Date navigation may use its lightweight path with the current Todo snapshot; that path is debounced, skips Flow-history reconciliation, and persists only when a Habit occurrence must actually be created or moved.
+- `HabitTodoMaterializer` is the only macOS/iOS persistence entry point for automatic Habit generation. Its full path fetches fresh SwiftData state, normalizes dates, runs `HabitTodoReconciler`, and invokes the planner. Tasks surfaces run that path after their initial frame. Date navigation uses a cancellable, debounced lightweight path with the current Todo snapshot; it skips Flow-history reconciliation and persists only when a Habit occurrence must actually be created or moved.
 - `HabitTodoReconciler` repairs duplicate active Habit occurrences for the same Direction/day, preserves related Flow history and progress, and soft-deletes redundant rows.
 - `FlowProgressCalculator` defines focused-time conversion for isolated calculations.
 - `FlowProgressReconciler` rebuilds measured Todo progress/completion and Direction focus totals from credited Flow history after every history mutation and once at app launch.

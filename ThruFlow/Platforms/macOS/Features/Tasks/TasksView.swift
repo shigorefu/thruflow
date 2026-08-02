@@ -35,16 +35,12 @@ struct TasksView: View {
     @State private var isSearchPresented = false
     @State private var moveError: String?
     @State private var backlogInspectorMode: MacTaskBacklogMode?
+    @State private var hasPerformedInitialMaterialization = false
+    @State private var calendarDayRevision = 0
     @AppStorage("today.groupOrder") private var groupOrderRaw = TasksTodoGroup.defaultOrderRaw
 
-    private var filter: TodayTodoFilter {
-        TodayTodoFilter(calendar: calendar, dayBoundary: dayBoundary)
-    }
     private var requiredPlanner: RequiredTodoPlanner { RequiredTodoPlanner(calendar: calendar) }
     private var calendarBuilder: TaskCalendarBuilder { TaskCalendarBuilder(calendar: calendar) }
-    private var backlogBuilder: TaskBacklogBuilder {
-        TaskBacklogBuilder(calendar: calendar, dayBoundary: dayBoundary)
-    }
     private var rescheduleService: TaskRescheduleService {
         TaskRescheduleService(calendar: calendar, dayBoundary: dayBoundary)
     }
@@ -72,16 +68,6 @@ struct TasksView: View {
         activeDirections.filter { !DefaultDirections.isTaskInbox($0) }
     }
 
-    private var selectedDateTodos: [Todo] {
-        searchFilteredTodos.filter {
-            filter.includes($0, on: selectedDate) && taskFilter.includes($0)
-        }
-    }
-
-    private var selectedDateGroups: [TasksTodoGroup] {
-        TasksTodoGroup.groups(for: selectedDateTodos, order: groupOrder)
-    }
-
     private var groupOrder: [DirectionType] {
         TasksTodoGroup.order(from: groupOrderRaw)
     }
@@ -90,26 +76,26 @@ struct TasksView: View {
         calendarBuilder.dates(for: calendarRange, anchoredAt: anchorDate)
     }
 
-    private var backlogSnapshot: TaskBacklogSnapshot {
-        backlogBuilder.build(todos: todos)
-    }
-
-    private var visibleOverdueTodos: [Todo] {
-        backlogSnapshot.overdue
-            .filter(taskFilter.includes)
-            .filter(matchesSearch)
-    }
-
-    private var searchFilteredTodos: [Todo] {
-        todos.filter(matchesSearch)
+    private var taskSearchQuery: DatabaseSearchQuery {
+        DatabaseSearchQuery(text: searchText)
     }
 
     var body: some View {
+        let snapshot = TaskCalendarSnapshot(
+            todos: todos,
+            calendar: calendar,
+            dayBoundary: dayBoundary
+        )
+
+        content(snapshot: snapshot)
+    }
+
+    private func content(snapshot: TaskCalendarSnapshot) -> some View {
         VStack(spacing: 0) {
             if isSearching {
                 globalSearchContent
             } else {
-                tasksWorkspace
+                tasksWorkspace(snapshot: snapshot)
             }
         }
         .navigationTitle(String(localized: "タスク"))
@@ -123,7 +109,7 @@ struct TasksView: View {
                 HStack(spacing: 10) {
                     backlogToolbarButton(
                         String(localized: "期限切れ"),
-                        count: backlogSnapshot.overdue.count,
+                        count: snapshot.backlog.overdue.count,
                         mode: .overdue
                     )
 
@@ -133,7 +119,7 @@ struct TasksView: View {
 
                     backlogToolbarButton(
                         String(localized: "日付なし"),
-                        count: backlogSnapshot.unscheduled.count,
+                        count: snapshot.backlog.unscheduled.count,
                         mode: .unscheduled
                     )
                 }
@@ -167,7 +153,7 @@ struct TasksView: View {
             TodoFormView(mode: .edit(todo))
         }
         .inspector(isPresented: backlogInspectorIsPresented) {
-            backlogInspector
+            backlogInspector(snapshot: snapshot)
                 .inspectorColumnWidth(min: 300, ideal: 340, max: 420)
         }
         .alert(String(localized: "移動できません"), isPresented: moveErrorIsPresented) {
@@ -177,29 +163,32 @@ struct TasksView: View {
         } message: {
             Text(moveError ?? "")
         }
-        .onAppear {
+        .task {
+            guard !hasPerformedInitialMaterialization else { return }
             alignInitialSelectionWithCurrentAppDay()
             selectComposerDate(selectedDate)
-            ensureRequiredTodosForVisibleDates()
+            await Task.yield()
+            ensureRequiredTodosForVisibleDates(reconcilesDuplicates: true)
+            hasPerformedInitialMaterialization = true
+        }
+        .task(id: requiredTodoMaterializationID) {
+            guard hasPerformedInitialMaterialization else { return }
+            do {
+                try await Task.sleep(for: .milliseconds(180))
+            } catch {
+                return
+            }
+            guard !Task.isCancelled else { return }
+            ensureRequiredTodosForVisibleDates(reconcilesDuplicates: false)
         }
         .onChange(of: calendarRange) { _, _ in
             anchorDate = selectedDate
-            ensureRequiredTodosForVisibleDates()
-        }
-        .onChange(of: anchorDate) { _, _ in
-            ensureRequiredTodosForVisibleDates()
         }
         .onChange(of: selectedDate) { _, newDate in
             selectComposerDate(newDate)
         }
-        .onChange(of: directions.map(\.updatedAt)) { _, _ in
-            ensureRequiredTodosForVisibleDates()
-        }
-        .onChange(of: todos.count) { _, _ in
-            ensureRequiredTodosForVisibleDates()
-        }
         .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) { _ in
-            ensureRequiredTodosForVisibleDates()
+            calendarDayRevision += 1
         }
         .onTapGesture {
 #if os(macOS)
@@ -221,13 +210,10 @@ struct TasksView: View {
     }
 
     @ViewBuilder
-    private var tasksWorkspace: some View {
+    private func tasksWorkspace(snapshot: TaskCalendarSnapshot) -> some View {
         GeometryReader { geometry in
             HStack(spacing: 0) {
-                boardContent
-                    .id(calendarRange)
-                    .transition(.opacity.combined(with: .scale(scale: 0.995)))
-                    .animation(.easeInOut(duration: 0.22), value: calendarRange)
+                boardContent(snapshot: snapshot)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                 Divider()
@@ -245,8 +231,8 @@ struct TasksView: View {
                     Divider()
 
                     ScrollView {
-                        taskPeriodPicker
-                            .padding(16)
+                    taskPeriodPicker(snapshot: snapshot)
+                        .padding(16)
                     }
 
                     Spacer(minLength: 0)
@@ -276,12 +262,13 @@ struct TasksView: View {
     }
 
     @ViewBuilder
-    private var taskPeriodPicker: some View {
+    private func taskPeriodPicker(snapshot: TaskCalendarSnapshot) -> some View {
         switch calendarRange {
         case .oneDay:
             HistoryMiniCalendar(
                 selectedDate: selectedDateBinding,
                 indicatorSource: .tasks(taskFilter),
+                taskSnapshot: snapshot,
                 onDropPayload: moveTaskPayload
             )
         case .sevenDays:
@@ -289,6 +276,7 @@ struct TasksView: View {
                 selectedDate: selectedDateBinding,
                 selectionMode: .week,
                 indicatorSource: .tasks(taskFilter),
+                taskSnapshot: snapshot,
                 onDropPayload: moveTaskPayload
             )
         case .month:
@@ -308,16 +296,17 @@ struct TasksView: View {
     }
 
     @ViewBuilder
-    private var boardContent: some View {
+    private func boardContent(snapshot: TaskCalendarSnapshot) -> some View {
         switch calendarRange {
         case .oneDay:
-            oneDayList
+            oneDayList(snapshot: snapshot)
         case .sevenDays:
             TaskMultiDayBoard(
                 dates: visibleDates,
                 selectedDate: selectedDate,
-                todos: searchFilteredTodos.filter { !$0.isArchived && !$0.isDeleted },
+                snapshot: snapshot,
                 filter: taskFilter,
+                searchQuery: taskSearchQuery,
                 columnWidth: 238,
                 onSelectDate: selectDate,
                 onToggle: toggleTodo,
@@ -333,59 +322,71 @@ struct TasksView: View {
                 anchorDate: anchorDate,
                 dates: visibleDates,
                 selectedDate: selectedDate,
-                todos: searchFilteredTodos.filter { !$0.isArchived && !$0.isDeleted },
+                snapshot: snapshot,
                 filter: taskFilter,
+                searchQuery: taskSearchQuery,
                 onSelectDate: openDay,
                 onMove: moveTodo
             )
         }
     }
 
-    private var oneDayList: some View {
-        List {
+    private func oneDayList(snapshot: TaskCalendarSnapshot) -> some View {
+        let selectedTodos = selectedDateTodos(in: snapshot)
+        let selectedGroups = TasksTodoGroup.groups(for: selectedTodos, order: groupOrder)
+        let overdueTodos = visibleOverdueTodos(in: snapshot)
+        let showsOverdueSection = calendar.isDateInToday(selectedDate) && !overdueTodos.isEmpty
+
+        return List {
             if showsOverdueSection {
                 Section {
-                    ForEach(visibleOverdueTodos) { todo in
+                    ForEach(overdueTodos) { todo in
                         draggableTodoRow(todo)
                     }
                 } header: {
                     TasksOverdueHeader(
-                        count: visibleOverdueTodos.count,
-                        onMoveAllToToday: { moveTodosToToday(visibleOverdueTodos) }
+                        count: overdueTodos.count,
+                        onMoveAllToToday: { moveTodosToToday(overdueTodos) }
                     )
                 }
                 .listSectionSeparator(.hidden)
             }
 
-            if selectedDateGroups.isEmpty {
+            if selectedGroups.isEmpty {
                 if !showsOverdueSection {
                     EmptyRow(text: String(localized: "この日のタスクはありません。"))
                         .listRowSeparator(.hidden)
                 }
             } else {
-                ForEach(selectedDateGroups) { group in
+                ForEach(selectedGroups) { group in
                     Section {
                         ForEach(group.todos) { todo in
                             draggableTodoRow(todo)
                         }
                         .onMove { source, destination in
-                            moveTodos(in: group.type, from: source, to: destination)
+                            moveTodos(
+                                in: group.type,
+                                from: source,
+                                to: destination,
+                                selectedTodos: selectedTodos
+                            )
                         }
                     } header: {
                         TasksSectionHeader(group: group)
                     }
                     .listSectionSeparator(.hidden)
                 }
-                .onMove(perform: moveGroups)
+                .onMove { source, destination in
+                    moveGroups(
+                        from: source,
+                        to: destination,
+                        selectedGroups: selectedGroups
+                    )
+                }
             }
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
-        .animation(.default, value: selectedDateTodos.map(\.id))
-    }
-
-    private var showsOverdueSection: Bool {
-        calendar.isDateInToday(selectedDate) && !visibleOverdueTodos.isEmpty
     }
 
     @ViewBuilder
@@ -454,19 +455,19 @@ struct TasksView: View {
         .accessibilityLabel(String(localized: "項目 \(title)、件数 \(count)"))
     }
 
-    private var backlogInspectorTodos: [Todo] {
+    private func backlogInspectorTodos(in snapshot: TaskCalendarSnapshot) -> [Todo] {
         switch backlogInspectorMode {
         case .overdue:
-            backlogSnapshot.overdue.filter(matchesSearch)
+            snapshot.backlog.overdue.filter(matchesSearch)
         case .unscheduled:
-            backlogSnapshot.unscheduled.filter(matchesSearch)
+            snapshot.backlog.unscheduled.filter(matchesSearch)
         case nil:
             []
         }
     }
 
     private func matchesSearch(_ todo: Todo) -> Bool {
-        DatabaseSearchQuery(text: searchText).matchesTask(todo)
+        taskSearchQuery.matchesTask(todo)
     }
 
     private var backlogInspectorTitle: String {
@@ -479,21 +480,23 @@ struct TasksView: View {
         backlogInspectorMode == .overdue ? "exclamationmark.circle" : "tray"
     }
 
-    private var backlogInspector: some View {
-        VStack(spacing: 0) {
+    private func backlogInspector(snapshot: TaskCalendarSnapshot) -> some View {
+        let inspectorTodos = backlogInspectorTodos(in: snapshot)
+
+        return VStack(spacing: 0) {
             HStack(spacing: 8) {
                 Label(backlogInspectorTitle, systemImage: backlogInspectorSystemImage)
                     .font(.headline)
 
-                Text("\(backlogInspectorTodos.count)")
+                Text("\(inspectorTodos.count)")
                     .font(.caption.monospacedDigit().weight(.semibold))
                     .foregroundStyle(.secondary)
 
                 Spacer(minLength: 0)
 
-                if !backlogInspectorTodos.isEmpty {
+                if !inspectorTodos.isEmpty {
                     Button(String(localized: "すべて今日へ")) {
-                        moveTodosToToday(backlogInspectorTodos)
+                        moveTodosToToday(inspectorTodos)
                     }
                     .buttonStyle(.bordered)
                 }
@@ -511,7 +514,7 @@ struct TasksView: View {
 
             Divider()
 
-            if backlogInspectorTodos.isEmpty {
+            if inspectorTodos.isEmpty {
                 ContentUnavailableView(
                     backlogInspectorTitle,
                     systemImage: backlogInspectorSystemImage
@@ -519,7 +522,7 @@ struct TasksView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 List {
-                    ForEach(backlogInspectorTodos) { todo in
+                    ForEach(inspectorTodos) { todo in
                         unscheduledTodoRow(todo)
                             .listRowSeparator(.hidden)
                     }
@@ -793,8 +796,12 @@ struct TasksView: View {
         return formatter
     }
 
-    private func moveGroups(from source: IndexSet, to destination: Int) {
-        var visibleOrder = selectedDateGroups.map(\.type)
+    private func moveGroups(
+        from source: IndexSet,
+        to destination: Int,
+        selectedGroups: [TasksTodoGroup]
+    ) {
+        var visibleOrder = selectedGroups.map(\.type)
         visibleOrder.move(fromOffsets: source, toOffset: destination)
 
         let hiddenOrder = groupOrder.filter { type in
@@ -806,11 +813,16 @@ struct TasksView: View {
             .joined(separator: ",")
     }
 
-    private func moveTodos(in type: DirectionType, from source: IndexSet, to destination: Int) {
-        var reordered = selectedDateTodos.filter { TasksTodoGroup.type(for: $0) == type }
+    private func moveTodos(
+        in type: DirectionType,
+        from source: IndexSet,
+        to destination: Int,
+        selectedTodos: [Todo]
+    ) {
+        var reordered = selectedTodos.filter { TasksTodoGroup.type(for: $0) == type }
         reordered.move(fromOffsets: source, toOffset: destination)
 
-        let groupedTodos = Dictionary(grouping: selectedDateTodos) { todo in
+        let groupedTodos = Dictionary(grouping: selectedTodos) { todo in
             TasksTodoGroup.type(for: todo)
         }
         let orderedTodos = groupOrder.flatMap { groupType -> [Todo] in
@@ -876,7 +888,10 @@ struct TasksView: View {
         newTodoError = nil
     }
 
-    private func ensureRequiredTodosForVisibleDates(now: Date = .now) {
+    private func ensureRequiredTodosForVisibleDates(
+        now: Date = .now,
+        reconcilesDuplicates: Bool
+    ) {
         let today = dayBoundary.day(containing: now, calendar: calendar)
         let dates = visibleDates
             .filter { $0 >= today }
@@ -894,7 +909,39 @@ struct TasksView: View {
             directions: activeDirections,
             dates: dates,
             modelContext: modelContext,
-            now: now
+            now: now,
+            knownTodos: todos,
+            reconcilesDuplicates: reconcilesDuplicates
+        )
+    }
+
+    private func selectedDateTodos(in snapshot: TaskCalendarSnapshot) -> [Todo] {
+        snapshot.todos(on: selectedDate)
+            .filter(taskFilter.includes)
+            .filter(taskSearchQuery.matchesTask)
+            .sorted(by: TaskBoardSort.areInIncreasingOrder)
+    }
+
+    private func visibleOverdueTodos(in snapshot: TaskCalendarSnapshot) -> [Todo] {
+        snapshot.backlog.overdue
+            .filter(taskFilter.includes)
+            .filter(taskSearchQuery.matchesTask)
+    }
+
+    private var requiredTodoMaterializationID: MacRequiredTodoMaterializationID {
+        MacRequiredTodoMaterializationID(
+            rangeRawValue: calendarRange.rawValue,
+            visibleDates: visibleDates.map { calendar.startOfDay(for: $0) },
+            habitRevisions: activeDirections
+                .filter { $0.type == .habit }
+                .map {
+                    MacHabitMaterializationRevision(
+                        id: $0.id,
+                        updatedAt: $0.updatedAt,
+                        isArchived: $0.isArchived
+                    )
+                },
+            calendarDayRevision: calendarDayRevision
         )
     }
 
@@ -929,6 +976,19 @@ struct TasksView: View {
 private enum MacTaskBacklogMode {
     case overdue
     case unscheduled
+}
+
+private struct MacRequiredTodoMaterializationID: Hashable {
+    let rangeRawValue: String
+    let visibleDates: [Date]
+    let habitRevisions: [MacHabitMaterializationRevision]
+    let calendarDayRevision: Int
+}
+
+private struct MacHabitMaterializationRevision: Hashable {
+    let id: UUID
+    let updatedAt: Date
+    let isArchived: Bool
 }
 
 /// Quick-add volume selection for the composer. `checkbox` means "no target amount",

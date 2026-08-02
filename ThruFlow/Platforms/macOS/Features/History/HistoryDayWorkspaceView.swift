@@ -157,6 +157,7 @@ struct HistoryMiniCalendar: View {
     @Binding var selectedDate: Date
     var selectionMode: HistoryMiniCalendarSelectionMode = .day
     var indicatorSource: HistoryMiniCalendarIndicatorSource = .flowHistory
+    var taskSnapshot: TaskCalendarSnapshot?
     var onDropPayload: ((String, Date) -> Bool)?
 
     @Query(sort: \Todo.sortIndex, order: .forward) private var todos: [Todo]
@@ -284,7 +285,7 @@ struct HistoryMiniCalendar: View {
             )
         case .tasks(let filter):
             CalendarTaskIndicators(
-                todos: todos.filter(filter.includes),
+                todos: (taskSnapshot?.todos(on: date) ?? todos).filter(filter.includes),
                 date: date,
                 maximumVisibleCount: 3
             )

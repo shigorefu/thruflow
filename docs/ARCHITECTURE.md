@@ -330,6 +330,20 @@ history on every SwiftUI body evaluation. User-visible ordering is applied by
 the relevant shared sorter or feature projection, independently of query
 ordering.
 
+Tasks calendar rendering follows the same projection rule without introducing
+a second source of truth. `TaskCalendarSnapshot` creates one immutable,
+render-scoped index from the current SwiftData `@Query` result: active Tasks by
+day and UUID, plus the overdue/undated backlog. Day, week, month, and the macOS
+mini-calendar reuse that index instead of independently scanning every Task for
+every visible cell. The snapshot is discarded with the render and never owns
+persistence or cross-navigation state.
+
+Habit occurrence materialization is not part of a date-selection transaction.
+Tasks surfaces perform one full reconciliation after their initial frame, then
+debounce lightweight materialization while the selected range is changing.
+Rapid navigation cancels superseded work, and the lightweight path saves only
+when an occurrence actually needs to be created or moved.
+
 The Flow dashboard creates its one-second `TimelineView` only while selected,
 and its Metal stream renders only while both selected and in the key window.
 The iOS shell retains tab roots through the system `TabView`; it passes the same

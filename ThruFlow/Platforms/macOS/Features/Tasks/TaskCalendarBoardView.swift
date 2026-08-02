@@ -12,8 +12,9 @@ struct TaskMultiDayBoard: View {
 
     let dates: [Date]
     let selectedDate: Date
-    let todos: [Todo]
+    let snapshot: TaskCalendarSnapshot
     let filter: TaskCalendarFilter
+    let searchQuery: DatabaseSearchQuery
     let columnWidth: CGFloat
     let onSelectDate: (Date) -> Void
     let onToggle: (Todo) -> Void
@@ -38,7 +39,7 @@ struct TaskMultiDayBoard: View {
                             onStartFlow: onStartFlow,
                             onDelete: onDelete,
                             onMove: { todoID in
-                                guard let todo = todos.first(where: { $0.id == todoID }) else { return }
+                                guard let todo = snapshot.todo(id: todoID) else { return }
                                 onMove(todo, date)
                             }
                         )
@@ -52,11 +53,9 @@ struct TaskMultiDayBoard: View {
     }
 
     private func todosForDate(_ date: Date) -> [Todo] {
-        todos
-            .filter { todo in
-                guard let scheduledDate = todo.scheduledDate else { return false }
-                return calendar.isDate(scheduledDate, inSameDayAs: date) && filter.includes(todo)
-            }
+        snapshot.todos(on: date)
+            .filter(filter.includes)
+            .filter(searchQuery.matchesTask)
             .sorted(by: TaskBoardSort.areInIncreasingOrder)
     }
 }
@@ -175,8 +174,9 @@ struct TaskMonthGrid: View {
     let anchorDate: Date
     let dates: [Date]
     let selectedDate: Date
-    let todos: [Todo]
+    let snapshot: TaskCalendarSnapshot
     let filter: TaskCalendarFilter
+    let searchQuery: DatabaseSearchQuery
     let onSelectDate: (Date) -> Void
     let onMove: (Todo, Date) -> Bool
 
@@ -275,16 +275,16 @@ struct TaskMonthGrid: View {
             guard let payload = payloads.first,
                   payload.hasPrefix("task:"),
                   let id = UUID(uuidString: String(payload.dropFirst("task:".count))),
-                  let todo = todos.first(where: { $0.id == id }) else { return false }
+                  let todo = snapshot.todo(id: id) else { return false }
             return onMove(todo, date)
         }
     }
 
     private func todosForDate(_ date: Date) -> [Todo] {
-        todos.filter { todo in
-            guard let scheduledDate = todo.scheduledDate else { return false }
-            return calendar.isDate(scheduledDate, inSameDayAs: date) && filter.includes(todo)
-        }
+        snapshot.todos(on: date)
+            .filter(filter.includes)
+            .filter(searchQuery.matchesTask)
+            .sorted(by: TaskBoardSort.areInIncreasingOrder)
     }
 
     private func canDrag(_ todo: Todo) -> Bool {
@@ -420,7 +420,7 @@ private struct TaskBoardGroup: Identifiable {
     }
 }
 
-private enum TaskBoardSort {
+enum TaskBoardSort {
     nonisolated static func areInIncreasingOrder(_ lhs: Todo, _ rhs: Todo) -> Bool {
         if lhs.isCompleted != rhs.isCompleted {
             return !lhs.isCompleted

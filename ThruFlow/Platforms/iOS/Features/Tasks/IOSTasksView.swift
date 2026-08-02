@@ -19,6 +19,8 @@ struct IOSTasksView: View {
     @State private var searchText = ""
     @State private var showsComposer = false
     @State private var backlogMoveError: String?
+    @State private var hasPerformedInitialMaterialization = false
+    @State private var calendarDayRevision = 0
 
     private var calendarBuilder: TaskCalendarBuilder { TaskCalendarBuilder(calendar: calendar) }
     private var rescheduleService: TaskRescheduleService {
@@ -46,29 +48,28 @@ struct IOSTasksView: View {
         calendarBuilder.dates(for: range, anchoredAt: selectedDate)
     }
 
-    private var selectedTodos: [Todo] {
-        todos(on: selectedDate)
-    }
-
-    private var backlog: TaskBacklogSnapshot {
-        TaskBacklogBuilder(
-            calendar: calendar,
-            dayBoundary: dayBoundary
-        ).build(todos: todos)
-    }
-
-    private var backlogCount: Int {
-        backlog.overdue.count + backlog.unscheduled.count
+    private var taskSearchQuery: DatabaseSearchQuery {
+        DatabaseSearchQuery(text: searchText)
     }
 
     var body: some View {
+        let snapshot = TaskCalendarSnapshot(
+            todos: todos,
+            calendar: calendar,
+            dayBoundary: dayBoundary
+        )
+
+        content(snapshot: snapshot)
+    }
+
+    private func content(snapshot: TaskCalendarSnapshot) -> some View {
         VStack(spacing: 0) {
             if isSearching {
                 globalSearchContent
             } else {
-                controls
+                controls(snapshot: snapshot)
                 Divider()
-                taskContent
+                taskContent(snapshot: snapshot)
                     .iosPeriodSwipeNavigation(
                         pageID: selectedPeriodPageID
                     ) { offset in
@@ -93,14 +94,14 @@ struct IOSTasksView: View {
                         IOSMoreMenuLabel()
                     }
                     .accessibilityLabel(String(localized: "その他"))
-                    .accessibilityValue("\(backlogCount)")
+                    .accessibilityValue("\(backlogCount(in: snapshot))")
 
-                    IOSNotificationBadge(count: backlogCount)
+                    IOSNotificationBadge(count: backlogCount(in: snapshot))
                         .allowsHitTesting(false)
                 }
                 .frame(width: 44, height: 44)
                 .popover(isPresented: $showsBacklogMenu, arrowEdge: .top) {
-                    backlogMenuContent
+                    backlogMenuContent(snapshot: snapshot)
                         .presentationCompactAdaptation(.popover)
                         .onDisappear(perform: presentPendingBacklog)
                 }
@@ -130,7 +131,9 @@ struct IOSTasksView: View {
             NavigationStack {
                 IOSBacklogView(
                     mode: mode,
-                    todos: mode == .overdue ? backlog.overdue : backlog.unscheduled,
+                    todos: mode == .overdue
+                        ? snapshot.backlog.overdue
+                        : snapshot.backlog.unscheduled,
                     edit: { todo in
                         backlogMode = nil
                         editorMode = .edit(todo)
@@ -152,10 +155,14 @@ struct IOSTasksView: View {
             Text(backlogMoveError ?? "")
         }
         .task {
+            guard !hasPerformedInitialMaterialization else { return }
             alignInitialSelectionWithCurrentAppDay()
+            await Task.yield()
             ensureRequiredTodos(reconcilesDuplicates: true)
+            hasPerformedInitialMaterialization = true
         }
         .task(id: requiredTodoMaterializationID) {
+            guard hasPerformedInitialMaterialization else { return }
             do {
                 try await Task.sleep(for: .milliseconds(180))
             } catch {
@@ -167,8 +174,8 @@ struct IOSTasksView: View {
         .onDisappear {
             showsComposer = false
         }
-        .onChange(of: directions.map(\.updatedAt)) { _, _ in
-            ensureRequiredTodos(reconcilesDuplicates: true)
+        .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) { _ in
+            calendarDayRevision += 1
         }
     }
 
@@ -222,17 +229,17 @@ struct IOSTasksView: View {
         }
     }
 
-    private var backlogMenuContent: some View {
+    private func backlogMenuContent(snapshot: TaskCalendarSnapshot) -> some View {
         VStack(spacing: 4) {
             backlogMenuButton(
                 String(localized: "期限切れ"),
-                count: backlog.overdue.count,
+                count: snapshot.backlog.overdue.count,
                 systemImage: "exclamationmark.circle",
                 mode: .overdue
             )
             backlogMenuButton(
                 String(localized: "日付なし"),
-                count: backlog.unscheduled.count,
+                count: snapshot.backlog.unscheduled.count,
                 systemImage: "tray",
                 mode: .unscheduled
             )
@@ -280,7 +287,7 @@ struct IOSTasksView: View {
         }
     }
 
-    private var controls: some View {
+    private func controls(snapshot: TaskCalendarSnapshot) -> some View {
         VStack(spacing: 10) {
             HStack(spacing: 10) {
                 Menu {
@@ -321,14 +328,16 @@ struct IOSTasksView: View {
             if range == .oneDay {
                 IOSWeekDateStrip(
                     selectedDate: $selectedDate,
-                    todos: searchFilteredTodos,
-                    filter: filter
+                    snapshot: snapshot,
+                    filter: filter,
+                    searchQuery: taskSearchQuery
                 )
             } else if range == .sevenDays {
                 IOSWeekCardStrip(
                     selectedDate: $selectedDate,
-                    todos: searchFilteredTodos,
-                    filter: filter
+                    snapshot: snapshot,
+                    filter: filter,
+                    searchQuery: taskSearchQuery
                 )
             }
         }
@@ -338,37 +347,45 @@ struct IOSTasksView: View {
     }
 
     @ViewBuilder
-    private var taskContent: some View {
+    private func taskContent(snapshot: TaskCalendarSnapshot) -> some View {
         switch range {
         case .oneDay:
-            groupedList(for: selectedDate, todos: selectedTodos)
+            groupedList(
+                for: selectedDate,
+                todos: todos(on: selectedDate, in: snapshot),
+                snapshot: snapshot
+            )
         case .sevenDays:
-            weekList(anchorDate: selectedDate)
+            weekList(anchorDate: selectedDate, snapshot: snapshot)
         case .month:
             ScrollView {
                 VStack(spacing: 14) {
                     IOSTaskMonthCalendar(
                         selectedDate: $selectedDate,
-                        todos: searchFilteredTodos,
-                        filter: filter
+                        snapshot: snapshot,
+                        filter: filter,
+                        searchQuery: taskSearchQuery
                     )
 
-                    daySection(date: selectedDate, todos: selectedTodos)
+                    daySection(
+                        date: selectedDate,
+                        todos: todos(on: selectedDate, in: snapshot)
+                    )
                 }
                 .padding(12)
             }
         }
     }
 
-    private func weekList(anchorDate: Date) -> some View {
+    private func weekList(anchorDate: Date, snapshot: TaskCalendarSnapshot) -> some View {
         let dates = calendarBuilder
             .dates(for: .sevenDays, anchoredAt: anchorDate)
-            .filter { !todos(on: $0).isEmpty }
+            .filter { !todos(on: $0, in: snapshot).isEmpty }
 
         return ScrollView {
             LazyVStack(spacing: 14) {
                 ForEach(dates, id: \.self) { date in
-                    daySection(date: date, todos: todos(on: date))
+                    daySection(date: date, todos: todos(on: date, in: snapshot))
                 }
 
                 if dates.isEmpty {
@@ -383,8 +400,12 @@ struct IOSTasksView: View {
         }
     }
 
-    private func groupedList(for date: Date, todos: [Todo]) -> some View {
-        let overdueTodos = visibleOverdueTodos(on: date)
+    private func groupedList(
+        for date: Date,
+        todos: [Todo],
+        snapshot: TaskCalendarSnapshot
+    ) -> some View {
+        let overdueTodos = visibleOverdueTodos(on: date, in: snapshot)
 
         return ScrollView {
             LazyVStack(spacing: 14) {
@@ -534,32 +555,30 @@ struct IOSTasksView: View {
         }
     }
 
-    private func todos(on date: Date) -> [Todo] {
-        todos
-            .filter { TodayTodoFilter(calendar: calendar).includes($0, on: date) }
+    private func todos(on date: Date, in snapshot: TaskCalendarSnapshot) -> [Todo] {
+        snapshot.todos(on: date)
             .filter(filter.includes)
             .filter(matchesSearch)
             .sorted(by: taskSort)
     }
 
-    private func visibleOverdueTodos(on date: Date) -> [Todo] {
+    private func visibleOverdueTodos(
+        on date: Date,
+        in snapshot: TaskCalendarSnapshot
+    ) -> [Todo] {
         let today = dayBoundary.day(containing: .now, calendar: calendar)
         guard range == .oneDay,
               calendar.isDate(date, inSameDayAs: today) else {
             return []
         }
-        return backlog.overdue
+        return snapshot.backlog.overdue
             .filter(filter.includes)
             .filter(matchesSearch)
             .sorted(by: taskSort)
     }
 
-    private var searchFilteredTodos: [Todo] {
-        todos.filter(matchesSearch)
-    }
-
     private func matchesSearch(_ todo: Todo) -> Bool {
-        DatabaseSearchQuery(text: searchText).matchesTask(todo)
+        taskSearchQuery.matchesTask(todo)
     }
 
     private func moveTodosToToday(_ candidates: [Todo]) {
@@ -586,12 +605,25 @@ struct IOSTasksView: View {
         }
     }
 
-    private var requiredTodoMaterializationID: RequiredTodoMaterializationID {
-        RequiredTodoMaterializationID(
-            selectedDate: calendar.startOfDay(for: selectedDate),
+    private var requiredTodoMaterializationID: IOSRequiredTodoMaterializationID {
+        IOSRequiredTodoMaterializationID(
             rangeRawValue: range.rawValue,
-            todoCount: todos.count
+            visibleDates: visibleDates.map { calendar.startOfDay(for: $0) },
+            habitRevisions: activeDirections
+                .filter { $0.type == .habit }
+                .map {
+                    IOSHabitMaterializationRevision(
+                        id: $0.id,
+                        updatedAt: $0.updatedAt,
+                        isArchived: $0.isArchived
+                    )
+                },
+            calendarDayRevision: calendarDayRevision
         )
+    }
+
+    private func backlogCount(in snapshot: TaskCalendarSnapshot) -> Int {
+        snapshot.backlog.overdue.count + snapshot.backlog.unscheduled.count
     }
 
     private func ensureRequiredTodos(
@@ -647,12 +679,11 @@ private struct IOSWeekDateStrip: View {
     @Environment(\.locale) private var locale
 
     @Binding var selectedDate: Date
-    let todos: [Todo]
+    let snapshot: TaskCalendarSnapshot
     let filter: TaskCalendarFilter
+    let searchQuery: DatabaseSearchQuery
 
     var body: some View {
-        let colorsByDay = indicatorColorsByDay
-
         IOSScrollablePeriodStrip(
             selectedDate: $selectedDate,
             unit: .day,
@@ -670,7 +701,14 @@ private struct IOSWeekDateStrip: View {
                         .font(.body.weight(.semibold))
                         .monospacedDigit()
                     HStack(spacing: 2) {
-                        ForEach(colorsByDay[calendar.startOfDay(for: date)] ?? [], id: \.self) { colorHex in
+                        ForEach(
+                            snapshot.indicatorColors(
+                                on: date,
+                                filter: filter,
+                                matching: searchQuery
+                            ),
+                            id: \.self
+                        ) { colorHex in
                             Circle()
                                 .fill(Color(hex: colorHex))
                                 .frame(width: 4, height: 4)
@@ -691,18 +729,6 @@ private struct IOSWeekDateStrip: View {
         }
     }
 
-    private var indicatorColorsByDay: [Date: [String]] {
-        let palette = TaskCalendarIndicatorPalette(calendar: calendar)
-        return Dictionary(
-            uniqueKeysWithValues: Set(
-                todos.compactMap(\.scheduledDate)
-                    .map(calendar.startOfDay(for:))
-            )
-                .map { day in
-                    (day, palette.colors(on: day, todos: todos, filter: filter))
-                }
-        )
-    }
 }
 
 private struct IOSWeekCardStrip: View {
@@ -710,12 +736,11 @@ private struct IOSWeekCardStrip: View {
     @Environment(\.locale) private var locale
 
     @Binding var selectedDate: Date
-    let todos: [Todo]
+    let snapshot: TaskCalendarSnapshot
     let filter: TaskCalendarFilter
+    let searchQuery: DatabaseSearchQuery
 
     var body: some View {
-        let colorsByWeek = indicatorColorsByWeek
-
         IOSScrollablePeriodStrip(
             selectedDate: $selectedDate,
             unit: .week,
@@ -735,7 +760,14 @@ private struct IOSWeekCardStrip: View {
                         .font(.body.monospacedDigit().weight(.semibold))
 
                     HStack(spacing: 2) {
-                        ForEach(colorsByWeek[weekStart(for: anchor)] ?? [], id: \.self) { colorHex in
+                        ForEach(
+                            snapshot.indicatorColors(
+                                inWeekContaining: anchor,
+                                filter: filter,
+                                matching: searchQuery
+                            ),
+                            id: \.self
+                        ) { colorHex in
                             Circle()
                                 .fill(Color(hex: colorHex))
                                 .frame(width: 4, height: 4)
@@ -771,26 +803,6 @@ private struct IOSWeekCardStrip: View {
         return "\(calendar.component(.day, from: first))–\(calendar.component(.day, from: last))"
     }
 
-    private var indicatorColorsByWeek: [Date: [String]] {
-        let palette = TaskCalendarIndicatorPalette(calendar: calendar)
-        return Dictionary(
-            uniqueKeysWithValues: Set(
-                todos.compactMap(\.scheduledDate)
-                    .map(weekStart(for:))
-            )
-                .map { week in
-                    (
-                        week,
-                        palette.colors(
-                            inWeekContaining: week,
-                            todos: todos,
-                            filter: filter
-                        )
-                    )
-                }
-        )
-    }
-
     private func weekStart(for date: Date) -> Date {
         calendar.dateInterval(of: .weekOfYear, for: date)?.start
             ?? calendar.startOfDay(for: date)
@@ -802,8 +814,9 @@ private struct IOSTaskMonthCalendar: View {
     @Environment(\.locale) private var locale
 
     @Binding var selectedDate: Date
-    let todos: [Todo]
+    let snapshot: TaskCalendarSnapshot
     let filter: TaskCalendarFilter
+    let searchQuery: DatabaseSearchQuery
 
     private let columns = Array(
         repeating: GridItem(.flexible(), spacing: 4),
@@ -851,8 +864,12 @@ private struct IOSTaskMonthCalendar: View {
     private func dayCell(_ date: Date) -> some View {
         let isSelected = calendar.isDate(date, inSameDayAs: selectedDate)
         let isCurrentMonth = calendar.isDate(date, equalTo: selectedDate, toGranularity: .month)
-        let colors = TaskCalendarIndicatorPalette(calendar: calendar)
-            .colors(on: date, todos: todos, filter: filter, limit: 3)
+        let colors = snapshot.indicatorColors(
+            on: date,
+            filter: filter,
+            matching: searchQuery,
+            limit: 3
+        )
 
         return Button {
             selectedDate = calendar.startOfDay(for: date)
@@ -892,10 +909,17 @@ private struct IOSTaskMonthCalendar: View {
     }
 }
 
-private struct RequiredTodoMaterializationID: Hashable {
-    let selectedDate: Date
+private struct IOSRequiredTodoMaterializationID: Hashable {
     let rangeRawValue: String
-    let todoCount: Int
+    let visibleDates: [Date]
+    let habitRevisions: [IOSHabitMaterializationRevision]
+    let calendarDayRevision: Int
+}
+
+private struct IOSHabitMaterializationRevision: Hashable {
+    let id: UUID
+    let updatedAt: Date
+    let isArchived: Bool
 }
 
 private struct IOSGroupedTodos {
