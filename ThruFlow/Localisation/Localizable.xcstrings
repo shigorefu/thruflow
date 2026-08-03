@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "ja",
   "strings" : {
+    "" : {
+
+    },
     "–" : {
       "localizations" : {
         "en" : {
@@ -654,6 +657,7 @@
       }
     },
     "%lld Flow in %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -698,6 +702,7 @@
       }
     },
     "%lld 達成 in %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2229,6 +2234,22 @@
         }
       }
     },
+    "カレンダー" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calendar"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Календарь"
+          }
+        }
+      }
+    },
     "キャンセル" : {
       "localizations" : {
         "en" : {
@@ -2673,22 +2694,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Эта неделя"
-          }
-        }
-      }
-    },
-    "カレンダー" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Calendar"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Календарь"
           }
         }
       }
@@ -6760,6 +6765,7 @@
       }
     },
     "言語と地域" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7176,6 +7182,7 @@
       }
     },
     "達成" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

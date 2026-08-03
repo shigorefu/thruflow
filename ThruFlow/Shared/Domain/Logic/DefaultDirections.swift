@@ -26,8 +26,8 @@ enum DefaultDirections {
 
     static func existingTaskInbox(in directions: [Direction]) -> Direction? {
         directions
-            .filter(isTaskInbox)
-            .min(by: canonicalOrder)
+            .filter { isTaskInbox($0) }
+            .min { canonicalOrder($0, $1) }
     }
 
     static func isTaskInbox(_ direction: Direction) -> Bool {

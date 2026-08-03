@@ -15,7 +15,7 @@ struct DefaultDirectionReconciler {
         let directions = try modelContext.fetch(FetchDescriptor<Direction>())
         let candidates = directions
             .filter { !$0.isArchived && DefaultDirections.isTaskInboxRecord($0) }
-            .sorted(by: DefaultDirections.canonicalOrder)
+            .sorted { DefaultDirections.canonicalOrder($0, $1) }
 
         guard let canonical = candidates.first else {
             let inbox = DefaultDirections.makeTaskInbox(now: now)
