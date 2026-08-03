@@ -347,6 +347,21 @@ and funding a backend. APNs transport and OAuth/webhook Connectors introduce
 operational cost, secret management, abuse protection, and privacy obligations
 that belong to a separate product stage.
 
+## D-030: macOS Statistics Is A Filtered Period Report
+
+The standalone macOS Statistics workspace uses anchored Week, Month, and Year
+periods with summary, trend, focused-time distribution, and Dots cards. A
+persistent calendar selects the period. Direction filter and text search apply
+before every aggregation, and CSV exports exactly that visible projection.
+Flow switching is resolved per segment; the model does not add a Project
+entity. The compact iPhone and widget contribution ranges from D-009 remain
+unchanged.
+
+Reason: desktop space supports comparison and investigation while one shared,
+segment-aware projection keeps cards, search, and export numerically
+consistent. Task titles already provide the lightweight grouping needed for
+work such as repeated sessions on one book.
+
 ## Open Questions
 
 - What measurement and planned amount should be used for an auto-created Task when Flow starts with only a Direction or with neither Direction nor Task?

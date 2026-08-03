@@ -16,6 +16,55 @@ struct StatisticsProjection: Sendable {
 @ModelActor
 actor StatisticsProjectionActor {
     func load(
+        filter: StatisticsPeriodFilter,
+        calendar: Calendar,
+        dayBoundary: AppDayBoundary
+    ) throws -> StatisticsPeriodSnapshot {
+        let builder = StatisticsPeriodBuilder(
+            calendar: calendar,
+            dayBoundary: dayBoundary
+        )
+        let interval = builder.bounds(for: filter).fetchInterval
+        let lowerBound = interval.start
+        let upperBound = interval.end
+
+        // Fetch overlapping Flows so a context segment can start inside the
+        // selected comparison range even when its parent Flow started earlier.
+        // The pure builder still applies the exact segment/day boundary.
+        let sessions = try modelContext.fetch(FetchDescriptor<FlowSession>(
+            predicate: #Predicate { session in
+                session.startedAt < upperBound &&
+                    (session.endedAt ?? upperBound) >= lowerBound
+            },
+            sortBy: [SortDescriptor(\FlowSession.startedAt)]
+        ))
+        let missingCompletionDate = Date.distantPast
+        let completedTodos = try modelContext.fetch(FetchDescriptor<Todo>(
+            predicate: #Predicate { todo in
+                (todo.completedAt ?? missingCompletionDate) >= interval.start &&
+                    (todo.completedAt ?? missingCompletionDate) < upperBound &&
+                    todo.deletedAt == nil
+            },
+            sortBy: [SortDescriptor(\Todo.completedAt)]
+        ))
+        let legacyCompletedTodos = try modelContext.fetch(FetchDescriptor<Todo>(
+            predicate: #Predicate { todo in
+                todo.completedAt == nil &&
+                    todo.updatedAt >= interval.start &&
+                    todo.updatedAt < upperBound &&
+                    todo.deletedAt == nil
+            },
+            sortBy: [SortDescriptor(\Todo.updatedAt)]
+        ))
+
+        return builder.build(
+            flowRecords: sessions.flatMap(makePeriodFlowRecords),
+            achievementRecords: (completedTodos + legacyCompletedTodos).compactMap(makePeriodAchievementRecord),
+            filter: filter
+        )
+    }
+
+    func load(
         filter: StatisticsFilter,
         calendar: Calendar,
         dayBoundary: AppDayBoundary,
@@ -109,6 +158,73 @@ actor StatisticsProjectionActor {
         return StatisticsAchievementRecord(
             completedAt: todo.completedAt ?? todo.updatedAt,
             directionID: todo.direction?.id,
+            directionColorHex: todo.direction?.colorHex
+        )
+    }
+
+    private func makePeriodFlowRecords(_ session: FlowSession) -> [StatisticsPeriodFlowRecord] {
+        guard session.status != .interrupted else { return [] }
+
+        if !session.resolvedSegments.isEmpty {
+            return session.resolvedSegments.compactMap { segment in
+                let focusSeconds = segment.resolvedFocusSeconds
+                guard focusSeconds > 0 else { return nil }
+                return makePeriodFlowRecord(
+                    session: session,
+                    startedAt: segment.startedAt,
+                    focusSeconds: focusSeconds,
+                    direction: segment.direction,
+                    todo: segment.todo
+                )
+            }
+        }
+
+        let focusSeconds = session.resolvedActualFocusDurationSeconds
+        guard focusSeconds > 0 else { return [] }
+        return [makePeriodFlowRecord(
+            session: session,
+            startedAt: session.startedAt,
+            focusSeconds: focusSeconds,
+            direction: session.direction,
+            todo: session.todo
+        )]
+    }
+
+    private func makePeriodFlowRecord(
+        session: FlowSession,
+        startedAt: Date,
+        focusSeconds: Int,
+        direction: Direction?,
+        todo: Todo?
+    ) -> StatisticsPeriodFlowRecord {
+        StatisticsPeriodFlowRecord(
+            sessionID: session.id,
+            startedAt: startedAt,
+            focusSeconds: focusSeconds,
+            directionID: direction?.id,
+            directionName: direction?.name ?? "",
+            directionSymbol: direction?.symbolName ?? "",
+            directionColorHex: direction?.colorHex,
+            todoID: todo?.id,
+            todoTitle: todo?.title ?? "",
+            todoHashtags: todo?.hashtags ?? [],
+            todoNotes: todo?.notes ?? "",
+            intent: session.intent,
+            result: session.result ?? ""
+        )
+    }
+
+    private func makePeriodAchievementRecord(_ todo: Todo) -> StatisticsPeriodAchievementRecord? {
+        guard todo.status == .completed, !todo.isDeleted else { return nil }
+        return StatisticsPeriodAchievementRecord(
+            completedAt: todo.completedAt ?? todo.updatedAt,
+            todoID: todo.id,
+            todoTitle: todo.title,
+            todoHashtags: todo.hashtags,
+            todoNotes: todo.notes ?? "",
+            directionID: todo.direction?.id,
+            directionName: todo.direction?.name ?? "",
+            directionSymbol: todo.direction?.symbolName ?? "",
             directionColorHex: todo.direction?.colorHex
         )
     }

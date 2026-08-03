@@ -132,6 +132,15 @@ Normal active Tasks may change `scheduledDate`. Completed Tasks and fixed daily/
 
 Flow statistics and day history are derived from FlowSession actual focus seconds. Task statistics use `Todo.completedAt`, with `updatedAt` as a legacy date fallback. Legacy completed Todos without `completedAt` are displayed without an invented clock time.
 
+`StatisticsPeriodSnapshot` is an immutable projection for one anchored Week,
+Month, or Year. It combines filtered summary totals, previous-period totals,
+daily or monthly trend points, Task/Direction focused-time distribution,
+contribution days, and CSV rows. `StatisticsPeriodBuilder` consumes Sendable
+Flow-segment and completion records, and applies Direction and text filters
+before aggregation. A session count is distinct by stable session UUID; a
+context-switched Flow contributes only the seconds of each matching segment.
+This projection adds no Project or other persistent entity.
+
 Paused Habit days do not contribute a planned Todo, so they are excluded from
 the completion-rate denominator and never count as missed. Previously completed
 Todos and actual Flow recorded for that Habit remain visible in history and

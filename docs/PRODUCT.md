@@ -72,18 +72,23 @@ Flow may start with a Task, only a Direction, or neither. Direction-only work is
 
 ## Statistics
 
-Statistics use a contribution-style grid.
+The standalone macOS Statistics workspace is a card-based period report. Its
+toolbar selects `Flow` or completed `タスク`, switches between `週・月・年`,
+filters by Direction, searches Task/Direction context, and exports the exact
+visible result as CSV. A persistent calendar column on the right anchors and
+navigates the selected week, month, or year.
 
-- `Flow`: Blocks per day.
-- `Tasks`: completed Tasks per day.
+The report contains combined summary cards, a period trend with comparison to
+the previous equivalent period, a focused-time distribution by Task or
+Direction, and contribution Dots. `Flow` or `タスク` changes the primary trend
+and Dots measure; the summary always presents both recorded focus and completed
+Tasks. Search is segment-aware, so matching one Task within a switched Flow
+credits only that Task's persisted interval.
 
-Ranges:
-
-- current month;
-- last 180 days;
-- current calendar year.
-
-Cell brightness is relative to the maximum day in the selected range.
+The compact iPhone Statistics workspace and Flow Dots widgets retain the
+contribution overview with `Flow` Blocks or completed Tasks and the current
+month, latest 180 days, or calendar year ranges. Cell brightness is relative to
+the maximum day in the selected compact range.
 
 ## History
 

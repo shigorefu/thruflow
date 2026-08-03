@@ -350,24 +350,44 @@ snapshots.
 
 ## Statistics
 
-Statistics uses a contribution grid.
+On macOS, the toolbar begins with a `Flow / タスク` menu, followed by the
+centered `週 | 月 | 年` period control. Its trailing controls are an overflow
+menu with `CSVを書き出す`, a Direction filter, and the shared expanding Search
+control. Filter and Search affect every card, calendar indicator, comparison,
+and exported row.
 
-Modes:
+The main column is a vertical set of cards:
 
-- `Tasks`: completed tasks;
-- `Flow`: focused Block activity.
+- combined totals for focused time, Blocks, Flows, completed Tasks, and active
+  Flow days;
+- a line chart whose points are days for Week/Month and months for Year, with
+  the previous equivalent period available for comparison;
+- focused-time distribution with `タスク別 | 方向別`, showing the largest
+  slices and grouping the remainder as `その他`;
+- contribution Dots for the selected week, month, or year.
 
-Ranges:
+`Flow / タスク` selects the primary line and Dots measure. Summary totals and
+focused-time distribution remain visible in both modes. Search matches Task
+title, Direction name or emoji, hashtags, and available Flow text. A Flow that
+changed context is searched and credited per persisted segment; matching one
+segment never includes its siblings.
 
-- current month;
-- last 180 days;
-- calendar year.
+A persistent calendar column on the right mirrors Tasks and History. Week uses
+week selection in the mini-calendar, Month uses the year/month picker, and Year
+uses a compact year picker. The header shows the selected period and provides
+previous, Today, and next navigation. Clicking a Dots day switches to the
+single canonical `履歴` destination for that date; Statistics does not embed
+History.
 
-The `その他` Direction may appear in statistics and filters because it represents real captured work.
+CSV export is local and contains exactly the selected period, filter, and
+search. It uses stable machine-readable columns for date, Task, Direction,
+hashtags, focused seconds/minutes, Blocks, Flow count, and completed Tasks.
 
-On macOS, clicking a contribution cell switches the app navigation to the single canonical `履歴` section for that day. On iOS, the first tap selects and highlights the cell and opens an anchored day-summary popover; tapping the selected cell again or tapping the popover opens `履歴` on that date. Statistics never embeds a duplicate History view.
-
-The macOS hover card and iOS anchored popover show the date, completed Task count, Flow count, Blocks, and focused duration. `今月` is arranged as a seven-column month calendar; `180日` uses larger contribution cells than the year view.
+The compact iPhone Statistics view keeps the contribution grid with completed
+Tasks or focused Blocks and the current month, latest 180 days, or calendar
+year ranges. Its anchored day popover shows date, completed Tasks, Flows,
+Blocks, and focused duration; tapping through opens `履歴`. The `その他`
+Direction may appear because it represents real captured work.
 
 ## History Calendar
 

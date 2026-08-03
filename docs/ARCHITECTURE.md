@@ -318,6 +318,15 @@ its cached or empty shell first and starts the actor request after a short
 navigation grace period. This keeps navigation responsive without changing
 persisted data semantics or duplicating calculation rules.
 
+The macOS card workspace requests the selected Week/Month/Year together with
+its immediately preceding comparison interval. The actor maps Flow segments
+and completed Todos to detailed value records; `StatisticsPeriodBuilder` owns
+search, filtering, summaries, trends, distributions, Dots, and export rows.
+`StatisticsCSVExporter` serializes those rows outside SwiftUI. The platform UI
+only owns toolbar state, navigation, chart presentation, and the system
+export/share surface. The compact iPhone/widget heatmap projection remains a
+separate consumer of the existing month/180-day/calendar-year ranges.
+
 The launch-wide Flow progress repair follows the same rule. The composition
 root waits until the first presentation has settled, then
 `FlowProgressReconciliationActor` performs the full-store reconciliation in its

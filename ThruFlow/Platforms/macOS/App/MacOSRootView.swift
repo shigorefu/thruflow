@@ -19,8 +19,7 @@ struct MacOSRootView: View {
     @State private var didReconcileFlowProgress = false
     @State private var flowSnapshotCache: FlowDashboardSnapshot?
     @State private var flowTodoGroupsCache: FlowDashboardTodoGroups?
-    @State private var statisticsFlowCache: StatisticsHeatmapResult?
-    @State private var statisticsAchievementCache: AchievementHeatmapResult?
+    @State private var statisticsPeriodCache: StatisticsPeriodSnapshot?
 
     var body: some View {
         NavigationSplitView {
@@ -91,8 +90,7 @@ struct MacOSRootView: View {
                 StatisticsView(
                     isVisible: true,
                     directions: directions,
-                    cachedFlowResult: $statisticsFlowCache,
-                    cachedAchievementResult: $statisticsAchievementCache
+                    cachedSnapshot: $statisticsPeriodCache
                 ) { date in
                     historyDate = calendar.startOfDay(for: date)
                     selection = .history
