@@ -20,13 +20,19 @@ Persisted data includes:
 
 - identity, name, emoji, color, and sort order;
 - type (`neutral`, `habit`, or `nice`);
+- optional stable system role (`systemRoleRawValue`); `taskInbox` identifies the
+  built-in `その他` Direction independently of its localized display name;
 - goal unit, target, period, and schedule configuration;
 - optional `habitPausePeriodsRawValue`, a JSON array of normalized pause
   intervals with inclusive start and exclusive optional end dates;
 - accumulated occurrences, focused seconds, and supporting progress state;
 - creation/update timestamps and archive state.
 
-System Direction `その他` is stored like other Directions but hidden from Direction management.
+System Direction `その他` is stored like other Directions but hidden from
+Direction management. Exactly one active `taskInbox` must exist. Legacy stores
+without the role are recognized by the reserved system signature. If local or
+CloudKit races produce duplicates, `DefaultDirectionReconciler` keeps the oldest
+record, reconnects Todo and Flow history to it, and soft-archives the others.
 
 Habit pause periods stay inside `Direction` rather than introducing another
 SwiftData entity. The optional scalar keeps existing stores and CloudKit

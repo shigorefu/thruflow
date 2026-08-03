@@ -12,6 +12,7 @@ import SwiftData
 @MainActor
 final class ActiveFlowStore: ObservableObject {
     private static let forgottenTimerReminderSeconds = 60 * 60
+    private static let defaultDirectionReconciliationInterval: TimeInterval = 30
 
     @Published var selectedDirectionID: UUID?
     @Published var selectedTodoID: UUID?
@@ -41,6 +42,7 @@ final class ActiveFlowStore: ObservableObject {
     private var synchronizationClock: AnyCancellable?
     private var lastAppliedRuntimeVersion: FlowRuntimeVersion?
     private var lastPublishedLiveActivityWasOvertime: Bool?
+    private var lastDefaultDirectionReconciliationAt: Date?
 
     init(
         defaults: UserDefaults = .standard,
@@ -204,6 +206,7 @@ final class ActiveFlowStore: ObservableObject {
     }
 
     func synchronizeFromPersistence(modelContext: ModelContext, now: Date = .now) {
+        reconcileDefaultDirectionsIfNeeded(modelContext: modelContext, now: now)
         let resolution = syncCoordinator.resolve(modelContext: modelContext)
 
         if let canonicalSession = resolution.canonicalSession,
@@ -233,6 +236,20 @@ final class ActiveFlowStore: ObservableObject {
             timerState: synchronizedState,
             now: now
         )
+    }
+
+    private func reconcileDefaultDirectionsIfNeeded(modelContext: ModelContext, now: Date) {
+        if let lastDefaultDirectionReconciliationAt,
+           now.timeIntervalSince(lastDefaultDirectionReconciliationAt) < Self.defaultDirectionReconciliationInterval {
+            return
+        }
+
+        do {
+            try DefaultDirectionReconciler().reconcile(modelContext: modelContext, now: now)
+            lastDefaultDirectionReconciliationAt = now
+        } catch {
+            // Retry on the next synchronization pass if persistence is temporarily unavailable.
+        }
     }
 
     func refresh(modelContext: ModelContext, now: Date = .now) {

@@ -33,6 +33,22 @@ local-only.
 These modes exist for deterministic development. They must not introduce a
 second model schema or different domain behavior.
 
+## System Direction Convergence
+
+The built-in `その他` Direction is identified by the stable optional
+`systemRoleRawValue = taskInbox`, not by its localized name. The optional field
+keeps existing SwiftData stores lightweight-migration compatible.
+
+Two devices can create the built-in Direction while offline before either sees
+the other's record. After CloudKit imports both records,
+`DefaultDirectionReconciler` deterministically keeps the oldest record (UUID is
+the tie-breaker), reconnects Todo and Flow relationships, and soft-archives the
+duplicates. The reconciliation uses the existing active persistence polling
+cycle; it does not add another timer or require CloudKit for local-only runs.
+
+The new optional field must be present in the Development schema and deployed
+to Production with the rest of the SwiftData schema before release.
+
 ## Development Verification
 
 1. Sign in to an Apple ID with iCloud Drive enabled on the Mac and iPhone.

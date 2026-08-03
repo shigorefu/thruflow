@@ -51,6 +51,10 @@ enum DirectionType: String, CaseIterable, Codable, Identifiable {
     }
 }
 
+enum DirectionSystemRole: String, Codable {
+    case taskInbox
+}
+
 enum GoalPeriod: String, CaseIterable, Codable, Identifiable {
     case daily
     case weekly
@@ -152,6 +156,7 @@ enum GoalWeekday: Int, CaseIterable, Codable, Identifiable {
 final class Direction {
     var id: UUID = UUID()
     var name: String = ""
+    var systemRoleRawValue: String?
     var typeRawValue: String = DirectionType.neutral.rawValue
     var symbolName: String = "🎯"
     var colorHex: String = "#007AFF"
@@ -177,6 +182,7 @@ final class Direction {
     init(
         id: UUID = UUID(),
         name: String,
+        systemRole: DirectionSystemRole? = nil,
         type: DirectionType,
         symbolName: String = "🎯",
         colorHex: String = "#007AFF",
@@ -194,6 +200,7 @@ final class Direction {
     ) {
         self.id = id
         self.name = name
+        self.systemRoleRawValue = systemRole?.rawValue
         self.typeRawValue = type.rawValue
         self.symbolName = symbolName
         self.colorHex = colorHex
@@ -213,6 +220,14 @@ final class Direction {
     var type: DirectionType {
         get { DirectionType.normalized(rawValue: typeRawValue) ?? .neutral }
         set { typeRawValue = newValue.rawValue }
+    }
+
+    var systemRole: DirectionSystemRole? {
+        get {
+            guard let systemRoleRawValue else { return nil }
+            return DirectionSystemRole(rawValue: systemRoleRawValue)
+        }
+        set { systemRoleRawValue = newValue?.rawValue }
     }
 
     var goalPeriod: GoalPeriod? {

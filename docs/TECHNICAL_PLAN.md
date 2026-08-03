@@ -24,7 +24,12 @@ The iOS deployment target is 17.0 even when building with Xcode 26 and the iOS
 
 ## Current Data Rules
 
-- `DefaultDirections` resolves system `その他`.
+- `DefaultDirections` identifies system `その他` by the stable `taskInbox` role,
+  with a reserved-signature fallback for legacy stores.
+- `DefaultDirectionReconciler` enforces one active system Direction, reconnects
+  Todo/Flow relationships, and soft-archives duplicates. It runs through the
+  existing active persistence synchronization cycle so late CloudKit imports
+  converge without adding another timer.
 - `TodayTodoFilter` includes only scheduled tasks for the selected day.
 - `TaskCalendarBuilder` creates deterministic visible date ranges and month grids.
 - `TaskCalendarSnapshot` creates the render-scoped day/UUID/backlog index shared by Tasks day, week, month, and mini-calendar projections. SwiftData remains the only source of truth; this is not an app-lifetime cache.
