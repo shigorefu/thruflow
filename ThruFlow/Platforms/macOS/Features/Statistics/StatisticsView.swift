@@ -185,9 +185,9 @@ struct StatisticsView: View {
     private var headerTitle: String {
         switch selectedMode {
         case .achievement:
-            String(localized: "\(achievementResult.summary.completedCount) 達成 in \(selectedRange.summaryText)")
+            "\(selectedRange.summaryText) · \(achievementResult.summary.completedCount) \(String(localized: "タスク"))"
         case .flow:
-            String(localized: "\(flowResult.summary.sessionCount) Flow in \(selectedRange.summaryText)")
+            "\(selectedRange.summaryText) · \(flowResult.summary.sessionCount) Flow"
         }
     }
 
@@ -216,7 +216,7 @@ struct StatisticsView: View {
     private var achievementSummaryRow: some View {
         HStack(spacing: 12) {
             StatisticSummaryTile(
-                title: String(localized: "達成"),
+                title: String(localized: "タスク"),
                 value: "\(achievementResult.summary.completedCount)",
                 subtitle: String(localized: "完了タスク")
             )
@@ -284,7 +284,7 @@ struct StatisticsView: View {
     private var achievementSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text(String(localized: "達成"))
+                Text(String(localized: "タスク"))
                     .font(.headline)
 
                 Spacer()

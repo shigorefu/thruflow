@@ -70,7 +70,7 @@ struct IOSRootView: View {
         Group {
             if #available(iOS 26.0, *) {
                 tabs
-                    .tabBarMinimizeBehavior(.never)
+                    .tabBarMinimizeBehavior(.onScrollDown)
             } else {
                 tabs
             }

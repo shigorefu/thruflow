@@ -33,8 +33,13 @@ Current MVP goal:
 - Flow-first iPhone MVP with the animated stream above the complete player,
   separate full-width Tasks and Statistics dashboard cards, and a persistent
   five-item material navigation surface: `Flow`, `タスク`, `履歴`, `方向`, and
-  `統計`. The Tasks screen replaces that surface with quick capture; basic
-  `設定` remains in the trailing More menu.
+  `統計`. The Tasks screen replaces that surface with quick capture; the native
+  tab bar minimizes while content scrolls down and returns when scrolling up.
+  Basic `設定` remains in the trailing More menu.
+- iPhone Flow dashboard parity for the actionable surfaces: the Task card can
+  switch between `すべて / タスク / 習慣 / ナイス`, while Statistics uses the
+  same three-page time-distribution, seven-day trend, and completion carousel
+  as macOS.
 - Shared `Sprint | Focus | Deep` segmented selection and mode Help on macOS and
   iPhone.
 - iPhone live quick-input suggestions, arbitrary and no-date Tasks, overdue and
@@ -68,7 +73,8 @@ Current MVP goal:
 - Food/sleep/game classification.
 - Complex rewards.
 - Accounts/subscriptions.
-- Advanced iPhone `統計` beyond the compact contribution overview.
+- Advanced iPhone `統計` beyond the contribution overview and dashboard
+  carousel.
 - Full iPhone History/calendar editing.
 
 ## Known Product Gaps

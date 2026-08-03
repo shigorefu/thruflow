@@ -183,13 +183,28 @@ struct IOSStatisticsView: View {
                     .foregroundStyle(.secondary)
             }
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHGrid(rows: heatmapRows, spacing: 5) {
-                    ForEach(days) { day in
-                        statisticsCell(day)
+            if range == .currentMonth {
+                HStack(alignment: .top, spacing: 5) {
+                    ForEach(Array(monthWeekColumns.enumerated()), id: \.offset) { _, week in
+                        VStack(spacing: 5) {
+                            ForEach(week) { day in
+                                statisticsCell(day, fillsAvailableWidth: true)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
                     }
                 }
+                .frame(maxWidth: .infinity)
                 .padding(.vertical, 2)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    LazyHGrid(rows: heatmapRows, spacing: 5) {
+                        ForEach(days) { day in
+                            statisticsCell(day)
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
             }
 
             HStack(spacing: 5) {
@@ -243,11 +258,13 @@ struct IOSStatisticsView: View {
         }
     }
 
-    private func statisticsCell(_ day: IOSStatisticsCell) -> some View {
+    private func statisticsCell(
+        _ day: IOSStatisticsCell,
+        fillsAvailableWidth: Bool = false
+    ) -> some View {
         let isSelected = selectedDate.map {
             calendar.isDate($0, inSameDayAs: day.date)
         } ?? false
-        let shape = RoundedRectangle(cornerRadius: 3)
 
         return Button {
             if isSelected {
@@ -258,19 +275,11 @@ struct IOSStatisticsView: View {
                 }
             }
         } label: {
-            shape
-                .fill(day.color)
-                .frame(width: cellSize, height: cellSize)
-                .overlay {
-                    if isSelected {
-                        shape
-                            .fill(Color.accentColor.opacity(0.18))
-                            .overlay {
-                                shape.strokeBorder(Color.accentColor, lineWidth: 2)
-                            }
-                    }
-                }
-                .scaleEffect(isSelected ? 1.08 : 1)
+            statisticsCellVisual(
+                day,
+                isSelected: isSelected,
+                fillsAvailableWidth: fillsAvailableWidth
+            )
         }
         .buttonStyle(.plain)
         .accessibilityLabel(day.accessibilityLabel)
@@ -287,6 +296,35 @@ struct IOSStatisticsView: View {
             selectedDayPopover(day)
                 .padding(10)
                 .presentationCompactAdaptation(.popover)
+        }
+    }
+
+    @ViewBuilder
+    private func statisticsCellVisual(
+        _ day: IOSStatisticsCell,
+        isSelected: Bool,
+        fillsAvailableWidth: Bool
+    ) -> some View {
+        let shape = RoundedRectangle(cornerRadius: fillsAvailableWidth ? 6 : 3)
+        let cell = shape
+            .fill(day.color)
+            .overlay {
+                if isSelected {
+                    shape
+                        .fill(Color.accentColor.opacity(0.18))
+                        .overlay {
+                            shape.strokeBorder(Color.accentColor, lineWidth: 2)
+                        }
+                }
+            }
+            .scaleEffect(isSelected ? 1.04 : 1)
+
+        if fillsAvailableWidth {
+            cell
+                .aspectRatio(1, contentMode: .fit)
+                .frame(maxWidth: .infinity)
+        } else {
+            cell.frame(width: cellSize, height: cellSize)
         }
     }
 
@@ -352,7 +390,13 @@ struct IOSStatisticsView: View {
     }
 
     private var cellSize: CGFloat {
-        range == .currentMonth ? 26 : 16
+        16
+    }
+
+    private var monthWeekColumns: [[IOSStatisticsCell]] {
+        stride(from: 0, to: days.count, by: 7).map { start in
+            Array(days[start..<min(start + 7, days.count)])
+        }
     }
 
     private var heatmapRows: [GridItem] {

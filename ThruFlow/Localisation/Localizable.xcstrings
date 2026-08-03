@@ -1,9 +1,6 @@
 {
   "sourceLanguage" : "ja",
   "strings" : {
-    "" : {
-
-    },
     "–" : {
       "localizations" : {
         "en" : {
@@ -2680,6 +2677,22 @@
         }
       }
     },
+    "カレンダー" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calendar"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Календарь"
+          }
+        }
+      }
+    },
     "シアン" : {
       "localizations" : {
         "en" : {
@@ -3406,23 +3419,6 @@
         }
       }
     },
-    "ほか%lld件" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld more"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ещё %lld"
-          }
-        }
-      }
-    },
     "まだFlowはありません" : {
       "localizations" : {
         "en" : {
@@ -3483,23 +3479,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Отправить без заметки"
-          }
-        }
-      }
-    },
-    "メモはタスクに保存されます。" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The Memo will be saved to the Task."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Заметка будет сохранена в задаче."
           }
         }
       }
@@ -5420,23 +5399,6 @@
         }
       }
     },
-    "日の時間軸" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Day Timeline"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Шкала дня"
-          }
-        }
-      }
-    },
     "日付" : {
       "localizations" : {
         "en" : {
@@ -5657,23 +5619,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Часы"
-          }
-        }
-      }
-    },
-    "時間軸" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Timeline"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Временная шкала"
           }
         }
       }

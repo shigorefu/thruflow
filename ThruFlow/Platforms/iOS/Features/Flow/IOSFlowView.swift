@@ -21,6 +21,7 @@ struct IOSFlowView: View {
     @State private var showsMemo = false
     @State private var editorMode: IOSTaskEditorMode?
     @State private var preparationRevision = 0
+    @State private var taskFilter = IOSDashboardTaskFilter.all
 
     private var dashboardBuilder: FlowDashboardBuilder {
         FlowDashboardBuilder(calendar: calendar, dayBoundary: dayBoundary)
@@ -148,7 +149,17 @@ struct IOSFlowView: View {
                 flowCard(snapshot: snapshot)
                 playerCard
                 dashboardTasks
-                IOSDashboardStatisticsView(snapshot: snapshot)
+                IOSDashboardStatisticsView(
+                    snapshot: snapshot,
+                    sessions: sessions,
+                    flowBreaks: flowBreaks,
+                    todos: todos,
+                    standardTodos: cachedTodoGroups?.standard ?? [],
+                    habitTodos: cachedTodoGroups?.habits ?? [],
+                    niceTodos: cachedTodoGroups?.nice ?? [],
+                    calendar: calendar,
+                    dayBoundary: dayBoundary
+                )
             }
             .padding(.horizontal, 16)
             .padding(.bottom, 10)
@@ -169,6 +180,20 @@ struct IOSFlowView: View {
 
     private var todayTodos: [Todo] {
         cachedTodoGroups?.all ?? []
+    }
+
+    private var filteredDashboardTodos: [Todo] {
+        guard let groups = cachedTodoGroups else { return [] }
+        switch taskFilter {
+        case .all:
+            return groups.all
+        case .task:
+            return groups.standard
+        case .habit:
+            return groups.habits
+        case .nice:
+            return groups.nice
+        }
     }
 
     private var selectedTodo: Todo? {
@@ -424,17 +449,25 @@ struct IOSFlowView: View {
                 .accessibilityLabel(String(localized: "タスク"))
             }
 
-            if todayTodos.isEmpty {
+            Picker(String(localized: "表示"), selection: $taskFilter) {
+                ForEach(IOSDashboardTaskFilter.allCases) { filter in
+                    Text(filter.title).tag(filter)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+
+            if filteredDashboardTodos.isEmpty {
                 ContentUnavailableView(
                     String(localized: "今日の項目はありません"),
                     systemImage: "checkmark.circle"
                 )
             } else {
-                ForEach(todayTodos) { todo in
+                ForEach(filteredDashboardTodos) { todo in
                     IOSTaskRow(todo: todo) {
                         editorMode = .edit(todo)
                     }
-                    if todo.id != todayTodos.last?.id {
+                    if todo.id != filteredDashboardTodos.last?.id {
                         Divider()
                     }
                 }
@@ -736,76 +769,447 @@ private struct IOSFlowPreparationID: Hashable {
     let revision: Int
 }
 
+private enum IOSDashboardTaskFilter: String, CaseIterable, Identifiable {
+    case all
+    case task
+    case habit
+    case nice
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .all: String(localized: "すべて")
+        case .task: String(localized: "タスク")
+        case .habit: String(localized: "習慣")
+        case .nice: String(localized: "ナイス")
+        }
+    }
+}
+
 private struct IOSDashboardStatisticsView: View {
     let snapshot: FlowDashboardSnapshot
+    let sessions: [FlowSession]
+    let flowBreaks: [FlowBreak]
+    let todos: [Todo]
+    let standardTodos: [Todo]
+    let habitTodos: [Todo]
+    let niceTodos: [Todo]
+    let calendar: Calendar
+    let dayBoundary: AppDayBoundary
+
+    @State private var page = IOSDashboardStatisticsPage.distribution
+    @State private var distributionMode = IOSDashboardDistributionMode.task
+
+    private var statisticsBuilder: DashboardStatisticsBuilder {
+        DashboardStatisticsBuilder(calendar: calendar, dayBoundary: dayBoundary)
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Label(String(localized: "統計"), systemImage: "chart.bar.fill")
-                .font(.headline)
-
-            HStack(spacing: 16) {
-                ZStack {
-                    Circle()
-                        .stroke(Color.primary.opacity(0.08), lineWidth: 12)
-                    Circle()
-                        .trim(from: 0, to: min(snapshot.blocks / 6, 1))
-                        .stroke(primaryColor, style: StrokeStyle(lineWidth: 12, lineCap: .round))
-                        .rotationEffect(.degrees(-90))
-                    VStack(spacing: 2) {
-                        Text("\(snapshot.totalFocusSeconds / 60)")
-                            .font(.title2.weight(.semibold))
-                            .monospacedDigit()
-                        Text(String(localized: "分"))
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 8) {
+                Label(String(localized: "統計"), systemImage: "chart.bar.xaxis")
+                    .font(.headline)
+                Spacer()
+                HStack(spacing: 5) {
+                    ForEach(IOSDashboardStatisticsPage.allCases) { value in
+                        Circle()
+                            .fill(value == page ? Color.accentColor : Color.secondary.opacity(0.25))
+                            .frame(width: 5, height: 5)
                     }
                 }
-                .frame(width: 112, height: 112)
-
-                VStack(alignment: .leading, spacing: 9) {
-                    ForEach(snapshot.directionSummaries.prefix(3)) { summary in
-                        VStack(alignment: .leading, spacing: 3) {
-                            HStack {
-                                Text("\(summary.symbol) \(summary.name)")
-                                    .font(.caption.weight(.medium))
-                                    .lineLimit(1)
-                                Spacer()
-                                Text("\(summary.focusSeconds / 60)\(String(localized: "分"))")
-                                    .font(.caption.monospacedDigit())
-                                    .foregroundStyle(.secondary)
-                            }
-                            GeometryReader { proxy in
-                                Capsule()
-                                    .fill(Color.primary.opacity(0.07))
-                                    .overlay(alignment: .leading) {
-                                        Capsule()
-                                            .fill(Color(hex: summary.colorHex))
-                                            .frame(
-                                                width: proxy.size.width
-                                                    * CGFloat(snapshot.focusShare(for: summary.focusSeconds))
-                                            )
-                                    }
-                            }
-                            .frame(height: 5)
-                        }
-                    }
+                Button { movePage(-1) } label: {
+                    Image(systemName: "chevron.left")
+                }
+                Button { movePage(1) } label: {
+                    Image(systemName: "chevron.right")
                 }
             }
+            .buttonStyle(.plain)
 
-            if snapshot.directionSummaries.isEmpty {
-                Text(String(localized: "Flowを記録すると時間配分が表示されます"))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+            Text(page.title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            Group {
+                switch page {
+                case .distribution:
+                    distributionPage
+                case .trend:
+                    trendPage
+                case .achievement:
+                    achievementPage
+                }
             }
-            Spacer(minLength: 0)
+            .id(page)
+            .transition(.opacity.combined(with: .scale(scale: 0.98)))
         }
         .padding(16)
-        .frame(maxWidth: .infinity, minHeight: 220, alignment: .topLeading)
+        .frame(maxWidth: .infinity, minHeight: 330, alignment: .topLeading)
         .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 16))
     }
 
-    private var primaryColor: Color {
-        Color(hex: snapshot.directionSummaries.first?.colorHex ?? "#8E8E93")
+    private var distributionPage: some View {
+        VStack(spacing: 12) {
+            Picker(String(localized: "集計単位"), selection: $distributionMode) {
+                ForEach(IOSDashboardDistributionMode.allCases) { mode in
+                    Text(mode.title).tag(mode)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+
+            distributionDonut
+
+            VStack(alignment: .leading, spacing: 9) {
+                ForEach(distributionRows.prefix(4)) { row in
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text("\(row.symbol) \(row.title)")
+                                .font(.caption)
+                                .lineLimit(1)
+                            Spacer()
+                            Text(focusText(row.focusSeconds))
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .monospacedDigit()
+                        }
+                        GeometryReader { proxy in
+                            Capsule()
+                                .fill(Color.primary.opacity(0.07))
+                                .overlay(alignment: .leading) {
+                                    Capsule()
+                                        .fill(Color(hex: row.colorHex))
+                                        .frame(
+                                            width: proxy.size.width
+                                                * CGFloat(snapshot.focusShare(for: row.focusSeconds))
+                                        )
+                                }
+                        }
+                        .frame(height: 5)
+                    }
+                }
+            }
+
+            if distributionRows.isEmpty {
+                Text(String(localized: "Flowを記録すると時間配分が表示されます"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+        }
+    }
+
+    private var distributionDonut: some View {
+        ZStack {
+            Circle()
+                .stroke(Color.primary.opacity(0.08), lineWidth: 12)
+            ForEach(distributionSlices) { slice in
+                Circle()
+                    .trim(from: slice.start, to: slice.end)
+                    .stroke(
+                        Color(hex: slice.colorHex),
+                        style: StrokeStyle(lineWidth: 12, lineCap: .butt)
+                    )
+                    .rotationEffect(.degrees(-90))
+            }
+            VStack(spacing: 1) {
+                Text(focusText(snapshot.totalFocusSeconds))
+                    .font(.callout.weight(.bold))
+                    .minimumScaleFactor(0.7)
+                    .monospacedDigit()
+                Text(String(localized: "今日の集中"))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(width: 112, height: 112)
+        .frame(maxWidth: .infinity)
+        .animation(.easeInOut(duration: 0.25), value: snapshot.totalFocusSeconds)
+    }
+
+    private var trendPage: some View {
+        let days = statisticsBuilder.days(
+            count: 7,
+            endingOn: snapshot.date,
+            sessions: sessions,
+            breaks: flowBreaks
+        )
+        let comparison = statisticsBuilder.comparison(
+            on: snapshot.date,
+            sessions: sessions,
+            breaks: flowBreaks,
+            todos: todos
+        )
+
+        return VStack(alignment: .leading, spacing: 12) {
+            Text(String(localized: "7日"))
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            IOSDashboardStatisticsBars(days: days)
+                .frame(height: 112)
+
+            Divider()
+
+            comparisonRow(
+                String(localized: "集中時間"),
+                value: signedMinutes(comparison.focusSecondsDelta),
+                systemImage: "timer"
+            )
+            comparisonRow(
+                String(localized: "完了タスク"),
+                value: signedCount(comparison.completedTaskDelta),
+                systemImage: "checkmark.circle"
+            )
+            comparisonRow(
+                String(localized: "ブロック"),
+                value: signedBlocks(comparison.blocksDelta),
+                systemImage: "square.stack.3d.up"
+            )
+            comparisonRow(
+                String(localized: "伸びた方向"),
+                value: growthText(comparison.growingDirection),
+                systemImage: "arrow.up.right"
+            )
+        }
+    }
+
+    private var achievementPage: some View {
+        let required = standardTodos + habitTodos
+        let completed = required.filter(\.isCompleted).count
+        let ratio = required.isEmpty ? 0 : Double(completed) / Double(required.count)
+
+        return VStack(spacing: 14) {
+            ZStack {
+                Circle()
+                    .stroke(Color.primary.opacity(0.08), lineWidth: 12)
+                Circle()
+                    .trim(from: 0, to: ratio)
+                    .stroke(
+                        Color.accentColor,
+                        style: StrokeStyle(lineWidth: 12, lineCap: .round)
+                    )
+                    .rotationEffect(.degrees(-90))
+                Text("\(Int((ratio * 100).rounded()))%")
+                    .font(.title3.bold())
+                    .monospacedDigit()
+            }
+            .frame(width: 112, height: 112)
+
+            achievementRow(
+                String(localized: "タスク"),
+                completed: standardTodos.filter(\.isCompleted).count,
+                total: standardTodos.count
+            )
+            achievementRow(
+                String(localized: "習慣"),
+                completed: habitTodos.filter(\.isCompleted).count,
+                total: habitTodos.count
+            )
+            if !niceTodos.isEmpty {
+                achievementRow(
+                    String(localized: "ナイス"),
+                    completed: niceTodos.filter(\.isCompleted).count,
+                    total: niceTodos.count
+                )
+            }
+
+            Text(String(localized: "今日の達成 \(completed) / \(required.count)"))
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var distributionRows: [IOSDashboardDistributionRow] {
+        switch distributionMode {
+        case .task:
+            snapshot.taskSummaries.map {
+                IOSDashboardDistributionRow(
+                    id: $0.id,
+                    symbol: $0.symbol,
+                    title: $0.title,
+                    colorHex: $0.colorHex,
+                    focusSeconds: $0.focusSeconds
+                )
+            }
+        case .direction:
+            snapshot.directionSummaries.map {
+                IOSDashboardDistributionRow(
+                    id: $0.id.uuidString,
+                    symbol: $0.symbol,
+                    title: $0.name,
+                    colorHex: $0.colorHex,
+                    focusSeconds: $0.focusSeconds
+                )
+            }
+        }
+    }
+
+    private var distributionSlices: [IOSDashboardFlowSlice] {
+        guard snapshot.totalFocusSeconds > 0 else { return [] }
+
+        var cursor = 0.0
+        return distributionRows.map { row in
+            let fraction = Double(row.focusSeconds) / Double(snapshot.totalFocusSeconds)
+            let gap = distributionRows.count > 1 ? min(0.004, fraction * 0.18) : 0
+            let slice = IOSDashboardFlowSlice(
+                id: row.id,
+                start: cursor + (gap / 2),
+                end: cursor + fraction - (gap / 2),
+                colorHex: row.colorHex
+            )
+            cursor += fraction
+            return slice
+        }
+    }
+
+    private func movePage(_ offset: Int) {
+        let pages = IOSDashboardStatisticsPage.allCases
+        guard let current = pages.firstIndex(of: page) else { return }
+        let next = (current + offset + pages.count) % pages.count
+        withAnimation(.easeInOut(duration: 0.2)) {
+            page = pages[next]
+        }
+    }
+
+    private func comparisonRow(_ title: String, value: String, systemImage: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: systemImage)
+                .foregroundStyle(.secondary)
+                .frame(width: 18)
+            Text(title)
+                .font(.caption)
+            Spacer()
+            Text(value)
+                .font(.caption.weight(.semibold))
+                .monospacedDigit()
+                .lineLimit(1)
+        }
+    }
+
+    private func achievementRow(_ title: String, completed: Int, total: Int) -> some View {
+        HStack {
+            Text(title)
+                .font(.caption)
+            Spacer()
+            Text("\(completed) / \(total)")
+                .font(.caption.weight(.semibold))
+                .monospacedDigit()
+        }
+    }
+
+    private func focusText(_ seconds: Int) -> String {
+        let minutes = seconds / 60
+        if minutes >= 60 {
+            return "\(minutes / 60):\(String(format: "%02d", minutes % 60))"
+        }
+        return "\(minutes)\(String(localized: "分"))"
+    }
+
+    private func signedMinutes(_ seconds: Int) -> String {
+        signedValue(Int((Double(seconds) / 60).rounded()), suffix: String(localized: "分"))
+    }
+
+    private func signedCount(_ count: Int) -> String {
+        signedValue(count, suffix: "")
+    }
+
+    private func signedBlocks(_ blocks: Double) -> String {
+        let sign = blocks > 0 ? "+" : ""
+        let value = abs(blocks) < 0.001 ? 0 : blocks
+        let text = value.rounded() == value ? String(Int(value)) : String(format: "%.1f", value)
+        return "\(sign)\(text)"
+    }
+
+    private func signedValue(_ value: Int, suffix: String) -> String {
+        let sign = value > 0 ? "+" : ""
+        return "\(sign)\(value)\(suffix)"
+    }
+
+    private func growthText(_ growth: DashboardStatisticsDirectionGrowth?) -> String {
+        guard let growth else { return String(localized: "変化なし") }
+        let minutes = max(1, growth.focusSecondsDelta / 60)
+        return "\(growth.symbol) \(growth.name) +\(minutes)\(String(localized: "分"))"
+    }
+}
+
+private enum IOSDashboardStatisticsPage: Int, CaseIterable, Identifiable {
+    case distribution
+    case trend
+    case achievement
+
+    var id: Int { rawValue }
+
+    var title: String {
+        switch self {
+        case .distribution: String(localized: "時間配分")
+        case .trend: String(localized: "Flow推移")
+        case .achievement: String(localized: "達成状況")
+        }
+    }
+}
+
+private enum IOSDashboardDistributionMode: String, CaseIterable, Identifiable {
+    case task
+    case direction
+
+    var id: String { rawValue }
+    var title: String { self == .task ? String(localized: "タスク別") : String(localized: "方向別") }
+}
+
+private struct IOSDashboardDistributionRow: Identifiable {
+    let id: String
+    let symbol: String
+    let title: String
+    let colorHex: String
+    let focusSeconds: Int
+}
+
+private struct IOSDashboardFlowSlice: Identifiable {
+    let id: String
+    let start: Double
+    let end: Double
+    let colorHex: String
+}
+
+private struct IOSDashboardStatisticsBars: View {
+    let days: [DashboardStatisticsDay]
+
+    var body: some View {
+        GeometryReader { proxy in
+            let maximum = max(days.map(\.focusSeconds).max() ?? 0, 1)
+
+            HStack(alignment: .bottom, spacing: 7) {
+                ForEach(days) { day in
+                    let minimumHeight: CGFloat = day.focusSeconds > 0 ? 4 : 2
+                    let availableHeight = max(proxy.size.height - 23, 0)
+                    let proportionalHeight = availableHeight
+                        * CGFloat(day.focusSeconds)
+                        / CGFloat(maximum)
+                    let barHeight = max(minimumHeight, proportionalHeight)
+
+                    VStack(spacing: 5) {
+                        Spacer(minLength: 0)
+                        Capsule()
+                            .fill(Color(hex: day.colorHex))
+                            .frame(width: 7, height: barHeight)
+                        Text(day.date.formatted(.dateTime.day()))
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                    }
+                    .frame(maxWidth: .infinity)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(dayAccessibilityLabel(day))
+                }
+            }
+        }
+    }
+
+    private func dayAccessibilityLabel(_ day: DashboardStatisticsDay) -> String {
+        "\(day.date.formatted(date: .abbreviated, time: .omitted)), \(day.focusSeconds / 60)\(String(localized: "分"))"
     }
 }

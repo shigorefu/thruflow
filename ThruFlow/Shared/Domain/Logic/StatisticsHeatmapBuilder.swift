@@ -46,7 +46,7 @@ enum StatisticsMode: String, CaseIterable, Identifiable, Sendable {
     var displayName: String {
         switch self {
         case .achievement:
-            String(localized: "達成")
+            String(localized: "タスク")
         case .flow:
             String(localized: "Flow")
         }

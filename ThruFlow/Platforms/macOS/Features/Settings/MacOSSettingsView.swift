@@ -21,7 +21,7 @@ struct MacOSSettingsView: View {
                 .pickerStyle(.segmented)
             }
 
-            Section(String(localized: "言語と地域")) {
+            Section(String(localized: "言語")) {
                 Picker(String(localized: "言語"), selection: $settings.languageCode) {
                     ForEach(languageOptions, id: \.code) { option in
                         Text(option.name).tag(option.code)
@@ -33,18 +33,14 @@ struct MacOSSettingsView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+            }
 
+            Section(String(localized: "カレンダー")) {
                 Picker(String(localized: "週の開始日"), selection: $settings.weekStart) {
                     Text(String(localized: "システム設定に合わせる")).tag(AppWeekStart.system)
                     Text(String(localized: "日曜日")).tag(AppWeekStart.sunday)
                     Text(String(localized: "月曜日")).tag(AppWeekStart.monday)
                     Text(String(localized: "土曜日")).tag(AppWeekStart.saturday)
-                }
-
-                Picker(String(localized: "時刻表示"), selection: $settings.clockFormat) {
-                    Text(String(localized: "システム設定に合わせる")).tag(AppClockFormat.system)
-                    Text(String(localized: "12時間制")).tag(AppClockFormat.twelveHour)
-                    Text(String(localized: "24時間制")).tag(AppClockFormat.twentyFourHour)
                 }
 
                 Picker(String(localized: "新しい日の開始"), selection: $settings.dayStartHour) {
@@ -56,6 +52,14 @@ struct MacOSSettingsView: View {
                 Text(String(localized: "設定した時刻までは前日のタスクとFlowとして扱います"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
+            }
+
+            Section(String(localized: "時刻")) {
+                Picker(String(localized: "時刻表示"), selection: $settings.clockFormat) {
+                    Text(String(localized: "システム設定に合わせる")).tag(AppClockFormat.system)
+                    Text(String(localized: "12時間制")).tag(AppClockFormat.twelveHour)
+                    Text(String(localized: "24時間制")).tag(AppClockFormat.twentyFourHour)
+                }
             }
 
             Section(String(localized: "タスク")) {

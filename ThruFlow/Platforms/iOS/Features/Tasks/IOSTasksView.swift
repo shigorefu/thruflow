@@ -17,6 +17,7 @@ struct IOSTasksView: View {
     @State private var pendingBacklogMode: IOSBacklogMode?
     @State private var showsBacklogMenu = false
     @State private var searchText = ""
+    @State private var isSearchPresented = false
     @State private var showsComposer = false
     @State private var backlogMoveError: String?
     @State private var hasPerformedInitialMaterialization = false
@@ -82,7 +83,8 @@ struct IOSTasksView: View {
         .navigationBarTitleDisplayMode(.inline)
         .searchable(
             text: $searchText,
-            placement: .navigationBarDrawer(displayMode: .always),
+            isPresented: $isSearchPresented,
+            placement: .toolbar,
             prompt: Text(String(localized: "検索"))
         )
         .toolbar {

@@ -53,7 +53,7 @@ enum DefaultDirections {
     }
 
     private static let legacyTaskInboxNames: Set<String> = [
-        "その他",
+        String(localized: "その他", locale: Locale(identifier: "ja")),
         "Other",
         "Другое",
     ]

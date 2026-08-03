@@ -41,7 +41,7 @@ struct MacOSRootView: View {
                 Label(String(localized: "方向"), systemImage: "point.3.connected.trianglepath.dotted")
                     .tag(AppSection.directions)
 
-                Label(String(localized: "統計"), systemImage: "square.grid.3x3")
+                Label(String(localized: "統計"), systemImage: "chart.bar.xaxis")
                     .tag(AppSection.statistics)
             }
             .navigationTitle(String(localized: "スルフロ"))
