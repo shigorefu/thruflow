@@ -43,8 +43,7 @@ struct IOSRootView: View {
     @State private var selectedHistoryDate = Date.now
     @State private var flowSnapshotCache: FlowDashboardSnapshot?
     @State private var flowTodoGroupsCache: FlowDashboardTodoGroups?
-    @State private var statisticsFlowCache: StatisticsHeatmapResult?
-    @State private var statisticsTaskCache: AchievementHeatmapResult?
+    @State private var statisticsSnapshotCache: StatisticsPeriodSnapshot?
 
     private var selectionBinding: Binding<IOSAppRoute> {
         Binding(
@@ -148,8 +147,7 @@ struct IOSRootView: View {
             ) {
                 IOSStatisticsView(
                     isVisible: true,
-                    cachedFlowResult: $statisticsFlowCache,
-                    cachedTaskResult: $statisticsTaskCache
+                    cachedSnapshot: $statisticsSnapshotCache
                 ) { date in
                     selectedHistoryDate = date
                     selectionBinding.wrappedValue = .history

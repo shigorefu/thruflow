@@ -243,9 +243,9 @@ tapping one opens its details. `方向` edits its emoji through a dedicated
 searchable picker instead of a text-field leading icon. The standalone iPhone
 `方向` uses the same types, goals, schedules, weekday rules, color palette,
 archive behavior, item ordering, and group ordering as macOS in a native list
-and editor. The standalone iPhone `統計` provides a compact Task/Flow
-contribution overview with range and Direction filters. Advanced statistics and
-full calendar/history editing remain deferred.
+and editor. The standalone iPhone `統計` provides the same report contents and
+filters as macOS in a touch-native vertical card workspace. Full drag-based
+calendar/history editing remains deferred.
 
 The iPhone MVP supports starting and controlling Flow, selecting today's Task or
 Habit, completing Check Tasks, creating and editing Tasks and Directions, and
@@ -350,44 +350,90 @@ snapshots.
 
 ## Statistics
 
-On macOS, the toolbar begins with a `Flow / タスク` menu, followed by the
-centered `週 | 月 | 年` period control. Its trailing controls are an overflow
-menu with `CSVを書き出す`, a Direction filter, and the shared expanding Search
-control. Filter and Search affect every card, calendar indicator, comparison,
-and exported row.
+On macOS, the toolbar contains a direct icon-only `CSVを書き出す` Share action,
+a Direction filter, and the shared expanding Search control. The Share action
+opens a dedicated popover for content (`すべて | Flow | タスク`),
+two inclusive `開始 / 終了日` date fields, Direction, and text filter. The persistent
+calendar centers the visible `週 | 月 | 年` segmented control and places an
+icon-only `期間を指定` action at the trailing edge. This button opens a compact
+system popover with inclusive start and end dates. Applying it deselects the presets and makes
+the exact custom range the source for every card, calendar indicator,
+comparison, and exported row; selecting a preset or a calendar period exits the
+custom range. Filter and Search continue to affect the complete projection.
 
 The main column is a vertical set of cards:
 
 - combined totals for focused time, Blocks, Flows, completed Tasks, and active
   Flow days;
-- a line chart whose points are days for Week/Month and months for Year, with
-  the previous equivalent period available for comparison;
+- a Trend line chart with an independent `Flow | タスク` switch; its points are
+  days for Week, seven-day totals for Month, and months for Year, with the
+  previous equivalent period available as a separate comparison series and
+  direct linear segments between points;
 - focused-time distribution with `タスク別 | 方向別`, showing the largest
-  slices and grouping the remainder as `その他`;
-- contribution Dots for the selected week, month, or year.
+  slices and grouping the remainder as `その他`; clicking a sector keeps it
+  bright, dims the others, and isolates that category in the center and legend;
+- contribution Dots with their own `Flow | タスク` switch for the selected week,
+  month, or year.
 
-`Flow / タスク` selects the primary line and Dots measure. Summary totals and
-focused-time distribution remain visible in both modes. Search matches Task
-title, Direction name or emoji, hashtags, and available Flow text. A Flow that
-changed context is searched and credited per persisted segment; matching one
-segment never includes its siblings.
+Trend and Dots switch independently without a projection reload. Flow shows
+focused time; Task shows completed Task counts. Week uses a full-width Dots card
+with seven stretched cells, Month may share an adaptive row with Pie, and Year
+uses a full-width 53-week grid. A custom range of seven days or fewer stretches
+only its actual days across the full row. The preset Month stretches its seven
+columns across the full Dots card; every custom range longer than seven days uses small cells.
+Medium custom ranges keep adding calendar cells through the
+inclusive end date; longer ranges switch to compact week columns. Every real
+Week, Month, or custom-range cell opens a non-interactive system hover bubble
+above the card layer with date, focused time, Flow count, and completed Task
+count. Year Dots are display-only because their dense cells are not reliable
+pointer targets. Month, Year, and custom ranges fit within the
+available card width without horizontal scrolling. Search matches Task title, Direction name or
+emoji, hashtags, and available Flow text. A Flow that changed context is
+searched and credited per persisted segment; matching one segment never
+includes its siblings.
 
-A persistent calendar column on the right mirrors Tasks and History. Week uses
-week selection in the mini-calendar, Month uses the year/month picker, and Year
-uses a compact year picker. The header shows the selected period and provides
-previous, Today, and next navigation. Clicking a Dots day switches to the
+A persistent calendar column on the right mirrors Tasks and History. Its header
+contains the centered preset control, trailing custom-range action,
+selected-period title, previous, Today, and next navigation. Previous/next move
+a custom range by its complete day count, while Today preserves that count and
+ends the range today. Week uses direct week selection in the mini-calendar, Month uses
+the year/month picker, and Year uses a compact year picker whose first entry is
+the current year and which omits future years. Switching Week/Month/Year uses a
+short opacity-and-scale layout transition. Clicking a Dots day switches to the
 single canonical `履歴` destination for that date; Statistics does not embed
-History.
+History. The current period is clipped to today: future calendar dates are
+disabled, Trend and Dots omit future buckets, custom/export date fields cannot
+pass today, and Next remains unavailable until a complete non-future period
+exists.
 
-CSV export is local and contains exactly the selected period, filter, and
-search. It uses stable machine-readable columns for date, Task, Direction,
-hashtags, focused seconds/minutes, Blocks, Flow count, and completed Tasks.
+The workspace paints its card shell immediately. A system progress indicator
+appears inside placeholders while a new projection is calculated. Up to four
+recent period/filter projections are kept as bounded presentation cache, and
+visible background refresh is throttled so calendar navigation never waits for
+SwiftData or CSV serialization.
 
-The compact iPhone Statistics view keeps the contribution grid with completed
-Tasks or focused Blocks and the current month, latest 180 days, or calendar
-year ranges. Its anchored day popover shows date, completed Tasks, Flows,
-Blocks, and focused duration; tapping through opens `履歴`. The `その他`
-Direction may appear because it represents real captured work.
+CSV export is local and runs only when its popover is open. Combined export uses
+stable machine-readable columns for date, Task, Direction, hashtags, focused
+seconds/minutes, Blocks, Flow count, and completed Tasks; Flow-only and Task-only
+exports omit the unrelated metric columns and empty rows.
+The toolbar Direction filter reuses the same
+`point.3.connected.trianglepath.dotted` symbol as the main navigation.
+
+The iPhone Statistics view reuses the same bounded Week/Month/Year or exact
+custom-range projection, comparisons, distributions, search, Direction filter,
+and CSV rows. The cards are stacked vertically. Period presets stay centered
+above previous/Today/next navigation; tapping the period title opens a graphical
+date sheet, and the calendar-clock action opens the two-field custom range
+sheet. Share opens a native export sheet with content, inclusive start/end,
+Direction, and text filters. Pie selection has the same dim-and-isolate
+behavior as macOS, while Year Dots use one compact full-width canvas to avoid a
+horizontal scroller. Tapping a Week, Month, or custom-range Dots cell opens a touch-sized daily detail sheet
+with focused duration, Flow count, and completed Tasks; its action opens
+`履歴`. Year Dots have no tap target. Search is an icon-only trailing toolbar
+action that expands only on demand. Related actions share a compact trailing
+group so the title stays centered. Tasks and History use the same search behavior, and every iOS
+navigation destination uses a centered inline title. The `その他` Direction may
+appear because it represents real captured work.
 
 ## History Calendar
 

@@ -83,8 +83,7 @@ struct IOSDirectionsView: View {
             }
             .environment(\.editMode, .constant(isEditingOrder ? .active : .inactive))
         }
-        .navigationTitle(String(localized: "方向"))
-        .navigationBarTitleDisplayMode(.inline)
+        .iosCenteredNavigationTitle(String(localized: "方向"))
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 Menu {
@@ -200,8 +199,7 @@ private struct IOSDirectionGroupOrderView: View {
             }
         }
         .environment(\.editMode, .constant(.active))
-        .navigationTitle(String(localized: "グループを並び替え"))
-        .navigationBarTitleDisplayMode(.inline)
+        .iosCenteredNavigationTitle(String(localized: "グループを並び替え"))
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button(String(localized: "完了")) { dismiss() }

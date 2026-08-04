@@ -69,23 +69,26 @@ struct IOSHistoryView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .navigationTitle(String(localized: "履歴"))
-        .navigationBarTitleDisplayMode(.inline)
-        .searchable(
+        .iosCenteredNavigationTitle(String(localized: "履歴"))
+        .iosToolbarSearch(
             text: $searchText,
             isPresented: $isSearchPresented,
-            placement: .toolbar,
-            prompt: Text(String(localized: "検索"))
+            prompt: String(localized: "検索")
         )
         .toolbar {
-            ToolbarItemGroup(placement: .topBarTrailing) {
-                modeMenu
-                Button {
-                    toggleHistoryRecord()
-                } label: {
-                    Image(systemName: "plus")
+            ToolbarItem(placement: .topBarTrailing) {
+                HStack(spacing: 8) {
+                    modeMenu
+                    Button {
+                        toggleHistoryRecord()
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                    .accessibilityLabel(String(localized: "記録を追加"))
+
+                    IOSSearchToolbarButton(isPresented: $isSearchPresented)
                 }
-                .accessibilityLabel(String(localized: "記録を追加"))
+                .fixedSize()
             }
         }
         .sheet(item: $selectedItem) { item in
@@ -1077,8 +1080,9 @@ struct IOSHistoryItemDetail: View {
                     }
                 }
             }
-            .navigationTitle(item.kind == .rest ? String(localized: "休憩") : String(localized: "Flow"))
-            .navigationBarTitleDisplayMode(.inline)
+            .iosCenteredNavigationTitle(
+                item.kind == .rest ? String(localized: "休憩") : String(localized: "Flow")
+            )
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(String(localized: "閉じる")) { dismiss() }

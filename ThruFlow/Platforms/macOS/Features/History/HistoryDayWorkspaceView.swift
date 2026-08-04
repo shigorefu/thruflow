@@ -167,6 +167,7 @@ struct HistoryMiniCalendar: View {
     var indicatorSource: HistoryMiniCalendarIndicatorSource = .flowHistory
     var taskSnapshot: TaskCalendarSnapshot?
     var onDropPayload: ((String, Date) -> Bool)?
+    var maximumDate: Date?
 
     @Query(sort: \Todo.sortIndex, order: .forward) private var todos: [Todo]
     @Query(sort: \FlowSession.startedAt, order: .forward) private var sessions: [FlowSession]
@@ -222,6 +223,7 @@ struct HistoryMiniCalendar: View {
                         calendarDayLabel(for: date, flowItems: flowItems)
                     }
                     .buttonStyle(.plain)
+                    .disabled(!canSelect(date))
                     .accessibilityLabel(accessibilityDate(date))
                     .dropDestination(for: String.self) { payloads, _ in
                         guard let payload = payloads.first else { return false }
@@ -337,6 +339,11 @@ struct HistoryMiniCalendar: View {
         date.formatted(.dateTime.locale(locale).year().month().day().weekday())
     }
 
+    private func canSelect(_ date: Date) -> Bool {
+        guard let maximumDate else { return true }
+        return calendar.startOfDay(for: date) <= calendar.startOfDay(for: maximumDate)
+    }
+
     private func isInSelectedWeek(_ date: Date) -> Bool {
         guard let interval = calendar.dateInterval(of: .weekOfYear, for: selectedDate) else { return false }
         let offset = calendar.dateComponents(
@@ -376,6 +383,7 @@ struct HistoryYearMonthPicker: View {
     @Environment(\.calendar) private var calendar
 
     @Binding var selectedDate: Date
+    var maximumDate: Date?
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 3)
 
@@ -394,6 +402,8 @@ struct HistoryYearMonthPicker: View {
                             .clipShape(RoundedRectangle(cornerRadius: 6))
                     }
                     .buttonStyle(.plain)
+                    .disabled(!canSelect(month: month))
+                    .opacity(canSelect(month: month) ? 1 : 0.45)
                     .accessibilityLabel(Text(verbatim: String(localized: "\(selectedYear)年\(month)月")))
                     .accessibilityAddTraits(month == selectedMonth ? .isSelected : [])
                 }
@@ -410,6 +420,7 @@ struct HistoryYearMonthPicker: View {
     }
 
     private func select(month: Int) {
+        guard canSelect(month: month) else { return }
         var components = DateComponents()
         components.calendar = calendar
         components.timeZone = calendar.timeZone
@@ -419,6 +430,21 @@ struct HistoryYearMonthPicker: View {
         if let date = components.date {
             selectedDate = calendar.startOfDay(for: date)
         }
+    }
+
+    private func canSelect(month: Int) -> Bool {
+        guard let maximumDate else { return true }
+        var components = DateComponents()
+        components.calendar = calendar
+        components.timeZone = calendar.timeZone
+        components.year = selectedYear
+        components.month = month
+        components.day = 1
+        guard let monthDate = components.date,
+              let maximumMonth = calendar.dateInterval(of: .month, for: maximumDate)?.start else {
+            return true
+        }
+        return monthDate <= maximumMonth
     }
 }
 

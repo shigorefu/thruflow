@@ -33,6 +33,33 @@ struct StatisticsPeriodTests {
         #expect(bounds.previousEnd == date(2026, 8, 3))
     }
 
+    @Test func customBoundsIncludeBothSelectedDatesAndUseAnEqualComparisonRange() {
+        let filter = StatisticsPeriodFilter(
+            period: .month,
+            anchorDate: date(2026, 8, 5),
+            customStartDate: date(2026, 8, 5),
+            customEndDate: date(2026, 8, 7)
+        )
+
+        let builder = StatisticsPeriodBuilder(calendar: calendar)
+        let bounds = builder.bounds(for: filter)
+        let snapshot = builder.build(
+            flowRecords: [],
+            achievementRecords: [],
+            filter: filter
+        )
+
+        #expect(bounds.currentStart == date(2026, 8, 5))
+        #expect(bounds.currentEnd == date(2026, 8, 8))
+        #expect(bounds.previousStart == date(2026, 8, 2))
+        #expect(bounds.previousEnd == date(2026, 8, 5))
+        #expect(snapshot.flowDays.map(\.date) == [
+            date(2026, 8, 5),
+            date(2026, 8, 6),
+            date(2026, 8, 7)
+        ])
+    }
+
     @Test func taskTitleSearchAggregatesRepeatedWorkAndExcludesSiblingSegments() {
         let readingID = UUID()
         let firstSessionID = UUID()
@@ -134,6 +161,63 @@ struct StatisticsPeriodTests {
         #expect(snapshot.flowDays.count == 365)
     }
 
+    @Test func monthTrendUsesSevenDayTotalsInsteadOfDailySpikes() {
+        let records = [
+            flowRecord(
+                sessionID: UUID(),
+                date: date(2026, 8, 1, 9),
+                seconds: 25 * 60,
+                directionID: nil,
+                direction: "",
+                task: "Reading"
+            ),
+            flowRecord(
+                sessionID: UUID(),
+                date: date(2026, 8, 7, 9),
+                seconds: 50 * 60,
+                directionID: nil,
+                direction: "",
+                task: "Reading"
+            ),
+            flowRecord(
+                sessionID: UUID(),
+                date: date(2026, 8, 8, 9),
+                seconds: 75 * 60,
+                directionID: nil,
+                direction: "",
+                task: "Reading"
+            ),
+            flowRecord(
+                sessionID: UUID(),
+                date: date(2026, 7, 1, 9),
+                seconds: 20 * 60,
+                directionID: nil,
+                direction: "",
+                task: "Reading"
+            )
+        ]
+        let achievements = [
+            achievementRecord(date: date(2026, 8, 1, 10), title: "Reading"),
+            achievementRecord(date: date(2026, 8, 7, 10), title: "Reading"),
+            achievementRecord(date: date(2026, 8, 8, 10), title: "Reading"),
+            achievementRecord(date: date(2026, 7, 1, 10), title: "Reading")
+        ]
+
+        let snapshot = StatisticsPeriodBuilder(calendar: calendar).build(
+            flowRecords: records,
+            achievementRecords: achievements,
+            filter: StatisticsPeriodFilter(period: .month, anchorDate: date(2026, 8, 5))
+        )
+
+        #expect(snapshot.trend.count == 5)
+        #expect(snapshot.trend[0].focusSeconds == 75 * 60)
+        #expect(snapshot.trend[0].previousFocusSeconds == 20 * 60)
+        #expect(snapshot.trend[1].focusSeconds == 75 * 60)
+        #expect(snapshot.trend[0].completedTaskCount == 2)
+        #expect(snapshot.trend[0].previousCompletedTaskCount == 1)
+        #expect(snapshot.trend[1].completedTaskCount == 1)
+    }
+
     @Test func csvEscapesTextAndUsesStableMachineColumns() {
         let rows = [StatisticsCSVRow(
             date: date(2026, 8, 5),
@@ -149,6 +233,40 @@ struct StatisticsPeriodTests {
 
         #expect(csv.hasPrefix("date,task,direction,hashtags,focused_seconds,focused_minutes,blocks,flow_count,completed_tasks\n"))
         #expect(csv.contains("2026-08-05,\"Book, \"\"Dune\"\"\",Reading,books sci-fi,1500,25,1,2,1"))
+    }
+
+    @Test func csvCanExportFlowAndTaskSpecificSchemas() {
+        let rows = [
+            StatisticsCSVRow(
+                date: date(2026, 8, 5),
+                task: "Deep work",
+                direction: "Work",
+                hashtags: [],
+                focusedSeconds: 25 * 60,
+                flowCount: 1,
+                completedTaskCount: 0
+            ),
+            StatisticsCSVRow(
+                date: date(2026, 8, 6),
+                task: "Release",
+                direction: "Work",
+                hashtags: ["ship"],
+                focusedSeconds: 0,
+                flowCount: 0,
+                completedTaskCount: 1
+            )
+        ]
+
+        let exporter = StatisticsCSVExporter()
+        let flowCSV = exporter.export(rows: rows, content: .flow, calendar: calendar)
+        let taskCSV = exporter.export(rows: rows, content: .task, calendar: calendar)
+
+        #expect(flowCSV.hasPrefix("date,task,direction,hashtags,focused_seconds,focused_minutes,blocks,flow_count\n"))
+        #expect(flowCSV.contains("Deep work"))
+        #expect(!flowCSV.contains("Release"))
+        #expect(taskCSV.hasPrefix("date,task,direction,hashtags,completed_tasks\n"))
+        #expect(taskCSV.contains("Release"))
+        #expect(!taskCSV.contains("Deep work"))
     }
 
     @Test func projectionActorMapsSearchableSegmentContext() async throws {
@@ -235,6 +353,20 @@ struct StatisticsPeriodTests {
             todoNotes: "",
             intent: "",
             result: ""
+        )
+    }
+
+    private func achievementRecord(date: Date, title: String) -> StatisticsPeriodAchievementRecord {
+        StatisticsPeriodAchievementRecord(
+            completedAt: date,
+            todoID: UUID(),
+            todoTitle: title,
+            todoHashtags: [],
+            todoNotes: "",
+            directionID: nil,
+            directionName: "",
+            directionSymbol: "",
+            directionColorHex: "#00AA66"
         )
     }
 

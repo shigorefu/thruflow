@@ -33,12 +33,32 @@ struct MacCalendarNavigationHeader<RangePicker: View>: View {
     let onPrevious: () -> Void
     let onToday: () -> Void
     let onNext: () -> Void
+    let rangePickerWidth: CGFloat?
+    let canMoveNext: Bool
     @ViewBuilder let rangePicker: RangePicker
+
+    init(
+        title: String,
+        onPrevious: @escaping () -> Void,
+        onToday: @escaping () -> Void,
+        onNext: @escaping () -> Void,
+        rangePickerWidth: CGFloat? = 150,
+        canMoveNext: Bool = true,
+        @ViewBuilder rangePicker: () -> RangePicker
+    ) {
+        self.title = title
+        self.onPrevious = onPrevious
+        self.onToday = onToday
+        self.onNext = onNext
+        self.rangePickerWidth = rangePickerWidth
+        self.canMoveNext = canMoveNext
+        self.rangePicker = rangePicker()
+    }
 
     var body: some View {
         VStack(spacing: 0) {
             rangePicker
-                .frame(width: 150)
+                .frame(width: rangePickerWidth)
                 .frame(maxWidth: .infinity)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
@@ -66,6 +86,7 @@ struct MacCalendarNavigationHeader<RangePicker: View>: View {
                     Button(action: onNext) {
                         Image(systemName: "chevron.right")
                     }
+                    .disabled(!canMoveNext)
                     .accessibilityLabel(String(localized: "次へ"))
                 }
                 .buttonStyle(.borderless)

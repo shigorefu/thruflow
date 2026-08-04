@@ -79,34 +79,37 @@ struct IOSTasksView: View {
             }
         }
         .background(Color.primary.opacity(0.025).ignoresSafeArea())
-        .navigationTitle(String(localized: "タスク"))
-        .navigationBarTitleDisplayMode(.inline)
-        .searchable(
+        .iosCenteredNavigationTitle(String(localized: "タスク"))
+        .iosToolbarSearch(
             text: $searchText,
             isPresented: $isSearchPresented,
-            placement: .toolbar,
-            prompt: Text(String(localized: "検索"))
+            prompt: String(localized: "検索")
         )
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                ZStack(alignment: .topTrailing) {
-                    Button {
-                        showsBacklogMenu.toggle()
-                    } label: {
-                        IOSMoreMenuLabel()
-                    }
-                    .accessibilityLabel(String(localized: "その他"))
-                    .accessibilityValue("\(backlogCount(in: snapshot))")
+                HStack(spacing: 8) {
+                    ZStack(alignment: .topTrailing) {
+                        Button {
+                            showsBacklogMenu.toggle()
+                        } label: {
+                            IOSMoreMenuLabel()
+                        }
+                        .accessibilityLabel(String(localized: "その他"))
+                        .accessibilityValue("\(backlogCount(in: snapshot))")
 
-                    IOSNotificationBadge(count: backlogCount(in: snapshot))
-                        .allowsHitTesting(false)
+                        IOSNotificationBadge(count: backlogCount(in: snapshot))
+                            .allowsHitTesting(false)
+                    }
+                    .frame(width: 44, height: 44)
+                    .popover(isPresented: $showsBacklogMenu, arrowEdge: .top) {
+                        backlogMenuContent(snapshot: snapshot)
+                            .presentationCompactAdaptation(.popover)
+                            .onDisappear(perform: presentPendingBacklog)
+                    }
+
+                    IOSSearchToolbarButton(isPresented: $isSearchPresented)
                 }
-                .frame(width: 44, height: 44)
-                .popover(isPresented: $showsBacklogMenu, arrowEdge: .top) {
-                    backlogMenuContent(snapshot: snapshot)
-                        .presentationCompactAdaptation(.popover)
-                        .onDisappear(perform: presentPendingBacklog)
-                }
+                .fixedSize()
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -963,7 +966,9 @@ private struct IOSBacklogView: View {
                 )
             }
         }
-        .navigationTitle(mode == .overdue ? String(localized: "期限切れ") : String(localized: "日付なし"))
+        .iosCenteredNavigationTitle(
+            mode == .overdue ? String(localized: "期限切れ") : String(localized: "日付なし")
+        )
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button(String(localized: "完了")) { dismiss() }

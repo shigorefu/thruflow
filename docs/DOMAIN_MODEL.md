@@ -134,7 +134,7 @@ Flow statistics and day history are derived from FlowSession actual focus second
 
 `StatisticsPeriodSnapshot` is an immutable projection for one anchored Week,
 Month, or Year. It combines filtered summary totals, previous-period totals,
-daily or monthly trend points, Task/Direction focused-time distribution,
+daily, seven-day, or monthly trend points, Task/Direction focused-time distribution,
 contribution days, and CSV rows. `StatisticsPeriodBuilder` consumes Sendable
 Flow-segment and completion records, and applies Direction and text filters
 before aggregation. A session count is distinct by stable session UUID; a

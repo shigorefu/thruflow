@@ -7,21 +7,40 @@
 
 import Foundation
 
+enum StatisticsCSVContent: String, CaseIterable, Identifiable, Sendable {
+    case all
+    case flow
+    case task
+
+    var id: String { rawValue }
+}
+
 struct StatisticsCSVExporter: Sendable {
-    nonisolated static let header = [
+    nonisolated init() {}
+
+    nonisolated static let commonHeader = [
         "date",
         "task",
         "direction",
-        "hashtags",
+        "hashtags"
+    ]
+
+    nonisolated static let flowHeader = commonHeader + [
         "focused_seconds",
         "focused_minutes",
         "blocks",
-        "flow_count",
+        "flow_count"
+    ]
+
+    nonisolated static let taskHeader = commonHeader + [
         "completed_tasks"
     ]
 
+    nonisolated static let header = flowHeader + ["completed_tasks"]
+
     nonisolated func export(
         rows: [StatisticsCSVRow],
+        content: StatisticsCSVContent = .all,
         calendar: Calendar = .current
     ) -> String {
         let dateFormatter = DateFormatter()
@@ -37,21 +56,52 @@ struct StatisticsCSVExporter: Sendable {
         numberFormatter.minimumFractionDigits = 0
         numberFormatter.maximumFractionDigits = 2
 
-        let lines = rows.map { row in
-            [
+        let includedRows = rows.filter { row in
+            switch content {
+            case .all:
+                true
+            case .flow:
+                row.focusedSeconds > 0 || row.flowCount > 0
+            case .task:
+                row.completedTaskCount > 0
+            }
+        }
+
+        let lines = includedRows.map { row in
+            let commonValues = [
                 dateFormatter.string(from: row.date),
                 row.task,
                 row.direction,
-                row.hashtags.joined(separator: " "),
+                row.hashtags.joined(separator: " ")
+            ]
+            let flowValues = [
                 String(row.focusedSeconds),
                 numberFormatter.string(from: NSNumber(value: row.focusedMinutes)) ?? "0",
                 numberFormatter.string(from: NSNumber(value: row.blocks)) ?? "0",
-                String(row.flowCount),
-                String(row.completedTaskCount)
-            ].map(Self.escape).joined(separator: ",")
+                String(row.flowCount)
+            ]
+            let values: [String]
+            switch content {
+            case .all:
+                values = commonValues + flowValues + [String(row.completedTaskCount)]
+            case .flow:
+                values = commonValues + flowValues
+            case .task:
+                values = commonValues + [String(row.completedTaskCount)]
+            }
+            return values.map(Self.escape).joined(separator: ",")
         }
 
-        return ([Self.header.joined(separator: ",")] + lines).joined(separator: "\n") + "\n"
+        let header: [String]
+        switch content {
+        case .all:
+            header = Self.header
+        case .flow:
+            header = Self.flowHeader
+        case .task:
+            header = Self.taskHeader
+        }
+        return ([header.joined(separator: ",")] + lines).joined(separator: "\n") + "\n"
     }
 
     nonisolated private static func escape(_ value: String) -> String {

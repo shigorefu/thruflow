@@ -201,16 +201,17 @@ or updated after iOS adopts the persisted runtime.
 
 The first iPhone release includes the Flow dashboard, Tasks/Habits across
 day/week/month ranges, Direction management and ordering, day/week/month
-History with the same chronology and editing semantics as macOS, a compact
-contribution Statistics screen, basic settings, and CloudKit synchronization.
+History with the same chronology and editing semantics as macOS, the complete
+period-report Statistics feature in a native iPhone presentation, basic
+settings, and CloudKit synchronization.
 Its persistent five-item navigation contains
 `Flow`, `タスク`, `履歴`, `方向`, and `統計`. The shell uses the system `TabView`
 so iOS owns selection, accessibility, and Liquid Glass while the tab bar remains
 full-size during scrolling; Tasks temporarily hides the tab bar and animates in
 the quick-capture composer.
-Advanced Statistics and drag-based calendar rescheduling remain macOS-only
-until the next iPhone stage. Shared calculations are reused, but desktop views
-are never compiled into the iOS target. iOS uses native sheets and navigation
+Drag-based calendar rescheduling remains macOS-only. Statistics calculations
+are shared, but desktop views are never compiled into the iOS target. iOS uses
+native cards, sheets, search, ShareLink, and navigation
 for record details while macOS uses its window/sheet hierarchy; this
 presentation difference must not change which records, gaps, series, progress,
 or filters the user sees.
@@ -318,14 +319,25 @@ its cached or empty shell first and starts the actor request after a short
 navigation grace period. This keeps navigation responsive without changing
 persisted data semantics or duplicating calculation rules.
 
-The macOS card workspace requests the selected Week/Month/Year together with
-its immediately preceding comparison interval. The actor maps Flow segments
+The macOS and iOS card workspaces request the selected Week/Month/Year or exact custom
+date range together with its immediately preceding equal-length comparison
+interval. The actor maps Flow segments
 and completed Todos to detailed value records; `StatisticsPeriodBuilder` owns
 search, filtering, summaries, trends, distributions, Dots, and export rows.
-`StatisticsCSVExporter` serializes those rows outside SwiftUI. The platform UI
-only owns toolbar state, navigation, chart presentation, and the system
-export/share surface. The compact iPhone/widget heatmap projection remains a
-separate consumer of the existing month/180-day/calendar-year ranges.
+`StatisticsCSVExporter` serializes those rows outside SwiftUI. Each platform UI
+only owns toolbar state, navigation, a bounded four-snapshot presentation
+cache, loading placeholders, independent Trend/Dots display modes, responsive
+card layout, non-interactive Year Dots, date bounds through today, chart
+presentation, and the system export/share surface. Switching
+Flow/Task presentation reuses the same snapshot. Month trend input is reduced
+to seven-day buckets in the pure builder and is rendered as two distinct chart
+series. Export options create an independent period/filter projection only while
+the Share popover is open; its period is always an exact inclusive start/end
+range. Pie selection remains local presentation state. CSV serialization and temporary-file creation run
+away from the main actor. iOS renders the same report as one touch-native
+vertical scroll, uses sheets for period/export/day details, and draws Year Dots
+in one compact Canvas. The widget heatmap projection remains a separate consumer
+of its bounded 180-day source and family-specific output ranges.
 
 The launch-wide Flow progress repair follows the same rule. The composition
 root waits until the first presentation has settled, then
@@ -361,14 +373,13 @@ refresh, projection building, habit materialization, and Metal rendering. Scene
 inactivity continues to stop rendering on every platform.
 
 While Statistics remains visible, it refreshes its bounded actor projection on
-a five-second cadence. This preserves live updates from local edits and
+a thirty-second cadence. This preserves live updates from local edits and
 CloudKit imports without putting persistent-model queries or heatmap work back
 on the navigation transaction.
 
 ## Non-Goals
 
-This cross-platform stage does not add new business rules or alter macOS
-behavior. It does not include advanced iPhone Statistics or full
+This cross-platform stage does not add new business rules or full
 History/calendar editing. The watchOS companion is a thin presentation client
 over the same shared models, calculations, active-Flow store, and CloudKit
 container.

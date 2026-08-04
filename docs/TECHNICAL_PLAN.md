@@ -109,8 +109,9 @@ Cover:
   lower bound, mode changes without elapsed-time reset, and actual-time rest
   thresholds.
 - Statistics range construction and filters.
-- Anchored macOS Statistics period boundaries, segment-aware search,
-  current/previous comparisons, distribution grouping, and deterministic CSV.
+- Anchored and inclusive custom macOS Statistics period boundaries, segment-aware search,
+  current/previous Flow and Task comparisons, seven-day Month trend buckets,
+  distribution grouping, and deterministic CSV.
 - Day-history grouping, legacy untimed completions, deterministic Flow progress reconciliation after create/edit/delete, and duration-preserving Flow moves.
 - Manual Flow creation, linked Task progress without implicit completion, and fixed-Direction Task creation.
 - Flow series continuation, Long Break thresholds, rest correction, and same-series downstream shifting.

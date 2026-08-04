@@ -30,8 +30,9 @@ struct IOSFlowMemoView: View {
                 }
             }
             .padding(20)
-            .navigationTitle(isBreakMemo ? String(localized: "休憩") : String(localized: "Flow完了"))
-            .navigationBarTitleDisplayMode(.inline)
+            .iosCenteredNavigationTitle(
+                isBreakMemo ? String(localized: "休憩") : String(localized: "Flow完了")
+            )
         }
     }
 

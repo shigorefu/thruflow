@@ -116,8 +116,9 @@ struct IOSTaskEditorView: View {
                 }
             }
         }
-        .navigationTitle(isEditing ? String(localized: "タスクを編集") : String(localized: "タスクを追加"))
-        .navigationBarTitleDisplayMode(.inline)
+        .iosCenteredNavigationTitle(
+            isEditing ? String(localized: "タスクを編集") : String(localized: "タスクを追加")
+        )
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button(String(localized: "キャンセル")) { dismiss() }

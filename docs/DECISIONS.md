@@ -350,17 +350,63 @@ that belong to a separate product stage.
 ## D-030: macOS Statistics Is A Filtered Period Report
 
 The standalone macOS Statistics workspace uses anchored Week, Month, and Year
-periods with summary, trend, focused-time distribution, and Dots cards. A
-persistent calendar selects the period. Direction filter and text search apply
-before every aggregation, and CSV exports exactly that visible projection.
+periods plus an exact inclusive custom date range with summary, trend,
+focused-time distribution, and Dots cards. A persistent calendar centers the
+Week/Month/Year control and selects the anchored period; a trailing icon-only
+`期間を指定` action opens the custom start/end popover. Trend and Dots
+own independent `Flow | タスク` display switches so comparison and contribution
+views can be inspected without rebuilding the projection. Direction filter and
+text search apply before every aggregation, and CSV exports the combined visible
+projection by default. A direct Share action opens export controls for combined,
+Flow-only, or Task-only data, exact inclusive start/end dates, Direction, and
+text filter. Pie selection is presentation-only: the chosen sector remains
+bright while other sectors are dimmed and the legend isolates that category.
+The toolbar Direction filter shares the navigation Direction symbol. Month trends
+use seven-day totals rather than one noisy point per day and render current and
+previous values as separate line series. Month can place Pie and Dots in one row;
+its Dots columns fill their card, while Week and Year keep full-width Dots.
+Custom Dots stretch up to seven actual days, then use small cells for every
+longer range, adding calendar cells for medium ranges and compact week columns
+for long ranges; preset Month retains the regular calendar-cell size, and every
+real cell exposes a system hover bubble above the card layer with its daily
+metrics, except Year Dots, which remain display-only because their cells are too
+small for dependable targeting. Current ranges stop at today: future calendar
+dates, export/custom dates, Trend/Dots buckets, and forward navigation are
+disabled or clipped. The Year calendar lists the
+current year first and does not offer future years.
 Flow switching is resolved per segment; the model does not add a Project
 entity. The compact iPhone and widget contribution ranges from D-009 remain
-unchanged.
+unchanged until explicitly superseded.
 
 Reason: desktop space supports comparison and investigation while one shared,
 segment-aware projection keeps cards, search, and export numerically
 consistent. Task titles already provide the lightweight grouping needed for
 work such as repeated sessions on one book.
+
+## D-031: iPhone Statistics Reuses The Complete Period Report
+
+The standalone iPhone Statistics screen now consumes the same
+`StatisticsPeriodSnapshot` as macOS and supersedes only the compact-Statistics
+limits in D-021, D-022, and D-030. It exposes anchored Week, Month, Year, and
+exact custom periods; Summary, Trend, focused-time distribution, and Dots;
+independent Trend/Dots Flow/Task modes; Direction and text filters; interactive
+Pie isolation; and combined, Flow-only, or Task-only CSV export. The shared
+actor, period builder, export serializer, comparison interval, and bounded
+four-projection cache remain the numeric source of truth.
+
+iPhone owns a touch-native renderer rather than compiling the macOS view: one
+vertical card scroll, graphical period and two-date custom-range sheets, a
+native export sheet and ShareLink, a compact full-width Canvas for Year Dots,
+and a daily detail sheet that can open History. Year Dots are intentionally
+non-interactive. Search begins as a toolbar magnifier and expands on demand;
+search and related actions share one compact trailing group so the shared
+principal title stays centered. All iPhone navigation destinations use this centered inline title
+contract. The widget Dots projection
+remains separate and compact.
+
+Reason: analysis should give the same answer on Mac and iPhone, while platform
+navigation, density, pointer behavior, and sharing must continue to follow the
+system conventions of each device.
 
 ## Open Questions
 

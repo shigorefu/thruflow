@@ -73,22 +73,46 @@ Flow may start with a Task, only a Direction, or neither. Direction-only work is
 ## Statistics
 
 The standalone macOS Statistics workspace is a card-based period report. Its
-toolbar selects `Flow` or completed `タスク`, switches between `週・月・年`,
-filters by Direction, searches Task/Direction context, and exports the exact
-visible result as CSV. A persistent calendar column on the right anchors and
-navigates the selected week, month, or year.
+toolbar provides Direction filter, Task/Direction search, and a direct Share
+action for configurable CSV export.
+The persistent calendar column on the right centers the `週・月・年` control and
+places an icon-only `期間を指定` action at the trailing edge. It opens an exact
+inclusive start/end date picker; navigation moves either the anchored preset or
+the whole custom range.
 
 The report contains combined summary cards, a period trend with comparison to
 the previous equivalent period, a focused-time distribution by Task or
-Direction, and contribution Dots. `Flow` or `タスク` changes the primary trend
-and Dots measure; the summary always presents both recorded focus and completed
-Tasks. Search is segment-aware, so matching one Task within a switched Flow
-credits only that Task's persisted interval.
+Direction, and contribution Dots. Trend and Dots each provide an independent
+`Flow | タスク` switch. Week trends use days, Month trends use seven-day totals,
+and Year trends use months; current and previous values are separate direct
+linear series. Week and
+Year use full-width Dots, while Month may share a row with Pie. Responsive Dots
+fit inside the card without horizontal scrolling. The preset Month stretches
+its seven columns across the available card width. A custom range of up to seven days uses the
+stretched Week row; every longer custom range uses small cells, adding
+calendar cells through the selected end date before switching to compact week
+columns. Hovering a real day cell shows a system bubble above all card content
+with its date, focus time, Flow count, and completed Task count. The summary always
+presents both recorded focus and completed Tasks. Search is segment-aware, so
+matching one Task within a switched Flow credits only that Task's persisted
+interval. The export popover independently chooses combined, Flow-only, or
+Task-only CSV, exact inclusive start/end dates, Direction, and text filter. A
+Pie sector can be selected to dim the other sectors and isolate its value and
+legend row. The Statistics Direction filter uses the same Direction symbol as
+the main navigation. The current Week, Month, Year, and custom ranges stop at
+today; future calendar dates and forward navigation are unavailable. Year Dots
+are display-only because their cells are too small for reliable inspection.
 
-The compact iPhone Statistics workspace and Flow Dots widgets retain the
-contribution overview with `Flow` Blocks or completed Tasks and the current
-month, latest 180 days, or calendar year ranges. Cell brightness is relative to
-the maximum day in the selected compact range.
+The iPhone Statistics workspace uses the same period report as macOS: anchored
+Week, Month, Year, or an exact custom date range; Summary, Trend, focused-time
+Pie, and Dots cards; Direction and text filters; and combined, Flow-only, or
+Task-only CSV export. Its presentation is touch-native: cards form one vertical
+scroll, period/calendar controls and export use system sheets, and tapping a
+Week or Month Dots day opens a compact detail sheet before navigating to
+History. Year Dots remain a non-interactive full-width overview. Search starts
+as a magnifying-glass toolbar action, and every iPhone navigation title uses the
+same centered inline presentation. The Flow
+Dots widgets keep their separate compact 30/60/90-day snapshots.
 
 ## History
 

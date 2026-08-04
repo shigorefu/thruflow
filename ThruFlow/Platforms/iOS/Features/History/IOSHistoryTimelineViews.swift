@@ -555,8 +555,7 @@ struct IOSHistorySeriesTimelineSheet: View {
                 gapInterval: nil,
                 onSelect: { selectedItem = $0 }
             )
-            .navigationTitle(String(localized: "Flowシリーズ"))
-            .navigationBarTitleDisplayMode(.inline)
+            .iosCenteredNavigationTitle(String(localized: "Flowシリーズ"))
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(String(localized: "閉じる")) {

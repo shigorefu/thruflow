@@ -153,8 +153,9 @@ struct IOSDirectionEditorView: View {
                 }
             }
         }
-        .navigationTitle(isEditing ? String(localized: "方向を編集") : String(localized: "方向を作成"))
-        .navigationBarTitleDisplayMode(.inline)
+        .iosCenteredNavigationTitle(
+            isEditing ? String(localized: "方向を編集") : String(localized: "方向を作成")
+        )
         .sheet(isPresented: $showsEmojiPicker) {
             IOSEmojiPickerView(selection: $symbolName)
         }
@@ -251,6 +252,7 @@ private struct IOSEmojiPickerView: View {
     @AppStorage("direction.recent-emojis") private var storedRecents = ""
 
     @State private var searchText = ""
+    @State private var isSearchPresented = false
     @State private var customEmoji = ""
     @State private var customError = false
 
@@ -293,12 +295,18 @@ private struct IOSEmojiPickerView: View {
                 }
                 .padding(16)
             }
-            .navigationTitle(String(localized: "絵文字"))
-            .navigationBarTitleDisplayMode(.inline)
-            .searchable(text: $searchText, prompt: String(localized: "絵文字を検索"))
+            .iosCenteredNavigationTitle(String(localized: "絵文字"))
+            .iosToolbarSearch(
+                text: $searchText,
+                isPresented: $isSearchPresented,
+                prompt: String(localized: "絵文字を検索")
+            )
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(String(localized: "閉じる")) { dismiss() }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    IOSSearchToolbarButton(isPresented: $isSearchPresented)
                 }
             }
         }

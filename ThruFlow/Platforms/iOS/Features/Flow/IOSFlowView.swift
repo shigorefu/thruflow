@@ -62,8 +62,7 @@ struct IOSFlowView: View {
 
     var body: some View {
         dashboardContent
-        .navigationTitle(String(localized: "Flow"))
-        .navigationBarTitleDisplayMode(.inline)
+        .iosCenteredNavigationTitle(String(localized: "Flow"))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {

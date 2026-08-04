@@ -39,11 +39,17 @@ enum StatisticsPeriod: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
-struct StatisticsPeriodFilter: Equatable, Sendable {
+struct StatisticsPeriodFilter: Hashable, Sendable {
     var period: StatisticsPeriod = .week
     var anchorDate: Date = .now
+    var customStartDate: Date?
+    var customEndDate: Date?
     var directionID: UUID?
     var query = ""
+
+    nonisolated var usesCustomRange: Bool {
+        customStartDate != nil && customEndDate != nil
+    }
 }
 
 struct StatisticsPeriodBounds: Equatable, Sendable {
@@ -167,21 +173,40 @@ struct StatisticsPeriodBuilder: Sendable {
     nonisolated func bounds(for filter: StatisticsPeriodFilter) -> StatisticsPeriodBounds {
         let anchorDay = dayBoundary.day(containing: filter.anchorDate, calendar: calendar)
         let current: DateInterval
-        switch filter.period {
-        case .week:
-            current = calendar.dateInterval(of: .weekOfYear, for: anchorDay)
-                ?? DateInterval(start: anchorDay, duration: 7 * 86_400)
-        case .month:
-            current = calendar.dateInterval(of: .month, for: anchorDay)
-                ?? DateInterval(start: anchorDay, duration: 31 * 86_400)
-        case .year:
-            current = calendar.dateInterval(of: .year, for: anchorDay)
-                ?? DateInterval(start: anchorDay, duration: 365 * 86_400)
+        if let rawStart = filter.customStartDate,
+           let rawEnd = filter.customEndDate {
+            let firstDay = dayBoundary.day(containing: min(rawStart, rawEnd), calendar: calendar)
+            let finalDay = dayBoundary.day(containing: max(rawStart, rawEnd), calendar: calendar)
+            let exclusiveEnd = calendar.date(byAdding: .day, value: 1, to: finalDay)
+                ?? finalDay.addingTimeInterval(86_400)
+            current = DateInterval(start: firstDay, end: exclusiveEnd)
+        } else {
+            switch filter.period {
+            case .week:
+                current = calendar.dateInterval(of: .weekOfYear, for: anchorDay)
+                    ?? DateInterval(start: anchorDay, duration: 7 * 86_400)
+            case .month:
+                current = calendar.dateInterval(of: .month, for: anchorDay)
+                    ?? DateInterval(start: anchorDay, duration: 31 * 86_400)
+            case .year:
+                current = calendar.dateInterval(of: .year, for: anchorDay)
+                    ?? DateInterval(start: anchorDay, duration: 365 * 86_400)
+            }
         }
 
         let currentStart = calendar.startOfDay(for: current.start)
         let currentEnd = calendar.startOfDay(for: current.end)
-        let previousStart = filter.period.offset(currentStart, by: -1, calendar: calendar)
+        let previousStart: Date
+        if filter.usesCustomRange {
+            let dayCount = max(
+                1,
+                calendar.dateComponents([.day], from: currentStart, to: currentEnd).day ?? 1
+            )
+            previousStart = calendar.date(byAdding: .day, value: -dayCount, to: currentStart)
+                ?? currentStart.addingTimeInterval(TimeInterval(-dayCount * 86_400))
+        } else {
+            previousStart = filter.period.offset(currentStart, by: -1, calendar: calendar)
+        }
         let previousEnd = currentStart
 
         return StatisticsPeriodBounds(
@@ -232,7 +257,7 @@ struct StatisticsPeriodBuilder: Sendable {
             summary: makeSummary(flows: currentFlows, achievements: currentAchievements),
             previousSummary: makeSummary(flows: previousFlows, achievements: previousAchievements),
             trend: makeTrend(
-                period: filter.period,
+                period: trendPeriod(for: filter, bounds: periodBounds),
                 bounds: periodBounds,
                 currentFlows: currentFlows,
                 previousFlows: previousFlows,
@@ -245,6 +270,24 @@ struct StatisticsPeriodBuilder: Sendable {
             achievementDays: makeAchievementDays(days: days, achievements: currentAchievements),
             csvRows: makeCSVRows(flows: currentFlows, achievements: currentAchievements)
         )
+    }
+
+    nonisolated private func trendPeriod(
+        for filter: StatisticsPeriodFilter,
+        bounds: StatisticsPeriodBounds
+    ) -> StatisticsPeriod {
+        guard filter.usesCustomRange else { return filter.period }
+        let dayCount = max(
+            1,
+            calendar.dateComponents(
+                [.day],
+                from: bounds.currentStart,
+                to: bounds.currentEnd
+            ).day ?? 1
+        )
+        if dayCount <= 14 { return .week }
+        if dayCount <= 120 { return .month }
+        return .year
     }
 
     nonisolated private func matchesDirection(_ directionID: UUID?, filter: StatisticsPeriodFilter) -> Bool {
@@ -308,58 +351,100 @@ struct StatisticsPeriodBuilder: Sendable {
         currentAchievements: [StatisticsPeriodAchievementRecord],
         previousAchievements: [StatisticsPeriodAchievementRecord]
     ) -> [StatisticsTrendPoint] {
-        let currentDates: [Date]
-        let previousDates: [Date]
+        let currentBuckets = trendBuckets(
+            for: period,
+            from: bounds.currentStart,
+            to: bounds.currentEnd
+        )
+        let previousBuckets = trendBuckets(
+            for: period,
+            from: bounds.previousStart,
+            to: bounds.previousEnd
+        )
 
-        if period == .year {
-            currentDates = monthStarts(from: bounds.currentStart, to: bounds.currentEnd)
-            previousDates = monthStarts(from: bounds.previousStart, to: bounds.previousEnd)
-        } else {
-            currentDates = dates(from: bounds.currentStart, to: bounds.currentEnd)
-            previousDates = dates(from: bounds.previousStart, to: bounds.previousEnd)
-        }
-
-        return currentDates.enumerated().map { index, date in
-            let comparisonDate = previousDates.indices.contains(index) ? previousDates[index] : bounds.previousStart
+        return currentBuckets.enumerated().map { index, bucket in
+            let comparisonBucket = previousBuckets.indices.contains(index)
+                ? previousBuckets[index]
+                : TrendBucket(start: bounds.previousStart, end: bounds.previousStart)
             return StatisticsTrendPoint(
                 index: index,
-                date: date,
-                comparisonDate: comparisonDate,
-                focusSeconds: totalFocus(on: date, period: period, records: currentFlows),
-                previousFocusSeconds: totalFocus(on: comparisonDate, period: period, records: previousFlows),
-                completedTaskCount: completionCount(on: date, period: period, records: currentAchievements),
-                previousCompletedTaskCount: completionCount(on: comparisonDate, period: period, records: previousAchievements)
+                date: bucket.start,
+                comparisonDate: comparisonBucket.start,
+                focusSeconds: totalFocus(in: bucket, records: currentFlows),
+                previousFocusSeconds: totalFocus(in: comparisonBucket, records: previousFlows),
+                completedTaskCount: completionCount(in: bucket, records: currentAchievements),
+                previousCompletedTaskCount: completionCount(
+                    in: comparisonBucket,
+                    records: previousAchievements
+                )
             )
         }
     }
 
+    private struct TrendBucket {
+        let start: Date
+        let end: Date
+
+        nonisolated func contains(_ date: Date) -> Bool {
+            date >= start && date < end
+        }
+    }
+
     nonisolated private func totalFocus(
-        on date: Date,
-        period: StatisticsPeriod,
+        in bucket: TrendBucket,
         records: [StatisticsPeriodFlowRecord]
     ) -> Int {
         records.reduce(0) { result, record in
             let day = dayBoundary.day(containing: record.startedAt, calendar: calendar)
-            return result + (sameTrendBucket(day, date, period: period) ? max(0, record.focusSeconds) : 0)
+            return result + (bucket.contains(day) ? max(0, record.focusSeconds) : 0)
         }
     }
 
     nonisolated private func completionCount(
-        on date: Date,
-        period: StatisticsPeriod,
+        in bucket: TrendBucket,
         records: [StatisticsPeriodAchievementRecord]
     ) -> Int {
         records.reduce(0) { result, record in
             let day = dayBoundary.day(containing: record.completedAt, calendar: calendar)
-            return result + (sameTrendBucket(day, date, period: period) ? 1 : 0)
+            return result + (bucket.contains(day) ? 1 : 0)
         }
     }
 
-    nonisolated private func sameTrendBucket(_ lhs: Date, _ rhs: Date, period: StatisticsPeriod) -> Bool {
-        if period == .year {
-            return calendar.isDate(lhs, equalTo: rhs, toGranularity: .month)
+    nonisolated private func trendBuckets(
+        for period: StatisticsPeriod,
+        from start: Date,
+        to end: Date
+    ) -> [TrendBucket] {
+        guard start < end else { return [] }
+
+        let component: Calendar.Component
+        let step: Int
+        switch period {
+        case .week:
+            component = .day
+            step = 1
+        case .month:
+            component = .day
+            step = 7
+        case .year:
+            component = .month
+            step = 1
         }
-        return calendar.isDate(lhs, inSameDayAs: rhs)
+
+        var buckets: [TrendBucket] = []
+        var bucketStart = start
+        while bucketStart < end {
+            let proposedEnd = calendar.date(
+                byAdding: component,
+                value: step,
+                to: bucketStart
+            ) ?? end
+            let bucketEnd = proposedEnd < end ? proposedEnd : end
+            buckets.append(TrendBucket(start: bucketStart, end: bucketEnd))
+            guard bucketEnd > bucketStart else { break }
+            bucketStart = bucketEnd
+        }
+        return buckets
     }
 
     private enum DistributionDimension {
@@ -583,15 +668,4 @@ struct StatisticsPeriodBuilder: Sendable {
         return result
     }
 
-    nonisolated private func monthStarts(from start: Date, to end: Date) -> [Date] {
-        guard start < end else { return [] }
-        var result: [Date] = []
-        var date = start
-        while date < end {
-            result.append(date)
-            guard let next = calendar.date(byAdding: .month, value: 1, to: date) else { break }
-            date = next
-        }
-        return result
-    }
 }

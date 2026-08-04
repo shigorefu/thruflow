@@ -114,8 +114,7 @@ struct IOSTaskComposer: View {
                 )
                 .datePickerStyle(.graphical)
                 .padding()
-                .navigationTitle(String(localized: "日付を選択"))
-                .navigationBarTitleDisplayMode(.inline)
+                .iosCenteredNavigationTitle(String(localized: "日付を選択"))
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button(String(localized: "キャンセル")) { showsDatePicker = false }

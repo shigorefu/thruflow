@@ -47,8 +47,7 @@ struct IOSFlowContextPicker: View {
                 }
             }
         }
-        .navigationTitle(String(localized: "Flowタスク"))
-        .navigationBarTitleDisplayMode(.inline)
+        .iosCenteredNavigationTitle(String(localized: "Flowタスク"))
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button(String(localized: "閉じる")) { dismiss() }

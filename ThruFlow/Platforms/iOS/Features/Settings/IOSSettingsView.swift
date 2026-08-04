@@ -64,7 +64,7 @@ struct IOSSettingsView: View {
                 )
             }
         }
-        .navigationTitle(String(localized: "設定"))
+        .iosCenteredNavigationTitle(String(localized: "設定"))
     }
 
     private var languageOptions: [(code: String, name: String)] {
