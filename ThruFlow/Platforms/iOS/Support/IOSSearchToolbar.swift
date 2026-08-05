@@ -6,37 +6,29 @@ private struct IOSSearchToolbarModifier: ViewModifier {
     @Binding var isPresented: Bool
     let prompt: String
 
+    @ViewBuilder
     func body(content: Content) -> some View {
-        Group {
-            if isPresented {
-                content.searchable(
-                    text: $text,
-                    isPresented: $isPresented,
-                    placement: .toolbar,
-                    prompt: Text(prompt)
-                )
-            } else {
-                content
-            }
-        }
-        .onChange(of: isPresented) { _, newValue in
-            if !newValue {
-                text = ""
-            }
+        if #available(iOS 26.0, *) {
+            searchableContent(content)
+                .searchToolbarBehavior(.minimize)
+        } else {
+            searchableContent(content)
         }
     }
-}
 
-struct IOSSearchToolbarButton: View {
-    @Binding var isPresented: Bool
-
-    var body: some View {
-        Button {
-            isPresented = true
-        } label: {
-            Image(systemName: "magnifyingglass")
-        }
-        .accessibilityLabel(String(localized: "検索"))
+    private func searchableContent(_ content: Content) -> some View {
+        content
+            .searchable(
+                text: $text,
+                isPresented: $isPresented,
+                placement: .toolbar,
+                prompt: Text(prompt)
+            )
+            .onChange(of: isPresented) { _, newValue in
+                if !newValue {
+                    text = ""
+                }
+            }
     }
 }
 

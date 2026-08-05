@@ -285,7 +285,7 @@ struct IOSStatisticsView: View {
 
     @ToolbarContentBuilder
     private var statisticsToolbar: some ToolbarContent {
-        ToolbarItem(placement: .topBarTrailing) {
+        ToolbarItem(placement: .topBarLeading) {
             HStack(spacing: 8) {
                 Button {
                     prepareExportDraft()
@@ -324,8 +324,6 @@ struct IOSStatisticsView: View {
                         )
                 }
                 .accessibilityLabel(String(localized: "方向フィルター"))
-
-                IOSSearchToolbarButton(isPresented: $isSearchPresented)
             }
             .fixedSize()
         }

@@ -38,6 +38,8 @@ enum IOSAppRoute: Hashable, CaseIterable, Identifiable {
 }
 
 struct IOSRootView: View {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
     @State private var selection = IOSAppRoute.flow
     @State private var showsSettings = false
     @State private var selectedHistoryDate = Date.now
@@ -67,11 +69,10 @@ struct IOSRootView: View {
 
     var body: some View {
         Group {
-            if #available(iOS 26.0, *) {
-                tabs
-                    .tabBarMinimizeBehavior(.onScrollDown)
+            if horizontalSizeClass == .regular {
+                regularWidthShell
             } else {
-                tabs
+                compactWidthShell
             }
         }
         .sheet(isPresented: $showsSettings) {
@@ -94,6 +95,58 @@ struct IOSRootView: View {
         }
     }
 
+    @ViewBuilder
+    private var compactWidthShell: some View {
+        if #available(iOS 26.0, *) {
+            tabs
+                .tabBarMinimizeBehavior(.onScrollDown)
+        } else {
+            tabs
+        }
+    }
+
+    private var regularWidthShell: some View {
+        NavigationSplitView {
+            List(selection: sidebarSelectionBinding) {
+                ForEach(IOSAppRoute.tabs) { route in
+                    routeLabel(for: route)
+                        .tag(route)
+                }
+            }
+            .navigationTitle(String(localized: "スルフロ"))
+            .navigationSplitViewColumnWidth(min: 220, ideal: 250, max: 300)
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                Button {
+                    showsSettings = true
+                } label: {
+                    Label(IOSAppRoute.settings.title, systemImage: IOSAppRoute.settings.systemImage)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 14)
+                .background(.bar)
+                .accessibilityLabel(IOSAppRoute.settings.title)
+            }
+        } detail: {
+            NavigationStack {
+                destination(for: selection)
+            }
+        }
+        .navigationSplitViewStyle(.balanced)
+    }
+
+    private var sidebarSelectionBinding: Binding<IOSAppRoute?> {
+        Binding(
+            get: { selection },
+            set: { route in
+                guard let route else { return }
+                selectionBinding.wrappedValue = route
+            }
+        )
+    }
+
     private var tabs: some View {
         TabView(selection: selectionBinding) {
             ForEach(IOSAppRoute.tabs) { route in
@@ -101,15 +154,7 @@ struct IOSRootView: View {
                     destination(for: route)
                 }
                 .tabItem {
-                    if route == .flow {
-                        Label {
-                            Text(route.title)
-                        } icon: {
-                            FlowMenuIcon(width: 22)
-                        }
-                    } else {
-                        Label(route.title, systemImage: route.systemImage)
-                    }
+                    routeLabel(for: route)
                 }
                 .tag(route)
                 .accessibilityLabel(route.title)
@@ -117,6 +162,19 @@ struct IOSRootView: View {
         }
         .tint(.accentColor)
         .toolbarBackground(.hidden, for: .tabBar)
+    }
+
+    @ViewBuilder
+    private func routeLabel(for route: IOSAppRoute) -> some View {
+        if route == .flow {
+            Label {
+                Text(route.title)
+            } icon: {
+                FlowMenuIcon(width: 22)
+            }
+        } else {
+            Label(route.title, systemImage: route.systemImage)
+        }
     }
 
     @ViewBuilder

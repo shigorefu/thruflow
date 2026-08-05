@@ -76,19 +76,17 @@ struct IOSHistoryView: View {
             prompt: String(localized: "検索")
         )
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 8) {
-                    modeMenu
-                    Button {
-                        toggleHistoryRecord()
-                    } label: {
-                        Image(systemName: "plus")
-                    }
-                    .accessibilityLabel(String(localized: "記録を追加"))
+            ToolbarItem(placement: .topBarLeading) {
+                modeMenu
+            }
 
-                    IOSSearchToolbarButton(isPresented: $isSearchPresented)
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    toggleHistoryRecord()
+                } label: {
+                    Image(systemName: "plus")
                 }
-                .fixedSize()
+                .accessibilityLabel(String(localized: "記録を追加"))
             }
         }
         .sheet(item: $selectedItem) { item in

@@ -86,30 +86,25 @@ struct IOSTasksView: View {
             prompt: String(localized: "検索")
         )
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 8) {
-                    ZStack(alignment: .topTrailing) {
-                        Button {
-                            showsBacklogMenu.toggle()
-                        } label: {
-                            IOSMoreMenuLabel()
-                        }
-                        .accessibilityLabel(String(localized: "その他"))
-                        .accessibilityValue("\(backlogCount(in: snapshot))")
-
-                        IOSNotificationBadge(count: backlogCount(in: snapshot))
-                            .allowsHitTesting(false)
+            ToolbarItem(placement: .topBarLeading) {
+                ZStack(alignment: .topTrailing) {
+                    Button {
+                        showsBacklogMenu.toggle()
+                    } label: {
+                        IOSMoreMenuLabel()
                     }
-                    .frame(width: 44, height: 44)
-                    .popover(isPresented: $showsBacklogMenu, arrowEdge: .top) {
-                        backlogMenuContent(snapshot: snapshot)
-                            .presentationCompactAdaptation(.popover)
-                            .onDisappear(perform: presentPendingBacklog)
-                    }
+                    .accessibilityLabel(String(localized: "その他"))
+                    .accessibilityValue("\(backlogCount(in: snapshot))")
 
-                    IOSSearchToolbarButton(isPresented: $isSearchPresented)
+                    IOSNotificationBadge(count: backlogCount(in: snapshot))
+                        .allowsHitTesting(false)
                 }
-                .fixedSize()
+                .frame(width: 44, height: 44)
+                .popover(isPresented: $showsBacklogMenu, arrowEdge: .top) {
+                    backlogMenuContent(snapshot: snapshot)
+                        .presentationCompactAdaptation(.popover)
+                        .onDisappear(perform: presentPendingBacklog)
+                }
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {

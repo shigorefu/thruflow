@@ -85,7 +85,7 @@ struct IOSDirectionsView: View {
         }
         .iosCenteredNavigationTitle(String(localized: "方向"))
         .toolbar {
-            ToolbarItemGroup(placement: .topBarTrailing) {
+            ToolbarItem(placement: .topBarLeading) {
                 Menu {
                     Toggle(String(localized: "アーカイブ"), isOn: $showingArchived)
                     Button(String(localized: "グループを並び替え"), systemImage: "rectangle.3.group") {
@@ -97,7 +97,9 @@ struct IOSDirectionsView: View {
                 } label: {
                     IOSMoreMenuLabel()
                 }
+            }
 
+            ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     editorMode = .create()
                 } label: {

@@ -305,9 +305,6 @@ private struct IOSEmojiPickerView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(String(localized: "閉じる")) { dismiss() }
                 }
-                ToolbarItem(placement: .topBarTrailing) {
-                    IOSSearchToolbarButton(isPresented: $isSearchPresented)
-                }
             }
         }
         .presentationDetents([.medium, .large])

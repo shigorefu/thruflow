@@ -250,21 +250,26 @@ struct IOSHistorySeriesWeekTimeline: View {
     private let hourHeight: CGFloat = 64
     private let headerHeight: CGFloat = 48
     private let timeGutter: CGFloat = 42
-    private let columnWidth: CGFloat = 132
+    private let minimumColumnWidth: CGFloat = 132
     private let projector = HistoryCalendarSeriesProjector()
 
     var body: some View {
-        ScrollView([.horizontal, .vertical]) {
-            ZStack(alignment: .topLeading) {
-                timelineBackground
-                emptyTimeSelectionLayer
-                seriesBlocks
-                currentTimeLine
+        GeometryReader { geometry in
+            let columnWidth = resolvedColumnWidth(for: geometry.size.width)
+
+            ScrollView([.horizontal, .vertical]) {
+                ZStack(alignment: .topLeading) {
+                    timelineBackground(columnWidth: columnWidth)
+                    emptyTimeSelectionLayer(columnWidth: columnWidth)
+                    seriesBlocks(columnWidth: columnWidth)
+                    currentTimeLine(columnWidth: columnWidth)
+                }
+                .frame(
+                    width: timeGutter + columnWidth * CGFloat(days.count),
+                    height: headerHeight + hourHeight * CGFloat(hourRange.count)
+                )
             }
-            .frame(
-                width: timeGutter + columnWidth * CGFloat(days.count),
-                height: headerHeight + hourHeight * CGFloat(hourRange.count)
-            )
+            .defaultScrollAnchor(.topLeading)
         }
     }
 
@@ -304,7 +309,13 @@ struct IOSHistorySeriesWeekTimeline: View {
         return lower..<max(lower + 1, upper)
     }
 
-    private var timelineBackground: some View {
+    private func resolvedColumnWidth(for availableWidth: CGFloat) -> CGFloat {
+        let dayCount = CGFloat(max(days.count, 1))
+        let availableDaysWidth = max(availableWidth - timeGutter, 0)
+        return max(minimumColumnWidth, availableDaysWidth / dayCount)
+    }
+
+    private func timelineBackground(columnWidth: CGFloat) -> some View {
         ZStack(alignment: .topLeading) {
             ForEach(Array(days.enumerated()), id: \.offset) { index, day in
                 Text(day, format: .dateTime.weekday(.abbreviated).day())
@@ -351,7 +362,7 @@ struct IOSHistorySeriesWeekTimeline: View {
         }
     }
 
-    private var seriesBlocks: some View {
+    private func seriesBlocks(columnWidth: CGFloat) -> some View {
         ForEach(Array(days.enumerated()), id: \.offset) { dayIndex, day in
             let blocks = projector.project(itemsForDay(day))
             let placements = projector.placements(for: blocks)
@@ -380,7 +391,7 @@ struct IOSHistorySeriesWeekTimeline: View {
         }
     }
 
-    private var emptyTimeSelectionLayer: some View {
+    private func emptyTimeSelectionLayer(columnWidth: CGFloat) -> some View {
         let height = hourHeight * CGFloat(hourRange.count)
 
         return ForEach(Array(days.enumerated()), id: \.offset) { dayIndex, day in
@@ -402,7 +413,7 @@ struct IOSHistorySeriesWeekTimeline: View {
     }
 
     @ViewBuilder
-    private var currentTimeLine: some View {
+    private func currentTimeLine(columnWidth: CGFloat) -> some View {
         if let dayIndex = days.firstIndex(where: calendar.isDateInToday) {
             let day = days[dayIndex]
             let dayInterval = HistoryCalendarRange.day.interval(

@@ -69,8 +69,10 @@ Platforms/watchOS ─┘              │
   Japanese is the source and fallback language.
 - `Platforms/macOS` owns navigation, windows, menu-bar scenes, keyboard/focus
   integration, drag-and-drop presentation, and the current desktop layouts.
-- `Platforms/iOS` owns the Flow-first iPhone navigation shell and compact Flow,
-  Tasks, History, Directions, Statistics, and Settings presentations.
+- `Platforms/iOS` owns the adaptive iPhone/iPad presentation. Compact widths use
+  the Flow-first tab shell; regular widths use a Mac-like split view with a
+  persistent sidebar and the same native Flow, Tasks, History, Directions,
+  Statistics, and Settings destinations.
 - `Platforms/watchOS` owns the four-page vertical Watch dashboard, compact
   player, Tasks, Statistics, and fullscreen Flow stream presentations.
 - iOS date navigation owns a bounded virtual window around the selected day or
@@ -110,7 +112,7 @@ Each platform owns its composition root:
   Tasks, Habits, Flow, History, Statistics, watchOS, and widgets cannot develop
   platform-specific midnight rules.
 
-- `Platforms/iOS/App/ThruFlowiOSApp.swift` declares the iPhone scene and injects
+- `Platforms/iOS/App/ThruFlowiOSApp.swift` declares the universal iPhone/iPad scene and injects
   the same `ActiveFlowStore`, `AppSettings`, calendar, locale, and model schema.
   It also registers the Live Activity control dependency used by system actions.
 - `Platforms/watchOS/App/ThruFlowWatchApp.swift` declares the Watch scene and
@@ -226,6 +228,14 @@ Dynamic Island adds `-5 minutes`, pause/resume, and `+5 minutes` controls.
 Those App Intents call the same `ActiveFlowStore` operations as the in-app
 player. The Lock Screen presentation is read-only, and tapping any activity
 deep-links to the Flow tab.
+
+On iPad and other regular-width iOS presentations, the same five destinations
+move into a persistent system sidebar and the selected feature uses the wide
+detail column. The composition mirrors macOS navigation without compiling
+AppKit-owned views into iOS. Compact Split View and Stage Manager widths fall
+back to the iPhone tab shell automatically; data, feature state, deep links,
+and navigation selection remain shared across both presentations. iPad supports
+portrait and landscape orientations, while iPhone remains portrait-only.
 
 Home Screen widgets are read-only projections delivered through App Group
 `group.com.shigorefu.thruflow`:

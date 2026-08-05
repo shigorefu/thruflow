@@ -399,7 +399,9 @@ vertical card scroll, graphical period and two-date custom-range sheets, a
 native export sheet and ShareLink, a compact full-width Canvas for Year Dots,
 and a daily detail sheet that can open History. Year Dots are intentionally
 non-interactive. Search begins as a toolbar magnifier and expands on demand;
-search and related actions share one compact trailing group so the shared
+Search stays trailing while context actions occupy the leading side: Tasks and
+Directions use `その他`, History uses its report mode, and Statistics groups
+Share with the Direction filter. Creation actions remain trailing. The shared
 principal title stays centered. All iPhone navigation destinations use this centered inline title
 contract. The widget Dots projection
 remains separate and compact.
@@ -407,6 +409,21 @@ remains separate and compact.
 Reason: analysis should give the same answer on Mac and iPhone, while platform
 navigation, density, pointer behavior, and sharing must continue to follow the
 system conventions of each device.
+
+## D-032: iPad Uses The Universal Adaptive iOS Target
+
+`ThruFlow iOS` supports both iPhone and iPad rather than shipping a second app
+bundle. Compact widths retain the system tab bar; regular widths switch to a
+Mac-like `NavigationSplitView` with a persistent sidebar and wide feature
+detail. The iPad presentation reuses the iOS-owned feature renderers and shared
+application/domain state instead of compiling AppKit-owned macOS views or
+forking SwiftData and CloudKit configuration. Narrow Split View and Stage
+Manager windows return to the compact shell, and iPad enables all portrait and
+landscape orientations.
+
+Reason: one universal bundle preserves installation identity, CloudKit data,
+deep links, and release versioning while allowing each available width to use
+space appropriately.
 
 ## Open Questions
 

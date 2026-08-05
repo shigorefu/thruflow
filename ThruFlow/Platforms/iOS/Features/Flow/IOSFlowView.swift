@@ -144,26 +144,61 @@ struct IOSFlowView: View {
         let snapshot = cachedSnapshot ?? .empty()
 
         return ScrollView {
-            LazyVStack(spacing: 16) {
-                flowCard(snapshot: snapshot)
-                playerCard
-                dashboardTasks
-                IOSDashboardStatisticsView(
-                    snapshot: snapshot,
-                    sessions: sessions,
-                    flowBreaks: flowBreaks,
-                    todos: todos,
-                    standardTodos: cachedTodoGroups?.standard ?? [],
-                    habitTodos: cachedTodoGroups?.habits ?? [],
-                    niceTodos: cachedTodoGroups?.nice ?? [],
-                    calendar: calendar,
-                    dayBoundary: dayBoundary
-                )
+            ViewThatFits(in: .horizontal) {
+                wideDashboard(snapshot: snapshot)
+                    .frame(minWidth: 900)
+
+                compactDashboard(snapshot: snapshot)
             }
+            .frame(maxWidth: 1_200)
             .padding(.horizontal, 16)
             .padding(.bottom, 10)
+            .frame(maxWidth: .infinity)
         }
         .background(backgroundColor.ignoresSafeArea())
+    }
+
+    private func compactDashboard(snapshot: FlowDashboardSnapshot) -> some View {
+        LazyVStack(spacing: 16) {
+            flowCard(snapshot: snapshot)
+            playerCard()
+            dashboardTasks()
+            statisticsCard(snapshot: snapshot)
+        }
+    }
+
+    private func wideDashboard(snapshot: FlowDashboardSnapshot) -> some View {
+        VStack(spacing: 16) {
+            HStack(alignment: .top, spacing: 16) {
+                flowCard(snapshot: snapshot, minHeight: 320)
+                    .frame(maxWidth: .infinity)
+
+                playerCard(minHeight: 320)
+                    .frame(width: 340)
+            }
+
+            HStack(alignment: .top, spacing: 16) {
+                dashboardTasks(minHeight: 330)
+                    .frame(maxWidth: .infinity)
+
+                statisticsCard(snapshot: snapshot)
+                    .frame(maxWidth: .infinity)
+            }
+        }
+    }
+
+    private func statisticsCard(snapshot: FlowDashboardSnapshot) -> some View {
+        IOSDashboardStatisticsView(
+            snapshot: snapshot,
+            sessions: sessions,
+            flowBreaks: flowBreaks,
+            todos: todos,
+            standardTodos: cachedTodoGroups?.standard ?? [],
+            habitTodos: cachedTodoGroups?.habits ?? [],
+            niceTodos: cachedTodoGroups?.nice ?? [],
+            calendar: calendar,
+            dayBoundary: dayBoundary
+        )
     }
 
     private var activeDirections: [Direction] {
@@ -209,7 +244,7 @@ struct IOSFlowView: View {
         return selectedDirection?.name ?? String(localized: "タスクを選択")
     }
 
-    private var playerCard: some View {
+    private func playerCard(minHeight: CGFloat? = nil) -> some View {
         VStack(spacing: 12) {
             contextButton
             modePicker
@@ -221,6 +256,7 @@ struct IOSFlowView: View {
             .frame(maxWidth: .infinity)
         }
         .padding(14)
+        .frame(minHeight: minHeight, alignment: .top)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
     }
 
@@ -384,7 +420,10 @@ struct IOSFlowView: View {
         .buttonStyle(.plain)
     }
 
-    private func flowCard(snapshot: FlowDashboardSnapshot) -> some View {
+    private func flowCard(
+        snapshot: FlowDashboardSnapshot,
+        minHeight: CGFloat? = nil
+    ) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 2) {
@@ -419,6 +458,7 @@ struct IOSFlowView: View {
             }
         }
         .padding(14)
+        .frame(minHeight: minHeight, alignment: .topLeading)
         .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 16))
     }
 
@@ -433,7 +473,7 @@ struct IOSFlowView: View {
         }
     }
 
-    private var dashboardTasks: some View {
+    private func dashboardTasks(minHeight: CGFloat = 220) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Label(String(localized: "今日のタスク"), systemImage: "checklist")
@@ -474,7 +514,7 @@ struct IOSFlowView: View {
             Spacer(minLength: 0)
         }
         .padding(16)
-        .frame(maxWidth: .infinity, minHeight: 220, alignment: .topLeading)
+        .frame(maxWidth: .infinity, minHeight: minHeight, alignment: .topLeading)
         .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 16))
     }
 

@@ -173,6 +173,18 @@ explicit `×` command that dismisses the keyboard and returns to the task list
 without creating a Task.
 `設定` is reached from the trailing More menu.
 
+At regular iPad widths the five primary destinations move from the bottom tab
+bar into a persistent leading sidebar, matching the macOS information
+architecture and leaving the wide detail area to the selected feature. The
+sidebar also exposes `設定`. Compact Split View and Stage Manager widths return
+to the tab shell automatically, without resetting the active destination or
+feature state. iPad supports portrait and landscape orientations.
+
+The regular-width Flow dashboard uses the detail area as two balanced columns:
+the live Flow scene and timeline sit beside the player, while Tasks and today’s
+Statistics share the next row. When the detail column becomes too narrow for
+comfortable controls, the dashboard returns to the single-column presentation.
+
 The first Flow viewport presents the softened animated stream and Elastic
 timeline before the timer card. It keeps the Task selector, the shared
 `Sprint | Focus | Deep` segmented selector, timer controls, stream, and timeline
@@ -430,8 +442,10 @@ behavior as macOS, while Year Dots use one compact full-width canvas to avoid a
 horizontal scroller. Tapping a Week, Month, or custom-range Dots cell opens a touch-sized daily detail sheet
 with focused duration, Flow count, and completed Tasks; its action opens
 `履歴`. Year Dots have no tap target. Search is an icon-only trailing toolbar
-action that expands only on demand. Related actions share a compact trailing
-group so the title stays centered. Tasks and History use the same search behavior, and every iOS
+action that expands only on demand. Screen-specific context actions use the
+leading side: Tasks and Directions place their `その他` menu there, History
+places its Flow/Task/Direction mode there, and Statistics groups Share with its
+Direction filter there. Creation actions remain trailing beside Search. Every iOS
 navigation destination uses a centered inline title. The `その他` Direction may
 appear because it represents real captured work.
 
