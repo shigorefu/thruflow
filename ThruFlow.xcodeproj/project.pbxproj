@@ -114,6 +114,7 @@
 				Configuration.storekit,
 				Info.plist,
 				Platforms/iOS/App/Info.plist,
+				Platforms/watchOS/App/Info.plist,
 			);
 			target = 2E1176EC2FFE20CF0011219C /* ThruFlow */;
 		};
@@ -123,6 +124,7 @@
 				Configuration.storekit,
 				Info.plist,
 				Platforms/iOS/App/Info.plist,
+				Platforms/watchOS/App/Info.plist,
 			);
 			target = 4A1000083000000000000008 /* ThruFlow iOS */;
 		};
@@ -139,6 +141,7 @@
 				Configuration.storekit,
 				Info.plist,
 				Platforms/iOS/App/Info.plist,
+				Platforms/watchOS/App/Info.plist,
 			);
 			target = 6C3000073000000000000007 /* ThruFlow Watch App */;
 		};
@@ -1161,7 +1164,8 @@
 					ThruFlowiOSApp.swift,
 					TodoFormView.swift,
 				);
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ThruFlow/Platforms/watchOS/App/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = ThruFlow;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_WKApplication = YES;
@@ -1251,7 +1255,8 @@
 					ThruFlowiOSApp.swift,
 					TodoFormView.swift,
 				);
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ThruFlow/Platforms/watchOS/App/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = ThruFlow;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_WKApplication = YES;
