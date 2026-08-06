@@ -185,6 +185,12 @@ Each platform owns its composition root:
   Platform wrappers only decide when rendering pauses: macOS requires the key
   window, while iOS requires an active scene. Pausing freezes the shared
   `FlowAnimationClock` phase instead of rebuilding the picture.
+- `ActiveFlowStore` publishes a transient sequenced `FlowBreakInteraction` for
+  each valid rest request and each confirmed rest start. It is application/UI
+  state only: it never enters SwiftData, CloudKit, runtime synchronization, or
+  history. `FlowStreamSurface` combines that cue with the derived regular/long
+  break style. macOS and iOS use the shared Metal pass; watchOS mirrors the same
+  spread and glow parameters in its shared Canvas renderer.
 - The renderer has separate dark additive and light ink-style composition
   paths. Palette weights come from actual focused seconds per Direction.
 - Desktop-specific dashboard layout remains macOS-owned.

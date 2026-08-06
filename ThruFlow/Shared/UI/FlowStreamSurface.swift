@@ -8,6 +8,8 @@ struct FlowStreamSurface: View {
     let dailySeed: UInt64
     let isActive: Bool
     let mode: FlowMode
+    let breakStyle: FlowStreamBreakStyle
+    let breakInteraction: FlowBreakInteraction?
     let isRenderingEnabled: Bool
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -15,6 +17,7 @@ struct FlowStreamSurface: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var animationClock = FlowAnimationClock()
     @State private var impulseStartedAt: Date?
+    @State private var reactionState = FlowStreamReactionState()
 
     init(
         blocks: Double,
@@ -24,6 +27,8 @@ struct FlowStreamSurface: View {
         dailySeed: UInt64 = 0,
         isActive: Bool,
         mode: FlowMode,
+        breakStyle: FlowStreamBreakStyle = .none,
+        breakInteraction: FlowBreakInteraction? = nil,
         isRenderingEnabled: Bool
     ) {
         self.blocks = blocks
@@ -33,6 +38,8 @@ struct FlowStreamSurface: View {
         self.dailySeed = dailySeed
         self.isActive = isActive
         self.mode = mode
+        self.breakStyle = breakStyle
+        self.breakInteraction = breakInteraction
         self.isRenderingEnabled = isRenderingEnabled
     }
 
@@ -67,9 +74,10 @@ struct FlowStreamSurface: View {
                             .float2(proxy.size),
                             .float(Float(animationClock.phase(
                                 at: timeline.date,
-                                speed: state.speed,
+                                visualState: state,
                                 isPaused: animationIsPaused
                             ))),
+                            .float(isActive ? 1 : 0),
                             .float(Float(state.progress)),
                             .float(Float(state.identityReveal)),
                             .float(Float(state.volume)),
@@ -79,6 +87,10 @@ struct FlowStreamSurface: View {
                             .float(Float(state.waveFrequency)),
                             .float(Float(state.turbulence)),
                             .float(Float(impulseProgress(at: timeline.date))),
+                            .float(Float(restRequestProgress(at: timeline.date))),
+                            .float(Float(regularBreakProgress(at: timeline.date))),
+                            .float(Float(longBreakProgress(at: timeline.date))),
+                            .float(breakStyle.rawValue),
                             .float(Float(appearance.topology)),
                             .float(Float(appearance.bend)),
                             .float(Float(appearance.spacing)),
@@ -100,10 +112,18 @@ struct FlowStreamSurface: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(String(localized: "今日のFlow"))
-        .accessibilityValue(accessibilityValue(state))
+        .accessibilityValue(accessibilityValue(state, breakStyle: breakStyle))
         .onChange(of: completedHalfBlocks) { oldValue, newValue in
             guard newValue > oldValue else { return }
             impulseStartedAt = .now
+        }
+        .onAppear(perform: synchronizeBreakInteraction)
+        .onChange(of: breakInteraction?.sequence) { _, _ in
+            synchronizeBreakInteraction()
+        }
+        .onChange(of: breakStyle) { _, newValue in
+            guard newValue == .none else { return }
+            reactionState.clearConfirmedBreak()
         }
 #endif
     }
@@ -127,7 +147,7 @@ struct FlowStreamSurface: View {
 
                 let phase = animationClock.phase(
                     at: timeline.date,
-                    speed: state.speed,
+                    visualState: state,
                     isPaused: animationIsPaused
                 )
                 drawWatchRibbons(
@@ -136,16 +156,27 @@ struct FlowStreamSurface: View {
                     phase: phase,
                     state: state,
                     colors: colors,
-                    appearance: appearance
+                    appearance: appearance,
+                    restRequestProgress: restRequestProgress(at: timeline.date),
+                    regularBreakProgress: regularBreakProgress(at: timeline.date),
+                    longBreakProgress: longBreakProgress(at: timeline.date)
                 )
             }
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(String(localized: "今日のFlow"))
-        .accessibilityValue(accessibilityValue(state))
+        .accessibilityValue(accessibilityValue(state, breakStyle: breakStyle))
         .onChange(of: completedHalfBlocks) { oldValue, newValue in
             guard newValue > oldValue else { return }
             impulseStartedAt = .now
+        }
+        .onAppear(perform: synchronizeBreakInteraction)
+        .onChange(of: breakInteraction?.sequence) { _, _ in
+            synchronizeBreakInteraction()
+        }
+        .onChange(of: breakStyle) { _, newValue in
+            guard newValue == .none else { return }
+            reactionState.clearConfirmedBreak()
         }
     }
 
@@ -155,10 +186,18 @@ struct FlowStreamSurface: View {
         phase: Double,
         state: FlowVisualState,
         colors: [Color],
-        appearance: DailyFlowAppearance
+        appearance: DailyFlowAppearance,
+        restRequestProgress: Double,
+        regularBreakProgress: Double,
+        longBreakProgress: Double
     ) {
         let ribbonCount = FlowVisualState.ribbonCount
         let impulse = max(0, impulseProgress(at: .now))
+        let requestEnvelope = FlowStreamReactionTiming.envelope(for: restRequestProgress)
+        let regularBreakEnvelope = FlowStreamReactionTiming.envelope(for: regularBreakProgress)
+        let longBreakEnvelope = FlowStreamReactionTiming.envelope(for: longBreakProgress)
+        let longBreakAmount = breakStyle == .long ? 1.0 : 0.0
+        let idleAmount = !isActive && breakStyle == .none ? 1.0 : 0.0
         let baseWidth = max(5, size.height * (0.070 + state.volume * 0.044))
         let amplitude = size.height * (0.06 + state.detail * 0.035)
 
@@ -172,10 +211,21 @@ struct FlowStreamSurface: View {
                 phase: phase,
                 amplitude: amplitude,
                 state: state,
-                appearance: appearance
+                appearance: appearance,
+                requestEnvelope: requestEnvelope,
+                regularBreakEnvelope: regularBreakEnvelope,
+                longBreakEnvelope: longBreakEnvelope,
+                longBreakAmount: longBreakAmount,
+                idleAmount: idleAmount
             )
             let width = baseWidth * (0.86 + progress * 0.34)
-            let opacity = 0.42 + state.glow * 0.38 + impulse * 0.12
+                * (1 + longBreakEnvelope * 0.24)
+            let opacity = 0.42
+                + state.glow * 0.38
+                + impulse * 0.12
+                + requestEnvelope * 0.05
+                + regularBreakEnvelope * 0.06
+                + longBreakEnvelope * 0.12
 
             context.drawLayer { glowLayer in
                 glowLayer.addFilter(.blur(radius: max(1.5, width * 0.52)))
@@ -200,10 +250,20 @@ struct FlowStreamSurface: View {
         phase: Double,
         amplitude: Double,
         state: FlowVisualState,
-        appearance: DailyFlowAppearance
+        appearance: DailyFlowAppearance,
+        requestEnvelope: Double,
+        regularBreakEnvelope: Double,
+        longBreakEnvelope: Double,
+        longBreakAmount: Double,
+        idleAmount: Double
     ) -> Path {
         let ribbonProgress = Double(ribbon) / Double(max(ribbonCount - 1, 1))
-        let baseY = size.height * (0.14 + ribbonProgress * 0.72)
+        let laneDirection = ribbonProgress * 2 - 1
+        let spread = requestEnvelope * 0.032
+            + regularBreakEnvelope * 0.044
+            + longBreakEnvelope * 0.092
+            + longBreakAmount * 0.018
+        let baseY = size.height * (0.14 + ribbonProgress * 0.72 + laneDirection * spread)
         let phaseOffset = Double(ribbon) * (0.61 + appearance.spacing * 0.42)
         let frequency = state.waveFrequency * (0.82 + appearance.topology * 0.28)
         let bend = 0.72 + appearance.bend * 0.58
@@ -222,9 +282,25 @@ struct FlowStreamSurface: View {
                     - phase * (0.38 + state.turbulence * 0.22)
                     + phaseOffset * 1.7
             )
+            let longBreakBreath = longBreakAmount > 0
+                ? sin(
+                    xProgress * .pi * 2.2
+                        - phase * 2.4
+                        + phaseOffset
+                ) * 0.16
+                : 0
+            let idleCurrent = idleAmount > 0
+                ? sin(
+                    xProgress * .pi * 5.2
+                        - phase * 3.4
+                        + phaseOffset * 1.2
+                ) * 0.09
+                : 0
             let y = baseY + amplitude * (
                 primary * (0.72 + ribbonProgress * 0.18)
                     + detail * state.turbulence * 0.18
+                    + longBreakBreath
+                    + idleCurrent
             )
             let point = CGPoint(x: size.width * xProgress, y: y)
 
@@ -281,12 +357,48 @@ struct FlowStreamSurface: View {
         return (0...1).contains(progress) ? progress : -1
     }
 
+    private func restRequestProgress(at date: Date) -> Double {
+        transientProgress(for: .requested, at: date)
+    }
+
+    private func regularBreakProgress(at date: Date) -> Double {
+        transientProgress(for: .started(isLong: false), at: date)
+    }
+
+    private func longBreakProgress(at date: Date) -> Double {
+        transientProgress(for: .started(isLong: true), at: date)
+    }
+
+    private func transientProgress(
+        for kind: FlowBreakInteraction.Kind,
+        at date: Date
+    ) -> Double {
+        guard !reduceMotion else { return -1 }
+        return reactionState.progress(for: kind, at: date)
+    }
+
+    private func synchronizeBreakInteraction() {
+        reactionState.consume(breakInteraction, breakStyle: breakStyle)
+    }
+
     private var isUITesting: Bool {
         ProcessInfo.processInfo.arguments.contains("--uitesting")
     }
 
-    private func accessibilityValue(_ state: FlowVisualState) -> String {
-        switch state.progress {
+    private func accessibilityValue(
+        _ state: FlowVisualState,
+        breakStyle: FlowStreamBreakStyle
+    ) -> String {
+        switch breakStyle {
+        case .regular:
+            return String(localized: "休憩")
+        case .long:
+            return String(localized: "長休憩")
+        case .none:
+            break
+        }
+
+        return switch state.progress {
         case ..<0.01: String(localized: "まだFlowはありません")
         case ..<0.34: String(localized: "小さな流れ")
         case ..<0.84: String(localized: "育っている流れ")

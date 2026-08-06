@@ -7,11 +7,114 @@
 
 import Foundation
 
+enum FlowStreamBreakStyle: Float, Equatable, Sendable {
+    case none = 0
+    case regular = 1
+    case long = 2
+}
+
+struct FlowBreakInteraction: Equatable, Sendable {
+    enum Kind: Equatable, Sendable {
+        case requested
+        case started(isLong: Bool)
+    }
+
+    let sequence: UInt64
+    let kind: Kind
+    let occurredAt: Date
+}
+
+struct FlowStreamReactionState: Equatable, Sendable {
+    private(set) var restRequestStartedAt: Date?
+    private(set) var regularBreakStartedAt: Date?
+    private(set) var longBreakStartedAt: Date?
+
+    mutating func consume(
+        _ interaction: FlowBreakInteraction?,
+        breakStyle: FlowStreamBreakStyle
+    ) {
+        guard let interaction else { return }
+
+        switch interaction.kind {
+        case .requested:
+            restRequestStartedAt = interaction.occurredAt
+        case .started(isLong: false):
+            guard breakStyle == .regular else { return }
+            restRequestStartedAt = nil
+            longBreakStartedAt = nil
+            regularBreakStartedAt = interaction.occurredAt
+        case .started(isLong: true):
+            guard breakStyle == .long else { return }
+            restRequestStartedAt = nil
+            regularBreakStartedAt = nil
+            longBreakStartedAt = interaction.occurredAt
+        }
+    }
+
+    mutating func clearConfirmedBreak() {
+        regularBreakStartedAt = nil
+        longBreakStartedAt = nil
+    }
+
+    func progress(
+        for kind: FlowBreakInteraction.Kind,
+        at date: Date
+    ) -> Double {
+        let startedAt = switch kind {
+        case .requested:
+            restRequestStartedAt
+        case .started(isLong: false):
+            regularBreakStartedAt
+        case .started(isLong: true):
+            longBreakStartedAt
+        }
+
+        return FlowStreamReactionTiming.progress(
+            at: date,
+            since: startedAt,
+            duration: FlowStreamReactionTiming.duration(for: kind)
+        )
+    }
+}
+
+enum FlowStreamReactionTiming {
+    static let requestDuration: TimeInterval = 1.4
+    static let regularBreakDuration: TimeInterval = 2.2
+    static let longBreakDuration: TimeInterval = 4.0
+
+    static func duration(for kind: FlowBreakInteraction.Kind) -> TimeInterval {
+        switch kind {
+        case .requested:
+            requestDuration
+        case .started(isLong: false):
+            regularBreakDuration
+        case .started(isLong: true):
+            longBreakDuration
+        }
+    }
+
+    static func progress(
+        at date: Date,
+        since startedAt: Date?,
+        duration: TimeInterval
+    ) -> Double {
+        guard let startedAt, duration > 0 else { return -1 }
+        let progress = date.timeIntervalSince(startedAt) / duration
+        return (0...1).contains(progress) ? progress : -1
+    }
+
+    static func envelope(for progress: Double) -> Double {
+        guard (0...1).contains(progress) else { return 0 }
+        return sin(progress * .pi)
+    }
+}
+
 struct FlowVisualState: Equatable {
     static let maximumGrowthBlocks = 6.0
     static let identityRevealBlocks = 1.0
     static let baselineRibbonCount = 6
     static let ribbonCount = 7
+    static let speedMultiplier = 1.25
 
     let progress: Double
     let identityReveal: Double
@@ -31,9 +134,10 @@ struct FlowVisualState: Equatable {
         progress = linearProgress
         let identityProgress = min(max(blocks / Self.identityRevealBlocks, 0), 1)
         identityReveal = Self.smoothstep(identityProgress)
-        speed = isActive
+        let baseSpeed = isActive
             ? 1.10 + easedProgress * 1.70
             : 0.06 + easedProgress * 0.22
+        speed = baseSpeed * Self.speedMultiplier
 
         let occupancyProgress = min(max(blocks / 4, 0), 1)
         volume = 0.38 + Self.smoothstep(occupancyProgress) * 0.30
@@ -136,6 +240,14 @@ final class FlowAnimationClock {
     private(set) var phase = 0.0
     private var lastDate: Date?
     private var wasPaused = true
+
+    func phase(
+        at date: Date,
+        visualState: FlowVisualState,
+        isPaused: Bool
+    ) -> Double {
+        phase(at: date, speed: visualState.speed, isPaused: isPaused)
+    }
 
     func phase(at date: Date, speed: Double, isPaused: Bool) -> Double {
         guard !isPaused else {

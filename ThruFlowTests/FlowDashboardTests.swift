@@ -349,14 +349,15 @@ struct FlowDashboardTests {
         let fourBlockActive = FlowVisualState(blocks: 4, flowCount: 4, isActive: true, mode: .twentyFiveFive)
         let fullActive = FlowVisualState(blocks: 6, flowCount: 6, isActive: true, mode: .twentyFiveFive)
 
-        #expect(emptyIdle.speed == 0.06)
+        #expect(abs(emptyIdle.speed - 0.075) < 0.0001)
         #expect(fourBlockIdle.speed > emptyIdle.speed)
-        #expect(fourBlockIdle.speed < 0.28)
-        #expect(abs(fullIdle.speed - 0.28) < 0.0001)
-        #expect(emptyActive.speed == 1.10)
+        #expect(fourBlockIdle.speed < 0.35)
+        #expect(abs(fullIdle.speed - 0.35) < 0.0001)
+        #expect(abs(emptyActive.speed - 1.375) < 0.0001)
         #expect(fourBlockActive.speed > emptyActive.speed)
         #expect(fourBlockActive.speed > fourBlockIdle.speed)
-        #expect(abs(fullActive.speed - 2.80) < 0.0001)
+        #expect(abs(fullActive.speed - 3.50) < 0.0001)
+        #expect(FlowVisualState.speedMultiplier == 1.25)
     }
 
     @Test func activeFlowAcceleratesWithoutChangingDailyGrowth() {
@@ -418,6 +419,116 @@ struct FlowDashboardTests {
         #expect(FlowRenderCadence.frameInterval(isActive: false) == 1.0 / 30.0)
     }
 
+    @Test func restReactionTimingsAndStyleEncodingsAreBounded() {
+        let start = Date(timeIntervalSinceReferenceDate: 3_000)
+
+        #expect(
+            FlowStreamReactionTiming.duration(for: .requested) ==
+                FlowStreamReactionTiming.requestDuration
+        )
+        #expect(
+            FlowStreamReactionTiming.duration(for: .started(isLong: false)) ==
+                FlowStreamReactionTiming.regularBreakDuration
+        )
+        #expect(
+            FlowStreamReactionTiming.duration(for: .started(isLong: true)) ==
+                FlowStreamReactionTiming.longBreakDuration
+        )
+        #expect(FlowStreamReactionTiming.longBreakDuration > FlowStreamReactionTiming.regularBreakDuration)
+        #expect(FlowStreamBreakStyle.none.rawValue == 0)
+        #expect(FlowStreamBreakStyle.regular.rawValue == 1)
+        #expect(FlowStreamBreakStyle.long.rawValue == 2)
+
+        #expect(
+            FlowStreamReactionTiming.progress(
+                at: start.addingTimeInterval(-0.1),
+                since: start,
+                duration: 2
+            ) == -1
+        )
+        #expect(FlowStreamReactionTiming.progress(at: start, since: start, duration: 2) == 0)
+        #expect(
+            FlowStreamReactionTiming.progress(
+                at: start.addingTimeInterval(1),
+                since: start,
+                duration: 2
+            ) == 0.5
+        )
+        #expect(
+            FlowStreamReactionTiming.progress(
+                at: start.addingTimeInterval(2),
+                since: start,
+                duration: 2
+            ) == 1
+        )
+        #expect(
+            FlowStreamReactionTiming.progress(
+                at: start.addingTimeInterval(2.1),
+                since: start,
+                duration: 2
+            ) == -1
+        )
+        #expect(FlowStreamReactionTiming.envelope(for: -1) == 0)
+        #expect(abs(FlowStreamReactionTiming.envelope(for: 0.5) - 1) < 0.0001)
+        #expect(abs(FlowStreamReactionTiming.envelope(for: 1)) < 0.0001)
+    }
+
+    @Test func reactionStateRetriggersRequestsAndRejectsStaleConfirmedBreaks() {
+        let firstAt = Date(timeIntervalSinceReferenceDate: 4_000)
+        let secondAt = firstAt.addingTimeInterval(0.2)
+        let regularAt = firstAt.addingTimeInterval(1)
+        let longAt = firstAt.addingTimeInterval(2)
+        var state = FlowStreamReactionState()
+
+        state.consume(
+            FlowBreakInteraction(sequence: 1, kind: .requested, occurredAt: firstAt),
+            breakStyle: .none
+        )
+        #expect(state.restRequestStartedAt == firstAt)
+
+        state.consume(
+            FlowBreakInteraction(sequence: 2, kind: .requested, occurredAt: secondAt),
+            breakStyle: .none
+        )
+        #expect(state.restRequestStartedAt == secondAt)
+        #expect(
+            abs(
+                state.progress(
+                    for: .requested,
+                    at: secondAt.addingTimeInterval(0.7)
+                ) - 0.5
+            ) < 0.0001
+        )
+
+        let regular = FlowBreakInteraction(
+            sequence: 3,
+            kind: .started(isLong: false),
+            occurredAt: regularAt
+        )
+        state.consume(regular, breakStyle: .none)
+        #expect(state.regularBreakStartedAt == nil)
+        #expect(state.restRequestStartedAt == secondAt)
+
+        state.consume(regular, breakStyle: .regular)
+        #expect(state.restRequestStartedAt == nil)
+        #expect(state.regularBreakStartedAt == regularAt)
+
+        state.consume(
+            FlowBreakInteraction(
+                sequence: 4,
+                kind: .started(isLong: true),
+                occurredAt: longAt
+            ),
+            breakStyle: .long
+        )
+        #expect(state.regularBreakStartedAt == nil)
+        #expect(state.longBreakStartedAt == longAt)
+
+        state.clearConfirmedBreak()
+        #expect(state.regularBreakStartedAt == nil)
+        #expect(state.longBreakStartedAt == nil)
+    }
+
     @Test func animationClockKeepsPhaseContinuousWhenSpeedChanges() {
         let clock = FlowAnimationClock()
         let start = Date(timeIntervalSinceReferenceDate: 1_000)
@@ -432,6 +543,27 @@ struct FlowDashboardTests {
         )
         #expect(abs(transitionPhase - 0.2) < 0.0001)
         #expect(abs(clock.phase(at: start.addingTimeInterval(3), speed: 0.8, isPaused: false) - 1.0) < 0.0001)
+    }
+
+    @Test func emptyIdleVisualStateAdvancesTheProductionAnimationClockAtBoostedSpeed() {
+        let state = FlowVisualState(
+            blocks: 0,
+            flowCount: 0,
+            isActive: false,
+            mode: .twentyFiveFive
+        )
+        let clock = FlowAnimationClock()
+        let start = Date(timeIntervalSinceReferenceDate: 1_500)
+
+        _ = clock.phase(at: start, visualState: state, isPaused: false)
+        let phase = clock.phase(
+            at: start.addingTimeInterval(8),
+            visualState: state,
+            isPaused: false
+        )
+
+        #expect(abs(phase - 0.6) < 0.0001)
+        #expect(phase > 0.48)
     }
 
     @Test func animationClockFreezesWhilePaused() {
