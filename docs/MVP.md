@@ -71,6 +71,9 @@ Direction -> Task -> Flow -> actual focused time -> progress -> statistics
   companion and does not repeat onboarding.
 - Optional support in Settings: App Store review, GitHub, and consumable Coffee
   (JPY 100) / Ramen (JPY 500) StoreKit tips that unlock no features.
+- Cross-platform Settings feedback entry that opens the public GitHub issue
+  templates, warns about private Task content, and explains TestFlight's native
+  screenshot feedback path.
 - A non-promotional StoreKit review request after seven days and meaningful
   completed-Flow use, at most once per app version.
 - Native Settings on macOS, iPhone, and iPad can irreversibly delete all Flow

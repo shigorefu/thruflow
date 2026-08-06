@@ -79,6 +79,8 @@ struct IOSSettingsView: View {
                 }
             }
 
+            FeedbackSettingsSection()
+
             historyDataSection
 
             SupportSettingsSection()

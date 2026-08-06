@@ -214,6 +214,13 @@ consumable StoreKit tips. A successful purchase shows thanks and finishes the
 verified transaction; cancellation is silent, pending approval is explained,
 and no purchase creates an entitlement or unlocks a feature.
 
+`設定 > フィードバック > フィードバックを送る` opens the public GitHub
+issue-template chooser on macOS, iPhone, and iPad. The section warns that GitHub
+reports are public and that private Task names and notes should be removed.
+TestFlight testers are also reminded that a screenshot or the TestFlight app
+can send feedback with device context. The app does not imitate TestFlight's
+submission UI or depend on an undocumented TestFlight URL scheme.
+
 ## iPhone and iPad
 
 The first iPhone surface is a Flow-first system `TabView`, with an independent
@@ -613,3 +620,7 @@ will be removed from every device through private CloudKit and cannot be
 restored. The operation runs in a model actor so Settings remains responsive.
 Tasks, Directions, Task memos, and manually checked state remain; all
 Flow-derived Task and Direction progress is reset.
+
+The shared `フィードバック` section appears before destructive data controls. It
+opens the GitHub issue-template chooser and presents the same public-data and
+TestFlight guidance on macOS, iPhone, and iPad.

@@ -12,7 +12,9 @@ ThruFlow is preparing its first TestFlight release. Please check existing issues
 
 ## Get help
 
-- Use [GitHub Issues](https://github.com/shigorefu/thruflow/issues) for reproducible bugs and feature requests.
+- In ThruFlow, open `Settings > Feedback > Send Feedback` to choose a GitHub report template.
+- TestFlight testers can also submit a screenshot or use the TestFlight app; this includes useful build and device context.
+- Use [GitHub Issues](https://github.com/shigorefu/thruflow/issues/new/choose) directly for reproducible bugs and feature requests.
 - Use the repository's bug template and attach a screen recording or diagnostic log only when it contains no sensitive information.
 - For a security or privacy vulnerability, do not open a public issue. Follow [SECURITY.md](SECURITY.md).
 
