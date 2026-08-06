@@ -1505,7 +1505,7 @@ struct MessengerTodoComposer: View {
         let options: [(String, String, TodoPriority, Bool)] = [
             ("high", String(localized: "高"), .high, false),
             ("medium", String(localized: "中"), .medium, false),
-            ("low", String(localized: "低い"), .low, false),
+            ("low", String(localized: "低"), .low, false),
             ("later", String(localized: "余裕があれば"), .low, true),
         ]
         return options

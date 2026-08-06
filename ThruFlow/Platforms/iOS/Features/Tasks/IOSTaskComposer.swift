@@ -477,7 +477,7 @@ struct IOSTaskComposer: View {
             return [
                 ("high", String(localized: "高")),
                 ("medium", String(localized: "中")),
-                ("low", String(localized: "低い")),
+                ("low", String(localized: "低")),
                 ("later", String(localized: "余裕があれば")),
             ]
             .filter { query.isEmpty || $0.0.hasPrefix(query) }

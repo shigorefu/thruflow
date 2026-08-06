@@ -1,55 +1,98 @@
 # ThruFlow
 
-ThruFlow / スルフロ is an Apple-first productivity app for turning focused work into task progress.
-
-Core loop:
+ThruFlow / スルフロ is an Apple-first productivity app that turns focused work into visible task progress.
 
 ```text
-方向 -> Task -> Flow -> actual focused time -> progress -> statistics
+Direction -> Task -> Flow -> focused time -> progress -> statistics
 ```
 
-The product is not a Pomodoro clone, a standalone habit tracker, or a generic Todo list.
+The project is preparing version `1.0 (1)` for TestFlight. It is pre-release software: back up important data and report reproducible problems through GitHub Issues.
 
-## Current Product Model
+## What ThruFlow does
 
-- `方向`: persistent activity area.
-- `通常`: normal area.
-- `習慣`: scheduled recurring requirement.
-- `ナイス`: optional positive activity.
-- `その他`: system Direction for work without a chosen Direction. It is hidden from Direction editing but can appear in task context and statistics.
-- `Task`: dated Todo item shown in the `タスク` calendar; date-less behavior is deferred.
-- `Flow`: media-player-like focused-work recorder.
-- `Flow dashboard`: the first screen, with a large animated daily stream, separate circular player controls, an Elastic series timeline, today's work, and a three-page statistics carousel.
-- `メモ`: stored on Todo.
-- `統計`: contribution-style grid for Tasks and Flow.
-- `履歴`: `Flow | タスク | 方向` history with shared `日 | 週 | 月` navigation; Habit summaries are grouped by Direction and weekly Tasks are divided by weekday.
+- Records focused work with Sprint, Focus, and Deep timers.
+- Connects actual focused time to Tasks and long-lived `方向` activity areas.
+- Preserves a detailed Flow/rest timeline and recalculates progress from history.
+- Shows daily, weekly, monthly, yearly, Task, and Direction statistics.
+- Syncs through the user's private iCloud database while retaining a local-only development mode.
+- Provides iPhone and macOS widgets, Live Activity and Dynamic Island, plus an Apple Watch companion.
+- Uses Japanese by default and includes English and Russian localizations.
 
-## Platforms
+`1 Block` is always 25 focused minutes. Breaks are not counted.
 
-The app is being built for Apple platforms, with current hands-on work focused on macOS while keeping iPhone/iPad compatibility in mind.
+## Platforms and requirements
 
-Default user-facing language is Japanese. Code identifiers and enum raw values stay in English.
+| Target | Minimum OS |
+| --- | --- |
+| macOS app | macOS 14.0 |
+| iPhone and iPad app | iOS/iPadOS 17.0 |
+| Apple Watch app | watchOS 10.0 |
 
-## Technology
+Development currently uses Xcode 26.6 and Apple system frameworks only. The app has no third-party runtime dependencies.
 
-- Swift
-- SwiftUI
-- SwiftData
-- Swift Testing
-- Apple system frameworks
-- Offline-first local storage
+## Build locally
 
-No third-party dependencies are used in the MVP.
+1. Clone the repository and open `ThruFlow.xcodeproj` in Xcode.
+2. Select `ThruFlow`, `ThruFlow iOS`, or `ThruFlow Watch`.
+3. For a signed iCloud build, replace the development team, bundle identifiers, App Group, and CloudKit container with values owned by your Apple Developer account.
+4. For deterministic local development, add the `--local-store` launch argument or set `THRUFLOW_DISABLE_CLOUDKIT=1`.
+
+Unsigned local verification:
+
+```sh
+THRUFLOW_DISABLE_CLOUDKIT=1 xcodebuild test \
+  -project ThruFlow.xcodeproj \
+  -scheme ThruFlow \
+  -destination 'platform=macOS' \
+  -only-testing:ThruFlowTests \
+  -parallel-testing-enabled NO \
+  -maximum-parallel-testing-workers 1 \
+  -derivedDataPath DerivedData/Tests \
+  CODE_SIGNING_ALLOWED=NO
+
+xcodebuild build \
+  -project ThruFlow.xcodeproj \
+  -scheme 'ThruFlow iOS' \
+  -configuration Release \
+  -destination 'generic/platform=iOS' \
+  -derivedDataPath DerivedData/iOS \
+  CODE_SIGNING_ALLOWED=NO
+```
+
+CloudKit synchronization cannot be validated in the simulator. Use signed builds on a real iPhone, Apple Watch, and Mac, and follow [the CloudKit guide](docs/CLOUDKIT.md).
 
 ## Documentation
 
-- [Concept](CONCEPT.md)
-- [Product](docs/PRODUCT.md)
-- [Domain Model](docs/DOMAIN_MODEL.md)
-- [Data Model](docs/DATA_MODEL.md)
-- [UX Flows](docs/UX_FLOWS.md)
-- [Technical Plan](docs/TECHNICAL_PLAN.md)
-- [MVP](docs/MVP.md)
+- [Product concept](CONCEPT.md)
+- [Product overview](docs/PRODUCT.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Domain model](docs/DOMAIN_MODEL.md)
+- [Data model](docs/DATA_MODEL.md)
+- [UX flows](docs/UX_FLOWS.md)
+- [CloudKit setup](docs/CLOUDKIT.md)
+- [Localization](docs/LOCALISATION.md)
+- [Onboarding copy and behavior (Russian)](Onboarding_ru.md)
+- [Release process](docs/RELEASE.md)
 - [Roadmap](docs/ROADMAP.md)
-- [Decisions](docs/DECISIONS.md)
-- [Japanese Vocabulary](docs/VOCABULARY.md)
+
+## Project policies
+
+- [Contributing](CONTRIBUTING.md)
+- [Contributors and attribution](CONTRIBUTORS.md)
+- [Licensing model](LICENSING.md)
+- [Security](SECURITY.md)
+- [Privacy](PRIVACY.md)
+- [Support](SUPPORT.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
+
+## Release status
+
+Passing CI is necessary but not sufficient for a TestFlight or App Store release. Device, CloudKit Production, StoreKit, privacy metadata, signing, archive validation, and TestFlight smoke checks remain manual release gates; see [Release process](docs/RELEASE.md).
+
+## License
+
+Unless otherwise noted, all original repository content is available under
+[`AGPL-3.0-or-later`](LICENSE). Official TestFlight and App Store binaries are
+separately distributed under Apple's applicable terms, and incoming
+contributions are accepted under `BSD-3-Clause`. See
+[`LICENSING.md`](LICENSING.md) for the complete policy.

@@ -36,11 +36,15 @@ There is no separate Inbox navigation item. Overdue normal Tasks appear in Today
 
 Reason: calendar planning should expose work that needs attention without adding another primary destination or mixing automatically generated Habit history into a manual backlog.
 
-## D-006: Todo Owns Memo
+## D-006: FlowSession Owns The Per-Flow Memo
 
-Flow memo is written to the associated Todo. FlowSession stores timing/history, not user-facing memo.
+Each submitted Flow memo is stored in `FlowSession.result`. When the Flow is
+linked to a Task, the same non-empty text is mirrored to `Todo.notes` for
+Task-level continuity. Submitting without text never clears an existing Task
+memo.
 
-Reason: the user describes what was done for the task, not for an abstract timer record.
+Reason: History must preserve what happened in each individual Flow, while the
+linked Task still benefits from the latest useful working note.
 
 ## D-007: Block Display Uses Half-Block Credits
 
@@ -59,6 +63,9 @@ When planned focus time ends, the timer continues. Break starts only after user 
 Reason: ThruFlow records actual work rhythm rather than forcing automatic Pomodoro transitions.
 
 ## D-009: Statistics Ranges
+
+Status: superseded by D-025, D-030, and D-031. Retained only as historical
+context for the original Statistics scope.
 
 Statistics ranges are:
 
@@ -155,6 +162,9 @@ deterministic offline/test path and avoiding a second persistence stack.
 
 ## D-021: Narrow Native iPhone MVP
 
+Status: superseded by D-022, D-031, and D-032. Retained as the first iPhone
+scope decision.
+
 The first iPhone target uses iOS 17.0 as its minimum deployment version and
 uses Flow as its root and default screen. Bottom navigation from Flow opens
 Tasks, History, and Directions, while Settings lives in the hamburger menu.
@@ -168,6 +178,9 @@ Reason: the core daily loop must be useful and stable on a phone before desktop
 analysis and editing surfaces are redesigned for touch.
 
 ## D-022: Material iPhone Shell and Shared Flow Mode Selector
+
+Status: navigation and Statistics scope are superseded by D-031 and D-032. The
+shared mode-selector and touch-presentation decisions remain active.
 
 The iPhone shell amends D-021 with four floating material navigation actions:
 Flow, Tasks, History, and Statistics. Settings moves to the trailing More menu.
@@ -266,10 +279,10 @@ terminating the widget process.
 ## D-026: Retrospective Task Records Reuse Todo And Flow
 
 History exposes one shared macOS/iOS `+` command for recording forgotten work.
-On macOS it remains in `履歴 > タスク`; on iOS it is a persistent bottom-trailing
-action across History modes so Flow recording remains reachable from the Flow
-timeline. Its Flow-style picker separates Tasks, Habits, and Directions. It can
-select an existing Todo occurrence, create a new Task, materialize an eligible
+It is a trailing toolbar action across History modes. macOS opens a trailing
+inspector and iOS opens the shared form in a sheet. Its Flow-style picker
+separates Tasks, Habits, and Directions. It can select an existing Todo
+occurrence, create a new Task, materialize an eligible
 missing historical Habit occurrence from its Direction template, or record
 Direction-only Flow. Recording Check needs only a date, accepts optional time,
 writes manual completion, and creates no Flow. Recording Block, Minute, or
@@ -454,9 +467,21 @@ nothing, and create no entitlement.
 Reason: support should remain visible to people who seek it without turning a
 focus tool into an advertising surface or pressuring a new user.
 
+## D-035: Settings Owns Complete Flow-History Deletion
+
+macOS exposes the native Settings scene through a gear at the bottom of its
+sidebar. macOS, iPhone, and iPad Settings can delete all `FlowSession`,
+`FlowSegment`, and `FlowBreak` records after an irreversible confirmation. The
+operation is unavailable while a restorable Flow runtime is active, runs as one model-actor
+transaction, preserves Tasks, Directions, Task memos, archive/delete markers,
+and manually checked state, then resets progress derived from Flow history.
+Private CloudKit propagates the deletion to the user's other devices.
+
+Reason: users need a clear release-grade way to erase recorded activity without
+destroying their planning structure or leaving totals inconsistent with an
+empty history.
+
 ## Open Questions
 
 - What measurement and planned amount should be used for an auto-created Task when Flow starts with only a Direction or with neither Direction nor Task?
-- Should Adaptive/Auto Flow remain, or should MVP expose only Sprint, Focus, and Deep?
 - How exactly should the “continue for longer break” prompt behave when less than 5 minutes remain to the next threshold?
-- What is the exact meaning of deleting the “last 1 Block” from a Flow series?

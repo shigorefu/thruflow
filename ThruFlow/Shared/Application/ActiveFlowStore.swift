@@ -287,8 +287,11 @@ final class ActiveFlowStore: ObservableObject {
 
     func completeResult(_ result: String?, modelContext: ModelContext, now: Date = .now) {
         let completedSessionID = activeSession?.id
-        activeSession?.result = normalizedResult(result)
-        activeSession?.todo?.setMemo(result, now: now)
+        let normalizedResult = normalizedResult(result)
+        activeSession?.result = normalizedResult
+        if let normalizedResult {
+            activeSession?.todo?.setMemo(normalizedResult, now: now)
+        }
         activeSession?.complete(now: now)
 
         if let timerState {
@@ -365,8 +368,11 @@ final class ActiveFlowStore: ObservableObject {
         }
 
         guard !discardShortFlowIfNeeded(timerState, modelContext: modelContext, now: now) else { return }
-        activeSession?.result = normalizedResult(result)
-        activeSession?.todo?.setMemo(result, now: now)
+        let normalizedResult = normalizedResult(result)
+        activeSession?.result = normalizedResult
+        if let normalizedResult {
+            activeSession?.todo?.setMemo(normalizedResult, now: now)
+        }
         isAwaitingBreakMemo = false
         notifications.cancelPendingFlowNotifications()
         beginBreak(from: timerState, modelContext: modelContext, now: now)

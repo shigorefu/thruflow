@@ -80,7 +80,7 @@ and produces one system success haptic on iPhone. It may also play the bundled
 `task-complete.caf` sound when that optional asset is present. Re-rendering an
 already completed Task never repeats the feedback.
 
-Quick capture behaves like a messenger composer. The user can set measurement, Direction, priority, date, and multiple hashtags from compact controls. The default measurement control reads `種類`; leaving it untouched creates a Check Task. It is one stable animated control: its leading icon distinguishes Check, Block ring, and filled Minute circle; Block and Minute states expose an inline numeric field and unit before the menu chevron. The remaining metadata controls are text-only on both platforms. Direction uses its configured color, priority uses red/neutral/green for high/medium/low, and date always remains neutral. On iOS the metadata row scrolls horizontally instead of compressing or clipping selected values. The priority menu keeps the fixed order `高`, `中`, `低い`, `余裕があれば`; the final option persists as low priority with its dedicated room-if-possible flag. Hashtags display with `#`, deduplicate case-insensitively, and preserve the first entered casing.
+Quick capture behaves like a messenger composer. The user can set measurement, Direction, priority, date, and multiple hashtags from compact controls. The default measurement control reads `種類`; leaving it untouched creates a Check Task. It is one stable animated control: its leading icon distinguishes Check, Block ring, and filled Minute circle; Block and Minute states expose an inline numeric field and unit before the menu chevron. The remaining metadata controls are text-only on both platforms. Direction uses its configured color, priority uses red/neutral/green for high/medium/low, and date always remains neutral. On iOS the metadata row scrolls horizontally instead of compressing or clipping selected values. The priority menu keeps the fixed order `高`, `中`, `低`, `余裕があれば`; the final option persists as low priority with its dedicated room-if-possible flag. Hashtags display with `#`, deduplicate case-insensitively, and preserve the first entered casing.
 
 The composer also recognizes `[]`, `[2b]`, `[30m]`, `@Direction`, `!high`, `/today`, and `#tag`. Completed tokens are removed from the persisted plain-text title, update the lower controls, and remain visible in a dedicated upper row inside the composer as semantic chips (`[]` becomes a `チェック` chip); clicking a chip removes its semantic value. English aliases always work, while Japanese and Russian aliases work in addition. Typing `@`, `!`, `/`, or `[` opens a contextual autocomplete surface above the composer. Each suggestion is clickable across its full row, and the current suggestion has an accent highlight. Mouse hover or `Up`/`Down` changes selection; `Return` applies it. An unknown Direction is never guessed: submitting it immediately opens the full Direction creation screen with the name prefilled; after cancellation the user can retry or explicitly create the Task under `その他`. Invalid tokens remain ordinary title text. A dismissible syntax legend appears above the composer only after typing begins, groups measurement shortcuts (`[ ]`, `[1b]`, `[25m]`) before metadata shortcuts (`@`, `!`, `/`, `#`), and can be restored from Settings. Autocomplete temporarily replaces the legend so the two surfaces never overlap. The primary submit action is an icon button in the composer's upper-right corner; unset Direction, priority, and date controls use neutral placeholder labels. Tasks and menu-bar quick creation use this same composer and interaction model.
 
@@ -131,7 +131,7 @@ Mode labels:
 - `Focus 25/5`;
 - `Deep 50/10`.
 
-Flow can be started with a selected Task, with only a Direction, or with neither. Direction-only work does not create an implicit Todo. If no Direction is chosen, the resolved Direction is `その他`. Automatic Task creation is deferred until its measurement and planned amount are defined.
+Flow can be started with a selected Task, with only a Direction, or with neither. Direction-only work does not create an implicit Todo. If no Direction is chosen, the resolved Direction is `その他`. Version 1.0 never creates a Task implicitly from Flow.
 
 At the planned focus end, Flow does not auto-switch. The timer continues. The user chooses:
 
@@ -143,7 +143,7 @@ While focus overtime is running, the primary pause control becomes `休憩` on
 macOS and iOS. Selecting it opens the normal break-memo flow; the break still
 does not start automatically.
 
-Stopping focus or starting break opens the same square memo panel in the dashboard and macOS menu bar player. It shows `お疲れ様です。メモを追加しますか？`, a large editor, `キャンセル` on the left, and one checkmark submit button on the right. The submit label is `メモなしで送信` for an empty editor and `送信` when text exists. Focus keeps counting while a break memo is open. Submitting text writes it to Todo; submitting an empty editor continues without changing the memo. Cancelling returns to the state before the prompt: a pending break returns to focus, while a stop prompt restores the previous running or paused Flow and removes its provisional progress. Stopping or skipping an existing rest never asks for memo again.
+Stopping focus or starting break opens the same square memo panel in the dashboard and macOS menu bar player. It shows `お疲れ様です。メモを追加しますか？`, a large editor, `キャンセル` on the left, and one checkmark submit button on the right. The submit label is `メモなしで送信` for an empty editor and `送信` when text exists. Focus keeps counting while a break memo is open. Submitting text writes it to `FlowSession.result` and mirrors it to `Todo.notes` when linked; submitting an empty editor continues without clearing an existing Task memo. Cancelling returns to the state before the prompt: a pending break returns to focus, while a stop prompt restores the previous running or paused Flow and removes its provisional progress. Stopping or skipping an existing rest never asks for memo again.
 
 On iPhone, successfully submitting the stop memo or starting the requested rest
 produces one system success haptic for the completed Flow. Cancelling the memo,
@@ -152,11 +152,11 @@ feedback.
 
 The trash action is phase-aware. During focus it deletes the current Flow and rolls back any credited Task/Direction progress through the canonical History editor. During rest it deletes only the active FlowBreak and closes the player, preserving the completed focus session and its progress.
 
-Before the first Flow, the dashboard uses the familiar neutral six-ribbon S-stream from the previous renderer. During the first canonical Block it continuously reveals a seventh ribbon, the deterministic profile-and-date topology, focus-weighted Direction colors, and additional depth. This transition happens inside one shader and never replaces or resets the current frame. The completed daily stream therefore becomes personal while a new user's empty dashboard remains immediately understandable. The resulting seven broad, bright, softly glowing translucent ribbons follow one shared channel. The seed remains identical on the user's synced Mac and iPhone and never changes with time of day. Back, middle, and foreground ribbons move at different speeds to create depth; later progress increases weave, glow, parallax, and detail while capped occupancy preserves readable gaps. Every completed half-Block sends a restrained light pulse through the channel. Idle stays in a calm `0.06...0.28` speed range at 30 FPS, while active Flow uses `1.10...2.80` at 60 FPS. Sprint uses energetic waves, Focus balanced waves, and Deep broad slow bends. Dark mode uses luminous additive composition; light mode uses controlled ink-style blending. The current Flow appears live after its first creditable minute. Reduce Motion, an inactive iOS scene, or a non-key macOS window freezes the last frame and stops further GPU updates. Selecting a completed timeline segment opens the existing Flow history inspector.
+Before the first Flow, the dashboard uses a familiar neutral six-ribbon S-stream. During the first canonical Block it continuously reveals a seventh ribbon, deterministic topology seeded by the date and the earliest stable Direction identifier, focus-weighted Direction colors, and additional depth. This transition happens inside one shader and never replaces or resets the current frame. The completed daily stream therefore becomes personal while a new user's empty dashboard remains immediately understandable. The resulting seven broad, bright, softly glowing translucent ribbons follow one shared channel. The seed remains identical on devices sharing the same synchronized database and never changes with time of day. Back, middle, and foreground ribbons move at different speeds to create depth; later progress increases weave, glow, parallax, and detail while capped occupancy preserves readable gaps. Every completed half-Block sends a restrained light pulse through the channel. Idle stays in a calm `0.06...0.28` speed range at 30 FPS, while active Flow uses `1.10...2.80` at 60 FPS. Sprint uses energetic waves, Focus balanced waves, and Deep broad slow bends. Dark mode uses luminous additive composition; light mode uses controlled ink-style blending. The current Flow appears live after its first creditable minute. Reduce Motion, an inactive iOS scene, or a non-key macOS window freezes the last frame and stops further GPU updates. Selecting a completed timeline segment opens the existing Flow history inspector.
 
 The dashboard timeline always uses `Elastic` and has no `24時間` control. When empty, it covers the current full hour and the following hour. Once activity exists, it expands from the first Flow's full hour through the full hour after the last Flow, never below two hours; this keeps short sessions visually meaningful. Hovering a dashboard timeline segment shows an immediate compact card with Task, clock interval, and focused duration. Clicking resolves one selected segment ID and opens one popover anchored to that exact timeline position, with Task, Direction, interval, focused duration, and Flow size. A red trash button deletes only that completed segment after confirmation and subtracts its progress; deleting the only segment deletes the Flow. Completed segments can continue to the canonical Flow history inspector; the active segment is read-only and marked `実行中`.
 
-The dashboard timeline uses a neutral dark rail for time without Flow. Every series containing a persisted rest receives one continuous light-gray underlay from its first Block through its final rest. The underlay and FlowSession Blocks have the same height. Blocks are rounded Direction-colored capsules above that underlay, so exposed gray intervals read as rests without becoming thinner, while unrelated series remain separated by the dark rail. FlowSegments caused by switching Tasks divide the color inside a Block edge-to-edge while sharing one outer capsule; they never appear as separately rounded Blocks or increment the Flow count. A context segment shorter than 60 focused seconds transfers wholesale to the newly selected Task/Direction; returning to the immediately preceding context during that window merges the adjacent segments. If the next Flow begins within 1.5 times the planned rest from rest start, both sessions retain separate history records but share one series ID and therefore one continuous underlay. Continuation windows are Sprint 4:30, Focus 7:30, Deep 15:00, and Long Break 30:00. After every 4 accumulated Blocks in the series, the next manually started rest becomes a 20-minute Long Break. Missing the window simply starts a new series.
+The dashboard timeline uses a neutral dark rail for time without Flow. Every series containing a persisted rest receives one continuous light-gray underlay from its first Block through its final rest. The underlay and FlowSession Blocks have the same height. Blocks are rounded Direction-colored capsules above that underlay, so exposed gray intervals read as rests without becoming thinner, while unrelated series remain separated by the dark rail. FlowSegments caused by switching Tasks divide the color inside a Block edge-to-edge while sharing one outer capsule; they never appear as separately rounded Blocks or increment the Flow count. A context segment shorter than 60 focused seconds transfers wholesale to the newly selected Task/Direction; returning to the immediately preceding context during that window merges the adjacent segments. If the next Flow begins within 1.5 times the planned rest from rest start, both sessions retain separate history records but share one series ID and therefore one continuous underlay. Continuation windows are Sprint 4:30, Focus 7:30, Deep 15:00, and `長休憩` 30:00. After every 4 accumulated Blocks in the series, the next manually started rest becomes a 20-minute `長休憩`. Missing the window simply starts a new series.
 
 Hovering a rest shows its type, interval, and duration above the timeline. Clicking a completed rest opens a duration editor anchored to that rest. Start time is fixed. If the new end overlaps the next Flow, that Flow and all later Flow/rest records in the same series move forward by the overlap. Free space absorbs an extension without shifting, shortening does not pull history backward, and unrelated series never move.
 
@@ -204,7 +204,7 @@ consumable StoreKit tips. A successful purchase shows thanks and finishes the
 verified transaction; cancellation is silent, pending approval is explained,
 and no purchase creates an entitlement or unlocks a feature.
 
-## iPhone MVP
+## iPhone and iPad
 
 The first iPhone surface is a Flow-first system `TabView`, with an independent
 `NavigationStack` inside each destination. `Flow` opens by default. The Flow tab
@@ -212,8 +212,9 @@ and macOS sidebar use the same three-wave template mark as the macOS menu bar,
 so primary Flow navigation has one icon across platforms. The tab bar
 remains visible and marks the active
 destination across five items: `Flow`, `タスク`, `履歴`, `方向`, and `統計`.
-On iOS 26 it uses the native Liquid Glass selection indicator and remains
-full-size while content scrolls; iOS 17–25 retain the system tab-bar appearance.
+On iOS 26 it uses the native Liquid Glass selection indicator, minimizes while
+content scrolls down, and returns on upward scrolling; iOS 17–25 retain the
+system tab-bar behavior.
 The system tab bar remains visible in `タスク`, matching the other primary
 destinations. A separate circular `+` command in the lower trailing corner
 opens the messenger composer and focuses its input. The composer includes an
@@ -284,9 +285,10 @@ clear. Editing an automatically generated Habit occurrence keeps its title,
 memo, and hashtags editable, while Direction, measurement, planned amount,
 priority, scheduled date, and deadline remain read-only values inherited from
 the Habit Direction. `履歴` provides touch-native `日 | 週 | 月` calendar ranges:
-day uses a vertically scrolling 24-hour timeline, week uses seven horizontally
-scrollable day columns, and month uses Apple Calendar-style numeric days with
-Direction-colored activity dots. Its period navigation matches `タスク`: `日`
+day uses a chronological list of saved Flow/rest records and meaningful
+internal gaps, week uses seven horizontally scrollable day columns, and month
+uses Apple Calendar-style numeric days with Direction-colored activity dots.
+Its period navigation matches `タスク`: `日`
 shows seven date cards, `週` shows previous/current/next week cards, and `月`
 shows the month calendar above the selected History mode. These controls mark
 only recorded Flow activity. Day and week use the same native horizontally
@@ -307,7 +309,7 @@ and editor. The standalone iPhone `統計` provides the same report contents and
 filters as macOS in a touch-native vertical card workspace. Full drag-based
 calendar/history editing remains deferred.
 
-The iPhone MVP supports starting and controlling Flow, selecting today's Task or
+The iPhone app supports starting and controlling Flow, selecting today's Task or
 Habit, completing Check Tasks, creating and editing Tasks and Directions, and
 changing the basic shared settings. Private CloudKit synchronization carries the
 same SwiftData records between devices signed into one Apple ID. Japanese is the
@@ -536,7 +538,7 @@ fixed value. The visible `表示` label and duplicate in-content filters are rem
 aggregates on the left and a mini-calendar plus range summary on the right. At
 compact widths, the calendar and summary stack above the aggregate list.
 
-On iPhone, the trailing History dropdown switches between the same `Flow`,
+On iPhone, the leading History dropdown switches between the same `Flow`,
 `タスク`, and `方向` modes without duplicating date navigation. The system Search
 toolbar item is an icon-only magnifying glass and expands only when selected.
 Task and Direction aggregates use the active `日 | 週 | 月` interval. Task History
@@ -593,10 +595,11 @@ summaries, History/Statistics grouping, watchOS, and widgets continue to use the
 previous logical day. Changing it takes effect immediately and does not rewrite
 stored Task dates or Flow timestamps.
 
-The Flow inspector limits its Task picker to Tasks scheduled on the Flow date plus the currently assigned Task. It edits time through linked `開始`, `終了`, and direct `分` fields: start/end changes recalculate minutes, and minute changes keep start fixed while moving end.
-
-- `カレンダー`: day, week, and month calendar history.
-- `タスク`: focus totals grouped by Task.
-- `方向`: focus totals grouped by Direction.
-
-Task completion timestamps remain available to Task summaries and Statistics, but are not rendered in the Flow calendar. Selecting a Flow opens its inspector for correction or deletion.
+The bottom of the macOS sidebar contains a system `設定` gear that opens this
+same Settings scene. The `データ` section on macOS, iPhone, and iPad offers
+`Flow履歴をすべて削除`. It is disabled while a Flow is active. A destructive
+confirmation explains that all FlowSession, FlowSegment, and FlowBreak records
+will be removed from every device through private CloudKit and cannot be
+restored. The operation runs in a model actor so Settings remains responsive.
+Tasks, Directions, Task memos, and manually checked state remain; all
+Flow-derived Task and Direction progress is reset.

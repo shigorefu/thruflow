@@ -4,8 +4,8 @@
 
 ThruFlow keeps one product model and one persistence model while allowing each
 Apple platform to provide its own application shell and feature presentation.
-macOS remains the complete editing and analysis surface. The iPhone app is a
-separate, Flow-first MVP presentation that reuses the same domain, application
+macOS remains the complete desktop editing and analysis surface. The iPhone app
+uses a separate, Flow-first presentation that reuses the same domain, application
 state, and persistence schema without copying the desktop UI.
 
 ## Source Layout
@@ -126,6 +126,11 @@ Each platform owns its composition root:
 - `SupportPurchaseStore` is the single StoreKit 2 boundary for optional
   consumable tips. It accepts only verified transactions, finishes them, and
   exposes no entitlement because support purchases unlock no functionality.
+- `FlowHistoryDeletionActor` performs the user-requested full Flow-history
+  purge away from the main UI. `FlowHistoryDeletionService` rejects an active
+  Flow, deletes Flow/segment/break records in one save, and resets only
+  Flow-derived Task and Direction progress. Platform Settings own confirmation
+  and presentation, not deletion rules.
 
 - `Platforms/iOS/App/ThruFlowiOSApp.swift` declares the universal iPhone/iPad scene and injects
   the same `ActiveFlowStore`, `AppSettings`, calendar, locale, and model schema.
@@ -225,7 +230,7 @@ or updated after iOS adopts the persisted runtime.
 - A shared-layer change must build the macOS target and pass its relevant unit
   tests before it is used by a second platform.
 
-## iPhone MVP Boundary
+## iPhone and iPad presentation
 
 The first iPhone release includes the Flow dashboard, Tasks/Habits across
 day/week/month ranges, Direction management and ordering, day/week/month
@@ -234,9 +239,10 @@ period-report Statistics feature in a native iPhone presentation, basic
 settings, and CloudKit synchronization.
 Its persistent five-item navigation contains
 `Flow`, `タスク`, `履歴`, `方向`, and `統計`. The shell uses the system `TabView`
-so iOS owns selection, accessibility, and Liquid Glass while the tab bar remains
-full-size during scrolling; Tasks temporarily hides the tab bar and animates in
-the quick-capture composer.
+so iOS owns selection, accessibility, and Liquid Glass. On iOS 26 the tab bar
+minimizes while content scrolls down and returns on upward scrolling; older
+systems keep their native tab-bar behavior. The Task quick-capture composer is
+presented above that system navigation.
 Drag-based calendar rescheduling remains macOS-only. Statistics calculations
 are shared, but desktop views are never compiled into the iOS target. iOS uses
 native cards, sheets, search, ShareLink, and navigation

@@ -1,0 +1,41 @@
+name: Feature request
+description: Propose a focused improvement to the product
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user problem or workflow gap does this solve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe the smallest useful outcome, not only a visual control.
+    validations:
+      required: true
+
+  - type: textarea
+    id: platforms
+    attributes:
+      label: Platform considerations
+      description: Explain how this should behave on macOS, iPhone/iPad, and Watch when relevant.
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope check
+      options:
+        - label: I checked the roadmap and existing issues.
+          required: true
+        - label: This request preserves the core Direction → Task → Flow → progress loop.
+          required: true

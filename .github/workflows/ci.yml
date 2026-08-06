@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build and test Apple targets
+    runs-on: macos-26
+    timeout-minutes: 45
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Test macOS domain and app logic
+        env:
+          THRUFLOW_DISABLE_CLOUDKIT: "1"
+        run: |
+          xcodebuild test \
+            -project ThruFlow.xcodeproj \
+            -scheme ThruFlow \
+            -destination 'platform=macOS' \
+            -only-testing:ThruFlowTests \
+            -parallel-testing-enabled NO \
+            -maximum-parallel-testing-workers 1 \
+            -derivedDataPath DerivedData/CI-macOS \
+            CODE_SIGNING_ALLOWED=NO \
+            COMPILER_INDEX_STORE_ENABLE=NO
+
+      - name: Build macOS release
+        run: |
+          xcodebuild build \
+            -project ThruFlow.xcodeproj \
+            -scheme ThruFlow \
+            -configuration Release \
+            -destination 'generic/platform=macOS' \
+            -derivedDataPath DerivedData/CI-macOS-Release \
+            CODE_SIGNING_ALLOWED=NO \
+            COMPILER_INDEX_STORE_ENABLE=NO
+
+      - name: Build iOS release with embedded Watch app
+        run: |
+          xcodebuild build \
+            -project ThruFlow.xcodeproj \
+            -scheme 'ThruFlow iOS' \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath DerivedData/CI-iOS \
+            CODE_SIGNING_ALLOWED=NO \
+            COMPILER_INDEX_STORE_ENABLE=NO

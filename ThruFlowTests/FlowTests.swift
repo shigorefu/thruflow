@@ -645,6 +645,68 @@ struct FlowTests {
         #expect(direction.recordedFocusSeconds == 0)
     }
 
+    @Test @MainActor func completingWithoutMemoPreservesExistingTaskMemo() throws {
+        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let start = Date(timeIntervalSince1970: 8_750)
+        let direction = Direction(name: "執筆", type: .neutral)
+        let todo = Todo(
+            title: "本文",
+            notes: "既存のメモ",
+            direction: direction,
+            measurement: .minutes,
+            plannedAmount: 30
+        )
+        context.insert(direction)
+        context.insert(todo)
+
+        let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
+        let store = ActiveFlowStore(defaults: defaults, notifications: TestFlowNotificationService())
+        store.configure(direction: direction, todo: todo, mode: .twentyFiveFive)
+        store.start(direction: direction, todo: todo, modelContext: context, now: start)
+        store.stop(modelContext: context, now: start.addingTimeInterval(10 * 60))
+        let session = try #require(store.activeSession)
+
+        store.completeResult(nil, modelContext: context, now: start.addingTimeInterval(10 * 60 + 1))
+
+        #expect(todo.notes == "既存のメモ")
+        #expect(session.result == nil)
+        #expect(session.status == .completed)
+    }
+
+    @Test @MainActor func startingBreakWithoutMemoPreservesExistingTaskMemo() throws {
+        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let start = Date(timeIntervalSince1970: 8_900)
+        let direction = Direction(name: "執筆", type: .neutral)
+        let todo = Todo(
+            title: "本文",
+            notes: "既存のメモ",
+            direction: direction,
+            measurement: .minutes,
+            plannedAmount: 30
+        )
+        context.insert(direction)
+        context.insert(todo)
+
+        let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
+        let store = ActiveFlowStore(defaults: defaults, notifications: TestFlowNotificationService())
+        store.configure(direction: direction, todo: todo, mode: .twentyFiveFive)
+        store.start(direction: direction, todo: todo, modelContext: context, now: start)
+        store.requestBreakMemo(modelContext: context, now: start.addingTimeInterval(25 * 60))
+        let session = try #require(store.activeSession)
+
+        store.completeBreakMemo(nil, modelContext: context, now: start.addingTimeInterval(25 * 60 + 1))
+
+        #expect(todo.notes == "既存のメモ")
+        #expect(session.result == nil)
+        #expect(store.phase == .breakTime)
+    }
+
     @Test @MainActor func startingWorkDuringBreakImmediatelyCreatesNextFlow() throws {
         let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)

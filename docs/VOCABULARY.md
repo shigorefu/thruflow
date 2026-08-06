@@ -25,7 +25,7 @@ first so GitHub contributors have one shared terminology table.
 | Minutes | 分 |
 | Priority high | 高 |
 | Priority medium | 中 |
-| Priority low | 低い |
+| Priority low | 低 |
 | If there is room | 余裕があれば |
 | Flow | Flow |
 | Rest | 休憩 |

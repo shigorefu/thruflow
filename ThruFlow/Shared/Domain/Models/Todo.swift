@@ -41,7 +41,7 @@ enum TodoPriority: String, CaseIterable, Codable, Identifiable {
         case .medium:
             String(localized: "中")
         case .low:
-            String(localized: "低い")
+            String(localized: "低")
         }
     }
 }

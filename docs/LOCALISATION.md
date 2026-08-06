@@ -4,8 +4,9 @@
 
 `ThruFlow/Localisation/Localizable.xcstrings` owns all user-facing copy.
 Japanese is the development and fallback language. The catalog is part of the
-application target and uses Apple's String Catalog format so macOS and future
-iOS presentation layers share translations without sharing screen layouts.
+application target and uses Apple's String Catalog format so macOS and
+iOS/iPadOS presentation layers share translations without sharing screen
+layouts.
 
 The maintained application locales are Japanese (`ja`), English (`en`), and
 Russian (`ru`). Every catalog entry must contain complete English and Russian

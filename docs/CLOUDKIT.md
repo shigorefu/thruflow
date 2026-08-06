@@ -7,9 +7,10 @@
 - Test bundle identifiers use the lowercase suffixes `.tests` and `.uitests`.
 - Shared container: `iCloud.com.shigorefu.thruflow`.
 - Service: CloudKit private database. There is no public/shared database product
-  behavior in the current MVP.
+  behavior in version 1.x.
 - iOS minimum deployment target: 17.0. Builds use Xcode 26 and the installed iOS
   26 SDK without making iOS 26 the deployment target.
+- macOS minimum deployment target: 14.0; watchOS minimum deployment target: 10.0.
 
 Both app targets contain the CloudKit entitlement. `AppModelContainerFactory`
 uses the same SwiftData schema and private container on normal signed runs.
@@ -94,11 +95,11 @@ deploy that schema to Production. Do not deploy schema changes casually:
 production CloudKit schema changes are forward-only and must remain compatible
 with existing app versions and local SwiftData stores.
 
-## Current Provisioning Blockers
+## Provisioning Requirements
 
-The project and entitlements are configured. A physical-device development
-profile cannot be generated until at least one iPhone is registered with the
-team. The current Mac must also be registered before Xcode can issue the Mac App
-Development profile needed for signed UI tests and CloudKit diagnostics.
-Connecting/registering both devices through Xcode resolves these provisioning
-blocks; they are not code or schema failures.
+Signed CloudKit verification requires registered physical devices and matching
+development profiles for every tested target. TestFlight/App Store archives
+additionally require an Apple Distribution certificate and current App Store
+provisioning profiles for the app and each embedded extension. These signing
+assets stay outside the repository and must be checked in Xcode and App Store
+Connect as part of every release gate.

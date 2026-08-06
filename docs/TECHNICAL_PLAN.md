@@ -12,15 +12,19 @@ The canonical source layout and dependency rules are documented in
 
 SwiftUI views should call domain logic instead of owning product rules directly.
 
-The macOS application shell and complete feature screens live under
-`Platforms/macOS`. The separate `ThruFlow iOS` target owns a narrow iPhone UI
-under `Platforms/iOS` and never imports the macOS folder. Both targets depend on
-the models, logic, application state, services, and small controls in `Shared`.
+The macOS application shell and desktop feature screens live under
+`Platforms/macOS`. The universal `ThruFlow iOS` target owns adaptive iPhone and
+iPad presentation under `Platforms/iOS` and never imports the macOS folder.
+Both targets depend on the models, logic, application state, services, and
+small controls in `Shared`.
 
 Normal app composition uses the private CloudKit database in
 `iCloud.com.shigorefu.thruflow`. Tests explicitly use an in-memory local store.
 The iOS deployment target is 17.0 even when building with Xcode 26 and the iOS
 26 SDK; iOS 26-only APIs require availability guards and an explicit product need.
+The macOS deployment target is 14.0, the oldest supported release with the
+SwiftData foundation used by the shared persistence layer. The watchOS companion
+targets watchOS 10.0 to match the iOS 17 generation.
 
 ## Current Data Rules
 
@@ -40,10 +44,11 @@ The iOS deployment target is 17.0 even when building with Xcode 26 and the iOS
 - `HabitTodoReconciler` repairs duplicate active Habit occurrences for the same Direction/day, preserves related Flow history and progress, and soft-deletes redundant rows.
 - `FlowProgressCalculator` defines focused-time conversion for isolated calculations.
 - `FlowProgressReconciler` rebuilds measured Todo progress/completion and Direction focus totals from credited Flow history after every history mutation and once at app launch.
-- `Todo.notes` stores memo.
+- `FlowSession.result` stores the memo for one Flow; linked writes mirror to
+  `Todo.notes` for Task-level continuity.
 - `FlowSession` stores timing/history.
 - `FlowSegment` stores Task/Direction intervals and cumulative focused-second boundaries within a FlowSession.
-- `FlowBreak` stores explicit rest and UUID links between adjacent sessions in a Flow series; `FlowSeriesPolicy` owns continuation windows and Long Break thresholds.
+- `FlowBreak` stores explicit rest and UUID links between adjacent sessions in a Flow series; `FlowSeriesPolicy` owns continuation windows and `長休憩` thresholds.
 - `Todo.completedAt` stores the exact completion time for new completions.
 - `DayHistoryBuilder` creates daily Task/Direction aggregates and legacy day projections.
 - `HistoryCalendarBuilder` creates day/week/month calendar projections from actual Flow and break records; Todo completion never creates a calendar item. `FlowHistoryEditor` moves a completed FlowSession and all of its segments by one shared time offset for calendar drag-and-drop.
@@ -52,6 +57,11 @@ The iOS deployment target is 17.0 even when building with Xcode 26 and the iOS
 - `HistoryCalendarSeriesProjector` groups connected Flow/rest records into week-only composite presentation blocks while preserving the underlying records for editing.
 - `HistoryOverlapLayout` assigns deterministic side-by-side lanes using actual and minimum visual duration so short records cannot overlap in rendering.
 - `FlowHistoryEditor` creates independent completed manual Flow records and delegates affected progress rebuilding to `FlowProgressReconciler` when history changes.
+- `FlowHistoryDeletionService` atomically purges all FlowSession/FlowSegment/
+  FlowBreak records only when no active Flow exists, preserves Task/Direction
+  entities and manual Check state, and resets Flow-derived progress.
+- `FlowHistoryDeletionActor` runs that purge away from the main UI for macOS,
+  iPhone, and iPad Settings.
 - `FlowDashboardBuilder` derives today's totals, Direction palette, and timeline segments from `FlowSession`, with a live overlay for the active creditable Flow.
 - `DashboardStatisticsBuilder` derives seven-day bars, previous-day deltas, and the most-grown Direction outside SwiftUI.
 - `FlowVisualState` converts 0...6 daily Blocks into clamped speed, volume, detail, depth, glow, and mode-specific wave character without placing those rules in SwiftUI. Its separate `identityReveal` reaches 1 during the first Block.
@@ -81,9 +91,9 @@ The iOS deployment target is 17.0 even when building with Xcode 26 and the iOS
   Extension reads that Codable snapshot and uses system date-backed timer and
   progress views. The Home Screen widget never opens SwiftData, schedules a
   per-second timeline, or owns transport behavior.
-- `IOSProductWidgetSnapshotSyncView` observes Todo, Direction, and FlowSession
-  changes in the iOS application. `ProductWidgetSnapshotBuilder` produces the
-  canonical Today Tasks and 180-day Flow Dots projections, then stores Codable
+- `ProductWidgetSnapshotSyncView` observes Todo, Direction, and FlowSession
+  changes in the iOS and macOS applications. `ProductWidgetSnapshotBuilder`
+  produces the canonical Today Tasks and 180-day Flow Dots projections, then stores Codable
   snapshots in the same App Group and reloads `TasksWidget` and
   `FlowDotsWidget`. The Widget Extension renders the latest 30, 60, or 90 days
   from that single snapshot according to Widget family and schedules a
@@ -114,7 +124,7 @@ Cover:
   distribution grouping, and deterministic CSV.
 - Day-history grouping, legacy untimed completions, deterministic Flow progress reconciliation after create/edit/delete, and duration-preserving Flow moves.
 - Manual Flow creation, linked Task progress without implicit completion, and fixed-Direction Task creation.
-- Flow series continuation, Long Break thresholds, rest correction, and same-series downstream shifting.
+- Flow series continuation, `長休憩` thresholds, rest correction, and same-series downstream shifting.
 - Active Task/Direction switching transfers sub-minute context mistakes to the new context, merges an immediate return, and never creates another FlowSession.
 - Flow dashboard totals, palette ordering, day filtering, live minimum-credit behavior, and timeline normalization.
 - Dashboard statistics distribution, seven-day trend comparisons, and completion projection.
@@ -146,4 +156,4 @@ placement, real-screen navigation, Back, Skip, all seven cards, and Finish.
 
 ## Migration Caution
 
-Avoid removing SwiftData fields such as `FlowSession.result` without a deliberate migration step. It can remain as legacy-compatible storage while new memo writes go to Todo.
+Avoid removing SwiftData fields such as `FlowSession.result` without a deliberate migration step. It is the per-Flow memo source; linked writes also mirror the value to `Todo.notes` for Task-level continuity.

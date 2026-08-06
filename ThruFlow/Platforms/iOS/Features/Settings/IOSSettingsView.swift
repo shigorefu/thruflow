@@ -1,8 +1,14 @@
+import SwiftData
 import SwiftUI
 
 struct IOSSettingsView: View {
+    @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var activeFlowStore: ActiveFlowStore
     @EnvironmentObject private var settings: AppSettings
     @EnvironmentObject private var onboarding: OnboardingStore
+    @State private var showsDeleteHistoryConfirmation = false
+    @State private var isDeletingHistory = false
+    @State private var deletionStatus: HistoryDeletionStatus?
 
     var body: some View {
         Form {
@@ -73,9 +79,73 @@ struct IOSSettingsView: View {
                 }
             }
 
+            historyDataSection
+
             SupportSettingsSection()
         }
         .iosCenteredNavigationTitle(String(localized: "設定"))
+        .alert(
+            String(localized: "すべてのFlow履歴を削除しますか？"),
+            isPresented: $showsDeleteHistoryConfirmation
+        ) {
+            Button(String(localized: "キャンセル"), role: .cancel) {}
+            Button(String(localized: "すべて削除"), role: .destructive) {
+                deleteAllHistory()
+            }
+        } message: {
+            Text(String(localized: "すべての端末からFlowと休憩の履歴が削除されます。タスクと方向は残り、Flowから計算された進捗はリセットされます。この操作は取り消せません。"))
+        }
+    }
+
+    private var historyDataSection: some View {
+        Section(String(localized: "データ")) {
+            Button(role: .destructive) {
+                showsDeleteHistoryConfirmation = true
+            } label: {
+                Label(String(localized: "Flow履歴をすべて削除"), systemImage: "trash")
+            }
+            .disabled(isDeletingHistory || activeFlowStore.timerState != nil)
+
+            if isDeletingHistory {
+                HStack(spacing: 8) {
+                    ProgressView()
+                    Text(String(localized: "Flow履歴を削除しています…"))
+                }
+                .foregroundStyle(.secondary)
+            } else if activeFlowStore.timerState != nil {
+                Label(
+                    String(localized: "履歴を削除する前に、現在のFlowを終了してください。"),
+                    systemImage: "timer"
+                )
+                .foregroundStyle(.secondary)
+            } else if let deletionStatus {
+                Label(deletionStatus.message, systemImage: deletionStatus.symbolName)
+                    .foregroundStyle(deletionStatus.isError ? Color.red : Color.secondary)
+            }
+
+            Text(String(localized: "タスク、方向、タスクのメモは残ります。チェック済みタスクの状態も変更されません。"))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private func deleteAllHistory() {
+        guard !isDeletingHistory else { return }
+        isDeletingHistory = true
+        deletionStatus = nil
+        let deletionActor = FlowHistoryDeletionActor(modelContainer: modelContext.container)
+
+        Task {
+            do {
+                _ = try await deletionActor.deleteAll()
+                deletionStatus = .success
+            } catch FlowHistoryDeletionError.activeFlowExists {
+                deletionStatus = .activeFlow
+            } catch {
+                deletionStatus = .failure
+            }
+            isDeletingHistory = false
+        }
     }
 
     private var languageOptions: [(code: String, name: String)] {
@@ -97,5 +167,31 @@ struct IOSSettingsView: View {
 
     private func languageName(for code: String) -> String {
         Locale.autoupdatingCurrent.localizedString(forIdentifier: code) ?? code
+    }
+}
+
+private enum HistoryDeletionStatus {
+    case success
+    case activeFlow
+    case failure
+
+    var message: String {
+        switch self {
+        case .success: String(localized: "Flow履歴を削除しました")
+        case .activeFlow: String(localized: "履歴を削除する前に、現在のFlowを終了してください。")
+        case .failure: String(localized: "Flow履歴を削除できませんでした")
+        }
+    }
+
+    var symbolName: String {
+        switch self {
+        case .success: "checkmark.circle"
+        case .activeFlow: "timer"
+        case .failure: "exclamationmark.triangle"
+        }
+    }
+
+    var isError: Bool {
+        self == .failure
     }
 }

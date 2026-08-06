@@ -107,7 +107,7 @@ Persisted data includes:
 - identity and `seriesID`;
 - previous FlowSession ID and optional next FlowSession ID;
 - rest start, timer-stop, series-connection, and optional manually adjusted end timestamps;
-- planned rest duration and Long Break flag;
+- planned rest duration and `長休憩` flag;
 - creation/update timestamps and soft-delete timestamp.
 
 The continuation deadline is derived as `startedAt + plannedDurationSeconds × 1.5`. A next Flow started on or before that deadline receives the same `seriesID`; a later Flow starts a new series. `connectedUntil` stores the original series connection point. Optional `adjustedEndAt` stores a historical duration correction without rewriting the planned break used by product policy.
@@ -121,9 +121,9 @@ Normal continuation windows are:
 | Sprint | 3 min | 4 min 30 sec |
 | Focus | 5 min | 7 min 30 sec |
 | Deep | 10 min | 15 min |
-| Long Break | 20 min | 30 min |
+| `長休憩` | 20 min | 30 min |
 
-A 20-minute Long Break is selected after each additional 4 accumulated Blocks in the same series. It still starts only when the user manually starts rest.
+A 20-minute `長休憩` is selected after each additional 4 accumulated Blocks in the same series. It still starts only when the user manually starts rest.
 
 ## Retrospective Records
 

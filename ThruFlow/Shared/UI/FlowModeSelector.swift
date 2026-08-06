@@ -27,6 +27,27 @@ struct FlowModeSelector: View {
     @ViewBuilder
     private var modePicker: some View {
 #if os(macOS)
+        if #available(macOS 26.0, *) {
+            macOSModePicker
+                .glassEffect(
+                    .regular.interactive(isSelectionEnabled),
+                    in: Capsule()
+                )
+        } else {
+            macOSModePicker
+                .background(.regularMaterial, in: Capsule())
+                .overlay {
+                    Capsule()
+                        .stroke(Color.primary.opacity(0.1), lineWidth: 1)
+                }
+        }
+#else
+        segmentedPicker
+#endif
+    }
+
+#if os(macOS)
+    private var macOSModePicker: some View {
         HStack(spacing: 0) {
             ForEach(modes) { mode in
                 Button {
@@ -51,14 +72,8 @@ struct FlowModeSelector: View {
             }
         }
         .padding(3)
-        .glassEffect(
-            .regular.interactive(isSelectionEnabled),
-            in: Capsule()
-        )
-#else
-        segmentedPicker
-#endif
     }
+#endif
 
     private var segmentedPicker: some View {
         Picker(String(localized: "Flowタイプ"), selection: selectionBinding) {

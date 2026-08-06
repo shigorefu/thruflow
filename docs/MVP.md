@@ -1,6 +1,6 @@
-# MVP
+# Version 1.0 scope
 
-Current MVP goal:
+Version 1.0 goal:
 
 ```text
 方向 -> Task -> Flow -> actual focused time -> progress -> statistics
@@ -21,16 +21,17 @@ Current MVP goal:
 - Flow player with Sprint, Focus, and Deep modes.
 - First/default `Flow` dashboard with expanded player, animated daily stream, totals, and Elastic Flow timeline.
 - Task switching inside an active Flow through persisted Flow segments.
-- Persisted Flow series, editable rests, continuation windows, and a 20-minute Long Break after every 4 Blocks in a series.
+- Persisted Flow series, editable rests, continuation windows, and a 20-minute `長休憩` after every 4 Blocks in a series.
 - Manual break start with memo before break begins.
 - Shared square memo panel in the dashboard and macOS menu bar player.
-- Todo memo storage.
+- Per-Flow memo storage in `FlowSession.result`, mirrored to `Todo.notes` when linked.
 - Canonical `履歴` with Flow calendar and Task/Direction aggregates for `日`, `週`, and `月`.
 - Manual historical Flow creation and correction without automatically completing a linked Task.
 - Dashboard statistics carousel for time distribution, a 7-day Flow trend, and completion status.
 - Flow and Tasks contribution-style statistics.
+- Configurable combined, Flow-only, and Task-only Statistics CSV export.
 - Private CloudKit synchronization between the user's signed-in Apple devices.
-- Flow-first iPhone MVP with the animated stream above the complete player,
+- Flow-first iPhone and iPad app with the animated stream above the complete player,
   separate full-width Tasks and Statistics dashboard cards, and a persistent
   five-item material navigation surface: `Flow`, `タスク`, `履歴`, `方向`, and
   `統計`. The Tasks screen replaces that surface with quick capture; the native
@@ -72,6 +73,10 @@ Current MVP goal:
   (JPY 100) / Ramen (JPY 500) StoreKit tips that unlock no features.
 - A non-promotional StoreKit review request after seven days and meaningful
   completed-Flow use, at most once per app version.
+- Native Settings on macOS, iPhone, and iPad can irreversibly delete all Flow
+  and break history after confirmation while preserving Tasks, Directions,
+  Task memos, and manually checked state; the macOS sidebar exposes Settings
+  through a bottom gear.
 
 ## Not Included
 
@@ -83,14 +88,9 @@ Current MVP goal:
 - Food/sleep/game classification.
 - Complex rewards.
 - Accounts/subscriptions.
-- Advanced iPhone `統計` beyond the contribution overview and dashboard
-  carousel.
-- Full iPhone History/calendar editing.
 
 ## Known Product Gaps
 
 - If iOS suspends the application before a Flow crosses zero, Live Activity can
   remain visually at `00:00` until the next application launch or foreground
   update. Canonical Flow time still advances from persisted absolute dates.
-- Automatic Task creation for Flow without a selected Task needs measurement and planned-amount defaults.
-- Product-level deletion of an arbitrary amount from a complete Flow series needs clarification; exact sessions and segments can already be corrected or deleted in History.

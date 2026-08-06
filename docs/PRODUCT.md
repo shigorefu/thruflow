@@ -62,13 +62,13 @@ Modes:
 - `Focus`: 25 focus / 5 break = 1 Block.
 - `Deep`: 50 focus / 10 break = 2 Blocks.
 
-Focus does not auto-stop or auto-switch to break. Break starts only after the user confirms memo. The dashboard and menu bar use the same square memo panel with two stable actions: cancel on the left and a checkmark submit action on the right. The submit label is `メモなしで送信` while the editor is empty and `送信` after text is entered. Memo is stored on Todo, not FlowSession, and rest completion never prompts again. The rest timer ring is neutral gray and drains while the focus ring fills with the selected Direction color.
+Focus does not auto-stop or auto-switch to break. Break starts only after the user confirms memo. The dashboard and menu bar use the same square memo panel with two stable actions: cancel on the left and a checkmark submit action on the right. The submit label is `メモなしで送信` while the editor is empty and `送信` after text is entered. Each submitted memo is stored in `FlowSession.result`; a linked Flow also mirrors the text to `Todo.notes`. Submitting without a memo preserves an existing Task memo, and rest completion never prompts again. The rest timer ring is neutral gray and drains while the focus ring fills with the selected Direction color.
 
-Flow sessions may share a stable series ID when the next session starts within 1.5 times the planned rest. The next rest after each 4 accumulated Blocks is a 20-minute Long Break with a 30-minute continuation window. History preserves separate Flow and rest records; only the dashboard renders their series as one continuous rail.
+Flow sessions may share a stable series ID when the next session starts within 1.5 times the planned rest. The next rest after each 4 accumulated Blocks is a 20-minute `長休憩` with a 30-minute continuation window. History preserves separate Flow and rest records; only the dashboard renders their series as one continuous rail.
 
 The active creditable Flow updates the dashboard live. Completed timeline segments open the existing historical Flow inspector.
 
-Flow may start with a Task, only a Direction, or neither. Direction-only work is persisted without an implicit Todo; work without either resolves to system `その他`. Automatic Task creation is deferred until its measurement and planned amount have explicit defaults.
+Flow may start with a Task, only a Direction, or neither. Direction-only work is persisted without an implicit Todo; work without either resolves to system `その他`. Version 1.0 never creates a Task implicitly from Flow.
 
 ## Statistics
 
@@ -116,7 +116,7 @@ Dots widgets keep their separate compact 30/60/90-day snapshots.
 
 ## History
 
-`履歴` is the single canonical History surface and a dedicated navigation item below `タスク`. Clicking a statistics cell switches navigation to this section on that date; Statistics does not embed another history view. Its toolbar filter follows the active tab: calendar visibility for `Flow`, `タスク / 習慣 / ナイス` for Task summaries, and `通常 / 習慣 / ナイス` for Direction summaries. In the day range, the right calendar column also shows `この日の記録`.
+`履歴` is the primary History surface and a dedicated navigation item below `タスク`. Clicking a statistics cell switches navigation to this section on that date; Statistics does not embed another history view. Its toolbar filter follows the active tab: calendar visibility for `Flow`, `タスク / 習慣 / ナイス` for Task summaries, and `通常 / 習慣 / ナイス` for Direction summaries. In the day range, the right calendar column also shows `この日の記録`.
 
 Completed breaks are edited with synchronized end-time and minute-duration controls. The start remains fixed; extending a break shifts only later records in the same Flow series when they overlap.
 
@@ -155,8 +155,15 @@ stays centered above a uniformly dimmed real workspace while the corresponding
 feature screen opens behind it. The introduction has no spotlight, highlighted
 target, anchor projection, or automatic target scrolling. Its final card
 summarizes the loop as `方向 → タスク → Flow → 履歴・統計 → 次の一歩`. It writes no
-sample records to SwiftData or CloudKit, and Settings can replay the same
-journey at any time.
+sample records to SwiftData or CloudKit, and
+`設定 > ヘルプ > 使い方を見る` can replay the same journey at any time.
+
+On macOS, a gear at the bottom of the sidebar opens the same native Settings
+window. The `データ` section on macOS, iPhone, and iPad can delete every Flow and
+break record after an irreversible-action confirmation. Deletion is unavailable
+while a Flow is active, runs away from the main UI, and synchronizes through the
+private CloudKit store. Tasks, Directions, Task memos, and manually checked Task state
+remain; measured Task and Direction progress is reset to zero.
 
 Settings also contains voluntary support actions: App Store review, the public
 GitHub project, and two StoreKit consumable tips (`Coffee`, JPY 100, and

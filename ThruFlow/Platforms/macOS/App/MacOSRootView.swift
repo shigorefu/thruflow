@@ -24,25 +24,38 @@ struct MacOSRootView: View {
 
     var body: some View {
         NavigationSplitView {
-            List(selection: $selection) {
-                Label {
-                    Text(String(localized: "Flow"))
-                } icon: {
-                    FlowMenuIcon()
+            VStack(spacing: 0) {
+                List(selection: $selection) {
+                    Label {
+                        Text(String(localized: "Flow"))
+                    } icon: {
+                        FlowMenuIcon()
+                    }
+                        .tag(AppSection.flow)
+
+                    Label(String(localized: "タスク"), systemImage: "checklist")
+                        .tag(AppSection.tasks)
+
+                    Label(String(localized: "履歴"), systemImage: "clock.arrow.circlepath")
+                        .tag(AppSection.history)
+
+                    Label(String(localized: "方向"), systemImage: "point.3.connected.trianglepath.dotted")
+                        .tag(AppSection.directions)
+
+                    Label(String(localized: "統計"), systemImage: "chart.bar.xaxis")
+                        .tag(AppSection.statistics)
                 }
-                    .tag(AppSection.flow)
 
-                Label(String(localized: "タスク"), systemImage: "checklist")
-                    .tag(AppSection.tasks)
+                Divider()
 
-                Label(String(localized: "履歴"), systemImage: "clock.arrow.circlepath")
-                    .tag(AppSection.history)
-
-                Label(String(localized: "方向"), systemImage: "point.3.connected.trianglepath.dotted")
-                    .tag(AppSection.directions)
-
-                Label(String(localized: "統計"), systemImage: "chart.bar.xaxis")
-                    .tag(AppSection.statistics)
+                SettingsLink {
+                    Label(String(localized: "設定"), systemImage: "gearshape")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
             }
             .navigationTitle(String(localized: "スルフロ"))
             .navigationSplitViewColumnWidth(min: 175, ideal: 190, max: 240)

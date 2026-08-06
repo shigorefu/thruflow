@@ -55,7 +55,6 @@ struct ThruFlowApp: App {
         }
         .modelContainer(sharedModelContainer)
         .defaultSize(width: 1_280, height: 800)
-        .defaultLaunchBehavior(.presented)
 
         MenuBarExtra {
             FlowMiniPlayerView(style: .dashboard)
@@ -72,10 +71,12 @@ struct ThruFlowApp: App {
 
         Settings {
             MacOSSettingsView()
+                .environmentObject(activeFlowStore)
                 .environmentObject(onboarding)
                 .environmentObject(supportPurchaseStore)
                 .appSettingsEnvironment(settings)
         }
+        .modelContainer(sharedModelContainer)
     }
 }
 

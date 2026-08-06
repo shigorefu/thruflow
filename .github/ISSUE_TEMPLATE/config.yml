@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Support and troubleshooting
+    url: https://github.com/shigorefu/thruflow/blob/main/SUPPORT.md
+    about: Check support guidance before filing an issue.
+  - name: Security vulnerability
+    url: https://github.com/shigorefu/thruflow/security/advisories/new
+    about: Report security-sensitive problems privately.

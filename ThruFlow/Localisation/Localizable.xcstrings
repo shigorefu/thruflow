@@ -1,9 +1,6 @@
 {
   "sourceLanguage" : "ja",
   "strings" : {
-    "" : {
-
-    },
     "–" : {
       "localizations" : {
         "en" : {
@@ -4730,7 +4727,7 @@
         }
       }
     },
-    "低い" : {
+    "低" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8705,6 +8702,166 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Частота"
+          }
+        }
+      }
+    },
+    "Flow履歴をすべて削除" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete All Flow History"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить всю историю Flow"
+          }
+        }
+      }
+    },
+    "Flow履歴を削除しています…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deleting Flow history…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удаление истории Flow…"
+          }
+        }
+      }
+    },
+    "Flow履歴を削除しました" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flow history deleted"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "История Flow удалена"
+          }
+        }
+      }
+    },
+    "Flow履歴を削除できませんでした" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t delete Flow history"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось удалить историю Flow"
+          }
+        }
+      }
+    },
+    "すべてのFlow履歴を削除しますか？" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete all Flow history?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить всю историю Flow?"
+          }
+        }
+      }
+    },
+    "すべての端末からFlowと休憩の履歴が削除されます。タスクと方向は残り、Flowから計算された進捗はリセットされます。この操作は取り消せません。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flow and break history will be deleted from every synced device. Tasks and Directions remain, and Flow-derived progress is reset. This can’t be undone."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "История Flow и перерывов будет удалена на всех синхронизируемых устройствах. Задачи и направления останутся, а прогресс из Flow сбросится. Это действие нельзя отменить."
+          }
+        }
+      }
+    },
+    "すべて削除" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete All"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить всё"
+          }
+        }
+      }
+    },
+    "タスク、方向、タスクのメモは残ります。チェック済みタスクの状態も変更されません。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tasks, Directions, and Task memos remain. Checked Tasks stay completed."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Задачи, направления и заметки задач останутся. Отмеченные задачи сохранят статус выполнения."
+          }
+        }
+      }
+    },
+    "データ" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Data"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Данные"
+          }
+        }
+      }
+    },
+    "履歴を削除する前に、現在のFlowを終了してください。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finish the current Flow before deleting history."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Завершите текущий Flow перед удалением истории."
           }
         }
       }
