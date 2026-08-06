@@ -125,6 +125,8 @@ private struct WatchFlowStreamView: View {
                 dailySeed: snapshot.dailyVisualSeed,
                 isActive: activeFlowStore.phase == .focusing,
                 mode: activeFlowStore.selectedMode,
+                breakStyle: activeFlowStore.flowStreamBreakStyle,
+                breakInteraction: activeFlowStore.flowBreakInteraction,
                 isRenderingEnabled: isVisible
             )
             .ignoresSafeArea()
@@ -189,6 +191,7 @@ private struct WatchTimerView: View {
     @Query private var todos: [Todo]
 
     @State private var showsMemo = false
+    @State private var restButtonReactionSequence = 0
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { timeline in
@@ -343,11 +346,20 @@ private struct WatchTimerView: View {
                 }
                 .disabled(activeFlowStore.timerState == nil)
 
-                timerButton("cup.and.saucer.fill", size: secondarySize) {
+                timerButton(
+                    "cup.and.saucer.fill",
+                    size: secondarySize,
+                    symbolEffectValue: restButtonReactionSequence
+                ) {
+                    restButtonReactionSequence &+= 1
                     activeFlowStore.requestBreakMemo(modelContext: modelContext)
                     showsMemo = activeFlowStore.isAwaitingBreakMemo
                 }
-                .disabled(activeFlowStore.timerState == nil || activeFlowStore.isBreakPhase)
+                .disabled(!activeFlowStore.canRequestBreak)
+                .sensoryFeedback(
+                    .impact(weight: .light),
+                    trigger: restButtonReactionSequence
+                )
             }
         }
     }
@@ -440,12 +452,14 @@ private struct WatchTimerView: View {
         role: ButtonRole? = nil,
         tint: Color = .secondary,
         size: CGFloat = 28,
+        symbolEffectValue: Int = 0,
         action: @escaping () -> Void
     ) -> some View {
         Button(role: role, action: action) {
             Image(systemName: systemName)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(tint)
+                .symbolEffect(.bounce, value: symbolEffectValue)
                 .frame(width: size, height: size)
                 .background(Color.primary.opacity(0.055), in: Circle())
         }

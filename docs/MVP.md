@@ -19,9 +19,13 @@ Direction -> Task -> Flow -> actual focused time -> progress -> statistics
 - Quick task capture.
 - Task measurements: `チェック`, `集中ブロック`, `分`.
 - Flow player with Sprint, Focus, and Deep modes.
-- First/default `Flow` dashboard with expanded player, animated daily stream, totals, and Elastic Flow timeline.
+- First/default `Flow` dashboard with expanded player, animated daily stream,
+  25-percent faster phase motion, rest-request feedback, totals, and Elastic
+  Flow timeline.
 - Task switching inside an active Flow through persisted Flow segments.
-- Persisted Flow series, editable rests, continuation windows, and a 20-minute `長休憩` after every 4 Blocks in a series.
+- Persisted Flow series, editable rests, continuation windows, and a 20-minute
+  `長休憩` after every 4 Blocks in a series, with its own fan-and-breathe stream
+  treatment after rest is confirmed.
 - Manual break start with memo before break begins.
 - Shared square memo panel in the dashboard and macOS menu bar player.
 - Per-Flow memo storage in `FlowSession.result`, mirrored to `Todo.notes` when linked.

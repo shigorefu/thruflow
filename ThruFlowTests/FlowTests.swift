@@ -710,6 +710,60 @@ struct FlowTests {
         #expect(store.phase == .breakTime)
     }
 
+    @Test @MainActor func everyEligibleRestPressPublishesANewVisualInteraction() throws {
+        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let start = Date(timeIntervalSince1970: 8_950)
+        let direction = Direction(name: "執筆", type: .neutral)
+        context.insert(direction)
+
+        let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
+        let store = ActiveFlowStore(defaults: defaults, notifications: TestFlowNotificationService())
+
+        store.requestBreakMemo(modelContext: context, now: start)
+        #expect(store.flowBreakInteraction == nil)
+        #expect(!store.canRequestBreak)
+
+        store.configure(direction: direction, todo: nil, mode: .twentyFiveFive)
+        store.start(direction: direction, todo: nil, modelContext: context, now: start)
+        #expect(store.canRequestBreak)
+
+        let firstRequestAt = start.addingTimeInterval(5 * 60)
+        store.requestBreakMemo(modelContext: context, now: firstRequestAt)
+        let firstRequest = try #require(store.flowBreakInteraction)
+        #expect(firstRequest.sequence == 1)
+        #expect(firstRequest.kind == .requested)
+        #expect(firstRequest.occurredAt == firstRequestAt)
+        #expect(store.phase == .focusing)
+
+        store.cancelBreakMemo()
+        #expect(store.flowBreakInteraction == firstRequest)
+
+        let secondRequestAt = firstRequestAt.addingTimeInterval(1)
+        store.requestBreakMemo(modelContext: context, now: secondRequestAt)
+        let secondRequest = try #require(store.flowBreakInteraction)
+        #expect(secondRequest.sequence == 2)
+        #expect(secondRequest.kind == .requested)
+        #expect(secondRequest.occurredAt == secondRequestAt)
+
+        let breakStartedAt = secondRequestAt.addingTimeInterval(1)
+        store.completeBreakMemo(nil, modelContext: context, now: breakStartedAt)
+        let breakStarted = try #require(store.flowBreakInteraction)
+        #expect(breakStarted.sequence == 3)
+        #expect(breakStarted.kind == .started(isLong: false))
+        #expect(breakStarted.occurredAt == breakStartedAt)
+        #expect(store.flowStreamBreakStyle == .regular)
+        #expect(!store.canRequestBreak)
+
+        store.requestBreakMemo(
+            modelContext: context,
+            now: breakStartedAt.addingTimeInterval(1)
+        )
+        #expect(store.flowBreakInteraction == breakStarted)
+    }
+
     @Test @MainActor func startingWorkDuringBreakImmediatelyCreatesNextFlow() throws {
         let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
@@ -729,6 +783,7 @@ struct FlowTests {
         store.start(direction: direction, todo: todo, modelContext: context, now: start)
         let firstSession = try #require(store.activeSession)
         store.startBreak(modelContext: context, now: breakStartedAt)
+        #expect(store.flowBreakInteraction?.kind == .started(isLong: false))
 
         store.startNextFlow(
             direction: direction,
@@ -740,6 +795,7 @@ struct FlowTests {
         #expect(firstSession.status == .completed)
         #expect(firstSession.endedAt == restartedAt)
         #expect(store.phase == .focusing)
+        #expect(store.flowBreakInteraction == nil)
         #expect(store.timerState?.startedAt == restartedAt)
         #expect(store.activeSession?.id != firstSession.id)
         #expect(store.activeSession?.seriesID == firstSession.seriesID)
@@ -769,6 +825,7 @@ struct FlowTests {
         store.start(direction: direction, todo: todo, modelContext: context, now: start)
         let sessionID = try #require(store.activeSession?.id)
         store.startBreak(modelContext: context, now: breakStartedAt)
+        #expect(store.flowBreakInteraction?.kind == .started(isLong: false))
 
         store.destroy(modelContext: context, now: breakStartedAt.addingTimeInterval(60))
 
@@ -777,6 +834,7 @@ struct FlowTests {
         #expect(sessions.map(\.id) == [sessionID])
         #expect(sessions.first?.status == .completed)
         #expect(flowBreak.deletedAt == breakStartedAt.addingTimeInterval(60))
+        #expect(store.flowBreakInteraction == nil)
         #expect(todo.recordedFocusSeconds == 25 * 60)
         #expect(todo.actualProgress == 25)
         #expect(direction.recordedFocusSeconds == 25 * 60)
@@ -868,6 +926,8 @@ struct FlowTests {
 
         #expect(store.timerState?.plannedBreakDurationSeconds == 20 * 60)
         #expect(store.timerState?.isLongBreak == true)
+        #expect(store.flowBreakInteraction?.kind == .started(isLong: true))
+        #expect(store.flowStreamBreakStyle == .long)
         let flowBreak = try #require(context.fetch(FetchDescriptor<FlowBreak>()).first)
         #expect(flowBreak.isLongBreak)
         #expect(flowBreak.continuationDeadline == start.addingTimeInterval(25 * 60 + 30 * 60))

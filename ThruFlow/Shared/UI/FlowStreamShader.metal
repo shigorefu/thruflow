@@ -33,6 +33,7 @@ static half4 ribbonColor(
     half4 sourceColor,
     float2 size,
     float time,
+    float motionActivity,
     float progress,
     float identityReveal,
     float volume,
@@ -42,6 +43,10 @@ static half4 ribbonColor(
     float waveFrequency,
     float turbulence,
     float impulse,
+    float restRequestProgress,
+    float regularBreakProgress,
+    float longBreakProgress,
+    float breakStyle,
     float topology,
     float dailyBend,
     float dailySpacing,
@@ -64,6 +69,23 @@ static half4 ribbonColor(
     float accumulatedWeight = 0.0;
     float haloWeight = 0.0;
     float dailyReveal = smoothstep(0.0, 1.0, clamp(identityReveal, 0.0, 1.0));
+    float restingAmount = step(0.5, breakStyle);
+    float idleAmount = (1.0 - clamp(motionActivity, 0.0, 1.0))
+        * (1.0 - restingAmount);
+    float longBreakAmount = step(1.5, breakStyle);
+    float requestEnvelope = restRequestProgress >= 0.0 && restRequestProgress <= 1.0
+        ? sin(restRequestProgress * 3.14159)
+        : 0.0;
+    float regularBreakEnvelope = regularBreakProgress >= 0.0 && regularBreakProgress <= 1.0
+        ? sin(regularBreakProgress * 3.14159)
+        : 0.0;
+    float longBreakEnvelope = longBreakProgress >= 0.0 && longBreakProgress <= 1.0
+        ? sin(longBreakProgress * 3.14159)
+        : 0.0;
+    float longBreakBreath = 0.5;
+    if (longBreakAmount > 0.5) {
+        longBreakBreath += sin(time * 2.4) * 0.5;
+    }
 
     // A new profile opens on the familiar neutral S-stream. The date/profile
     // topology is revealed continuously through the first Block, so Play never
@@ -82,7 +104,14 @@ static half4 ribbonColor(
 
     float envelopeDistance = abs(uv.y - spine);
     float legacyEnvelope = 1.0 - smoothstep(0.30, 0.46, envelopeDistance);
-    float dailyEnvelope = 1.0 - smoothstep(0.31, 0.46, envelopeDistance);
+    float envelopeExpansion = regularBreakEnvelope * 0.018
+        + longBreakEnvelope * 0.060
+        + longBreakAmount * 0.012;
+    float dailyEnvelope = 1.0 - smoothstep(
+        0.31 + envelopeExpansion * 0.45,
+        0.46 + envelopeExpansion,
+        envelopeDistance
+    );
     float envelope = mix(legacyEnvelope, dailyEnvelope, dailyReveal);
     // Keep the daily lanes close enough that every ribbon remains inside the
     // visible flow envelope while preserving clear gaps between their cores.
@@ -129,6 +158,30 @@ static half4 ribbonColor(
         dailyCenter += dailyPrimary * mix(0.025, 0.060, turbulence);
         dailyCenter += dailySecondary * mix(0.006, 0.022, detail) * turbulence;
         float center = mix(legacyCenter, dailyCenter, dailyReveal);
+        // Idle keeps a small readable current instead of looking frozen. It
+        // uses the same phase clock as the main stream, so the global 1.25x
+        // speed change remains exact without changing render cadence.
+        if (idleAmount > 0.5) {
+            float idleCurrent = sin(
+                uv.x * mix(15.0, 18.0, dailyReveal)
+                    - time * 3.4
+                    + layer * 0.83
+            );
+            center += idleCurrent * mix(0.0026, 0.0044, dailyReveal);
+        }
+        float laneDirection = dailyLane * 2.0 - 1.0;
+        float restSpread = requestEnvelope * 0.022
+            + regularBreakEnvelope * 0.034
+            + longBreakEnvelope * 0.078
+            + longBreakAmount * 0.012;
+        center += laneDirection * restSpread;
+        if (longBreakAmount > 0.5) {
+            center += sin(
+                uv.x * 6.28318
+                    - time * 2.1
+                    + layer * 0.72
+            ) * mix(0.005, 0.014, longBreakBreath);
+        }
 
         float legacyDepthScale = depthIndex == 0 ? 1.30 : (depthIndex == 1 ? 0.92 : 0.58);
         float legacyThickness = mix(0.070, 0.105, volume) * legacyDepthScale;
@@ -138,6 +191,10 @@ static half4 ribbonColor(
         float dailyDepthScale = depthIndex == 0 ? 1.20 : (depthIndex == 1 ? 0.98 : 0.78);
         float dailyThickness = mix(0.044, 0.066, volume) * dailyDepthScale;
         float thickness = mix(legacyThickness, dailyThickness, dailyReveal);
+        thickness *= 1.0
+            + regularBreakEnvelope * 0.06
+            + longBreakEnvelope * 0.18
+            + longBreakAmount * 0.035;
         float distanceToBand = abs(uv.y - center);
         float legacyBand = 1.0 - smoothstep(thickness * 0.52, thickness, distanceToBand);
         float dailyBand = 1.0 - smoothstep(thickness * 0.44, thickness, distanceToBand);
@@ -196,6 +253,14 @@ static half4 ribbonColor(
             * dailyProgressReveal;
 
         float brightness = mix(legacyBrightness, dailyBrightness, dailyReveal);
+        if (idleAmount > 0.5) {
+            float idleCurrentLight = 0.5 + sin(
+                uv.x * 12.0
+                    - time * 4.2
+                    + layer * 0.91
+            ) * 0.5;
+            brightness *= 1.0 + (idleCurrentLight - 0.5) * 0.075;
+        }
         float contribution = mix(legacyContribution, dailyContribution, dailyReveal);
         float layerVisibility = index < 6 ? 1.0 : dailyReveal;
         contribution *= layerVisibility;
@@ -254,6 +319,52 @@ static half4 ribbonColor(
         float pulse = exp(-pulseDistance * pulseDistance * 180.0) * sin(impulse * 3.14159);
         rendered += rendered * pulse * mix(0.38, 0.34, dailyReveal);
     }
+
+    if (restRequestProgress >= 0.0 && restRequestProgress <= 1.0) {
+        // Rest intent travels against the normal completion pulse. It reads as
+        // an immediate release, not as confirmation that rest has started.
+        float releaseCenter = 1.0 - restRequestProgress;
+        float releaseDistance = abs(uv.x - releaseCenter);
+        float releaseWave = exp(-releaseDistance * releaseDistance * 120.0)
+            * requestEnvelope;
+        rendered += rendered * releaseWave * 0.30;
+        rendered += ambientColor * releaseWave * 0.045;
+    }
+
+    if (regularBreakProgress >= 0.0 && regularBreakProgress <= 1.0) {
+        float exhaleDistance = abs(uv.x - 0.5);
+        float exhaleCenter = regularBreakProgress * 0.62;
+        float exhaleWave = exp(
+            -(exhaleDistance - exhaleCenter)
+                * (exhaleDistance - exhaleCenter)
+                * 105.0
+        ) * regularBreakEnvelope;
+        rendered += rendered * exhaleWave * 0.22;
+        rendered += ambientColor * exhaleWave * 0.035;
+    }
+
+    if (longBreakProgress >= 0.0 && longBreakProgress <= 1.0) {
+        float fanDistance = abs(uv.x - 0.5);
+        float fanCenter = longBreakProgress * 0.68;
+        float fanWave = exp(
+            -(fanDistance - fanCenter)
+                * (fanDistance - fanCenter)
+                * 72.0
+        ) * longBreakEnvelope;
+        float centerBloom = exp(
+            -dot(
+                float2((uv.x - 0.5) * 1.25, uv.y - spine),
+                float2((uv.x - 0.5) * 1.25, uv.y - spine)
+            ) * 18.0
+        ) * longBreakEnvelope;
+        rendered += rendered * fanWave * 0.42;
+        rendered += ambientColor * (fanWave * 0.10 + centerBloom * 0.07);
+    }
+
+    float regularRestAmount = clamp(restingAmount - longBreakAmount, 0.0, 1.0);
+    rendered *= 1.0
+        - regularRestAmount * 0.018
+        + longBreakAmount * mix(0.025, 0.065, longBreakBreath);
 
     float peak = max(max(rendered.r, rendered.g), rendered.b);
     float compressionThreshold = mix(0.90, 0.88, dailyReveal);

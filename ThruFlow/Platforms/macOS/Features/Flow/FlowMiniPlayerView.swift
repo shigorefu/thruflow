@@ -556,7 +556,7 @@ struct FlowMiniPlayerView: View {
                     stopButton
                 }
 
-                compactControlSlot(isEnabled: activeFlowStore.phase == .focusing) {
+                compactControlSlot(isEnabled: activeFlowStore.canRequestBreak) {
                     breakButton
                 }
 
@@ -575,7 +575,7 @@ struct FlowMiniPlayerView: View {
                     stopButton
                 }
 
-                if activeFlowStore.phase == .focusing {
+                if activeFlowStore.canRequestBreak {
                     breakButton
                 }
 
