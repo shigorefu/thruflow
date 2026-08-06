@@ -21,7 +21,7 @@ struct SupportSettingsSection: View {
             }
 
             Button {
-                openURL(SupportLinks.githubURL)
+                openURL(SupportLinks.projectURL)
             } label: {
                 Label(String(localized: "GitHubで開発に参加"), systemImage: "chevron.left.forwardslash.chevron.right")
             }
@@ -92,19 +92,6 @@ private extension SupportTip {
         case .coffee: "cup.and.saucer.fill"
         case .ramen: "takeoutbag.and.cup.and.straw.fill"
         }
-    }
-}
-
-private enum SupportLinks {
-    static let githubURL = URL(string: "https://github.com/shigorefu/thruflow")!
-
-    static var appStoreReviewURL: URL? {
-        guard let appStoreID = Bundle.main.object(forInfoDictionaryKey: "ThruFlowAppStoreID") as? String,
-              !appStoreID.isEmpty,
-              !appStoreID.contains("$(") else {
-            return nil
-        }
-        return URL(string: "https://apps.apple.com/app/id\(appStoreID)?action=write-review")
     }
 }
 

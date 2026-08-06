@@ -181,6 +181,12 @@ least seven days and either five active Flow days or ten completed Flows, it may
 ask for a review at a natural post-Flow moment, at most once per app version.
 The system ultimately decides whether the review sheet is shown.
 
+A separate `フィードバック` section opens the repository's public issue-template
+chooser and warns the user to remove private Task names and notes. It also
+explains that TestFlight testers can submit a screenshot or use the TestFlight
+app to include device context. ThruFlow does not operate a separate feedback
+backend.
+
 ## Apple Watch
 
 The watchOS companion provides a compact four-page vertical Flow dashboard:

@@ -81,6 +81,8 @@ struct MacOSSettingsView: View {
                 }
             }
 
+            FeedbackSettingsSection()
+
             historyDataSection
 
             SupportSettingsSection()
