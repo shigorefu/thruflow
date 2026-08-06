@@ -2036,6 +2036,22 @@
         }
       }
     },
+    "GitHub Issuesへの投稿は公開されます。個人情報や公開したくないタスク名・メモを含めないでください。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GitHub Issues are public. Don’t include personal information or private Task names or notes."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обращения в GitHub Issues общедоступны. Не указывайте личные данные, названия задач или заметки, которые не хотите публиковать."
+          }
+        }
+      }
+    },
     "Inbox" : {
       "localizations" : {
         "en" : {
@@ -2176,6 +2192,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Символы"
+          }
+        }
+      }
+    },
+    "TestFlight版では、スクリーンショットまたはTestFlightアプリから端末情報付きのフィードバックを送信できます。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In TestFlight, send feedback with device details from a screenshot or the TestFlight app."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В TestFlight можно отправить отзыв с данными устройства через снимок экрана или приложение TestFlight."
           }
         }
       }
@@ -3803,6 +3835,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Розовый"
+          }
+        }
+      }
+    },
+    "フィードバック" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Feedback"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обратная связь"
+          }
+        }
+      }
+    },
+    "フィードバックを送る" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send Feedback"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отправить отзыв"
           }
         }
       }

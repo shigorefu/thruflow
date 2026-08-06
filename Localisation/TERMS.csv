@@ -80,5 +80,7 @@
 "TaskQuickInput.shortcuts","Title for the contextual quick-input legend","ショートカットを使えます","Shortcuts available","Доступны быстрые команды"
 "TaskQuickInput.removeToken","Command to remove a recognized token from the composer","トークンを削除","Remove token","Удалить токен"
 "TaskQuickInput.createDirection","Command to create an unknown Direction from autocomplete","新しい方向を作成","Create Direction","Создать направление"
+"Feedback.section","Settings section for tester and user feedback","フィードバック","Feedback","Обратная связь"
+"Feedback.send","Open the public GitHub feedback form","フィードバックを送る","Send Feedback","Отправить отзыв"
 "Support.coffee","Optional consumable purchase without an entitlement","コーヒーを贈る","Send a coffee","Подарить кофе"
 "Support.ramen","Optional consumable purchase without an entitlement","ラーメンを贈る","Send a bowl of ramen","Подарить рамэн"

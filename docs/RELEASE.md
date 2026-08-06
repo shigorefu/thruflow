@@ -39,6 +39,10 @@ Also build the iOS and Watch Release schemes without signing. CI performs the sa
   - `com.shigorefu.thruflow.tip.coffee`;
   - `com.shigorefu.thruflow.tip.ramen`.
 - Add localized metadata, screenshots, review notes, support URL, and privacy-policy URL.
+- In `TestFlight > Test Information`, set a monitored public feedback email;
+  do not use the GitHub noreply commit address.
+- Keep tester feedback enabled for every TestFlight group unless a documented
+  privacy or support reason requires email-only feedback.
 - Complete App Privacy answers from the behavior described in [`../PRIVACY.md`](../PRIVACY.md) and the checked-in privacy manifests.
 - Confirm agreements, tax, and banking status required for optional tips.
 - After the first external contribution, include
@@ -72,6 +76,9 @@ Recommended public URLs after the files are merged to `main`:
    diagnostics.
 7. Install the exact processed builds from TestFlight and complete the smoke
    test on every supported device family.
+8. Submit one sanitized screenshot feedback item from iPhone/iPad and one from
+   macOS, then confirm both appear under `TestFlight > Feedback` with the
+   expected build and device context.
 
 Never publish by rebuilding after the smoke test. Promote the exact tested build.
 

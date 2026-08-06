@@ -484,3 +484,16 @@ Private CloudKit propagates the deletion to the user's other devices.
 Reason: users need a clear release-grade way to erase recorded activity without
 destroying their planning structure or leaving totals inconsistent with an
 empty history.
+
+## D-036: Feedback Uses Existing Trusted Channels
+
+macOS, iPhone, and iPad Settings provide a permanent `フィードバックを送る`
+action that opens the public GitHub issue-template chooser. The same section
+warns users to remove private Task names and notes, and tells TestFlight testers
+that screenshot and TestFlight-app submissions can include device context.
+ThruFlow does not add a custom feedback server, analytics SDK, mail recipient,
+or undocumented TestFlight deep link.
+
+Reason: TestFlight already provides diagnostic feedback during beta, while
+GitHub Issues remains transparent and maintainable after release without
+inventing an account or data-collection service.
