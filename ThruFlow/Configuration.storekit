@@ -1,0 +1,70 @@
+{
+  "identifier" : "8F30B91E",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+    {
+      "displayPrice" : "100",
+      "familyShareable" : false,
+      "internalID" : "C0FFEE10",
+      "localizations" : [
+        {
+          "description" : "ThruFlowの開発をコーヒー一杯で応援します。機能は変わりません。",
+          "displayName" : "コーヒーを贈る",
+          "locale" : "ja_JP"
+        },
+        {
+          "description" : "Support ThruFlow development with a coffee. This purchase unlocks no features.",
+          "displayName" : "Send a Coffee",
+          "locale" : "en_US"
+        },
+        {
+          "description" : "Поддержать разработку ThruFlow чашкой кофе. Покупка не открывает дополнительных функций.",
+          "displayName" : "Подарить кофе",
+          "locale" : "ru_RU"
+        }
+      ],
+      "productID" : "com.shigorefu.thruflow.tip.coffee",
+      "referenceName" : "Coffee Tip",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "500",
+      "familyShareable" : false,
+      "internalID" : "A11CE500",
+      "localizations" : [
+        {
+          "description" : "ThruFlowの開発をラーメン一杯で応援します。機能は変わりません。",
+          "displayName" : "ラーメンを贈る",
+          "locale" : "ja_JP"
+        },
+        {
+          "description" : "Support ThruFlow development with a bowl of ramen. This purchase unlocks no features.",
+          "displayName" : "Send Ramen",
+          "locale" : "en_US"
+        },
+        {
+          "description" : "Поддержать разработку ThruFlow миской рамэна. Покупка не открывает дополнительных функций.",
+          "displayName" : "Подарить рамэн",
+          "locale" : "ru_RU"
+        }
+      ],
+      "productID" : "com.shigorefu.thruflow.tip.ramen",
+      "referenceName" : "Ramen Tip",
+      "type" : "Consumable"
+    }
+  ],
+  "settings" : {
+    "_failTransactionsEnabled" : false,
+    "_locale" : "ja_JP",
+    "_storefront" : "JPN"
+  },
+  "subscriptionGroups" : [
+
+  ],
+  "version" : {
+    "major" : 1,
+    "minor" : 0
+  }
+}

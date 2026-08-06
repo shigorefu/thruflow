@@ -9,6 +9,7 @@ import SwiftUI
 
 struct MacOSSettingsView: View {
     @EnvironmentObject private var settings: AppSettings
+    @EnvironmentObject private var onboarding: OnboardingStore
 
     var body: some View {
         Form {
@@ -65,6 +66,16 @@ struct MacOSSettingsView: View {
             Section(String(localized: "タスク")) {
                 Toggle(String(localized: "クイック入力のヒントを表示"), isOn: $settings.showsTaskQuickInputLegend)
             }
+
+            Section(String(localized: "ヘルプ")) {
+                Button {
+                    onboarding.present()
+                } label: {
+                    Label(String(localized: "使い方を見る"), systemImage: "sparkles.rectangle.stack")
+                }
+            }
+
+            SupportSettingsSection()
         }
         .formStyle(.grouped)
         .padding(20)
@@ -97,4 +108,6 @@ struct MacOSSettingsView: View {
 #Preview {
     MacOSSettingsView()
         .environmentObject(AppSettings())
+        .environmentObject(OnboardingStore())
+        .environmentObject(SupportPurchaseStore())
 }

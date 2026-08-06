@@ -482,6 +482,11 @@ struct FlowDashboardTests {
         #expect(snapshot.segments.map(\.focusSeconds) == [16 * 60, 9 * 60])
         #expect(snapshot.taskSummaries.map(\.title) == ["本文", "確認"])
         #expect(snapshot.taskSummaries.map(\.focusSeconds) == [16 * 60, 9 * 60])
+        #expect(snapshot.sessionGroups.count == 1)
+        #expect(snapshot.sessionGroups[0].id == session.id)
+        #expect(snapshot.sessionGroups[0].startedAt == session.startedAt)
+        #expect(snapshot.sessionGroups[0].endedAt == session.endedAt)
+        #expect(snapshot.sessionGroups[0].segments.map(\.id) == [first.id, second.id])
     }
 
     @Test func dashboardTaskSummaryCombinesFocusFromRepeatedFlows() {

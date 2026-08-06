@@ -82,6 +82,26 @@ struct FlowDashboardSnapshot {
             return $0.title.localizedStandardCompare($1.title) == .orderedAscending
         }
     }
+
+    var sessionGroups: [FlowDashboardSessionGroup] {
+        Dictionary(grouping: segments, by: { $0.session.id })
+            .values
+            .compactMap { values in
+                guard let first = values.min(by: { $0.startedAt < $1.startedAt }),
+                      let last = values.max(by: { $0.endedAt < $1.endedAt }) else {
+                    return nil
+                }
+
+                return FlowDashboardSessionGroup(
+                    id: first.session.id,
+                    startedAt: first.startedAt,
+                    endedAt: last.endedAt,
+                    segments: values.sorted { $0.startedAt < $1.startedAt },
+                    isActive: values.contains(where: \FlowDashboardSegment.isActive)
+                )
+            }
+            .sorted { $0.startedAt < $1.startedAt }
+    }
 }
 
 struct FlowDashboardDirectionSummary: Identifiable {
@@ -116,6 +136,14 @@ struct FlowDashboardSegment: Identifiable {
     let colorHex: String
     let symbol: String
     let taskTitle: String
+    let isActive: Bool
+}
+
+struct FlowDashboardSessionGroup: Identifiable {
+    let id: UUID
+    let startedAt: Date
+    let endedAt: Date
+    let segments: [FlowDashboardSegment]
     let isActive: Bool
 }
 

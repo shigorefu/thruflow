@@ -1,5 +1,9 @@
 # UX Flows
 
+The main macOS window opens at an initial size of `1280 × 800` points. This is a
+default only: normal macOS window restoration continues to respect a size chosen
+by the user.
+
 ## 方向
 
 The Direction screen manages only user-editable Directions:
@@ -9,6 +13,10 @@ The Direction screen manages only user-editable Directions:
 - `ナイス`.
 
 The system Direction `その他` is not shown here and cannot be edited from this screen.
+
+On macOS, the `通常`, `習慣`, and `ナイス` groups use an adaptive grid: wide
+windows show them side by side, while narrower windows wrap the remaining groups
+onto following rows in the same vertical scroll surface instead of clipping them.
 
 On macOS, editing a Habit Direction includes `習慣の状態`. An active Habit can
 use `今日は休む`, `期間を指定…`, or `再開するまで一時停止`; a paused Habit
@@ -107,7 +115,7 @@ In the narrow vertical dashboard layout, the player comes first, followed by the
 - selecting another Focus mode during focus or paused focus preserves elapsed time, applies that preset as the new total plan, and moves only the planned end. A shorter preset may immediately show overtime; crossing another preset threshold never renames the selected mode;
 - transport seek controls subtract or add exactly five minutes from remaining focus time across macOS, iOS, menu bar, and Live Activity. Subtract stops at one minute remaining, both actions preserve elapsed time and mode, and both are disabled during rest;
 - starting rest derives its duration from actual focused time rather than the selected mode: under 24 minutes gives 3 minutes, 24...48:59 gives 5 minutes, and 49 minutes or more gives 10 minutes. The 24- and 49-minute boundaries normalize Block credit to 25 and 50 minutes while longer actual time remains exact;
-- break time counts down past zero with a positive overtime sign; its neutral-gray progress ring drains while the Direction-colored focus ring fills. Starting work during rest completes the previous Flow and immediately starts the next one, while menu bar status becomes `☕️ 休憩 - time` or `☕️ Long Break - time`;
+- break time counts down past zero with a positive overtime sign; its neutral-gray progress ring drains while the Direction-colored focus ring fills. Starting work during rest completes the previous Flow and immediately starts the next one, while the Japanese menu bar status becomes `☕️ 休憩 - time` or `☕️ 長休憩 - time`;
 - choosing another Task during focus or pause keeps the current Flow running and starts a new history segment; no memo prompt is shown for this switch;
 - the Task card reuses the canonical completion/progress control; only Check is interactive, while Block and Minute rings are read-only and show progress and the remaining amount;
 - generated titles for empty Tasks and Habits are consistently italic and visually muted in the player, picker, Tasks screen, and dashboard panels;
@@ -155,6 +163,46 @@ Hovering a rest shows its type, interval, and duration above the timeline. Click
 Below the Flow stage are today's `タスク` and `習慣` columns. `ナイス` is omitted when empty. Rows use the same square Check and circular Block/Minute progress controls as the Tasks screen. Check can be completed manually; Block and Minute rings are read-only because recorded Flow owns their progress. Rows can be opened for editing. The fixed-height compact `統計` carousel provides Task/Direction focused-time distribution, a seven-day Flow trend with previous-day comparisons, and today's completion status.
 
 The Dashboard Task header `+` opens the shared messenger-style composer in a separate popover. The Flow Task picker's `タスク` tab also ends with an add row that opens the same popover; a Task created there is immediately selected for Flow. Direction, measurement, and priority remain editable, while the date is fixed to `今日`. The composer has an explicit close button that discards the unfinished action. Habit has no manual add action.
+
+## Onboarding And Voluntary Support
+
+On first launch, macOS, iPhone, and iPad keep the real application workspace
+visible beneath a uniformly dimmed overlay. One compact information card stays
+centered in the window or screen for every step. The introduction contains
+seven cards:
+
+1. Welcome;
+2. `Flow`;
+3. `方向`;
+4. `タスク`;
+5. `履歴`;
+6. `統計`;
+7. `使い方の流れ`.
+
+Advancing programmatically opens the corresponding real feature screen behind
+the centered card while all interaction below the overlay remains disabled.
+There are no spotlights, scrim cutouts, highlighted cards, target anchors, or
+automatic target scrolling. The final card summarizes the complete loop as
+`方向 → タスク → Flow → 履歴・統計 → 次の一歩`. The journey does not create a
+sample Direction, Task, Flow, or history record, and `--onboarding-preview`
+always opens it against the existing `--uitesting` in-memory store. Skip and
+Finish both return to Flow and complete first-run onboarding; preview completion
+is intentionally not persisted.
+`設定 > ヘルプ > 使い方を見る` reopens it without clearing user data.
+watchOS does not present a second onboarding journey; it remains a companion to
+the phone installation.
+
+The app never schedules promotional support notifications. After a completed
+Flow, the StoreKit review sheet may be requested only when the installation is
+at least seven days old and the user has either five distinct completed-Flow
+days or ten completed Flows. A request is recorded once per app version even
+when the system chooses not to show the sheet.
+
+`設定 > ThruFlowを応援` links to the App Store review page when a production App
+Store ID is configured, links to GitHub, and offers Coffee and Ramen as
+consumable StoreKit tips. A successful purchase shows thanks and finishes the
+verified transaction; cancellation is silent, pending approval is explained,
+and no purchase creates an entitlement or unlocks a feature.
 
 ## iPhone MVP
 
@@ -340,7 +388,7 @@ planned for 2.0.
 
 ## Home Screen Widgets
 
-The iPhone exposes three read-only WidgetKit configurations:
+The iPhone Home Screen and macOS desktop expose the same three read-only WidgetKit configurations:
 
 - `Flowタイマー` in Small and Medium shows the active Task, optional Direction,
   mode, phase, remaining `MM:SS`, and progress. Its empty state shows

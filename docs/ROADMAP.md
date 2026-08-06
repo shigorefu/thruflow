@@ -21,6 +21,12 @@
   истории.
 - [x] Японская, английская и русская локализации.
 - [x] Настройки темы, языка, недели, формата времени и границы нового дня.
+- [x] Знакомство из семи центральных карточек поверх настоящих экранов
+  macOS/iPhone/iPad: автоматическая навигация между разделами, финальная схема
+  `方向 → タスク → Flow → 履歴・統計 → 次の一歩`, отдельные preview-схемы и повторный
+  запуск из Settings без подсветки элементов и создания тестовых данных.
+- [x] Ненавязчивый системный запрос оценки после подтверждённого использования,
+  GitHub и добровольные StoreKit tips: кофе ¥100 / рамэн ¥500.
 
 ### Release gate
 
@@ -43,8 +49,15 @@
   включая системное завершение extension и временно недоступный App Group.
 - [ ] Завершить проверку `ja`, `en`, `ru`: обрезание текста, Dynamic Type,
   VoiceOver labels, светлая/тёмная тема и узкие размеры окон/экранов.
-- [ ] Добавить и проверить `PrivacyInfo.xcprivacy`, App Store privacy answers,
-  privacy policy/support URL и описание использования iCloud.
+- [x] Добавить и проверить `PrivacyInfo.xcprivacy` для приложения, Watch и
+  widget/Live Activity extension.
+- [ ] Заполнить App Store privacy answers, privacy policy/support URL и
+  описание использования private iCloud sync.
+- [ ] Создать в App Store Connect consumable IAP с идентификаторами
+  `com.shigorefu.thruflow.tip.coffee` и
+  `com.shigorefu.thruflow.tip.ramen`, назначить японские цены ¥100/¥500,
+  локализации и review screenshot; после создания приложения задать
+  `THRUFLOW_APP_STORE_ID` для прямой ссылки на отзыв.
 - [ ] Развернуть проверенную CloudKit Development schema в Production и
   подтвердить чистую установку против Production environment.
 - [ ] Установить app/extension/watch версии `1.0`, согласованные build numbers,

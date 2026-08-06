@@ -12,8 +12,12 @@ import SwiftUI
 @main
 struct ThruFlowApp: App {
     @Environment(\.scenePhase) private var scenePhase
-    @StateObject private var activeFlowStore = ActiveFlowStore()
+    @StateObject private var activeFlowStore = ActiveFlowStore(
+        liveActivities: MacOSFlowWidgetService()
+    )
     @StateObject private var settings = AppSettings()
+    @StateObject private var onboarding = OnboardingStore()
+    @StateObject private var supportPurchaseStore = SupportPurchaseStore()
     @NSApplicationDelegateAdaptor(MacOSAppDelegate.self) private var appDelegate
 
     private let sharedModelContainer = AppModelContainerFactory.make()
@@ -21,7 +25,10 @@ struct ThruFlowApp: App {
     var body: some Scene {
         WindowGroup {
             MacOSRootView()
+                .onboardingJourney(store: onboarding)
                 .environmentObject(activeFlowStore)
+                .environmentObject(onboarding)
+                .environmentObject(supportPurchaseStore)
                 .appSettingsEnvironment(settings)
                 .onAppear {
                     activeFlowStore.clearNotificationBadge()
@@ -39,8 +46,16 @@ struct ThruFlowApp: App {
                         activeFlowStore.endSynchronization()
                     }
                 }
+                .background {
+                    if !onboarding.isPresented {
+                        ProductWidgetSnapshotSyncView()
+                        ReviewRequestGate()
+                    }
+                }
         }
         .modelContainer(sharedModelContainer)
+        .defaultSize(width: 1_280, height: 800)
+        .defaultLaunchBehavior(.presented)
 
         MenuBarExtra {
             FlowMiniPlayerView(style: .dashboard)
@@ -57,6 +72,8 @@ struct ThruFlowApp: App {
 
         Settings {
             MacOSSettingsView()
+                .environmentObject(onboarding)
+                .environmentObject(supportPurchaseStore)
                 .appSettingsEnvironment(settings)
         }
     }

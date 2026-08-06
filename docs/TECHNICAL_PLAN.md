@@ -126,6 +126,23 @@ Cover:
   Tasks/Dots snapshot persistence.
 - Flow Dots reuse of the canonical 180-day statistics projection and mixed
   Direction color.
+- First-run onboarding persistence, forced preview isolation, real-screen
+  navigation, centered-card presentation, the exact seven-card order, and the
+  final `方向 → タスク → Flow → 履歴・統計 → 次の一歩` projection on macOS and
+  universal iOS. Coverage must also ensure no spotlight/anchor geometry or
+  automatic target scrolling is required.
+- Review eligibility boundaries: seven-day delay, active-day/completed-Flow
+  thresholds, and one request per application version.
+- StoreKit support configuration uses stable Coffee/Ramen product identifiers,
+  consumable product types, JPY 100/500 local test prices, and verified
+  transaction completion without entitlements.
+
+For interactive first-user QA, select `ThruFlow Onboarding Preview` on macOS or
+`ThruFlow iOS Onboarding Preview` on an iPhone/iPad simulator and Run. Both
+schemes force onboarding, use the existing in-memory UI-testing container, and
+never persist completion or sample data. `OnboardingJourneyUITests` provides the
+automated macOS walkthrough over the real workspace, including centered-card
+placement, real-screen navigation, Back, Skip, all seven cards, and Finish.
 
 ## Migration Caution
 

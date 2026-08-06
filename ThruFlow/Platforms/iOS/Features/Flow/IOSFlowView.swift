@@ -4,6 +4,7 @@ import SwiftUI
 struct IOSFlowView: View {
     @Environment(\.calendar) private var calendar
     @Environment(\.appDayBoundary) private var dayBoundary
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
 
@@ -19,9 +20,10 @@ struct IOSFlowView: View {
 
     @State private var showsContextPicker = false
     @State private var showsMemo = false
+    @State private var showsTaskComposer = false
     @State private var editorMode: IOSTaskEditorMode?
     @State private var preparationRevision = 0
-    @State private var taskFilter = IOSDashboardTaskFilter.all
+    @State private var taskFilter = IOSDashboardTaskFilter.task
 
     private var dashboardBuilder: FlowDashboardBuilder {
         FlowDashboardBuilder(calendar: calendar, dayBoundary: dayBoundary)
@@ -75,6 +77,13 @@ struct IOSFlowView: View {
                     IOSMoreMenuLabel()
                 }
                 .accessibilityLabel(String(localized: "その他"))
+            }
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if showsTaskComposer, horizontalSizeClass != .regular {
+                taskComposer
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .background(backgroundColor.ignoresSafeArea())
             }
         }
         .sheet(isPresented: $showsContextPicker) {
@@ -219,8 +228,6 @@ struct IOSFlowView: View {
     private var filteredDashboardTodos: [Todo] {
         guard let groups = cachedTodoGroups else { return [] }
         switch taskFilter {
-        case .all:
-            return groups.all
         case .task:
             return groups.standard
         case .habit:
@@ -479,6 +486,17 @@ struct IOSFlowView: View {
                 Label(String(localized: "今日のタスク"), systemImage: "checklist")
                     .font(.headline)
                 Spacer()
+                Button(action: presentTaskComposer) {
+                    Image(systemName: "plus")
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(String(localized: "タスクを追加"))
+                .popover(isPresented: regularTaskComposerPresentation, arrowEdge: .top) {
+                    taskComposer
+                        .frame(width: 520)
+                        .presentationCompactAdaptation(.popover)
+                }
+
                 Button {
                     open(.tasks)
                 } label: {
@@ -766,6 +784,36 @@ struct IOSFlowView: View {
         showsMemo = false
     }
 
+    private func presentTaskComposer() {
+        withAnimation(.snappy(duration: 0.28)) {
+            showsTaskComposer = true
+        }
+    }
+
+    private func dismissTaskComposer() {
+        withAnimation(.snappy(duration: 0.24)) {
+            showsTaskComposer = false
+        }
+    }
+
+    private var taskComposer: some View {
+        IOSTaskComposer(
+            directions: activeDirections,
+            onClose: dismissTaskComposer
+        )
+    }
+
+    private var regularTaskComposerPresentation: Binding<Bool> {
+        Binding(
+            get: { showsTaskComposer && horizontalSizeClass == .regular },
+            set: { isPresented in
+                if !isPresented {
+                    showsTaskComposer = false
+                }
+            }
+        )
+    }
+
     private func focusText(_ seconds: Int) -> String {
         let minutes = seconds / 60
         return minutes >= 60 ? "\(minutes / 60):\(String(format: "%02d", minutes % 60))" : "\(minutes)\(String(localized: "分"))"
@@ -809,7 +857,6 @@ private struct IOSFlowPreparationID: Hashable {
 }
 
 private enum IOSDashboardTaskFilter: String, CaseIterable, Identifiable {
-    case all
     case task
     case habit
     case nice
@@ -818,7 +865,6 @@ private enum IOSDashboardTaskFilter: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .all: String(localized: "すべて")
         case .task: String(localized: "タスク")
         case .habit: String(localized: "習慣")
         case .nice: String(localized: "ナイス")

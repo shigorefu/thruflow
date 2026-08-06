@@ -1,8 +1,9 @@
+#if os(iOS) || os(macOS)
 import SwiftData
 import SwiftUI
 import WidgetKit
 
-struct IOSProductWidgetSnapshotSyncView: View {
+struct ProductWidgetSnapshotSyncView: View {
     @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.calendar) private var calendar
     @Environment(\.scenePhase) private var scenePhase
@@ -62,3 +63,4 @@ struct IOSProductWidgetSnapshotSyncView: View {
         WidgetCenter.shared.reloadTimelines(ofKind: ProductWidgetSnapshotStore.dotsWidgetKind)
     }
 }
+#endif

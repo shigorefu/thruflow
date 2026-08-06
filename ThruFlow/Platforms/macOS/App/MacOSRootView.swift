@@ -12,6 +12,7 @@ struct MacOSRootView: View {
     @Environment(\.calendar) private var calendar
     @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var onboarding: OnboardingStore
 
     @Query(sort: \Direction.updatedAt, order: .reverse) private var directions: [Direction]
     @State private var selection: AppSection? = .flow
@@ -58,6 +59,20 @@ struct MacOSRootView: View {
             let reconciler = FlowProgressReconciliationActor(modelContainer: modelContainer)
             try? await reconciler.reconcileAll()
         }
+        .onAppear {
+            showOnboardingScreenIfNeeded()
+        }
+        .onChange(of: onboarding.step) { _, _ in
+            showOnboardingScreenIfNeeded()
+        }
+        .onChange(of: onboarding.isPresented) { _, isPresented in
+            if isPresented {
+                showOnboardingScreenIfNeeded()
+            } else {
+                selection = .flow
+            }
+        }
+        .onOpenURL(perform: openWidgetURL)
     }
 
     @ViewBuilder
@@ -98,6 +113,27 @@ struct MacOSRootView: View {
             }
         }
     }
+
+    private func showOnboardingScreenIfNeeded() {
+        guard onboarding.isPresented else { return }
+        selection = switch onboarding.step.screen {
+        case .flow: .flow
+        case .directions: .directions
+        case .tasks: .tasks
+        case .history: .history
+        case .statistics: .statistics
+        }
+    }
+
+    private func openWidgetURL(_ url: URL) {
+        guard url.scheme == "thruflow" else { return }
+        selection = switch url.host {
+        case "flow": .flow
+        case "tasks": .tasks
+        case "statistics": .statistics
+        default: selection
+        }
+    }
 }
 
 private enum AppSection: Hashable {
@@ -111,5 +147,6 @@ private enum AppSection: Hashable {
 #Preview {
     MacOSRootView()
         .environmentObject(ActiveFlowStore())
+        .environmentObject(OnboardingStore())
         .modelContainer(for: [Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self], inMemory: true)
 }

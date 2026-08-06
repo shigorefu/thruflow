@@ -19,7 +19,7 @@ struct MacOSFlowMenuBarLabel: View {
         guard activeFlowStore.timerState != nil else { return String(localized: "Flow") }
 
         if activeFlowStore.isBreakPhase {
-            let title = activeFlowStore.timerState?.isLongBreak == true ? String(localized: "Long Break") : String(localized: "休憩")
+            let title = activeFlowStore.timerState?.isLongBreak == true ? String(localized: "長休憩") : String(localized: "休憩")
             return String(localized: "☕️ \(title) - \(activeFlowStore.remainingText(now: activeFlowStore.displayDate))")
         }
 

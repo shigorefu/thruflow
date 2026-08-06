@@ -111,6 +111,21 @@ Each platform owns its composition root:
   logical day contains an instant. Domain builders accept it explicitly so
   Tasks, Habits, Flow, History, Statistics, watchOS, and widgets cannot develop
   platform-specific midnight rules.
+- `OnboardingStore` owns the local first-run completion flag and deterministic
+  seven-card step/screen projection. The platform roots keep their real
+  workspace mounted and follow the requested onboarding screen behind one
+  uniformly dimmed overlay with a centered card. Onboarding has no target-bound
+  geometry, anchor preference, spotlight, or automatic target scrolling. No
+  demo entity is inserted into SwiftData. `--onboarding-preview` forces the
+  journey while `--uitesting` keeps its application container in memory.
+- `ReviewPromptPolicy` is a deterministic value policy. `ReviewRequestGate`
+  queries completed Flow history only at application entry or after the shared
+  `flowDidComplete` event, then delegates presentation to StoreKit's system
+  `requestReview` action. The last requested application version stays in local
+  preferences and is not synced.
+- `SupportPurchaseStore` is the single StoreKit 2 boundary for optional
+  consumable tips. It accepts only verified transactions, finishes them, and
+  exposes no entitlement because support purchases unlock no functionality.
 
 - `Platforms/iOS/App/ThruFlowiOSApp.swift` declares the universal iPhone/iPad scene and injects
   the same `ActiveFlowStore`, `AppSettings`, calendar, locale, and model schema.
@@ -119,6 +134,8 @@ Each platform owns its composition root:
   injects the same model schema, settings-derived calendar/locale, and
   `ActiveFlowStore`. It reconciles persisted active Flow state on appearance
   and foreground entry instead of creating a Watch-only timer.
+  The Watch does not compile onboarding, review-presentation, or support-store
+  UI; those surfaces are owned by the companion iPhone/iPad/macOS application.
 
 ## Feature Boundaries
 
@@ -183,6 +200,15 @@ All derived progress must be reproducible from persisted history. Mutations to
 Flow history go through the shared reconciliation logic rather than applying
 view-local relative deltas.
 
+Every shipped executable declares its required-reason API use in a bundled
+`PrivacyInfo.xcprivacy`. The main app and Watch bundle declare app-local
+UserDefaults (`CA92.1`) and App Group defaults (`1C8F.1`); the widget/Live
+Activity extension declares only its App Group snapshot access. No target
+declares tracking or developer-accessible collected data. Private CloudKit
+records remain owned by the user and are not visible in the developer portal;
+the App Store privacy answers and public privacy policy must still explain the
+private iCloud synchronization accurately.
+
 Active timer synchronization follows the same local-first rule. Every timer
 transition is written to the active `FlowSession` with absolute anchors and a
 new runtime revision. CloudKit is transport, not the timer authority.
@@ -237,26 +263,27 @@ back to the iPhone tab shell automatically; data, feature state, deep links,
 and navigation selection remain shared across both presentations. iPad supports
 portrait and landscape orientations, while iPhone remains portrait-only.
 
-Home Screen widgets are read-only projections delivered through App Group
+Home Screen and macOS desktop widgets are read-only projections delivered through App Group
 `group.com.shigorefu.thruflow`:
 
 - `Flowタイマー` supports Small and Medium and projects the current
   `FlowLiveActivityContent`. Date-backed timer and progress views advance
   without a second timer engine or per-second application wakeups.
-- `今日のタスク` supports Small, Medium, and Large. The iOS application builds
+- `今日のタスク` supports Small, Medium, and Large. The host application builds
   its immutable snapshot with the canonical Today filter and dashboard sorter.
 - `Flow Dots` renders one GitHub-style contribution grid from the canonical
   180-day snapshot: Small uses `5 × 6` for 30 days, Medium `12 × 5` for 60
   days, and Large `9 × 10` for 90 days. Every family fills its content area
   without calendar-alignment placeholders.
 
-`IOSProductWidgetSnapshotSyncView` observes SwiftData in the application
+`ProductWidgetSnapshotSyncView` observes SwiftData in each iOS/macOS application
 process, builds Task and Dots snapshots through shared domain logic, stores
 them in the App Group, and reloads only the affected widget kinds. The Widget
 Extension decodes snapshots; it never opens SwiftData, CloudKit, or a second
 business-rule engine. Widget taps deep-link to Flow, Tasks, or Statistics. The
-App Group capability must be provisioned for both the iOS app and the Widget
-Extension.
+App Group capability must be provisioned for the iOS app, macOS app, and the
+shared Widget Extension. ActivityKit rendering remains conditionally compiled
+for iOS; macOS embeds only the three regular WidgetKit configurations.
 
 Dynamic Island regions must remain self-sizing. Do not use unbounded layout such
 as `.frame(maxWidth: .infinity)` or geometry-derived offsets inside an expanded

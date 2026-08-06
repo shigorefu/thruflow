@@ -319,7 +319,7 @@ struct FlowMiniPlayerView: View {
         case .paused:
             String(localized: "一時停止")
         case .breakTime:
-            activeFlowStore.timerState?.isLongBreak == true ? String(localized: "Long Break") : String(localized: "休憩")
+            activeFlowStore.timerState?.isLongBreak == true ? String(localized: "長休憩") : String(localized: "休憩")
         default:
             String(localized: "待機中")
         }
@@ -327,7 +327,7 @@ struct FlowMiniPlayerView: View {
 
     private var timerPhaseName: String {
         activeFlowStore.isBreakPhase && activeFlowStore.timerState?.isLongBreak == true
-            ? String(localized: "Long Break")
+            ? String(localized: "長休憩")
             : activeFlowStore.selectedMode.displayName
     }
 

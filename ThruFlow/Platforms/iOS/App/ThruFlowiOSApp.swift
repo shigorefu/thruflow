@@ -7,6 +7,8 @@ struct ThruFlowiOSApp: App {
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var activeFlowStore: ActiveFlowStore
     @StateObject private var settings = AppSettings()
+    @StateObject private var onboarding = OnboardingStore()
+    @StateObject private var supportPurchaseStore = SupportPurchaseStore()
 
     private let modelContainer: ModelContainer
     private let liveActivityControl: FlowLiveActivityControl
@@ -58,8 +60,11 @@ struct ThruFlowiOSApp: App {
     var body: some Scene {
         WindowGroup {
             IOSRootView()
+                .onboardingJourney(store: onboarding)
                 .environmentObject(activeFlowStore)
                 .environmentObject(settings)
+                .environmentObject(onboarding)
+                .environmentObject(supportPurchaseStore)
                 .environment(\.calendar, settings.effectiveCalendar)
                 .environment(\.appDayBoundary, settings.dayBoundary)
                 .environment(\.locale, settings.effectiveLocale)
@@ -81,7 +86,10 @@ struct ThruFlowiOSApp: App {
                     }
                 }
                 .background {
-                    IOSProductWidgetSnapshotSyncView()
+                    if !onboarding.isPresented {
+                        ProductWidgetSnapshotSyncView()
+                        ReviewRequestGate()
+                    }
                 }
         }
         .modelContainer(modelContainer)

@@ -228,9 +228,9 @@ collapse the archived timer label at runtime.
 
 ## D-024: Home Screen Timer Widget Is A Read-Only Snapshot
 
-The Small and Medium `Flowタイマー` widgets reuse the existing Widget Extension
+The Small and Medium `Flowタイマー` widgets reuse the existing multiplatform Widget Extension
 but do not reuse ActivityKit rendering or create another timer controller. The
-iOS Live Activity adapter writes one Codable `FlowTimerWidgetSnapshot` to App
+iOS Live Activity adapter and macOS Widget projection service write one Codable `FlowTimerWidgetSnapshot` to App
 Group `group.com.shigorefu.thruflow` whenever the canonical
 `FlowLiveActivityContent` changes, clears it when Flow ends, and requests a
 targeted WidgetKit reload. The extension uses date-backed system timer and
@@ -244,9 +244,9 @@ business-rule duplication in the extension.
 
 ## D-025: Product Widgets Use Application-Built Immutable Snapshots
 
-The Widget Extension exposes three independent Home Screen configurations:
+The Widget Extension exposes three independent Home Screen/macOS desktop configurations:
 `Flowタイマー`, `今日のタスク`, and `Flow Dots`. The timer remains a projection
-of `FlowLiveActivityContent`. The iOS application builds Tasks with the
+of `FlowLiveActivityContent`. The iOS and macOS applications build Tasks with the
 canonical Today filter and dashboard ordering, and builds Dots with the
 canonical 180-day statistics heatmap. It serializes these immutable Codable
 snapshots into the shared App Group and requests targeted WidgetKit reloads.
@@ -424,6 +424,35 @@ landscape orientations.
 Reason: one universal bundle preserves installation identity, CloudKit data,
 deep links, and release versioning while allowing each available width to use
 space appropriately.
+
+## D-033: Onboarding Teaches The Real Loop Without Demo Data
+
+macOS, iPhone, and iPad share one seven-card first-run introduction covering
+Welcome, Flow, `方向`, `タスク`, `履歴`, `統計`, and `使い方の流れ`. One compact card
+remains centered above a uniformly dimmed real workspace, and later steps
+navigate the real feature screens behind it. The journey deliberately has no
+spotlight, highlighted target, anchor projection, or automatic target scrolling.
+The last card summarizes `方向 → タスク → Flow → 履歴・統計 → 次の一歩`.
+Onboarding must never write sample records into the user's SwiftData or
+CloudKit store. Settings can reopen the journey, and dedicated preview schemes
+force it with an in-memory test store. watchOS does not repeat onboarding
+because it is a companion surface.
+
+Reason: a short screen tour explains the complete product loop without fragile
+geometry-dependent coach marks, while the user's real workspace remains empty
+and safe to sync.
+
+## D-034: Support Is Voluntary And Never Interrupts Work
+
+The app does not send promotional notifications. StoreKit's review prompt may
+be requested only at a natural post-Flow moment after seven days and either
+five active Flow days or ten completed Flows, at most once per app version.
+Settings owns permanent App Store, GitHub, Coffee JPY 100, and Ramen JPY 500
+support actions. Coffee and Ramen are consumable StoreKit products, unlock
+nothing, and create no entitlement.
+
+Reason: support should remain visible to people who seek it without turning a
+focus tool into an advertising surface or pressuring a new user.
 
 ## Open Questions
 

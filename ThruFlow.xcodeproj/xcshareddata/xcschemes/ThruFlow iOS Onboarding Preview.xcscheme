@@ -8,10 +8,10 @@
       buildArchitectures = "Automatic">
       <BuildActionEntries>
          <BuildActionEntry
-            buildForTesting = "YES"
+            buildForTesting = "NO"
             buildForRunning = "YES"
-            buildForProfiling = "YES"
-            buildForArchiving = "YES"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
@@ -35,9 +35,15 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "NO"
-      ignoresPersistentStateOnLaunch = "NO"
+      ignoresPersistentStateOnLaunch = "YES"
       debugDocumentVersioning = "YES"
       allowLocationSimulation = "YES">
+      <CommandLineArguments>
+         <CommandLineArgument argument = "--uitesting" isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument argument = "--onboarding-preview" isEnabled = "YES">
+         </CommandLineArgument>
+      </CommandLineArguments>
       <BuildableProductRunnable runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
@@ -51,26 +57,10 @@
          identifier = "../ThruFlow/Configuration.storekit">
       </StoreKitConfigurationFileReference>
    </LaunchAction>
-   <ProfileAction
-      buildConfiguration = "Release"
-      shouldUseLaunchSchemeArgsEnv = "YES"
-      savedToolIdentifier = ""
-      useCustomWorkingDirectory = "NO"
-      debugDocumentVersioning = "YES">
-      <BuildableProductRunnable runnableDebuggingMode = "0">
-         <BuildableReference
-            BuildableIdentifier = "primary"
-            BlueprintIdentifier = "4A1000083000000000000008"
-            BuildableName = "ThruFlow.app"
-            BlueprintName = "ThruFlow iOS"
-            ReferencedContainer = "container:ThruFlow.xcodeproj">
-         </BuildableReference>
-      </BuildableProductRunnable>
+   <ProfileAction buildConfiguration = "Release" shouldUseLaunchSchemeArgsEnv = "YES">
    </ProfileAction>
    <AnalyzeAction buildConfiguration = "Debug">
    </AnalyzeAction>
-   <ArchiveAction
-      buildConfiguration = "Release"
-      revealArchiveInOrganizer = "YES">
+   <ArchiveAction buildConfiguration = "Release" revealArchiveInOrganizer = "NO">
    </ArchiveAction>
 </Scheme>

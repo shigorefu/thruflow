@@ -2,6 +2,7 @@ import SwiftUI
 
 struct IOSSettingsView: View {
     @EnvironmentObject private var settings: AppSettings
+    @EnvironmentObject private var onboarding: OnboardingStore
 
     var body: some View {
         Form {
@@ -63,6 +64,16 @@ struct IOSSettingsView: View {
                     isOn: $settings.showsTaskQuickInputLegend
                 )
             }
+
+            Section(String(localized: "ヘルプ")) {
+                Button {
+                    onboarding.present()
+                } label: {
+                    Label(String(localized: "使い方を見る"), systemImage: "sparkles.rectangle.stack")
+                }
+            }
+
+            SupportSettingsSection()
         }
         .iosCenteredNavigationTitle(String(localized: "設定"))
     }

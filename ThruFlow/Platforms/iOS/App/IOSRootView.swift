@@ -39,6 +39,7 @@ enum IOSAppRoute: Hashable, CaseIterable, Identifiable {
 
 struct IOSRootView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @EnvironmentObject private var onboarding: OnboardingStore
 
     @State private var selection = IOSAppRoute.flow
     @State private var showsSettings = false
@@ -91,6 +92,19 @@ struct IOSRootView: View {
                 selectionBinding.wrappedValue = .statistics
             default:
                 break
+            }
+        }
+        .onAppear {
+            showOnboardingScreenIfNeeded()
+        }
+        .onChange(of: onboarding.step) { _, _ in
+            showOnboardingScreenIfNeeded()
+        }
+        .onChange(of: onboarding.isPresented) { _, isPresented in
+            if isPresented {
+                showOnboardingScreenIfNeeded()
+            } else {
+                selectionBinding.wrappedValue = .flow
             }
         }
     }
@@ -221,6 +235,23 @@ struct IOSRootView: View {
             showsSettings = true
         } else {
             selectionBinding.wrappedValue = route
+        }
+    }
+
+    private func showOnboardingScreenIfNeeded() {
+        guard onboarding.isPresented else { return }
+        let route: IOSAppRoute = switch onboarding.step.screen {
+        case .flow: .flow
+        case .directions: .directions
+        case .tasks: .tasks
+        case .history: .history
+        case .statistics: .statistics
+        }
+
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            selection = route
         }
     }
 }

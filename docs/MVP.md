@@ -37,9 +37,10 @@ Current MVP goal:
   tab bar minimizes while content scrolls down and returns when scrolling up.
   Basic `設定` remains in the trailing More menu.
 - iPhone Flow dashboard parity for the actionable surfaces: the Task card can
-  switch between `すべて / タスク / 習慣 / ナイス`, while Statistics uses the
-  same three-page time-distribution, seven-day trend, and completion carousel
-  as macOS.
+  switch between `タスク / 習慣 / ナイス`, provides inline quick capture next
+  to the Tasks deep link (bottom composer on iPhone, anchored popover on iPad),
+  and Statistics uses the same three-page
+  time-distribution, seven-day trend, and completion carousel as macOS.
 - Shared `Sprint | Focus | Deep` segmented selection and mode Help on macOS and
   iPhone.
 - iPhone live quick-input suggestions, arbitrary and no-date Tasks, overdue and
@@ -49,12 +50,12 @@ Current MVP goal:
 - iPhone Live Activity and Dynamic Island player for an active Flow, including
   system-updating time/progress, Task and Direction context, expanded
   seek/pause controls, and deep-link return to the Flow screen.
-- iPhone Home Screen `Flowタイマー` widget in Small and Medium sizes, with
+- iPhone Home Screen and macOS desktop `Flowタイマー` widgets in Small and Medium sizes, with
   system-updating time/progress, active Task and Direction context, an empty
   state, and deep-link return to Flow.
-- iPhone Home Screen `今日のタスク` widget in Small, Medium, and Large sizes,
+- iPhone Home Screen and macOS desktop `今日のタスク` widgets in Small, Medium, and Large sizes,
   with Today ordering and Task measurement progress.
-- iPhone Home Screen `Flow Dots` widget in Small, Medium, and Large sizes:
+- iPhone Home Screen and macOS desktop `Flow Dots` widgets in Small, Medium, and Large sizes:
   GitHub-style `5 × 6`, `12 × 5`, and `9 × 10` grids show the latest 30, 60,
   or 90 days using canonical Flow statistics colors.
 - watchOS Flow companion with a native four-page vertical dashboard for
@@ -62,6 +63,15 @@ Current MVP goal:
 - Shared active-Flow restoration through the CloudKit-backed SwiftData store:
   opening the Watch adopts the same Task, Direction, mode, phase, and elapsed
   time as macOS or iPhone.
+- Shared seven-card first-run introduction over the real macOS, iPhone, and
+  iPad workspace: one centered card above a uniformly dimmed feature screen,
+  no target spotlight or automatic scrolling, a final product-loop summary, a
+  clean in-memory preview path, and a Settings replay action. watchOS remains a
+  companion and does not repeat onboarding.
+- Optional support in Settings: App Store review, GitHub, and consumable Coffee
+  (JPY 100) / Ramen (JPY 500) StoreKit tips that unlock no features.
+- A non-promotional StoreKit review request after seven days and meaningful
+  completed-Flow use, at most once per app version.
 
 ## Not Included
 

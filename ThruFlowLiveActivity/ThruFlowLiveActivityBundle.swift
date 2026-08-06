@@ -7,6 +7,8 @@ struct ThruFlowLiveActivityBundle: WidgetBundle {
         FlowTimerWidget()
         TasksWidget()
         FlowDotsWidget()
+#if os(iOS)
         FlowLiveActivityWidget()
+#endif
     }
 }

@@ -80,3 +80,5 @@
 "TaskQuickInput.shortcuts","Заголовок появляющейся легенды быстрого ввода","ショートカットを使えます","Shortcuts available","Доступны быстрые команды"
 "TaskQuickInput.removeToken","Команда удаления распознанного токена из composer","トークンを削除","Remove token","Удалить токен"
 "TaskQuickInput.createDirection","Команда создания неизвестного направления из autocomplete","新しい方向を作成","Create Direction","Создать направление"
+"Support.coffee","Добровольная consumable-покупка без entitlement","コーヒーを贈る","Send a coffee","Подарить кофе"
+"Support.ramen","Добровольная consumable-покупка без entitlement","ラーメンを贈る","Send a bowl of ramen","Подарить рамэн"

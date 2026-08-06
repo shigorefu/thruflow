@@ -305,6 +305,7 @@ final class ActiveFlowStore: ObservableObject {
 
         if let completedSessionID {
             TaskCompletionFeedbackPlayer.shared.playFlow(for: completedSessionID, now: now)
+            NotificationCenter.default.post(name: .flowDidComplete, object: completedSessionID)
         }
     }
 
@@ -899,6 +900,10 @@ final class ActiveFlowStore: ObservableObject {
         let clampedSeconds = max(0, seconds)
         return String(format: "%02d:%02d", clampedSeconds / 60, clampedSeconds % 60)
     }
+}
+
+extension Notification.Name {
+    static let flowDidComplete = Notification.Name("com.shigorefu.thruflow.flowDidComplete")
 }
 
 private extension UserDefaults {

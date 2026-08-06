@@ -1,3 +1,4 @@
+#if os(iOS)
 import ActivityKit
 import AppIntents
 import SwiftUI
@@ -276,3 +277,4 @@ private extension Color {
         self.init(red: red, green: green, blue: blue)
     }
 }
+#endif

@@ -70,21 +70,22 @@ private struct FlowTimerWidgetView: View {
     private func activeContent(_ snapshot: FlowTimerWidgetSnapshot) -> some View {
         switch family {
         case .systemMedium:
-            HStack(spacing: 16) {
-                identity(snapshot)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+            VStack(spacing: 10) {
+                HStack(spacing: 16) {
+                    identity(snapshot)
+                        .frame(maxWidth: .infinity, alignment: .leading)
 
-                VStack(alignment: .trailing, spacing: 7) {
-                    timeLabel(snapshot)
-                        .font(.title.monospacedDigit().weight(.bold))
+                    VStack(alignment: .trailing, spacing: 7) {
+                        timeLabel(snapshot)
+                            .font(.title.monospacedDigit().weight(.bold))
 
-                    Text("\(snapshot.statusTitle) · \(snapshot.modeName)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                        Text("\(snapshot.statusTitle) · \(snapshot.modeName)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
                 }
-            }
-            .overlay(alignment: .bottom) {
+
                 progress(snapshot)
             }
         default:
@@ -158,12 +159,14 @@ private struct FlowTimerWidgetView: View {
         if snapshot.isPaused {
             ProgressView(value: snapshot.progress)
                 .tint(snapshot.tintColor)
+                .labelsHidden()
         } else {
             ProgressView(
                 timerInterval: snapshot.timerRange,
                 countsDown: snapshot.progressCountsDown
             )
             .tint(snapshot.tintColor)
+            .labelsHidden()
         }
     }
 

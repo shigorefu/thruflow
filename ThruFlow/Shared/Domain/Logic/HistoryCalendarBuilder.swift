@@ -421,7 +421,7 @@ struct HistoryCalendarBuilder {
                 kind: .rest,
                 startedAt: flowBreak.startedAt,
                 endedAt: end,
-                title: flowBreak.isLongBreak ? String(localized: "Long Break") : String(localized: "休憩"),
+                title: flowBreak.isLongBreak ? String(localized: "長休憩") : String(localized: "休憩"),
                 subtitle: direction?.name ?? String(localized: "Flowシリーズ"),
                 symbol: "☕️",
                 colorHex: "#8E8E93",

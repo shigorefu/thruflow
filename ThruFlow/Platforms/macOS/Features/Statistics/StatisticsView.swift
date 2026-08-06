@@ -1075,26 +1075,26 @@ private struct StatisticsTrendCard: View {
                     Chart {
                         ForEach(points) { point in
                             LineMark(
-                                x: .value("日", point.index),
-                                y: .value("前の期間", previousValue(point)),
-                                series: .value("期間", String(localized: "前の期間"))
+                                x: .value(String(localized: "日"), point.index),
+                                y: .value(String(localized: "前の期間"), previousValue(point)),
+                                series: .value(String(localized: "期間"), String(localized: "前の期間"))
                             )
                             .foregroundStyle(Color.secondary.opacity(0.55))
                             .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
                             .interpolationMethod(.linear)
 
                             LineMark(
-                                x: .value("日", point.index),
-                                y: .value("選択した期間", currentValue(point)),
-                                series: .value("期間", String(localized: "選択した期間"))
+                                x: .value(String(localized: "日"), point.index),
+                                y: .value(String(localized: "選択した期間"), currentValue(point)),
+                                series: .value(String(localized: "期間"), String(localized: "選択した期間"))
                             )
                             .foregroundStyle(Color.accentColor)
                             .lineStyle(StrokeStyle(lineWidth: 2.2))
                             .interpolationMethod(.linear)
 
                             PointMark(
-                                x: .value("日", point.index),
-                                y: .value("選択した期間", currentValue(point))
+                                x: .value(String(localized: "日"), point.index),
+                                y: .value(String(localized: "選択した期間"), currentValue(point))
                             )
                             .foregroundStyle(Color.accentColor)
                             .symbolSize(24)
@@ -1213,7 +1213,7 @@ private struct StatisticsDistributionCard: View {
                     HStack(spacing: contentSpacing) {
                         Chart(items) { item in
                             SectorMark(
-                                angle: .value("集中時間", item.focusSeconds),
+                                angle: .value(String(localized: "集中時間"), item.focusSeconds),
                                 innerRadius: .ratio(0.60),
                                 outerRadius: .ratio(
                                     selectedItemID == nil || selectedItemID == item.id ? 1 : 0.96

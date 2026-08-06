@@ -1201,7 +1201,7 @@ struct HistoryBreakEditorView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Label(flowBreak.isLongBreak ? String(localized: "Long Break") : String(localized: "休憩"), systemImage: "cup.and.saucer")
+                    Label(flowBreak.isLongBreak ? String(localized: "長休憩") : String(localized: "休憩"), systemImage: "cup.and.saucer")
                         .font(.title3.weight(.semibold))
                 }
                 Spacer()

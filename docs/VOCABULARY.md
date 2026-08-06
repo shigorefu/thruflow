@@ -29,7 +29,7 @@ first so GitHub contributors have one shared terminology table.
 | If there is room | 余裕があれば |
 | Flow | Flow |
 | Rest | 休憩 |
-| Long Break | Long Break |
+| Long Break | 長休憩 |
 | Sprint Flow | Sprint |
 | Focus Flow | Focus |
 | Deep Flow | Deep |

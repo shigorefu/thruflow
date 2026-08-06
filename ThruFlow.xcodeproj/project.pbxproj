@@ -14,6 +14,7 @@
 		5B2000163000000000000016 /* ThruFlow/Localisation/Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 5B2000123000000000000012 /* ThruFlow/Localisation/Localizable.xcstrings */; };
 		5B2000173000000000000017 /* ThruFlow/Shared/Widget/FlowTimerWidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B2000183000000000000018 /* ThruFlow/Shared/Widget/FlowTimerWidgetSnapshot.swift */; };
 		5B2000193000000000000019 /* ThruFlow/Shared/Widget/ProductWidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B20001A300000000000001A /* ThruFlow/Shared/Widget/ProductWidgetSnapshot.swift */; };
+		5B20001B300000000000001B /* ThruFlowLiveActivityExtension.appex in Embed Widget Extension */ = {isa = PBXBuildFile; fileRef = 5B2000023000000000000002 /* ThruFlowLiveActivityExtension.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		6C3000013000000000000001 /* ThruFlow Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 6C3000023000000000000002 /* ThruFlow Watch App.app */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
@@ -39,6 +40,13 @@
 			remoteGlobalIDString = 5B2000083000000000000008;
 			remoteInfo = ThruFlowLiveActivityExtension;
 		};
+		5B20001E300000000000001E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2E1176E52FFE20CF0011219C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 5B2000083000000000000008;
+			remoteInfo = ThruFlowLiveActivityExtension;
+		};
 		6C30000B300000000000000B /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 2E1176E52FFE20CF0011219C /* Project object */;
@@ -58,6 +66,17 @@
 				5B2000013000000000000001 /* ThruFlowLiveActivityExtension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5B20001C300000000000001C /* Embed Widget Extension */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				5B20001B300000000000001B /* ThruFlowLiveActivityExtension.appex in Embed Widget Extension */,
+			);
+			name = "Embed Widget Extension";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		6C30000D300000000000000D /* Embed Watch Content */ = {
@@ -92,6 +111,7 @@
 		2E1177102FFE20CF0011219C /* Exceptions for "ThruFlow" folder in "ThruFlow" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Configuration.storekit,
 				Info.plist,
 				Platforms/iOS/App/Info.plist,
 			);
@@ -100,6 +120,7 @@
 		4A1000023000000000000002 /* Exceptions for "ThruFlow" folder in "ThruFlow iOS" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Configuration.storekit,
 				Info.plist,
 				Platforms/iOS/App/Info.plist,
 			);
@@ -115,6 +136,7 @@
 		6C3000033000000000000003 /* Exceptions for "ThruFlow" folder in "ThruFlow Watch App" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Configuration.storekit,
 				Info.plist,
 				Platforms/iOS/App/Info.plist,
 			);
@@ -247,10 +269,12 @@
 				2E1176E92FFE20CF0011219C /* Sources */,
 				2E1176EA2FFE20CF0011219C /* Frameworks */,
 				2E1176EB2FFE20CF0011219C /* Resources */,
+				5B20001C300000000000001C /* Embed Widget Extension */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				5B20001D300000000000001D /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				2E1176EF2FFE20CF0011219C /* ThruFlow */,
@@ -547,6 +571,11 @@
 			target = 5B2000083000000000000008 /* ThruFlowLiveActivityExtension */;
 			targetProxy = 5B20000D300000000000000D /* PBXContainerItemProxy */;
 		};
+		5B20001D300000000000001D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 5B2000083000000000000008 /* ThruFlowLiveActivityExtension */;
+			targetProxy = 5B20001E300000000000001E /* PBXContainerItemProxy */;
+		};
 		6C30000C300000000000000C /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 6C3000073000000000000007 /* ThruFlow Watch App */;
@@ -587,6 +616,7 @@
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ThruFlow/Info.plist;
+				INFOPLIST_KEY_ThruFlowAppStoreID = "$(THRUFLOW_APP_STORE_ID)";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -650,6 +680,7 @@
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ThruFlow/Info.plist;
+				INFOPLIST_KEY_ThruFlowAppStoreID = "$(THRUFLOW_APP_STORE_ID)";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -1031,20 +1062,23 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 26.5;
 				MARKETING_VERSION = 0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.shigorefu.thruflow.liveactivity;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
+				SDKROOT = auto;
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				"TARGETED_DEVICE_FAMILY[sdk=iphoneos*]" = 1;
+				"TARGETED_DEVICE_FAMILY[sdk=iphonesimulator*]" = 1;
+				"TARGETED_DEVICE_FAMILY[sdk=macosx*]" = 6;
 			};
 			name = Debug;
 		};
@@ -1064,20 +1098,23 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 26.5;
 				MARKETING_VERSION = 0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.shigorefu.thruflow.liveactivity;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
+				SDKROOT = auto;
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				"TARGETED_DEVICE_FAMILY[sdk=iphoneos*]" = 1;
+				"TARGETED_DEVICE_FAMILY[sdk=iphonesimulator*]" = 1;
+				"TARGETED_DEVICE_FAMILY[sdk=macosx*]" = 6;
 			};
 			name = Release;
 		};
@@ -1119,7 +1156,6 @@
 					IOSHistoryView.swift,
 					IOSMoreMenuLabel.swift,
 					IOSPeriodSwipeNavigation.swift,
-					IOSProductWidgetSnapshotSyncView.swift,
 					IOSRootView.swift,
 					IOSScrollablePeriodStrip.swift,
 					IOSSettingsView.swift,
@@ -1133,7 +1169,11 @@
 					MacOSRootView.swift,
 					MacOSSettingsView.swift,
 					ManualFlowCreationView.swift,
+					OnboardingJourneyView.swift,
+					ReviewRequestGate.swift,
 					StatisticsView.swift,
+					SupportPurchaseStore.swift,
+					SupportSettingsSection.swift,
 					TaskCalendarBoardView.swift,
 					TasksView.swift,
 					ThruFlowApp.swift,
@@ -1204,7 +1244,6 @@
 					IOSHistoryView.swift,
 					IOSMoreMenuLabel.swift,
 					IOSPeriodSwipeNavigation.swift,
-					IOSProductWidgetSnapshotSyncView.swift,
 					IOSRootView.swift,
 					IOSScrollablePeriodStrip.swift,
 					IOSSettingsView.swift,
@@ -1218,7 +1257,11 @@
 					MacOSRootView.swift,
 					MacOSSettingsView.swift,
 					ManualFlowCreationView.swift,
+					OnboardingJourneyView.swift,
+					ReviewRequestGate.swift,
 					StatisticsView.swift,
+					SupportPurchaseStore.swift,
+					SupportSettingsSection.swift,
 					TaskCalendarBoardView.swift,
 					TasksView.swift,
 					ThruFlowApp.swift,

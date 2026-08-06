@@ -408,7 +408,7 @@ struct FlowDashboardView: View {
                             .allowsHitTesting(false)
                     }
 
-                    ForEach(timelineSessionGroups(snapshot.segments)) { group in
+                    ForEach(snapshot.sessionGroups) { group in
                         let width = intervalWidth(
                             from: group.startedAt,
                             to: group.endedAt,
@@ -621,7 +621,6 @@ struct FlowDashboardView: View {
                 onOpen: { editingTodo = $0 },
                 addControl: AnyView(dashboardAddButton)
             )
-
             DashboardTodoColumn(
                 title: String(localized: "習慣"),
                 systemImage: "repeat",
@@ -1041,25 +1040,6 @@ struct FlowDashboardView: View {
         Color.black.opacity(colorScheme == .dark ? 0.46 : 0.12)
     }
 
-    private func timelineSessionGroups(_ segments: [FlowDashboardSegment]) -> [TimelineSessionGroup] {
-        Dictionary(grouping: segments, by: { $0.session.id })
-            .values
-            .compactMap { values in
-                guard let first = values.min(by: { $0.startedAt < $1.startedAt }),
-                      let last = values.max(by: { $0.endedAt < $1.endedAt }) else {
-                    return nil
-                }
-                return TimelineSessionGroup(
-                    id: first.session.id,
-                    startedAt: first.startedAt,
-                    endedAt: last.endedAt,
-                    segments: values.sorted { $0.startedAt < $1.startedAt },
-                    isActive: values.contains(where: \.isActive)
-                )
-            }
-            .sorted { $0.startedAt < $1.startedAt }
-    }
-
     private func segmentWidth(
         _ segment: FlowDashboardSegment,
         range: FlowTimelineRange,
@@ -1096,7 +1076,7 @@ struct FlowDashboardView: View {
     }
 
     private func breakHelpText(_ flowBreak: FlowDashboardBreak) -> String {
-        let name = flowBreak.isLongBreak ? String(localized: "Long Break") : String(localized: "休憩")
+        let name = flowBreak.isLongBreak ? String(localized: "長休憩") : String(localized: "休憩")
         return "☕️ \(name) \(TimelineSegmentFormat.duration(flowBreak.durationSeconds))"
     }
 
@@ -1217,14 +1197,6 @@ private enum TimelineItem: Equatable {
     case flowBreak(UUID)
 }
 
-private struct TimelineSessionGroup: Identifiable {
-    let id: UUID
-    let startedAt: Date
-    let endedAt: Date
-    let segments: [FlowDashboardSegment]
-    let isActive: Bool
-}
-
 private struct TimelineSegmentHoverCard: View {
     @Environment(\.locale) private var locale
 
@@ -1261,7 +1233,7 @@ private struct TimelineBreakHoverCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
-            Label(flowBreak.isLongBreak ? String(localized: "Long Break") : String(localized: "休憩"), systemImage: "cup.and.saucer.fill")
+            Label(flowBreak.isLongBreak ? String(localized: "長休憩") : String(localized: "休憩"), systemImage: "cup.and.saucer.fill")
                 .font(.caption.weight(.semibold))
 
             Text("\(TimelineSegmentFormat.interval(from: flowBreak.startedAt, to: flowBreak.endedAt, locale: locale)) · \(TimelineSegmentFormat.duration(flowBreak.durationSeconds))")
@@ -1311,7 +1283,7 @@ private struct TimelineBreakPopover: View {
                     .clipShape(RoundedRectangle(cornerRadius: 8))
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(flowBreak.isLongBreak ? String(localized: "Long Break") : String(localized: "休憩"))
+                    Text(flowBreak.isLongBreak ? String(localized: "長休憩") : String(localized: "休憩"))
                         .font(.headline)
                     Text(String(localized: "開始時刻は固定されます"))
                         .font(.caption)

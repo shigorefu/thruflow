@@ -38,14 +38,28 @@ struct DirectionListView: View {
         DirectionGroup.order(from: directionGroupOrderRaw)
     }
 
+    private var directionGridColumns: [GridItem] {
+        [
+            GridItem(
+                .adaptive(minimum: 300),
+                spacing: 14,
+                alignment: .top
+            )
+        ]
+    }
+
     private var editingDirection: Direction? {
         guard let editingDirectionID else { return nil }
         return directions.first { $0.id == editingDirectionID }
     }
 
     var body: some View {
-        ScrollView(.horizontal) {
-            HStack(alignment: .top, spacing: 14) {
+        ScrollView(.vertical) {
+            LazyVGrid(
+                columns: directionGridColumns,
+                alignment: .leading,
+                spacing: 14
+            ) {
                 ForEach(directionGroups) { group in
                     VStack(alignment: .leading, spacing: 10) {
                         DirectionSectionHeader(group: group)
@@ -63,59 +77,55 @@ struct DirectionListView: View {
                                 )
                             }
 
-                        ScrollView(.vertical) {
-                            LazyVStack(spacing: 8) {
-                                if group.directions.isEmpty {
-                                    ContentUnavailableView(
-                                        String(localized: "方向はありません"),
-                                        systemImage: "tray",
-                                        description: Text(String(localized: "この列に該当する方向はまだありません。"))
-                                    )
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.top, 40)
-                                }
-
-                                ForEach(group.directions) { direction in
-                                    DirectionRow(direction: direction)
-                                        .contentShape(Rectangle())
-                                        .overlay {
-                                            if dropTargetID == direction.id {
-                                                RoundedRectangle(cornerRadius: 8)
-                                                    .strokeBorder(Color.accentColor, lineWidth: 2)
-                                            }
-                                        }
-                                        .onTapGesture {
-                                            editingDirectionID = direction.id
-                                        }
-                                        .onDrag {
-                                            draggedDirectionID = direction.id
-                                            return NSItemProvider(object: direction.id.uuidString as NSString)
-                                        }
-                                        .onDrop(
-                                            of: [UTType.text],
-                                            delegate: DirectionReorderDropDelegate(
-                                                targetID: direction.id,
-                                                draggedDirectionID: $draggedDirectionID,
-                                                dropTargetID: $dropTargetID,
-                                                move: moveDirection
-                                            )
-                                        )
-                                        .contextMenu {
-                                            if !direction.isArchived {
-                                                Button(String(localized: "アーカイブ"), systemImage: "archivebox", role: .destructive) {
-                                                    direction.archive()
-                                                    try? modelContext.save()
-                                                }
-                                            }
-                                        }
-                                }
+                        LazyVStack(spacing: 8) {
+                            if group.directions.isEmpty {
+                                ContentUnavailableView(
+                                    String(localized: "方向はありません"),
+                                    systemImage: "tray",
+                                    description: Text(String(localized: "この列に該当する方向はまだありません。"))
+                                )
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 40)
                             }
-                            .padding(.bottom, 8)
+
+                            ForEach(group.directions) { direction in
+                                DirectionRow(direction: direction)
+                                    .contentShape(Rectangle())
+                                    .overlay {
+                                        if dropTargetID == direction.id {
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .strokeBorder(Color.accentColor, lineWidth: 2)
+                                        }
+                                    }
+                                    .onTapGesture {
+                                        editingDirectionID = direction.id
+                                    }
+                                    .onDrag {
+                                        draggedDirectionID = direction.id
+                                        return NSItemProvider(object: direction.id.uuidString as NSString)
+                                    }
+                                    .onDrop(
+                                        of: [UTType.text],
+                                        delegate: DirectionReorderDropDelegate(
+                                            targetID: direction.id,
+                                            draggedDirectionID: $draggedDirectionID,
+                                            dropTargetID: $dropTargetID,
+                                            move: moveDirection
+                                        )
+                                    )
+                                    .contextMenu {
+                                        if !direction.isArchived {
+                                            Button(String(localized: "アーカイブ"), systemImage: "archivebox", role: .destructive) {
+                                                direction.archive()
+                                                try? modelContext.save()
+                                            }
+                                        }
+                                    }
+                            }
                         }
-                        .scrollIndicators(.visible)
+                        .padding(.bottom, 8)
                     }
-                    .frame(width: 320)
-                    .frame(maxHeight: .infinity, alignment: .top)
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
                     .padding(12)
                     .background(Color.primary.opacity(0.035))
                     .clipShape(RoundedRectangle(cornerRadius: 8))

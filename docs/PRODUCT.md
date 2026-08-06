@@ -54,7 +54,7 @@ Flow is a media-player-like recorder.
 
 `Flow` is the first/default navigation section and today's primary dashboard. In wide layout, one grid aligns the stream/timeline above Tasks on the left and the square player above Statistics on the right. The left column occupies roughly three quarters of the content. Direction colors compose the stream palette, while focus duration and session count control its visual volume.
 
-The stream is a field of broad, bright, softly glowing translucent ribbons rendered on the GPU around one shared S-shaped channel with three levels of depth. It remains smooth while idle and immediately accelerates when Flow starts. Its occupied area stops growing at 4 Blocks so depth, transparency, and motion preserve the silhouette without black carved stripes; progress through 6 Blocks instead adds internal detail, parallax, saturation, and motion. A restrained light pulse crosses the stream at each completed half-Block. Sprint, Focus, and Deep change the wave character, while a subtle mode-specific tint is applied to the dashboard. Below it, today's normal Tasks and Habits remain actionable with the same Check, Block, and Minute indicators as Tasks; Nice appears only when present. The dashboard Task card switches between `すべて / タスク / 習慣 / ナイス`. Fixed-height compact Statistics form the same three-page carousel on macOS and iPhone for Task/Direction time distribution, a seven-day Flow trend with day-over-day deltas, and today's completion status.
+The stream is a field of broad, bright, softly glowing translucent ribbons rendered on the GPU around one shared S-shaped channel with three levels of depth. It remains smooth while idle and immediately accelerates when Flow starts. Its occupied area stops growing at 4 Blocks so depth, transparency, and motion preserve the silhouette without black carved stripes; progress through 6 Blocks instead adds internal detail, parallax, saturation, and motion. A restrained light pulse crosses the stream at each completed half-Block. Sprint, Focus, and Deep change the wave character, while a subtle mode-specific tint is applied to the dashboard. Below it, today's normal Tasks and Habits remain actionable with the same Check, Block, and Minute indicators as Tasks; Nice appears only when present. On iPhone and iPad, one dashboard Task card switches between `タスク / 習慣 / ナイス`; its header offers quick Task capture next to the Tasks deep link. Compact width uses the bottom composer and regular width anchors it as a popover to `+`. Fixed-height compact Statistics form the same three-page carousel on macOS and iPhone for Task/Direction time distribution, a seven-day Flow trend with day-over-day deltas, and today's completion status.
 
 Modes:
 
@@ -148,6 +148,23 @@ app scene.
 Language follows the shared String Catalog and takes effect after relaunch;
 available languages are discovered from the bundle so contributors can add a
 locale without changing Settings code.
+
+A first installation opens a seven-card introduction: Welcome, Flow,
+Directions, Tasks, History, Statistics, and `使い方の流れ`. Each compact card
+stays centered above a uniformly dimmed real workspace while the corresponding
+feature screen opens behind it. The introduction has no spotlight, highlighted
+target, anchor projection, or automatic target scrolling. Its final card
+summarizes the loop as `方向 → タスク → Flow → 履歴・統計 → 次の一歩`. It writes no
+sample records to SwiftData or CloudKit, and Settings can replay the same
+journey at any time.
+
+Settings also contains voluntary support actions: App Store review, the public
+GitHub project, and two StoreKit consumable tips (`Coffee`, JPY 100, and
+`Ramen`, JPY 500). Tips unlock no feature and are not subscriptions. The app
+does not send a promotional notification after one week. Instead, after at
+least seven days and either five active Flow days or ten completed Flows, it may
+ask for a review at a natural post-Flow moment, at most once per app version.
+The system ultimately decides whether the review sheet is shown.
 
 ## Apple Watch
 

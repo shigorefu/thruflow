@@ -551,7 +551,7 @@ struct HistoryDayInspectorPane: View {
                 }
             case .rest:
                 propertyRow(String(localized: "種類"), systemImage: "cup.and.saucer") {
-                    item.flowBreak?.isLongBreak == true ? String(localized: "Long Break") : String(localized: "休憩")
+                    item.flowBreak?.isLongBreak == true ? String(localized: "長休憩") : String(localized: "休憩")
                 }
             }
 

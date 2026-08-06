@@ -281,7 +281,7 @@
       }
     },
     "%@ %@ %lld方向 タスク%lld件 Flow%lld件" : {
-      "extractionState" : "stale",
+      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -326,7 +326,7 @@
       }
     },
     "%@ %@ タスク%lld件 Flow%lld件" : {
-      "extractionState" : "stale",
+      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -382,6 +382,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@–%@"
+          }
+        }
+      }
+    },
+    "%@, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@, %2$@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@, %2$@"
           }
         }
       }
@@ -659,7 +681,7 @@
       }
     },
     "%lld Flow in %@" : {
-      "extractionState" : "stale",
+      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -704,7 +726,7 @@
       }
     },
     "%lld 達成 in %@" : {
-      "extractionState" : "stale",
+      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -945,7 +967,7 @@
       }
     },
     "%lld達成" : {
-      "extractionState" : "stale",
+      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1111,6 +1133,39 @@
         }
       }
     },
+    "1時間12分" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 hr 12 min"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 ч 12 мин"
+          }
+        }
+      }
+    },
+    "1集中ブロックは25分。短いFlowは同じタスクの進捗として積み重なり、休憩は含まれません。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One focus block is 25 minutes. Short Flows add to the same task's progress; breaks do not count."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Один блок фокуса — 25 минут. Короткие Flow складываются в прогресс одной задачи, перерывы не учитываются."
+          }
+        }
+      }
+    },
     "7日" : {
       "localizations" : {
         "en" : {
@@ -1123,6 +1178,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "7 дней"
+          }
+        }
+      }
+    },
+    "8時間42分" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "8 hr 42 min"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "8 ч 42 мин"
           }
         }
       }
@@ -1331,6 +1403,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Активности"
+          }
+        }
+      }
+    },
+    "App Storeで評価" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rate on the App Store"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Оценить в App Store"
           }
         }
       }
@@ -1887,6 +1975,22 @@
         }
       }
     },
+    "Flow画面は、今日の作業を進める中心です。タスクを選び、Sprint・Focus・Deepから今の自分に合う長さで集中します。タイマー、今日の流れ、タスク、今日の統計をひとつの画面で確認できます。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Flow screen is the center of today's work. Choose a task, then focus for the length that suits you now: Sprint, Focus, or Deep. The timer, today's flow, tasks, and today's statistics are all in one place."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Экран Flow — центр работы на сегодня. Выберите задачу и подходящую сейчас длительность концентрации: Sprint, Focus или Deep. Таймер, поток дня, задачи и статистика за сегодня собраны в одном месте."
+          }
+        }
+      }
+    },
     "Focus" : {
       "localizations" : {
         "en" : {
@@ -1919,6 +2023,22 @@
         }
       }
     },
+    "GitHubで開発に参加" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contribute on GitHub"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Участвовать в разработке на GitHub"
+          }
+        }
+      }
+    },
     "Inbox" : {
       "localizations" : {
         "en" : {
@@ -1947,28 +2067,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Входящие пусты"
-          }
-        }
-      }
-    },
-    "Long Break" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Long Break"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "長休憩"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Длинный перерыв"
           }
         }
       }
@@ -2085,6 +2183,103 @@
         }
       }
     },
+    "ThruFlow" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ThruFlow"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ThruFlow"
+          }
+        }
+      }
+    },
+    "ThruFlowが役に立っているなら、これからの開発を応援していただけるとうれしいです。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If ThruFlow helps you, your support can help keep its development moving forward."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Если ThruFlow вам помогает, вы можете поддержать дальнейшее развитие приложения."
+          }
+        }
+      }
+    },
+    "ThruFlowの開発を応援していただき、ありがとうございます。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thank you for supporting ThruFlow's development."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Спасибо, что поддерживаете разработку ThruFlow."
+          }
+        }
+      }
+    },
+    "ThruFlowへようこそ" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welcome to ThruFlow"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добро пожаловать в ThruFlow"
+          }
+        }
+      }
+    },
+    "ThruFlowを始める" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start using ThruFlow"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Начать с ThruFlow"
+          }
+        }
+      }
+    },
+    "ThruFlowを応援" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Support ThruFlow"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поддержать ThruFlow"
+          }
+        }
+      }
+    },
     "Travel" : {
       "localizations" : {
         "en" : {
@@ -2161,6 +2356,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "В архиве"
+          }
+        }
+      }
+    },
+    "ありがとうございます！" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thank you!"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Спасибо!"
           }
         }
       }
@@ -2433,6 +2644,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Серый"
+          }
+        }
+      }
+    },
+    "コーヒーを贈る" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send a coffee"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подарить кофе"
+          }
+        }
+      }
+    },
+    "コーヒー一杯、あるいはラーメン一杯で開発を応援できます。購入しても機能は変わりません。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Support development with a coffee or a bowl of ramen. These purchases do not change app features."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поддержите разработку чашкой кофе или рамэном. Эти покупки не открывают дополнительных функций."
           }
         }
       }
@@ -2881,6 +3124,22 @@
         }
       }
     },
+    "スキップ" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skip"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пропустить"
+          }
+        }
+      }
+    },
     "すべて" : {
       "localizations" : {
         "en" : {
@@ -2893,6 +3152,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Все"
+          }
+        }
+      }
+    },
+    "すべてが、ひとつの流れになる" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Everything comes together in one flow"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Всё складывается в единый поток"
           }
         }
       }
@@ -2962,7 +3237,7 @@
       }
     },
     "その他の操作" : {
-      "extractionState" : "stale",
+      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3065,7 +3340,7 @@
       }
     },
     "タスク %lld ・ Flow %lld" : {
-      "extractionState" : "stale",
+      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3099,6 +3374,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Выберите задачу, привычку или направление"
+          }
+        }
+      }
+    },
+    "タスク、習慣、集中した時間を、ひとつのわかりやすいFlowにつなげます。1分で基本を見てみましょう。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bring tasks, habits, and focused time together in one clear Flow. Take a minute to see the basics."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Объедините задачи, привычки и время концентрации в один понятный Flow. За минуту познакомимся с основами."
           }
         }
       }
@@ -3147,6 +3438,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Задач нет"
+          }
+        }
+      }
+    },
+    "タスクは今日できる具体的な行動です。チェック、集中ブロック、分の3つから、進捗の測り方を選べます。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tasks are concrete actions you can take today. Track progress by completion, focus blocks, or minutes."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Задачи — конкретные действия на сегодня. Прогресс можно измерять выполнением, блоками фокуса или минутами."
           }
         }
       }
@@ -3583,6 +3890,22 @@
         }
       }
     },
+    "ヘルプ" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Help"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Помощь"
+          }
+        }
+      }
+    },
     "まだFlowはありません" : {
       "localizations" : {
         "en" : {
@@ -3663,6 +3986,38 @@
         }
       }
     },
+    "ようこそ" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welcome"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добро пожаловать"
+          }
+        }
+      }
+    },
+    "ラーメンを贈る" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send a bowl of ramen"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подарить рамэн"
+          }
+        }
+      }
+    },
     "ライト" : {
       "localizations" : {
         "en" : {
@@ -3691,6 +4046,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Красный"
+          }
+        }
+      }
+    },
+    "一日の流れを振り返る" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Look back on the day's flow"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Оглянитесь на течение дня"
           }
         }
       }
@@ -4117,6 +4488,22 @@
         }
       }
     },
+    "今日を進める中心" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Where your day moves forward"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Центр вашего дня"
+          }
+        }
+      }
+    },
     "今月" : {
       "localizations" : {
         "en" : {
@@ -4129,6 +4516,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Этот месяц"
+          }
+        }
+      }
+    },
+    "仕事" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Work"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Работа"
           }
         }
       }
@@ -4161,6 +4565,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Необязательно: выберите дни недели"
+          }
+        }
+      }
+    },
+    "企画書を作る" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Draft the proposal"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подготовить предложение"
           }
         }
       }
@@ -4401,6 +4822,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Подстраивается под время работы"
+          }
+        }
+      }
+    },
+    "使い方の流れ" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How it works"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Как всё работает"
+          }
+        }
+      }
+    },
+    "使い方を見る" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "View introduction"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Посмотреть знакомство"
           }
         }
       }
@@ -4728,7 +5181,7 @@
       }
     },
     "合計" : {
-      "extractionState" : "stale",
+      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4937,7 +5390,7 @@
       }
     },
     "完了あり" : {
-      "extractionState" : "stale",
+      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5113,6 +5566,22 @@
         }
       }
     },
+    "履歴・統計" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "History & Statistics"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "История и статистика"
+          }
+        }
+      }
+    },
     "履歴と関連タスクを保つため、方向はアーカイブされます。" : {
       "localizations" : {
         "en" : {
@@ -5125,6 +5594,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Направление будет перенесено в архив, чтобы сохранить историю и связанные задачи."
+          }
+        }
+      }
+    },
+    "履歴には実際のFlow、休憩、タスクの切り替えが残ります。記録が違っていたときは、あとから正しく直せます。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "History keeps your actual Flows, breaks, and task changes. If a record is wrong, you can correct it later."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В истории сохраняются реальные Flow, перерывы и смены задач. Если запись неточна, её можно исправить позже."
           }
         }
       }
@@ -5241,6 +5726,22 @@
         }
       }
     },
+    "意図を、今日の一歩に" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn intention into today's step"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Превратите намерение в шаг сегодня"
+          }
+        }
+      }
+    },
     "戻る" : {
       "localizations" : {
         "en" : {
@@ -5253,6 +5754,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Назад"
+          }
+        }
+      }
+    },
+    "承認が完了すると購入が自動的に処理されます。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The purchase will be processed automatically once approval is complete."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Покупка будет обработана автоматически после подтверждения."
+          }
+        }
+      }
+    },
+    "散歩" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Walk"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Прогулка"
           }
         }
       }
@@ -5391,6 +5925,22 @@
         }
       }
     },
+    "方向、タスク、Flow、履歴と統計、次の一歩" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Directions, Tasks, Flow, History and Statistics, then your next step"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Направления, задачи, Flow, история и статистика, затем следующий шаг"
+          }
+        }
+      }
+    },
     "方向「%@」が見つかりません" : {
       "localizations" : {
         "en" : {
@@ -5408,7 +5958,7 @@
       }
     },
     "方向で絞り込む" : {
-      "extractionState" : "stale",
+      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5436,6 +5986,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Этот Flow будет вычтен из времени фокуса направления и задачи."
+          }
+        }
+      }
+    },
+    "方向は、仕事・学習・健康・読書のように、継続して時間を向けたいテーマです。関連するタスク、Flow、統計をひとつにまとめます。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Directions are themes you want to keep investing time in, such as work, learning, health, or reading. They bring related tasks, Flows, and statistics together."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Направления — темы, которым вы хотите регулярно уделять время: работа, учёба, здоровье или чтение. Они объединяют связанные задачи, Flow и статистику."
           }
         }
       }
@@ -5500,6 +6066,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Удалить направление"
+          }
+        }
+      }
+    },
+    "方向を決め、今日のタスクに落とし込み、Flowで実際の集中時間を記録します。履歴と統計で振り返ったら、次に時間を向ける先を選びます。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a Direction, turn it into today's Tasks, and record the focused time you actually spend in Flow. Review your History and Statistics, then decide where to direct your time next."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите направление, превратите его в задачи на сегодня и записывайте фактическое время концентрации с помощью Flow. Просмотрите историю и статистику, а затем решите, куда направить время дальше."
           }
         }
       }
@@ -5760,6 +6342,23 @@
         }
       }
     },
+    "日本語を復習" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Review Japanese"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Повторить японский"
+          }
+        }
+      }
+    },
     "明日" : {
       "localizations" : {
         "en" : {
@@ -5852,6 +6451,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Часы"
+          }
+        }
+      }
+    },
+    "時間をおいてから、もう一度お試しください。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please wait a moment and try again."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подождите немного и попробуйте снова."
+          }
+        }
+      }
+    },
+    "時間を向ける先を決める" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose where your time goes"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Решите, чему уделять время"
           }
         }
       }
@@ -6172,6 +6803,23 @@
         }
       }
     },
+    "本を読む" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Read a book"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Читать книгу"
+          }
+        }
+      }
+    },
     "検索" : {
       "localizations" : {
         "en" : {
@@ -6206,6 +6854,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Обзор"
+          }
+        }
+      }
+    },
+    "次の一歩" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next step"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Следующий шаг"
           }
         }
       }
@@ -6466,6 +7130,22 @@
         }
       }
     },
+    "無料・広告なし・サブスクリプションなし・アカウント登録不要" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Free · No ads · No subscriptions · No account required"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Бесплатно · Без рекламы · Без подписок · Без обязательной регистрации"
+          }
+        }
+      }
+    },
     "現在のFlowをメモなしで終了します。" : {
       "localizations" : {
         "en" : {
@@ -6627,7 +7307,7 @@
       }
     },
     "空白" : {
-      "extractionState" : "stale",
+      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6867,6 +7547,22 @@
         }
       }
     },
+    "続ける" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Продолжить"
+          }
+        }
+      }
+    },
     "編集" : {
       "localizations" : {
         "en" : {
@@ -7012,7 +7708,7 @@
       }
     },
     "複数の方向は色を混ぜて表示" : {
-      "extractionState" : "stale",
+      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7061,7 +7757,7 @@
       }
     },
     "言語と地域" : {
-      "extractionState" : "stale",
+      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7269,6 +7965,55 @@
         }
       }
     },
+    "資料を送る" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send the document"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отправить документ"
+          }
+        }
+      }
+    },
+    "購入できませんでした" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Purchase unavailable"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось совершить покупку"
+          }
+        }
+      }
+    },
+    "購入を確認しています" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Awaiting purchase approval"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ожидание подтверждения покупки"
+          }
+        }
+      }
+    },
     "追加" : {
       "localizations" : {
         "en" : {
@@ -7301,6 +8046,38 @@
         }
       }
     },
+    "途中でタスクや長さを変えても、連続した作業はひとつのFlowとして記録されます。休憩は3・5・10分、4ブロックごとに20分の長休憩です。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Even if you change the task or duration midway, continuous work is recorded as one Flow. Breaks are 3, 5, or 10 minutes, with a 20-minute Long Break after every four blocks."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Даже если сменить задачу или длительность, непрерывная работа останется одним Flow. Перерывы длятся 3, 5 или 10 минут, а после каждых четырёх блоков — 20 минут длинного перерыва."
+          }
+        }
+      }
+    },
+    "途中でタスクを変えても、連続した作業はひとつのFlowのままです。各タスクの時間は別々に集計されます。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If you change tasks midway, uninterrupted work remains one Flow. Time is still calculated separately for each task."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Если сменить задачу в процессе, непрерывная работа останется одним Flow. Время по каждой задаче всё равно считается отдельно."
+          }
+        }
+      }
+    },
     "通常" : {
       "localizations" : {
         "en" : {
@@ -7313,6 +8090,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Обычное"
+          }
+        }
+      }
+    },
+    "通常は計画する活動、習慣は決めた日に現れる活動、ナイスはできたらうれしい活動です。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Regular items are planned activities, Habits appear on chosen days, and Nice items are optional wins."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обычные направления — запланированные занятия, привычки появляются в выбранные дни, а Nice — приятные необязательные дела."
           }
         }
       }
@@ -7345,6 +8138,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld раз в неделю"
+          }
+        }
+      }
+    },
+    "週・月・年ごとに、集中時間の傾向、タスクや方向への時間配分、日々のDotsを確認できます。自分を採点するためではなく、次に時間を向ける先を選ぶための統計です。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See focused-time trends, time by Task or Direction, and daily Dots by week, month, or year. Statistics are here to help choose where your time goes next—not to grade you."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Смотрите тенденции времени фокуса, распределение по задачам и направлениям и ежедневные Dots за неделю, месяц или год. Статистика нужна не для оценки себя, а чтобы решить, чему уделить время дальше."
           }
         }
       }
@@ -7461,6 +8270,23 @@
         }
       }
     },
+    "運動" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exercise"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Тренировка"
+          }
+        }
+      }
+    },
     "過去180日" : {
       "localizations" : {
         "en" : {
@@ -7478,7 +8304,7 @@
       }
     },
     "達成" : {
-      "extractionState" : "stale",
+      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7495,7 +8321,7 @@
       }
     },
     "達成なし" : {
-      "extractionState" : "stale",
+      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7512,7 +8338,7 @@
       }
     },
     "達成日" : {
-      "extractionState" : "stale",
+      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7630,6 +8456,22 @@
         }
       }
     },
+    "長休憩" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Long Break"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Длинный перерыв"
+          }
+        }
+      }
+    },
     "閉じる" : {
       "localizations" : {
         "en" : {
@@ -7695,7 +8537,7 @@
       }
     },
     "集中のみ" : {
-      "extractionState" : "stale",
+      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7707,6 +8549,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Только фокус"
+          }
+        }
+      }
+    },
+    "集中のリズムに気づく" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notice your focus rhythm"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Замечайте свой ритм концентрации"
           }
         }
       }

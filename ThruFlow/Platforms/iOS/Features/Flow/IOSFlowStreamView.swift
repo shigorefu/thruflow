@@ -55,13 +55,11 @@ struct IOSFlowTimelineView: View {
                         )
                     }
 
-                    ForEach(snapshot.segments) { segment in
-                        timelineCapsule(
-                            start: segment.startedAt,
-                            end: segment.endedAt,
+                    ForEach(snapshot.sessionGroups) { group in
+                        timelineSessionGroup(
+                            group,
                             range: range,
                             width: proxy.size.width,
-                            color: Color(hex: segment.colorHex),
                             height: 14
                         )
                     }
@@ -96,5 +94,40 @@ struct IOSFlowTimelineView: View {
             .fill(color)
             .frame(width: max(endX - startX, 4), height: height)
             .offset(x: startX)
+    }
+
+    private func timelineSessionGroup(
+        _ group: FlowDashboardSessionGroup,
+        range: FlowTimelineRange,
+        width: CGFloat,
+        height: CGFloat
+    ) -> some View {
+        let startX = width * range.fraction(for: group.startedAt)
+        let endX = width * range.fraction(for: group.endedAt)
+        let groupWidth = max(endX - startX, 4)
+        let groupDuration = max(1, group.endedAt.timeIntervalSince(group.startedAt))
+
+        return ZStack(alignment: .leading) {
+            ForEach(group.segments) { segment in
+                let segmentStart = max(0, segment.startedAt.timeIntervalSince(group.startedAt))
+                let segmentDuration = max(1, segment.endedAt.timeIntervalSince(segment.startedAt))
+
+                Rectangle()
+                    .fill(Color(hex: segment.colorHex))
+                    .frame(
+                        width: max(1, groupWidth * segmentDuration / groupDuration),
+                        height: height
+                    )
+                    .offset(x: groupWidth * segmentStart / groupDuration)
+            }
+        }
+        .frame(width: groupWidth, height: height, alignment: .leading)
+        .clipShape(RoundedRectangle(cornerRadius: height / 2))
+        .shadow(
+            color: Color(hex: group.segments.first?.colorHex ?? "#8E8E93")
+                .opacity(group.isActive ? 0.55 : 0.40),
+            radius: group.isActive ? 5 : 4
+        )
+        .offset(x: startX)
     }
 }
