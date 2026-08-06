@@ -497,3 +497,25 @@ or undocumented TestFlight deep link.
 Reason: TestFlight already provides diagnostic feedback during beta, while
 GitHub Issues remains transparent and maintainable after release without
 inventing an account or data-collection service.
+
+## D-037: The Flow Stream Acknowledges The Rest Lifecycle
+
+The shared Flow stream runs its existing idle and active phase-speed curves 25
+percent faster without changing the 30/60 FPS cadence. A restrained idle-only
+inner current makes the low end of that curve readable without applying another
+speed multiplier. Every valid `休憩`
+selection publishes one sequenced, non-persisted request cue and produces a
+short reverse release wave. This acknowledges the tap but does not represent a
+started rest. Only the actual `beginBreak` transition publishes the start cue;
+user-facing controls reach that transition after memo confirmation. A regular rest
+uses a soft exhale; a confirmed `長休憩` uses a stronger four-second fan and
+bloom followed by a calm breathing spread. The canonical timer remains the
+source of the ongoing regular/long-rest style, including after restoration. On
+watchOS, where the stream is on another page, the rest control also bounces and
+provides light sensory feedback immediately. Reduce Motion suppresses transient
+stream movement without hiding the rest state.
+
+Reason: the stream should feel directly connected to the player's controls and
+reward the four-Block milestone, while memo cancellation, timer history,
+CloudKit synchronization, and render performance retain their existing
+semantics.

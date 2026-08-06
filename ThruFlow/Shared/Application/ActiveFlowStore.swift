@@ -26,6 +26,7 @@ final class ActiveFlowStore: ObservableObject {
     @Published var activeSession: FlowSession?
     @Published private(set) var displayDate: Date = .now
     @Published private(set) var isAwaitingBreakMemo = false
+    @Published private(set) var flowBreakInteraction: FlowBreakInteraction?
 
     private let engine = FlowTimerEngine()
     private let progressReconciler = FlowProgressReconciler()
@@ -43,6 +44,7 @@ final class ActiveFlowStore: ObservableObject {
     private var lastAppliedRuntimeVersion: FlowRuntimeVersion?
     private var lastPublishedLiveActivityWasOvertime: Bool?
     private var lastDefaultDirectionReconciliationAt: Date?
+    private var nextFlowBreakInteractionSequence: UInt64 = 0
 
     init(
         defaults: UserDefaults = .standard,
@@ -76,6 +78,15 @@ final class ActiveFlowStore: ObservableObject {
         guard let timerState else { return false }
         return timerState.phase == .breakTime ||
             (timerState.phase == .paused && timerState.phaseBeforePause == .breakTime)
+    }
+
+    var canRequestBreak: Bool {
+        timerState?.phase == .focusing || timerState?.phase == .awaitingExtensionDecision
+    }
+
+    var flowStreamBreakStyle: FlowStreamBreakStyle {
+        guard isBreakPhase else { return .none }
+        return timerState?.isLongBreak == true ? .long : .regular
     }
 
     func configure(direction: Direction?, todo: Todo?, intent: String? = nil, mode: FlowMode? = nil) {
@@ -354,7 +365,8 @@ final class ActiveFlowStore: ObservableObject {
 
     func requestBreakMemo(modelContext: ModelContext, now: Date = .now) {
         guard let timerState else { return }
-        guard timerState.phase == .focusing || timerState.phase == .awaitingExtensionDecision else { return }
+        guard canRequestBreak else { return }
+        publishFlowBreakInteraction(.requested, at: now)
         guard !discardShortFlowIfNeeded(timerState, modelContext: modelContext, now: now) else { return }
         isAwaitingBreakMemo = true
     }
@@ -455,6 +467,7 @@ final class ActiveFlowStore: ObservableObject {
 
         activeSession = nil
         timerState = nil
+        flowBreakInteraction = nil
         didApplyProgress = false
         isAwaitingBreakMemo = false
         stateBeforeResultPrompt = nil
@@ -492,6 +505,7 @@ final class ActiveFlowStore: ObservableObject {
         apply(engine.skipBreak(timerState, now: now), modelContext: modelContext, now: now)
         activeSession = nil
         self.timerState = nil
+        flowBreakInteraction = nil
         didApplyProgress = false
         isAwaitingBreakMemo = false
         lastAppliedRuntimeVersion = nil
@@ -537,7 +551,20 @@ final class ActiveFlowStore: ObservableObject {
 
         modelContext.insert(flowBreak)
         apply(next, modelContext: modelContext, now: now)
+        publishFlowBreakInteraction(.started(isLong: usesLongBreak), at: now)
         TaskCompletionFeedbackPlayer.shared.playFlow(for: activeSession.id, now: now)
+    }
+
+    private func publishFlowBreakInteraction(
+        _ kind: FlowBreakInteraction.Kind,
+        at date: Date
+    ) {
+        nextFlowBreakInteractionSequence &+= 1
+        flowBreakInteraction = FlowBreakInteraction(
+            sequence: nextFlowBreakInteractionSequence,
+            kind: kind,
+            occurredAt: date
+        )
     }
 
     private func eligiblePendingBreak(modelContext: ModelContext, at date: Date) -> FlowBreak? {
@@ -636,6 +663,7 @@ final class ActiveFlowStore: ObservableObject {
         notifications.cancelPendingFlowNotifications()
         activeSession = session
         self.timerState = timerState
+        flowBreakInteraction = nil
         selectedDirectionID = session.direction?.id
         selectedTodoID = session.todo?.id
         selectedMode = timerState.mode
@@ -660,6 +688,7 @@ final class ActiveFlowStore: ObservableObject {
         notifications.cancelPendingFlowNotifications()
         activeSession = nil
         timerState = nil
+        flowBreakInteraction = nil
         didApplyProgress = false
         lastAppliedRuntimeVersion = nil
         liveActivities.end()

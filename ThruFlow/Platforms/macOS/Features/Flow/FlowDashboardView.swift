@@ -338,6 +338,8 @@ struct FlowDashboardView: View {
                 dailySeed: snapshot.dailyVisualSeed,
                 isActive: activeFlowStore.phase == .focusing,
                 mode: activeFlowStore.selectedMode,
+                breakStyle: activeFlowStore.flowStreamBreakStyle,
+                breakInteraction: activeFlowStore.flowBreakInteraction,
                 isRenderingEnabled: isVisible
             )
 

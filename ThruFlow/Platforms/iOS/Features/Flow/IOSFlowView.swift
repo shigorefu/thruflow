@@ -415,7 +415,7 @@ struct IOSFlowView: View {
                     activeFlowStore.requestBreakMemo(modelContext: modelContext)
                     presentMemoIfNeeded()
                 }
-                .disabled(activeFlowStore.timerState == nil || activeFlowStore.isBreakPhase)
+                .disabled(!activeFlowStore.canRequestBreak)
                 .accessibilityLabel(String(localized: "休憩を開始"))
             }
         }
@@ -459,6 +459,8 @@ struct IOSFlowView: View {
                 snapshot: snapshot,
                 isActive: activeFlowStore.phase == .focusing,
                 mode: activeFlowStore.selectedMode,
+                breakStyle: activeFlowStore.flowStreamBreakStyle,
+                breakInteraction: activeFlowStore.flowBreakInteraction,
                 isRenderingEnabled: isVisible
             )
             .frame(height: 142)

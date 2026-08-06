@@ -15,6 +15,8 @@ struct FlowStreamView: View {
     let dailySeed: UInt64
     let isActive: Bool
     let mode: FlowMode
+    let breakStyle: FlowStreamBreakStyle
+    let breakInteraction: FlowBreakInteraction?
     let isRenderingEnabled: Bool
 
     @Environment(\.controlActiveState) private var controlActiveState
@@ -28,6 +30,8 @@ struct FlowStreamView: View {
             dailySeed: dailySeed,
             isActive: isActive,
             mode: mode,
+            breakStyle: breakStyle,
+            breakInteraction: breakInteraction,
             isRenderingEnabled: isRenderingEnabled && controlActiveState == .key
         )
     }
