@@ -37,7 +37,10 @@ struct LocalisationTests {
                 let usesLocalisationAPI = line.contains("String(localized:") ||
                     line.contains("LocalizedStringResource") ||
                     line.contains("IntentDescription(")
-                guard !usesLocalisationAPI else { continue }
+                let isDocumentedPersistenceLiteral = line.contains(
+                    "// localisation-audit: persisted-value"
+                )
+                guard !usesLocalisationAPI, !isDocumentedPersistenceLiteral else { continue }
 
                 let relativePath = fileURL.path.replacingOccurrences(
                     of: repositoryRoot.path + "/",

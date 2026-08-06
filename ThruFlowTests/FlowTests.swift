@@ -22,12 +22,15 @@ struct FlowTests {
     }
 
     @Test func blockDisplayUsesProductValues() {
-        #expect(BlockUnit.displayText(forFocusedSeconds: 11 * 60) == "0 Block")
-        #expect(BlockUnit.displayText(forFocusedSeconds: 12 * 60) == "0.5 Block")
-        #expect(BlockUnit.displayText(forFocusedSeconds: 24 * 60) == "1 Block")
-        #expect(BlockUnit.displayText(forFocusedSeconds: 25 * 60) == "1 Block")
-        #expect(BlockUnit.displayText(forFocusedSeconds: 37 * 60) == "1.5 Blocks")
-        #expect(BlockUnit.displayText(forFocusedSeconds: 50 * 60) == "2 Blocks")
+        #expect(BlockUnit.displayText(forFocusedSeconds: 11 * 60) == String(localized: "0 Block"))
+        #expect(BlockUnit.displayText(forFocusedSeconds: 12 * 60) == String(localized: "0.5 Block"))
+        #expect(BlockUnit.displayText(forFocusedSeconds: 24 * 60) == String(localized: "1 Block"))
+        #expect(BlockUnit.displayText(forFocusedSeconds: 25 * 60) == String(localized: "1 Block"))
+        #expect(
+            BlockUnit.displayText(forFocusedSeconds: 37 * 60) ==
+                String(localized: "\(1.5, format: .number.precision(.fractionLength(0...1))) Blocks")
+        )
+        #expect(BlockUnit.displayText(forFocusedSeconds: 50 * 60) == String(localized: "\(2) Blocks"))
     }
 
     @Test func blockCalculationUsesHalfBlockUnits() {

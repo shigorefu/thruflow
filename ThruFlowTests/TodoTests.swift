@@ -64,10 +64,10 @@ struct TodoTests {
         #expect(errors == [.invalidPlannedAmount])
     }
 
-    @Test func defaultOtherDirectionIsNeutralAndHiddenSystemDirection() {
+    @Test func defaultTaskInboxUsesLocalizedNameAndStableSystemProperties() {
         let direction = DefaultDirections.makeTaskInbox(now: Date(timeIntervalSince1970: 0))
 
-        #expect(direction.name == "その他")
+        #expect(direction.name == DefaultDirections.taskInboxName)
         #expect(direction.type == .neutral)
         #expect(direction.symbolName == "📝")
         #expect(direction.colorHex == "#007AFF")
