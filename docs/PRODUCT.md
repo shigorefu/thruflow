@@ -5,7 +5,7 @@ ThruFlow / スルフロ records focused work and turns it into visible task prog
 Core loop:
 
 ```text
-方向 -> Task -> Flow -> focused time -> progress -> statistics
+Direction -> Task -> Flow -> focused time -> progress -> statistics
 ```
 
 ## 方向
@@ -56,6 +56,13 @@ Flow is a media-player-like recorder.
 
 The stream is a field of broad, bright, softly glowing translucent ribbons rendered on the GPU around one shared S-shaped channel with three levels of depth. It remains smooth while idle and immediately accelerates when Flow starts. Its occupied area stops growing at 4 Blocks so depth, transparency, and motion preserve the silhouette without black carved stripes; progress through 6 Blocks instead adds internal detail, parallax, saturation, and motion. A restrained light pulse crosses the stream at each completed half-Block. Sprint, Focus, and Deep change the wave character, while a subtle mode-specific tint is applied to the dashboard. Below it, today's normal Tasks and Habits remain actionable with the same Check, Block, and Minute indicators as Tasks; Nice appears only when present. On iPhone and iPad, one dashboard Task card switches between `タスク / 習慣 / ナイス`; its header offers quick Task capture next to the Tasks deep link. Compact width uses the bottom composer and regular width anchors it as a popover to `+`. Fixed-height compact Statistics form the same three-page carousel on macOS and iPhone for Task/Direction time distribution, a seven-day Flow trend with day-over-day deltas, and today's completion status.
 
+The Flow player uses the same `タスク / 習慣 / 方向` context choice on macOS,
+iPhone, and iPad. The touch presentation uses native segmented tabs and lists,
+while Direction-only selection keeps `その他` first. On iPhone and iPad,
+tapping a completed segment or rest in today's dashboard timeline opens the
+canonical History detail/editor for that exact persisted record. Active and
+awaiting-result records remain non-interactive until they are completed.
+
 Modes:
 
 - `Sprint`: 12 focus / 3 break = 0.5 Block.
@@ -66,7 +73,8 @@ Focus does not auto-stop or auto-switch to break. Break starts only after the us
 
 Flow sessions may share a stable series ID when the next session starts within 1.5 times the planned rest. The next rest after each 4 accumulated Blocks is a 20-minute `長休憩` with a 30-minute continuation window. History preserves separate Flow and rest records; only the dashboard renders their series as one continuous rail.
 
-The active creditable Flow updates the dashboard live. Completed timeline segments open the existing historical Flow inspector.
+The active creditable Flow updates the dashboard live. Completed timeline
+segments open the existing platform History detail/editor.
 
 Flow may start with a Task, only a Direction, or neither. Direction-only work is persisted without an implicit Todo; work without either resolves to system `その他`. Version 1.0 never creates a Task implicitly from Flow.
 

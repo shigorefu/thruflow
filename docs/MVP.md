@@ -3,7 +3,7 @@
 Version 1.0 goal:
 
 ```text
-方向 -> Task -> Flow -> actual focused time -> progress -> statistics
+Direction -> Task -> Flow -> actual focused time -> progress -> statistics
 ```
 
 ## Included
@@ -47,7 +47,7 @@ Version 1.0 goal:
 - iPhone live quick-input suggestions, arbitrary and no-date Tasks, overdue and
   no-date inboxes, day/week/month Task ranges, automatic Habits, native Task
   editing, ordered Direction groups, and a dedicated Direction emoji picker.
-- Animated completion feedback for Check, Block, and Minute Tasks, with an optional bundled completion sound.
+- Animated completion feedback for Check, Block, and Minute Tasks.
 - iPhone Live Activity and Dynamic Island player for an active Flow, including
   system-updating time/progress, Task and Direction context, expanded
   seek/pause controls, and deep-link return to the Flow screen.

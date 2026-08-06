@@ -1,10 +1,14 @@
 # Decisions
 
-## D-001: CONCEPT.md Is Product Source Of Truth
+## D-001: Product Documentation Is Split By Responsibility
 
-`CONCEPT.md` defines the product model. `CODEX.md` and `docs/` summarize it for implementation.
+`docs/PRODUCT.md` defines the product overview, while the domain, data,
+architecture, UX, localization, release, and roadmap documents own their
+respective details. This decision log records accepted changes and explicitly
+marks superseded behavior.
 
-Reason: the product direction changed, and older Must/Bonus/Result wording is deprecated.
+Reason: focused documents are easier to keep current and review than a second,
+monolithic product specification that duplicates them.
 
 ## D-002: Direction Types
 
@@ -73,7 +77,7 @@ Statistics ranges are:
 - last 180 days;
 - current calendar year.
 
-Reason: these match the current concept and keep GitHub-like statistics understandable.
+Reason: these matched the original Statistics scope and kept GitHub-like statistics understandable.
 
 ## D-010: Weekly Habits Are Sequential
 
@@ -480,8 +484,3 @@ Private CloudKit propagates the deletion to the user's other devices.
 Reason: users need a clear release-grade way to erase recorded activity without
 destroying their planning structure or leaving totals inconsistent with an
 empty history.
-
-## Open Questions
-
-- What measurement and planned amount should be used for an auto-created Task when Flow starts with only a Direction or with neither Direction nor Task?
-- How exactly should the “continue for longer break” prompt behave when less than 5 minutes remain to the next threshold?

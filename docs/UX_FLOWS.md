@@ -100,7 +100,7 @@ Daily and selected-weekday Habit instances are generated for visible current/fut
 
 ## Flow Player
 
-`Flow` is the first/default navigation item. In a wide window, its dashboard uses one aligned two-column grid: the animated daily stream and Elastic series timeline sit above today's Tasks on the left, while the equally tall square player sits above compact Statistics on the right. Both rows reuse the same explicit column widths, so the player and Statistics always align and have the same width while the window is resized. All lower Task, Habit, optional Nice, and Statistics panels share one height and stretch to the bottom of the viewport; short windows retain a minimum lower-row height and scroll vertically. The left side occupies roughly three quarters of the content. Other app sections do not repeat the player as a top header; the macOS menu bar opens this same square player. A horizontal compact menu-bar layout is retained in product documentation as a deferred design only and is not part of the current UI.
+`Flow` is the first/default navigation item. In a wide window, its dashboard uses one aligned two-column grid: the animated daily stream and Elastic series timeline sit above today's Tasks on the left, while the equally tall square player sits above compact Statistics on the right. Both rows reuse the same explicit column widths, so the player and Statistics always align and have the same width while the window is resized. All lower Task, Habit, optional Nice, and Statistics panels share one height and stretch to the bottom of the viewport; short windows retain a minimum lower-row height and scroll vertically. The left side occupies roughly three quarters of the content. Other app sections do not repeat the player as a top header; the macOS menu bar opens this same square player.
 
 The player layout is:
 
@@ -110,6 +110,8 @@ In the narrow vertical dashboard layout, the player comes first, followed by the
 - Task card opens a picker with `タスク`, `習慣`, and `方向` tabs;
 - `タスク` and `習慣` use separate lists of today's items;
 - `方向` uses an emoji-and-name grid with `その他` first for Direction-only starts;
+- on iPhone and iPad the same three context tabs use touch-native lists, open on
+  the currently selected context type, and keep `その他` first;
 - Direction icon color follows the selected Task Direction;
 - compact Focus selector opens a separate picker for `Sprint`, `Focus`, and `Deep`;
 - selecting another Focus mode during focus or paused focus preserves elapsed time, applies that preset as the new total plan, and moves only the planned end. A shorter preset may immediately show overtime; crossing another preset threshold never renames the selected mode;
@@ -124,6 +126,14 @@ In the narrow vertical dashboard layout, the player comes first, followed by the
 - double-clicking the selected Task title edits it inline; Enter or focus loss saves and Escape cancels. Double-click recognition is limited to the visible title bounds so the rest of the Task card opens the picker immediately;
 - the Task card provides the same short pressed-state feedback as the Focus selector without changing its single/double-click actions;
 - timer and transport controls on the right.
+
+On iPhone and iPad, today's compact Flow timeline keeps its 14-point visual rail
+inside a 44-point touch target. Tapping a completed Flow segment resolves the
+exact persisted segment, and tapping a completed rest resolves that rest; both
+open the same canonical detail/editor used by `履歴`. Active, paused,
+awaiting-result, and active-rest records do not open until their record is
+complete. The lookup runs only after a tap, so the live timeline does not add a
+per-tick History projection.
 
 Mode labels:
 

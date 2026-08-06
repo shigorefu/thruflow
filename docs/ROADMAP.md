@@ -1,126 +1,128 @@
 # Roadmap
 
-## 1.0 — Первый стабильный релиз
+## 1.0 — First stable release
 
-Цель 1.0 — не расширять продукт, а выпустить надёжный основной цикл:
+The goal for 1.0 is to ship a reliable core loop, not expand the product:
 
 ```text
-方向 -> Task -> Flow -> focused time -> progress -> statistics
+Direction -> Task -> Flow -> focused time -> progress -> statistics
 ```
 
-### Реализовано
+### Implemented
 
-- [x] Общий SwiftData domain и private CloudKit store для macOS и iOS.
-- [x] Основной macOS-продукт: Flow, Tasks, History, Directions и Statistics.
-- [x] Flow-first iPhone-приложение с Tasks, History, Directions, Statistics и
+- [x] Shared SwiftData domain and private CloudKit store for macOS and iOS.
+- [x] Complete macOS product with Flow, Tasks, History, Directions, and
+  Statistics.
+- [x] Flow-first iPhone app with Tasks, History, Directions, Statistics, and
   Settings.
-- [x] Базовый Apple Watch companion.
-- [x] Live Activity, Dynamic Island и Home Screen widgets.
-- [x] Точная история Flow, переключения Tasks, перерывов и Flow series.
-- [x] Пересчёт Task/Direction progress после создания, изменения и удаления
-  истории.
-- [x] Японская, английская и русская локализации.
-- [x] Настройки темы, языка, недели, формата времени и границы нового дня.
-- [x] Знакомство из семи центральных карточек поверх настоящих экранов
-  macOS/iPhone/iPad: автоматическая навигация между разделами, финальная схема
-  `方向 → タスク → Flow → 履歴・統計 → 次の一歩`, отдельные preview-схемы и повторный
-  запуск из Settings без подсветки элементов и создания тестовых данных.
-- [x] Ненавязчивый системный запрос оценки после подтверждённого использования,
-  GitHub и добровольные StoreKit tips: кофе ¥100 / рамэн ¥500.
-- [x] Настраиваемый CSV-экспорт статистики.
-- [x] Безопасное удаление всей Flow-истории из Settings с сохранением Tasks и
-  `方向`, сбросом вычисляемого прогресса и синхронизацией через private CloudKit.
+- [x] Native wide iPad layout.
+- [x] Basic Apple Watch companion.
+- [x] Live Activity, Dynamic Island, and Home Screen widgets.
+- [x] Exact Flow history, Task switches, breaks, and Flow series.
+- [x] Task and Direction progress reconciliation after history creation,
+  editing, and deletion.
+- [x] Japanese, English, and Russian localizations.
+- [x] Theme, language, first-weekday, time-format, and new-day-boundary settings.
+- [x] Seven centered introduction cards shown over the real macOS, iPhone, and
+  iPad screens, with automatic section navigation, the final
+  `Direction -> Task -> Flow -> History and Statistics -> next step` summary,
+  dedicated preview schemes, and replay from Settings without test data.
+- [x] A non-intrusive system review request after confirmed use, a GitHub link,
+  and optional StoreKit tips: coffee ¥100 / ramen ¥500.
+- [x] Configurable Statistics CSV export.
+- [x] Safe deletion of all Flow history from Settings while preserving Tasks
+  and Directions, resetting derived progress, and syncing through private
+  CloudKit.
 
-### Release gate
+### Release gates
 
-Все пункты ниже обязательны перед публикацией 1.0:
+Every item below is required before publishing 1.0:
 
-- [ ] Провести минимум недельный daily-use burn-in без потери или дублирования
-  Tasks, Habits, Flow segments, breaks и completion progress.
-- [ ] Пройти матрицу реальных устройств: signed macOS + физический iPhone +
-  Apple Watch; проверить запуск, pause/resume, break, восстановление после
-  force-quit/reboot и принятие активного Flow с другого устройства.
-- [ ] Проверить CloudKit conflict/reconciliation: одновременное изменение на
-  двух устройствах, offline -> online, удаление/редактирование истории и
-  отсутствие дубликатов Habits.
-- [ ] Проверить миграцию копии текущей пользовательской SwiftData базы на
-  release build без очистки store.
-- [ ] Завершить целевые unit-тесты для timer restoration, history mutation,
-  progress reconciliation, Habit materialization и CloudKit runtime revision;
-  устранить воспроизводимые crashes и UI freezes.
-- [ ] Проверить Live Activity, Dynamic Island, widgets и Watch на release build,
-  включая системное завершение extension и временно недоступный App Group.
-- [ ] Завершить проверку `ja`, `en`, `ru`: обрезание текста, Dynamic Type,
-  VoiceOver labels, светлая/тёмная тема и узкие размеры окон/экранов.
-- [x] Добавить и проверить `PrivacyInfo.xcprivacy` для приложения, Watch и
+- [ ] Complete at least one week of daily-use burn-in without lost or duplicate
+  Tasks, Habits, Flow segments, breaks, or completion progress.
+- [ ] Complete the real-device matrix: signed macOS app, physical iPhone, and
+  Apple Watch. Verify launch, pause/resume, break, force-quit/reboot restoration,
+  and adopting an active Flow from another device.
+- [ ] Verify CloudKit conflict and reconciliation behavior for simultaneous
+  edits, offline-to-online recovery, history deletion/editing, and Habit
+  deduplication.
+- [ ] Migrate a copy of the current user SwiftData database to a release build
+  without clearing the store.
+- [ ] Complete targeted tests for timer restoration, history mutation, progress
+  reconciliation, Habit materialization, and CloudKit runtime revisions; fix
+  all reproducible crashes and UI freezes.
+- [ ] Verify Live Activity, Dynamic Island, widgets, and Watch on a release
+  build, including extension termination and a temporarily unavailable App
+  Group.
+- [ ] Finish the `ja`, `en`, and `ru` review for truncation, Dynamic Type,
+  VoiceOver labels, light/dark appearance, and narrow windows or screens.
+- [x] Add and verify `PrivacyInfo.xcprivacy` for the app, Watch app, and
   widget/Live Activity extension.
-- [ ] Заполнить App Store privacy answers, privacy policy/support URL и
-  описание использования private iCloud sync.
-- [ ] Создать в App Store Connect consumable IAP с идентификаторами
-  `com.shigorefu.thruflow.tip.coffee` и
-  `com.shigorefu.thruflow.tip.ramen`, назначить японские цены ¥100/¥500,
-  локализации и review screenshot; после создания приложения задать
-  `THRUFLOW_APP_STORE_ID` для прямой ссылки на отзыв.
-- [ ] Развернуть проверенную CloudKit Development schema в Production и
-  подтвердить чистую установку против Production environment.
-- [ ] Установить app/extension/watch версии `1.0`, согласованные build numbers,
-  Release signing, icons и архив без validation errors.
-- [ ] Провести закрытый TestFlight/внешний smoke test и только после него
-  отправлять App Store build.
+- [ ] Complete App Store privacy answers, privacy-policy and support URLs, and
+  the private-iCloud-sync description.
+- [ ] Create consumable IAPs in App Store Connect with identifiers
+  `com.shigorefu.thruflow.tip.coffee` and
+  `com.shigorefu.thruflow.tip.ramen`; set Japanese prices to ¥100 and ¥500,
+  provide localizations and a review screenshot, then define
+  `THRUFLOW_APP_STORE_ID` for the direct review link.
+- [ ] Deploy the verified CloudKit Development schema to Production and verify
+  a clean install against the Production environment.
+- [ ] Confirm app, extension, and Watch version `1.0`, aligned build numbers,
+  Release signing, icons, and archives without validation errors.
+- [ ] Complete closed TestFlight and external smoke tests before submitting an
+  App Store build.
 
-### Не блокирует 1.0
+### Not blockers for 1.0
 
-- Дополнительная визуальная полировка, не мешающая основному сценарию.
-- Расширение быстрого ввода Tasks.
-- Непотоковый непрерывный timeline.
-- Новые награды, AI и внешние connectors.
+- Additional visual polish that does not obstruct the core workflow.
+- More Task quick-input capabilities.
+- A continuous non-Flow timeline.
+- New rewards, AI, or external connectors.
 
-## 1.1 — Осознанное незаполненное время
+## 1.1 — Intentional unrecorded time
 
-Эта функция не блокирует TestFlight и релиз 1.0. В 1.0 `履歴` продолжает
-показывать незаполненные промежутки и позволяет заполнять их вручную. После
-проверки основного цикла на реальных пользователях приложение сможет мягко
-предлагать классифицировать длинные промежутки вне Flow.
+This feature does not block TestFlight or 1.0. In 1.0, History continues to
+show unrecorded gaps and lets the user fill them manually. After validating the
+core loop with real users, the app may gently offer to classify long periods
+outside Flow.
 
-- [ ] Перед реализацией подтвердить по TestFlight-обратной связи полезный порог;
-  начальное предположение — `60–90` минут без записи.
-- [ ] Показывать необязательное предложение при открытии приложения или
-  `履歴`, а не прерывающий popup и не автоматическое уведомление.
-- [ ] Формулировать вопрос нейтрально: «Чем было занято это время?», не
-  предполагая, что пользователь ничего не делал.
-- [ ] Предлагать быстрые варианты `睡眠`, `休憩`, `食事`, `移動`, `その他` и
-  `スキップ`.
-- [ ] Позволить пропустить вопрос, отключить предложения на текущий день или
-  полностью выключить функцию.
-- [ ] Не создавать несколько последовательных вопросов за ночь или длинный
-  период отсутствия; объединять их в спокойный обзор незаполненного времени.
-- [ ] Хранить время вне Flow отдельно от Task/Direction progress: такие записи
-  не начисляют Blocks и не считаются сфокусированным временем.
+- [ ] Validate a useful threshold from TestFlight feedback before building it;
+  the initial assumption is `60–90` minutes without a record.
+- [ ] Present an optional suggestion when opening the app or History, not an
+  interrupting popup or automatic notification.
+- [ ] Ask neutrally, “What occupied this time?”, without implying inactivity.
+- [ ] Offer quick choices for Sleep, Rest, Meal, Travel, Other, and Skip.
+- [ ] Allow dismissing the question, disabling suggestions for the current day,
+  or turning the feature off entirely.
+- [ ] Avoid a series of prompts after a night or long absence; combine gaps into
+  one calm review.
+- [ ] Store non-Flow time separately from Task and Direction progress. These
+  records never earn Blocks or count as focused time.
 
-## Другие задачи после 1.0
+## Other work after 1.0
 
-- Более подробная watchOS Statistics.
-- Дальнейшее улучшение quick Task composer.
-- Более продуманная система наград для `ナイス`.
+- More detailed watchOS Statistics.
+- Further improvements to the quick Task composer.
+- A more deliberate reward system for `Nice` (`ナイス`).
 
-## 2.0 — Server Transport и Connectors
+## 2.0 — Server transport and connectors
 
-- [ ] Добавить опциональный serverless APNs backend:
+- [ ] Add an optional serverless APNs backend:
   `API Gateway -> Lambda -> EventBridge Scheduler -> APNs`.
-- [ ] Регистрировать и обновлять ActivityKit push tokens без хранения Apple
-  `.p8`-ключа в приложении.
-- [ ] Обновлять Live Activity через APNs в момент перехода через `00:00`, чтобы
-  полностью приостановленный iPhone надёжно показывал overtime `+MM:SS`.
-- [ ] Добавить серверное напоминание о Flow/перерыве, который продолжается
-  больше часа.
-- [ ] Добавить retry/idempotency, удаление одноразовых schedules, минимальные
-  CloudWatch logs и AWS Budget alerts.
-- [ ] Сохранить локальный timer и CloudKit как source of truth: отсутствие
-  backend или сети не должно мешать запуску и сохранению Flow.
-- [ ] Добавить Connectors: Toggl, Strava, Jira и другие
-  OAuth/webhook-интеграции.
+- [ ] Register and update ActivityKit push tokens without storing the Apple
+  `.p8` key in the app.
+- [ ] Update Live Activity through APNs at the `00:00` boundary so a suspended
+  iPhone reliably shows overtime as `+MM:SS`.
+- [ ] Add a server reminder for a Flow or break that continues for more than an
+  hour.
+- [ ] Add retry and idempotency, one-shot schedule cleanup, minimal CloudWatch
+  logs, and AWS Budget alerts.
+- [ ] Keep the local timer and CloudKit as the source of truth: missing backend
+  connectivity must never prevent starting or saving Flow.
+- [ ] Add connectors such as Toggl, Strava, Jira, and other OAuth/webhook
+  integrations.
 
-## После 2.0
+## After 2.0
 
-- AI-сводки.
+- AI summaries.
 - Pets.

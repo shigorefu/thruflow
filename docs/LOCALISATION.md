@@ -50,7 +50,7 @@ Unambiguous glossary terms are checked against the catalog by unit tests.
 Task quick-input aliases are domain syntax rather than translated UI strings.
 English forms (`b`, `m`, `high`, `today`, weekday names, and related short forms)
 must remain available under every app locale. Japanese and Russian forms are
-additive aliases documented in the product concept; translators must not replace
+additive aliases documented in `docs/UX_FLOWS.md`; translators must not replace
 or remove the universal English forms.
 
 ## Context-Specific Labels

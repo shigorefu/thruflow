@@ -22,6 +22,7 @@ struct IOSFlowView: View {
     @State private var showsMemo = false
     @State private var showsTaskComposer = false
     @State private var editorMode: IOSTaskEditorMode?
+    @State private var selectedHistoryItem: HistoryCalendarItem?
     @State private var preparationRevision = 0
     @State private var taskFilter = IOSDashboardTaskFilter.task
 
@@ -89,7 +90,7 @@ struct IOSFlowView: View {
         .sheet(isPresented: $showsContextPicker) {
             NavigationStack {
                 IOSFlowContextPicker(
-                    todos: todayTodos.filter { !$0.isCompleted },
+                    todos: todayTodos,
                     directions: activeDirections,
                     selectedTodoID: activeFlowStore.selectedTodoID,
                     selectedDirectionID: activeFlowStore.selectedDirectionID
@@ -112,6 +113,10 @@ struct IOSFlowView: View {
             NavigationStack {
                 IOSTaskEditorView(mode: mode, directions: activeDirections)
             }
+        }
+        .sheet(item: $selectedHistoryItem) { item in
+            IOSHistoryItemDetail(item: item)
+                .presentationDetents(item.kind == .flow ? [.large] : [.medium])
         }
         .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) { _ in
             preparationRevision += 1
@@ -139,6 +144,10 @@ struct IOSFlowView: View {
         }
         .onChange(of: activeFlowStore.phase) { _, _ in
             presentMemoIfNeeded()
+        }
+        .onChange(of: isVisible) { _, newValue in
+            guard !newValue else { return }
+            selectedHistoryItem = nil
         }
     }
 
@@ -458,10 +467,18 @@ struct IOSFlowView: View {
 
             if isVisible {
                 TimelineView(.periodic(from: .now, by: 1)) { timeline in
-                    IOSFlowTimelineView(snapshot: snapshot, now: timeline.date)
+                    IOSFlowTimelineView(
+                        snapshot: snapshot,
+                        now: timeline.date,
+                        onSelect: inspectTimelineSelection
+                    )
                 }
             } else {
-                IOSFlowTimelineView(snapshot: snapshot, now: .now)
+                IOSFlowTimelineView(
+                    snapshot: snapshot,
+                    now: .now,
+                    onSelect: inspectTimelineSelection
+                )
             }
         }
         .padding(14)
@@ -701,6 +718,27 @@ struct IOSFlowView: View {
             activeFlowStore.configure(direction: direction, todo: todo)
         } else {
             activeFlowStore.selectContext(direction: direction, todo: todo, modelContext: modelContext)
+        }
+    }
+
+    private func inspectTimelineSelection(_ selection: IOSFlowTimelineSelection) {
+        let today = dayBoundary.day(containing: .now, calendar: calendar)
+        let interval = dayBoundary.interval(for: today, calendar: calendar)
+        let items = HistoryCalendarBuilder(calendar: calendar)
+            .build(
+                interval: interval,
+                sessions: sessions,
+                breaks: flowBreaks,
+                referenceDate: .now
+            )
+            .items
+        let resolver = FlowDashboardHistoryItemResolver()
+
+        switch selection {
+        case .segment(let segment):
+            selectedHistoryItem = resolver.item(for: segment, in: items)
+        case .flowBreak(let flowBreak):
+            selectedHistoryItem = resolver.item(for: flowBreak, in: items)
         }
     }
 

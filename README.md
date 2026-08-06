@@ -11,7 +11,8 @@ The project is preparing version `1.0 (1)` for TestFlight. It is pre-release sof
 ## What ThruFlow does
 
 - Records focused work with Sprint, Focus, and Deep timers.
-- Connects actual focused time to Tasks and long-lived `方向` activity areas.
+- Connects actual focused time to Tasks and long-lived Direction (`方向`)
+  activity areas.
 - Preserves a detailed Flow/rest timeline and recalculates progress from history.
 - Shows daily, weekly, monthly, yearly, Task, and Direction statistics.
 - Syncs through the user's private iCloud database while retaining a local-only development mode.
@@ -63,7 +64,6 @@ CloudKit synchronization cannot be validated in the simulator. Use signed builds
 
 ## Documentation
 
-- [Product concept](CONCEPT.md)
 - [Product overview](docs/PRODUCT.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Domain model](docs/DOMAIN_MODEL.md)
@@ -71,7 +71,6 @@ CloudKit synchronization cannot be validated in the simulator. Use signed builds
 - [UX flows](docs/UX_FLOWS.md)
 - [CloudKit setup](docs/CLOUDKIT.md)
 - [Localization](docs/LOCALISATION.md)
-- [Onboarding copy and behavior (Russian)](Onboarding_ru.md)
 - [Release process](docs/RELEASE.md)
 - [Roadmap](docs/ROADMAP.md)
 

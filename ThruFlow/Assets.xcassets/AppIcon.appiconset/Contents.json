@@ -1,40 +1,6 @@
 {
   "images" : [
     {
-      "filename" : "AppIcon-iOS-1024.png",
-      "idiom" : "universal",
-      "platform" : "ios",
-      "size" : "1024x1024"
-    },
-    {
-      "filename" : "AppIcon-Watch-1024.png",
-      "idiom" : "watch-marketing",
-      "scale" : "1x",
-      "size" : "1024x1024"
-    },
-    {
-      "appearances" : [
-        {
-          "appearance" : "luminosity",
-          "value" : "dark"
-        }
-      ],
-      "idiom" : "universal",
-      "platform" : "ios",
-      "size" : "1024x1024"
-    },
-    {
-      "appearances" : [
-        {
-          "appearance" : "luminosity",
-          "value" : "tinted"
-        }
-      ],
-      "idiom" : "universal",
-      "platform" : "ios",
-      "size" : "1024x1024"
-    },
-    {
       "filename" : "AppIcon-16.png",
       "idiom" : "mac",
       "scale" : "1x",

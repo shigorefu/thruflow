@@ -1,138 +1,124 @@
-# Инструкция для Codex
+# Codex Repository Guide
 
-Этот файл объясняет агенту, **как работать с репозиторием ThruFlow**. Он не
-дублирует продуктовую спецификацию или архитектуру. Перед изменениями нужно
-прочитать этот файл, затем открыть документы, относящиеся к задаче.
+This file explains how an agent should work in the ThruFlow repository. It is
+an operating guide, not a duplicate product specification. Read it first, then
+open the documents relevant to the task.
 
-## Как вести себя
+## Working behavior
 
-- Сначала изучи задачу, `git status`, затрагиваемый код, тесты и документацию.
-- Не додумывай продуктовые правила. Если ответ нельзя достоверно получить из
-  кода или документации, остановись и задай пользователю вопрос.
-- Для дизайна следуй Apple Human Interface Guidelines и системному стилю
-  Liquid Glass. Если продуктовое требование им противоречит, явно опиши
-  конфликт и предложи подходящий платформе вариант.
-- Учитывай последнее сообщение пользователя как актуальное направление работы.
-- Не отменяй и не перезаписывай изменения пользователя. Незнакомые изменения
-  считай пользовательскими и работай совместно с ними.
-- Не расширяй задачу скрытыми рефакторингами, новыми функциями или визуальной
-  полировкой, если они не нужны для корректного результата.
-- Делай небольшие, проверяемые изменения. После существенного этапа проект
-  должен оставаться собираемым.
-- Пользовательский интерфейс по умолчанию пишется на японском. Идентификаторы,
-  enum raw values и внутренняя техническая документация остаются на английском.
-- Изменения `Localizable.xcstrings` могут появляться автоматически после сборки
-  или извлечения строк Xcode. Не считать такой diff пользовательским только по
-  факту его наличия: проверить связанные Swift-строки, удалить пустые и
-  неиспользуемые `stale`-ключи, сделать ключи понятными переводчикам и заполнить
-  поддерживаемые локали `ja`, `en` и `ru`. Не откатывать осмысленные переводы.
-- Общайся с пользователем кратко и конкретно. Во время долгой работы сообщай,
-  что проверяется, что найдено и что меняется.
-- В случае отсутствия нужных компонентов от Apple разрешается докачивать.
-- Изменения по возможности должны распространяться на все поддерживаемые
-  платформы, если пользователь явно не ограничил задачу одной из них.
+- Inspect the request, `git status`, affected code, tests, and documentation
+  before changing anything.
+- Do not invent product rules. If code and documentation cannot establish the
+  answer reliably, stop and ask the user.
+- Follow Apple Human Interface Guidelines and the system Liquid Glass style.
+  When a product request conflicts with platform conventions, explain the
+  conflict and propose a platform-appropriate option.
+- Treat the user's latest message as the current direction.
+- Do not overwrite or revert user changes. Treat unfamiliar changes as
+  user-owned and work around them.
+- Do not hide unrelated refactors, features, or visual polish inside a task.
+- Make small, verifiable changes and keep the project buildable after each
+  substantial step.
+- User-facing text defaults to Japanese. Code identifiers, enum raw values,
+  and internal technical documentation remain in English.
+- Xcode may update `Localizable.xcstrings` during builds or string extraction.
+  Review those changes against the Swift source, remove empty or unused stale
+  keys, use translator-readable keys, and preserve meaningful `ja`, `en`, and
+  `ru` translations.
+- Communicate briefly and concretely. During long work, report what is being
+  checked, what was found, and what is changing.
+- Apple components required for a task may be downloaded when unavailable.
+- Unless the user limits scope to one platform, apply shared behavior to every
+  supported platform where appropriate.
 
-## Перед началом задачи
+## Before starting a task
 
-1. Выполни `git status --short --branch` и не теряй существующие изменения.
-2. Найди реализацию через `rg`; не начинай с широкого переписывания файлов.
-3. Прочитай `CONCEPT.md` и профильные документы из списка ниже.
-4. Проверь существующие тесты, SwiftData-модели, target membership и
-   platform-specific зависимости, если задача их затрагивает.
-5. Для крупного или рискованного изменения используй отдельную ветку с
-   префиксом `codex/`, если пользователь не указал другой процесс.
+1. Run `git status --short --branch` and preserve existing work.
+2. Locate the implementation with `rg`; do not begin with a broad rewrite.
+3. Read `docs/PRODUCT.md`, `docs/DECISIONS.md`, and the relevant documents from
+   the map below.
+4. When persistence or platform integration is involved, inspect the existing
+   tests, SwiftData models, target membership, and platform dependencies.
+5. Use a separate `codex/` branch for large or risky changes unless the user
+   specifies another workflow.
 
-## Источники истины
+## Sources of truth
 
-При расхождении используй следующий приоритет:
+Resolve conflicts in this order:
 
-1. актуальное явное требование пользователя;
-2. [`CONCEPT.md`](CONCEPT.md) — продуктовая цель и целостная карта поведения;
-3. [`docs/DECISIONS.md`](docs/DECISIONS.md) — контекст принятых решений; новое
-   решение считается поправкой к концепции и должно быть отражено в ней;
-4. профильная документация ниже — точное текущее поведение соответствующей
-   области;
-5. существующий код и тесты как описание текущей реализации.
+1. the user's latest explicit requirement;
+2. current accepted decisions in `docs/DECISIONS.md`;
+3. the focused document that owns the affected product or technical area;
+4. existing code and tests as a description of the current implementation.
 
-Если требование меняет концепцию, обнови соответствующий документ вместе с
-кодом. Не оставляй старое и новое поведение описанными одновременно.
+Decision-log entries marked superseded are historical context, not current
+requirements. When behavior changes, update the owning document and decision
+record with the code; never leave old and new behavior both described as
+current.
 
-## Карта документации
+## Documentation map
 
-- [`CONCEPT.md`](CONCEPT.md) — подробная продуктовая модель и правила поведения.
-- [`docs/PRODUCT.md`](docs/PRODUCT.md) — краткий обзор продукта и основных экранов.
-- [`docs/UX_FLOWS.md`](docs/UX_FLOWS.md) — пользовательские сценарии и UI-поведение.
-- [`docs/VOCABULARY.md`](docs/VOCABULARY.md) — японские термины и их значение.
-- [`docs/DOMAIN_MODEL.md`](docs/DOMAIN_MODEL.md) — доменные сущности и вычисления.
-- [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md) — SwiftData-схема и владение данными.
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — слои, зависимости и разделение
-  общего кода между macOS, iOS, watchOS и расширениями.
-- [`docs/LOCALISATION.md`](docs/LOCALISATION.md) — String Catalog, правила ключей
-  и процесс добавления языков.
-- [`docs/CLOUDKIT.md`](docs/CLOUDKIT.md) — container, signing, локальный режим и
-  порядок проверки/публикации CloudKit schema.
-- [`docs/TECHNICAL_PLAN.md`](docs/TECHNICAL_PLAN.md) — сервисы, технические правила
-  и ожидаемое покрытие тестами.
-- [`docs/DECISIONS.md`](docs/DECISIONS.md) — журнал архитектурных и продуктовых решений.
-- [`docs/MVP.md`](docs/MVP.md) — границы версии 1.0.
-- [`docs/ROADMAP.md`](docs/ROADMAP.md) — последовательность следующих этапов.
+- `docs/PRODUCT.md`: product overview and primary screens.
+- `docs/UX_FLOWS.md`: user journeys and UI behavior.
+- `docs/VOCABULARY.md`: Japanese product terms and meanings.
+- `docs/DOMAIN_MODEL.md`: domain entities and calculations.
+- `docs/DATA_MODEL.md`: SwiftData schema and data ownership.
+- `docs/ARCHITECTURE.md`: layers, dependencies, and platform boundaries.
+- `docs/LOCALISATION.md`: String Catalog rules and language workflow.
+- `docs/CLOUDKIT.md`: container, signing, local mode, and schema deployment.
+- `docs/TECHNICAL_PLAN.md`: services, technical rules, and expected tests.
+- `docs/DECISIONS.md`: accepted product and architecture decisions.
+- `docs/MVP.md`: version 1.0 scope.
+- `docs/RELEASE.md`: release gates and archive process.
+- `docs/ROADMAP.md`: planned work after 1.0.
 
-## Правила реализации
+## Implementation rules
 
-- Следуй границам из `docs/ARCHITECTURE.md`.
-- Не размещай бизнес-логику в SwiftUI views. Расчёты и переходы состояния должны
-  быть тестируемы независимо от UI.
-- Не меняй SwiftData-поля, enum raw values и семантику истории без осознанного
-  плана миграции.
-- Используй стабильные UUID. Для исторических данных предпочитай soft
-  archive/delete, если физическое удаление разрушает проекции.
-- Локальная SwiftData должна работать независимо от CloudKit.
-- Предпочитай Swift, SwiftUI, SwiftData, Swift Testing и системные Apple API.
-  Сторонние зависимости добавляются только после явного согласования.
-- Для UI сначала используй готовые компоненты и поведение Apple: системную
-  навигацию, `TabView`, toolbar, sheet, popover, menu, picker, controls,
-  animations и platform conventions. Не создавай самодельный аналог, если
-  системная реализация решает задачу.
-- Если одного системного компонента недостаточно, сначала собери решение из
-  стандартных Apple API. Кастомный компонент допустим только когда системного
-  решения нет или явное требование пользователя невозможно выполнить иначе.
-  Перед такой реализацией кратко объясни пользователю причину и границы
-  кастомизации.
-- `1 Block = 25` минут сфокусированной работы. Перерыв не входит в Block.
-  `12` минут отображаются как `0.5 Block`.
-- Не копируй UI одной платформы в другую. macOS, iOS и watchOS разделяют домен
-  и application state, но каждая платформа владеет навигацией и presentation
-  layer. Если системный API недоступен на одной платформе, сохраняй общий
-  визуальный state и реализуй только платформенный renderer отдельно.
+- Follow the boundaries in `docs/ARCHITECTURE.md`.
+- Keep business logic out of SwiftUI views. Calculations and state transitions
+  must be independently testable.
+- Do not change SwiftData fields, enum raw values, or history semantics without
+  an explicit migration plan.
+- Use stable UUIDs. Prefer archive or soft-delete fields when physical deletion
+  would invalidate historical projections.
+- Local SwiftData must work independently of CloudKit.
+- Prefer Swift, SwiftUI, SwiftData, Swift Testing, and Apple system frameworks.
+  Add third-party dependencies only after explicit approval.
+- Prefer system navigation, toolbars, sheets, popovers, menus, pickers,
+  controls, and animations. Build a custom component only when Apple APIs
+  cannot satisfy an explicit requirement, and explain that boundary first.
+- `1 Block = 25` focused minutes. Breaks are excluded. `12` minutes are shown
+  as `0.5 Block`.
+- Share domain and application state across platforms, not entire screens.
+  macOS, iOS/iPadOS, and watchOS own their navigation and presentation layers.
+  When a system API differs, preserve shared visual state and implement a
+  platform-specific renderer.
 
-## Проверка результата
+## Verification
 
-- Масштаб проверки соответствует риску: узкое UI-изменение требует сборки и
-  ручной/визуальной проверки; доменная логика требует целевых unit-тестов;
-  изменение общей модели или persistence требует полного набора тестов.
-- Для macOS используй схему `ThruFlow`; unit-тесты написаны на Swift Testing,
-  UI-тесты — на XCTest.
-- Локальные macOS unit- и UI-тесты запускай последовательно: передавай
-  `-parallel-testing-enabled NO` и `-maximum-parallel-testing-workers 1`. Не
-  запускай несколько `xcodebuild test` одновременно.
-- Для визуальной QA держи запущенной только одну временную копию приложения. Не
-  запускай новую QA-копию, пока предыдущая не закрыта.
-- После тестов и визуальной QA обязательно заверши временное приложение и
-  убедись, что не осталось процессов `xcodebuild`, `xctest`, test runner или
-  временных `ThruFlow*QA*`. При диагностике памяти ориентируйся на resident
-  memory (RSS), не путай её с зарезервированным virtual address space (VSZ).
-- Если проверка начинает заметно расходовать память или CPU, останови test
-  runners и QA-приложение, сообщи об этом и продолжай с более узкой
-  последовательной проверкой.
-- Проверяй `git diff --check` и итоговый `git diff`.
-- Не утверждай, что сборка или тесты прошли, если они не запускались. Если среда
-  не позволяет выполнить проверку, назови точную причину.
-- Не маскируй ошибку теста ослаблением assertion без подтверждения нового
-  продуктового поведения.
+- Match verification to risk: focused UI changes require a build and visual
+  check; domain changes require targeted unit tests; persistence or shared
+  model changes require the full suite.
+- The macOS scheme is `ThruFlow`. Unit tests use Swift Testing; UI tests use
+  XCTest.
+- Run local macOS unit and UI tests sequentially with
+  `-parallel-testing-enabled NO` and `-maximum-parallel-testing-workers 1`.
+- Keep only one temporary app copy running during visual QA, then terminate it
+  and confirm no `xcodebuild`, `xctest`, test-runner, or temporary QA process
+  remains.
+- If tests consume unusual memory or CPU, stop the runners and QA app, report
+  it, and continue with a narrower sequential check. Diagnose memory using RSS,
+  not reserved virtual address space (VSZ).
+- Run `git diff --check` and inspect the final diff.
+- Never claim that a build or test passed unless it actually ran. If the
+  environment blocks verification, state the exact reason.
+- Do not make a failing test pass by weakening its assertion without an
+  approved behavior change.
 
-## Завершение задачи
+## Completing a task
 
-1. Проверь, что реализовано именно последнее требование пользователя.
-2. Обнови документацию, если изменились продукт, архитектура, данные или UX.
-3. Кратко перечисли изменённое и выполненные проверки.
-4. Merge только по запросу пользователя либо когда это было явно частью согласованной задачи. Большие рефакторинги и большие изменение делать в отдельных ветках.
+1. Verify the latest user requirement, not an older interpretation.
+2. Update documentation when product, architecture, data, or UX changed.
+3. Summarize the changes and checks concisely.
+4. Merge only when the user requests it or it is part of the agreed workflow.
+   Keep large refactors and large features on separate branches.

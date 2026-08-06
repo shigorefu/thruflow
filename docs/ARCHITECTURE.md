@@ -175,7 +175,7 @@ Each platform owns its composition root:
   the same user's devices render the same daily topology without adding a new
   persisted setting. The topology is independent of time of day.
 - `FlowVisualState` maps actual daily focus into depth, glow, detail, and
-  motion. At zero progress the shader preserves the archived six-ribbon
+  motion. At zero progress the shader preserves the baseline six-ribbon
   neutral S-stream. `identityReveal` blends it into the seven-ribbon daily
   topology over the first canonical Block; there is no renderer swap or phase
   reset. The shader accumulates colored ribbon cores and wider halos
@@ -422,10 +422,10 @@ on the navigation transaction.
 
 ## Non-Goals
 
-This cross-platform stage does not add new business rules or full
-History/calendar editing. The watchOS companion is a thin presentation client
-over the same shared models, calculations, active-Flow store, and CloudKit
-container.
+The shared cross-platform layer does not replace platform-native presentation
+or introduce watch-only business rules. The watchOS companion is a thin
+presentation client over the same shared models, calculations, active-Flow
+store, and CloudKit container.
 
 ## watchOS Presentation
 

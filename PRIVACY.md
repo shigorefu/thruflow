@@ -24,6 +24,17 @@ The app uses:
 
 Apple may process diagnostic, purchase, iCloud, and App Store information according to the user's Apple settings and Apple's privacy policy. ThruFlow does not receive payment-card details.
 
+TestFlight automatically provides the developer with crash logs and statistical
+or usage information under [Apple's TestFlight terms](https://www.apple.com/legal/internet-services/itunes/testflight/).
+Testers may also choose to send feedback, including comments or screenshots,
+through TestFlight. This beta testing information is used only to diagnose
+defects and improve release quality.
+
+For App Store releases, Apple may provide aggregated sales and performance
+metrics. App usage and diagnostic data is available to the developer only under
+Apple's applicable [privacy, opt-in, and reporting-threshold rules](https://developer.apple.com/help/app-store-connect-analytics/).
+ThruFlow does not add a separate analytics SDK.
+
 ## Retention and deletion
 
 Local data remains on the device until the user deletes records or removes the app and its data. Synced data remains in the user's private iCloud storage until it is deleted from the app or through the user's iCloud data controls. Copies may remain in the user's own device or iCloud backups according to Apple's backup settings.

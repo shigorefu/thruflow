@@ -995,35 +995,24 @@ struct FlowTaskPickerView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var selectedTab: FlowTaskPickerTab = .tasks
 
-    private var taskGroups: [FlowTaskPickerGroup] {
-        FlowTaskPickerGroup.groups(for: todos.filter { $0.direction?.type != .habit })
+    private var projection: FlowContextPickerProjection {
+        FlowContextPickerProjection(directions: directions, todos: todos)
+    }
+
+    private var taskGroups: [FlowContextPickerTaskGroup] {
+        projection.taskGroups
     }
 
     private var habitTodos: [Todo] {
-        todos
-            .filter { $0.direction?.type == .habit }
-            .sorted(by: FlowTaskPickerGroup.sortTodos)
+        projection.habitTodos
     }
 
     private var otherDirection: Direction? {
-        DefaultDirections.existingTaskInbox(in: directions)
+        projection.otherDirection
     }
 
     private var userDirections: [Direction] {
-        directions
-            .filter { !DefaultDirections.isTaskInbox($0) }
-            .sorted {
-                if $0.type != $1.type {
-                    return FlowTaskPickerGroup.order.firstIndex(of: $0.type) ?? 0 <
-                        FlowTaskPickerGroup.order.firstIndex(of: $1.type) ?? 0
-                }
-
-                if $0.sortIndex != $1.sortIndex {
-                    return $0.sortIndex < $1.sortIndex
-                }
-
-                return $0.name < $1.name
-            }
+        projection.userDirections
     }
 
     var body: some View {
@@ -1311,23 +1300,9 @@ private enum FlowTaskPickerTab: String, CaseIterable, Identifiable {
     }
 }
 
-private struct FlowTaskPickerGroup: Identifiable {
-    static let order: [DirectionType] = [.habit, .neutral, .nice]
-
-    let type: DirectionType
-    let todos: [Todo]
-
-    var id: String { type.rawValue }
-
+private extension FlowContextPickerTaskGroup {
     var title: String {
-        switch type {
-        case .habit:
-            String(localized: "習慣")
-        case .neutral:
-            String(localized: "通常")
-        case .nice:
-            String(localized: "ナイス")
-        }
+        type.displayName
     }
 
     var tint: Color {
@@ -1339,29 +1314,6 @@ private struct FlowTaskPickerGroup: Identifiable {
         case .nice:
             .green
         }
-    }
-
-    static func groups(for todos: [Todo]) -> [FlowTaskPickerGroup] {
-        order.compactMap { type in
-            let items = todos
-                .filter { ($0.direction?.type ?? .neutral) == type }
-                .sorted(by: sortTodos)
-
-            guard !items.isEmpty else { return nil }
-            return FlowTaskPickerGroup(type: type, todos: items)
-        }
-    }
-
-    nonisolated static func sortTodos(_ lhs: Todo, _ rhs: Todo) -> Bool {
-        if lhs.isCompleted != rhs.isCompleted {
-            return !lhs.isCompleted
-        }
-
-        if lhs.sortIndex != rhs.sortIndex {
-            return lhs.sortIndex < rhs.sortIndex
-        }
-
-        return lhs.createdAt < rhs.createdAt
     }
 }
 
