@@ -22,7 +22,7 @@ enum TodoMeasurement: String, CaseIterable, Codable, Identifiable {
         case .focusBlocks:
             String(localized: "集中ブロック")
         case .minutes:
-            String(localized: "分")
+            String(localized: "分単位")
         }
     }
 }

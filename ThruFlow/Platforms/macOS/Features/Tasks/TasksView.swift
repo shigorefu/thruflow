@@ -108,7 +108,7 @@ struct TasksView: View {
             ToolbarItem(placement: .primaryAction) {
                 HStack(spacing: 10) {
                     backlogToolbarButton(
-                        String(localized: "期限切れ"),
+                        String(localized: "やり残し"),
                         count: snapshot.backlog.overdue.count,
                         mode: .overdue
                     )
@@ -472,7 +472,7 @@ struct TasksView: View {
 
     private var backlogInspectorTitle: String {
         backlogInspectorMode == .overdue
-            ? String(localized: "期限切れ")
+            ? String(localized: "やり残し")
             : String(localized: "日付なし")
     }
 
@@ -2221,7 +2221,7 @@ private struct VolumeChip: View {
                     menuRow(String(localized: "ブロック"), selected: volume.measurement == .focusBlocks)
                 }
                 Button { volume = .minutes(max(1, volume.plannedAmount ?? 25)) } label: {
-                    menuRow(String(localized: "分"), selected: volume.measurement == .minutes)
+                    menuRow(TodoMeasurement.minutes.displayName, selected: volume.measurement == .minutes)
                 }
             } label: {
                 Image(systemName: "chevron.down")
@@ -2264,7 +2264,7 @@ private struct VolumeChip: View {
         case .unspecified: String(localized: "種類")
         case .checkbox: String(localized: "チェック")
         case .blocks: String(localized: "ブロック")
-        case .minutes: String(localized: "分")
+        case .minutes: TodoMeasurement.minutes.displayName
         }
     }
 
@@ -2475,7 +2475,7 @@ private struct TasksOverdueHeader: View {
                 .fill(.red)
                 .frame(width: 7, height: 7)
 
-            Text(String(localized: "期限切れ"))
+            Text(String(localized: "やり残し"))
                 .font(.caption.weight(.semibold))
 
             Text("\(count)")

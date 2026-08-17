@@ -222,7 +222,7 @@ struct DayHistoryView: View {
                 systemImage: "square.stack.3d.up"
             )
             HistorySummaryTile(
-                title: String(localized: "Flow"),
+                title: String(localized: "集中回数"),
                 value: "\(snapshot.flowCount)",
                 systemImage: "waveform.path.ecg"
             )
@@ -433,7 +433,7 @@ struct DayHistoryView: View {
         ContentUnavailableView(
             String(localized: "記録なし"),
             systemImage: "clock.arrow.circlepath",
-            description: Text(String(localized: "この期間のFlowとタスクはありません。"))
+            description: Text(String(localized: "この期間には集中記録もタスクもありません。"))
         )
         .frame(maxWidth: .infinity)
         .padding(.vertical, 40)
@@ -443,7 +443,7 @@ struct DayHistoryView: View {
         switch selectedRange {
         case .day:
             if calendar.isDateInToday(selectedDate) {
-                return String(localized: "今日 ・ \(fullDateFormatter.string(from: selectedDate))")
+                return String(localized: "今日・\(fullDateFormatter.string(from: selectedDate))")
             }
             return fullDateFormatter.string(from: selectedDate)
         case .week:
@@ -830,7 +830,7 @@ private struct HistoryExpandableTaskRow: View {
                                 .font(.body.weight(.medium))
                                 .strikethrough(task.todo?.isCompleted == true)
                                 .lineLimit(1)
-                            Text(String(localized: "\(task.directionName) ・ \(task.flowCount) Flow"))
+                            Text(String(localized: "\(task.directionName)・集中\(task.flowCount)回"))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -853,8 +853,8 @@ private struct HistoryExpandableTaskRow: View {
                                 .frame(width: 24, height: 24)
                         }
                         .buttonStyle(.plain)
-                        .help(String(localized: "このタスクにFlowを追加"))
-                        .accessibilityLabel(String(localized: "このタスクにFlowを追加"))
+                        .help(String(localized: "このタスクに集中記録を追加"))
+                        .accessibilityLabel(String(localized: "このタスクに集中記録を追加"))
                     }
 
                     Image(systemName: "chevron.right")
@@ -871,7 +871,7 @@ private struct HistoryExpandableTaskRow: View {
             if isExpanded {
                 Divider().padding(.leading, 54)
                 if flows.isEmpty {
-                    Text(String(localized: "この期間のFlowはありません"))
+                    Text(String(localized: "この期間には集中記録がありません"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -1024,7 +1024,7 @@ private struct HistoryExpandableDirectionRow: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(direction.name)
                         .font(.body.weight(.medium))
-                    Text(String(localized: "\(direction.taskCount) タスク ・ \(direction.flowCount) Flow"))
+                    Text(String(localized: "タスク\(direction.taskCount)件・集中\(direction.flowCount)回"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -1144,7 +1144,7 @@ private struct HistoryFlowDisclosureRow: View {
         .padding(.leading, 56)
         .padding(.trailing, 12)
         .padding(.vertical, 7)
-        .accessibilityLabel(String(localized: "Flowを編集"))
+        .accessibilityLabel(String(localized: "集中記録を編集"))
     }
 
     private func time(_ date: Date) -> String {

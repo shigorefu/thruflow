@@ -151,7 +151,7 @@ private struct WatchFlowStreamView: View {
                         HStack {
                             Text(BlockUnit.displayText(forFocusedSeconds: snapshot.totalFocusSeconds))
                             Spacer()
-                            Text("\(snapshot.flowCount) Flow")
+                            Text(String(localized: "集中\(snapshot.flowCount)回"))
                         }
                         .font(.caption2.weight(.semibold))
                         .padding(.horizontal, 8)
@@ -743,7 +743,7 @@ private struct WatchStatisticsView: View {
                         systemImage: "square.stack.3d.up"
                     )
                     statisticRow(
-                        "Flow",
+                        String(localized: "集中回数"),
                         value: "\(snapshot.flowCount)",
                         systemImage: "waveform.path"
                     )

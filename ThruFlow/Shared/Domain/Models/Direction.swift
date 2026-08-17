@@ -86,7 +86,7 @@ enum GoalUnit: String, CaseIterable, Codable, Identifiable {
         case .focusBlocks:
             String(localized: "フローブロック")
         case .minutes:
-            String(localized: "分")
+            String(localized: "分単位")
         case .hours:
             String(localized: "時間")
         }

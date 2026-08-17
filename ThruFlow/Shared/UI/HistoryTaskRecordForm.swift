@@ -424,7 +424,7 @@ struct HistoryTaskRecordForm: View {
     }
 
     private var flowSection: some View {
-        Section(String(localized: "Flow")) {
+        Section(String(localized: "集中設定")) {
             Picker(String(localized: "Flowタイプ"), selection: $mode) {
                 ForEach(manualModes) { mode in
                     Text(mode.displayName).tag(mode)

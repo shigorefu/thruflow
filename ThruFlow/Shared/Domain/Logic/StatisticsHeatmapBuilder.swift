@@ -48,7 +48,7 @@ enum StatisticsMode: String, CaseIterable, Identifiable, Sendable {
         case .achievement:
             String(localized: "タスク")
         case .flow:
-            String(localized: "Flow")
+            String(localized: "集中")
         }
     }
 }
