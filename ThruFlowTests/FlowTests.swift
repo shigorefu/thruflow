@@ -242,12 +242,13 @@ struct FlowTests {
         #expect(todo.recordedFocusSeconds == 24 * 60)
         #expect(todo.actualProgress == 1)
         #expect(todo.status == .active)
+        let expectedProgress = "\(String(localized: "1 Block")) / \(String(localized: "\(2) Blocks"))"
         #expect(TodoProgressCalculator().summary(
             measurement: todo.measurement,
             plannedAmount: todo.plannedAmount,
             actualProgress: todo.actualProgress,
             focusDurationSeconds: todo.focusDurationSeconds
-        ) == "1 Block / 2 Blocks")
+        ) == expectedProgress)
     }
 
     @Test func manualBlockTodoProgressUsesTodoMeasurementWithoutDirectionGoal() {
@@ -1022,7 +1023,7 @@ struct FlowTests {
         #expect(started.taskTitle == "Live Activity")
         #expect(started.directionName == "開発")
         #expect(started.directionColorHex == "#34C759")
-        #expect(started.modeName == "Focus")
+        #expect(started.modeName == FlowMode.twentyFiveFive.displayName)
         #expect(started.status == .focus)
         #expect(started.remainingSeconds == 25 * 60)
         #expect(started.progress == 0)

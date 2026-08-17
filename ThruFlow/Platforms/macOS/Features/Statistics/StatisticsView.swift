@@ -340,7 +340,7 @@ struct StatisticsView: View {
             .pickerStyle(.segmented)
 
             DatePicker(
-                String(localized: "開始"),
+                String(localized: "開始日"),
                 selection: $exportStartDate,
                 in: ...today,
                 displayedComponents: .date
@@ -872,7 +872,7 @@ private struct StatisticsCustomRangePopover: View {
 
             VStack(spacing: 12) {
                 DatePicker(
-                    String(localized: "開始"),
+                    String(localized: "開始日"),
                     selection: $startDate,
                     in: ...maximumDate,
                     displayedComponents: .date
@@ -995,7 +995,7 @@ private struct StatisticsSummaryCard: View {
                     systemImage: "square.grid.2x2"
                 )
                 StatisticsSummaryMetric(
-                    title: String(localized: "Flow"),
+                    title: String(localized: "集中回数"),
                     value: "\(summary.flowCount)",
                     previousValue: "\(previousSummary.flowCount)",
                     systemImage: "water.waves"
@@ -1358,7 +1358,7 @@ private struct StatisticsDotsCard: View {
     var body: some View {
         StatisticsCard(
             title: String(localized: "Dots"),
-            subtitle: mode == .flow ? String(localized: "Flow Blocks") : String(localized: "完了タスク"),
+            subtitle: mode == .flow ? String(localized: "集中時間") : String(localized: "完了タスク"),
             minimumHeight: period == .month ? 288 : nil,
             headerAccessory: {
                 StatisticsModePicker(selection: $mode)
@@ -1624,7 +1624,9 @@ private struct StatisticsContributionCell: View {
     private var helpText: String {
         guard let day else { return "" }
         let date = day.date.formatted(.dateTime.locale(locale).year().month().day())
-        return "\(date) · \(StatisticsFormatting.duration(day.focusedSeconds)) · \(day.flowCount) Flow · \(day.completedTaskCount) \(String(localized: "タスク"))"
+        let focusCount = String(localized: "集中\(day.flowCount)回")
+        let completedTasks = String(localized: "完了タスク\(day.completedTaskCount)件")
+        return "\(date) · \(StatisticsFormatting.duration(day.focusedSeconds)) · \(focusCount) · \(completedTasks)"
     }
 }
 
@@ -1643,7 +1645,7 @@ private struct StatisticsContributionPopover: View {
                     String(localized: "集中時間"),
                     value: StatisticsFormatting.duration(day.focusedSeconds)
                 )
-                metricRow("Flow", value: "\(day.flowCount)")
+                metricRow(String(localized: "集中回数"), value: "\(day.flowCount)")
                 metricRow(String(localized: "完了タスク"), value: "\(day.completedTaskCount)")
             }
         }
@@ -1882,7 +1884,7 @@ private extension StatisticsCSVContent {
         case .all:
             String(localized: "すべて")
         case .flow:
-            String(localized: "Flow")
+            String(localized: "集中記録")
         case .task:
             String(localized: "タスク")
         }

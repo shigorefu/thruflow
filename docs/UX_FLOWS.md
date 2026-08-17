@@ -4,17 +4,17 @@ The main macOS window opens at an initial size of `1280 × 800` points. This is 
 default only: normal macOS window restoration continues to respect a size chosen
 by the user.
 
-## 方向
+## 分野
 
 The Direction screen manages only user-editable Directions:
 
-- `通常`;
+- `いつでも`;
 - `習慣`;
-- `ナイス`.
+- `できたら`.
 
 The system Direction `その他` is not shown here and cannot be edited from this screen.
 
-On macOS, the `通常`, `習慣`, and `ナイス` groups use an adaptive grid: wide
+On macOS, the `いつでも`, `習慣`, and `できたら` groups use an adaptive grid: wide
 windows show them side by side, while narrower windows wrap the remaining groups
 onto following rows in the same vertical scroll surface instead of clipping them.
 
@@ -42,7 +42,7 @@ Active normal Tasks can be dragged between dates in day, week, and month. Month 
 
 Clicking a month cell opens that date in `日`. On macOS, the system title toolbar
 centers the compact text segmented filter `すべて | タスク | 習慣`; its trailing
-actions contain `期限切れ N | 日付なし N` and an icon-only search action that
+actions contain `やり残し N | 日付なし N` and an icon-only search action that
 expands on demand. Both counters open the same trailing backlog inspector with the
 corresponding records. The calendar header uses two rows: centered `日 | 週 | 月`
 first, then the active date or period on the left and `‹ 今日 ›` navigation on the
@@ -60,12 +60,12 @@ The quick composer follows the selected date or kanban column.
 Sections:
 
 - `習慣`: automatically generated habit tasks;
-- `通常`: normal scheduled tasks;
-- `ナイス`: optional positive tasks.
+- `いつでも`: normal scheduled tasks;
+- `できたら`: optional positive tasks.
 
 Task rows:
 
-- empty title displays `(方向)` in a translucent italic style;
+- empty title displays `(分野)` in a translucent italic style;
 - completed tasks are visually muted, struck through, and sorted below active tasks;
 - Direction color is used unless the Direction is `その他`;
 - `チェック` shows a checkbox;
@@ -86,10 +86,10 @@ The composer also recognizes `[]`, `[2b]`, `[30m]`, `@Direction`, `!high`, `/tod
 
 Inside the Flow task picker, quick creation opens as a separate compact trailing popover. It shows only the messenger composer, without the syntax legend. The add action first closes the Task picker and then presents the composer from the player itself. Avoiding a nested popover keeps controls and submenus interactive in the macOS menu-bar window instead of treating them as outside clicks.
 
-When `今日` is selected on macOS, or the iOS `日` view is showing today, active overdue normal Tasks appear in a leading `期限切れ` section. On iOS this is a separate card above the dated Task card and it is not rendered in `週` or `月`. Both platforms use the shared backlog projection and expose normal Task actions plus `すべて今日へ`; macOS additionally supports drag-to-date. Automatically generated Habit instances are excluded.
+When `今日` is selected on macOS, or the iOS `日` view is showing today, active overdue normal Tasks appear in a leading `やり残し` section. On iOS this is a separate card above the dated Task card and it is not rendered in `週` or `月`. Both platforms use the shared backlog projection and expose normal Task actions plus `すべて今日へ`; macOS additionally supports drag-to-date. Automatically generated Habit instances are excluded.
 
 There is no separate Inbox navigation item. The macOS toolbar counters for
-`期限切れ` and `日付なし` always show their active normal Task totals and open a
+`やり残し` and `日付なし` always show their active normal Task totals and open a
 shared trailing inspector. It supports per-Task `今日へ移動`, drag-to-date, edit,
 complete, delete, and `すべて今日へ`. Returning from the inspector preserves the
 selected calendar date and range.
@@ -100,21 +100,21 @@ Daily and selected-weekday Habit instances are generated for visible current/fut
 
 ## Flow Player
 
-`Flow` is the first/default navigation item. In a wide window, its dashboard uses one aligned two-column grid: the animated daily stream and Elastic series timeline sit above today's Tasks on the left, while the equally tall square player sits above compact Statistics on the right. Both rows reuse the same explicit column widths, so the player and Statistics always align and have the same width while the window is resized. All lower Task, Habit, optional Nice, and Statistics panels share one height and stretch to the bottom of the viewport; short windows retain a minimum lower-row height and scroll vertically. The left side occupies roughly three quarters of the content. Other app sections do not repeat the player as a top header; the macOS menu bar opens this same square player.
+`流れ` is the first/default navigation item. In a wide window, its dashboard uses one aligned two-column grid: the animated daily stream and Elastic series timeline sit above today's Tasks on the left, while the equally tall square player sits above compact Statistics on the right. Both rows reuse the same explicit column widths, so the player and Statistics always align and have the same width while the window is resized. All lower Task, Habit, optional `できたら`, and Statistics panels share one height and stretch to the bottom of the viewport; short windows retain a minimum lower-row height and scroll vertically. The left side occupies roughly three quarters of the content. Other app sections do not repeat the player as a top header; the macOS menu bar opens this same square player.
 
 The player layout is:
 
 In the narrow vertical dashboard layout, the player comes first, followed by the Flow stream/timeline, Tasks/Habits, and Statistics. The narrow player and Flow stage use stable heights so resizing does not reorder controls or cause layout jumps.
 
 - left Task card with Direction icon, Task title, and smaller Direction name;
-- Task card opens a picker with `タスク`, `習慣`, and `方向` tabs;
+- Task card opens a picker with `タスク`, `習慣`, and `分野` tabs;
 - `タスク` and `習慣` use separate lists of today's items;
-- `方向` uses an emoji-and-name grid with `その他` first for Direction-only starts;
+- `分野` uses an emoji-and-name grid with `その他` first for Direction-only starts;
 - on iPhone and iPad the same three context tabs use touch-native lists, open on
   the currently selected context type, and keep `その他` first;
 - Direction icon color follows the selected Task Direction;
-- compact Focus selector opens a separate picker for `Sprint`, `Focus`, and `Deep`;
-- selecting another Focus mode during focus or paused focus preserves elapsed time, applies that preset as the new total plan, and moves only the planned end. A shorter preset may immediately show overtime; crossing another preset threshold never renames the selected mode;
+- compact `集中モード` selector opens a separate picker for `短め`, `標準`, and `じっくり`;
+- selecting another `集中モード` during focus or paused focus preserves elapsed time, applies that preset as the new total plan, and moves only the planned end. A shorter preset may immediately show overtime; crossing another preset threshold never renames the selected mode;
 - transport seek controls subtract or add exactly five minutes from remaining focus time across macOS, iOS, menu bar, and Live Activity. Subtract stops at one minute remaining, both actions preserve elapsed time and mode, and both are disabled during rest;
 - starting rest derives its duration from actual focused time rather than the selected mode: under 24 minutes gives 3 minutes, 24...48:59 gives 5 minutes, and 49 minutes or more gives 10 minutes. The 24- and 49-minute boundaries normalize Block credit to 25 and 50 minutes while longer actual time remains exact;
 - break time counts down past zero with a positive overtime sign; its neutral-gray progress ring drains while the Direction-colored focus ring fills. Starting work during rest completes the previous Flow and immediately starts the next one, while the Japanese menu bar status becomes `☕️ 休憩 - time` or `☕️ 長休憩 - time`;
@@ -122,24 +122,27 @@ In the narrow vertical dashboard layout, the player comes first, followed by the
 - the Task card reuses the canonical completion/progress control; only Check is interactive, while Block and Minute rings are read-only and show progress and the remaining amount;
 - generated titles for empty Tasks and Habits are consistently italic and visually muted in the player, picker, Tasks screen, and dashboard panels;
 - dashboard `タスク` rows show priority before progress, including `余裕があれば` for low-priority optional work; fixed Habit priority is not displayed;
-- the fixed-height dashboard Statistics carousel opens with a centered donut and `タスク別 | 方向別`; its other pages show a 7-day Flow-minute bar chart with previous-day deltas and today's `達成状況`;
+- the fixed-height dashboard Statistics carousel opens with a centered donut and `タスク別 | 分野別`; its other pages show a 7-day Flow-minute bar chart with previous-day deltas and today's `達成状況`;
 - double-clicking the selected Task title edits it inline; Enter or focus loss saves and Escape cancels. Double-click recognition is limited to the visible title bounds so the rest of the Task card opens the picker immediately;
-- the Task card provides the same short pressed-state feedback as the Focus selector without changing its single/double-click actions;
+- the Task card provides the same short pressed-state feedback as the `集中モード` selector without changing its single/double-click actions;
 - timer and transport controls on the right.
 
 On iPhone and iPad, today's compact Flow timeline keeps its 14-point visual rail
-inside a 44-point touch target. Tapping a completed Flow segment resolves the
-exact persisted segment, and tapping a completed rest resolves that rest; both
-open the same canonical detail/editor used by `履歴`. Active, paused,
-awaiting-result, and active-rest records do not open until their record is
-complete. The lookup runs only after a tap, so the live timeline does not add a
-per-tick History projection.
+inside a 44-point touch target. Tapping a Flow segment opens a compact popover
+above that exact position with its Task, Direction, interval, focused duration,
+and mode. A running segment is marked `実行中` and remains read-only. Completed
+segments and rests can continue from the popover to the same canonical
+detail/editor used by `履歴`; an active rest remains non-interactive. The History
+lookup runs only when that action is selected, so the live timeline does not add
+a per-tick History projection.
 
-Mode labels:
+The `集中モード` labels are:
 
-- `Sprint 12/3`;
-- `Focus 25/5`;
-- `Deep 50/10`.
+- `短め 12/3`;
+- `標準 25/5`;
+- `じっくり 50/10`.
+
+The internal adaptive mode is labeled `自動` whenever it appears in saved data.
 
 Flow can be started with a selected Task, with only a Direction, or with neither. Direction-only work does not create an implicit Todo. If no Direction is chosen, the resolved Direction is `その他`. Version 1.0 never creates a Task implicitly from Flow.
 
@@ -175,15 +178,15 @@ feedback.
 
 The trash action is phase-aware. During focus it deletes the current Flow and rolls back any credited Task/Direction progress through the canonical History editor. During rest it deletes only the active FlowBreak and closes the player, preserving the completed focus session and its progress.
 
-Before the first Flow, the dashboard uses a familiar neutral six-ribbon S-stream. During the first canonical Block it continuously reveals a seventh ribbon, deterministic topology seeded by the date and the earliest stable Direction identifier, focus-weighted Direction colors, and additional depth. This transition happens inside one shader and never replaces or resets the current frame. The completed daily stream therefore becomes personal while a new user's empty dashboard remains immediately understandable. The resulting seven broad, bright, softly glowing translucent ribbons follow one shared channel. The seed remains identical on devices sharing the same synchronized database and never changes with time of day. Back, middle, and foreground ribbons move at different speeds to create depth; later progress increases weave, glow, parallax, and detail while capped occupancy preserves readable gaps. Every completed half-Block sends a restrained light pulse through the channel. After the 25-percent motion increase, idle stays in a calm `0.075...0.35` phase-speed range at 30 FPS and carries a subtle moving inner current so it does not appear frozen, while active Flow uses `1.375...3.50` at 60 FPS. Frame cadence is unchanged. Sprint uses energetic waves, Focus balanced waves, and Deep broad slow bends. Dark mode uses luminous additive composition; light mode uses controlled ink-style blending. The current Flow appears live after its first creditable minute. Reduce Motion, an inactive iOS scene, or a non-key macOS window freezes the last frame and stops further GPU updates. Selecting a completed timeline segment opens the existing Flow history inspector.
+Before the first Flow, the dashboard uses a familiar neutral six-ribbon S-stream. During the first canonical Block it continuously reveals a seventh ribbon, deterministic topology seeded by the date and the earliest stable Direction identifier, focus-weighted Direction colors, and additional depth. This transition happens inside one shader and never replaces or resets the current frame. The completed daily stream therefore becomes personal while a new user's empty dashboard remains immediately understandable. The resulting seven broad, bright, softly glowing translucent ribbons follow one shared channel. The seed remains identical on devices sharing the same synchronized database and never changes with time of day. Back, middle, and foreground ribbons move at different speeds to create depth; later progress increases weave, glow, parallax, and detail while capped occupancy preserves readable gaps. Every completed half-Block sends a restrained light pulse through the channel. After the 25-percent motion increase, idle stays in a calm `0.075...0.35` phase-speed range at 30 FPS and carries a subtle moving inner current so it does not appear frozen, while active Flow uses `1.375...3.50` at 60 FPS. Frame cadence is unchanged. `短め` uses energetic waves, `標準` balanced waves, and `じっくり` broad slow bends. Dark mode uses luminous additive composition; light mode uses controlled ink-style blending. The current Flow appears live after its first creditable minute. Reduce Motion, an inactive iOS scene, or a non-key macOS window freezes the last frame and stops further GPU updates. Selecting a completed timeline segment opens the existing Flow history inspector.
 
 The dashboard timeline always uses `Elastic` and has no `24時間` control. When empty, it covers the current full hour and the following hour. Once activity exists, it expands from the first Flow's full hour through the full hour after the last Flow, never below two hours; this keeps short sessions visually meaningful. Hovering a dashboard timeline segment shows an immediate compact card with Task, clock interval, and focused duration. Clicking resolves one selected segment ID and opens one popover anchored to that exact timeline position, with Task, Direction, interval, focused duration, and Flow size. A red trash button deletes only that completed segment after confirmation and subtracts its progress; deleting the only segment deletes the Flow. Completed segments can continue to the canonical Flow history inspector; the active segment is read-only and marked `実行中`.
 
-The dashboard timeline uses a neutral dark rail for time without Flow. Every series containing a persisted rest receives one continuous light-gray underlay from its first Block through its final rest. The underlay and FlowSession Blocks have the same height. Blocks are rounded Direction-colored capsules above that underlay, so exposed gray intervals read as rests without becoming thinner, while unrelated series remain separated by the dark rail. FlowSegments caused by switching Tasks divide the color inside a Block edge-to-edge while sharing one outer capsule; they never appear as separately rounded Blocks or increment the Flow count. A context segment shorter than 60 focused seconds transfers wholesale to the newly selected Task/Direction; returning to the immediately preceding context during that window merges the adjacent segments. If the next Flow begins within 1.5 times the planned rest from rest start, both sessions retain separate history records but share one series ID and therefore one continuous underlay. Continuation windows are Sprint 4:30, Focus 7:30, Deep 15:00, and `長休憩` 30:00. After every 4 accumulated Blocks in the series, the next manually started rest becomes a 20-minute `長休憩`. Missing the window simply starts a new series.
+The dashboard timeline uses a neutral dark rail for time without Flow. Every series containing a persisted rest receives one continuous light-gray underlay from its first Block through its final rest. The underlay and FlowSession Blocks have the same height. Blocks are rounded Direction-colored capsules above that underlay, so exposed gray intervals read as rests without becoming thinner, while unrelated series remain separated by the dark rail. FlowSegments caused by switching Tasks divide the color inside a Block edge-to-edge while sharing one outer capsule; they never appear as separately rounded Blocks or increment `集中回数`. A context segment shorter than 60 focused seconds transfers wholesale to the newly selected Task/Direction; returning to the immediately preceding context during that window merges the adjacent segments. If the next Flow begins within 1.5 times the planned rest from rest start, both sessions retain separate history records but share one series ID and therefore one continuous underlay. Continuation windows are `短め` 4:30, `標準` 7:30, `じっくり` 15:00, and `長休憩` 30:00. After every 4 accumulated Blocks in the series, the next manually started rest becomes a 20-minute `長休憩`. Missing the window simply starts a new series.
 
 Hovering a rest shows its type, interval, and duration above the timeline. Clicking a completed rest opens a duration editor anchored to that rest. Start time is fixed. If the new end overlaps the next Flow, that Flow and all later Flow/rest records in the same series move forward by the overlap. Free space absorbs an extension without shifting, shortening does not pull history backward, and unrelated series never move.
 
-Below the Flow stage are today's `タスク` and `習慣` columns. `ナイス` is omitted when empty. Rows use the same square Check and circular Block/Minute progress controls as the Tasks screen. Check can be completed manually; Block and Minute rings are read-only because recorded Flow owns their progress. Rows can be opened for editing. The fixed-height compact `統計` carousel provides Task/Direction focused-time distribution, a seven-day Flow trend with previous-day comparisons, and today's completion status.
+Below the Flow stage are today's `タスク` and `習慣` columns. `できたら` is omitted when empty. Rows use the same square Check and circular Block/Minute progress controls as the Tasks screen. Check can be completed manually; Block and Minute rings are read-only because recorded Flow owns their progress. Rows can be opened for editing. The fixed-height compact `統計` carousel provides Task/Direction focused-time distribution, a seven-day Flow trend with previous-day comparisons, and today's completion status.
 
 The Dashboard Task header `+` opens the shared messenger-style composer in a separate popover. The Flow Task picker's `タスク` tab also ends with an add row that opens the same popover; a Task created there is immediately selected for Flow. Direction, measurement, and priority remain editable, while the date is fixed to `今日`. The composer has an explicit close button that discards the unfinished action. Habit has no manual add action.
 
@@ -194,9 +197,9 @@ visible beneath a uniformly dimmed overlay. One compact information card stays
 centered in the window or screen for every step. The introduction contains
 seven cards:
 
-1. Welcome;
-2. `Flow`;
-3. `方向`;
+1. `ようこそ`;
+2. `流れ`;
+3. `分野`;
 4. `タスク`;
 5. `履歴`;
 6. `統計`;
@@ -206,7 +209,7 @@ Advancing programmatically opens the corresponding real feature screen behind
 the centered card while all interaction below the overlay remains disabled.
 There are no spotlights, scrim cutouts, highlighted cards, target anchors, or
 automatic target scrolling. The final card summarizes the complete loop as
-`方向 → タスク → Flow → 履歴・統計 → 次の一歩`. The journey does not create a
+`分野 → タスク → 流れ → 履歴・統計 → 次の一歩`. The journey does not create a
 sample Direction, Task, Flow, or history record, and `--onboarding-preview`
 always opens it against the existing `--uitesting` in-memory store. Skip and
 Finish both return to Flow and complete first-run onboarding; preview completion
@@ -237,11 +240,11 @@ submission UI or depend on an undocumented TestFlight URL scheme.
 ## iPhone and iPad
 
 The first iPhone surface is a Flow-first system `TabView`, with an independent
-`NavigationStack` inside each destination. `Flow` opens by default. The Flow tab
+`NavigationStack` inside each destination. `流れ` opens by default. The Flow tab
 and macOS sidebar use the same three-wave template mark as the macOS menu bar,
 so primary Flow navigation has one icon across platforms. The tab bar
 remains visible and marks the active
-destination across five items: `Flow`, `タスク`, `履歴`, `方向`, and `統計`.
+destination across five items: `流れ`, `タスク`, `履歴`, `分野`, and `統計`.
 On iOS 26 it uses the native Liquid Glass selection indicator, minimizes while
 content scrolls down, and returns on upward scrolling; iOS 17–25 retain the
 system tab-bar behavior.
@@ -266,7 +269,7 @@ comfortable controls, the dashboard returns to the single-column presentation.
 
 The first Flow viewport presents the softened animated stream and Elastic
 timeline before the timer card. It keeps the Task selector, the shared
-`Sprint | Focus | Deep` segmented selector, timer controls, stream, and timeline
+`集中モード` selector (`短め | 標準 | じっくり`), timer controls, stream, and timeline
 together. The selector's Help button opens a native dimmed bottom sheet with
 mode icons, work/rest durations, and usage guidance; macOS keeps the same content
 in a popover. Changing the mode on either platform animates the shared Metal
@@ -285,14 +288,14 @@ in above the persistent system tab bar. Shared quick-input tokens (`[ ]`, `[1b]`
 `[25m]`, `@`, `!`, `/`, and `#`) update the composer controls while typing, and
 contextual autocomplete is shown above the field. The date control supports
 Today, Tomorrow, No Date, and an arbitrary date through the native graphical
-picker. Unspecified controls remain visibly labeled `種類`, `方向`, `優先度`,
+picker. Unspecified controls remain visibly labeled `種類`, `分野`, `優先度`,
 and `日付`, while submission applies the shared Check, inbox Direction, medium
 priority, and Today defaults. The screen provides filtered day/week/month
 ranges, automatic Habit instances, overdue and no-date inboxes, completion,
 progress, and native Task editing. Its compact header uses an icon-only system
 filter, centered `日 | 週 | 月`, a separate trailing `今日` action, and one
 vertical More button. More carries the combined nonzero inbox badge and opens
-`期限切れ N` and `日付なし N`; the same vertical More symbol is used throughout
+`やり残し N` and `日付なし N`; the same vertical More symbol is used throughout
 the iPhone app. Japanese day cells use bare numbers. The upper day strip is a
 native horizontally scrolling, view-aligned list of date cards. Week uses the
 same system behavior for cards containing the month and seven-day range. These
@@ -322,7 +325,7 @@ Its period navigation matches `タスク`: `日`
 shows seven date cards, `週` shows previous/current/next week cards, and `月`
 shows the month calendar above the selected History mode. These controls mark
 only recorded Flow activity. Day and week use the same native horizontally
-scrolling period strips across the `Flow`, `タスク`, and `方向` modes, while the
+scrolling period strips across the `集中記録`, `タスク`, and `分野` modes, while the
 timeline or aggregate content below keeps its own scrolling behavior. Their tap
 and settled-swipe selection semantics match `タスク`. Native History search
 filters the complete database by record title, Direction, emoji, hashtag,
@@ -331,9 +334,9 @@ period. Day content and week summaries can also animate between adjacent periods
 with a horizontal swipe. Calendar-week content retains
 its own horizontal timeline gesture instead. Flow
 and rest remain separate calendar records and
-tapping one opens its details. `方向` edits its emoji through a dedicated
+tapping one opens its details. `分野` edits its emoji through a dedicated
 searchable picker instead of a text-field leading icon. The standalone iPhone
-`方向` uses the same types, goals, schedules, weekday rules, color palette,
+`分野` uses the same types, goals, schedules, weekday rules, color palette,
 archive behavior, item ordering, and group ordering as macOS in a native list
 and editor. The standalone iPhone `統計` provides the same report contents and
 filters as macOS in a touch-native vertical card workspace. Full drag-based
@@ -348,19 +351,19 @@ default language for a fresh install.
 ## Apple Watch Companion
 
 Watch opens on a native four-page vertical pager in this order: `タイマー`,
-fullscreen `Flow`, today's `タスク`, and today's `統計`. Every page occupies
+fullscreen `流れ`, today's `タスク`, and today's `統計`. Every page occupies
 the display; the system vertical page gesture or Digital Crown moves between
 them. Task and mode pickers continue to use system `NavigationLink`
 destinations.
 
-The initial timer page keeps Task/Direction context selection and the Flow mode
+The initial timer page keeps Task/Direction context selection and the `集中モード`
 selector above the player. The focus/rest ring sits on the left; `-5`,
 Play/Pause, `+5`, destroy, stop, and break controls sit on the right, with the
 primary Play/Pause action visually larger than secondary actions. Everything
 remains on one non-scrolling screen. Memo confirmation uses a Watch sheet.
 
 The fullscreen Flow page contains the stream and compact, material-backed
-`今日のFlow` and Block/Flow overlays. Tapping anywhere on the stream toggles an
+overlays for `今日の流れ`, Blocks, and `集中回数`. Tapping anywhere on the stream toggles an
 immersive state that hides every overlay and leaves only the animation. It
 intentionally omits the dashboard timeline and stops rendering while off-screen.
 
@@ -368,8 +371,8 @@ Tasks expose the same Check, Block-ring, and Minute-progress semantics as the
 other platforms. A system `+` button opens a native form made only from pickers
 and steppers: Direction, Task type and target, priority, and date. It creates an
 untitled Task whose visible placeholder comes from its Direction, so Watch never
-opens a keyboard. Statistics presents completion, focused time, Blocks, and Flow
-count.
+opens a keyboard. Statistics presents completion, focused time, Blocks, and
+`集中回数`.
 
 Opening or foregrounding Watch reconciles the canonical persisted active
 session. CloudKit transports the same Task, Direction, mode, phase, and absolute
@@ -378,10 +381,10 @@ timer anchors; Watch never starts an independent timer state machine.
 ## System Notifications
 
 macOS and iOS request alert, sound, and badge permission from the shared Flow
-notification service. A completed focus interval is named by its mode
-(`Sprint`, `Focus`, or `Deep`) instead of its Block value; Japanese completion
+notification service. A completed focus interval is named by its `集中モード`
+(`短め`, `標準`, or `じっくり`) instead of its Block value; Japanese completion
 copy starts with `お疲れ様です。`. Break completion prompts the user to return to
-Flow.
+`流れ`.
 
 Focus and break each schedule an additional forgotten-timer reminder after 60
 minutes of active phase time. Paused time shifts that deadline and does not
@@ -405,7 +408,7 @@ Direction context, progress, and three
 transport actions in the same order as the in-app player: subtract five minutes,
 pause/resume, and add five minutes. Seek is disabled during a break. Lock Screen
 content shows the same session identity, timer, and progress without
-action buttons. Opening any activity routes to the Flow tab. ActivityKit
+action buttons. Opening any activity routes to the `流れ` tab. ActivityKit
 advances date-backed timer text and progress while the app is suspended; state
 transitions still originate from `ActiveFlowStore`. The running surface uses
 only WidgetKit-safe system timer text. After the canonical content state enters
@@ -422,13 +425,13 @@ planned for 2.0.
 
 The iPhone Home Screen and macOS desktop expose the same three read-only WidgetKit configurations:
 
-- `Flowタイマー` in Small and Medium shows the active Task, optional Direction,
+- `集中タイマー` in Small and Medium shows the active Task, optional Direction,
   mode, phase, remaining `MM:SS`, and progress. Its empty state shows
-  `Flowなし`. Tapping opens Flow.
+  `集中中ではありません`. Tapping opens `流れ`.
 - `今日のタスク` in Small, Medium, and Large shows the canonical Today list in
   priority order, completion count, and the same Check, Block-ring, or
   minute-fill progress semantics as the application. Tapping opens Tasks.
-- `Flow Dots` uses a GitHub-style contribution grid: Small shows the latest 30
+- `集中カレンダー` uses a GitHub-style contribution grid: Small shows the latest 30
   days in `5 × 6`, Medium 60 days in `12 × 5`, and Large 90 days in `9 × 10`.
   Cells expand to the full widget content area without empty alignment cells,
   retain Direction-mixed color, and use four relative intensity levels.
@@ -437,14 +440,14 @@ The iPhone Home Screen and macOS desktop expose the same three read-only WidgetK
 Home Screen widgets intentionally have no transport or mutation controls. Live
 Activity owns quick Flow controls, while regular widgets remain reliable
 glanceable projections. Date-backed system views keep the timer moving while
-the app is suspended; Tasks and Dots refresh from immutable application-built
+the app is suspended; Tasks and the `集中カレンダー` refresh from immutable application-built
 snapshots.
 
 ## Statistics
 
 On macOS, the toolbar contains a direct icon-only `CSVを書き出す` Share action,
 a Direction filter, and the shared expanding Search control. The Share action
-opens a dedicated popover for content (`すべて | Flow | タスク`),
+opens a dedicated popover for content (`すべて | 集中記録 | タスク`),
 two inclusive `開始 / 終了日` date fields, Direction, and text filter. The persistent
 calendar centers the visible `週 | 月 | 年` segmented control and places an
 icon-only `期間を指定` action at the trailing edge. This button opens a compact
@@ -455,29 +458,29 @@ custom range. Filter and Search continue to affect the complete projection.
 
 The main column is a vertical set of cards:
 
-- combined totals for focused time, Blocks, Flows, completed Tasks, and active
+- combined totals for focused time, Blocks, `集中回数`, completed Tasks, and active
   Flow days;
-- a Trend line chart with an independent `Flow | タスク` switch; its points are
+- a Trend line chart with an independent `集中 | タスク` switch; its points are
   days for Week, seven-day totals for Month, and months for Year, with the
   previous equivalent period available as a separate comparison series and
   direct linear segments between points;
-- focused-time distribution with `タスク別 | 方向別`, showing the largest
+- focused-time distribution with `タスク別 | 分野別`, showing the largest
   slices and grouping the remainder as `その他`; clicking a sector keeps it
   bright, dims the others, and isolates that category in the center and legend;
-- contribution Dots with their own `Flow | タスク` switch for the selected week,
+- a `集中カレンダー` with its own `集中 | タスク` switch for the selected week,
   month, or year.
 
-Trend and Dots switch independently without a projection reload. Flow shows
-focused time; Task shows completed Task counts. Week uses a full-width Dots card
+Trend and the focus calendar switch independently without a projection reload.
+`集中` shows focused time; `タスク` shows completed Task counts. Week uses a full-width `集中カレンダー` card
 with seven stretched cells, Month may share an adaptive row with Pie, and Year
 uses a full-width 53-week grid. A custom range of seven days or fewer stretches
 only its actual days across the full row. The preset Month stretches its seven
-columns across the full Dots card; every custom range longer than seven days uses small cells.
+columns across the full focus-calendar card; every custom range longer than seven days uses small cells.
 Medium custom ranges keep adding calendar cells through the
 inclusive end date; longer ranges switch to compact week columns. Every real
 Week, Month, or custom-range cell opens a non-interactive system hover bubble
-above the card layer with date, focused time, Flow count, and completed Task
-count. Year Dots are display-only because their dense cells are not reliable
+above the card layer with date, focused time, `集中回数`, and completed Task
+count. The Year focus calendar is display-only because its dense cells are not reliable
 pointer targets. Month, Year, and custom ranges fit within the
 available card width without horizontal scrolling. Search matches Task title, Direction name or
 emoji, hashtags, and available Flow text. A Flow that changed context is
@@ -491,10 +494,10 @@ a custom range by its complete day count, while Today preserves that count and
 ends the range today. Week uses direct week selection in the mini-calendar, Month uses
 the year/month picker, and Year uses a compact year picker whose first entry is
 the current year and which omits future years. Switching Week/Month/Year uses a
-short opacity-and-scale layout transition. Clicking a Dots day switches to the
+short opacity-and-scale layout transition. Clicking a focus-calendar day switches to the
 single canonical `履歴` destination for that date; Statistics does not embed
 History. The current period is clipped to today: future calendar dates are
-disabled, Trend and Dots omit future buckets, custom/export date fields cannot
+disabled, Trend and the focus calendar omit future buckets, custom/export date fields cannot
 pass today, and Next remains unavailable until a complete non-future period
 exists.
 
@@ -518,22 +521,22 @@ above previous/Today/next navigation; tapping the period title opens a graphical
 date sheet, and the calendar-clock action opens the two-field custom range
 sheet. Share opens a native export sheet with content, inclusive start/end,
 Direction, and text filters. Pie selection has the same dim-and-isolate
-behavior as macOS, while Year Dots use one compact full-width canvas to avoid a
-horizontal scroller. Tapping a Week, Month, or custom-range Dots cell opens a touch-sized daily detail sheet
-with focused duration, Flow count, and completed Tasks; its action opens
-`履歴`. Year Dots have no tap target. Search is an icon-only trailing toolbar
+behavior as macOS, while the Year `集中カレンダー` uses one compact full-width canvas to avoid a
+horizontal scroller. Tapping a Week, Month, or custom-range focus-calendar cell opens a touch-sized daily detail sheet
+with focused duration, `集中回数`, and completed Tasks; its action opens
+`履歴`. The Year focus calendar has no tap target. Search is an icon-only trailing toolbar
 action that expands only on demand. Screen-specific context actions use the
 leading side: Tasks and Directions place their `その他` menu there, History
-places its Flow/Task/Direction mode there, and Statistics groups Share with its
+places its `集中記録 / タスク / 分野` mode there, and Statistics groups Share with its
 Direction filter there. Creation actions remain trailing beside Search. Every iOS
 navigation destination uses a centered inline title. The `その他` Direction may
 appear because it represents real captured work.
 
 ## History Calendar
 
-`履歴` is available directly below `タスク`, owns the canonical History presentation, and initially opens today. It preserves the date selected from Statistics. The user can move backward or forward by the selected range, choose a date, or use the mini-calendar on wide macOS windows. On macOS the filter sits immediately left of Search and changes with the active tab: Flow visibility, `タスク / 習慣 / ナイス`, or `通常 / 習慣 / ナイス`. In `Flow > 日`, `この日の記録` appears below the mini-calendar and reuses the canonical day totals.
+`履歴` is available directly below `タスク`, owns the canonical History presentation, and initially opens today. It preserves the date selected from Statistics. The user can move backward or forward by the selected range, choose a date, or use the mini-calendar on wide macOS windows. On macOS the filter sits immediately left of Search and changes with the active tab: `集中記録` visibility, `タスク / 習慣 / できたら`, or `いつでも / 習慣 / できたら`. In `集中記録 > 日`, `この日の記録` appears below the mini-calendar and reuses the canonical day totals.
 
-The History mini-calendar marks only days that contain recorded Flow history, using the corresponding Direction colors. Scheduled, pending, and future Task or Habit dates do not create History dots. On macOS and iOS, the History `タスク` and `方向` filters apply to both aggregate rows and the `日 | 週 | 月` calendar indicators. A Flow that switched context is filtered per persisted segment, so each indicator follows that segment's Task/Direction type. Task calendars keep their separate indicators and apply the active `すべて | タスク | 習慣` filter.
+The History mini-calendar marks only days that contain recorded Flow history, using the corresponding Direction colors. Scheduled, pending, and future Task or Habit dates do not create History dots. On macOS and iOS, the History `タスク` and `分野` filters apply to both aggregate rows and the `日 | 週 | 月` calendar indicators. A Flow that switched context is filtered per persisted segment, so each indicator follows that segment's Task/Direction type. Task calendars keep their separate indicators and apply the active `すべて | タスク | 習慣` filter.
 
 History search follows the same segment boundary. A query that matches one
 segment's Task or Direction returns that segment only; it must not surface a
@@ -552,7 +555,7 @@ The primary `カレンダー` mode provides:
   no intermediate summary or separate day sheet is used.
 
 On macOS, History follows the same two-level hierarchy as Tasks. The system title
-toolbar centers the compact `Flow | タスク | 方向` selector, keeps the Flow/rest
+toolbar centers the compact `集中記録 | タスク | 分野` selector, keeps the Flow/rest
 filter on the leading side, and places an icon-only expanding search action on
 the trailing side.
 The persistent calendar/inspector column owns a two-row header: centered
@@ -564,12 +567,12 @@ and its inspector. On wide macOS layouts, range changes animate only the primary
 calendar workspace; the persistent calendar/inspector column does not transition.
 Its width follows the localized period title and `今日` action rather than a
 fixed value. The visible `表示` label and duplicate in-content filters are removed.
-`タスク` and `方向` use a wide two-column layout with
+`タスク` and `分野` use a wide two-column layout with
 aggregates on the left and a mini-calendar plus range summary on the right. At
 compact widths, the calendar and summary stack above the aggregate list.
 
-On iPhone, the leading History dropdown switches between the same `Flow`,
-`タスク`, and `方向` modes without duplicating date navigation. The system Search
+On iPhone, the leading History dropdown switches between the same `集中記録`,
+`タスク`, and `分野` modes without duplicating date navigation. The system Search
 toolbar item is an icon-only magnifying glass and expands only when selected.
 Task and Direction aggregates use the active `日 | 週 | 月` interval. Task History
 only lists items with recorded focused time; scheduled or completed Tasks with
@@ -579,7 +582,7 @@ In `日`, the right pane keeps the only wide-layout mini-calendar and no longer 
 
 Week keeps date headers fixed while hours scroll. Its right mini-calendar highlights the complete selected week, and choosing any date selects that week. Opening a day/week grid scrolls near the current time when today is visible, otherwise near the first Flow. A red line marks the current time. On macOS, Month keeps a minimum full-grid width and a right `1月...12月` year picker; a crowded day uses `詳細` to open its complete timeline. On iPhone, Month instead keeps the calendar and selected day's full timeline in one vertical scroll surface, so no second sheet or summary list interrupts navigation. Medium/narrow layouts preserve stable calendar widths through horizontal scrolling.
 
-Flow and FlowSegment records remain separate persisted records colored by Direction. FlowBreak records remain separate light-gray records. In `週`, `seriesID` is used only to draw a composite series block; clicking it reveals each persisted Flow and rest record in a vertical detail timeline. Selecting a detail pushes its canonical editor inside that sheet, and the leading Back control returns to the series timeline rather than replacing the sheet. The Flow editor uses the same `タスク・習慣・方向` picker and Task composer as the player, while the rest editor uses a smaller content-fitted presentation. The sheet animates its window size while moving between the series timeline, Flow editor, and compact rest editor. The Flow dashboard independently uses `seriesID` for its continuous rail. Todo completions and pending Tasks never become independent History Calendar blocks.
+Flow and FlowSegment records remain separate persisted records colored by Direction. FlowBreak records remain separate light-gray records. In `週`, `seriesID` is used only to draw a composite series block; clicking it reveals each persisted Flow and rest record in a vertical detail timeline. Selecting a detail pushes its canonical editor inside that sheet, and the leading Back control returns to the series timeline rather than replacing the sheet. The Flow editor uses the same `タスク・習慣・分野` picker and Task composer as the player, while the rest editor uses a smaller content-fitted presentation. The sheet animates its window size while moving between the series timeline, Flow editor, and compact rest editor. The Flow dashboard independently uses `seriesID` for its continuous rail. Todo completions and pending Tasks never become independent History Calendar blocks.
 
 Lane assignment uses exact stored start/end intervals. Contiguous Flow and rest records stay in one vertical lane, and only actual time overlap creates side-by-side lanes. Entries below 15 minutes use compact title-only rendering; short rests become thin gray bars and expose exact time through hover and accessibility.
 
@@ -590,16 +593,16 @@ optionally link an existing Task or open explicit `タスクを追加` with the
 Flow's Direction and date preselected; finishing or editing Flow never creates
 a Task automatically. Completing `タスクを追加` from the Flow inspector
 immediately attaches the created Task to the edited Flow or task-switch segment,
-reconciles measured progress, and refreshes an already open `Flowシリーズ`
+reconciles measured progress, and refreshes an already open `一連の記録`
 timeline without closing and reopening it. Other inspector draft changes still
 use the explicit Save action. A completed Flow can be dragged to another exact day/time
 in day and week, or to another date in month; the complete session and its
 task-switch segments move together without changing duration or measured
 progress. Active Flow and rest records are not draggable. Double-clicking empty
-time inserts a selected `新しいFlow` draft block directly into the calendar.
+time inserts a selected `新しい集中記録` draft block directly into the calendar.
 The clicked time is rounded to five minutes and the default duration is 25
-minutes. In wide day view, `Flowを追加` occupies the right inspector; Task,
-Direction, Sprint/Focus/Deep, linked start/end, and minutes update the visible
+minutes. In wide day view, `集中記録を追加` occupies the right inspector; Task,
+Direction, `短め / 標準 / じっくり`, linked start/end, and minutes update the visible
 draft block immediately. Compact day and week use a sheet while retaining the
 draft block in the grid. Saving creates a completed independent Flow series and
 applies normal Direction/Todo progress without completing the Task; manual rest
@@ -607,9 +610,9 @@ creation is intentionally unavailable.
 
 On macOS and iOS, `+` sits in the top-right History toolbar beside Search and opens the shared record form using the platform presentation convention: a trailing inspector on macOS and a sheet on iOS. On macOS, pressing `+` again closes the inspector. `キャンセル` and `記録` remain inside the record form instead of being promoted into the window toolbar. Clicking or tapping an empty time in the weekly calendar opens the same form with that day and time preselected.
 
-The form follows the active History mode. `Flow` opens a Flow-specific form with `タスクなし` selected by default; its picker may optionally link an existing Task, Habit, or Direction, but saving always creates Flow and never completes a linked Check Task. `タスク` limits the picker to Task and Habit, offers new Task creation, and applies the selected unit's completion/progress semantics. `方向` limits the picker to Direction and creates Direction-only Flow. Habit lists every eligible Habit Direction for the selected day; when no Todo occurrence exists, saving materializes the historical occurrence from the Direction template. A Task/Habit progress preview is shown only when the operation changes that progress.
+The form follows the active History mode. `集中記録` opens a Flow-specific form with `タスクなし` selected by default; its picker may optionally link an existing Task, Habit, or Direction, but saving always creates Flow and never completes a linked Check Task. `タスク` limits the picker to Task and Habit, offers new Task creation, and applies the selected unit's completion/progress semantics. `分野` limits the picker to Direction and creates Direction-only Flow. Habit lists every eligible Habit Direction for the selected day; when no Todo occurrence exists, saving materializes the historical occurrence from the Direction template. A Task/Habit progress preview is shown only when the operation changes that progress.
 
-Check requires a date and accepts an optional exact time; it writes historical completion without inventing Flow. Block, Minute, and Direction-only records require explicit start and end times, create a completed independent Flow, and rebuild measured progress from persisted history. Zero-Flow scheduled Tasks remain absent from the actual History summary. The row action with a fixed Task remains available as the faster manual-Flow path. Expanded `履歴 > 方向` ends with `タスクを追加`, which creates a Task with fixed Direction but no Flow. The calendar does not provide direct resize and does not persist a second calendar entity.
+Check requires a date and accepts an optional exact time; it writes historical completion without inventing Flow. Block, Minute, and Direction-only records require explicit start and end times, create a completed independent Flow, and rebuild measured progress from persisted history. Zero-Flow scheduled Tasks remain absent from the actual History summary. The row action with a fixed Task remains available as the faster manual-Flow path. Expanded `履歴 > 分野` ends with `タスクを追加`, which creates a Task with fixed Direction but no Flow. The calendar does not provide direct resize and does not persist a second calendar entity.
 
 ## Settings
 
@@ -627,7 +630,7 @@ stored Task dates or Flow timestamps.
 
 The bottom of the macOS sidebar contains a system `設定` gear that opens this
 same Settings scene. The `データ` section on macOS, iPhone, and iPad offers
-`Flow履歴をすべて削除`. It is disabled while a Flow is active. A destructive
+`集中履歴をすべて削除`. It is disabled while a Flow is active. A destructive
 confirmation explains that all FlowSession, FlowSegment, and FlowBreak records
 will be removed from every device through private CloudKit and cannot be
 restored. The operation runs in a model actor so Settings remains responsive.

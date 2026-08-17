@@ -18,7 +18,7 @@ struct HistoryWeekSeriesBlockView: View {
     }
 
     private var title: String {
-        flowItems.first?.displayTitle ?? String(localized: "Flowシリーズ")
+        flowItems.first?.displayTitle ?? String(localized: "一連の集中記録")
     }
 
     var body: some View {
@@ -75,7 +75,8 @@ struct HistoryWeekSeriesBlockView: View {
 
     private var helpText: String {
         let time = "\(block.startedAt.formatted(date: .omitted, time: .shortened))–\(block.endedAt.formatted(date: .omitted, time: .shortened))"
-        return "\(title)\n\(time)\n\(flowItems.count) Flow"
+        let count = String(localized: "集中\(flowItems.count)回")
+        return "\(title)\n\(time)\n\(count)"
     }
 }
 
@@ -136,7 +137,7 @@ struct HistorySeriesTimelineView: View {
     private var header: some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 3) {
-                Text(String(localized: "Flowシリーズ"))
+                Text(String(localized: "一連の集中記録"))
                     .font(.title3.weight(.semibold))
                 Text(seriesIntervalText)
                     .font(.subheadline.monospacedDigit())

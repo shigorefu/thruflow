@@ -472,14 +472,14 @@ struct IOSFlowView: View {
                     IOSFlowTimelineView(
                         snapshot: snapshot,
                         now: timeline.date,
-                        onSelect: inspectTimelineSelection
+                        onOpenHistory: inspectTimelineSelection
                     )
                 }
             } else {
                 IOSFlowTimelineView(
                     snapshot: snapshot,
                     now: .now,
-                    onSelect: inspectTimelineSelection
+                    onOpenHistory: inspectTimelineSelection
                 )
             }
         }

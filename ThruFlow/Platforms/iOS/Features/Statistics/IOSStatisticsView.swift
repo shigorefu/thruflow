@@ -352,7 +352,7 @@ struct IOSStatisticsView: View {
 
                 Section {
                     DatePicker(
-                        String(localized: "開始"),
+                        String(localized: "開始日"),
                         selection: $exportStartDate,
                         in: ...today,
                         displayedComponents: .date
@@ -809,7 +809,7 @@ private struct IOSStatisticsSummaryCard: View {
                     systemImage: "square.grid.2x2"
                 )
                 IOSStatisticsMetric(
-                    title: String(localized: "Flow"),
+                    title: String(localized: "集中回数"),
                     value: "\(summary.flowCount)",
                     previousValue: "\(previousSummary.flowCount)",
                     systemImage: "water.waves"
@@ -1159,7 +1159,7 @@ private struct IOSStatisticsDotsCard: View {
     var body: some View {
         IOSStatisticsCard(
             title: String(localized: "Dots"),
-            subtitle: mode == .flow ? String(localized: "Flow Blocks") : String(localized: "完了タスク"),
+            subtitle: mode == .flow ? String(localized: "集中時間") : String(localized: "完了タスク"),
             headerAccessory: {
                 IOSStatisticsModePicker(selection: $mode)
             }
@@ -1365,7 +1365,7 @@ private struct IOSStatisticsDaySheet: View {
 
                 HStack(spacing: 10) {
                     dayMetric(String(localized: "集中時間"), IOSStatisticsFormatting.duration(day.focusedSeconds))
-                    dayMetric(String(localized: "Flow"), "\(day.flowCount)")
+                    dayMetric(String(localized: "集中回数"), "\(day.flowCount)")
                     dayMetric(String(localized: "完了タスク"), "\(day.completedTaskCount)")
                 }
 
@@ -1455,7 +1455,7 @@ private struct IOSStatisticsCustomRangeSheet: View {
         NavigationStack {
             Form {
                 DatePicker(
-                    String(localized: "開始"),
+                    String(localized: "開始日"),
                     selection: $startDate,
                     in: ...maximumDate,
                     displayedComponents: .date
@@ -1610,7 +1610,9 @@ private struct IOSStatisticsContributionDay: Identifiable {
     var id: Date { date }
 
     var accessibilityLabel: String {
-        "\(date.formatted(date: .abbreviated, time: .omitted)), \(IOSStatisticsFormatting.duration(focusedSeconds)), \(flowCount) Flow, \(completedTaskCount) \(String(localized: "タスク"))"
+        let focusCount = String(localized: "集中\(flowCount)回")
+        let completedTasks = String(localized: "完了タスク\(completedTaskCount)件")
+        return "\(date.formatted(date: .abbreviated, time: .omitted)), \(IOSStatisticsFormatting.duration(focusedSeconds)), \(focusCount), \(completedTasks)"
     }
 }
 
@@ -1632,7 +1634,7 @@ private extension StatisticsCSVContent {
         case .all:
             String(localized: "すべて")
         case .flow:
-            String(localized: "Flow")
+            String(localized: "集中記録")
         case .task:
             String(localized: "タスク")
         }

@@ -115,8 +115,8 @@ struct ManualFlowCreationView: View {
                         .disabled(selectedTodo != nil || lockedTodoID != nil)
                     }
 
-                    field(String(localized: "Flow")) {
-                        Picker(String(localized: "Flow"), selection: $mode) {
+                    field(String(localized: "集中モード")) {
+                        Picker(String(localized: "集中モード"), selection: $mode) {
                             ForEach(manualModes) { mode in
                                 Text(mode.displayName).tag(mode)
                             }
@@ -215,7 +215,7 @@ struct ManualFlowCreationView: View {
     private var header: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
-                Text(String(localized: "Flowを追加"))
+                Text(String(localized: "集中記録を追加"))
                     .font(.title3.weight(.semibold))
                 Text(timeDraft.startedAt.formatted(.dateTime.locale(locale).month().day().weekday()))
                     .font(.caption)
@@ -293,7 +293,7 @@ struct ManualFlowCreationView: View {
             try modelContext.save()
             onDismiss()
         } catch {
-            errorMessage = String(localized: "Flowを保存できませんでした")
+            errorMessage = String(localized: "集中記録を保存できませんでした。")
         }
     }
 }

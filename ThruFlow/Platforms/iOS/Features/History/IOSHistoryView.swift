@@ -400,7 +400,7 @@ struct IOSHistoryView: View {
 
     private var historyVisibilityMenu: some View {
         Menu {
-            Toggle(String(localized: "Flow"), isOn: visibilityBinding(for: .flow))
+            Toggle(String(localized: "集中記録"), isOn: visibilityBinding(for: .flow))
             Toggle(String(localized: "休憩"), isOn: visibilityBinding(for: .rest))
         } label: {
             Image(
@@ -761,7 +761,7 @@ private struct IOSHistoryTaskSummaryList: View {
                     ContentUnavailableView(
                         String(localized: "記録なし"),
                         systemImage: "clock.arrow.circlepath",
-                        description: Text(String(localized: "この期間のFlowとタスクはありません。"))
+                        description: Text(String(localized: "この期間には集中記録もタスクもありません。"))
                     )
                     .padding(.top, 72)
                 } else {
@@ -805,7 +805,7 @@ private struct IOSHistoryDirectionSummaryList: View {
                     ContentUnavailableView(
                         String(localized: "記録なし"),
                         systemImage: "clock.arrow.circlepath",
-                        description: Text(String(localized: "この期間のFlowとタスクはありません。"))
+                        description: Text(String(localized: "この期間には集中記録もタスクもありません。"))
                     )
                     .padding(.top, 72)
                 } else {
@@ -895,7 +895,7 @@ private struct IOSHistorySummaryRow: View {
             VStack(alignment: .trailing, spacing: 3) {
                 Text(focusDurationText)
                     .font(.subheadline.weight(.semibold).monospacedDigit())
-                Text("\(flowCount) Flow")
+                Text(String(localized: "集中\(flowCount)回"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -1079,7 +1079,7 @@ struct IOSHistoryItemDetail: View {
                 }
             }
             .iosCenteredNavigationTitle(
-                item.kind == .rest ? String(localized: "休憩") : String(localized: "Flow")
+                item.kind == .rest ? String(localized: "休憩") : String(localized: "集中記録")
             )
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -1127,7 +1127,7 @@ struct IOSHistoryItemDetail: View {
             }
         }
         .confirmationDialog(
-            String(localized: "このFlowを削除しますか？"),
+            String(localized: "この集中記録を削除しますか？"),
             isPresented: $showsDeleteConfirmation,
             titleVisibility: .visible
         ) {
@@ -1147,7 +1147,7 @@ struct IOSHistoryItemDetail: View {
             }
             Button(String(localized: "キャンセル"), role: .cancel) {}
         } message: {
-            Text(String(localized: "方向とタスクの集中時間から、このFlowの分を差し引きます。"))
+            Text(String(localized: "この記録分の集中時間を、タスクと分野の合計から差し引きます。"))
         }
         .alert(
             String(localized: "移動できません"),
@@ -1277,7 +1277,7 @@ struct IOSHistoryItemDetail: View {
                 )
 
                 Stepper(
-                    "\(timeDraft.focusMinutes) \(String(localized: "分"))",
+                    String(localized: "\(timeDraft.focusMinutes)分"),
                     value: Binding(
                         get: { timeDraft.focusMinutes },
                         set: { timeDraft.setFocusMinutes($0) }
@@ -1292,7 +1292,7 @@ struct IOSHistoryItemDetail: View {
             }
 
             Section {
-                Button(String(localized: "このFlowを削除"), role: .destructive) {
+                Button(String(localized: "この集中記録を削除"), role: .destructive) {
                     showsDeleteConfirmation = true
                 }
             }
@@ -1331,7 +1331,7 @@ struct IOSHistoryItemDetail: View {
                 )
 
                 Stepper(
-                    "\(breakDurationMinutes) \(String(localized: "分"))",
+                    String(localized: "\(breakDurationMinutes)分"),
                     value: Binding(
                         get: { breakDurationMinutes },
                         set: { minutes in
@@ -1386,7 +1386,7 @@ struct IOSHistoryItemDetail: View {
             )
             dismiss()
         } catch FlowBreakEditorError.activeFlowWouldMove {
-            breakEditError = String(localized: "実行中のFlowは移動できません。")
+            breakEditError = String(localized: "進行中の集中は移動できません。")
         } catch {
             breakEditError = error.localizedDescription
         }
@@ -1399,7 +1399,7 @@ struct IOSHistoryItemDetail: View {
     private var durationText: String {
         let minutes = item.durationSeconds / 60
         return minutes >= 60
-            ? "\(minutes / 60)\(String(localized: "時間")) \(minutes % 60)\(String(localized: "分"))"
-            : "\(minutes)\(String(localized: "分"))"
+            ? String(localized: "\(minutes / 60)時間\(minutes % 60)分")
+            : String(localized: "\(minutes)分")
     }
 }
