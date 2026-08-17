@@ -29,6 +29,40 @@ Xcode preserves placeholder type information and generates compile-time string
 symbols. Renaming a source key is a product-copy migration and should be
 reviewed like an API rename.
 
+## Product Terminology and Context
+
+Japanese product terminology is translated by UI meaning, not by replacing an
+English domain word everywhere. In particular, `Flow` has no single canonical
+Japanese rendering:
+
+| UI context | Japanese |
+| --- | --- |
+| Main Flow navigation and workspace | `流れ` |
+| Persisted Flow session or History record | `集中記録` |
+| Start, continue, or switch focused work | `集中` |
+| Number of recorded Flow sessions | `集中回数` |
+| Statistics focus / Task switch | `集中` / `タスク` |
+| Flow mode selector | `集中モード` |
+| Sprint / Focus / Deep / Adaptive mode | `短め` / `標準` / `じっくり` / `自動` |
+| Focus Block name / short unit | `集中ブロック` / `ブロック` |
+| Dots visualization | `集中カレンダー` |
+
+For example, an action should read `集中を始める`, not a mechanical
+`流れを開始`. A History row should use `集中記録`, while the main workspace may
+use `流れ`. Translators must inspect the originating screen and choose the
+contextual term recorded in `Localisation/TERMS.csv`.
+
+The persistent activity-area entity is `分野` in Japanese UI. Its visible types
+are `いつでも`, `習慣`, and `できたら`. Other context-sensitive terms include
+`日付なし` for the Inbox projection, `週に数回` for the weekly-count Habit
+schedule, and `集中カレンダー` for Dots.
+
+These copy choices never rename implementation or persisted identifiers.
+Swift types and properties such as `Direction`, `FlowSession`, and `FlowMode`,
+enum cases, raw values, storage keys, and stable code references remain in
+English. A terminology update must not migrate user data or user-authored
+content.
+
 ## Contributor Workflow
 
 The non-programmer workflow is documented in `Localisation/README.md`. A new
@@ -61,7 +95,13 @@ navigation labels name collections and therefore use plurals:
 | Context | Japanese key | English | Russian |
 | --- | --- | --- | --- |
 | Tasks navigation | `タスク` | Tasks | Задачи |
-| Directions navigation | `方向` | Directions | Направления |
+| Directions navigation | `分野` | Directions | Направления |
+| Main Flow navigation | `流れ` | Flow | Flow |
+| Saved Flow session | `集中記録` | Flow | Flow |
+| Flow count | `集中回数` | Flows | Сессии Flow |
+| Flow mode selector | `集中モード` | Flow Mode | Режим Flow |
+| Statistics focus mode | `集中` | Focus | Фокус |
+| Statistics Task mode | `タスク` | Tasks | Задачи |
 | Statistics completed-task count | `達成` | Tasks | Задачи |
 | Current year period | `今年` | this year | Этот год |
 | Current month period | `今月` | This month | Этот месяц |

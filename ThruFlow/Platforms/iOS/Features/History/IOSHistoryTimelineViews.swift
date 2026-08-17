@@ -510,7 +510,7 @@ private struct IOSHistoryWeekSeriesBlock: View {
                     if geometry.size.height >= 24 {
                         HStack(spacing: 3) {
                             Text(flowItems.first?.displaySymbol ?? "☕️")
-                            Text(flowItems.first?.displayTitle ?? String(localized: "Flowシリーズ"))
+                            Text(flowItems.first?.displayTitle ?? String(localized: "一連の集中記録"))
                                 .lineLimit(1)
                             if flowItems.count > 1 {
                                 Text(verbatim: "· \(flowItems.count)")
@@ -566,7 +566,7 @@ struct IOSHistorySeriesTimelineSheet: View {
                 gapInterval: nil,
                 onSelect: { selectedItem = $0 }
             )
-            .iosCenteredNavigationTitle(String(localized: "Flowシリーズ"))
+            .iosCenteredNavigationTitle(String(localized: "一連の集中記録"))
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(String(localized: "閉じる")) {

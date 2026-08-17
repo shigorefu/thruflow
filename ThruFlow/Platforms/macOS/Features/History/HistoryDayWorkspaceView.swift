@@ -154,7 +154,7 @@ private struct HistoryCalendarFlowIndicators: View {
         .padding(.horizontal, 2)
         .frame(height: 6)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(String(localized: "Flow"))
+        .accessibilityLabel(String(localized: "集中記録"))
     }
 }
 
@@ -485,7 +485,7 @@ struct HistoryDayInspectorPane: View {
                         ContentUnavailableView(
                             String(localized: "記録を選択"),
                             systemImage: "cursorarrow.click",
-                            description: Text(String(localized: "Flowまたは休憩の詳細をここに表示します。"))
+                            description: Text(String(localized: "集中記録または休憩を選ぶと、ここに詳細が表示されます。"))
                         )
                         .padding(.horizontal, 20)
                         .padding(.vertical, 44)
@@ -543,8 +543,8 @@ struct HistoryDayInspectorPane: View {
 
             switch item.kind {
             case .flow:
-                propertyRow(String(localized: "Flow"), systemImage: "waveform.path") {
-                    item.session?.mode.displayName ?? String(localized: "Flow")
+                propertyRow(String(localized: "集中モード"), systemImage: "waveform.path") {
+                    item.session?.mode.displayName ?? String(localized: "集中記録")
                 }
                 propertyRow(String(localized: "方向"), systemImage: "point.3.connected.trianglepath.dotted") {
                     item.subtitle

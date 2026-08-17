@@ -118,6 +118,71 @@ struct LocalisationTests {
         #expect(mismatches.isEmpty, "Glossary mismatches: \(mismatches.joined(separator: ", "))")
     }
 
+    @Test func japaneseCopyUsesNativeProductLanguage() throws {
+        let data = try Data(contentsOf: catalogURL)
+        let root = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let strings = try #require(root["strings"] as? [String: Any])
+        let expectedTerms = [
+            "Flow": "流れ",
+            "方向": "分野",
+            "通常": "いつでも",
+            "ナイス": "できたら",
+            "Sprint": "短め",
+            "Focus": "標準",
+            "Deep": "じっくり",
+            "Blocks": "ブロック",
+            "Dots": "集中カレンダー",
+            "Flow Blocks": "集中時間",
+            "Flow Dots": "集中カレンダー",
+            "Elastic": "自動調整",
+            "Inbox": "日付なし",
+            "Activities": "スポーツ・趣味",
+            "Food": "食べ物・飲み物",
+            "Nature": "自然",
+            "Objects": "もの",
+            "People": "人・表情",
+            "Recent": "最近使ったもの",
+            "Symbols": "記号",
+            "Travel": "乗り物・場所",
+            "Work & Study": "仕事・勉強",
+            "オート": "自動",
+            "フローブロック": "集中ブロック",
+            "週回": "週に数回",
+        ]
+
+        for (key, expected) in expectedTerms {
+            #expect(
+                try japaneseValue(for: key, in: strings) == expected,
+                "Unexpected Japanese product term for \(key)"
+            )
+        }
+
+        let prohibitedFragments = [
+            "Flow", "Block", "Dots", "方向", "ナイス", "週回", "Sprint", "Focus",
+            "Deep", "Elastic", "Inbox",
+        ]
+        let prohibitedExactValues = Set([
+            "Activities", "Blocks", "Deep", "Dots", "Elastic", "Focus", "Food",
+            "Inbox", "Nature", "Objects", "People", "Recent", "Sprint", "Symbols",
+            "Travel", "Work & Study",
+        ])
+        var violations: [String] = []
+
+        for key in strings.keys.sorted() {
+            let value = try japaneseValue(for: key, in: strings)
+            let copyWithoutBrand = value.replacingOccurrences(of: "ThruFlow", with: "")
+            if prohibitedFragments.contains(where: { copyWithoutBrand.contains($0) }) ||
+                prohibitedExactValues.contains(value) {
+                violations.append("\(key)=\(value)")
+            }
+        }
+
+        #expect(
+            violations.isEmpty,
+            "Unnatural Japanese product copy: \(violations.joined(separator: ", "))"
+        )
+    }
+
     private var repositoryRoot: URL {
         URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
@@ -138,6 +203,17 @@ struct LocalisationTests {
             let stringUnit = localisation["stringUnit"] as? [String: Any]
         else { return nil }
         return stringUnit["value"] as? String
+    }
+
+    private func japaneseValue(for key: String, in strings: [String: Any]) throws -> String {
+        guard
+            let entry = strings[key] as? [String: Any],
+            let localisations = entry["localizations"] as? [String: Any],
+            let japanese = localisedValue(language: "ja", from: localisations)
+        else {
+            return key
+        }
+        return japanese
     }
 
     private func placeholderTypes(in value: String) -> [String] {

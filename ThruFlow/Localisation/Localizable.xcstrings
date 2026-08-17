@@ -143,6 +143,12 @@
             "value" : "%.0f Blocks"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%.0fブロック"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -157,6 +163,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%.1f Blocks"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%.1fブロック"
           }
         },
         "ru" : {
@@ -221,8 +233,8 @@
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ ・ %2$lld Flow"
+            "state" : "translated",
+            "value" : "%1$@・集中%2$lld回"
           }
         },
         "ru" : {
@@ -288,8 +300,8 @@
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ %2$@ %3$lld方向 タスク%4$lld件 Flow%5$lld件"
+            "state" : "translated",
+            "value" : "%1$@ %2$@ 分野%3$lld件、タスク%4$lld件、集中%5$lld回"
           }
         },
         "ru" : {
@@ -333,8 +345,8 @@
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ %2$@ タスク%3$lld件 Flow%4$lld件"
+            "state" : "translated",
+            "value" : "%1$@ %2$@ タスク%3$lld件、集中%4$lld回"
           }
         },
         "ru" : {
@@ -351,6 +363,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ Blocks"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ブロック"
           }
         },
         "ru" : {
@@ -653,6 +671,12 @@
             "value" : "%lld Blocks"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lldブロック"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -667,6 +691,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld Flow"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中%lld回"
           }
         },
         "ru" : {
@@ -688,8 +718,8 @@
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld Flow in %2$@"
+            "state" : "translated",
+            "value" : "%2$@の集中は%1$lld回"
           }
         },
         "ru" : {
@@ -710,8 +740,8 @@
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld タスク ・ %2$lld Flow"
+            "state" : "translated",
+            "value" : "タスク%1$lld件・集中%2$lld回"
           }
         },
         "ru" : {
@@ -733,8 +763,8 @@
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld 達成 in %2$@"
+            "state" : "translated",
+            "value" : "%2$@で%1$lld件達成"
           }
         },
         "ru" : {
@@ -777,8 +807,8 @@
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld/%2$lld ブロック"
+            "state" : "translated",
+            "value" : "%1$lld/%2$lldブロック"
           }
         },
         "ru" : {
@@ -799,8 +829,8 @@
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld/%2$lld 分"
+            "state" : "translated",
+            "value" : "%1$lld/%2$lld分"
           }
         },
         "ru" : {
@@ -1058,6 +1088,12 @@
             "value" : "0 Blocks"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "0ブロック"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1072,6 +1108,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "0.5 Block"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "0.5ブロック"
           }
         },
         "ru" : {
@@ -1104,6 +1146,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "1 Block"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1ブロック"
           }
         },
         "ru" : {
@@ -1153,6 +1201,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "One focus block is 25 minutes. Short Flows add to the same task's progress; breaks do not count."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1集中ブロックは25分です。短い集中時間も同じタスクに積み上げられ、休憩時間は含まれません。"
           }
         },
         "ru" : {
@@ -1220,6 +1274,12 @@
             "value" : "12 min work / 3 min break"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中12分・休憩3分"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1234,6 +1294,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "12 min focus / 3 min break"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中12分・休憩3分"
           }
         },
         "ru" : {
@@ -1316,6 +1382,12 @@
             "value" : "25 min work / 5 min break"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中25分・休憩5分"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1330,6 +1402,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "25 min focus / 5 min break"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中25分・休憩5分"
           }
         },
         "ru" : {
@@ -1348,6 +1426,12 @@
             "value" : "50 min work / 10 min break"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中50分・休憩10分"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1362,6 +1446,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "50 min focus / 10 min break"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中50分・休憩10分"
           }
         },
         "ru" : {
@@ -1396,6 +1486,12 @@
             "value" : "Activities"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スポーツ・趣味"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1410,6 +1506,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rate on the App Store"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Storeでレビューを書く"
           }
         },
         "ru" : {
@@ -1431,7 +1533,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Blocks"
+            "value" : "ブロック"
           }
         },
         "ru" : {
@@ -1472,6 +1574,12 @@
             "value" : "Deep"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "じっくり"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1491,7 +1599,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dots"
+            "value" : "集中カレンダー"
           }
         },
         "ru" : {
@@ -1510,6 +1618,12 @@
             "value" : "Elastic"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動調整"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1524,6 +1638,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Flow"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "流れ"
           }
         },
         "ru" : {
@@ -1545,7 +1665,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Flow Blocks"
+            "value" : "集中時間"
           }
         },
         "ru" : {
@@ -1564,6 +1684,12 @@
             "value" : "Flow Dots"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中カレンダー"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1578,6 +1704,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Flow Series"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一連の記録"
           }
         },
         "ru" : {
@@ -1596,6 +1728,12 @@
             "value" : "Flow Type"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中モード"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1610,6 +1748,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Flow mode help"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中モードについて"
           }
         },
         "ru" : {
@@ -1628,6 +1772,12 @@
             "value" : "Flow Timer"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中タイマー"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1642,6 +1792,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Flow Task"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取り組む内容"
           }
         },
         "ru" : {
@@ -1660,6 +1816,12 @@
             "value" : "Select Flow Task"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取り組む内容を選択"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1674,6 +1836,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No Flow"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中中ではありません"
           }
         },
         "ru" : {
@@ -1692,6 +1860,12 @@
             "value" : "Pauses or resumes the current Flow."
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中タイマーの一時停止と再開を切り替えます。"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1706,6 +1880,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "See your Flow activity across 30, 60, or 90 days."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中の記録を30日・60日・90日ごとに確認できます。"
           }
         },
         "ru" : {
@@ -1724,6 +1904,12 @@
             "value" : "Flow or Break details appear here."
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中または休憩の詳細がここに表示されます。"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1738,6 +1924,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Flow Memo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中メモ"
           }
         },
         "ru" : {
@@ -1756,6 +1948,12 @@
             "value" : "Could not save Flow"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中記録を保存できませんでした"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1770,6 +1968,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Stop and Save Flow"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中を終了して記録"
           }
         },
         "ru" : {
@@ -1788,6 +1992,12 @@
             "value" : "Start a Flow to grow today's stream here"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中を始めると、今日の流れがここに表示されます。"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1802,6 +2012,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Destroy Flow"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今回の集中を破棄"
           }
         },
         "ru" : {
@@ -1820,6 +2036,12 @@
             "value" : "Finish Flow"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中を終了"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1834,6 +2056,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Edit Flow"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中記録を編集"
           }
         },
         "ru" : {
@@ -1852,6 +2080,12 @@
             "value" : "Record a Flow to see time distribution"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中時間を記録すると、時間配分が表示されます。"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1866,6 +2100,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add Flow"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中記録を追加"
           }
         },
         "ru" : {
@@ -1884,6 +2124,12 @@
             "value" : "Start Flow"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中を始める"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1898,6 +2144,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "You started Flow over an hour ago. Did you forget to stop the timer?"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中を始めてから1時間以上たっています。タイマーを止め忘れていませんか？"
           }
         },
         "ru" : {
@@ -1916,6 +2168,12 @@
             "value" : "Flow Complete"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中完了"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1930,6 +2188,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Open Flow History"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中記録を開く"
           }
         },
         "ru" : {
@@ -1948,6 +2212,12 @@
             "value" : "Flow Trend"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中時間の推移"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1962,6 +2232,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Flow Not Started"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中を開始していません"
           }
         },
         "ru" : {
@@ -1980,6 +2256,12 @@
             "value" : "The Flow screen is the center of today's work. Choose a task, then focus for the length that suits you now: Sprint, Focus, or Deep. The timer, today's flow, tasks, and today's statistics are all in one place."
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「流れ」画面では、取り組む内容と集中時間を選んでタイマーを始めます。タイマー、今日の記録、タスク、統計をひとつの画面で確認できます。"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1994,6 +2276,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Focus"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "標準"
           }
         },
         "ru" : {
@@ -2012,6 +2300,12 @@
             "value" : "Food"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "食べ物・飲み物"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2026,6 +2320,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Contribute on GitHub"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GitHubでプロジェクトを見る"
           }
         },
         "ru" : {
@@ -2044,6 +2344,12 @@
             "value" : "GitHub Issues are public. Don’t include personal information or private Task names or notes."
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GitHub Issuesに投稿した内容は公開されます。個人情報や、公開したくないタスク名・メモは含めないでください。"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2058,6 +2364,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Inbox"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日付なし"
           }
         },
         "ru" : {
@@ -2076,6 +2388,12 @@
             "value" : "Inbox is empty"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日付なしのタスクはありません"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2092,6 +2410,12 @@
             "value" : "Nature"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自然"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2106,6 +2430,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Objects"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "もの"
           }
         },
         "ru" : {
@@ -2140,6 +2470,12 @@
             "value" : "People"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "人・表情"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2154,6 +2490,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Recent"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最近使ったもの"
           }
         },
         "ru" : {
@@ -2172,6 +2514,12 @@
             "value" : "Sprint"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "短め"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2188,6 +2536,12 @@
             "value" : "Symbols"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "記号"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2202,6 +2556,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "In TestFlight, send feedback with device details from a screenshot or the TestFlight app."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TestFlightをご利用の場合は、スクリーンショットを撮ったとき、またはTestFlightアプリから、端末情報を添えてフィードバックを送れます。"
           }
         },
         "ru" : {
@@ -2221,6 +2581,12 @@
             "value" : "ThruFlow"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スルフロ"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2235,6 +2601,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "If ThruFlow helps you, your support can help keep its development moving forward."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スルフロがお役に立てているようでしたら、今後の開発を応援していただけるとうれしいです。"
           }
         },
         "ru" : {
@@ -2253,6 +2625,12 @@
             "value" : "Thank you for supporting ThruFlow's development."
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スルフロの開発を応援していただき、ありがとうございます。"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2267,6 +2645,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Welcome to ThruFlow"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スルフロへようこそ"
           }
         },
         "ru" : {
@@ -2285,6 +2669,12 @@
             "value" : "Start using ThruFlow"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スルフロを始める"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2299,6 +2689,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Support ThruFlow"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スルフロを応援する"
           }
         },
         "ru" : {
@@ -2317,6 +2713,12 @@
             "value" : "Travel"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "乗り物・場所"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2331,6 +2733,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Work & Study"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "仕事・勉強"
           }
         },
         "ru" : {
@@ -2445,6 +2853,12 @@
             "value" : "Auto"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2477,6 +2891,12 @@
             "value" : "Great work. Deep is complete."
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "お疲れさまでした。50分の集中時間が終わりました。"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2491,6 +2911,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Great work. Flow is complete."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "お疲れさまでした。設定した集中時間が終わりました。"
           }
         },
         "ru" : {
@@ -2509,6 +2935,12 @@
             "value" : "Great work. Focus is complete."
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "お疲れさまでした。25分の集中時間が終わりました。"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2525,6 +2957,12 @@
             "value" : "Great work. Sprint is complete."
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "お疲れさまでした。12分の集中時間が終わりました。"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2539,6 +2977,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nice work. Add a Memo?"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "お疲れさまでした。メモを残しますか？"
           }
         },
         "ru" : {
@@ -2701,6 +3145,12 @@
             "value" : "Support development with a coffee or a bowl of ramen. These purchases do not change app features."
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "コーヒーやラーメン代として、開発を応援できます。どちらも任意の支援で、機能が追加されるものではありません。"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2715,6 +3165,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Delete This Flow"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この集中記録を削除"
           }
         },
         "ru" : {
@@ -2733,6 +3189,12 @@
             "value" : "Delete this Flow?"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この集中記録を削除しますか？"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2747,6 +3209,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Delete This Flow Segment"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この集中区間を削除"
           }
         },
         "ru" : {
@@ -2765,6 +3233,12 @@
             "value" : "Delete this Flow segment?"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この集中区間を削除しますか？"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2779,6 +3253,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add Flow to This Task"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このタスクに集中記録を追加"
           }
         },
         "ru" : {
@@ -2797,6 +3277,12 @@
             "value" : "There are no Directions in this column yet."
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この列に該当する分野はまだありません。"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2811,6 +3297,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "This segment's focus time will be deducted from Task and Direction progress."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この区間の集中時間が、タスクと分野の進捗から差し引かれます。"
           }
         },
         "ru" : {
@@ -2845,6 +3337,12 @@
             "value" : "Delete This Direction"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この分野を削除します"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2861,6 +3359,12 @@
             "value" : "Delete this Direction?"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この分野を削除しますか？"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2875,6 +3379,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No Record on This Day"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この日の記録はありません"
           }
         },
         "ru" : {
@@ -3005,6 +3515,12 @@
             "value" : "There are no Flows or Tasks in this period."
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この期間には、集中記録もタスクもありません。"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3019,6 +3535,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "There are no Flows in this period"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この期間に集中記録はありません"
           }
         },
         "ru" : {
@@ -3056,7 +3578,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "この期間のデータはありません"
+            "value" : "この期間には記録がありません"
           }
         },
         "ru" : {
@@ -3078,7 +3600,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "この期間の集中記録はありません"
+            "value" : "この期間には集中記録がありません。"
           }
         },
         "ru" : {
@@ -3145,6 +3667,12 @@
             "value" : "Shortcuts available"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "入力ショートカット"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3193,6 +3721,12 @@
             "value" : "Everything comes together in one flow"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "毎日の取り組みを、ひとつの流れに"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3207,6 +3741,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Move All to Today"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "すべて今日に移動"
           }
         },
         "ru" : {
@@ -3379,8 +3919,8 @@
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "タスク %1$lld ・ Flow %2$lld"
+            "state" : "translated",
+            "value" : "タスク%1$lld件・集中%2$lld回"
           }
         },
         "ru" : {
@@ -3399,6 +3939,12 @@
             "value" : "Select a Task, Habit, or Direction"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タスク・習慣・分野を選択"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3413,6 +3959,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bring tasks, habits, and focused time together in one clear Flow. Take a minute to see the basics."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スルフロでは、タスクや習慣、集中時間をひとつの流れで把握できます。まずは1分で基本の使い方を見てみましょう。"
           }
         },
         "ru" : {
@@ -3447,6 +3999,12 @@
             "value" : "Select Task Amount"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "進捗の測り方を選択"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3479,6 +4037,12 @@
             "value" : "Tasks are concrete actions you can take today. Track progress by completion, focus blocks, or minutes."
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タスクは、今日取り組む具体的な内容です。進捗は「チェック」「集中ブロック」「分単位」から選んで記録できます。"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3509,6 +4073,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Enter a Task"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タスクを入力"
           }
         },
         "ru" : {
@@ -3591,6 +4161,12 @@
             "value" : "Close Task Creation"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タスク作成画面を閉じる"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3671,6 +4247,12 @@
             "value" : "Task Progress"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タスクの進捗"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3701,6 +4283,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Check Only"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "チェックで完了"
           }
         },
         "ru" : {
@@ -3751,6 +4339,12 @@
             "value" : "An optional activity that would be nice to complete."
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "余裕があるときに取り組みたい分野です。"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3767,6 +4361,12 @@
             "value" : "Remove token"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この指定を取り消す"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3781,6 +4381,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nice"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "できたら"
           }
         },
         "ru" : {
@@ -3911,6 +4517,12 @@
             "value" : "Flow Blocks"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中ブロック"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3975,6 +4587,12 @@
             "value" : "No Flow yet"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中記録はまだありません"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4021,6 +4639,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Send Without Memo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "メモなしで続ける"
           }
         },
         "ru" : {
@@ -4119,6 +4743,12 @@
             "value" : "Look back on the day's flow"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一日の記録を振り返る"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4181,6 +4811,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "While paused, scheduled tasks and completion rate exclude this habit. Flow history is preserved."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一時停止中は予定タスクと達成率の対象外になります。集中記録は残ります。"
           }
         },
         "ru" : {
@@ -4263,6 +4899,12 @@
             "value" : "A Habit that automatically appears in Tasks on scheduled dates."
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "決めた日にタスクが自動で追加される習慣です。"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4277,6 +4919,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Target must be at least 1."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目標値は1以上にしてください。"
           }
         },
         "ru" : {
@@ -4341,6 +4989,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Today's Flow"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今日の流れ"
           }
         },
         "ru" : {
@@ -4457,8 +5111,8 @@
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "今日の達成 %1$lld / %2$lld"
+            "state" : "translated",
+            "value" : "今日の達成：%1$lld/%2$lld"
           }
         },
         "ru" : {
@@ -4493,6 +5147,12 @@
             "value" : "No Items Today"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今日の予定はありません"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4525,6 +5185,12 @@
             "value" : "To Today"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今日に移動"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4555,6 +5221,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Where your day moves forward"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今日の作業はここから"
           }
         },
         "ru" : {
@@ -4606,6 +5278,12 @@
             "value" : "Other Date..."
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "別の日付…"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4620,6 +5298,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Optional: choose weekdays"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "曜日を指定することもできます。"
           }
         },
         "ru" : {
@@ -4669,6 +5353,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Break ended. Return to Flow?"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "休憩が終わりました。集中を再開しますか？"
           }
         },
         "ru" : {
@@ -4783,6 +5473,12 @@
             "value" : "Most Improved Direction"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中時間が増えた分野"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4861,6 +5557,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choose a focus length that fits the work"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "作業に合わせて集中時間を選べます。"
           }
         },
         "ru" : {
@@ -4946,7 +5648,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "傾向"
+            "value" : "推移"
           }
         },
         "ru" : {
@@ -5135,6 +5837,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "мин"
+          }
+        }
+      }
+    },
+    "分単位" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Minutes"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Минуты"
           }
         }
       }
@@ -5491,6 +6215,12 @@
             "value" : "Completed Tasks"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完了したタスク"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5539,6 +6269,12 @@
             "value" : "A running Flow cannot be moved."
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "進行中の集中は移動できません。"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5555,6 +6291,12 @@
             "value" : "A running Flow cannot be moved. Finish the current Flow before editing."
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "進行中の集中は移動できません。現在の集中を終了してから編集してください。"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5569,6 +6311,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "See the active Flow on your Home Screen."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "進行中の集中をホーム画面で確認できます。"
           }
         },
         "ru" : {
@@ -5651,6 +6399,12 @@
             "value" : "The Direction will be archived to preserve History and related Tasks."
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "履歴と関連タスクを残すため、分野はアーカイブされます。"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5665,6 +6419,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "History keeps your actual Flows, breaks, and task changes. If a record is wrong, you can correct it later."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "履歴には、集中時間、休憩、タスクを切り替えた記録が残ります。誤りがあれば、あとから修正できます。"
           }
         },
         "ru" : {
@@ -5747,6 +6507,12 @@
             "value" : "A workspace for planning Tasks when needed."
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "必要なときにタスクを追加する分野です。"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5795,6 +6561,12 @@
             "value" : "Turn intention into today's step"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今日やることを決める"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5825,6 +6597,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "The purchase will be processed automatically once approval is complete."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "承認されると、自動的に購入が完了します。"
           }
         },
         "ru" : {
@@ -5860,6 +6638,12 @@
             "value" : "New Flow"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新しい集中記録"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5878,8 +6662,8 @@
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "新しいFlow、%1$@から%2$@"
+            "state" : "translated",
+            "value" : "新しい集中記録、%1$@から%2$@"
           }
         },
         "ru" : {
@@ -5914,6 +6698,12 @@
             "value" : "New Direction"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新しい分野"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5930,6 +6720,12 @@
             "value" : "Create Direction"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新しい分野を作成"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5944,6 +6740,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "New Day Starts"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1日の開始時刻"
           }
         },
         "ru" : {
@@ -5978,6 +6780,12 @@
             "value" : "Directions"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分野"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5994,6 +6802,12 @@
             "value" : "Directions, Tasks, Flow, History and Statistics, then your next step"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分野、タスク、流れ、履歴と統計、次の一歩"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6008,6 +6822,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Direction “%1$@” was not found"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「%1$@」という分野が見つかりません。"
           }
         },
         "ru" : {
@@ -6027,6 +6847,12 @@
             "value" : "Filter by Direction"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分野で絞り込む"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6041,6 +6867,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "This Flow will be deducted from Direction and Task focus time."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この集中記録の時間が、分野とタスクの集中時間から差し引かれます。"
           }
         },
         "ru" : {
@@ -6059,6 +6891,12 @@
             "value" : "Directions are themes you want to keep investing time in, such as work, learning, health, or reading. They bring related tasks, Flows, and statistics together."
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「分野」は、仕事、勉強、健康、読書など、継続して取り組みたいテーマです。関連するタスクと集中記録をまとめて確認できます。"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6073,6 +6911,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No Directions"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分野はまだありません"
           }
         },
         "ru" : {
@@ -6091,6 +6935,12 @@
             "value" : "Direction Filter"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分野で絞り込む"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6105,6 +6955,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Create Direction"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分野を作成"
           }
         },
         "ru" : {
@@ -6123,6 +6979,12 @@
             "value" : "Delete Direction"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分野を削除"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6137,6 +6999,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choose a Direction, turn it into today's Tasks, and record the focused time you actually spend in Flow. Review your History and Statistics, then decide where to direct your time next."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分野を決め、今日のタスクに落とし込み、集中タイマーで実際の集中時間を記録します。履歴と統計で振り返ったら、次に取り組むことを決めます。"
           }
         },
         "ru" : {
@@ -6155,6 +7023,12 @@
             "value" : "Edit Direction"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分野を編集"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6169,6 +7043,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add Direction"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分野を追加"
           }
         },
         "ru" : {
@@ -6187,6 +7067,12 @@
             "value" : "Select Direction"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分野を選択"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6201,6 +7087,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Select a Direction"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分野を選択してください"
           }
         },
         "ru" : {
@@ -6219,6 +7111,12 @@
             "value" : "Select a Direction."
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分野を選択してください。"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6235,6 +7133,12 @@
             "value" : "By Direction"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分野別"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6249,6 +7153,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Direction Name"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分野名"
           }
         },
         "ru" : {
@@ -6297,6 +7207,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Date Today"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日付：今日"
           }
         },
         "ru" : {
@@ -6361,6 +7277,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "For regular focused work"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "いつもの集中作業に"
           }
         },
         "ru" : {
@@ -6444,6 +7366,12 @@
             "value" : "To Tomorrow"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "明日に移動"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6524,6 +7452,12 @@
             "value" : "Please wait a moment and try again."
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "しばらくしてから、もう一度お試しください。"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6538,6 +7472,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choose where your time goes"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取り組む分野を決める"
           }
         },
         "ru" : {
@@ -6588,6 +7528,12 @@
             "value" : "Weekdays (optional)"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取り組む曜日（任意）"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6623,7 +7569,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "書き出す内容"
+            "value" : "書き出すデータ"
           }
         },
         "ru" : {
@@ -6709,7 +7655,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "期間やフィルターを変更してください"
+            "value" : "期間や絞り込み条件を変えてみてください。"
           }
         },
         "ru" : {
@@ -6768,7 +7714,7 @@
         }
       }
     },
-    "期限切れ" : {
+    "やり残し" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6975,6 +7921,12 @@
             "value" : "%@ Block Remaining"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "残り%@ブロック"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6989,6 +7941,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld Remaining"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "残り%lld件"
           }
         },
         "ru" : {
@@ -7087,6 +8045,12 @@
             "value" : "Reach this Goal every day."
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "毎日、タスクが自動で追加されます。"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7133,6 +8097,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Active Days"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中した日"
           }
         },
         "ru" : {
@@ -7215,6 +8185,12 @@
             "value" : "Finishes the current Flow without a memo."
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "現在の集中をメモなしで終了します。"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7263,6 +8239,12 @@
             "value" : "Select a Unit when using a Goal."
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目標を設定する場合は、単位を選んでください。"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7309,6 +8291,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "For short work or simply getting started"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "短い作業や、まずは始めてみたいときに"
           }
         },
         "ru" : {
@@ -7486,6 +8474,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Statistics View"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "表示する内容"
           }
         },
         "ru" : {
@@ -7680,6 +8674,12 @@
             "value" : "Select a Frequency for a Habit Direction."
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "習慣の頻度を選んでください。"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7777,6 +8777,12 @@
             "value" : "Mix colors for multiple Directions"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "複数の分野の色を混ぜて表示"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7840,6 +8846,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Language changes apply after restarting the app"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "言語の変更は、アプリを再起動すると反映されます。"
           }
         },
         "ru" : {
@@ -7922,6 +8934,12 @@
             "value" : "Select a Record"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "記録を選んでください"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7968,6 +8986,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Until this time, Tasks and Flow count toward the previous day."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定した時刻までは、タスクや集中記録を前日分として扱います。"
           }
         },
         "ru" : {
@@ -8067,6 +9091,12 @@
             "value" : "Awaiting purchase approval"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "購入の承認を待っています"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -8099,6 +9129,12 @@
             "value" : "Send"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存して続ける"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -8113,6 +9149,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Even if you change the task or duration midway, continuous work is recorded as one Flow. Breaks are 3, 5, or 10 minutes, with a 20-minute Long Break after every four blocks."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "途中でタスクや集中時間を変えても、続けて取り組んだ分は一連の集中として記録されます。休憩は3分・5分・10分で、4ブロックごとに20分の長休憩が入ります。"
           }
         },
         "ru" : {
@@ -8131,6 +9173,12 @@
             "value" : "If you change tasks midway, uninterrupted work remains one Flow. Time is still calculated separately for each task."
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "途中でタスクを変えても、続けて取り組んだ分はひとつの記録として残ります。各タスクの時間は別々に集計されます。"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -8147,6 +9195,12 @@
             "value" : "Normal"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "いつでも"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -8161,6 +9215,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Regular items are planned activities, Habits appear on chosen days, and Nice items are optional wins."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「いつでも」は好きなときに取り組むもの、「習慣」は設定した日に表示されるもの、「できたら」は余裕があるときに取り組むものです。"
           }
         },
         "ru" : {
@@ -8195,6 +9255,12 @@
             "value" : "%lld Times per Week"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "週に%lld回"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -8209,6 +9275,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "See focused-time trends, time by Task or Direction, and daily Dots by week, month, or year. Statistics are here to help choose where your time goes next—not to grade you."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "週・月・年ごとに、集中時間の推移、タスクや分野ごとの時間配分、日々の集中記録を確認できます。自分を評価するためではなく、次に何へ時間を使うかを決めるための統計です。"
           }
         },
         "ru" : {
@@ -8243,6 +9315,12 @@
             "value" : "Times per Week"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "週に数回"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -8257,6 +9335,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choose between 1 and 7 times per week."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "週に取り組む回数は、1〜7回から選んでください。"
           }
         },
         "ru" : {
@@ -8455,6 +9539,12 @@
             "value" : "Create a Task on the Selected Day"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選択した日付にタスクを作成"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -8507,6 +9597,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Duration"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所要時間"
           }
         },
         "ru" : {
@@ -8586,7 +9682,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Focusing"
+            "value" : "Focus"
           }
         },
         "ru" : {
@@ -8620,6 +9716,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Notice your focus rhythm"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中の傾向を知る"
           }
         },
         "ru" : {
@@ -8743,7 +9845,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "項目 %1$@、件数 %2$lld"
+            "value" : "%1$@、%2$lld件"
           }
         },
         "ru" : {
@@ -8778,6 +9880,12 @@
             "value" : "Delete All Flow History"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中履歴をすべて削除"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -8792,6 +9900,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Deleting Flow history…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中履歴を削除しています…"
           }
         },
         "ru" : {
@@ -8810,6 +9924,12 @@
             "value" : "Flow history deleted"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中履歴を削除しました"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -8824,6 +9944,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couldn’t delete Flow history"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中履歴を削除できませんでした"
           }
         },
         "ru" : {
@@ -8842,6 +9968,12 @@
             "value" : "Delete all Flow history?"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中履歴をすべて削除しますか？"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -8856,6 +9988,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Flow and break history will be deleted from every synced device. Tasks and Directions remain, and Flow-derived progress is reset. This can’t be undone."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "すべての端末から、集中と休憩の記録が削除されます。タスクと分野は残りますが、集中時間から計算された進捗はリセットされます。この操作は取り消せません。"
           }
         },
         "ru" : {
@@ -8890,6 +10028,12 @@
             "value" : "Tasks, Directions, and Task memos remain. Checked Tasks stay completed."
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タスクと分野、タスクに付けたメモは削除されません。チェック済みの状態もそのまま残ります。"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -8922,10 +10066,448 @@
             "value" : "Finish the current Flow before deleting history."
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中履歴を削除するには、先に現在の集中を終了してください。"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Завершите текущий Flow перед удалением истории."
+          }
+        }
+      }
+    },
+    "一連の集中記録" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flow Series"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Серия Flow"
+          }
+        }
+      }
+    },
+    "このタスクに集中記録を追加" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Flow to This Task"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить Flow к этой задаче"
+          }
+        }
+      }
+    },
+    "この期間には集中記録がありません" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "There are no Flows in this period"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "За этот период нет Flow"
+          }
+        }
+      }
+    },
+    "この期間には集中記録もタスクもありません。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "There are no Flows or Tasks in this period."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "За этот период нет Flow и задач."
+          }
+        }
+      }
+    },
+    "この記録分の集中時間を、タスクと分野の合計から差し引きます。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This record’s focus time will be deducted from the Task and Direction totals."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Время фокуса этой записи будет вычтено из итогов задачи и направления."
+          }
+        }
+      }
+    },
+    "この集中記録を削除" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete This Flow"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить этот Flow"
+          }
+        }
+      }
+    },
+    "この集中記録を削除しますか？" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete this Flow?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить этот Flow?"
+          }
+        }
+      }
+    },
+    "%@・集中%lld回" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · %2$lld Flows"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · Flow: %2$lld"
+          }
+        }
+      }
+    },
+    "タスク%lld件・集中%lld回" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld Tasks · %2$lld Flows"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Задач: %1$lld · Flow: %2$lld"
+          }
+        }
+      }
+    },
+    "実行中の集中記録は移動できません。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A running Flow cannot be moved."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запущенный Flow нельзя переместить."
+          }
+        }
+      }
+    },
+    "新しい集中記録" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Flow"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новый Flow"
+          }
+        }
+      }
+    },
+    "新しい集中記録、%@から%@まで" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Flow, %1$@ to %2$@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новый Flow, с %1$@ до %2$@"
+          }
+        }
+      }
+    },
+    "記録するタスクを選択" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select the Task to Record"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбрать задачу для записи"
+          }
+        }
+      }
+    },
+    "集中%lld回" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld Flows"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flow: %lld"
+          }
+        }
+      }
+    },
+    "集中モード" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flow Mode"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Режим Flow"
+          }
+        }
+      }
+    },
+    "集中回数" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flows"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сессии Flow"
+          }
+        }
+      }
+    },
+    "集中記録" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flow"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flow"
+          }
+        }
+      }
+    },
+    "集中記録または休憩を選ぶと、ここに詳細が表示されます。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select a Flow or Break to see its details here."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите Flow или перерыв, чтобы увидеть подробности."
+          }
+        }
+      }
+    },
+    "集中記録を保存できませんでした。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not save Flow."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось сохранить Flow."
+          }
+        }
+      }
+    },
+    "集中記録を編集" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit Flow"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Изменить Flow"
+          }
+        }
+      }
+    },
+    "集中記録を追加" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Flow"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить Flow"
+          }
+        }
+      }
+    },
+    "今日・%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today · %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сегодня · %@"
+          }
+        }
+      }
+    },
+    "完了タスク%lld件" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Completed Tasks: %lld"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Завершено задач: %lld"
+          }
+        }
+      }
+    },
+    "開始日" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start Date"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дата начала"
+          }
+        }
+      }
+    },
+    "進行中の集中は移動できません。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An active focus session cannot be moved."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Текущую сессию фокуса нельзя переместить."
+          }
+        }
+      }
+    },
+    "集中設定" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Focus Details"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Параметры фокуса"
+          }
+        }
+      }
+    },
+    "集中記録に紐づけるタスクを選択" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select the Task for This Flow"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбрать задачу для этой сессии Flow"
           }
         }
       }

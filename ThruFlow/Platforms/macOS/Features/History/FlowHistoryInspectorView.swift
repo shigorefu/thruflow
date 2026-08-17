@@ -166,7 +166,7 @@ struct FlowHistoryInspectorView: View {
                     Button(role: .destructive) {
                         showsDeleteConfirmation = true
                     } label: {
-                        Label(String(localized: "このFlowを削除"), systemImage: "trash")
+                        Label(String(localized: "この集中記録を削除"), systemImage: "trash")
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.bordered)
@@ -203,7 +203,7 @@ struct FlowHistoryInspectorView: View {
             }
         }
         .confirmationDialog(
-            String(localized: "このFlowを削除しますか？"),
+            String(localized: "この集中記録を削除しますか？"),
             isPresented: $showsDeleteConfirmation,
             titleVisibility: .visible
         ) {
@@ -222,7 +222,7 @@ struct FlowHistoryInspectorView: View {
             }
             Button(String(localized: "キャンセル"), role: .cancel) {}
         } message: {
-            Text(String(localized: "方向とタスクの集中時間から、このFlowの分を差し引きます。"))
+            Text(String(localized: "この記録分の集中時間を、タスクと分野の合計から差し引きます。"))
         }
         .popover(isPresented: $showsTaskPicker, arrowEdge: .bottom) {
             FlowTaskPickerView(
@@ -291,7 +291,7 @@ struct FlowHistoryInspectorView: View {
             }
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(String(localized: "Flowを編集"))
+                Text(String(localized: "集中記録を編集"))
                     .font(.title3.weight(.semibold))
                 Text(dateText)
                     .font(.caption)
@@ -351,7 +351,7 @@ struct FlowHistoryInspectorView: View {
             }
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(String(localized: "Flowタスクを選択"))
+        .accessibilityLabel(String(localized: "集中記録に紐づけるタスクを選択"))
     }
 
     private var selectionTitle: String {

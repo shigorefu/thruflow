@@ -294,7 +294,7 @@ struct FlowDashboardView: View {
 
                 metric(value: focusText(snapshot.totalFocusSeconds), label: String(localized: "集中時間"))
                 metric(value: blockText(snapshot.blocks), label: String(localized: "ブロック"))
-                metric(value: "\(snapshot.flowCount)", label: String(localized: "Flow"))
+                metric(value: "\(snapshot.flowCount)", label: String(localized: "集中回数"))
             }
 
             streamSurface(snapshot: snapshot)
@@ -1412,7 +1412,7 @@ private struct TimelineSegmentPopover: View {
 
             segmentDetail(String(localized: "時間"), value: TimelineSegmentFormat.interval(segment, locale: locale), systemImage: "clock")
             segmentDetail(String(localized: "集中"), value: TimelineSegmentFormat.duration(segment.focusSeconds), systemImage: "timer")
-            segmentDetail(String(localized: "Flow"), value: segment.session.mode.displayName, systemImage: "waveform.path")
+            segmentDetail(String(localized: "集中モード"), value: segment.session.mode.displayName, systemImage: "waveform.path")
 
             if let onOpenHistory {
                 Button(action: onOpenHistory) {

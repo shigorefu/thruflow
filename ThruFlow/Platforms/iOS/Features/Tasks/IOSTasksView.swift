@@ -232,7 +232,7 @@ struct IOSTasksView: View {
     private func backlogMenuContent(snapshot: TaskCalendarSnapshot) -> some View {
         VStack(spacing: 4) {
             backlogMenuButton(
-                String(localized: "期限切れ"),
+                String(localized: "やり残し"),
                 count: snapshot.backlog.overdue.count,
                 systemImage: "exclamationmark.circle",
                 mode: .overdue
@@ -458,7 +458,7 @@ struct IOSTasksView: View {
                         .fill(.red)
                         .frame(width: 7, height: 7)
 
-                    Text(String(localized: "期限切れ"))
+                    Text(String(localized: "やり残し"))
                         .font(.caption.weight(.semibold))
 
                     Text("\(todos.count)")
@@ -956,13 +956,13 @@ private struct IOSBacklogView: View {
         .overlay {
             if todos.isEmpty {
                 ContentUnavailableView(
-                    mode == .overdue ? String(localized: "期限切れ") : String(localized: "日付なし"),
+                    mode == .overdue ? String(localized: "やり残し") : String(localized: "日付なし"),
                     systemImage: mode == .overdue ? "checkmark.circle" : "tray"
                 )
             }
         }
         .iosCenteredNavigationTitle(
-            mode == .overdue ? String(localized: "期限切れ") : String(localized: "日付なし")
+            mode == .overdue ? String(localized: "やり残し") : String(localized: "日付なし")
         )
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {

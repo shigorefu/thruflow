@@ -119,7 +119,7 @@ struct IOSDirectionEditorView: View {
                     }
                     if goalSchedule == .weeklyCount {
                         Stepper(value: $weeklyTargetCount, in: 1...7) {
-                            Text("\(weeklyTargetCount) \(String(localized: "回 / 週"))")
+                            Text(String(localized: "週 \(weeklyTargetCount) 回"))
                         }
                     }
 

@@ -383,7 +383,7 @@ struct HistoryVisibilityMenu: View {
 
     var body: some View {
         Menu {
-            filterToggle(String(localized: "Flow"), symbol: "waveform.path", kinds: [.flow])
+            filterToggle(String(localized: "集中記録"), symbol: "waveform.path", kinds: [.flow])
             filterToggle(String(localized: "休憩"), symbol: "cup.and.saucer", kinds: [.rest])
         } label: {
             Image(systemName: "line.3.horizontal.decrease")
@@ -927,7 +927,7 @@ private struct HistoryManualFlowDraftView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(String(localized: "新しいFlow"))
+            Text(String(localized: "新しい集中記録"))
                 .font(.caption.weight(.semibold))
             Text("\(startedAt.formatted(date: .omitted, time: .shortened))–\(endedAt.formatted(date: .omitted, time: .shortened))")
                 .font(.caption2.monospacedDigit())
@@ -942,7 +942,7 @@ private struct HistoryManualFlowDraftView: View {
             RoundedRectangle(cornerRadius: 5)
                 .stroke(Color.white.opacity(0.75), lineWidth: 1.5)
         }
-        .accessibilityLabel(String(localized: "新しいFlow、\(startedAt.formatted(date: .omitted, time: .shortened))から\(endedAt.formatted(date: .omitted, time: .shortened))"))
+        .accessibilityLabel(String(localized: "新しい集中記録、\(startedAt.formatted(date: .omitted, time: .shortened))から\(endedAt.formatted(date: .omitted, time: .shortened))まで"))
     }
 }
 
@@ -1304,7 +1304,7 @@ struct HistoryBreakEditorView: View {
             )
             close()
         } catch FlowBreakEditorError.activeFlowWouldMove {
-            errorMessage = String(localized: "実行中のFlowは移動できません。")
+            errorMessage = String(localized: "進行中の集中は移動できません。")
         } catch {
             errorMessage = String(localized: "休憩を保存できませんでした。")
         }
