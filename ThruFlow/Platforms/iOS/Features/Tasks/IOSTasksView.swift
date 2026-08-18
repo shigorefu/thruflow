@@ -431,7 +431,7 @@ struct IOSTasksView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             let grouped = IOSGroupedTodos(todos: todos)
-            taskGroup(title: String(localized: "習慣"), todos: grouped.habits)
+            taskGroup(title: String(localized: "習慣一覧"), todos: grouped.habits)
             taskGroup(title: String(localized: "タスク"), todos: grouped.tasks)
             if !grouped.nice.isEmpty {
                 taskGroup(title: String(localized: "ナイス"), todos: grouped.nice)

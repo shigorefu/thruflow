@@ -1610,9 +1610,11 @@ private struct IOSStatisticsContributionDay: Identifiable {
     var id: Date { date }
 
     var accessibilityLabel: String {
-        let focusCount = String(localized: "集中\(flowCount)回")
-        let completedTasks = String(localized: "完了タスク\(completedTaskCount)件")
-        return "\(date.formatted(date: .abbreviated, time: .omitted)), \(IOSStatisticsFormatting.duration(focusedSeconds)), \(focusCount), \(completedTasks)"
+        let formattedDate = date.formatted(date: .abbreviated, time: .omitted)
+        let duration = IOSStatisticsFormatting.duration(focusedSeconds)
+        return String(
+            localized: "\(formattedDate)：集中時間\(duration)、集中\(flowCount)回、完了タスク\(completedTaskCount)件"
+        )
     }
 }
 

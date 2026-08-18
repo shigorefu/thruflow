@@ -247,7 +247,7 @@ struct TaskMonthGrid: View {
                 }
 
                 if dayTodos.contains(where: { $0.direction?.type == .habit && !$0.isCompleted }) {
-                    Label(String(localized: "習慣"), systemImage: "exclamationmark.circle.fill")
+                    Label(String(localized: "習慣一覧"), systemImage: "exclamationmark.circle.fill")
                         .font(.caption2)
                         .foregroundStyle(.red)
                 } else {
@@ -401,7 +401,10 @@ private struct TaskBoardGroup: Identifiable {
     let todos: [Todo]
 
     var id: String { type.rawValue }
-    var title: String { type.displayName }
+
+    var title: String {
+        type == .habit ? String(localized: "習慣一覧") : type.displayName
+    }
 
     var tint: Color {
         switch type {

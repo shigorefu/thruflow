@@ -510,7 +510,9 @@ struct FlowDashboardView: View {
                         .buttonStyle(.plain)
                         .position(x: centerX, y: proxy.size.height / 2)
                         .zIndex(hoveredTimelineItem == .segment(segment.id) ? 2 : 1)
-                        .accessibilityLabel("\(segment.taskTitle)、\(focusText(segment.focusSeconds))")
+                        .accessibilityLabel(
+                            String(localized: "\(segment.taskTitle), \(focusText(segment.focusSeconds))")
+                        )
                     }
 
                     if let hoveredSegment = snapshot.segments.first(where: {
@@ -624,7 +626,7 @@ struct FlowDashboardView: View {
                 addControl: AnyView(dashboardAddButton)
             )
             DashboardTodoColumn(
-                title: String(localized: "習慣"),
+                title: String(localized: "習慣一覧"),
                 systemImage: "repeat",
                 todos: habitTodos,
                 progressText: progressText,
@@ -827,7 +829,7 @@ struct FlowDashboardView: View {
             .frame(width: 112, height: 112)
 
             achievementRow(String(localized: "タスク"), completed: standard.filter(\.isCompleted).count, total: standard.count)
-            achievementRow(String(localized: "習慣"), completed: habits.filter(\.isCompleted).count, total: habits.count)
+            achievementRow(String(localized: "習慣一覧"), completed: habits.filter(\.isCompleted).count, total: habits.count)
             if !nice.isEmpty {
                 achievementRow(String(localized: "ナイス"), completed: nice.filter(\.isCompleted).count, total: nice.count)
             }
@@ -1079,7 +1081,8 @@ struct FlowDashboardView: View {
 
     private func breakHelpText(_ flowBreak: FlowDashboardBreak) -> String {
         let name = flowBreak.isLongBreak ? String(localized: "長休憩") : String(localized: "休憩")
-        return "☕️ \(name) \(TimelineSegmentFormat.duration(flowBreak.durationSeconds))"
+        let duration = TimelineSegmentFormat.duration(flowBreak.durationSeconds)
+        return String(localized: "☕️ \(name)（\(duration)）")
     }
 
     private var timelinePopoverBinding: Binding<Bool> {
@@ -1666,9 +1669,9 @@ private struct DashboardTodoColumn: View {
     private func todoDetail(_ todo: Todo) -> String {
         let tags = todo.hashtags.map { "#\($0)" }.joined(separator: " ")
         let detail = showsPriority
-            ? "\(priorityLabel(todo)) ・ \(progressText(todo))"
+            ? String(localized: "\(priorityLabel(todo)) · \(progressText(todo))")
             : progressText(todo)
-        return tags.isEmpty ? detail : "\(detail) ・ \(tags)"
+        return tags.isEmpty ? detail : String(localized: "\(detail) · \(tags)")
     }
 
     private func priorityLabel(_ todo: Todo) -> String {

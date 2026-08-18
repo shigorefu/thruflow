@@ -136,7 +136,7 @@ struct IOSTaskComposer: View {
             }
         }
         .alert(
-            String(localized: "方向"),
+            String(localized: "分野"),
             isPresented: Binding(
                 get: { unresolvedDirection != nil },
                 set: { if !$0 { unresolvedDirection = nil } }
@@ -214,7 +214,7 @@ struct IOSTaskComposer: View {
             }
         } label: {
             compactLabel(
-                hasExplicitDirection ? selectedDirection?.name ?? String(localized: "方向") : String(localized: "方向"),
+                hasExplicitDirection ? selectedDirection?.name ?? String(localized: "分野") : String(localized: "分野"),
                 tint: directionTint,
                 isExplicit: hasExplicitDirection
             )
@@ -299,7 +299,7 @@ struct IOSTaskComposer: View {
             Grid(alignment: .leading, horizontalSpacing: 18, verticalSpacing: 6) {
                 GridRow {
                     legendItem("[ ]", String(localized: "チェック"))
-                    legendItem("@", String(localized: "方向"))
+                    legendItem("@", String(localized: "分野"))
                 }
                 GridRow {
                     legendItem("[1b]", String(localized: "1ブロック"))

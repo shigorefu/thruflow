@@ -307,7 +307,7 @@ struct IOSFlowView: View {
                         Circle()
                             .fill(tint)
                             .frame(width: 6, height: 6)
-                        Text(selectedDirection?.name ?? String(localized: "方向"))
+                        Text(selectedDirection?.name ?? String(localized: "分野"))
                             .lineLimit(1)
                     }
                     .font(.caption.weight(.medium))
@@ -522,7 +522,7 @@ struct IOSFlowView: View {
                     Image(systemName: "arrow.up.right")
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(String(localized: "タスク"))
+                .accessibilityLabel(String(localized: "対象タスク"))
             }
 
             Picker(String(localized: "表示"), selection: $taskFilter) {
@@ -906,7 +906,7 @@ private enum IOSDashboardTaskFilter: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .task: String(localized: "タスク")
-        case .habit: String(localized: "習慣")
+        case .habit: String(localized: "習慣一覧")
         case .nice: String(localized: "ナイス")
         }
     }
@@ -1128,7 +1128,7 @@ private struct IOSDashboardStatisticsView: View {
                 total: standardTodos.count
             )
             achievementRow(
-                String(localized: "習慣"),
+                String(localized: "習慣一覧"),
                 completed: habitTodos.filter(\.isCompleted).count,
                 total: habitTodos.count
             )

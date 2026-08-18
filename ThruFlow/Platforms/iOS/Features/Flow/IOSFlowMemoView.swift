@@ -23,7 +23,7 @@ struct IOSFlowMemoView: View {
                 HStack {
                     Button(String(localized: "キャンセル"), action: cancel)
                     Spacer()
-                    Button(memoIsEmpty ? String(localized: "メモなしで送信") : String(localized: "送信")) {
+                    Button(memoIsEmpty ? String(localized: "メモなしで送信") : String(localized: "メモを保存して続ける")) {
                         submit(memoIsEmpty ? nil : memo)
                     }
                     .buttonStyle(.borderedProminent)

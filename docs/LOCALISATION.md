@@ -31,31 +31,36 @@ reviewed like an API rename.
 
 ## Product Terminology and Context
 
-Japanese product terminology is translated by UI meaning, not by replacing an
-English domain word everywhere. In particular, `Flow` has no single canonical
-Japanese rendering:
+Product terminology is translated by UI meaning, not by replacing an English
+domain word everywhere. The Japanese source key may also differ from the text
+shown in Japanese when a catalog override exists. In particular, `Flow` has no
+single canonical rendering:
 
-| UI context | Japanese |
-| --- | --- |
-| Main Flow navigation and workspace | `流れ` |
-| Persisted Flow session or History record | `集中記録` |
-| Start, continue, or switch focused work | `集中` |
-| Number of recorded Flow sessions | `集中回数` |
-| Statistics focus / Task switch | `集中` / `タスク` |
-| Flow mode selector | `集中モード` |
-| Sprint / Focus / Deep / Adaptive mode | `短め` / `標準` / `じっくり` / `自動` |
-| Focus Block name / short unit | `集中ブロック` / `ブロック` |
-| Dots visualization | `集中カレンダー` |
+| UI context | Source key | Japanese UI | English UI | Russian UI |
+| --- | --- | --- | --- | --- |
+| Main Flow navigation and workspace | `Flow` | `流れ` | Flow | Flow |
+| Persisted Flow session or History record | `集中記録` | `集中記録` | Flow | Flow |
+| Start, continue, or switch focused work | `集中` | `集中` | Focus | Фокус |
+| Number of recorded Flow sessions | `集中回数` | `集中回数` | Flows | Сессии Flow |
+| Statistics focus / Task switch | `集中` / `タスク` | `集中` / `タスク` | Focus / Tasks | Фокус / Задачи |
+| Flow mode selector | `Flowタイプ` or `集中モード` | `集中モード` | Flow Mode | Режим Flow |
+| Short / Standard / Deep / Auto mode | `Sprint` / `Focus` / `Deep` / `オート` | `短め` / `標準` / `じっくり` / `自動` | Short / Standard / Deep / Auto | Короткий / Обычный / Глубокий / Авто |
+| Focus Block name / goal unit | `集中ブロック` / `フローブロック` | `集中ブロック` | Focus Blocks | Блоки фокуса |
+| Focus Calendar visualization | `Dots` | `集中カレンダー` | Focus Calendar | Календарь фокуса |
 
 For example, an action should read `集中を始める`, not a mechanical
 `流れを開始`. A History row should use `集中記録`, while the main workspace may
 use `流れ`. Translators must inspect the originating screen and choose the
 contextual term recorded in `Localisation/TERMS.csv`.
 
-The persistent activity-area entity is `分野` in Japanese UI. Its visible types
-are `いつでも`, `習慣`, and `できたら`. Other context-sensitive terms include
-`日付なし` for the Inbox projection, `週に数回` for the weekly-count Habit
-schedule, and `集中カレンダー` for Dots.
+The persistent activity-area entity is `分野` in Japanese UI, `Area` in English,
+and `Направление` in Russian. Collection navigation uses `Areas` and
+`Направления`. Its visible types are `いつでも` / Anytime / В любое время,
+`習慣` / Habit / Привычка, and `できたら` / Optional / Если получится. The
+corresponding source keys remain `通常`, `習慣`, and `ナイス`. Other
+context-sensitive terms include `日付なし` for the Inbox projection, `週に数回`
+for the weekly-count Habit schedule, and `集中カレンダー` / Focus Calendar /
+Календарь фокуса for the calendar-style focus visualization.
 
 These copy choices never rename implementation or persisted identifiers.
 Swift types and properties such as `Direction`, `FlowSession`, and `FlowMode`,
@@ -76,10 +81,14 @@ removed when no source still references them, and dynamic placeholders must use
 translator-readable source keys with complete `ja`, `en`, and `ru` values.
 
 `Localisation/TERMS.csv` is the contributor-facing terminology glossary. Its
-first column contains stable code references, while language columns contain
-approved translations. It is intentionally not loaded at runtime and therefore
-cannot diverge application behavior from the validated String Catalog.
-Unambiguous glossary terms are checked against the catalog by unit tests.
+first two columns are English metadata, its third column contains the actual
+Japanese String Catalog source key, and its final columns contain approved
+English and Russian UI translations. A source key can intentionally have a
+different Japanese catalog override; translators must not expose technical or
+legacy source-key wording to users. The CSV is not loaded at runtime and
+therefore cannot diverge application behavior from the validated String
+Catalog. Unambiguous glossary terms are checked against the catalog by unit
+tests.
 
 Task quick-input aliases are domain syntax rather than translated UI strings.
 English forms (`b`, `m`, `high`, `today`, weekday names, and related short forms)
@@ -89,23 +98,31 @@ or remove the universal English forms.
 
 ## Context-Specific Labels
 
-Entity names remain singular in prose and editors (`Task`, `Direction`), while
-navigation labels name collections and therefore use plurals:
+Entity names remain singular in prose and editors (`Task`, `Area`), while
+navigation labels name collections and therefore use plurals. `Direction`
+remains the internal Swift, persistence, and machine-readable CSV identifier;
+it is not visible English UI copy:
 
 | Context | Japanese key | English | Russian |
 | --- | --- | --- | --- |
 | Tasks navigation | `タスク` | Tasks | Задачи |
-| Directions navigation | `分野` | Directions | Направления |
-| Main Flow navigation | `流れ` | Flow | Flow |
+| Task field or picker | `対象タスク` | Task | Задача |
+| Areas navigation | `方向` | Areas | Направления |
+| Area field or picker | `分野` | Area | Направление |
+| Main Flow navigation | `Flow` | Flow | Flow |
 | Saved Flow session | `集中記録` | Flow | Flow |
 | Flow count | `集中回数` | Flows | Сессии Flow |
 | Flow mode selector | `集中モード` | Flow Mode | Режим Flow |
+| Short / Standard / Deep / Auto modes | `Sprint` / `Focus` / `Deep` / `オート` | Short / Standard / Deep / Auto | Короткий / Обычный / Глубокий / Авто |
 | Statistics focus mode | `集中` | Focus | Фокус |
 | Statistics Task mode | `タスク` | Tasks | Задачи |
 | Statistics completed-task count | `達成` | Tasks | Задачи |
-| Current year period | `今年` | this year | Этот год |
-| Current month period | `今月` | This month | Этот месяц |
+| Focus Calendar | `Dots` | Focus Calendar | Календарь фокуса |
+| Current year period | `今年` | This Year | Этот год |
+| Current month period | `今月` | This Month | Этот месяц |
 
 Translators must use the UI context from `Localisation/TERMS.csv`; identical
 Japanese wording does not imply that English and Russian should use a singular
-entity label in collection navigation.
+entity label in collection navigation. Likewise, English `Area` and Russian
+`Направление` are independent idiomatic choices; neither should be translated
+mechanically from the other language.

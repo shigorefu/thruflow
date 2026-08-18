@@ -20,7 +20,7 @@ struct WatchTaskCreationForm: View {
         NavigationStack {
             Form {
                 Section {
-                    Picker(String(localized: "方向"), selection: $directionID) {
+                    Picker(String(localized: "分野"), selection: $directionID) {
                         ForEach(activeDirections) { direction in
                             Label {
                                 Text(direction.name)

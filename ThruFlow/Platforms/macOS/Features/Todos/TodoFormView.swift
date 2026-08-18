@@ -176,7 +176,7 @@ struct TodoFormView: View {
     private var classificationCard: some View {
         TodoEditorCard(title: String(localized: "基本")) {
             editorRow(
-                title: String(localized: "方向"),
+                title: String(localized: "分野"),
                 systemImage: "point.3.connected.trianglepath.dotted"
             ) {
                 directionControl
@@ -260,7 +260,7 @@ struct TodoFormView: View {
                 tint: Color(hex: direction.colorHex)
             )
         } else {
-            Picker(String(localized: "方向"), selection: selectedDirectionBinding) {
+            Picker(String(localized: "分野"), selection: selectedDirectionBinding) {
                 Text(String(localized: "未選択")).tag(UUID?.none)
 
                 ForEach(visibleDirections) { direction in
@@ -270,7 +270,7 @@ struct TodoFormView: View {
             }
             .labelsHidden()
             .frame(width: 240)
-            .accessibilityLabel(String(localized: "方向"))
+            .accessibilityLabel(String(localized: "分野"))
         }
     }
 

@@ -88,7 +88,7 @@ enum GoalUnit: String, CaseIterable, Codable, Identifiable {
         case .minutes:
             String(localized: "分単位")
         case .hours:
-            String(localized: "時間")
+            String(localized: "時間単位")
         }
     }
 }
@@ -103,7 +103,7 @@ enum GoalScheduleKind: String, CaseIterable, Codable, Identifiable {
     var displayName: String {
         switch self {
         case .everyDay:
-            String(localized: "毎日")
+            String(localized: "毎日予定")
         case .weeklyCount:
             String(localized: "週回")
         case .weekdays:
@@ -135,9 +135,9 @@ enum GoalWeekday: Int, CaseIterable, Codable, Identifiable {
     var displayName: String {
         switch self {
         case .sunday:
-            String(localized: "日")
+            String(localized: "日曜短縮")
         case .monday:
-            String(localized: "月")
+            String(localized: "月曜短縮")
         case .tuesday:
             String(localized: "火")
         case .wednesday:

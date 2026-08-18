@@ -115,7 +115,7 @@ struct DirectionListView: View {
                                     )
                                     .contextMenu {
                                         if !direction.isArchived {
-                                            Button(String(localized: "アーカイブ"), systemImage: "archivebox", role: .destructive) {
+                                            Button(String(localized: "アーカイブする"), systemImage: "archivebox", role: .destructive) {
                                                 direction.archive()
                                                 try? modelContext.save()
                                             }
@@ -394,7 +394,7 @@ private struct DirectionGroup: Identifiable {
     var title: String {
         switch type {
         case .neutral: String(localized: "通常")
-        case .habit: String(localized: "習慣")
+        case .habit: String(localized: "習慣一覧")
         case .nice: String(localized: "ナイス")
         }
     }

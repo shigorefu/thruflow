@@ -773,7 +773,7 @@ private struct HistoryAggregateFilterMenu: View {
     var body: some View {
         Menu {
             filterToggle(neutralLabel, type: .neutral)
-            filterToggle(String(localized: "習慣"), type: .habit)
+            filterToggle(String(localized: "習慣一覧"), type: .habit)
             filterToggle(String(localized: "ナイス"), type: .nice)
         } label: {
             Image(systemName: "line.3.horizontal.decrease")
@@ -996,7 +996,7 @@ private struct HistoryTodoProgressIndicator: View {
     }
 
     private var progressDescription: String {
-        if isCompleted { return String(localized: "完了") }
+        if isCompleted { return String(localized: "完了済み") }
         return "\(Int((progress * 100).rounded()))%"
     }
 }

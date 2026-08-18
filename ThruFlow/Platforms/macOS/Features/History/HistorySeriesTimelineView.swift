@@ -37,7 +37,7 @@ struct HistoryWeekSeriesBlockView: View {
                             Text(title)
                                 .lineLimit(1)
                             if flowItems.count > 1 {
-                                Text(verbatim: "· \(flowItems.count)")
+                                Text(String(localized: "（全\(flowItems.count)回）"))
                                     .foregroundStyle(.secondary)
                             }
                         }
@@ -75,8 +75,7 @@ struct HistoryWeekSeriesBlockView: View {
 
     private var helpText: String {
         let time = "\(block.startedAt.formatted(date: .omitted, time: .shortened))–\(block.endedAt.formatted(date: .omitted, time: .shortened))"
-        let count = String(localized: "集中\(flowItems.count)回")
-        return "\(title)\n\(time)\n\(count)"
+        return String(localized: "\(title)\n\(time)\n集中\(flowItems.count)回")
     }
 }
 
@@ -160,7 +159,7 @@ struct HistorySeriesTimelineView: View {
     private var seriesIntervalText: String {
         let date = block.startedAt.formatted(.dateTime.locale(locale).month().day().weekday(.abbreviated))
         let time = "\(block.startedAt.formatted(date: .omitted, time: .shortened))–\(block.endedAt.formatted(date: .omitted, time: .shortened))"
-        return "\(date) · \(time)"
+        return String(localized: "\(date) · \(time)")
     }
 }
 
@@ -434,7 +433,7 @@ private struct HistoryTimelineItemRow: View {
                         Text(item.displayTitle)
                             .font(.body.weight(.semibold))
                             .lineLimit(1)
-                        Text(verbatim: "\(item.startedAt.formatted(date: .omitted, time: .shortened))–\(item.endedAt.formatted(date: .omitted, time: .shortened)) · \(durationText)")
+                        Text(timingText)
                             .font(.caption.monospacedDigit())
                             .foregroundStyle(.secondary)
                         if !item.displaySubtitle.isEmpty {
@@ -498,6 +497,12 @@ private struct HistoryTimelineItemRow: View {
             .units(allowed: [.hours, .minutes], width: .abbreviated, maximumUnitCount: 2)
         )
     }
+
+    private var timingText: String {
+        let start = item.startedAt.formatted(date: .omitted, time: .shortened)
+        let end = item.endedAt.formatted(date: .omitted, time: .shortened)
+        return String(localized: "\(start)〜\(end)（\(durationText)）")
+    }
 }
 
 private struct HistoryTimelineGapRow: View {
@@ -535,7 +540,7 @@ private struct HistoryTimelineGapRow: View {
             .padding(.vertical, 14)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text(verbatim: "\(timeRange), \(String(localized: "記録なし"))"))
+        .accessibilityLabel(String(localized: "\(timeRange)：記録なし"))
     }
 
     private var timeRange: String {

@@ -118,9 +118,7 @@ private struct IOSHistoryTimelineItemRow: View {
                         Text(item.displayTitle)
                             .font(.subheadline.weight(.semibold))
                             .lineLimit(1)
-                        Text(
-                            verbatim: "\(item.startedAt.formatted(date: .omitted, time: .shortened))–\(item.endedAt.formatted(date: .omitted, time: .shortened)) · \(durationText)"
-                        )
+                        Text(timingText)
                         .font(.caption2.monospacedDigit())
                         .foregroundStyle(.secondary)
 
@@ -190,6 +188,12 @@ private struct IOSHistoryTimelineItemRow: View {
             return String(format: "%d:%02d:%02d", hours, minutes, seconds)
         }
         return String(format: "%02d:%02d", minutes, seconds)
+    }
+
+    private var timingText: String {
+        let start = item.startedAt.formatted(date: .omitted, time: .shortened)
+        let end = item.endedAt.formatted(date: .omitted, time: .shortened)
+        return String(localized: "\(start)〜\(end)（\(durationText)）")
     }
 }
 
@@ -513,7 +517,7 @@ private struct IOSHistoryWeekSeriesBlock: View {
                             Text(flowItems.first?.displayTitle ?? String(localized: "一連の集中記録"))
                                 .lineLimit(1)
                             if flowItems.count > 1 {
-                                Text(verbatim: "· \(flowItems.count)")
+                                Text(String(localized: "（全\(flowItems.count)回）"))
                                     .foregroundStyle(.white.opacity(0.78))
                             }
                         }

@@ -63,7 +63,7 @@ struct IOSTaskEditorView: View {
                 habitStructureSection
             } else {
                 Section {
-                    Picker(String(localized: "方向"), selection: $directionID) {
+                    Picker(String(localized: "分野"), selection: $directionID) {
                         ForEach(directions) { direction in
                             Text("\(direction.symbolName) \(direction.name)")
                                 .tag(Optional(direction.id))
@@ -165,8 +165,8 @@ struct IOSTaskEditorView: View {
     private var habitStructureSection: some View {
         if let todo = editedTodo {
             Section {
-                LabeledContent(String(localized: "方向")) {
-                    Text("\(todo.direction?.symbolName ?? "📝") \(todo.direction?.name ?? String(localized: "方向"))")
+                LabeledContent(String(localized: "分野")) {
+                    Text("\(todo.direction?.symbolName ?? "📝") \(todo.direction?.name ?? String(localized: "分野"))")
                 }
 
                 LabeledContent(String(localized: "種類"), value: todo.measurement.displayName)

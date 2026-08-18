@@ -546,7 +546,7 @@ struct HistoryDayInspectorPane: View {
                 propertyRow(String(localized: "集中モード"), systemImage: "waveform.path") {
                     item.session?.mode.displayName ?? String(localized: "集中記録")
                 }
-                propertyRow(String(localized: "方向"), systemImage: "point.3.connected.trianglepath.dotted") {
+                propertyRow(String(localized: "分野"), systemImage: "point.3.connected.trianglepath.dotted") {
                     item.subtitle
                 }
             case .rest:
