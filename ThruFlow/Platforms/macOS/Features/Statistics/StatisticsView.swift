@@ -1624,9 +1624,10 @@ private struct StatisticsContributionCell: View {
     private var helpText: String {
         guard let day else { return "" }
         let date = day.date.formatted(.dateTime.locale(locale).year().month().day())
-        let focusCount = String(localized: "集中\(day.flowCount)回")
-        let completedTasks = String(localized: "完了タスク\(day.completedTaskCount)件")
-        return "\(date) · \(StatisticsFormatting.duration(day.focusedSeconds)) · \(focusCount) · \(completedTasks)"
+        let duration = StatisticsFormatting.duration(day.focusedSeconds)
+        return String(
+            localized: "\(date)：集中時間\(duration)、集中\(day.flowCount)回、完了タスク\(day.completedTaskCount)件"
+        )
     }
 }
 

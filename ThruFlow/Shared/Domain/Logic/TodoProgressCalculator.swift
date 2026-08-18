@@ -42,7 +42,7 @@ struct TodoProgressCalculator {
     ) -> String {
         switch measurement {
         case .checkbox:
-            return actualProgress > 0 ? String(localized: "完了") : String(localized: "未完了")
+            return actualProgress > 0 ? String(localized: "完了済み") : String(localized: "未完了")
         case .focusBlocks:
             if let focusDurationSeconds {
                 return BlockUnit.progressText(

@@ -58,9 +58,9 @@ enum TodoStatus: String, CaseIterable, Codable, Identifiable {
         case .active:
             String(localized: "進行中")
         case .completed:
-            String(localized: "完了")
+            String(localized: "完了済み")
         case .archived:
-            String(localized: "アーカイブ")
+            String(localized: "アーカイブ済み")
         }
     }
 }

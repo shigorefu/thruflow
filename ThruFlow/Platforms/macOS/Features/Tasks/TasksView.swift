@@ -1404,7 +1404,7 @@ struct MessengerTodoComposer: View {
             Grid(alignment: .leading, horizontalSpacing: 24, verticalSpacing: 6) {
                 GridRow {
                     legendItem(shortcut: "[ ]", label: String(localized: "チェック"))
-                    legendItem(shortcut: "@", label: String(localized: "方向"))
+                    legendItem(shortcut: "@", label: String(localized: "分野"))
                     legendItem(shortcut: "!", label: String(localized: "優先度"))
                 }
 
@@ -1849,7 +1849,7 @@ struct MessengerTodoComposer: View {
                 return "\(max(1, amount ?? 1)) \(String(localized: "分"))"
             }
         case .direction(let id):
-            return directions.first(where: { $0.id == id })?.name ?? String(localized: "方向")
+            return directions.first(where: { $0.id == id })?.name ?? String(localized: "分野")
         case .priority(let priority, let later):
             return later ? String(localized: "余裕があれば") : priority.displayName
         case .date(let date):
@@ -2128,7 +2128,7 @@ private struct DirectionChip: View {
 
     private var labelText: String {
         guard isExplicit else {
-            return String(localized: "方向")
+            return String(localized: "分野")
         }
         guard let selectedDirection else {
             return String(localized: "その他")
@@ -2381,7 +2381,7 @@ private struct TasksTodoGroup: Identifiable {
     var title: String {
         switch type {
         case .habit:
-            String(localized: "習慣")
+            String(localized: "習慣一覧")
         case .neutral:
             String(localized: "通常")
         case .nice:

@@ -4,62 +4,69 @@ The canonical translator glossary is `Localisation/TERMS.csv`. This page is a
 compact product reference; additions and translation changes belong in the CSV
 first so GitHub contributors have one shared terminology table.
 
-| English | Japanese UI |
-| --- | --- |
-| ThruFlow | スルフロ |
-| Direction | 分野 |
-| Normal Direction | いつでも |
-| Habit Direction | 習慣 |
-| Nice Direction | できたら |
-| System Other Direction | その他 |
-| Task / Todo | タスク |
-| Tasks navigation | タスク |
-| Directions navigation | 分野 |
-| No-date Tasks / Inbox | 日付なし |
-| All task filter | すべて |
-| Day range | 日 |
-| Week range | 週 |
-| Month range | 月 |
-| Memo | メモ |
-| Check | チェック |
-| Focus Block | 集中ブロック |
-| Block unit (short label) | ブロック |
-| Minutes measurement | 分単位 |
-| Minute unit (short label) | 分 |
-| Priority high | 高 |
-| Priority medium | 中 |
-| Priority low | 低 |
-| If there is room | 余裕があれば |
-| Main Flow section | 流れ |
-| Saved Flow session | 集中記録 |
-| Flow action | 集中 |
-| Flow count | 集中回数 |
-| Flow mode selector | 集中モード |
-| Rest | 休憩 |
-| Long Break | 長休憩 |
-| Sprint Flow | 短め |
-| Focus Flow | 標準 |
-| Deep Flow | じっくり |
-| Adaptive Flow | 自動 |
-| Habit schedule: several times per week | 週に数回 |
-| Statistics | 統計 |
-| Time distribution | 時間配分 |
-| By Task | タスク別 |
-| By Direction | 分野別 |
-| Flow trend | 集中時間の推移 |
-| Dots | 集中カレンダー |
-| Completion status | 達成状況 |
-| Completed-task statistics label | 達成 |
-| History | 履歴 |
-| Timeline | タイムライン |
-| Today | 今日 |
-| Add Task | タスクを追加 |
-| Completion time unavailable | 完了時刻なし |
-| Statistics Task mode | タスク |
-| Statistics focus mode | 集中 |
+| Visible English | Russian UI | Japanese UI | Source key |
+| --- | --- | --- | --- |
+| ThruFlow | ThruFlow | スルフロ | `スルフロ` |
+| Area | Направление | 分野 | `分野` |
+| Anytime | В любое время | いつでも | `通常` |
+| Habit | Привычка | 習慣 | `習慣` |
+| Optional | Если получится | できたら | `ナイス` |
+| Other | Другое | その他 | `その他` |
+| Task | Задача | タスク | `対象タスク` |
+| Tasks navigation | Задачи | タスク | `タスク` |
+| Areas navigation | Направления | 分野 | `方向` |
+| No-date Tasks / Inbox | Без даты / Входящие | 日付なし | `日付なし` / `Inbox` |
+| All task filter | Все | すべて | `すべて` |
+| Day range | День | 日 | `日` |
+| Week range | Неделя | 週 | `週` |
+| Month range | Месяц | 月 | `月` |
+| Note | Заметка | メモ | `メモ` |
+| Check | Отметка | チェック | `チェック` |
+| Focus Blocks | Блоки фокуса | 集中ブロック | `集中ブロック` / `フローブロック` |
+| Block unit (short label) | Блок | ブロック | `ブロック` |
+| Minutes measurement | Минуты | 分 | `分単位` |
+| Minute unit (short label) | мин | 分 | `分` |
+| High priority | Высокий | 高 | `高` |
+| Medium priority | Средний | 中 | `中` |
+| Low priority | Низкий | 低 | `低` |
+| If there is room | Если останется время | 余裕があれば | `余裕があれば` |
+| Main Flow section | Flow | 流れ | `Flow` |
+| Saved Flow session | Flow | 集中記録 | `集中記録` |
+| Flow action | Фокус | 集中 | `集中` |
+| Flow count | Сессии Flow | 集中回数 | `集中回数` |
+| Flow Mode | Режим Flow | 集中モード | `Flowタイプ` / `集中モード` |
+| Break | Перерыв | 休憩 | `休憩` |
+| Long Break | Длинный перерыв | 長休憩 | `長休憩` |
+| Short | Короткий | 短め | `Sprint` |
+| Standard | Обычный | 標準 | `Focus` |
+| Deep | Глубокий | じっくり | `Deep` |
+| Auto | Авто | 自動 | `オート` |
+| Habit schedule: several times per week | Несколько раз в неделю | 週に数回 | `週回` |
+| Statistics | Статистика | 統計 | `統計` |
+| Time Distribution | Распределение времени | 時間配分 | `時間配分` |
+| By Task | По задачам | タスク別 | `タスク別` |
+| By Area | По направлениям | 分野別 | `方向別` |
+| Trend | Динамика | 推移 | `傾向` |
+| Focus Calendar | Календарь фокуса | 集中カレンダー | `Dots` |
+| Completion | Выполнение | 達成状況 | `達成状況` |
+| Completed-task statistics label | Задачи | 達成 | `達成` |
+| History | История | 履歴 | `履歴` |
+| Today's Timeline | Хронология за сегодня | 今日のタイムライン | `今日のタイムライン` |
+| Today | Сегодня | 今日 | `今日` |
+| Add Task | Добавить задачу | タスクを追加 | `タスクを追加` |
+| Completion time unavailable | Время завершения неизвестно | 完了時刻なし | `完了時刻なし` |
+| Statistics Task mode | Задачи | タスク | `タスク` |
+| Statistics focus mode | Фокус | 集中 | `集中` |
 
 `Flow` does not have one global Japanese replacement. Use `流れ` for the main
 workspace and its visual stream, `集中記録` for a persisted session or history
 record, `集中` for an action, and `集中回数` for a count. Translate the intended
 meaning in each UI context instead of performing a project-wide text
 replacement.
+
+Visible English uses `Area` / `Areas`, while visible Russian uses
+`Направление` / `Направления`. `Direction` remains the Swift model name,
+property name, persisted identifier, and stable machine-readable CSV column.
+The source keys `Sprint`, `Focus`, `Deep`, and `Dots` are likewise implementation
+details: the visible English labels are `Short`, `Standard`, `Deep`, and
+`Focus Calendar`.

@@ -16,6 +16,7 @@ struct FlowMiniPlayerView: View {
     }
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.locale) private var locale
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
 
     @Query(sort: \Direction.name, order: .forward) private var directions: [Direction]
@@ -317,7 +318,7 @@ struct FlowMiniPlayerView: View {
         case .focusing:
             String(localized: "集中")
         case .paused:
-            String(localized: "一時停止")
+            String(localized: "一時停止中のFlow")
         case .breakTime:
             activeFlowStore.timerState?.isLongBreak == true ? String(localized: "長休憩") : String(localized: "休憩")
         default:
@@ -522,11 +523,15 @@ struct FlowMiniPlayerView: View {
 
         switch todo.measurement {
         case .checkbox:
-            return todo.isCompleted ? String(localized: "完了") : String(localized: "未完了")
+            return todo.isCompleted ? String(localized: "完了済み") : String(localized: "未完了")
         case .focusBlocks:
             let planned = Double(todo.plannedAmount ?? 0)
             let remaining = max(0, planned - BlockUnit.blocks(forFocusedSeconds: displayedFocusSeconds))
-            let value = remaining == remaining.rounded() ? String(Int(remaining)) : String(format: "%.1f", remaining)
+            let value = remaining.formatted(
+                .number
+                    .precision(.fractionLength(0...1))
+                    .locale(locale)
+            )
             return String(localized: "残り \(value) Block")
         case .minutes:
             let remainingSeconds = max(0, (todo.plannedAmount ?? 0) * 60 - displayedFocusSeconds)
@@ -712,7 +717,7 @@ struct FlowMiniPlayerView: View {
         case .breakTime:
             String(localized: "Flowを開始")
         case .awaitingExtensionDecision:
-            String(localized: "完了")
+            String(localized: "Flowを終了")
         case .awaitingResult:
             String(localized: "保存")
         case .completed:
@@ -765,7 +770,7 @@ struct FlowMiniPlayerView: View {
                 activeFlowStore.requestBreakMemo(modelContext: modelContext)
             }
 
-            Button(String(localized: "終了")) {
+            Button(String(localized: "Flowを終了")) {
                 activeFlowStore.finish(modelContext: modelContext)
             }
         }
@@ -865,7 +870,7 @@ struct FlowMiniPlayerView: View {
 
     private var memoSubmitTitle: String {
         hasMemoText
-            ? String(localized: "送信")
+            ? String(localized: "メモを保存して続ける")
             : String(localized: "メモなしで送信")
     }
 
@@ -1248,7 +1253,7 @@ struct FlowTaskPickerView: View {
     private func taskSubtitle(_ todo: Todo) -> String {
         let directionName = todo.direction?.name ?? String(localized: "その他")
         let priority = todo.priority == .low && todo.isRoomIfPossible ? String(localized: "余裕があれば") : todo.priority.displayName
-        return "\(directionName) ・ \(priority)"
+        return String(localized: "\(directionName) · \(priority)")
     }
 
     private func sectionHeader(title: String, count: Int, tint: Color) -> some View {
@@ -1293,7 +1298,7 @@ private enum FlowTaskPickerTab: String, CaseIterable, Identifiable {
         case .tasks:
             String(localized: "タスク")
         case .habits:
-            String(localized: "習慣")
+            String(localized: "習慣一覧")
         case .directions:
             String(localized: "方向")
         }

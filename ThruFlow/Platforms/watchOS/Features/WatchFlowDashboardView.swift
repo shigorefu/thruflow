@@ -233,7 +233,7 @@ private struct WatchTimerView: View {
                     Text(selectedContextTitle)
                         .font(.caption.weight(.semibold))
                         .lineLimit(1)
-                    Text(selectedDirection?.name ?? String(localized: "方向"))
+                    Text(selectedDirection?.name ?? String(localized: "分野"))
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
@@ -312,6 +312,7 @@ private struct WatchTimerView: View {
                     activeFlowStore.seekBackward(modelContext: modelContext)
                 }
                 .disabled(!canSeek)
+                .accessibilityLabel(String(localized: "残り時間を5分短縮"))
 
                 Button(action: primaryAction) {
                     Image(systemName: primarySymbol)
@@ -322,11 +323,13 @@ private struct WatchTimerView: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(selectedDirection == nil)
+                .accessibilityLabel(primaryActionTitle)
 
                 timerButton("goforward.5", size: secondarySize) {
                     activeFlowStore.seekForward(modelContext: modelContext)
                 }
                 .disabled(!canSeek)
+                .accessibilityLabel(String(localized: "残り時間を5分延長"))
             }
 
             HStack(spacing: spacing) {
@@ -339,12 +342,18 @@ private struct WatchTimerView: View {
                     activeFlowStore.destroy(modelContext: modelContext)
                 }
                 .disabled(activeFlowStore.timerState == nil)
+                .accessibilityLabel(
+                    activeFlowStore.isBreakPhase
+                        ? String(localized: "休憩を削除")
+                        : String(localized: "Flowを破壊")
+                )
 
                 timerButton("stop.fill", size: secondarySize) {
                     activeFlowStore.stop(modelContext: modelContext)
                     showsMemo = activeFlowStore.phase == .awaitingResult
                 }
                 .disabled(activeFlowStore.timerState == nil)
+                .accessibilityLabel(String(localized: "Flowを停止して保存"))
 
                 timerButton(
                     "cup.and.saucer.fill",
@@ -356,6 +365,7 @@ private struct WatchTimerView: View {
                     showsMemo = activeFlowStore.isAwaitingBreakMemo
                 }
                 .disabled(!activeFlowStore.canRequestBreak)
+                .accessibilityLabel(String(localized: "休憩を開始"))
                 .sensoryFeedback(
                     .impact(weight: .light),
                     trigger: restButtonReactionSequence
@@ -405,6 +415,19 @@ private struct WatchTimerView: View {
         if state.phase == .paused { return "play.fill" }
         if activeFlowStore.isBreakPhase { return "forward.fill" }
         return "pause.fill"
+    }
+
+    private var primaryActionTitle: String {
+        guard let state = activeFlowStore.timerState else {
+            return String(localized: "Flowを開始")
+        }
+        if state.phase == .paused {
+            return String(localized: "再開")
+        }
+        if activeFlowStore.isBreakPhase {
+            return String(localized: "Flowを開始")
+        }
+        return String(localized: "一時停止")
     }
 
     private var canSeek: Bool {
@@ -496,7 +519,7 @@ private struct WatchFlowContextPicker: View {
                 }
             }
 
-            Section(String(localized: "方向")) {
+            Section(String(localized: "分野")) {
                 ForEach(activeDirections) { direction in
                     Button {
                         select(direction: direction, todo: nil)
@@ -589,7 +612,7 @@ private struct WatchFlowMemoView: View {
             Form {
                 TextField(String(localized: "何をしましたか"), text: $memo)
 
-                Button(String(localized: "送信")) {
+                Button(String(localized: "メモを保存して続ける")) {
                     submit(memo)
                 }
 
@@ -748,7 +771,7 @@ private struct WatchStatisticsView: View {
                         systemImage: "waveform.path"
                     )
                     statisticRow(
-                        String(localized: "完了"),
+                        String(localized: "完了タスク"),
                         value: "\(todayTodos.filter(\.isCompleted).count)/\(todayTodos.count)",
                         systemImage: "checkmark.circle"
                     )

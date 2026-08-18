@@ -4,21 +4,28 @@ The main macOS window opens at an initial size of `1280 × 800` points. This is 
 default only: normal macOS window restoration continues to respect a size chosen
 by the user.
 
+User-facing English uses `Area` / `Areas`; user-facing Russian uses
+`Направление` / `Направления`. This document uses `Direction` only when it
+refers to the Swift model, a property, persisted data, or the stable
+machine-readable CSV column.
+
 ## 分野
 
-The Direction screen manages only user-editable Directions:
+The Area screen (`分野`; internal model `Direction`) manages only user-editable
+Areas:
 
-- `いつでも`;
-- `習慣`;
-- `できたら`.
+- `いつでも` / Anytime / В любое время;
+- `習慣` / Habit / Привычка;
+- `できたら` / Optional / Если получится.
 
-The system Direction `その他` is not shown here and cannot be edited from this screen.
+The system Area `その他` / Other / Другое is not shown here and cannot be edited
+from this screen.
 
 On macOS, the `いつでも`, `習慣`, and `できたら` groups use an adaptive grid: wide
 windows show them side by side, while narrower windows wrap the remaining groups
 onto following rows in the same vertical scroll surface instead of clipping them.
 
-On macOS, editing a Habit Direction includes `習慣の状態`. An active Habit can
+On macOS, editing a Habit Area includes `習慣の状態`. An active Habit can
 use `今日は休む`, `期間を指定…`, or `再開するまで一時停止`; a paused Habit
 shows its effective period and a single `再開` action. While paused, the app
 does not generate scheduled Habit Tasks and excludes those days from completion
@@ -34,7 +41,7 @@ Calendar ranges:
 
 - `日`: detailed list for the selected date;
 - `週`: seven horizontally scrollable kanban columns;
-- `月`: month grid with completion counts, Direction dots, and incomplete Habit markers.
+- `月`: month grid with completion counts, Area dots, and incomplete Habit markers.
 
 Filters are `すべて`, `タスク`, and `習慣`. Habit instances stay in the same calendar as normal Tasks but remain visually separated.
 
@@ -80,9 +87,9 @@ and produces one system success haptic on iPhone. It may also play the bundled
 `task-complete.caf` sound when that optional asset is present. Re-rendering an
 already completed Task never repeats the feedback.
 
-Quick capture behaves like a messenger composer. The user can set measurement, Direction, priority, date, and multiple hashtags from compact controls. The default measurement control reads `種類`; leaving it untouched creates a Check Task. It is one stable animated control: its leading icon distinguishes Check, Block ring, and filled Minute circle; Block and Minute states expose an inline numeric field and unit before the menu chevron. The remaining metadata controls are text-only on both platforms. Direction uses its configured color, priority uses red/neutral/green for high/medium/low, and date always remains neutral. On iOS the metadata row scrolls horizontally instead of compressing or clipping selected values. The priority menu keeps the fixed order `高`, `中`, `低`, `余裕があれば`; the final option persists as low priority with its dedicated room-if-possible flag. Hashtags display with `#`, deduplicate case-insensitively, and preserve the first entered casing.
+Quick capture behaves like a messenger composer. The user can set measurement, Area, priority, date, and multiple hashtags from compact controls. The default measurement control reads `種類`; leaving it untouched creates a Check Task. It is one stable animated control: its leading icon distinguishes Check, Block ring, and filled Minute circle; Block and Minute states expose an inline numeric field and unit before the menu chevron. The remaining metadata controls are text-only on both platforms. Area uses its configured color, priority uses red/neutral/green for high/medium/low, and date always remains neutral. On iOS the metadata row scrolls horizontally instead of compressing or clipping selected values. The priority menu keeps the fixed order `高`, `中`, `低`, `余裕があれば`; the final option persists as low priority with its dedicated room-if-possible flag. Hashtags display with `#`, deduplicate case-insensitively, and preserve the first entered casing.
 
-The composer also recognizes `[]`, `[2b]`, `[30m]`, `@Direction`, `!high`, `/today`, and `#tag`. Completed tokens are removed from the persisted plain-text title, update the lower controls, and remain visible in a dedicated upper row inside the composer as semantic chips (`[]` becomes a `チェック` chip); clicking a chip removes its semantic value. English aliases always work, while Japanese and Russian aliases work in addition. Typing `@`, `!`, `/`, or `[` opens a contextual autocomplete surface above the composer. Each suggestion is clickable across its full row, and the current suggestion has an accent highlight. Mouse hover or `Up`/`Down` changes selection; `Return` applies it. An unknown Direction is never guessed: submitting it immediately opens the full Direction creation screen with the name prefilled; after cancellation the user can retry or explicitly create the Task under `その他`. Invalid tokens remain ordinary title text. A dismissible syntax legend appears above the composer only after typing begins, groups measurement shortcuts (`[ ]`, `[1b]`, `[25m]`) before metadata shortcuts (`@`, `!`, `/`, `#`), and can be restored from Settings. Autocomplete temporarily replaces the legend so the two surfaces never overlap. The primary submit action is an icon button in the composer's upper-right corner; unset Direction, priority, and date controls use neutral placeholder labels. Tasks and menu-bar quick creation use this same composer and interaction model.
+The composer also recognizes `[]`, `[2b]`, `[30m]`, `@Area`, `!high`, `/today`, and `#tag`. Completed tokens are removed from the persisted plain-text title, update the lower controls, and remain visible in a dedicated upper row inside the composer as semantic chips (`[]` becomes a `チェック` chip); clicking a chip removes its semantic value. English aliases always work, while Japanese and Russian aliases work in addition. Typing `@`, `!`, `/`, or `[` opens a contextual autocomplete surface above the composer. Each suggestion is clickable across its full row, and the current suggestion has an accent highlight. Mouse hover or `Up`/`Down` changes selection; `Return` applies it. An unknown Area is never guessed: submitting it immediately opens the full Area creation screen with the name prefilled; after cancellation the user can retry or explicitly create the Task under `その他`. Invalid tokens remain ordinary title text. A dismissible syntax legend appears above the composer only after typing begins, groups measurement shortcuts (`[ ]`, `[1b]`, `[25m]`) before metadata shortcuts (`@`, `!`, `/`, `#`), and can be restored from Settings. Autocomplete temporarily replaces the legend so the two surfaces never overlap. The primary submit action is an icon button in the composer's upper-right corner; unset Area, priority, and date controls use neutral placeholder labels. Tasks and menu-bar quick creation use this same composer and interaction model.
 
 Inside the Flow task picker, quick creation opens as a separate compact trailing popover. It shows only the messenger composer, without the syntax legend. The add action first closes the Task picker and then presents the composer from the player itself. Avoiding a nested popover keeps controls and submenus interactive in the macOS menu-bar window instead of treating them as outside clicks.
 
@@ -106,13 +113,13 @@ The player layout is:
 
 In the narrow vertical dashboard layout, the player comes first, followed by the Flow stream/timeline, Tasks/Habits, and Statistics. The narrow player and Flow stage use stable heights so resizing does not reorder controls or cause layout jumps.
 
-- left Task card with Direction icon, Task title, and smaller Direction name;
+- left Task card with Area icon, Task title, and smaller Area name;
 - Task card opens a picker with `タスク`, `習慣`, and `分野` tabs;
 - `タスク` and `習慣` use separate lists of today's items;
-- `分野` uses an emoji-and-name grid with `その他` first for Direction-only starts;
+- `分野` uses an emoji-and-name grid with `その他` first for Area-only starts;
 - on iPhone and iPad the same three context tabs use touch-native lists, open on
   the currently selected context type, and keep `その他` first;
-- Direction icon color follows the selected Task Direction;
+- Area icon color follows the selected Task Area;
 - compact `集中モード` selector opens a separate picker for `短め`, `標準`, and `じっくり`;
 - selecting another `集中モード` during focus or paused focus preserves elapsed time, applies that preset as the new total plan, and moves only the planned end. A shorter preset may immediately show overtime; crossing another preset threshold never renames the selected mode;
 - transport seek controls subtract or add exactly five minutes from remaining focus time across macOS, iOS, menu bar, and Live Activity. Subtract stops at one minute remaining, both actions preserve elapsed time and mode, and both are disabled during rest;
@@ -129,22 +136,26 @@ In the narrow vertical dashboard layout, the player comes first, followed by the
 
 On iPhone and iPad, today's compact Flow timeline keeps its 14-point visual rail
 inside a 44-point touch target. Tapping a Flow segment opens a compact popover
-above that exact position with its Task, Direction, interval, focused duration,
+above that exact position with its Task, Area, interval, focused duration,
 and mode. A running segment is marked `実行中` and remains read-only. Completed
 segments and rests can continue from the popover to the same canonical
 detail/editor used by `履歴`; an active rest remains non-interactive. The History
 lookup runs only when that action is selected, so the live timeline does not add
 a per-tick History projection.
 
-The `集中モード` labels are:
+The `集中モード` / Flow Mode labels are:
 
-- `短め 12/3`;
-- `標準 25/5`;
-- `じっくり 50/10`.
+- `短め 12/3` / Short / Короткий;
+- `標準 25/5` / Standard / Обычный;
+- `じっくり 50/10` / Deep / Глубокий.
 
-The internal adaptive mode is labeled `自動` whenever it appears in saved data.
+The internal adaptive mode is labeled `自動` / Auto / Авто whenever it appears
+in saved data.
 
-Flow can be started with a selected Task, with only a Direction, or with neither. Direction-only work does not create an implicit Todo. If no Direction is chosen, the resolved Direction is `その他`. Version 1.0 never creates a Task implicitly from Flow.
+Flow can be started with a selected Task, with only an Area, or with neither.
+Area-only work does not create an implicit Todo. If no Area is chosen, the
+resolved internal `Direction` is `その他`. Version 1.0 never creates a Task
+implicitly from Flow.
 
 At the planned focus end, Flow does not auto-switch. The timer continues. The user chooses:
 
@@ -169,7 +180,7 @@ is persisted or resets the stream phase. Reduce Motion suppresses the transient
 movement while keeping the static regular/long-rest appearance and accessible
 rest label.
 
-Stopping focus or starting break opens the same square memo panel in the dashboard and macOS menu bar player. It shows `お疲れ様です。メモを追加しますか？`, a large editor, `キャンセル` on the left, and one checkmark submit button on the right. The submit label is `メモなしで送信` for an empty editor and `送信` when text exists. Focus keeps counting while a break memo is open. Submitting text writes it to `FlowSession.result` and mirrors it to `Todo.notes` when linked; submitting an empty editor continues without clearing an existing Task memo. Cancelling returns to the state before the prompt: a pending break returns to focus, while a stop prompt restores the previous running or paused Flow and removes its provisional progress. Stopping or skipping an existing rest never asks for memo again.
+Stopping focus or starting break opens the same square note panel in the dashboard and macOS menu bar player. It shows `お疲れ様です。メモを追加しますか？`, a large editor, `キャンセル` on the left, and one checkmark submit button on the right. The submit label is `メモなしで送信` for an empty editor and `送信` when text exists. Focus keeps counting while a break note is open. Submitting text writes it to `FlowSession.result` and mirrors it to `Todo.notes` when linked; submitting an empty editor continues without clearing an existing Task note. Cancelling returns to the state before the prompt: a pending break returns to focus, while a stop prompt restores the previous running or paused Flow and removes its provisional progress. Stopping or skipping an existing rest never asks for a note again.
 
 On iPhone, successfully submitting the stop memo or starting the requested rest
 produces one system success haptic for the completed Flow. Cancelling the memo,
@@ -186,9 +197,9 @@ The dashboard timeline uses a neutral dark rail for time without Flow. Every ser
 
 Hovering a rest shows its type, interval, and duration above the timeline. Clicking a completed rest opens a duration editor anchored to that rest. Start time is fixed. If the new end overlaps the next Flow, that Flow and all later Flow/rest records in the same series move forward by the overlap. Free space absorbs an extension without shifting, shortening does not pull history backward, and unrelated series never move.
 
-Below the Flow stage are today's `タスク` and `習慣` columns. `できたら` is omitted when empty. Rows use the same square Check and circular Block/Minute progress controls as the Tasks screen. Check can be completed manually; Block and Minute rings are read-only because recorded Flow owns their progress. Rows can be opened for editing. The fixed-height compact `統計` carousel provides Task/Direction focused-time distribution, a seven-day Flow trend with previous-day comparisons, and today's completion status.
+Below the Flow stage are today's `タスク` and `習慣` columns. `できたら` is omitted when empty. Rows use the same square Check and circular Block/Minute progress controls as the Tasks screen. Check can be completed manually; Block and Minute rings are read-only because recorded Flow owns their progress. Rows can be opened for editing. The fixed-height compact `統計` carousel provides Task/Area focused-time distribution, a seven-day Flow trend with previous-day comparisons, and today's completion status.
 
-The Dashboard Task header `+` opens the shared messenger-style composer in a separate popover. The Flow Task picker's `タスク` tab also ends with an add row that opens the same popover; a Task created there is immediately selected for Flow. Direction, measurement, and priority remain editable, while the date is fixed to `今日`. The composer has an explicit close button that discards the unfinished action. Habit has no manual add action.
+The Dashboard Task header `+` opens the shared messenger-style composer in a separate popover. The Flow Task picker's `タスク` tab also ends with an add row that opens the same popover; a Task created there is immediately selected for Flow. Area, measurement, and priority remain editable, while the date is fixed to `今日`. The composer has an explicit close button that discards the unfinished action. Habit has no manual add action.
 
 ## Onboarding And Voluntary Support
 
@@ -210,7 +221,7 @@ the centered card while all interaction below the overlay remains disabled.
 There are no spotlights, scrim cutouts, highlighted cards, target anchors, or
 automatic target scrolling. The final card summarizes the complete loop as
 `分野 → タスク → 流れ → 履歴・統計 → 次の一歩`. The journey does not create a
-sample Direction, Task, Flow, or history record, and `--onboarding-preview`
+sample Area, Task, Flow, or history record, and `--onboarding-preview`
 always opens it against the existing `--uitesting` in-memory store. Skip and
 Finish both return to Flow and complete first-run onboarding; preview completion
 is intentionally not persisted.
@@ -343,7 +354,7 @@ filters as macOS in a touch-native vertical card workspace. Full drag-based
 calendar/history editing remains deferred.
 
 The iPhone app supports starting and controlling Flow, selecting today's Task or
-Habit, completing Check Tasks, creating and editing Tasks and Directions, and
+Habit, completing Check Tasks, creating and editing Tasks and Areas, and
 changing the basic shared settings. Private CloudKit synchronization carries the
 same SwiftData records between devices signed into one Apple ID. Japanese is the
 default language for a fresh install.
@@ -356,7 +367,7 @@ the display; the system vertical page gesture or Digital Crown moves between
 them. Task and mode pickers continue to use system `NavigationLink`
 destinations.
 
-The initial timer page keeps Task/Direction context selection and the `集中モード`
+The initial timer page keeps Task/Area context selection and the `集中モード`
 selector above the player. The focus/rest ring sits on the left; `-5`,
 Play/Pause, `+5`, destroy, stop, and break controls sit on the right, with the
 primary Play/Pause action visually larger than secondary actions. Everything
@@ -369,8 +380,8 @@ intentionally omits the dashboard timeline and stops rendering while off-screen.
 
 Tasks expose the same Check, Block-ring, and Minute-progress semantics as the
 other platforms. A system `+` button opens a native form made only from pickers
-and steppers: Direction, Task type and target, priority, and date. It creates an
-untitled Task whose visible placeholder comes from its Direction, so Watch never
+and steppers: Area, Task type and target, priority, and date. It creates an
+untitled Task whose visible placeholder comes from its Area, so Watch never
 opens a keyboard. Statistics presents completion, focused time, Blocks, and
 `集中回数`.
 
@@ -397,14 +408,14 @@ opening or foregrounding either app clears it.
 Starting an iPhone Flow creates one system Live Activity. It remains visible on
 the Lock Screen and supported Dynamic Island devices until the Flow or its
 connected break ends. Focus presentation includes Task title and emoji,
-optional Direction, remaining time, and timer progress. Break presentation
-replaces that identity with `☕️ 休憩` and hides the Direction. The clock is the
+optional Area, remaining time, and timer progress. Break presentation
+replaces that identity with `☕️ 休憩` and hides the Area. The clock is the
 only content in the trailing column; mode and phase are not repeated below it.
 
 Compact Island uses the Task emoji on the leading side and remaining time on
 the trailing side; during a break it uses the coffee emoji instead. Minimal
 Island uses a circular progress indicator. Expanded Island shows Task and
-Direction context, progress, and three
+Area context, progress, and three
 transport actions in the same order as the in-app player: subtract five minutes,
 pause/resume, and add five minutes. Seek is disabled during a break. Lock Screen
 content shows the same session identity, timer, and progress without
@@ -431,7 +442,7 @@ The iPhone Home Screen and macOS desktop expose the same three read-only WidgetK
 - `今日のタスク` in Small, Medium, and Large shows the canonical Today list in
   priority order, completion count, and the same Check, Block-ring, or
   minute-fill progress semantics as the application. Tapping opens Tasks.
-- `集中カレンダー` uses a GitHub-style contribution grid: Small shows the latest 30
+- `集中カレンダー` / Focus Calendar / Календарь фокуса uses a GitHub-style contribution grid: Small shows the latest 30
   days in `5 × 6`, Medium 60 days in `12 × 5`, and Large 90 days in `9 × 10`.
   Cells expand to the full widget content area without empty alignment cells,
   retain Direction-mixed color, and use four relative intensity levels.
@@ -446,9 +457,9 @@ snapshots.
 ## Statistics
 
 On macOS, the toolbar contains a direct icon-only `CSVを書き出す` Share action,
-a Direction filter, and the shared expanding Search control. The Share action
+an Area filter, and the shared expanding Search control. The Share action
 opens a dedicated popover for content (`すべて | 集中記録 | タスク`),
-two inclusive `開始 / 終了日` date fields, Direction, and text filter. The persistent
+two inclusive `開始 / 終了日` date fields, Area, and text filter. The persistent
 calendar centers the visible `週 | 月 | 年` segmented control and places an
 icon-only `期間を指定` action at the trailing edge. This button opens a compact
 system popover with inclusive start and end dates. Applying it deselects the presets and makes
@@ -467,7 +478,7 @@ The main column is a vertical set of cards:
 - focused-time distribution with `タスク別 | 分野別`, showing the largest
   slices and grouping the remainder as `その他`; clicking a sector keeps it
   bright, dims the others, and isolates that category in the center and legend;
-- a `集中カレンダー` with its own `集中 | タスク` switch for the selected week,
+- a `集中カレンダー` / Focus Calendar with its own `集中 | タスク` switch for the selected week,
   month, or year.
 
 Trend and the focus calendar switch independently without a projection reload.
@@ -511,25 +522,25 @@ CSV export is local and runs only when its popover is open. Combined export uses
 stable machine-readable columns for date, Task, Direction, hashtags, focused
 seconds/minutes, Blocks, Flow count, and completed Tasks; Flow-only and Task-only
 exports omit the unrelated metric columns and empty rows.
-The toolbar Direction filter reuses the same
+The toolbar Area filter reuses the same
 `point.3.connected.trianglepath.dotted` symbol as the main navigation.
 
 The iPhone Statistics view reuses the same bounded Week/Month/Year or exact
-custom-range projection, comparisons, distributions, search, Direction filter,
+custom-range projection, comparisons, distributions, search, Area filter,
 and CSV rows. The cards are stacked vertically. Period presets stay centered
 above previous/Today/next navigation; tapping the period title opens a graphical
 date sheet, and the calendar-clock action opens the two-field custom range
 sheet. Share opens a native export sheet with content, inclusive start/end,
-Direction, and text filters. Pie selection has the same dim-and-isolate
+Area, and text filters. Pie selection has the same dim-and-isolate
 behavior as macOS, while the Year `集中カレンダー` uses one compact full-width canvas to avoid a
 horizontal scroller. Tapping a Week, Month, or custom-range focus-calendar cell opens a touch-sized daily detail sheet
 with focused duration, `集中回数`, and completed Tasks; its action opens
 `履歴`. The Year focus calendar has no tap target. Search is an icon-only trailing toolbar
 action that expands only on demand. Screen-specific context actions use the
-leading side: Tasks and Directions place their `その他` menu there, History
+leading side: Tasks and Areas place their `その他` menu there, History
 places its `集中記録 / タスク / 分野` mode there, and Statistics groups Share with its
-Direction filter there. Creation actions remain trailing beside Search. Every iOS
-navigation destination uses a centered inline title. The `その他` Direction may
+Area filter there. Creation actions remain trailing beside Search. Every iOS
+navigation destination uses a centered inline title. The `その他` Area may
 appear because it represents real captured work.
 
 ## History Calendar
@@ -634,7 +645,7 @@ same Settings scene. The `データ` section on macOS, iPhone, and iPad offers
 confirmation explains that all FlowSession, FlowSegment, and FlowBreak records
 will be removed from every device through private CloudKit and cannot be
 restored. The operation runs in a model actor so Settings remains responsive.
-Tasks, Directions, Task memos, and manually checked state remain; all
+Tasks, Areas, Task notes, and manually checked state remain; all
 Flow-derived Task and Direction progress is reset.
 
 The shared `フィードバック` section appears before destructive data controls. It
