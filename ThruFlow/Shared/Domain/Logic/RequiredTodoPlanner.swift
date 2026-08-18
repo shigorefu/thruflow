@@ -123,6 +123,30 @@ struct RequiredTodoPlanner {
         )
     }
 
+    func matchesGeneratedTemplate(_ todo: Todo, for direction: Direction) -> Bool {
+        let hasNoNotes = todo.notes?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .isEmpty ?? true
+
+        guard let scheduledDate = todo.scheduledDate,
+              direction.type == .habit,
+              !direction.isArchived,
+              direction.goalSchedule != .weeklyCount,
+              shouldAppearToday(direction, on: scheduledDate),
+              let goalUnit = direction.goalUnit,
+              todo.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              hasNoNotes,
+              todo.hashtags.isEmpty,
+              todo.priority == .high,
+              !todo.isRoomIfPossible else {
+            return false
+        }
+
+        let target = max(1, direction.goalTarget ?? direction.weeklyTargetCount ?? 1)
+        return todo.measurement == measurement(for: goalUnit) &&
+            todo.plannedAmount == plannedAmount(for: goalUnit, target: target)
+    }
+
     func weeklyRescheduleOptions(
         for todo: Todo,
         in todos: [Todo],

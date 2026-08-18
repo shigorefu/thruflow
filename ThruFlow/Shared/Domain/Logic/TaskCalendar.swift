@@ -45,13 +45,15 @@ enum TaskCalendarFilter: String, CaseIterable, Identifiable {
     }
 
     func includes(_ todo: Todo) -> Bool {
+        guard let direction = todo.direction else { return false }
+
         switch self {
         case .all:
-            true
+            return true
         case .tasks:
-            todo.direction?.type != .habit
+            return direction.type != .habit
         case .habits:
-            todo.direction?.type == .habit
+            return direction.type == .habit
         }
     }
 }
