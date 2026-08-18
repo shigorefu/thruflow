@@ -34,7 +34,7 @@ struct FlowTimerWidgetSnapshot: Codable, Equatable {
         case .breakTime:
             String(localized: "休憩")
         case .paused:
-            String(localized: "一時停止")
+            String(localized: "一時停止中のFlow")
         }
     }
 }

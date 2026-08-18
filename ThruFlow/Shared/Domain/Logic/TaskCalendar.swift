@@ -40,7 +40,7 @@ enum TaskCalendarFilter: String, CaseIterable, Identifiable {
         case .tasks:
             String(localized: "タスク")
         case .habits:
-            String(localized: "習慣")
+            String(localized: "習慣一覧")
         }
     }
 

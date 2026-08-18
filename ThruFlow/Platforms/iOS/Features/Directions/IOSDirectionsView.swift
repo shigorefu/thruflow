@@ -57,7 +57,7 @@ struct IOSDirectionsView: View {
                                     direction.archive()
                                     try? modelContext.save()
                                 } label: {
-                                    Label(String(localized: "アーカイブ"), systemImage: "archivebox")
+                                    Label(String(localized: "アーカイブする"), systemImage: "archivebox")
                                 }
                             }
                         }
@@ -87,7 +87,7 @@ struct IOSDirectionsView: View {
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Menu {
-                    Toggle(String(localized: "アーカイブ"), isOn: $showingArchived)
+                    Toggle(String(localized: "アーカイブ済み"), isOn: $showingArchived)
                     Button(String(localized: "グループを並び替え"), systemImage: "rectangle.3.group") {
                         showsGroupOrder = true
                     }
@@ -173,9 +173,20 @@ struct IOSDirectionsView: View {
 
     private func goalText(_ direction: Direction) -> String {
         let target = direction.goalTarget ?? 1
-        let unit = direction.goalUnit?.displayName ?? ""
         let schedule = direction.goalSchedule?.displayName ?? ""
-        return "\(target) \(unit) · \(schedule)"
+
+        switch direction.goalUnit {
+        case .occurrences:
+            return String(localized: "目標回数：\(target)回・\(schedule)")
+        case .focusBlocks:
+            return String(localized: "集中ブロック数：\(target)・\(schedule)")
+        case .minutes:
+            return String(localized: "目標時間：\(target)分・\(schedule)")
+        case .hours:
+            return String(localized: "目標時間：\(target)時間・\(schedule)")
+        case nil:
+            return schedule
+        }
     }
 }
 

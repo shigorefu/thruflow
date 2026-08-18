@@ -1000,7 +1000,7 @@ private struct HistoryTimedItemView: View {
         }
         .buttonStyle(.plain)
         .help("\(item.title)\n\(timeText)\n\(item.subtitle)")
-        .accessibilityLabel("\(item.title)、\(timeText)、\(item.subtitle)")
+        .accessibilityLabel(accessibilityText)
     }
 
     private var background: Color {
@@ -1016,6 +1016,11 @@ private struct HistoryTimedItemView: View {
         let start = previewStartedAt ?? item.startedAt
         let end = start.addingTimeInterval(TimeInterval(item.durationSeconds))
         return "\(start.formatted(date: .omitted, time: .shortened))–\(end.formatted(date: .omitted, time: .shortened))"
+    }
+
+    private var accessibilityText: String {
+        let titleAndTime = String(localized: "\(item.title), \(timeText)")
+        return String(localized: "\(titleAndTime), \(item.subtitle)")
     }
 }
 

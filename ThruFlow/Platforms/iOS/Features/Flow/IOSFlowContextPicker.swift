@@ -91,7 +91,7 @@ struct IOSFlowContextPicker: View {
         if projection.habitTodos.isEmpty {
             emptyRow(String(localized: "今日の習慣はありません"), systemImage: "repeat")
         } else {
-            Section(String(localized: "習慣")) {
+            Section(String(localized: "習慣一覧")) {
                 ForEach(projection.habitTodos) { todo in
                     taskRow(todo)
                 }
@@ -206,7 +206,7 @@ struct IOSFlowContextPicker: View {
         let priority = todo.priority == .low && todo.isRoomIfPossible
             ? String(localized: "余裕があれば")
             : todo.priority.displayName
-        return "\(directionName) ・ \(priority)"
+        return String(localized: "\(directionName) · \(priority)")
     }
 }
 
@@ -222,7 +222,7 @@ private enum IOSFlowContextPickerTab: String, CaseIterable, Identifiable {
         case .tasks:
             String(localized: "タスク")
         case .habits:
-            String(localized: "習慣")
+            String(localized: "習慣一覧")
         case .directions:
             String(localized: "方向")
         }

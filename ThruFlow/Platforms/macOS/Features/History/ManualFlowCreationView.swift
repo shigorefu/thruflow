@@ -83,7 +83,7 @@ struct ManualFlowCreationView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    field(String(localized: "タスク")) {
+                    field(String(localized: "対象タスク")) {
                         if let selectedTodo, lockedTodoID != nil {
                             Label {
                                 Text(TodoDisplay.title(for: selectedTodo))
@@ -93,7 +93,7 @@ struct ManualFlowCreationView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.vertical, 6)
                         } else {
-                            Picker(String(localized: "タスク"), selection: $selectedTodoID) {
+                            Picker(String(localized: "対象タスク"), selection: $selectedTodoID) {
                                 Text(String(localized: "タスクなし")).tag(UUID?.none)
                                 ForEach(availableTodos) { todo in
                                     Text("\(todo.direction?.symbolName ?? "📥") \(TodoDisplay.title(for: todo))")
@@ -104,8 +104,8 @@ struct ManualFlowCreationView: View {
                         }
                     }
 
-                    field(String(localized: "方向")) {
-                        Picker(String(localized: "方向"), selection: directionSelection) {
+                    field(String(localized: "分野")) {
+                        Picker(String(localized: "分野"), selection: directionSelection) {
                             ForEach(availableDirections) { direction in
                                 Text("\(direction.symbolName) \(direction.name)")
                                     .tag(Optional(direction.id))

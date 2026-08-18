@@ -833,7 +833,7 @@ private struct IOSHistoryAggregateFilterMenu: View {
     var body: some View {
         Menu {
             filterToggle(neutralLabel, type: .neutral)
-            filterToggle(String(localized: "習慣"), type: .habit)
+            filterToggle(String(localized: "習慣一覧"), type: .habit)
             filterToggle(String(localized: "ナイス"), type: .nice)
         } label: {
             Image(
@@ -1232,8 +1232,8 @@ struct IOSHistoryItemDetail: View {
     @ViewBuilder
     private func flowEditor(session: FlowSession) -> some View {
         Form {
-            Section(String(localized: "タスク")) {
-                Picker(String(localized: "タスク"), selection: $selectedTodoID) {
+            Section(String(localized: "対象タスク")) {
+                Picker(String(localized: "対象タスク"), selection: $selectedTodoID) {
                     Text(String(localized: "タスクなし")).tag(UUID?.none)
                     ForEach(availableTodos) { todo in
                         Text("\(todo.direction?.symbolName ?? "📥") \(TodoDisplay.title(for: todo))")
@@ -1249,8 +1249,8 @@ struct IOSHistoryItemDetail: View {
                 .disabled(selectedDirection == nil)
             }
 
-            Section(String(localized: "方向")) {
-                Picker(String(localized: "方向"), selection: $selectedDirectionID) {
+            Section(String(localized: "分野")) {
+                Picker(String(localized: "分野"), selection: $selectedDirectionID) {
                     ForEach(availableDirections) { direction in
                         Text("\(direction.symbolName) \(direction.name)")
                             .tag(Optional(direction.id))

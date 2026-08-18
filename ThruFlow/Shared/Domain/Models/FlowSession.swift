@@ -134,7 +134,7 @@ enum FlowPhase: String, CaseIterable, Codable, Identifiable {
         case .focusing:
             String(localized: "集中")
         case .paused:
-            String(localized: "一時停止")
+            String(localized: "一時停止中のFlow")
         case .breakTime:
             String(localized: "休憩")
         case .awaitingExtensionDecision:
@@ -142,7 +142,7 @@ enum FlowPhase: String, CaseIterable, Codable, Identifiable {
         case .awaitingResult:
             String(localized: "結果を入力")
         case .completed:
-            String(localized: "完了")
+            String(localized: "集中完了")
         }
     }
 }

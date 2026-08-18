@@ -132,7 +132,6 @@ struct LocalisationTests {
             "Deep": "じっくり",
             "Blocks": "ブロック",
             "Dots": "集中カレンダー",
-            "Flow Blocks": "集中時間",
             "Flow Dots": "集中カレンダー",
             "Elastic": "自動調整",
             "Inbox": "日付なし",
@@ -181,6 +180,51 @@ struct LocalisationTests {
             violations.isEmpty,
             "Unnatural Japanese product copy: \(violations.joined(separator: ", "))"
         )
+    }
+
+    @Test func englishAndRussianCopyUsesContextualProductLanguage() throws {
+        let data = try Data(contentsOf: catalogURL)
+        let root = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let strings = try #require(root["strings"] as? [String: Any])
+        let expectedTerms: [String: (english: String, russian: String)] = [
+            "方向": ("Areas", "Направления"),
+            "分野": ("Area", "Направление"),
+            "タスク": ("Tasks", "Задачи"),
+            "対象タスク": ("Task", "Задача"),
+            "時間": ("Time", "Время"),
+            "時間単位": ("Hours", "Часы"),
+            "完了": ("Done", "Готово"),
+            "完了済み": ("Completed", "Выполнена"),
+            "終了": ("End", "Окончание"),
+            "開始": ("Start", "Начало"),
+            "日": ("Day", "День"),
+            "日曜短縮": ("Sun", "Вс"),
+            "月": ("Month", "Месяц"),
+            "月曜短縮": ("Mon", "Пн"),
+            "通常": ("Anytime", "В любое время"),
+            "ナイス": ("Optional", "Если получится"),
+            "Sprint": ("Short", "Короткий"),
+            "Focus": ("Standard", "Обычный"),
+            "Deep": ("Deep", "Глубокий"),
+            "Dots": ("Focus Calendar", "Календарь фокуса"),
+            "Flow Dots": ("Focus Calendar", "Календарь фокуса"),
+            "フローブロック": ("Focus Blocks", "Блоки фокуса"),
+            "集中ブロック": ("Focus Blocks", "Блоки фокуса"),
+        ]
+
+        for (key, expected) in expectedTerms {
+            let entry = try #require(strings[key] as? [String: Any])
+            let localisations = try #require(entry["localizations"] as? [String: Any])
+
+            #expect(
+                localisedValue(language: "en", from: localisations) == expected.english,
+                "Unexpected English product term for \(key)"
+            )
+            #expect(
+                localisedValue(language: "ru", from: localisations) == expected.russian,
+                "Unexpected Russian product term for \(key)"
+            )
+        }
     }
 
     private var repositoryRoot: URL {

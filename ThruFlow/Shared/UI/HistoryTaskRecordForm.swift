@@ -340,11 +340,11 @@ struct HistoryTaskRecordForm: View {
 
     @ViewBuilder
     private var newTaskSections: some View {
-        Section(String(localized: "タスク")) {
+        Section(String(localized: "対象タスク")) {
             TextField(String(localized: "タスク名"), text: $title, axis: .vertical)
                 .lineLimit(1...3)
 
-            Picker(String(localized: "方向"), selection: $selectedDirectionID) {
+            Picker(String(localized: "分野"), selection: $selectedDirectionID) {
                 ForEach(availableDirections) { direction in
                     Text("\(direction.symbolName) \(direction.name)")
                         .tag(Optional(direction.id))
@@ -455,14 +455,14 @@ struct HistoryTaskRecordForm: View {
                 return String(localized: "タスクなし")
             }
             guard let direction = availableDirections.first(where: { $0.id == directionID }) else {
-                return String(localized: "方向")
+                return String(localized: "分野")
             }
             return "(\(direction.name))"
         case .newTask:
             let normalized = title.trimmingCharacters(in: .whitespacesAndNewlines)
             return normalized.isEmpty ? String(localized: "新しいタスク") : normalized
         case .todo:
-            return String(localized: "タスク")
+            return String(localized: "対象タスク")
         case nil:
             return context.emptyTargetTitle
         }
@@ -721,9 +721,9 @@ enum HistoryRecordContext: Equatable {
     var targetSectionTitle: String {
         switch self {
         case .flow, .task:
-            String(localized: "タスク")
+            String(localized: "対象タスク")
         case .direction:
-            String(localized: "方向")
+            String(localized: "分野")
         }
     }
 
@@ -776,7 +776,7 @@ private enum HistoryRecordPickerTab: String, CaseIterable, Identifiable {
         case .tasks:
             String(localized: "タスク")
         case .habits:
-            String(localized: "習慣")
+            String(localized: "習慣一覧")
         case .directions:
             String(localized: "方向")
         }
