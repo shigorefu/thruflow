@@ -42,6 +42,7 @@ targets watchOS 10.0 to match the iOS 17 generation.
 - `RequiredTodoPlanner` decides whether a scheduled Habit Task is eligible.
 - `HabitTodoMaterializer` is the only macOS/iOS persistence entry point for automatic Habit generation. Its full path fetches fresh SwiftData state, normalizes dates, runs `HabitTodoReconciler`, and invokes the planner. Tasks surfaces run that path after their initial frame. Date navigation uses a cancellable, debounced lightweight path with the current Todo snapshot; it skips Flow-history reconciliation and persists only when a Habit occurrence must actually be created or moved.
 - `HabitTodoReconciler` repairs duplicate active Habit occurrences for the same Direction/day, preserves related Flow history and progress, and soft-deletes redundant rows.
+- `OrphanTodoReconciler` runs with the existing persistence synchronization cycle, restores a missing Todo-to-Direction relationship only from unambiguous Flow history or a matching fixed-schedule Habit template, and leaves ambiguous records hidden rather than relabeling them as `その他`.
 - `FlowProgressCalculator` defines focused-time conversion for isolated calculations.
 - `FlowProgressReconciler` rebuilds measured Todo progress/completion and Direction focus totals from credited Flow history after every history mutation and once at app launch.
 - `FlowSession.result` stores the memo for one Flow; linked writes mirror to

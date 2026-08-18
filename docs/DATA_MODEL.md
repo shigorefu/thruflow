@@ -57,6 +57,13 @@ while Direction-only Flow remains fully descriptive without a Todo.
 
 An automatically generated Habit Todo is uniquely identified at the domain level by its Direction UUID and local calendar day. SwiftData does not provide a compound uniqueness constraint for this relationship/date projection, so `HabitTodoMaterializer` enforces the invariant before generation on both platforms. A duplicate reconciliation retains one active Todo, reconnects its FlowSession and FlowSegment relationships, merges progress and user-authored fields, and soft-deletes the redundant rows. This repair is safe to repeat after CloudKit imports.
 
+Because CloudKit-compatible relationships are optional at the persistence
+boundary, an imported Todo can temporarily or historically lose its Direction
+relationship. `OrphanTodoReconciler` restores an unambiguous Direction from
+linked Flow history or from one matching fixed-schedule Habit template. An
+unresolved Todo is retained in storage but excluded from Task projections; it
+must never be presented as the explicit system `その他` Direction.
+
 `hashtagsRawValue` is an optional JSON array of display values without `#`.
 Normalization trims leading `#`, removes empty values, and deduplicates using a
 locale-stable case-insensitive key while preserving the first spelling. The
