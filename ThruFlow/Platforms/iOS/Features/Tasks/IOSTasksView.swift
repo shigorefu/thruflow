@@ -78,7 +78,11 @@ struct IOSTasksView: View {
                     }
             }
         }
-        .background(Color.primary.opacity(0.025).ignoresSafeArea())
+        .background {
+            Rectangle()
+                .fill(.background)
+                .ignoresSafeArea()
+        }
         .iosCenteredNavigationTitle(String(localized: "タスク"))
         .iosToolbarSearch(
             text: $searchText,
@@ -114,7 +118,6 @@ struct IOSTasksView: View {
                     onClose: dismissComposer
                 )
                     .transition(.move(edge: .bottom).combined(with: .opacity))
-                    .background(Color.primary.opacity(0.025).ignoresSafeArea())
             }
         }
         .overlay(alignment: .bottomTrailing) {
