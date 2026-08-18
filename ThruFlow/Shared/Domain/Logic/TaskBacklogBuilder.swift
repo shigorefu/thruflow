@@ -34,10 +34,11 @@ struct TaskBacklogBuilder {
     }
 
     private func isActionableTask(_ todo: Todo) -> Bool {
-        !todo.isArchived &&
+        guard let direction = todo.direction else { return false }
+        return !todo.isArchived &&
         !todo.isDeleted &&
         todo.status == .active &&
-        todo.direction?.type != .habit
+        direction.type != .habit
     }
 
     private func backlogOrder(_ lhs: Todo, _ rhs: Todo) -> Bool {

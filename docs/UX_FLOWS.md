@@ -105,6 +105,10 @@ Weekly-count habits create one pending task at a time. After completion, the nex
 
 Daily and selected-weekday Habit instances are generated for visible current/future dates. Weekly-count habits are not expanded across future calendar columns.
 
+A Todo whose Direction relationship has not resolved is not a normal
+`その他` Task. It stays out of Today, calendar, widget, and backlog projections
+until the persistence reconciler can restore one unambiguous relationship.
+
 ## Flow Player
 
 `流れ` is the first/default navigation item. In a wide window, its dashboard uses one aligned two-column grid: the animated daily stream and Elastic series timeline sit above today's Tasks on the left, while the equally tall square player sits above compact Statistics on the right. Both rows reuse the same explicit column widths, so the player and Statistics always align and have the same width while the window is resized. All lower Task, Habit, optional `できたら`, and Statistics panels share one height and stretch to the bottom of the viewport; short windows retain a minimum lower-row height and scroll vertically. The left side occupies roughly three quarters of the content. Other app sections do not repeat the player as a top header; the macOS menu bar opens this same square player.

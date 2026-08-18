@@ -12,7 +12,7 @@ import SwiftData
 @MainActor
 final class ActiveFlowStore: ObservableObject {
     private static let forgottenTimerReminderSeconds = 60 * 60
-    private static let defaultDirectionReconciliationInterval: TimeInterval = 30
+    private static let persistenceReconciliationInterval: TimeInterval = 30
 
     @Published var selectedDirectionID: UUID?
     @Published var selectedTodoID: UUID?
@@ -43,7 +43,7 @@ final class ActiveFlowStore: ObservableObject {
     private var synchronizationClock: AnyCancellable?
     private var lastAppliedRuntimeVersion: FlowRuntimeVersion?
     private var lastPublishedLiveActivityWasOvertime: Bool?
-    private var lastDefaultDirectionReconciliationAt: Date?
+    private var lastPersistenceReconciliationAt: Date?
     private var nextFlowBreakInteractionSequence: UInt64 = 0
 
     init(
@@ -217,7 +217,7 @@ final class ActiveFlowStore: ObservableObject {
     }
 
     func synchronizeFromPersistence(modelContext: ModelContext, now: Date = .now) {
-        reconcileDefaultDirectionsIfNeeded(modelContext: modelContext, now: now)
+        reconcilePersistenceIfNeeded(modelContext: modelContext, now: now)
         let resolution = syncCoordinator.resolve(modelContext: modelContext)
 
         if let canonicalSession = resolution.canonicalSession,
@@ -249,15 +249,16 @@ final class ActiveFlowStore: ObservableObject {
         )
     }
 
-    private func reconcileDefaultDirectionsIfNeeded(modelContext: ModelContext, now: Date) {
-        if let lastDefaultDirectionReconciliationAt,
-           now.timeIntervalSince(lastDefaultDirectionReconciliationAt) < Self.defaultDirectionReconciliationInterval {
+    private func reconcilePersistenceIfNeeded(modelContext: ModelContext, now: Date) {
+        if let lastPersistenceReconciliationAt,
+           now.timeIntervalSince(lastPersistenceReconciliationAt) < Self.persistenceReconciliationInterval {
             return
         }
 
         do {
             try DefaultDirectionReconciler().reconcile(modelContext: modelContext, now: now)
-            lastDefaultDirectionReconciliationAt = now
+            try OrphanTodoReconciler().reconcile(modelContext: modelContext, now: now)
+            lastPersistenceReconciliationAt = now
         } catch {
             // Retry on the next synchronization pass if persistence is temporarily unavailable.
         }

@@ -114,6 +114,13 @@ Weekly-count Habit Directions create one pending Todo at a time. A completed Tod
 
 Every Habit Direction has at most one active Todo occurrence per local calendar day. `HabitTodoMaterializer` is the shared macOS/iOS entry point: it fetches current persisted state, normalizes occurrence dates to the start of day, reconciles duplicates, and only then asks `RequiredTodoPlanner` to create missing occurrences. `HabitTodoReconciler` deterministically preserves the occurrence with history or completion state, reassigns related FlowSession and FlowSegment records, merges user data and progress, and soft-deletes the redundant occurrences. This makes repeated calls and CloudKit race recovery idempotent.
 
+`OrphanTodoReconciler` repairs a Todo whose optional persistence relationship to
+Direction is missing. Flow history wins when it identifies one Direction;
+otherwise a generated occurrence may be restored only when one fixed-schedule
+Habit template matches its date and unit exactly. Ambiguous records are not
+guessed and are excluded from Today, calendar, widget, and backlog projections
+instead of being mislabeled as `その他`.
+
 `HabitPauseService` owns pause/resume behavior outside SwiftUI. Pause intervals
 use the configured logical-day boundary at their command edge and persist as
 normalized local calendar days. Supported commands are one-day rest, inclusive
