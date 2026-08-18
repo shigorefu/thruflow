@@ -93,7 +93,6 @@ struct IOSTaskComposer: View {
 
             }
             .padding(12)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
         }
         .padding(.horizontal, 12)
         .padding(.top, 8)
