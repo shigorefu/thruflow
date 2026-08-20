@@ -17,7 +17,7 @@ property, persistence, and machine-readable CSV identifier.
 `分野` is the Japanese UI label for the persistent `Direction` model. The same
 entity is shown as `Area` in English and `Сфера` in Russian.
 
-- `いつでも` / Anytime / В любое время: no automatic daily Task.
+- `いつでも` / Anytime / Обычное: no automatic daily Task.
 - `習慣` / Habit / Привычка: scheduled recurring requirement that creates Habit Tasks.
 - `できたら` / Optional / Если получится: positive activity that does not block day completion.
 - `その他` / Other / Другое: system Area for Tasks and Flow without a chosen Area. Its internal role remains a `Direction`; it is hidden only from Area management, not from Statistics.
@@ -169,8 +169,9 @@ Language follows the shared String Catalog and takes effect after relaunch;
 available languages are discovered from the bundle so contributors can add a
 locale without changing Settings code.
 
-Version 1.0.2 introduces an eight-step onboarding journey: `ようこそ`, `分野`,
-`タスク`, `流れ`, `集中のプレビュー`, `履歴`, `統計`, and `使い方の流れ`.
+Version 1.0.2 introduces a ten-step onboarding journey: `ようこそ`, `分野`,
+`タスク`, `流れ`, `集中タイマー`, `流れを体験`, `履歴`, `統計`,
+`使い方の流れ`, and `データ`.
 An empty first installation uses guided mode. It opens the real Area editor and
 Task composer with localized starter values, but saves only an Area or Task that
 the user explicitly confirms. The Flow preview presents the complete production
@@ -180,8 +181,10 @@ to `00:00`, then demonstrates the switch to the regular break at `03:00`. The
 demo omits the note panel; in a real Flow, the break begins only after the user
 confirms that note. All demo state is presentation-only: it creates no
 `FlowSession`, segment, break, Task progress, History, Statistics, notification,
-Live Activity, or CloudKit record. The final step summarizes
-`分野 → タスク → 流れ → 履歴・統計 → 次の一歩`.
+Live Activity, or CloudKit record. The Flow overview and timer guidance stay on
+separate cards so neither screen becomes overloaded. The workflow card
+summarizes `分野 → タスク → 流れ → 履歴・統計 → 次の一歩`; a final dedicated
+card explains private data storage and the free, ad-free core features.
 
 If first launch already contains user data, onboarding becomes a read-only tour
 and creates nothing. `設定 > ヘルプ > 使い方を見る` closes the Settings

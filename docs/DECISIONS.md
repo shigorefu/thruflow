@@ -14,7 +14,7 @@ monolithic product specification that duplicates them.
 
 Current visible Area types are:
 
-- `いつでも` / Anytime / В любое время;
+- `いつでも` / Anytime / Обычное;
 - `習慣` / Habit / Привычка;
 - `できたら` / Optional / Если получится.
 
@@ -451,8 +451,9 @@ space appropriately.
 ## D-033: Guided Onboarding Teaches The Real Loop Safely
 
 Version 1.0.2 replaces the passive seven-card introduction with one shared
-eight-step journey on macOS, iPhone, and iPad: Welcome, Area, Task, Flow, a
-transient focus preview, History, Statistics, and the final workflow summary.
+ten-step journey on macOS, iPhone, and iPad: Welcome, Area, Task, Flow overview,
+timer guidance, a transient Flow demo, History, Statistics, workflow summary,
+and a final data/core-features card.
 Guidance stays independent of target geometry and presents the real Area editor
 and Task composer through platform-native surfaces.
 
@@ -471,8 +472,8 @@ notification, or CloudKit record.
 
 If user content already exists, first-run onboarding is a read-only tour.
 Settings replay is always read-only, dismisses Settings before it begins, and
-restarts from Welcome without clearing or modifying data. Every step remains
-skippable. Dedicated preview schemes use an in-memory store, and watchOS does not
+restarts from Welcome without clearing or modifying data. Every card has an
+icon-only Close control. Dedicated preview schemes use an in-memory store, and watchOS does not
 repeat onboarding because it is a companion surface.
 
 On signed CloudKit runs, an initially empty query snapshot is not accepted as

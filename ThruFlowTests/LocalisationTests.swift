@@ -201,7 +201,7 @@ struct LocalisationTests {
             "日曜短縮": ("Sun", "Вс"),
             "月": ("Month", "Месяц"),
             "月曜短縮": ("Mon", "Пн"),
-            "通常": ("Anytime", "В любое время"),
+            "通常": ("Anytime", "Обычное"),
             "ナイス": ("Optional", "Если получится"),
             "Sprint": ("Short", "Короткий"),
             "Focus": ("Standard", "Обычный"),

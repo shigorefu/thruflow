@@ -23,15 +23,17 @@ Area -> Task -> Flow -> focused time -> progress -> statistics
   editing, and deletion.
 - [x] Japanese, English, and Russian localizations.
 - [x] Theme, language, first-weekday, time-format, and new-day-boundary settings.
-- [x] Version 1.0.2 eight-step onboarding on macOS, iPhone, and iPad. An empty
+- [x] Version 1.0.2 ten-step onboarding on macOS, iPhone, and iPad. An empty
   first run can create a real Area and Task only after user confirmation, then
   shows the complete production Flow player in a transient scripted sequence:
   Task selection, visual Play, accelerated Short focus from `12:00` to `00:00`,
   and the demonstrated regular break at `03:00`, with no credited or
   synchronized data. The demo omits the note panel; a real Flow starts its break
   only after note confirmation.
-  Existing-workspace first launch and Settings replay are read-only, every step
-  is skippable, and preview schemes isolate confirmed examples in memory.
+  Flow overview and timer guidance are separated, and a dedicated final card
+  explains data storage and free core features. Existing-workspace first launch
+  and Settings replay are read-only, every card can be closed, and preview
+  schemes isolate confirmed examples in memory.
 - [x] A non-intrusive system review request after confirmed use, a GitHub link,
   and optional StoreKit tips: coffee ¥100 / ramen ¥500.
 - [x] Core Tasks, Flow timer, History, and Statistics remain free and ad-free

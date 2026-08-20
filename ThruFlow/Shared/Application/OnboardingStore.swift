@@ -446,10 +446,12 @@ enum OnboardingStep: Int, CaseIterable, Sendable {
     case areas
     case tasks
     case flow
+    case timer
     case demo
     case history
     case statistics
     case workflow
+    case privacy
 
     var next: OnboardingStep? {
         Self(rawValue: rawValue + 1)
@@ -461,7 +463,7 @@ enum OnboardingStep: Int, CaseIterable, Sendable {
 
     var screen: OnboardingScreen {
         switch self {
-        case .welcome, .flow, .demo, .workflow:
+        case .welcome, .flow, .timer, .demo, .workflow, .privacy:
             .flow
         case .areas:
             .directions
@@ -475,7 +477,7 @@ enum OnboardingStep: Int, CaseIterable, Sendable {
     }
 
     var isFinal: Bool {
-        self == .workflow
+        self == .privacy
     }
 }
 

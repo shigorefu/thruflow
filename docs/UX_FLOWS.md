@@ -14,7 +14,7 @@ machine-readable CSV column.
 The Area screen (`分野`; internal model `Direction`) manages only user-editable
 Areas:
 
-- `いつでも` / Anytime / В любое время;
+- `いつでも` / Anytime / Обычное;
 - `習慣` / Habit / Привычка;
 - `できたら` / Optional / Если получится.
 
@@ -207,22 +207,25 @@ The Dashboard Task header `+` opens the shared messenger-style composer in a sep
 
 ## Onboarding And Voluntary Support
 
-Version 1.0.2 uses the same eight-step order on macOS, iPhone, and iPad:
+Version 1.0.2 uses the same ten-step order on macOS, iPhone, and iPad:
 
 1. `ようこそ`;
 2. `分野`;
 3. `タスク`;
 4. `流れ`;
-5. `集中のプレビュー`;
-6. `履歴`;
-7. `統計`;
-8. `使い方の流れ`.
+5. `集中タイマー`;
+6. `流れを体験`;
+7. `履歴`;
+8. `統計`;
+9. `使い方の流れ`;
+10. `データ`.
 
 The real application workspace remains visible beneath a dimmed onboarding
 surface, and the requested feature screen opens behind each guidance step.
 Guidance stays centered and uses platform-native editor, composer, sheet, and
 popover presentation instead of geometry-dependent spotlights or scrim cutouts.
-Back and Skip remain available throughout. Skip and Finish close any onboarding
+The header keeps its step label, progress indicator, and icon-only Close control
+on one row. Back and Close remain available throughout. Close and Finish close any onboarding
 presentation, return to Flow, and mark the first-run journey complete.
 
 After the workspace is available, onboarding selects one of two experiences:
@@ -244,8 +247,9 @@ of the journey continues as a read-only tour.
   read-only tour mode. It explains the same product loop without offering
   example creation or changing existing data.
 
-The Flow step keeps the just-created Task only as presentation context. The
-following preview uses the complete production Flow player in a scripted,
+The Flow overview and timer explanation use separate cards. The timer step keeps
+the just-created Task only as presentation context. The following preview uses
+the complete production Flow player in a scripted,
 non-interactive sequence: it visually presses the Task card, selects that Task,
 presses Play, rapidly counts a canonical Short focus interval from `12:00` to
 `00:00`, briefly shows the break action, then demonstrates the regular break at
@@ -254,8 +258,9 @@ the break action keeps focus running until the user confirms the note, and only
 then begins the break. Demo selection, controls, timer, phase, and progress are
 entirely transient: they create no session, segment, break, Task progress or
 completion, History, Statistics, notification, Live Activity, or CloudKit write.
-Leaving the step or skipping resets the preview.
-The final step summarizes `分野 → タスク → 流れ → 履歴・統計 → 次の一歩`.
+Leaving the step or skipping resets the preview. The workflow card summarizes
+`分野 → タスク → 流れ → 履歴・統計 → 次の一歩`; the final card separately
+explains data storage and the free, ad-free core features.
 
 `設定 > ヘルプ > 使い方を見る` first dismisses Settings, then starts the
 journey again from Welcome in read-only replay mode. Replay never creates an

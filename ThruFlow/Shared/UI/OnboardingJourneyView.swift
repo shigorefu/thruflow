@@ -94,17 +94,25 @@ private struct OnboardingJourneyCard: View {
             } icon: {
                 OnboardingIconView(icon: store.step.icon, width: 18)
             }
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.tint)
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(.tint)
+            .lineLimit(1)
+            .frame(maxWidth: .infinity, alignment: .leading)
 
-            Spacer()
             pageIndicator
 
-            Button(String(localized: "スキップ")) {
+            Button {
                 store.skip()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.caption.weight(.bold))
+                    .frame(width: 28, height: 28)
+                    .background(Color.primary.opacity(0.07), in: Circle())
             }
             .buttonStyle(.plain)
             .foregroundStyle(.secondary)
+            .contentShape(Circle())
+            .accessibilityLabel(String(localized: "スキップ"))
             .accessibilityIdentifier("onboarding.skip")
         }
     }
@@ -159,7 +167,7 @@ private struct OnboardingJourneyCard: View {
                     systemImage: "square.grid.3x3"
                 )
                 OnboardingHintRow(
-                    title: String(localized: "分"),
+                    title: String(localized: "分単位"),
                     body: String(localized: "集中した実時間を、分単位で積み上げます。"),
                     systemImage: "clock"
                 )
@@ -197,6 +205,13 @@ private struct OnboardingJourneyCard: View {
                     systemImage: "chart.bar.xaxis"
                 )
             }
+
+        case .timer:
+            OnboardingHintRow(
+                title: String(localized: "取り組むタスク"),
+                body: String(localized: "タスクを選ぶと、集中時間がそのタスクと分野の進捗に反映されます。"),
+                systemImage: "checklist"
+            )
 
             OnboardingModeSummary()
 
@@ -251,6 +266,7 @@ private struct OnboardingJourneyCard: View {
         case .workflow:
             OnboardingWorkflowSummary()
 
+        case .privacy:
             VStack(spacing: 8) {
                 OnboardingCallout(
                     title: String(localized: "プライベートなデータ"),
@@ -876,10 +892,12 @@ extension OnboardingStep {
         case .areas: String(localized: "分野")
         case .tasks: String(localized: "タスク")
         case .flow: String(localized: "流れ")
+        case .timer: String(localized: "集中タイマー")
         case .demo: String(localized: "流れを体験")
         case .history: String(localized: "履歴")
         case .statistics: String(localized: "統計")
         case .workflow: String(localized: "使い方の流れ")
+        case .privacy: String(localized: "データ")
         }
     }
 
@@ -889,10 +907,12 @@ extension OnboardingStep {
         case .areas: .system(ProductSymbol.area)
         case .tasks: .system("checklist")
         case .flow: .flow
+        case .timer: .system("timer")
         case .demo: .system("timer")
         case .history: .system("clock.arrow.circlepath")
         case .statistics: .system("chart.bar.xaxis")
         case .workflow: .system("arrow.triangle.2.circlepath")
+        case .privacy: .system("lock.shield")
         }
     }
 
@@ -901,11 +921,13 @@ extension OnboardingStep {
         case .welcome: String(localized: "大切なことに集中しよう")
         case .areas: String(localized: "取り組むことを、分野で整理")
         case .tasks: String(localized: "やることを、具体的なタスクに")
-        case .flow: String(localized: "タスクを選んで、集中を始める")
+        case .flow: String(localized: "今日の流れをひと目で")
+        case .timer: String(localized: "タスクを選んで、集中を始める")
         case .demo: String(localized: "集中から休憩までを見てみよう")
         case .history: String(localized: "一日の記録を、あとから振り返る")
         case .statistics: String(localized: "時間の使い方に気づく")
         case .workflow: String(localized: "すべてが、ひとつの流れに")
+        case .privacy: String(localized: "データと基本機能について")
         }
     }
 
@@ -918,7 +940,9 @@ extension OnboardingStep {
         case .tasks:
             String(localized: "タスクには、分野、優先度、日付、進捗の測り方を設定できます。ボタンから選ぶことも、入力中にショートカットを使うこともできます。")
         case .flow:
-            String(localized: "流れは、今日の作業を進める中心の画面です。集中タイマー、今日のタスク、作業の流れ、今日の統計をまとめて確認できます。途中でタスクや長さを変えても、途切れない作業はひとつの流れとして残ります。")
+            String(localized: "流れの画面では、今日の作業、タスク、集中の記録、統計をまとめて確認できます。")
+        case .timer:
+            String(localized: "取り組むタスクと集中時間を選び、準備ができたら再生ボタンを押します。途中で変更しても、途切れない作業はひとつの流れとして残ります。")
         case .demo:
             String(localized: "タスクを選んで集中を始め、12分の集中が終わって3分の休憩に切り替わるまでを早送りで再現します。デモのため、履歴や統計には記録されません。実際には、集中後にメモを確認してから休憩を始めます。")
         case .history:
@@ -927,6 +951,8 @@ extension OnboardingStep {
             String(localized: "統計では、集中時間、完了したタスク、タスクや分野ごとの時間配分を週・月・年で確認できます。")
         case .workflow:
             String(localized: "分野で取り組むことを整理し、タスクで次の一歩を決める。流れで実際の集中時間を記録し、履歴と統計で振り返る。ThruFlowは、このサイクルをひとつにつなげます。")
+        case .privacy:
+            String(localized: "最後に、データの保存先と無料で使える基本機能についてお伝えします。")
         }
     }
 }

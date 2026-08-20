@@ -46,18 +46,18 @@ struct OnboardingAndReviewPromptTests {
             defaults: defaults,
             arguments: [
                 "--onboarding-preview",
-                "--onboarding-step=7",
+                "--onboarding-step=9",
                 "--onboarding-experience=tour",
             ]
         )
 
         #expect(store.isPresented)
-        #expect(store.step == .workflow)
+        #expect(store.step == .privacy)
         #expect(store.step.screen == .flow)
         #expect(store.experience == .tour)
     }
 
-    @Test func tourWalkthroughMovesAcrossEightRealApplicationScreens() {
+    @Test func tourWalkthroughMovesAcrossTenGuidanceSteps() {
         let store = OnboardingStore(defaults: makeDefaults(), arguments: [])
 
         #expect(!store.canAdvance)
@@ -82,11 +82,15 @@ struct OnboardingAndReviewPromptTests {
         #expect(store.step.screen == .flow)
 
         store.advance()
+        #expect(store.step == .timer)
+        #expect(store.step.screen == .flow)
+
+        store.advance()
         #expect(store.step == .demo)
         #expect(store.step.screen == .flow)
 
-        for _ in 0..<3 { store.advance() }
-        #expect(store.step == .workflow)
+        for _ in 0..<4 { store.advance() }
+        #expect(store.step == .privacy)
         #expect(store.step.screen == .flow)
 
         store.advance()
@@ -229,7 +233,7 @@ struct OnboardingAndReviewPromptTests {
     @Test func demoClockRunsACompressedFocusIntoBreakAndCancelsWhenLeavingItsStep() {
         let store = OnboardingStore(
             defaults: makeDefaults(),
-            arguments: ["--onboarding-preview", "--onboarding-step=4"]
+            arguments: ["--onboarding-preview", "--onboarding-step=5"]
         )
         let start = Date(timeIntervalSince1970: 1_000)
 
@@ -314,7 +318,7 @@ struct OnboardingAndReviewPromptTests {
 
         #expect(store.startDemo(at: start))
         store.goBack()
-        #expect(store.step == .flow)
+        #expect(store.step == .timer)
         #expect(store.demoState == .idle)
     }
 

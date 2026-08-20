@@ -55,15 +55,16 @@ contextual term recorded in `Localisation/TERMS.csv`.
 
 The persistent activity-area entity is `分野` in Japanese UI, `Area` in English,
 and `Сфера` in Russian. Collection navigation uses `Areas` and `Сферы`. Its
-visible types are `いつでも` / Anytime / В любое время,
+visible types are `いつでも` / Anytime / Обычное,
 `習慣` / Habit / Привычка, and `できたら` / Optional / Если получится. The
 corresponding source keys remain `通常`, `習慣`, and `ナイス`. Other
 context-sensitive terms include `日付なし` for the Inbox projection, `週に数回`
 for the weekly-count Habit schedule, and `集中カレンダー` / Focus Calendar /
 Календарь фокуса for the calendar-style focus visualization.
 
-Version 1.0.2 onboarding has eight semantic steps: Welcome, Area, Task, Flow,
-the transient Flow preview, History, Statistics, and the final workflow summary.
+Version 1.0.2 onboarding has ten semantic steps: Welcome, Area, Task, Flow
+overview, timer guidance, the transient Flow demo, History, Statistics, workflow
+summary, and a final card for data storage and free core features.
 The preview shows the complete Flow player in a short scripted sequence: Task
 selection, Play, accelerated Short focus from `12:00` to `00:00`, and the
 demonstrated regular break at `03:00`. Copy should explain naturally that this is

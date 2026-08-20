@@ -8,7 +8,7 @@ first so GitHub contributors have one shared terminology table.
 | --- | --- | --- | --- |
 | ThruFlow | ThruFlow | スルフロ | `スルフロ` |
 | Area | Сфера | 分野 | `分野` |
-| Anytime | В любое время | いつでも | `通常` |
+| Anytime | Обычное | いつでも | `通常` |
 | Habit | Привычка | 習慣 | `習慣` |
 | Optional | Если получится | できたら | `ナイス` |
 | Other | Другое | その他 | `その他` |

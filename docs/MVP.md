@@ -68,15 +68,17 @@ Area -> Task -> Flow -> actual focused time -> progress -> statistics
 - Shared active-Flow restoration through the CloudKit-backed SwiftData store:
   opening the Watch adopts the same Task, Area, mode, phase, and elapsed
   time as macOS or iPhone.
-- Shared eight-step onboarding for macOS, iPhone, and iPad: an empty first run
+- Shared ten-step onboarding for macOS, iPhone, and iPad: an empty first run
   can create one real Area and Task only after user confirmation, then shows a
   transient full-player demonstration of Task selection, visual Play,
   accelerated Short focus from `12:00` to `00:00`, and the regular break at
   `03:00`. The demo skips the note panel, while a real Flow begins its break only
   after note confirmation. The demonstration cannot affect progress, History,
   Statistics, notifications, Live Activity, or CloudKit.
-  Existing-workspace first launch and Settings replay are read-only, every step
-  can be skipped, and preview schemes use an in-memory store. watchOS remains a
+  Flow overview, timer guidance, and the production-player demo use separate
+  cards; data storage and the free, ad-free core features have a dedicated final
+  card. Existing-workspace first launch and Settings replay are read-only, every step
+  can be closed, and preview schemes use an in-memory store. watchOS remains a
   companion and does not repeat onboarding.
 - Optional support in Settings: App Store review, GitHub, and consumable Coffee
   (JPY 100) / Ramen (JPY 500) StoreKit tips that unlock no features.

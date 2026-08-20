@@ -3015,7 +3015,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "В любое время"
+            "value" : "Обычное"
           }
         }
       }
@@ -4349,7 +4349,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Для каждой задачи можно выбрать сферу, порядок отображения и дату. Если задача из сферы «В любое время» остаётся незавершённой после этой даты, она попадает в раздел «Просроченные»."
+            "value" : "Для каждой задачи можно выбрать сферу, порядок отображения и дату. Если задача из сферы «Обычное» остаётся незавершённой после этой даты, она попадает в раздел «Просроченные»."
           }
         }
       }
@@ -4505,7 +4505,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Choose a Task and Start Focusing"
+            "value" : "Choose a Task"
           }
         },
         "ja" : {
@@ -4517,7 +4517,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Выберите задачу и сосредоточьтесь"
+            "value" : "Выберите задачу"
           }
         }
       }
@@ -4696,6 +4696,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Данные"
+          }
+        }
+      }
+    },
+    "データと基本機能について" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your Data and Core Features"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "データと基本機能について"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваши данные и основные функции"
+          }
+        }
+      }
+    },
+    "最後に、データの保存先と無料で使える基本機能についてお伝えします。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One last thing: where your data is stored and which core features are free to use."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最後に、データの保存先と無料で使える基本機能についてお伝えします。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Напоследок — о хранении данных и бесплатных возможностях ThruFlow."
           }
         }
       }
@@ -5682,6 +5726,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Сегодня"
+          }
+        }
+      }
+    },
+    "今日の流れをひと目で" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See Your Day at a Glance"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今日の流れをひと目で"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Весь день перед глазами"
           }
         }
       }
@@ -6906,6 +6972,72 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Единица"
+          }
+        }
+      }
+    },
+    "取り組むタスク" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Task to Focus On"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取り組むタスク"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Задача для фокуса"
+          }
+        }
+      }
+    },
+    "タスクを選ぶと、集中時間がそのタスクと分野の進捗に反映されます。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a Task to count focused time toward its progress and Area."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タスクを選ぶと、集中時間がそのタスクと分野の進捗に反映されます。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите задачу, чтобы время фокуса учитывалось в её прогрессе и сфере."
+          }
+        }
+      }
+    },
+    "取り組むタスクと集中時間を選び、準備ができたら再生ボタンを押します。途中で変更しても、途切れない作業はひとつの流れとして残ります。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose what to work on and how long to focus, then press Play. You can change either during a session without splitting continuous work."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取り組むタスクと集中時間を選び、準備ができたら再生ボタンを押します。途中で変更しても、途切れない作業はひとつの流れとして残ります。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите задачу и длительность, затем нажмите Play. Их можно менять во время работы — непрерывная сессия останется одной записью Flow."
           }
         }
       }
@@ -9250,24 +9382,24 @@
         }
       }
     },
-    "流れは、今日の作業を進める中心の画面です。集中タイマー、今日のタスク、作業の流れ、今日の統計をまとめて確認できます。途中でタスクや長さを変えても、途切れない作業はひとつの流れとして残ります。" : {
+    "流れの画面では、今日の作業、タスク、集中の記録、統計をまとめて確認できます。" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Flow is the main workspace for getting today's work done. It brings together the focus timer, today's Tasks, your timeline, and today's Statistics. You can switch Tasks or duration along the way; uninterrupted work remains one Flow."
+            "value" : "The Flow screen brings together today's work, Tasks, focus history, and a daily summary."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "流れは、今日の作業を進める中心の画面です。集中タイマー、今日のタスク、作業の流れ、今日の統計をまとめて確認できます。途中でタスクや長さを変えても、途切れない作業はひとつの流れとして残ります。"
+            "value" : "流れの画面では、今日の作業、タスク、集中の記録、統計をまとめて確認できます。"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Flow — главный экран для работы на сегодня. Здесь собраны таймер фокуса, задачи на сегодня, шкала времени и статистика за день. Можно менять задачу или длительность: непрерывная работа всё равно сохранится как один Flow."
+            "value" : "На экране Flow собраны задачи на сегодня, таймер, ход дня и краткая статистика."
           }
         }
       }
@@ -10595,7 +10727,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "В любое время"
+            "value" : "Обычное"
           }
         }
       }

@@ -1,7 +1,7 @@
 "Code reference","Meaning","Source key (JP)","EN","RU"
 "ThruFlow","Application name","スルフロ","ThruFlow","ThruFlow"
 "Direction","Persistent activity area connecting Tasks and Flow history; the internal identifier remains Direction","分野","Area","Сфера"
-"DirectionType.neutral","Anytime Area for planned Tasks","通常","Anytime","В любое время"
+"DirectionType.neutral","Anytime Area for planned Tasks","通常","Anytime","Обычное"
 "DirectionType.habit","Habit Area that automatically creates recurring Tasks","習慣","Habit","Привычка"
 "HabitStatus.active","Habit is active and creates scheduled Tasks","有効","Active","Активна"
 "HabitStatus.paused","Habit temporarily creates no Tasks and is excluded from expected statistics","一時停止中","Paused","Приостановлена"

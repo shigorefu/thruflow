@@ -112,7 +112,7 @@ Each platform owns its composition root:
   Tasks, Habits, Flow, History, Statistics, watchOS, and widgets cannot develop
   platform-specific midnight rules.
 - `OnboardingStore` owns the local first-run completion flag, launch kind,
-  guided/read-only experience, deterministic eight-step screen projection,
+  guided/read-only experience, deterministic ten-step screen projection,
   pending editor presentation, IDs of user-confirmed onboarding records, and
   transient Flow-preview state. It never inserts an Area or Task itself; the
   platform's normal editor/composer reports a saved stable ID only after the

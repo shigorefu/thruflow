@@ -141,8 +141,8 @@ Cover:
   Direction color.
 - First-run onboarding persistence, workspace-content detection, guided versus
   read-only experience selection, real-screen navigation, and the exact
-  eight-step `ようこそ → 分野 → タスク → 流れ → 集中のプレビュー → 履歴 → 統計 →
-  使い方の流れ` order on macOS and universal iOS. Coverage must prove that Area
+  ten-step `ようこそ → 分野 → タスク → 流れ → 集中タイマー → 流れを体験 → 履歴 → 統計 →
+  使い方の流れ → データ` order on macOS and universal iOS. Coverage must prove that Area
   and Task records appear only after normal user confirmation, the Flow preview
   renders the production player shell and deterministically projects Task-card
   press and selection, Play press, accelerated Short focus from `12:00` to
@@ -163,7 +163,7 @@ schemes force onboarding and use the existing in-memory UI-testing container,
 so user-confirmed example records cannot reach the real store. The preview
 experience can be selected explicitly to exercise guided creation or read-only
 tour behavior. `OnboardingJourneyUITests` covers real-screen navigation, Back,
-Skip, all eight steps, confirmation-gated Area and Task creation, the transient
+Close, all ten steps, confirmation-gated Area and Task creation, the transient
 Flow preview, and Finish.
 
 ## Migration Caution
