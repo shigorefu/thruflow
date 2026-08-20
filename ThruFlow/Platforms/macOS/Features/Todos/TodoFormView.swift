@@ -177,7 +177,7 @@ struct TodoFormView: View {
         TodoEditorCard(title: String(localized: "基本")) {
             editorRow(
                 title: String(localized: "分野"),
-                systemImage: "point.3.connected.trianglepath.dotted"
+                systemImage: ProductSymbol.area
             ) {
                 directionControl
             }

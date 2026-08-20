@@ -187,8 +187,8 @@ struct LocalisationTests {
         let root = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
         let strings = try #require(root["strings"] as? [String: Any])
         let expectedTerms: [String: (english: String, russian: String)] = [
-            "方向": ("Areas", "Направления"),
-            "分野": ("Area", "Направление"),
+            "方向": ("Areas", "Сферы"),
+            "分野": ("Area", "Сфера"),
             "タスク": ("Tasks", "Задачи"),
             "対象タスク": ("Task", "Задача"),
             "時間": ("Time", "Время"),
@@ -201,7 +201,7 @@ struct LocalisationTests {
             "日曜短縮": ("Sun", "Вс"),
             "月": ("Month", "Месяц"),
             "月曜短縮": ("Mon", "Пн"),
-            "通常": ("Anytime", "В любое время"),
+            "通常": ("Anytime", "Обычное"),
             "ナイス": ("Optional", "Если получится"),
             "Sprint": ("Short", "Короткий"),
             "Focus": ("Standard", "Обычный"),
@@ -210,6 +210,9 @@ struct LocalisationTests {
             "Flow Dots": ("Focus Calendar", "Календарь фокуса"),
             "フローブロック": ("Focus Blocks", "Блоки фокуса"),
             "集中ブロック": ("Focus Blocks", "Блоки фокуса"),
+            "アプリのデータをリセット": ("Reset App Data", "Сбросить данные приложения"),
+            "アプリのデータをリセットしますか？": ("Reset App Data?", "Сбросить данные приложения?"),
+            "リセット": ("Reset", "Сбросить"),
         ]
 
         for (key, expected) in expectedTerms {
@@ -225,6 +228,28 @@ struct LocalisationTests {
                 "Unexpected Russian product term for \(key)"
             )
         }
+
+        var legacyAreaTerms: [String] = []
+        for (key, rawEntry) in strings {
+            guard
+                let entry = rawEntry as? [String: Any],
+                let localisations = entry["localizations"] as? [String: Any]
+            else { continue }
+
+            if let english = localisedValue(language: "en", from: localisations),
+               english.range(of: #"\bdirections?\b"#, options: [.regularExpression, .caseInsensitive]) != nil {
+                legacyAreaTerms.append("en:\(key)")
+            }
+            if let russian = localisedValue(language: "ru", from: localisations),
+               russian.range(of: "направ", options: [.caseInsensitive]) != nil {
+                legacyAreaTerms.append("ru:\(key)")
+            }
+        }
+
+        #expect(
+            legacyAreaTerms.isEmpty,
+            "Legacy Area terms: \(legacyAreaTerms.sorted().joined(separator: ", "))"
+        )
     }
 
     private var repositoryRoot: URL {

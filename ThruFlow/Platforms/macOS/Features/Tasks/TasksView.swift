@@ -1381,6 +1381,7 @@ struct MessengerTodoComposer: View {
         .buttonStyle(.plain)
         .help(String(localized: "タスクを追加"))
         .accessibilityLabel(String(localized: "タスクを追加"))
+        .accessibilityIdentifier("task.composer.submit")
         .disabled(trimmedTitle.isEmpty)
         .opacity(trimmedTitle.isEmpty ? 0.45 : 1)
     }
@@ -1921,9 +1922,10 @@ struct QuickTodoCreationPopover: View {
     @Query(sort: \Todo.sortIndex, order: .forward) private var allTodos: [Todo]
 
     let directions: [Direction]
-    var scheduledDate: Date = .now
-    var showsQuickInputLegend = true
-    var onCreated: ((Todo) -> Void)?
+    let scheduledDate: Date?
+    let showsQuickInputLegend: Bool
+    let initialDraft: TodoDraft?
+    let onCreated: ((Todo) -> Void)?
 
     @State private var title = ""
     @State private var selectedDirectionID: UUID?
@@ -1936,6 +1938,50 @@ struct QuickTodoCreationPopover: View {
 
     private let validator = TodoValidator()
     private let progressCalculator = TodoProgressCalculator()
+
+    init(
+        directions: [Direction],
+        scheduledDate: Date? = .now,
+        showsQuickInputLegend: Bool = true,
+        initialDraft: TodoDraft? = nil,
+        onCreated: ((Todo) -> Void)? = nil
+    ) {
+        self.directions = directions
+        self.showsQuickInputLegend = showsQuickInputLegend
+        self.initialDraft = initialDraft
+        self.onCreated = onCreated
+
+        let resolvedScheduledDate: Date?
+        let initialVolume: QuickTodoVolume
+        if let initialDraft {
+            resolvedScheduledDate = initialDraft.scheduledDate
+            switch initialDraft.measurement {
+            case .checkbox:
+                initialVolume = .checkbox
+            case .focusBlocks:
+                initialVolume = .blocks(max(1, initialDraft.plannedAmount ?? 1))
+            case .minutes:
+                initialVolume = .minutes(max(1, initialDraft.plannedAmount ?? 1))
+            }
+        } else {
+            resolvedScheduledDate = scheduledDate
+            initialVolume = .unspecified
+        }
+        self.scheduledDate = resolvedScheduledDate
+
+        _title = State(initialValue: initialDraft?.title ?? "")
+        _selectedDirectionID = State(initialValue: initialDraft?.direction?.id)
+        _volume = State(initialValue: initialVolume)
+        _priority = State(initialValue: initialDraft?.priority ?? .medium)
+        _isRoomIfPossible = State(
+            initialValue: initialDraft?.priority == .low && initialDraft?.isRoomIfPossible == true
+        )
+        _dateOption = State(
+            initialValue: resolvedScheduledDate.map(QuickTodoDate.custom) ?? .none
+        )
+        _hashtags = State(initialValue: initialDraft?.hashtags ?? [])
+        _validationMessage = State(initialValue: nil)
+    }
 
     private var activeDirections: [Direction] {
         directions.filter { !$0.isArchived }
@@ -1966,18 +2012,22 @@ struct QuickTodoCreationPopover: View {
     }
 
     private func createTodo() {
+        validationMessage = nil
         let selectedDirection = selectedDirectionID.flatMap { id in
             selectableDirections.first { $0.id == id }
         }
         let draft = TodoDraft(
             title: title,
+            notes: initialDraft?.notes ?? "",
             hashtags: hashtags,
             direction: selectedDirection,
             measurement: volume.measurement,
             priority: priority,
             isRoomIfPossible: priority == .low && isRoomIfPossible,
             plannedAmount: volume.plannedAmount,
-            scheduledDate: scheduledDate
+            actualProgress: initialDraft?.actualProgress ?? 0,
+            scheduledDate: scheduledDate,
+            deadline: initialDraft?.deadline
         )
         let errors = validator.validate(draft)
 
@@ -1989,24 +2039,33 @@ struct QuickTodoCreationPopover: View {
         let direction = selectedDirection ?? resolvedOtherDirection()
         let todo = Todo(
             title: draft.trimmedTitle,
+            notes: draft.trimmedNotes,
             hashtags: draft.hashtags,
             direction: direction,
             measurement: volume.measurement,
             priority: priority,
             isRoomIfPossible: priority == .low && isRoomIfPossible,
             plannedAmount: volume.plannedAmount,
+            actualProgress: draft.actualProgress,
             status: progressCalculator.status(
                 measurement: volume.measurement,
                 plannedAmount: volume.plannedAmount,
-                actualProgress: 0
+                actualProgress: draft.actualProgress
             ),
             scheduledDate: scheduledDate,
+            deadline: draft.deadline,
             sortIndex: (allTodos.map(\.sortIndex).min() ?? 0) - 1
         )
         modelContext.insert(todo)
-        try? modelContext.save()
-        onCreated?(todo)
-        dismiss()
+
+        do {
+            try modelContext.save()
+            onCreated?(todo)
+            dismiss()
+        } catch {
+            modelContext.rollback()
+            validationMessage = String(localized: "記録を保存できませんでした。")
+        }
     }
 
     private func resolvedOtherDirection() -> Direction {

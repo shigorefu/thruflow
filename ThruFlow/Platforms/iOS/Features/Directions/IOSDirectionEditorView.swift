@@ -7,6 +7,7 @@ struct IOSDirectionEditorView: View {
     @Query(sort: \Direction.sortIndex) private var directions: [Direction]
 
     let mode: IOSDirectionEditorMode
+    let onSaved: ((Direction) -> Void)?
 
     @State private var name: String
     @State private var symbolName: String
@@ -18,34 +19,43 @@ struct IOSDirectionEditorView: View {
     @State private var weeklyTargetCount: Int
     @State private var weekdayMask: Int
     @State private var showsEmojiPicker = false
+    @State private var saveErrorMessage: String?
 
     private let colors = [
         "#007AFF", "#34C759", "#00C7BE", "#32ADE6", "#5856D6", "#AF52DE",
         "#FF2D55", "#FF3B30", "#FF9500", "#FFCC00", "#8E8E93"
     ]
 
-    init(mode: IOSDirectionEditorMode) {
+    init(
+        mode: IOSDirectionEditorMode,
+        initialDraft: DirectionDraft? = nil,
+        onSaved: ((Direction) -> Void)? = nil
+    ) {
         self.mode = mode
-        let direction: Direction?
-        let initialName: String
+        self.onSaved = onSaved
+
+        let draft: DirectionDraft
         switch mode {
         case .create(let name):
-            direction = nil
-            initialName = name ?? ""
+            if let initialDraft {
+                draft = initialDraft
+            } else {
+                draft = DirectionDraft(name: name ?? "")
+            }
         case .edit(let value):
-            direction = value
-            initialName = value.name
+            draft = DirectionDraft(direction: value)
         }
 
-        _name = State(initialValue: initialName)
-        _symbolName = State(initialValue: direction?.symbolName ?? "🎯")
-        _type = State(initialValue: direction?.type ?? .neutral)
-        _colorHex = State(initialValue: direction?.colorHex ?? "#007AFF")
-        _goalTarget = State(initialValue: max(1, direction?.goalTarget ?? 1))
-        _goalUnit = State(initialValue: direction?.goalUnit ?? .occurrences)
-        _goalSchedule = State(initialValue: direction?.goalSchedule ?? .everyDay)
-        _weeklyTargetCount = State(initialValue: max(1, direction?.weeklyTargetCount ?? 1))
-        _weekdayMask = State(initialValue: direction?.weekdayMask ?? 0)
+        _name = State(initialValue: draft.name)
+        _symbolName = State(initialValue: draft.symbolName)
+        _type = State(initialValue: draft.type)
+        _colorHex = State(initialValue: draft.colorHex)
+        _goalTarget = State(initialValue: max(1, draft.goalTarget ?? 1))
+        _goalUnit = State(initialValue: draft.goalUnit ?? .occurrences)
+        _goalSchedule = State(initialValue: draft.goalSchedule ?? .everyDay)
+        _weeklyTargetCount = State(initialValue: max(1, draft.weeklyTargetCount ?? 1))
+        _weekdayMask = State(initialValue: draft.weekdayMask ?? 0)
+        _saveErrorMessage = State(initialValue: nil)
     }
 
     var body: some View {
@@ -152,6 +162,13 @@ struct IOSDirectionEditorView: View {
                     }
                 }
             }
+
+            if let saveErrorMessage {
+                Section {
+                    Label(saveErrorMessage, systemImage: "exclamationmark.triangle")
+                        .foregroundStyle(.red)
+                }
+            }
         }
         .iosCenteredNavigationTitle(
             isEditing ? String(localized: "方向を編集") : String(localized: "方向を作成")
@@ -166,6 +183,7 @@ struct IOSDirectionEditorView: View {
             ToolbarItem(placement: .confirmationAction) {
                 Button(String(localized: "保存"), action: save)
                     .disabled(!canSave)
+                    .accessibilityIdentifier("direction.editor.save")
             }
         }
     }
@@ -200,6 +218,7 @@ struct IOSDirectionEditorView: View {
     }
 
     private func save() {
+        saveErrorMessage = nil
         let normalizedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         let emoji = EmojiValidation.normalizedSingleEmoji(from: symbolName) ?? "🎯"
         let goalPeriod = type == .habit ? goalSchedule.goalPeriod : nil
@@ -209,6 +228,7 @@ struct IOSDirectionEditorView: View {
         let weeklyCount: Int? = type == .habit && goalSchedule == .weeklyCount ? weeklyTargetCount : nil
         let selectedWeekdays: Int? = type == .habit && goalSchedule != .everyDay ? weekdayMask : nil
 
+        let savedDirection: Direction
         switch mode {
         case .create:
             let direction = Direction(
@@ -225,6 +245,7 @@ struct IOSDirectionEditorView: View {
                 sortIndex: (directions.map(\.sortIndex).max() ?? -1) + 1
             )
             modelContext.insert(direction)
+            savedDirection = direction
         case .edit(let direction):
             direction.update(
                 name: normalizedName,
@@ -238,10 +259,17 @@ struct IOSDirectionEditorView: View {
                 weeklyTargetCount: weeklyCount,
                 weekdayMask: selectedWeekdays
             )
+            savedDirection = direction
         }
 
-        try? modelContext.save()
-        dismiss()
+        do {
+            try modelContext.save()
+            onSaved?(savedDirection)
+            dismiss()
+        } catch {
+            modelContext.rollback()
+            saveErrorMessage = String(localized: "記録を保存できませんでした。")
+        }
     }
 }
 

@@ -1,3 +1,4 @@
+import SwiftData
 import SwiftUI
 
 enum IOSAppRoute: Hashable, CaseIterable, Identifiable {
@@ -26,7 +27,7 @@ enum IOSAppRoute: Hashable, CaseIterable, Identifiable {
         case .flow: "waveform.path"
         case .tasks: "checklist"
         case .history: "clock.arrow.circlepath"
-        case .directions: "point.3.connected.trianglepath.dotted"
+        case .directions: ProductSymbol.area
         case .statistics: "chart.bar.xaxis"
         case .settings: "gearshape"
         }
@@ -38,8 +39,16 @@ enum IOSAppRoute: Hashable, CaseIterable, Identifiable {
 }
 
 struct IOSRootView: View {
+    @Environment(\.appDayBoundary) private var dayBoundary
+    @Environment(\.calendar) private var calendar
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @EnvironmentObject private var activeFlowStore: ActiveFlowStore
     @EnvironmentObject private var onboarding: OnboardingStore
+
+    @Query(sort: \Direction.sortIndex) private var onboardingDirections: [Direction]
+    @Query private var onboardingTodos: [Todo]
+    @Query private var onboardingFlowSessions: [FlowSession]
+    @Query private var onboardingFlowBreaks: [FlowBreak]
 
     @State private var selection = IOSAppRoute.flow
     @State private var showsSettings = false
@@ -47,6 +56,28 @@ struct IOSRootView: View {
     @State private var flowSnapshotCache: FlowDashboardSnapshot?
     @State private var flowTodoGroupsCache: FlowDashboardTodoGroups?
     @State private var statisticsSnapshotCache: StatisticsPeriodSnapshot?
+
+    init() {
+        var todoDescriptor = FetchDescriptor<Todo>(
+            predicate: #Predicate { $0.deletedAt == nil },
+            sortBy: [SortDescriptor(\Todo.createdAt)]
+        )
+        todoDescriptor.fetchLimit = 1
+        _onboardingTodos = Query(todoDescriptor)
+
+        var sessionDescriptor = FetchDescriptor<FlowSession>(
+            sortBy: [SortDescriptor(\FlowSession.startedAt)]
+        )
+        sessionDescriptor.fetchLimit = 1
+        _onboardingFlowSessions = Query(sessionDescriptor)
+
+        var breakDescriptor = FetchDescriptor<FlowBreak>(
+            predicate: #Predicate { $0.deletedAt == nil },
+            sortBy: [SortDescriptor(\FlowBreak.startedAt)]
+        )
+        breakDescriptor.fetchLimit = 1
+        _onboardingFlowBreaks = Query(breakDescriptor)
+    }
 
     private var selectionBinding: Binding<IOSAppRoute> {
         Binding(
@@ -81,6 +112,9 @@ struct IOSRootView: View {
                 IOSSettingsView()
             }
         }
+        .sheet(item: onboardingPresentationBinding) { presentation in
+            onboardingSheet(for: presentation)
+        }
         .onOpenURL { url in
             guard url.scheme == "thruflow" else { return }
             switch url.host {
@@ -96,6 +130,9 @@ struct IOSRootView: View {
         }
         .onAppear {
             showOnboardingScreenIfNeeded()
+        }
+        .task(id: onboardingWorkspaceHasUserContent) {
+            await resolveOnboardingExperience()
         }
         .onChange(of: onboarding.step) { _, _ in
             showOnboardingScreenIfNeeded()
@@ -200,7 +237,7 @@ struct IOSRootView: View {
                 title: IOSAppRoute.flow.title
             ) {
                 IOSFlowView(
-                    isVisible: true,
+                    isVisible: !onboarding.isPresented,
                     cachedSnapshot: $flowSnapshotCache,
                     cachedTodoGroups: $flowTodoGroupsCache,
                     open: open
@@ -236,6 +273,163 @@ struct IOSRootView: View {
         } else {
             selectionBinding.wrappedValue = route
         }
+    }
+
+    private var onboardingPresentationBinding: Binding<OnboardingPresentation?> {
+        Binding(
+            get: { onboarding.presentation },
+            set: { presentation in
+                if presentation == nil {
+                    onboarding.dismissPresentation()
+                }
+            }
+        )
+    }
+
+    @ViewBuilder
+    private func onboardingSheet(for presentation: OnboardingPresentation) -> some View {
+        switch presentation {
+        case .areaEditor:
+            NavigationStack {
+                IOSDirectionEditorView(
+                    mode: .create(),
+                    initialDraft: onboardingAreaDraft
+                ) { direction in
+                    onboarding.resolveWorkspace(
+                        hasUserContent: hasExternalOnboardingWorkspaceContent(
+                            excludingAreaID: direction.id
+                        )
+                    )
+                    _ = onboarding.recordArea(id: direction.id)
+                }
+                .toolbar {
+                    ToolbarItem(placement: .bottomBar) {
+                        Button(String(localized: "ガイドをスキップ")) {
+                            onboarding.skip()
+                        }
+                    }
+                }
+            }
+            .interactiveDismissDisabled(false)
+
+        case .taskComposer:
+            NavigationStack {
+                VStack(spacing: 0) {
+                    Spacer(minLength: 0)
+
+                    if let area = onboardingCreatedArea {
+                        IOSTaskComposer(
+                            directions: activeOnboardingDirections,
+                            initialDraft: onboardingTaskDraft(area: area),
+                            onClose: onboarding.dismissPresentation
+                        ) { todo in
+                            onboarding.resolveWorkspace(
+                                hasUserContent: hasExternalOnboardingWorkspaceContent(
+                                    excludingTaskID: todo.id
+                                )
+                            )
+                            guard let area = todo.direction else { return }
+                            _ = onboarding.recordTask(
+                                id: todo.id,
+                                presentation: OnboardingTaskPresentation(
+                                    title: TodoDisplay.title(for: todo),
+                                    areaName: area.name,
+                                    areaSymbol: area.symbolName,
+                                    areaColorHex: area.colorHex
+                                )
+                            )
+                        }
+                    } else {
+                        ContentUnavailableView(
+                            String(localized: "分野が見つかりません"),
+                            systemImage: ProductSymbol.area
+                        )
+                    }
+                }
+                .background(Color(.systemGroupedBackground))
+                .iosCenteredNavigationTitle(String(localized: "最初のタスクを作る"))
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button(String(localized: "キャンセル")) {
+                            onboarding.dismissPresentation()
+                        }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button(String(localized: "ガイドをスキップ")) {
+                            onboarding.skip()
+                        }
+                    }
+                }
+            }
+            .presentationDetents([.medium, .large])
+            .interactiveDismissDisabled(false)
+        }
+    }
+
+    private var activeOnboardingDirections: [Direction] {
+        onboardingDirections.filter { !$0.isArchived && !DefaultDirections.isTaskInboxRecord($0) }
+    }
+
+    private var onboardingCreatedArea: Direction? {
+        guard let id = onboarding.createdAreaID else { return nil }
+        return onboardingDirections.first { $0.id == id && !$0.isArchived }
+    }
+
+    private var onboardingAreaDraft: DirectionDraft {
+        DirectionDraft(
+            name: String(localized: "仕事"),
+            type: .neutral,
+            symbolName: "💼",
+            colorHex: "#007AFF"
+        )
+    }
+
+    private func onboardingTaskDraft(area: Direction) -> TodoDraft {
+        TodoDraft(
+            title: String(localized: "レポートを仕上げる"),
+            direction: area,
+            measurement: .checkbox,
+            priority: .medium,
+            scheduledDate: dayBoundary.day(containing: .now, calendar: calendar)
+        )
+    }
+
+    private var onboardingWorkspaceHasUserContent: Bool {
+        hasExternalOnboardingWorkspaceContent()
+    }
+
+    private func hasExternalOnboardingWorkspaceContent(
+        excludingAreaID: UUID? = nil,
+        excludingTaskID: UUID? = nil
+    ) -> Bool {
+        OnboardingWorkspaceInspector.inspect(
+            directions: onboardingDirections.filter {
+                $0.id != onboarding.createdAreaID && $0.id != excludingAreaID
+            },
+            todos: onboardingTodos.filter {
+                $0.id != onboarding.createdTaskID && $0.id != excludingTaskID
+            },
+            flowSessions: onboardingFlowSessions,
+            flowBreaks: onboardingFlowBreaks
+        ).hasUserContent
+    }
+
+    private func resolveOnboardingExperience() async {
+        guard onboarding.isPresented else { return }
+
+        if onboardingWorkspaceHasUserContent {
+            onboarding.resolveWorkspace(hasUserContent: true)
+            return
+        }
+
+        if onboarding.launchKind == .firstRun,
+           onboarding.experience == .undecided,
+           AppModelContainerFactory.usesCloudKitForCurrentProcess {
+            await OnboardingWorkspaceSettler.waitForInitialImportOrTimeout()
+            guard !Task.isCancelled else { return }
+        }
+
+        onboarding.resolveWorkspace(hasUserContent: onboardingWorkspaceHasUserContent)
     }
 
     private func showOnboardingScreenIfNeeded() {

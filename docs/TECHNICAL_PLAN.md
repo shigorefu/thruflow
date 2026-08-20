@@ -58,11 +58,11 @@ targets watchOS 10.0 to match the iOS 17 generation.
 - `HistoryCalendarSeriesProjector` groups connected Flow/rest records into week-only composite presentation blocks while preserving the underlying records for editing.
 - `HistoryOverlapLayout` assigns deterministic side-by-side lanes using actual and minimum visual duration so short records cannot overlap in rendering.
 - `FlowHistoryEditor` creates independent completed manual Flow records and delegates affected progress rebuilding to `FlowProgressReconciler` when history changes.
-- `FlowHistoryDeletionService` atomically purges all FlowSession/FlowSegment/
-  FlowBreak records only when no active Flow exists, preserves Task/Direction
-  entities and manual Check state, and resets Flow-derived progress.
-- `FlowHistoryDeletionActor` runs that purge away from the main UI for macOS,
-  iPhone, and iPad Settings.
+- `AppDataResetService` atomically deletes every Direction, Todo, FlowSession,
+  FlowSegment, and FlowBreak only when no active Flow exists.
+- `AppDataResetActor` runs that reset away from the main UI for macOS, iPhone,
+  and iPad Settings. After success, the platform clears the persisted timer
+  selection and restarts first-run onboarding while preserving AppSettings.
 - `FlowDashboardBuilder` derives today's totals, Direction palette, and timeline segments from `FlowSession`, with a live overlay for the active creditable Flow.
 - `DashboardStatisticsBuilder` derives seven-day bars, previous-day deltas, and the most-grown Direction outside SwiftUI.
 - `FlowVisualState` converts 0...6 daily Blocks into clamped speed, volume, detail, depth, glow, and mode-specific wave character without placing those rules in SwiftUI. Its separate `identityReveal` reaches 1 during the first Block. The complete idle and active phase-speed curves use one testable `1.25` multiplier; frame cadence is unchanged. `FlowAnimationClock` consumes the complete visual state through its production API, and an idle-only shader current makes the low end of that curve visually legible without applying a second speed multiplier.
@@ -139,11 +139,18 @@ Cover:
   Tasks/Dots snapshot persistence.
 - Flow Dots reuse of the canonical 180-day statistics projection and mixed
   Direction color.
-- First-run onboarding persistence, forced preview isolation, real-screen
-  navigation, centered-card presentation, the exact seven-card order, and the
-  final `方向 → タスク → Flow → 履歴・統計 → 次の一歩` projection on macOS and
-  universal iOS. Coverage must also ensure no spotlight/anchor geometry or
-  automatic target scrolling is required.
+- First-run onboarding persistence, workspace-content detection, guided versus
+  read-only experience selection, real-screen navigation, and the exact
+  ten-step `ようこそ → 分野 → タスク → 流れ → 集中タイマー → 流れを体験 → 履歴 → 統計 →
+  使い方の流れ → データ` order on macOS and universal iOS. Coverage must prove that Area
+  and Task records appear only after normal user confirmation, the Flow preview
+  renders the production player shell and deterministically projects Task-card
+  press and selection, Play press, accelerated Short focus from `12:00` to
+  `00:00`, break press, and the `03:00` regular-break state without invoking
+  production actions or creating credited or synchronized data. Coverage must
+  also preserve the real-player rule that a break begins only after note
+  confirmation, prove every step can be skipped, and keep existing-workspace or
+  Settings replay read-only.
 - Review eligibility boundaries: seven-day delay, active-day/completed-Flow
   thresholds, and one request per application version.
 - StoreKit support configuration uses stable Coffee/Ramen product identifiers,
@@ -152,10 +159,12 @@ Cover:
 
 For interactive first-user QA, select `ThruFlow Onboarding Preview` on macOS or
 `ThruFlow iOS Onboarding Preview` on an iPhone/iPad simulator and Run. Both
-schemes force onboarding, use the existing in-memory UI-testing container, and
-never persist completion or sample data. `OnboardingJourneyUITests` provides the
-automated macOS walkthrough over the real workspace, including centered-card
-placement, real-screen navigation, Back, Skip, all seven cards, and Finish.
+schemes force onboarding and use the existing in-memory UI-testing container,
+so user-confirmed example records cannot reach the real store. The preview
+experience can be selected explicitly to exercise guided creation or read-only
+tour behavior. `OnboardingJourneyUITests` covers real-screen navigation, Back,
+Close, all ten steps, confirmation-gated Area and Task creation, the transient
+Flow preview, and Finish.
 
 ## Migration Caution
 

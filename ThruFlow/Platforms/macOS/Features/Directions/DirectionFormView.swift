@@ -33,6 +33,7 @@ struct DirectionFormView: View {
 
     @State private var draft: DirectionDraft
     @State private var validationErrors: [DirectionValidationError] = []
+    @State private var saveErrorMessage: String?
     @State private var isShowingEmojiPicker = false
     @State private var isShowingDeleteConfirmation = false
     @State private var isShowingHabitPauseDateSheet = false
@@ -43,6 +44,7 @@ struct DirectionFormView: View {
     init(
         mode: Mode,
         initialName: String? = nil,
+        initialDraft: DirectionDraft? = nil,
         onSaved: ((Direction) -> Void)? = nil
     ) {
         self.mode = mode
@@ -50,12 +52,17 @@ struct DirectionFormView: View {
 
         switch mode {
         case .create:
-            var draft = DirectionDraft()
-            draft.name = initialName ?? ""
-            _draft = State(initialValue: draft)
+            if let initialDraft {
+                _draft = State(initialValue: initialDraft)
+            } else {
+                var draft = DirectionDraft()
+                draft.name = initialName ?? ""
+                _draft = State(initialValue: draft)
+            }
         case .edit(let direction):
             _draft = State(initialValue: DirectionDraft(direction: direction))
         }
+        _saveErrorMessage = State(initialValue: nil)
     }
 
     var body: some View {
@@ -95,6 +102,7 @@ struct DirectionFormView: View {
 
                 ToolbarItem(placement: .confirmationAction) {
                     Button(String(localized: "保存"), action: save)
+                        .accessibilityIdentifier("direction.editor.save")
                 }
             }
         }
@@ -331,11 +339,16 @@ struct DirectionFormView: View {
 
     @ViewBuilder
     private var validationCard: some View {
-        if !validationErrors.isEmpty {
+        if !validationErrors.isEmpty || saveErrorMessage != nil {
             DirectionSectionCard {
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(validationErrors, id: \.self) { error in
                         Label(error.localizedDescription, systemImage: "exclamationmark.triangle")
+                            .foregroundStyle(.red)
+                    }
+
+                    if let saveErrorMessage {
+                        Label(saveErrorMessage, systemImage: "exclamationmark.triangle")
                             .foregroundStyle(.red)
                     }
                 }
@@ -418,6 +431,7 @@ struct DirectionFormView: View {
     }
 
     private func save() {
+        saveErrorMessage = nil
         normalizeGoalState(for: draft.type)
         validationErrors = validator.validate(draft)
         guard validationErrors.isEmpty else { return }
@@ -463,9 +477,14 @@ struct DirectionFormView: View {
             savedDirection = direction
         }
 
-        try? modelContext.save()
-        onSaved?(savedDirection)
-        dismiss()
+        do {
+            try modelContext.save()
+            onSaved?(savedDirection)
+            dismiss()
+        } catch {
+            modelContext.rollback()
+            saveErrorMessage = String(localized: "記録を保存できませんでした。")
+        }
     }
 
     private func deleteDirection() {

@@ -122,50 +122,22 @@ struct FlowMiniPlayerView: View {
     }
 
     private func dashboardPlayer(now: Date) -> some View {
-        VStack(spacing: 18) {
+        FlowTimerPanelShell(
+            style: .dashboard,
+            timer: FlowTimerPresentation(
+                progress: dashboardTimerProgress(now: now),
+                tint: timerRingColor,
+                eyebrow: timerEyebrow,
+                timeText: dashboardTimerText(now: now),
+                footer: timerPhaseName
+            ),
+            timerAccessibilityLabel: String(localized: "Flowタイマー")
+        ) {
             taskPickerButton(now: now)
-
+        } mode: {
             modePickerButton
-
-            ZStack {
-                Circle()
-                    .stroke(Color.primary.opacity(0.08), lineWidth: 10)
-
-                Circle()
-                    .trim(from: 0, to: dashboardTimerProgress(now: now))
-                    .stroke(
-                        timerRingColor,
-                        style: StrokeStyle(lineWidth: 10, lineCap: .round)
-                    )
-                    .rotationEffect(.degrees(-90))
-
-                VStack(spacing: 5) {
-                    Text(timerEyebrow)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-
-                    Text(dashboardTimerText(now: now))
-                        .font(.system(.title, design: .rounded).weight(.bold))
-                        .monospacedDigit()
-
-                    Text(timerPhaseName)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .frame(width: 158, height: 158)
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel(String(localized: "Flowタイマー"))
-
-            transportControls
-        }
-        .padding(18)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(.ultraThinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-        .overlay {
-            RoundedRectangle(cornerRadius: 8)
-                .strokeBorder(Color.primary.opacity(0.08))
+        } controls: {
+            dashboardTransportControls
         }
     }
 
@@ -181,48 +153,41 @@ struct FlowMiniPlayerView: View {
     }
 
     private func taskPickerButton(now: Date) -> some View {
-        HStack(spacing: 8) {
-            if let selectedTodo {
-                TodoProgressControl(
-                    todo: selectedTodo,
-                    additionalFocusSeconds: liveSelectedTaskFocusSeconds(now: now)
-                ) {
-                    if selectedTodo.setManuallyCompleted(!selectedTodo.isCompleted) {
-                        try? modelContext.save()
+        FlowTimerContextButton(
+            style: .dashboard,
+            presentation: FlowTimerContextPresentation(
+                symbol: flowDirection?.symbolName ?? "▶",
+                areaTitle: flowDirectionName,
+                tint: artworkColor,
+                detail: selectedTodo.flatMap { todo in
+                    todo.measurement == .checkbox
+                        ? nil
+                        : todoRemainingText(
+                            todo,
+                            additionalFocusSeconds: liveSelectedTaskFocusSeconds(now: now)
+                        )
+                },
+                isPlaceholder: flowTaskTitleIsPlaceholder,
+                showsProgress: selectedTodo != nil
+            ),
+            isVisuallyPressed: taskCardIsPressed,
+            accessibilityLabel: String(localized: "Flowタスクを選択"),
+            action: openTaskPicker
+        ) {
+            taskTitleEditor
+        } progress: {
+            Group {
+                if let selectedTodo {
+                    TodoProgressControl(
+                        todo: selectedTodo,
+                        additionalFocusSeconds: liveSelectedTaskFocusSeconds(now: now)
+                    ) {
+                        if selectedTodo.setManuallyCompleted(!selectedTodo.isCompleted) {
+                            try? modelContext.save()
+                        }
                     }
                 }
             }
-
-            HStack(spacing: 12) {
-                playerArtwork
-
-                contextLabel(now: now)
-
-                Spacer(minLength: 0)
-
-                Image(systemName: "chevron.down")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .contentShape(Rectangle())
-            .scaleEffect(taskCardIsPressed ? 0.985 : 1)
-            .opacity(taskCardIsPressed ? 0.82 : 1)
-            .onTapGesture {
-                openTaskPicker()
-            }
-            .accessibilityElement(children: .contain)
-            .accessibilityAction(named: String(localized: "Flowタスクを選択")) {
-                openTaskPicker()
-            }
-        }
-        .padding(.leading, selectedTodo == nil ? 0 : 6)
-        .background(Color.primary.opacity(0.05))
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .overlay {
-            RoundedRectangle(cornerRadius: 14)
-                .strokeBorder(Color.primary.opacity(0.08))
         }
         .popover(isPresented: $showsTaskPicker, arrowEdge: .bottom) {
             FlowTaskPickerView(
@@ -598,6 +563,41 @@ struct FlowMiniPlayerView: View {
         .padding(3)
         .background(Color.primary.opacity(0.06))
         .clipShape(Capsule())
+    }
+
+    private var dashboardTransportControls: some View {
+        FlowTimerTransportControls(
+            style: .dashboard,
+            presentation: FlowTimerTransportPresentation(
+                primarySymbol: primaryButtonImage,
+                primaryLabel: primaryButtonTitle,
+                primaryTint: primaryButtonColor,
+                isPrimaryEnabled: true,
+                canSeek: canSeek,
+                canDestroy: activeFlowStore.timerState != nil,
+                canStop: activeFlowStore.timerState != nil,
+                canStartBreak: activeFlowStore.canRequestBreak,
+                destroyLabel: activeFlowStore.isBreakPhase
+                    ? String(localized: "休憩を削除")
+                    : String(localized: "Flowを破壊"),
+                visuallyPressedAction: nil
+            )
+        ) { action in
+            switch action {
+            case .seekBackward:
+                activeFlowStore.seekBackward(modelContext: modelContext)
+            case .primary:
+                handlePrimaryAction()
+            case .seekForward:
+                activeFlowStore.seekForward(modelContext: modelContext)
+            case .destroy:
+                activeFlowStore.destroy(modelContext: modelContext)
+            case .stop:
+                activeFlowStore.stop(modelContext: modelContext)
+            case .startBreak:
+                activeFlowStore.requestBreakMemo(modelContext: modelContext)
+            }
+        }
     }
 
     private func compactControlSlot<Content: View>(

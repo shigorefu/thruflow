@@ -992,6 +992,47 @@ struct FlowTests {
         #expect(notifications.runningTooLong.last?.fireDate == breakStart.addingTimeInterval(62 * 60))
     }
 
+    @Test @MainActor func applicationDataResetClearsAndPersistsTimerConfiguration() {
+        let suiteName = "FlowTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let direction = Direction(name: "仕事", type: .neutral)
+        let todo = Todo(title: "実装", direction: direction)
+        let notifications = TestFlowNotificationService()
+        let liveActivities = TestLiveActivityService()
+        let store = ActiveFlowStore(
+            defaults: defaults,
+            notifications: notifications,
+            liveActivities: liveActivities
+        )
+        store.configure(
+            direction: direction,
+            todo: todo,
+            intent: "次の作業",
+            mode: .fiftyTen
+        )
+
+        store.resetAfterApplicationDataReset()
+
+        #expect(store.selectedDirectionID == nil)
+        #expect(store.selectedTodoID == nil)
+        #expect(store.selectedMode == .twentyFiveFive)
+        #expect(store.intent.isEmpty)
+        #expect(store.phase == .idle)
+        #expect(notifications.cancelCount == 1)
+        #expect(notifications.clearBadgeCount == 1)
+        #expect(liveActivities.endCount == 1)
+
+        let restored = ActiveFlowStore(
+            defaults: defaults,
+            notifications: TestFlowNotificationService()
+        )
+        #expect(restored.selectedDirectionID == nil)
+        #expect(restored.selectedTodoID == nil)
+        #expect(restored.selectedMode == .twentyFiveFive)
+        #expect(restored.intent.isEmpty)
+    }
+
     @Test @MainActor func activeFlowPublishesLiveActivityContextAndPauseState() throws {
         let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
@@ -1333,6 +1374,8 @@ private final class TestFlowNotificationService: FlowNotificationService {
     private(set) var focusFinishedDates: [Date] = []
     private(set) var breakFinishedDates: [Date] = []
     private(set) var runningTooLong: [(phase: FlowNotificationPhase, fireDate: Date)] = []
+    private(set) var cancelCount = 0
+    private(set) var clearBadgeCount = 0
 
     func requestAuthorizationIfNeeded() {}
     func scheduleFocusFinished(mode: FlowMode, focusedSeconds: Int, fireDate: Date) {
@@ -1344,8 +1387,12 @@ private final class TestFlowNotificationService: FlowNotificationService {
     func scheduleRunningTooLong(phase: FlowNotificationPhase, fireDate: Date) {
         runningTooLong.append((phase, fireDate))
     }
-    func cancelPendingFlowNotifications() {}
-    func clearBadge() {}
+    func cancelPendingFlowNotifications() {
+        cancelCount += 1
+    }
+    func clearBadge() {
+        clearBadgeCount += 1
+    }
 }
 
 @MainActor

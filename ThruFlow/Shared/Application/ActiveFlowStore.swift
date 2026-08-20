@@ -104,6 +104,25 @@ final class ActiveFlowStore: ObservableObject {
         persistConfiguration()
     }
 
+    func resetAfterApplicationDataReset() {
+        guard timerState == nil else { return }
+
+        notifications.cancelPendingFlowNotifications()
+        notifications.clearBadge()
+        liveActivities.end()
+        selectedDirectionID = nil
+        selectedTodoID = nil
+        selectedMode = .twentyFiveFive
+        intent = ""
+        activeSession = nil
+        didApplyProgress = false
+        isAwaitingBreakMemo = false
+        stateBeforeResultPrompt = nil
+        lastAppliedRuntimeVersion = nil
+        flowBreakInteraction = nil
+        persistConfiguration()
+    }
+
     func start(direction: Direction, todo: Todo?, modelContext: ModelContext, now: Date = .now) {
         stateBeforeResultPrompt = nil
         let state = engine.start(mode: selectedMode, now: now)
