@@ -22,7 +22,7 @@ struct StoreKitConfigurationTests {
         for product in indexed.values {
             let localizations = try #require(product["localizations"] as? [[String: Any]])
             let locales = Set(localizations.compactMap { $0["locale"] as? String })
-            #expect(locales == ["en_US", "ja_JP", "ru_RU"])
+            #expect(locales == ["en_US", "ja", "ru"])
         }
     }
 
