@@ -5,33 +5,34 @@
 The goal for 1.0 is to ship a reliable core loop, not expand the product:
 
 ```text
-Direction -> Task -> Flow -> focused time -> progress -> statistics
+Area -> Task -> Flow -> focused time -> progress -> statistics
 ```
 
 ### Implemented
 
 - [x] Shared SwiftData domain and private CloudKit store for macOS and iOS.
-- [x] Complete macOS product with Flow, Tasks, History, Directions, and
+- [x] Complete macOS product with Flow, Tasks, History, Areas, and
   Statistics.
-- [x] Flow-first iPhone app with Tasks, History, Directions, Statistics, and
+- [x] Flow-first iPhone app with Tasks, History, Areas, Statistics, and
   Settings.
 - [x] Native wide iPad layout.
 - [x] Basic Apple Watch companion.
 - [x] Live Activity, Dynamic Island, and Home Screen widgets.
 - [x] Exact Flow history, Task switches, breaks, and Flow series.
-- [x] Task and Direction progress reconciliation after history creation,
+- [x] Task and Area progress reconciliation after history creation,
   editing, and deletion.
 - [x] Japanese, English, and Russian localizations.
 - [x] Theme, language, first-weekday, time-format, and new-day-boundary settings.
-- [x] Seven centered introduction cards shown over the real macOS, iPhone, and
-  iPad screens, with automatic section navigation, the final
-  `Direction -> Task -> Flow -> History and Statistics -> next step` summary,
-  dedicated preview schemes, and replay from Settings without test data.
+- [x] Version 1.0.2 eight-step onboarding on macOS, iPhone, and iPad. An empty
+  first run can create a real Area and Task only after user confirmation, then
+  shows a transient Flow preview with no credited or synchronized data.
+  Existing-workspace first launch and Settings replay are read-only, every step
+  is skippable, and preview schemes isolate confirmed examples in memory.
 - [x] A non-intrusive system review request after confirmed use, a GitHub link,
   and optional StoreKit tips: coffee ¥100 / ramen ¥500.
 - [x] Configurable Statistics CSV export.
 - [x] Safe deletion of all Flow history from Settings while preserving Tasks
-  and Directions, resetting derived progress, and syncing through private
+  and Areas, resetting derived progress, and syncing through private
   CloudKit.
 
 ### Release gates
@@ -67,7 +68,7 @@ Every item below is required before publishing 1.0:
   `THRUFLOW_APP_STORE_ID` for the direct review link.
 - [ ] Deploy the verified CloudKit Development schema to Production and verify
   a clean install against the Production environment.
-- [ ] Confirm app, extension, and Watch version `1.0`, aligned build numbers,
+- [ ] Confirm app, extension, and Watch version `1.0.2`, aligned build numbers,
   Release signing, icons, and archives without validation errors.
 - [ ] Complete closed TestFlight and external smoke tests before submitting an
   App Store build.
@@ -96,14 +97,14 @@ outside Flow.
   or turning the feature off entirely.
 - [ ] Avoid a series of prompts after a night or long absence; combine gaps into
   one calm review.
-- [ ] Store non-Flow time separately from Task and Direction progress. These
+- [ ] Store non-Flow time separately from Task and Area progress. These
   records never earn Blocks or count as focused time.
 
 ## Other work after 1.0
 
 - More detailed watchOS Statistics.
 - Further improvements to the quick Task composer.
-- A more deliberate reward system for `Nice` (`ナイス`).
+- A more deliberate reward system for Optional Areas (`できたら`).
 
 ## 2.0 — Server transport and connectors
 

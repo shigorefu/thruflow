@@ -948,7 +948,7 @@ private struct StatisticsDirectionFilterMenu: View {
                 }
             }
         } label: {
-            Image(systemName: "point.3.connected.trianglepath.dotted")
+            Image(systemName: ProductSymbol.area)
                 .foregroundStyle(selectedDirectionID == nil ? Color.primary : Color.accentColor)
         }
         .menuStyle(.borderlessButton)

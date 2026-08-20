@@ -7,7 +7,9 @@ struct IOSTaskComposer: View {
     @Environment(\.modelContext) private var modelContext
 
     let directions: [Direction]
-    var onClose: (() -> Void)? = nil
+    let initialDraft: TodoDraft?
+    let onClose: (() -> Void)?
+    let onCreated: ((Todo) -> Void)?
 
     @State private var title = ""
     @State private var directionID: UUID?
@@ -25,10 +27,42 @@ struct IOSTaskComposer: View {
     @State private var hasExplicitDirection = false
     @State private var hasExplicitPriority = false
     @State private var hasExplicitDate = false
+    @State private var saveErrorMessage: String?
     @AppStorage("settings.showsTaskQuickInputLegend") private var showsQuickInputLegend = true
     @FocusState private var isFocused: Bool
 
     private let parser = TaskQuickInputParser()
+
+    init(
+        directions: [Direction],
+        initialDraft: TodoDraft? = nil,
+        onClose: (() -> Void)? = nil,
+        onCreated: ((Todo) -> Void)? = nil
+    ) {
+        self.directions = directions
+        self.initialDraft = initialDraft
+        self.onClose = onClose
+        self.onCreated = onCreated
+
+        let draft = initialDraft ?? TodoDraft(scheduledDate: .now)
+        let initialTitle = ([draft.title] + draft.hashtags.map { "#\($0)" })
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
+
+        _title = State(initialValue: initialTitle)
+        _directionID = State(initialValue: draft.direction?.id)
+        _measurement = State(initialValue: draft.measurement)
+        _plannedAmount = State(initialValue: max(1, draft.plannedAmount ?? 1))
+        _priority = State(initialValue: draft.priority)
+        _isRoomIfPossible = State(initialValue: draft.priority == .low && draft.isRoomIfPossible)
+        _scheduledDate = State(initialValue: draft.scheduledDate)
+        _datePickerValue = State(initialValue: draft.scheduledDate ?? .now)
+        _hasExplicitMeasurement = State(initialValue: initialDraft != nil)
+        _hasExplicitDirection = State(initialValue: initialDraft?.direction != nil)
+        _hasExplicitPriority = State(initialValue: initialDraft != nil)
+        _hasExplicitDate = State(initialValue: initialDraft != nil)
+        _saveErrorMessage = State(initialValue: nil)
+    }
 
     var body: some View {
         VStack(spacing: 8) {
@@ -40,6 +74,14 @@ struct IOSTaskComposer: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
 
+            if let saveErrorMessage {
+                Label(saveErrorMessage, systemImage: "exclamationmark.triangle")
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 12)
+            }
+
             VStack(spacing: 10) {
                 HStack(alignment: .top, spacing: 8) {
                     TextField(String(localized: "タスクを入力してください"), text: $title, axis: .vertical)
@@ -48,6 +90,7 @@ struct IOSTaskComposer: View {
                         .submitLabel(.send)
                         .onSubmit(submit)
                         .onChange(of: title) { _, _ in
+                            saveErrorMessage = nil
                             applyRecognizedQuickInput()
                         }
 
@@ -88,6 +131,7 @@ struct IOSTaskComposer: View {
                     .buttonStyle(.plain)
                     .disabled(!canSubmit)
                     .accessibilityLabel(String(localized: "タスクを追加"))
+                    .accessibilityIdentifier("task.composer.submit")
                 }
                 .font(.caption.weight(.medium))
 
@@ -98,8 +142,10 @@ struct IOSTaskComposer: View {
         .padding(.top, 8)
         .padding(.bottom, 8)
         .task {
-            directionID = nil
-            scheduledDate = currentAppDay
+            if initialDraft == nil {
+                directionID = nil
+                scheduledDate = currentAppDay
+            }
             await Task.yield()
             isFocused = true
         }
@@ -469,7 +515,7 @@ struct IOSTaskComposer: View {
                         id: $0.id.uuidString,
                         title: "\($0.symbolName) \($0.name)",
                         replacement: "@\($0.name)",
-                        systemImage: "point.3.connected.trianglepath.dotted"
+                        systemImage: ProductSymbol.area
                     )
                 }
         case "!":
@@ -533,6 +579,7 @@ struct IOSTaskComposer: View {
     }
 
     private func submit() {
+        saveErrorMessage = nil
         let parserDirections = directions.map { TaskQuickInputDirection(id: $0.id, name: $0.name) }
         let result = parser.parse(
             title,
@@ -563,7 +610,16 @@ struct IOSTaskComposer: View {
             scheduledDate: resolvedDate(from: result.date)
         )
         modelContext.insert(todo)
-        try? modelContext.save()
+
+        do {
+            try modelContext.save()
+        } catch {
+            modelContext.rollback()
+            saveErrorMessage = String(localized: "記録を保存できませんでした。")
+            return
+        }
+
+        onCreated?(todo)
 
         title = ""
         measurement = .checkbox

@@ -29,7 +29,7 @@ ThruFlow/
       Support/      AppKit adapters used by the macOS presentation layer
     iOS/
       App/          iPhone composition root, navigation, entitlements, and Info.plist
-      Features/     Native iPhone Flow, Tasks, History, Directions, Statistics, and Settings
+      Features/     Native iPhone Flow, Tasks, History, Areas, Statistics, and Settings
       Support/      ActivityKit and other iOS framework adapters
     watchOS/
       App/          Watch composition root and CloudKit entitlements
@@ -71,7 +71,7 @@ Platforms/watchOS ─┘              │
   integration, drag-and-drop presentation, and the current desktop layouts.
 - `Platforms/iOS` owns the adaptive iPhone/iPad presentation. Compact widths use
   the Flow-first tab shell; regular widths use a Mac-like split view with a
-  persistent sidebar and the same native Flow, Tasks, History, Directions,
+  persistent sidebar and the same native Flow, Tasks, History, Areas,
   Statistics, and Settings destinations.
 - `Platforms/watchOS` owns the four-page vertical Watch dashboard, compact
   player, Tasks, Statistics, and fullscreen Flow stream presentations.
@@ -111,13 +111,26 @@ Each platform owns its composition root:
   logical day contains an instant. Domain builders accept it explicitly so
   Tasks, Habits, Flow, History, Statistics, watchOS, and widgets cannot develop
   platform-specific midnight rules.
-- `OnboardingStore` owns the local first-run completion flag and deterministic
-  seven-card step/screen projection. The platform roots keep their real
-  workspace mounted and follow the requested onboarding screen behind one
-  uniformly dimmed overlay with a centered card. Onboarding has no target-bound
-  geometry, anchor preference, spotlight, or automatic target scrolling. No
-  demo entity is inserted into SwiftData. `--onboarding-preview` forces the
-  journey while `--uitesting` keeps its application container in memory.
+- `OnboardingStore` owns the local first-run completion flag, launch kind,
+  guided/read-only experience, deterministic eight-step screen projection,
+  pending editor presentation, IDs of user-confirmed onboarding records, and
+  transient Flow-preview state. It never inserts an Area or Task itself; the
+  platform's normal editor/composer reports a saved stable ID only after the
+  user confirms creation. The preview is elapsed presentation state and never
+  starts an `ActiveFlowStore` session or reaches persistence.
+- `OnboardingWorkspaceInspector` derives whether real user Areas, Tasks, or Flow
+  history already exist. Platform roots use that value once the workspace is
+  available: an empty first run can be guided, while an existing workspace and
+  every Settings replay are read-only. The roots keep the real workspace mounted,
+  follow the requested onboarding screen, and own native editor/sheet/popover
+  presentation. Signed CloudKit runs keep the first empty snapshot unresolved
+  until a successful initial import event or a bounded four-second grace period,
+  then inspect the workspace again. The same fresh inspection runs before an
+  onboarding Area or Task save is accepted; late imported content changes the
+  remaining journey to read-only without discarding an open draft. Settings is
+  dismissed before replay begins. `--onboarding-preview` forces the journey while
+  `--uitesting` keeps confirmed preview records inside an in-memory application
+  container.
 - `ReviewPromptPolicy` is a deterministic value policy. `ReviewRequestGate`
   queries completed Flow history only at application entry or after the shared
   `flowDidComplete` event, then delegates presentation to StoreKit's system
@@ -129,7 +142,7 @@ Each platform owns its composition root:
 - `FlowHistoryDeletionActor` performs the user-requested full Flow-history
   purge away from the main UI. `FlowHistoryDeletionService` rejects an active
   Flow, deletes Flow/segment/break records in one save, and resets only
-  Flow-derived Task and Direction progress. Platform Settings own confirmation
+  Flow-derived Task and Area progress. Platform Settings own confirmation
   and presentation, not deletion rules.
 
 - `Platforms/iOS/App/ThruFlowiOSApp.swift` declares the universal iPhone/iPad scene and injects
@@ -239,12 +252,12 @@ or updated after iOS adopts the persisted runtime.
 ## iPhone and iPad presentation
 
 The first iPhone release includes the Flow dashboard, Tasks/Habits across
-day/week/month ranges, Direction management and ordering, day/week/month
+day/week/month ranges, Area management and ordering, day/week/month
 History with the same chronology and editing semantics as macOS, the complete
 period-report Statistics feature in a native iPhone presentation, basic
 settings, and CloudKit synchronization.
 Its persistent five-item navigation contains
-`Flow`, `タスク`, `履歴`, `方向`, and `統計`. The shell uses the system `TabView`
+`Flow`, `タスク`, `履歴`, `分野`, and `統計`. The shell uses the system `TabView`
 so iOS owns selection, accessibility, and Liquid Glass. On iOS 26 the tab bar
 minimizes while content scrolls down and returns on upward scrolling; older
 systems keep their native tab-bar behavior. The Task quick-capture composer is
@@ -257,8 +270,8 @@ presentation difference must not change which records, gaps, series, progress,
 or filters the user sees.
 
 An active iPhone Flow publishes one system Live Activity. The Lock Screen and
-Dynamic Island show Task, Direction, remaining time, and progress. During a
-break, the task identity is replaced by `☕️ 休憩` and the Direction is hidden.
+Dynamic Island show Task, Area, remaining time, and progress. During a
+break, the task identity is replaced by `☕️ 休憩` and the Area is hidden.
 Date-backed timer ranges let the system advance timer text and progress while
 the app is suspended. Compact Dynamic Island shows only the Task emoji and
 remaining `MM:SS`; minimal presentation shows circular progress. Expanded

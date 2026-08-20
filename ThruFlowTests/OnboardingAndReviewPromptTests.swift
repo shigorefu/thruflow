@@ -9,13 +9,17 @@ struct OnboardingAndReviewPromptTests {
         let firstLaunch = OnboardingStore(defaults: defaults, arguments: [])
 
         #expect(firstLaunch.isPresented)
+        #expect(firstLaunch.launchKind == .firstRun)
+        #expect(firstLaunch.experience == .undecided)
         firstLaunch.complete()
         #expect(!firstLaunch.isPresented)
 
         let nextLaunch = OnboardingStore(defaults: defaults, arguments: [])
         #expect(!nextLaunch.isPresented)
-        nextLaunch.present()
+        nextLaunch.presentReplay()
         #expect(nextLaunch.isPresented)
+        #expect(nextLaunch.launchKind == .replay)
+        #expect(nextLaunch.experience == .tour)
     }
 
     @Test func previewModeNeverChangesFirstRunState() {
@@ -27,6 +31,8 @@ struct OnboardingAndReviewPromptTests {
 
         #expect(preview.isPreviewMode)
         #expect(preview.isPresented)
+        #expect(preview.launchKind == .preview)
+        #expect(preview.experience == .guided)
         preview.complete()
         #expect(!preview.isPresented)
 
@@ -38,37 +44,218 @@ struct OnboardingAndReviewPromptTests {
         let defaults = makeDefaults()
         let store = OnboardingStore(
             defaults: defaults,
-            arguments: ["--onboarding-preview", "--onboarding-step=6"]
+            arguments: [
+                "--onboarding-preview",
+                "--onboarding-step=7",
+                "--onboarding-experience=tour",
+            ]
         )
 
         #expect(store.isPresented)
         #expect(store.step == .workflow)
         #expect(store.step.screen == .flow)
+        #expect(store.experience == .tour)
     }
 
-    @Test func onboardingWalkthroughMovesAcrossRealApplicationScreens() {
+    @Test func tourWalkthroughMovesAcrossEightRealApplicationScreens() {
         let store = OnboardingStore(defaults: makeDefaults(), arguments: [])
+
+        #expect(!store.canAdvance)
+        store.advance()
+        #expect(store.step == .welcome)
+
+        store.resolveWorkspace(hasUserContent: true)
 
         #expect(store.step == .welcome)
         #expect(store.step.screen == .flow)
+
+        store.advance()
+        #expect(store.step == .areas)
+        #expect(store.step.screen == .directions)
+
+        store.advance()
+        #expect(store.step == .tasks)
+        #expect(store.step.screen == .tasks)
 
         store.advance()
         #expect(store.step == .flow)
         #expect(store.step.screen == .flow)
 
         store.advance()
-        #expect(store.step == .directions)
-        #expect(store.step.screen == .directions)
+        #expect(store.step == .demo)
+        #expect(store.step.screen == .flow)
 
-        for _ in 0..<4 { store.advance() }
+        for _ in 0..<3 { store.advance() }
         #expect(store.step == .workflow)
         #expect(store.step.screen == .flow)
 
         store.advance()
         #expect(!store.isPresented)
 
-        store.present()
+        store.presentReplay()
         #expect(store.step == .welcome)
+    }
+
+    @Test func emptyWorkspaceUsesGuidedCreationAndRecordsOnlyStableIdentifiers() {
+        let store = OnboardingStore(defaults: makeDefaults(), arguments: [])
+        let areaID = UUID()
+        let taskID = UUID()
+
+        store.resolveWorkspace(hasUserContent: false)
+        #expect(store.experience == .guided)
+
+        store.advance()
+        #expect(store.step == .areas)
+        #expect(store.canOfferAreaCreation)
+        #expect(!store.canAdvance)
+        #expect(store.requestAreaCreation())
+        #expect(store.presentation == .areaEditor)
+
+        #expect(store.recordArea(id: areaID))
+        #expect(store.createdAreaID == areaID)
+        #expect(store.step == .tasks)
+        #expect(store.canOfferTaskCreation)
+        #expect(!store.canAdvance)
+        #expect(store.requestTaskCreation())
+        #expect(store.presentation == .taskComposer)
+
+        #expect(store.recordTask(id: taskID))
+        #expect(store.createdTaskID == taskID)
+        #expect(store.step == .flow)
+        #expect(store.canAdvance)
+    }
+
+    @Test func existingDataAndReplayNeverOfferCreation() {
+        let firstRun = OnboardingStore(defaults: makeDefaults(), arguments: [])
+        firstRun.resolveWorkspace(hasUserContent: true)
+        firstRun.advance()
+
+        #expect(firstRun.experience == .tour)
+        #expect(firstRun.step == .areas)
+        #expect(!firstRun.canOfferAreaCreation)
+        #expect(!firstRun.requestAreaCreation())
+        #expect(!firstRun.recordArea(id: UUID()))
+
+        firstRun.skip()
+        firstRun.presentReplay()
+        firstRun.advance()
+
+        #expect(firstRun.launchKind == .replay)
+        #expect(firstRun.experience == .tour)
+        #expect(!firstRun.canOfferAreaCreation)
+        #expect(!firstRun.requestAreaCreation())
+    }
+
+    @Test func newlyArrivedWorkspaceContentPreservesAnOpenDraftThenUsesTheTour() {
+        let store = OnboardingStore(defaults: makeDefaults(), arguments: [])
+
+        store.resolveWorkspace(hasUserContent: false)
+        #expect(store.experience == .guided)
+        store.advance()
+        #expect(store.requestAreaCreation())
+        #expect(store.presentation == .areaEditor)
+
+        store.resolveWorkspace(hasUserContent: true)
+        #expect(store.experience == .guided)
+        #expect(store.presentation == .areaEditor)
+        #expect(!store.canOfferAreaCreation)
+
+        store.dismissPresentation()
+        #expect(store.experience == .tour)
+        #expect(store.presentation == nil)
+    }
+
+    @Test func savingAnOpenDraftAfterRemoteContentArrivesDoesNotOfferMoreCreation() {
+        let store = OnboardingStore(defaults: makeDefaults(), arguments: [])
+
+        store.resolveWorkspace(hasUserContent: false)
+        store.advance()
+        #expect(store.requestAreaCreation())
+
+        store.resolveWorkspace(hasUserContent: true)
+        #expect(store.recordArea(id: UUID()))
+        #expect(store.experience == .tour)
+        #expect(store.step == .tasks)
+        #expect(!store.canOfferTaskCreation)
+    }
+
+    @Test func externalContentAfterTheFirstAreaStopsGuidedTaskCreation() {
+        let store = OnboardingStore(defaults: makeDefaults(), arguments: [])
+
+        store.resolveWorkspace(hasUserContent: false)
+        store.advance()
+        #expect(store.recordArea(id: UUID()))
+        #expect(store.step == .tasks)
+
+        store.resolveWorkspace(hasUserContent: true)
+        #expect(store.experience == .tour)
+        #expect(!store.canOfferTaskCreation)
+    }
+
+    @Test func dismissingCreationKeepsTheGuidedStepAvailable() {
+        let store = OnboardingStore(defaults: makeDefaults(), arguments: [])
+        store.resolveWorkspace(hasUserContent: false)
+        store.advance()
+
+        #expect(store.requestAreaCreation())
+        store.dismissPresentation()
+
+        #expect(store.presentation == nil)
+        #expect(store.step == .areas)
+        #expect(store.canOfferAreaCreation)
+    }
+
+    @Test func skipCompletesFromAnyGuidedStepAndKeepsTheCompletionKey() {
+        let defaults = makeDefaults()
+        let store = OnboardingStore(defaults: defaults, arguments: [])
+        store.resolveWorkspace(hasUserContent: false)
+        store.advance()
+        _ = store.recordArea(id: UUID())
+
+        store.skip()
+        #expect(!store.isPresented)
+
+        let nextLaunch = OnboardingStore(defaults: defaults, arguments: [])
+        #expect(!nextLaunch.isPresented)
+    }
+
+    @Test func demoClockIsPureDeterministicAndCancelsWhenLeavingItsStep() {
+        let store = OnboardingStore(
+            defaults: makeDefaults(),
+            arguments: ["--onboarding-preview", "--onboarding-step=4"]
+        )
+        let start = Date(timeIntervalSince1970: 1_000)
+
+        #expect(store.step == .demo)
+        #expect(store.startDemo(at: start, duration: 5))
+        #expect(store.demoState.isRunning)
+        #expect(store.demoProgress(at: start.addingTimeInterval(2.5)) == 0.5)
+
+        store.updateDemo(at: start.addingTimeInterval(4.9))
+        #expect(store.demoState.isRunning)
+        store.updateDemo(at: start.addingTimeInterval(5))
+        #expect(store.demoState.isCompleted)
+        #expect(store.demoProgress(at: start.addingTimeInterval(6)) == 1)
+
+        #expect(store.startDemo(at: start))
+        store.goBack()
+        #expect(store.step == .flow)
+        #expect(store.demoState == .idle)
+    }
+
+    @Test func previewReplayStillNeverPersistsFirstRunCompletion() {
+        let defaults = makeDefaults()
+        let preview = OnboardingStore(
+            defaults: defaults,
+            arguments: ["--onboarding-preview"]
+        )
+
+        preview.presentReplay()
+        #expect(preview.launchKind == .preview)
+        #expect(preview.experience == .tour)
+        preview.complete()
+
+        #expect(OnboardingStore(defaults: defaults, arguments: []).isPresented)
     }
 
     @Test func reviewPromptRequiresTimeAndMeaningfulUse() {

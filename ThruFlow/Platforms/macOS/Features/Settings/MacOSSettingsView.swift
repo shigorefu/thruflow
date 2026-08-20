@@ -7,9 +7,12 @@
 
 import SwiftData
 import SwiftUI
+import AppKit
 
 struct MacOSSettingsView: View {
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.openWindow) private var openWindow
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
     @EnvironmentObject private var settings: AppSettings
     @EnvironmentObject private var onboarding: OnboardingStore
@@ -75,7 +78,15 @@ struct MacOSSettingsView: View {
 
             Section(String(localized: "ヘルプ")) {
                 Button {
-                    onboarding.present()
+                    let settingsWindow = NSApp.keyWindow
+                    openWindow(id: MacOSWindowID.main)
+                    dismiss()
+                    settingsWindow?.performClose(nil)
+                    Task { @MainActor in
+                        await Task.yield()
+                        NSApp.activate(ignoringOtherApps: true)
+                        onboarding.presentReplay()
+                    }
                 } label: {
                     Label(String(localized: "使い方を見る"), systemImage: "sparkles.rectangle.stack")
                 }

@@ -2,6 +2,7 @@ import SwiftData
 import SwiftUI
 
 struct IOSSettingsView: View {
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
     @EnvironmentObject private var settings: AppSettings
@@ -73,7 +74,11 @@ struct IOSSettingsView: View {
 
             Section(String(localized: "ヘルプ")) {
                 Button {
-                    onboarding.present()
+                    dismiss()
+                    Task { @MainActor in
+                        await Task.yield()
+                        onboarding.presentReplay()
+                    }
                 } label: {
                     Label(String(localized: "使い方を見る"), systemImage: "sparkles.rectangle.stack")
                 }

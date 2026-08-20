@@ -187,8 +187,8 @@ struct LocalisationTests {
         let root = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
         let strings = try #require(root["strings"] as? [String: Any])
         let expectedTerms: [String: (english: String, russian: String)] = [
-            "方向": ("Areas", "Направления"),
-            "分野": ("Area", "Направление"),
+            "方向": ("Areas", "Сферы"),
+            "分野": ("Area", "Сфера"),
             "タスク": ("Tasks", "Задачи"),
             "対象タスク": ("Task", "Задача"),
             "時間": ("Time", "Время"),
@@ -225,6 +225,28 @@ struct LocalisationTests {
                 "Unexpected Russian product term for \(key)"
             )
         }
+
+        var legacyAreaTerms: [String] = []
+        for (key, rawEntry) in strings {
+            guard
+                let entry = rawEntry as? [String: Any],
+                let localisations = entry["localizations"] as? [String: Any]
+            else { continue }
+
+            if let english = localisedValue(language: "en", from: localisations),
+               english.range(of: #"\bdirections?\b"#, options: [.regularExpression, .caseInsensitive]) != nil {
+                legacyAreaTerms.append("en:\(key)")
+            }
+            if let russian = localisedValue(language: "ru", from: localisations),
+               russian.range(of: "направ", options: [.caseInsensitive]) != nil {
+                legacyAreaTerms.append("ru:\(key)")
+            }
+        }
+
+        #expect(
+            legacyAreaTerms.isEmpty,
+            "Legacy Area terms: \(legacyAreaTerms.sorted().joined(separator: ", "))"
+        )
     }
 
     private var repositoryRoot: URL {

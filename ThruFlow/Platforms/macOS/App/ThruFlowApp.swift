@@ -9,6 +9,10 @@ import AppKit
 import SwiftData
 import SwiftUI
 
+enum MacOSWindowID {
+    static let main = "main"
+}
+
 @main
 struct ThruFlowApp: App {
     @Environment(\.scenePhase) private var scenePhase
@@ -23,7 +27,7 @@ struct ThruFlowApp: App {
     private let sharedModelContainer = AppModelContainerFactory.make()
 
     var body: some Scene {
-        WindowGroup {
+        Window("ThruFlow", id: MacOSWindowID.main) {
             MacOSRootView()
                 .onboardingJourney(store: onboarding)
                 .environmentObject(activeFlowStore)

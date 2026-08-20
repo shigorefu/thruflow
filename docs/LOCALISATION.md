@@ -54,13 +54,22 @@ use `流れ`. Translators must inspect the originating screen and choose the
 contextual term recorded in `Localisation/TERMS.csv`.
 
 The persistent activity-area entity is `分野` in Japanese UI, `Area` in English,
-and `Направление` in Russian. Collection navigation uses `Areas` and
-`Направления`. Its visible types are `いつでも` / Anytime / В любое время,
+and `Сфера` in Russian. Collection navigation uses `Areas` and `Сферы`. Its
+visible types are `いつでも` / Anytime / В любое время,
 `習慣` / Habit / Привычка, and `できたら` / Optional / Если получится. The
 corresponding source keys remain `通常`, `習慣`, and `ナイス`. Other
 context-sensitive terms include `日付なし` for the Inbox projection, `週に数回`
 for the weekly-count Habit schedule, and `集中カレンダー` / Focus Calendar /
 Календарь фокуса for the calendar-style focus visualization.
+
+Version 1.0.2 onboarding has eight semantic steps: Welcome, Area, Task, Flow,
+the transient Flow preview, History, Statistics, and the final workflow summary.
+Translations should describe that loop naturally rather than mirror Japanese
+sentence structure. The privacy step may say that records are stored on the
+device and, when iCloud is enabled, synchronize through the user's private
+CloudKit database. It may also say that ThruFlow does not send Tasks or History
+to a developer-operated server. It must not claim end-to-end encryption,
+anonymity, that Apple never processes the records, or that iCloud is required.
 
 These copy choices never rename implementation or persisted identifiers.
 Swift types and properties such as `Direction`, `FlowSession`, and `FlowMode`,
@@ -107,8 +116,8 @@ it is not visible English UI copy:
 | --- | --- | --- | --- |
 | Tasks navigation | `タスク` | Tasks | Задачи |
 | Task field or picker | `対象タスク` | Task | Задача |
-| Areas navigation | `方向` | Areas | Направления |
-| Area field or picker | `分野` | Area | Направление |
+| Areas navigation | `方向` | Areas | Сферы |
+| Area field or picker | `分野` | Area | Сфера |
 | Main Flow navigation | `Flow` | Flow | Flow |
 | Saved Flow session | `集中記録` | Flow | Flow |
 | Flow count | `集中回数` | Flows | Сессии Flow |
@@ -124,5 +133,5 @@ it is not visible English UI copy:
 Translators must use the UI context from `Localisation/TERMS.csv`; identical
 Japanese wording does not imply that English and Russian should use a singular
 entity label in collection navigation. Likewise, English `Area` and Russian
-`Направление` are independent idiomatic choices; neither should be translated
+`Сфера` are independent idiomatic choices; neither should be translated
 mechanically from the other language.

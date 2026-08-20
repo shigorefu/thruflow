@@ -421,28 +421,6 @@
         }
       }
     },
-    "%@ ・ %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ · %2$@"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ ・ %2$@"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ · %2$@"
-          }
-        }
-      }
-    },
     "%@ · %@" : {
       "localizations" : {
         "en" : {
@@ -505,7 +483,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$@ %2$@ · Направления: %3$lld · Задачи: %4$lld · Flow: %5$lld"
+            "value" : "%1$@ %2$@ · Сферы: %3$lld · Задачи: %4$lld · Flow: %5$lld"
           }
         }
       }
@@ -655,50 +633,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@, %lld %@"
-          }
-        }
-      }
-    },
-    "%@、%@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@, %2$@"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@、%2$@"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@, %2$@"
-          }
-        }
-      }
-    },
-    "%@、%@、%@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@, %2$@, %3$@"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@、%2$@、%3$@"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@, %2$@, %3$@"
           }
         }
       }
@@ -2901,7 +2835,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Нет направлений в архиве"
+            "value" : "Нет сфер в архиве"
           }
         }
       }
@@ -3361,7 +3295,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "В этой колонке пока нет направлений."
+            "value" : "В этой колонке пока нет сфер."
           }
         }
       }
@@ -3383,7 +3317,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Время фокуса этого интервала будет вычтено из прогресса задачи и направления."
+            "value" : "Время фокуса этого интервала будет вычтено из прогресса задачи и сферы."
           }
         }
       }
@@ -3421,7 +3355,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Удалить это направление"
+            "value" : "Удалить эту сферу"
           }
         }
       }
@@ -3443,7 +3377,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Удалить это направление?"
+            "value" : "Удалить эту сферу?"
           }
         }
       }
@@ -3685,7 +3619,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Время этой сессии Flow будет вычтено из общего времени задачи и направления."
+            "value" : "Время этой сессии Flow будет вычтено из общего времени задачи и сферы."
           }
         }
       }
@@ -3885,7 +3819,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "История Flow и перерывов будет удалена на всех синхронизируемых устройствах. Задачи и направления останутся, а прогресс, рассчитанный по Flow, будет сброшен. Это действие нельзя отменить."
+            "value" : "История Flow и перерывов будет удалена на всех синхронизируемых устройствах. Задачи и сферы останутся, а прогресс, рассчитанный по Flow, будет сброшен. Это действие нельзя отменить."
           }
         }
       }
@@ -4119,7 +4053,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Выберите задачу, привычку или направление"
+            "value" : "Выберите задачу, привычку или сферу"
           }
         }
       }
@@ -4141,7 +4075,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Задачи, направления и заметки к задачам останутся. Статус выполненных задач не изменится."
+            "value" : "Задачи, сферы и заметки к задачам останутся. Статус выполненных задач не изменится."
           }
         }
       }
@@ -4573,7 +4507,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Необязательное направление для дел, которые будет приятно выполнить."
+            "value" : "Необязательная сфера для дел, которыми будет приятно заняться."
           }
         }
       }
@@ -5739,7 +5673,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Направление с наибольшим ростом"
+            "value" : "Сфера с наибольшим ростом"
           }
         }
       }
@@ -5867,13 +5801,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "How It Works"
+            "value" : "Replay Guide"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使い方をもう一度見る"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Как это работает"
+            "value" : "Повторить обучение"
           }
         }
       }
@@ -6470,22 +6410,6 @@
         }
       }
     },
-    "完了タスク%lld件" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Completed Tasks: %lld"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Завершено задач: %lld"
-          }
-        }
-      }
-    },
     "完了にする" : {
       "localizations" : {
         "en" : {
@@ -6643,7 +6567,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Направление будет перенесено в архив, чтобы сохранить историю и связанные задачи."
+            "value" : "Сфера будет перенесена в архив, чтобы сохранить историю и связанные задачи."
           }
         }
       }
@@ -6773,7 +6697,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Направление для задач, которые можно запланировать в любое время."
+            "value" : "Сфера для задач, которые можно запланировать в любое время."
           }
         }
       }
@@ -6920,7 +6844,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Новое направление"
+            "value" : "Новая сфера"
           }
         }
       }
@@ -6942,7 +6866,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Создать направление"
+            "value" : "Создать сферу"
           }
         }
       }
@@ -7034,7 +6958,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Направления"
+            "value" : "Сферы"
           }
         }
       }
@@ -7056,7 +6980,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Направления, задачи, Flow, история и статистика, следующий шаг"
+            "value" : "Сферы, задачи, Flow, история и статистика, следующий шаг"
           }
         }
       }
@@ -7078,7 +7002,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Направление «%1$@» не найдено"
+            "value" : "Сфера «%1$@» не найдена"
           }
         }
       }
@@ -7101,7 +7025,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Фильтр по направлению"
+            "value" : "Фильтр по сфере"
           }
         }
       }
@@ -7123,7 +7047,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Направления — это постоянные темы, которым вы хотите уделять время: работа, учёба, здоровье или чтение. Они объединяют связанные задачи, Flow и статистику."
+            "value" : "Сферы — это постоянные темы, которым вы хотите уделять время: работа, учёба, здоровье или чтение. Они объединяют связанные задачи, Flow и статистику."
           }
         }
       }
@@ -7145,7 +7069,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Направлений нет"
+            "value" : "Сфер нет"
           }
         }
       }
@@ -7167,7 +7091,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Фильтр направлений"
+            "value" : "Фильтр сфер"
           }
         }
       }
@@ -7189,7 +7113,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Создать направление"
+            "value" : "Создать сферу"
           }
         }
       }
@@ -7211,7 +7135,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Удалить направление"
+            "value" : "Удалить сферу"
           }
         }
       }
@@ -7233,7 +7157,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Выберите направление, превратите его в задачи на сегодня и записывайте время фокуса с помощью Flow. Просмотрите историю и статистику, а затем решите, чему уделить время дальше."
+            "value" : "Выберите сферу, превратите её в задачи на сегодня и записывайте время фокуса с помощью Flow. Просмотрите историю и статистику, а затем решите, чему уделить время дальше."
           }
         }
       }
@@ -7255,7 +7179,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Изменить направление"
+            "value" : "Изменить сферу"
           }
         }
       }
@@ -7277,7 +7201,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Добавить направление"
+            "value" : "Добавить сферу"
           }
         }
       }
@@ -7299,7 +7223,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Выбрать направление"
+            "value" : "Выбрать сферу"
           }
         }
       }
@@ -7309,7 +7233,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Select a Area"
+            "value" : "Select an Area"
           }
         },
         "ja" : {
@@ -7321,7 +7245,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Выберите направление"
+            "value" : "Выберите сферу"
           }
         }
       }
@@ -7331,7 +7255,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Select a Area."
+            "value" : "Select an Area."
           }
         },
         "ja" : {
@@ -7343,7 +7267,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Выберите направление."
+            "value" : "Выберите сферу."
           }
         }
       }
@@ -7365,7 +7289,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "По направлениям"
+            "value" : "По сферам"
           }
         }
       }
@@ -7387,7 +7311,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Название направления"
+            "value" : "Название сферы"
           }
         }
       }
@@ -8993,7 +8917,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Смешивать цвета нескольких направлений"
+            "value" : "Смешивать цвета нескольких сфер"
           }
         }
       }
@@ -9471,7 +9395,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Смотрите динамику времени фокуса, распределение по задачам и направлениям и календарь фокуса за неделю, месяц или год. Статистика помогает решить, чему уделить время дальше, а не оценивать себя."
+            "value" : "Смотрите динамику времени фокуса, распределение по задачам и сферам и календарь фокуса за неделю, месяц или год. Статистика помогает решить, чему уделить время дальше, а не оценивать себя."
           }
         }
       }
@@ -10309,7 +10233,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Направление"
+            "value" : "Сфера"
           }
         }
       }
@@ -10502,6 +10426,1590 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Высокий"
+          }
+        }
+      }
+    },
+    "ひとつずつ試せます" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try it step by step"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ひとつずつ試せます"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Попробуйте всё по шагам"
+          }
+        }
+      }
+    },
+    "まず分野とタスクを作り、流れの短いプレビューを見ます。途中でいつでもスキップできます。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "First, create an Area and a Task, then watch a quick Flow preview. You can skip at any time."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "まず分野とタスクを作り、流れの短いプレビューを見ます。途中でいつでもスキップできます。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сначала создайте сферу и задачу, затем посмотрите короткую демонстрацию Flow. Любой шаг можно пропустить."
+          }
+        }
+      }
+    },
+    "いつでも" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anytime"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "いつでも"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В любое время"
+          }
+        }
+      }
+    },
+    "必要なときに、自分でタスクを追加します。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add tasks yourself whenever you need them."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "必要なときに、自分でタスクを追加します。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавляйте задачи вручную, когда они понадобятся."
+          }
+        }
+      }
+    },
+    "設定した曜日や回数に合わせて、タスクが自動で追加されます。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tasks are added automatically on your chosen days or at your chosen weekly frequency."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定した曜日や回数に合わせて、タスクが自動で追加されます。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Задачи добавляются автоматически в выбранные дни или нужное количество раз в неделю."
+          }
+        }
+      }
+    },
+    "できたら" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Optional"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "できたら"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Если получится"
+          }
+        }
+      }
+    },
+    "時間に余裕があるときに取り組みたいこと向けです。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For things you would like to do when you have some time."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "時間に余裕があるときに取り組みたいこと向けです。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для дел, которыми хочется заняться, если останется время."
+          }
+        }
+      }
+    },
+    "最初の分野を作りましょう" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create your first Area"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最初の分野を作りましょう"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Создайте первую сферу"
+          }
+        }
+      }
+    },
+    "「仕事」を用意しました。名前、絵文字、色は自由に変えられます。保存すると実際の分野として残ります。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We’ve started you off with “Work.” Change the name, emoji, or color if you like, then save it as your first Area."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「仕事」を用意しました。名前、絵文字、色は自由に変えられます。保存すると実際の分野として残ります。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Мы подготовили сферу «Работа». Название, эмодзи и цвет можно изменить. После сохранения она останется в приложении."
+          }
+        }
+      }
+    },
+    "終わったら、自分で完了にします。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check it off when you are done."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "終わったら、自分で完了にします。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Завершив задачу, отметьте её вручную."
+          }
+        }
+      }
+    },
+    "25分を1ブロックとして、集中した時間が自動で進捗になります。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One Block is 25 minutes. Your focus time updates progress automatically."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "25分を1ブロックとして、集中した時間が自動で進捗になります。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Один блок — это 25 минут. Время фокуса автоматически учитывается в прогрессе."
+          }
+        }
+      }
+    },
+    "集中した実時間を、分単位で積み上げます。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Track your actual focus time in minutes."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中した実時間を、分単位で積み上げます。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фактическое время фокуса накапливается в минутах."
+          }
+        }
+      }
+    },
+    "分野・優先度・日付" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Area, Priority & Date"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分野・優先度・日付"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сфера, приоритет и дата"
+          }
+        }
+      }
+    },
+    "タスクの分野、表示順、取り組む日を設定できます。「いつでも」の分野にある未完了タスクは、日付を過ぎると「やり残し」にまとまります。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set each Task’s Area, display order, and date. If a Task in an Anytime Area is still incomplete after that date, it moves to Overdue."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タスクの分野、表示順、取り組む日を設定できます。「いつでも」の分野にある未完了タスクは、日付を過ぎると「やり残し」にまとまります。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для каждой задачи можно выбрать сферу, порядок отображения и дату. Если задача из сферы «В любое время» остаётся незавершённой после этой даты, она попадает в раздел «Просроченные»."
+          }
+        }
+      }
+    },
+    "最初のタスクを作りましょう" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create your first Task"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最初のタスクを作りましょう"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Создайте первую задачу"
+          }
+        }
+      }
+    },
+    "「レポートを仕上げる」を用意しました。内容と設定は自由に変えられます。保存すると今日の実際のタスクになります。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We’ve started you off with “Prepare the report.” Change the details or settings if you like, then save it to add it to today’s Tasks."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「レポートを仕上げる」を用意しました。内容と設定は自由に変えられます。保存すると今日の実際のタスクになります。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Мы подготовили задачу «Подготовить отчёт». Содержание и настройки можно изменить. После сохранения она появится в задачах на сегодня."
+          }
+        }
+      }
+    },
+    "流れ" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flow"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "流れ"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flow"
+          }
+        }
+      }
+    },
+    "集中と休憩の積み重なりを映します。下のタイムラインでは、いつ・何に取り組んだかを確認できます。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See how focus sessions and breaks build up over time. The timeline below shows when and what you worked on."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中と休憩の積み重なりを映します。下のタイムラインでは、いつ・何に取り組んだかを確認できます。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Здесь видно, как чередуются фокус и отдых. На шкале времени ниже можно посмотреть, когда и над чем вы работали."
+          }
+        }
+      }
+    },
+    "今日やることと、その進捗をすぐに確認できます。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See today's Tasks and their progress at a glance."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今日やることと、その進捗をすぐに確認できます。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Задачи на сегодня и их прогресс всегда перед глазами."
+          }
+        }
+      }
+    },
+    "今日の統計" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today's Statistics"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今日の統計"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Статистика за сегодня"
+          }
+        }
+      }
+    },
+    "集中時間と完了したタスクを、その場で振り返れます。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Review your focus time and completed Tasks right here."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中時間と完了したタスクを、その場で振り返れます。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Здесь же можно посмотреть время фокуса и выполненные задачи."
+          }
+        }
+      }
+    },
+    "プレビューをスキップ" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skip Preview"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プレビューをスキップ"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пропустить демонстрацию"
+          }
+        }
+      }
+    },
+    "自動で記録" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recorded Automatically"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動で記録"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Записывается автоматически"
+          }
+        }
+      }
+    },
+    "実際に行った集中、休憩、途中のタスク切り替えが残ります。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Focus sessions, breaks, and Task switches are saved as they happen."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "実際に行った集中、休憩、途中のタスク切り替えが残ります。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сеансы фокуса, перерывы и переключения между задачами сохраняются автоматически."
+          }
+        }
+      }
+    },
+    "あとから修正" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit Later"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "あとから修正"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Можно исправить позже"
+          }
+        }
+      }
+    },
+    "記録を開いて内容や時間を直せます。タイマーを使い忘れたときは手動でも追加できます。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open a record to adjust its details or time. If you forgot the timer, add the record manually."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "記録を開いて内容や時間を直せます。タイマーを使い忘れたときは手動でも追加できます。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Откройте запись, чтобы изменить содержание или время. Если забыли запустить таймер, добавьте запись вручную."
+          }
+        }
+      }
+    },
+    "週・月・年" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Week, Month & Year"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "週・月・年"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Неделя, месяц и год"
+          }
+        }
+      }
+    },
+    "集中時間、完了したタスク、タスクや分野ごとの時間配分を確認できます。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Review focus time, completed Tasks, and how your time is divided across Tasks and Areas."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中時間、完了したタスク、タスクや分野ごとの時間配分を確認できます。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Смотрите время фокуса, выполненные задачи и распределение времени по задачам и сферам."
+          }
+        }
+      }
+    },
+    "集中カレンダー" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Focus Calendar"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中カレンダー"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Календарь фокуса"
+          }
+        }
+      }
+    },
+    "色が濃いほど、その日に集中した時間が長かったことを表します。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Darker colors mean you spent more time focusing that day."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "色が濃いほど、その日に集中した時間が長かったことを表します。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чем темнее цвет, тем больше времени вы провели в фокусе в этот день."
+          }
+        }
+      }
+    },
+    "自分を採点するためではありません" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Statistics, Not Scores"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自分を採点するためではありません"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Здесь нет оценок"
+          }
+        }
+      }
+    },
+    "時間の使い方に気づき、次に何へ取り組むかを決めるための統計です。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use Statistics to notice where your time goes and decide what to focus on next."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "時間の使い方に気づき、次に何へ取り組むかを決めるための統計です。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Статистика помогает понять, куда уходит время, и решить, чем заняться дальше."
+          }
+        }
+      }
+    },
+    "プライベートなデータ" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your Data Stays Private"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プライベートなデータ"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваши данные остаются личными"
+          }
+        }
+      }
+    },
+    "データは端末内に保存されます。iCloudが有効な場合は、Apple Accountに紐づく非公開のCloudKitデータベースを通じて同期されます。タスクや履歴がThruFlow独自のサーバーへ送信されることはありません。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your data is stored on your device. With iCloud enabled, it syncs through the private CloudKit database tied to your Apple Account. ThruFlow never sends your Tasks or History to its own servers."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "データは端末内に保存されます。iCloudが有効な場合は、Apple Accountに紐づく非公開のCloudKitデータベースを通じて同期されます。タスクや履歴がThruFlow独自のサーバーへ送信されることはありません。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Данные хранятся на устройстве. Если включён iCloud, они синхронизируются через личную базу CloudKit, связанную с вашим аккаунтом Apple. ThruFlow не отправляет задачи и историю на собственные серверы."
+          }
+        }
+      }
+    },
+    "無料で、広告もサブスクリプションもありません" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Free, with No Ads or Subscriptions"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無料で、広告もサブスクリプションもありません"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Бесплатно, без рекламы и подписок"
+          }
+        }
+      }
+    },
+    "すべての機能を無料で使えます。任意の応援で機能が解放されることもありません。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Every feature is free. Optional support does not unlock anything because nothing is held back."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "すべての機能を無料で使えます。任意の応援で機能が解放されることもありません。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Все функции доступны бесплатно. Добровольная поддержка ничего не разблокирует — скрытых возможностей нет."
+          }
+        }
+      }
+    },
+    "iCloudのデータを確認しています…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Checking iCloud…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloudのデータを確認中…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проверяем данные в iCloud…"
+          }
+        }
+      }
+    },
+    "準備中" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preparing…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "準備中"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подготовка…"
+          }
+        }
+      }
+    },
+    "分野を作る" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create Area"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分野を作る"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Создать сферу"
+          }
+        }
+      }
+    },
+    "タスクを作る" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create Task"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タスクを作る"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Создать задачу"
+          }
+        }
+      }
+    },
+    "プレビュー中" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Previewing…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プレビュー中"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Идёт демонстрация…"
+          }
+        }
+      }
+    },
+    "プレビューを見る" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Watch Preview"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プレビューを見る"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Посмотреть демонстрацию"
+          }
+        }
+      }
+    },
+    "はじめる" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Get Started"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "はじめる"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Начать"
+          }
+        }
+      }
+    },
+    "短め" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Short"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "短め"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Короткий"
+          }
+        }
+      }
+    },
+    "12分＋3分休憩" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "12 min + 3 min break"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "12分＋3分休憩"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "12 мин + 3 мин отдыха"
+          }
+        }
+      }
+    },
+    "標準" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Standard"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "標準"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обычный"
+          }
+        }
+      }
+    },
+    "25分＋5分休憩" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "25 min + 5 min break"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "25分＋5分休憩"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "25 мин + 5 мин отдыха"
+          }
+        }
+      }
+    },
+    "じっくり" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deep"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "じっくり"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Глубокий"
+          }
+        }
+      }
+    },
+    "50分＋10分休憩" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "50 min + 10 min break"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "50分＋10分休憩"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "50 мин + 10 мин отдыха"
+          }
+        }
+      }
+    },
+    "準備は完了です。取り組むときに、最初の集中を始めてみてください。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You are all set. When you are ready to get something done, try starting your first focus."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "準備は完了です。取り組むときに、最初の集中を始めてみてください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Всё готово. Когда захотите приступить к делу, запустите первую сессию фокуса."
+          }
+        }
+      }
+    },
+    "このプレビューは履歴や統計には保存されません。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This preview is not saved to History or Statistics."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このプレビューは履歴や統計には保存されません。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Эта демонстрация не сохраняется в истории и статистике."
+          }
+        }
+      }
+    },
+    "分野、タスク、流れ、履歴と統計、次の一歩" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Area, Task, Flow, History & Statistics, and Your Next Step"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分野、タスク、流れ、履歴と統計、次の一歩"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сфера, задача, Flow, история и статистика, следующий шаг"
+          }
+        }
+      }
+    },
+    "大切なことに集中しよう" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Focus on What Matters"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "大切なことに集中しよう"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сосредоточьтесь на важном"
+          }
+        }
+      }
+    },
+    "取り組むことを、分野で整理" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Organize What Matters into Areas"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取り組むことを、分野で整理"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разделите дела по сферам"
+          }
+        }
+      }
+    },
+    "やることを、具体的なタスクに" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn Plans into Clear Tasks"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "やることを、具体的なタスクに"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Превратите планы в конкретные задачи"
+          }
+        }
+      }
+    },
+    "タスクを選んで、集中を始める" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a Task and Start Focusing"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タスクを選んで、集中を始める"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите задачу и сосредоточьтесь"
+          }
+        }
+      }
+    },
+    "流れの動きを見てみよう" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See Flow in Motion"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "流れの動きを見てみよう"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Посмотрите, как оживает Flow"
+          }
+        }
+      }
+    },
+    "一日の記録を、あとから振り返る" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Review Your Day"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一日の記録を、あとから振り返る"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подведите итоги дня"
+          }
+        }
+      }
+    },
+    "時間の使い方に気づく" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See Where Your Time Goes"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "時間の使い方に気づく"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поймите, куда уходит время"
+          }
+        }
+      }
+    },
+    "すべてが、ひとつの流れに" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Everything Comes Together in One Flow"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "すべてが、ひとつの流れに"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Всё складывается в единый Flow"
+          }
+        }
+      }
+    },
+    "ThruFlowは、タスク管理、柔軟な集中タイマー、時間の振り返りをひとつにまとめたアプリです。まずは分野とタスクをひとつずつ作り、基本の流れを試してみましょう。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ThruFlow brings Tasks, a flexible focus timer, and time review together in one app. Create your first Area and Task, then try the basic workflow."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ThruFlowは、タスク管理、柔軟な集中タイマー、時間の振り返りをひとつにまとめたアプリです。まずは分野とタスクをひとつずつ作り、基本の流れを試してみましょう。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ThruFlow объединяет задачи, гибкий таймер фокуса и анализ времени. Создайте первую сферу и задачу, а затем попробуйте основной рабочий цикл."
+          }
+        }
+      }
+    },
+    "分野は、仕事・勉強・健康・家事など、日々取り組むことをまとめる枠です。タスクと集中時間が分野ごとにつながるので、何に時間を使ったか振り返りやすくなります。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Areas group the parts of life you spend time on, such as work, study, health, or home. Tasks and focus time stay connected to each Area, making it easy to see where your time went."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分野は、仕事・勉強・健康・家事など、日々取り組むことをまとめる枠です。タスクと集中時間が分野ごとにつながるので、何に時間を使ったか振り返りやすくなります。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сферы объединяют части жизни, которым вы уделяете время: работу, учёбу, здоровье или домашние дела. Задачи и время фокуса связаны со своими сферами, поэтому легко понять, куда ушло время."
+          }
+        }
+      }
+    },
+    "タスクには、分野、優先度、日付、進捗の測り方を設定できます。ボタンから選ぶことも、入力中にショートカットを使うこともできます。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Each Task can have an Area, priority, date, and progress measure. Choose them with the controls or use shortcuts while typing."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タスクには、分野、優先度、日付、進捗の測り方を設定できます。ボタンから選ぶことも、入力中にショートカットを使うこともできます。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для каждой задачи можно выбрать сферу, приоритет, дату и способ измерения прогресса — с помощью кнопок или быстрых команд при вводе."
+          }
+        }
+      }
+    },
+    "流れは、今日の作業を進める中心の画面です。集中タイマー、今日のタスク、作業の流れ、今日の統計をまとめて確認できます。途中でタスクや長さを変えても、途切れない作業はひとつの流れとして残ります。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flow is the main workspace for getting today's work done. It brings together the focus timer, today's Tasks, your timeline, and today's Statistics. You can switch Tasks or duration along the way; uninterrupted work remains one Flow."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "流れは、今日の作業を進める中心の画面です。集中タイマー、今日のタスク、作業の流れ、今日の統計をまとめて確認できます。途中でタスクや長さを変えても、途切れない作業はひとつの流れとして残ります。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flow — главный экран для работы на сегодня. Здесь собраны таймер фокуса, задачи на сегодня, шкала времени и статистика за день. Можно менять задачу или длительность: непрерывная работа всё равно сохранится как один Flow."
+          }
+        }
+      }
+    },
+    "短いプレビューで、集中を始めたときに流れがどう反応するか見てみましょう。実際のタスク、進捗、履歴、統計には影響しません。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use this quick preview to see how Flow responds when focus begins. It will not affect your real Tasks, progress, History, or Statistics."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "短いプレビューで、集中を始めたときに流れがどう反応するか見てみましょう。実際のタスク、進捗、履歴、統計には影響しません。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Короткая демонстрация покажет, как Flow реагирует на начало фокуса. Она не повлияет на реальные задачи, прогресс, историю или статистику."
+          }
+        }
+      }
+    },
+    "履歴には、実際に行った集中、休憩、途中のタスク切り替えが自動で残ります。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "History automatically keeps the focus sessions, breaks, and Task switches that actually happened."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "履歴には、実際に行った集中、休憩、途中のタスク切り替えが自動で残ります。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В истории автоматически сохраняются фактические сеансы фокуса, перерывы и переключения между задачами."
+          }
+        }
+      }
+    },
+    "統計では、集中時間、完了したタスク、タスクや分野ごとの時間配分を週・月・年で確認できます。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Review focus time, completed Tasks, and time by Task or Area for the week, month, or year."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "統計では、集中時間、完了したタスク、タスクや分野ごとの時間配分を週・月・年で確認できます。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В статистике можно посмотреть время фокуса, выполненные задачи и распределение времени по задачам и сферам за неделю, месяц или год."
+          }
+        }
+      }
+    },
+    "分野で取り組むことを整理し、タスクで次の一歩を決める。流れで実際の集中時間を記録し、履歴と統計で振り返る。ThruFlowは、このサイクルをひとつにつなげます。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Organize what matters into Areas, then choose the next step with Tasks. Record real focus time in Flow and review it in History and Statistics. ThruFlow connects the whole cycle."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分野で取り組むことを整理し、タスクで次の一歩を決める。流れで実際の集中時間を記録し、履歴と統計で振り返る。ThruFlowは、このサイクルをひとつにつなげます。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разделите дела по сферам и определяйте следующий шаг с помощью задач. Записывайте реальное время фокуса во Flow, а затем анализируйте его в истории и статистике. ThruFlow связывает весь этот цикл."
+          }
+        }
+      }
+    },
+    "ガイドをスキップ" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skip Guide"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ガイドをスキップ"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пропустить обучение"
+          }
+        }
+      }
+    },
+    "分野が見つかりません" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Area Not Found"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分野が見つかりません"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сфера не найдена"
+          }
+        }
+      }
+    },
+    "最初のタスクを作る" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create First Task"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最初のタスクを作る"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Создать первую задачу"
+          }
+        }
+      }
+    },
+    "レポートを仕上げる" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prepare the report"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "レポートを仕上げる"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подготовить отчёт"
           }
         }
       }

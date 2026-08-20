@@ -81,7 +81,7 @@ struct DirectionListView: View {
                             if group.directions.isEmpty {
                                 ContentUnavailableView(
                                     String(localized: "方向はありません"),
-                                    systemImage: "tray",
+                                    systemImage: ProductSymbol.area,
                                     description: Text(String(localized: "この列に該当する方向はまだありません。"))
                                 )
                                 .frame(maxWidth: .infinity)

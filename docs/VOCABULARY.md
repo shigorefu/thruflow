@@ -7,14 +7,14 @@ first so GitHub contributors have one shared terminology table.
 | Visible English | Russian UI | Japanese UI | Source key |
 | --- | --- | --- | --- |
 | ThruFlow | ThruFlow | スルフロ | `スルフロ` |
-| Area | Направление | 分野 | `分野` |
+| Area | Сфера | 分野 | `分野` |
 | Anytime | В любое время | いつでも | `通常` |
 | Habit | Привычка | 習慣 | `習慣` |
 | Optional | Если получится | できたら | `ナイス` |
 | Other | Другое | その他 | `その他` |
 | Task | Задача | タスク | `対象タスク` |
 | Tasks navigation | Задачи | タスク | `タスク` |
-| Areas navigation | Направления | 分野 | `方向` |
+| Areas navigation | Сферы | 分野 | `方向` |
 | No-date Tasks / Inbox | Без даты / Входящие | 日付なし | `日付なし` / `Inbox` |
 | All task filter | Все | すべて | `すべて` |
 | Day range | День | 日 | `日` |
@@ -45,7 +45,7 @@ first so GitHub contributors have one shared terminology table.
 | Statistics | Статистика | 統計 | `統計` |
 | Time Distribution | Распределение времени | 時間配分 | `時間配分` |
 | By Task | По задачам | タスク別 | `タスク別` |
-| By Area | По направлениям | 分野別 | `方向別` |
+| By Area | По сферам | 分野別 | `方向別` |
 | Trend | Динамика | 推移 | `傾向` |
 | Focus Calendar | Календарь фокуса | 集中カレンダー | `Dots` |
 | Completion | Выполнение | 達成状況 | `達成状況` |
@@ -65,7 +65,7 @@ meaning in each UI context instead of performing a project-wide text
 replacement.
 
 Visible English uses `Area` / `Areas`, while visible Russian uses
-`Направление` / `Направления`. `Direction` remains the Swift model name,
+`Сфера` / `Сферы`. `Direction` remains the Swift model name,
 property name, persisted identifier, and stable machine-readable CSV column.
 The source keys `Sprint`, `Focus`, `Deep`, and `Dots` are likewise implementation
 details: the visible English labels are `Short`, `Standard`, `Deep`, and

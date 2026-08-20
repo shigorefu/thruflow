@@ -9,13 +9,13 @@ Area -> Task -> Flow -> focused time -> progress -> statistics
 ```
 
 User-facing English uses `Area` / `Areas`, and user-facing Russian uses
-`Направление` / `Направления`. `Direction` remains the internal Swift model,
+`Сфера` / `Сферы`. `Direction` remains the internal Swift model,
 property, persistence, and machine-readable CSV identifier.
 
 ## 分野
 
 `分野` is the Japanese UI label for the persistent `Direction` model. The same
-entity is shown as `Area` in English and `Направление` in Russian.
+entity is shown as `Area` in English and `Сфера` in Russian.
 
 - `いつでも` / Anytime / В любое время: no automatic daily Task.
 - `習慣` / Habit / Привычка: scheduled recurring requirement that creates Habit Tasks.
@@ -41,7 +41,7 @@ vertical scrolling, and a horizontal swipe across its content card animates to
 the previous or next day/week only after release. While native search is active,
 the calendar workspace is replaced by results from the complete Task database,
 grouped by scheduled date with a separate `日付なし` section. Matching uses
-Task title, Direction, emoji, and hashtag without changing stored records or
+Task title, Area, emoji, and hashtag without changing stored records or
 Habit materialization. macOS exposes the same database-wide search semantics
 through its native toolbar search field.
 
@@ -57,7 +57,7 @@ Task completion:
 
 Flow is a media-player-like recorder.
 
-`流れ` is the first/default navigation section and today's primary dashboard. In wide layout, one grid aligns the stream/timeline above Tasks on the left and the square player above Statistics on the right. The left column occupies roughly three quarters of the content. Direction colors compose the stream palette, while focus duration and session count control its visual volume.
+`流れ` is the first/default navigation section and today's primary dashboard. In wide layout, one grid aligns the stream/timeline above Tasks on the left and the square player above Statistics on the right. The left column occupies roughly three quarters of the content. Area colors compose the stream palette, while focus duration and session count control its visual volume.
 
 The stream is a field of broad, bright, softly glowing translucent ribbons rendered on the GPU around one shared S-shaped channel with three levels of depth. Its phase motion is tuned 25 percent faster than the original profile while keeping the same 30/60 FPS render budget. A subtle internal current makes that phase motion legible while idle, and the stream immediately accelerates when Flow starts. Its occupied area stops growing at 4 Blocks so depth, transparency, and motion preserve the silhouette without black carved stripes; progress through 6 Blocks instead adds internal detail, parallax, saturation, and motion. A restrained light pulse crosses the stream at each completed half-Block. Every valid `休憩` press sends a short reverse release wave without implying that rest has started. After note confirmation, a regular rest exhales softly; a confirmed `長休憩` opens all seven ribbons into a brighter fan and then keeps a calm breathing form for the rest of the break. These effects are transient presentation state and never change or persist timer data. `短め`, `標準`, and `じっくり` change the wave character, while a subtle mode-specific tint is applied to the dashboard. Below it, today's Anytime Tasks and Habits remain actionable with the same Check, Block, and Minute indicators as Tasks; the Optional `できたら` group appears only when present. On iPhone and iPad, one dashboard Task card switches between `タスク / 習慣 / できたら`; its header offers quick Task capture next to the Tasks deep link. Compact width uses the bottom composer and regular width anchors it as a popover to `+`. The fixed-height compact Statistics panel forms the same three-page carousel on macOS and iPhone for Task/Area time distribution, a seven-day Flow trend with day-over-day deltas, and today's completion status.
 
@@ -78,7 +78,7 @@ The `集中モード` / Flow Mode choices are:
 The internal adaptive mode is labeled `自動` / Auto / Авто whenever it appears
 in saved data.
 
-Focus does not auto-stop or auto-switch to break. Break starts only after the user confirms a note. The dashboard and menu bar use the same square note panel with two stable actions: cancel on the left and a checkmark submit action on the right. The submit label is `メモなしで送信` while the editor is empty and `送信` after text is entered. Each submitted note is stored in `FlowSession.result`; a linked Flow also mirrors the text to `Todo.notes`. Submitting without a note preserves an existing Task note, and rest completion never prompts again. The rest timer ring is neutral gray and drains while the focus ring fills with the selected Direction color.
+Focus does not auto-stop or auto-switch to break. Break starts only after the user confirms a note. The dashboard and menu bar use the same square note panel with two stable actions: cancel on the left and a checkmark submit action on the right. The submit label is `メモなしで送信` while the editor is empty and `送信` after text is entered. Each submitted note is stored in `FlowSession.result`; a linked Flow also mirrors the text to `Todo.notes`. Submitting without a note preserves an existing Task note, and rest completion never prompts again. The rest timer ring is neutral gray and drains while the focus ring fills with the selected Area color.
 
 Flow sessions may share a stable series ID when the next session starts within 1.5 times the planned rest. The next rest after each 4 accumulated Blocks is a 20-minute `長休憩` with a 30-minute continuation window. History preserves separate Flow and rest records; only the dashboard renders their series as one continuous rail.
 
@@ -140,7 +140,7 @@ separate compact 30/60/90-day snapshots.
 
 Completed breaks are edited with synchronized end-time and minute-duration controls. The start remains fixed; extending a break shifts only later records in the same Flow series when they overlap.
 
-It provides a primary `集中記録` calendar mode with `日・週・月`, plus `タスク` and `分野` aggregates. Day directly presents the selected day's actual Flow and rest records as one vertically ordered timeline; long internal gaps are labeled as having no records with deliberate vertical spacing, while short records retain a full-size interactive card. Selecting a Day record opens its canonical editor in a separate system sheet. Week uses a vertically scrolling seven-column hour grid and projects each connected Flow series as one composite block. Opening that block shows the same vertical record timeline in a separate sheet, where every underlying Flow or rest remains independently editable and Back returns to the series timeline. The Flow editor reuses the player's Task, Habit, and Direction picker, including inline Task creation, so Direction is derived from the selected item rather than edited in a second control. Rest editing uses a compact, content-fitted sheet. On iPhone, Month is one vertical surface: the month calendar scrolls directly into `この日の記録`, which reuses the complete Day timeline for the selected date; scrolling back restores the calendar. These are UI projections only: the persisted Flow and rest records remain separate. Completed Flow records can be moved between exact day/time positions where the calendar editor supports it; the session and all task-switch segments preserve their duration and progress. Active Flow and rest records remain fixed. Todo completion remains in Task summaries and Statistics. Manual History creation creates an independent Flow, never a manual rest. Historical Flow changes must adjust Direction totals and measured Todo progress by the same delta. Linking a manual Flow to a Task does not automatically complete it.
+It provides a primary `集中記録` calendar mode with `日・週・月`, plus `タスク` and `分野` aggregates. Day directly presents the selected day's actual Flow and rest records as one vertically ordered timeline; long internal gaps are labeled as having no records with deliberate vertical spacing, while short records retain a full-size interactive card. Selecting a Day record opens its canonical editor in a separate system sheet. Week uses a vertically scrolling seven-column hour grid and projects each connected Flow series as one composite block. Opening that block shows the same vertical record timeline in a separate sheet, where every underlying Flow or rest remains independently editable and Back returns to the series timeline. The Flow editor reuses the player's Task, Habit, and Area picker, including inline Task creation, so Area is derived from the selected item rather than edited in a second control. Rest editing uses a compact, content-fitted sheet. On iPhone, Month is one vertical surface: the month calendar scrolls directly into `この日の記録`, which reuses the complete Day timeline for the selected date; scrolling back restores the calendar. These are UI projections only: the persisted Flow and rest records remain separate. Completed Flow records can be moved between exact day/time positions where the calendar editor supports it; the session and all task-switch segments preserve their duration and progress. Active Flow and rest records remain fixed. Todo completion remains in Task summaries and Statistics. Manual History creation creates an independent Flow, never a manual rest. Historical Flow changes must adjust Area totals and measured Todo progress by the same delta. Linking a manual Flow to a Task does not automatically complete it.
 
 On iPhone, `日`, `週`, and `月` consume the same chronology, connected-series,
 gap, and aggregate projections as macOS. Day is the complete vertical
@@ -149,7 +149,7 @@ places the selected day's complete timeline directly below the calendar in the
 same scroll surface. iOS keeps touch-native period navigation and system sheets
 instead of compiling the desktop views. Search is an icon-only system toolbar
 action that expands on demand. While native search is active, results come from the complete History database
-instead of the selected period. Matching uses record title, Direction, emoji,
+instead of the selected period. Matching uses record title, Area, emoji,
 hashtag, intent, or memo in `集中記録`, `タスク`, and `分野` modes. macOS provides
 the same database-wide filtering through its native toolbar search field.
 
@@ -169,21 +169,27 @@ Language follows the shared String Catalog and takes effect after relaunch;
 available languages are discovered from the bundle so contributors can add a
 locale without changing Settings code.
 
-A first installation opens a seven-card introduction: `ようこそ`, `流れ`,
-`分野`, `タスク`, `履歴`, `統計`, and `使い方の流れ`. Each compact card
-stays centered above a uniformly dimmed real workspace while the corresponding
-feature screen opens behind it. The introduction has no spotlight, highlighted
-target, anchor projection, or automatic target scrolling. Its final card
-summarizes the loop as `分野 → タスク → 流れ → 履歴・統計 → 次の一歩`. It writes no
-sample records to SwiftData or CloudKit, and
-`設定 > ヘルプ > 使い方を見る` can replay the same journey at any time.
+Version 1.0.2 introduces an eight-step onboarding journey: `ようこそ`, `分野`,
+`タスク`, `流れ`, `集中のプレビュー`, `履歴`, `統計`, and `使い方の流れ`.
+An empty first installation uses guided mode. It opens the real Area editor and
+Task composer with localized starter values, but saves only an Area or Task that
+the user explicitly confirms. The Flow preview is a five-second transient
+presentation: it creates no `FlowSession`, progress, History, Statistics, or
+CloudKit record and never turns five seconds into credited focus time. The final
+step summarizes `分野 → タスク → 流れ → 履歴・統計 → 次の一歩`.
+
+If first launch already contains user data, onboarding becomes a read-only tour
+and creates nothing. `設定 > ヘルプ > 使い方を見る` closes the Settings
+presentation before replaying the same read-only journey from the beginning.
+Every step can be skipped. Preview schemes isolate guided actions in an
+in-memory store, and watchOS remains a companion without a second onboarding.
 
 On macOS, a gear at the bottom of the sidebar opens the same native Settings
 window. The `データ` section on macOS, iPhone, and iPad can delete every Flow and
 break record after an irreversible-action confirmation. Deletion is unavailable
 while a Flow is active, runs away from the main UI, and synchronizes through the
 private CloudKit store. Tasks, Areas, Task notes, and manually checked Task state
-remain; measured Task and Direction progress is reset to zero.
+remain; measured Task and Area progress is reset to zero.
 
 Settings also contains voluntary support actions: App Store review, the public
 GitHub project, and two StoreKit consumable tips (`Coffee`, JPY 100, and
