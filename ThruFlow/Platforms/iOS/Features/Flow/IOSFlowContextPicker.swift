@@ -104,7 +104,7 @@ struct IOSFlowContextPicker: View {
         let hasDirections = projection.otherDirection != nil || !projection.userDirections.isEmpty
 
         if !hasDirections {
-            emptyRow(String(localized: "方向はありません"), systemImage: "point.3.connected.trianglepath.dotted")
+            emptyRow(String(localized: "方向はありません"), systemImage: ProductSymbol.area)
         } else {
             Section(String(localized: "方向")) {
                 if let otherDirection = projection.otherDirection {

@@ -54,13 +54,38 @@ use `流れ`. Translators must inspect the originating screen and choose the
 contextual term recorded in `Localisation/TERMS.csv`.
 
 The persistent activity-area entity is `分野` in Japanese UI, `Area` in English,
-and `Направление` in Russian. Collection navigation uses `Areas` and
-`Направления`. Its visible types are `いつでも` / Anytime / В любое время,
+and `Сфера` in Russian. Collection navigation uses `Areas` and `Сферы`. Its
+visible types are `いつでも` / Anytime / Обычное,
 `習慣` / Habit / Привычка, and `できたら` / Optional / Если получится. The
 corresponding source keys remain `通常`, `習慣`, and `ナイス`. Other
 context-sensitive terms include `日付なし` for the Inbox projection, `週に数回`
 for the weekly-count Habit schedule, and `集中カレンダー` / Focus Calendar /
 Календарь фокуса for the calendar-style focus visualization.
+
+Version 1.0.2 onboarding has ten semantic steps: Welcome, Area, Task, Flow
+overview, timer guidance, the transient Flow demo, History, Statistics, workflow
+summary, and a final card for data storage and free core features.
+The preview shows the complete Flow player in a short scripted sequence: Task
+selection, Play, accelerated Short focus from `12:00` to `00:00`, and the
+demonstrated regular break at `03:00`. Copy should explain naturally that this is
+only a demonstration and does not change History or Statistics. It must also
+distinguish the shortened demo transition from real use, where focus continues
+until the user confirms the note and only then begins the break. Translations
+must not imply that displayed demo time becomes real progress or a persisted
+record, and should describe the loop naturally rather than mirror Japanese
+sentence structure. The privacy step may say that records are stored on the
+device and, when iCloud is enabled, synchronize through the user's private
+CloudKit database. It may also say that
+ThruFlow does not send Tasks or History to a developer-operated server. It must
+not claim end-to-end encryption, anonymity, that Apple never processes the
+records, or that iCloud is required.
+
+Onboarding and product copy may promise that Tasks, the Flow focus timer,
+History, and Statistics are free and ad-free and require no payment. It must not
+expand that statement into a promise that every current or future feature will
+always be free: possible future optional integrations or services may have
+separate terms or costs. Coffee and Ramen remain optional tips, not subscriptions,
+and unlock no functionality.
 
 These copy choices never rename implementation or persisted identifiers.
 Swift types and properties such as `Direction`, `FlowSession`, and `FlowMode`,
@@ -107,8 +132,8 @@ it is not visible English UI copy:
 | --- | --- | --- | --- |
 | Tasks navigation | `タスク` | Tasks | Задачи |
 | Task field or picker | `対象タスク` | Task | Задача |
-| Areas navigation | `方向` | Areas | Направления |
-| Area field or picker | `分野` | Area | Направление |
+| Areas navigation | `方向` | Areas | Сферы |
+| Area field or picker | `分野` | Area | Сфера |
 | Main Flow navigation | `Flow` | Flow | Flow |
 | Saved Flow session | `集中記録` | Flow | Flow |
 | Flow count | `集中回数` | Flows | Сессии Flow |
@@ -124,5 +149,5 @@ it is not visible English UI copy:
 Translators must use the UI context from `Localisation/TERMS.csv`; identical
 Japanese wording does not imply that English and Russian should use a singular
 entity label in collection navigation. Likewise, English `Area` and Russian
-`Направление` are independent idiomatic choices; neither should be translated
+`Сфера` are independent idiomatic choices; neither should be translated
 mechanically from the other language.

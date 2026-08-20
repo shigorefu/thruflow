@@ -1,4 +1,14 @@
 {
+  "appPolicies" : {
+    "eula" : "",
+    "policies" : [
+      {
+        "locale" : "en_US",
+        "policyText" : "",
+        "policyURL" : ""
+      }
+    ]
+  },
   "identifier" : "8F30B91E",
   "nonRenewingSubscriptions" : [
 
@@ -12,7 +22,7 @@
         {
           "description" : "ThruFlowの開発をコーヒー一杯で応援します。機能は変わりません。",
           "displayName" : "コーヒーを贈る",
-          "locale" : "ja_JP"
+          "locale" : "ja"
         },
         {
           "description" : "Support ThruFlow development with a coffee. This purchase unlocks no features.",
@@ -22,7 +32,7 @@
         {
           "description" : "Поддержать разработку ThruFlow чашкой кофе. Покупка не открывает дополнительных функций.",
           "displayName" : "Подарить кофе",
-          "locale" : "ru_RU"
+          "locale" : "ru"
         }
       ],
       "productID" : "com.shigorefu.thruflow.tip.coffee",
@@ -37,7 +47,7 @@
         {
           "description" : "ThruFlowの開発をラーメン一杯で応援します。機能は変わりません。",
           "displayName" : "ラーメンを贈る",
-          "locale" : "ja_JP"
+          "locale" : "ja"
         },
         {
           "description" : "Support ThruFlow development with a bowl of ramen. This purchase unlocks no features.",
@@ -47,7 +57,7 @@
         {
           "description" : "Поддержать разработку ThruFlow миской рамэна. Покупка не открывает дополнительных функций.",
           "displayName" : "Подарить рамэн",
-          "locale" : "ru_RU"
+          "locale" : "ru"
         }
       ],
       "productID" : "com.shigorefu.thruflow.tip.ramen",
@@ -56,15 +66,24 @@
     }
   ],
   "settings" : {
+    "_askToBuyEnabled" : false,
+    "_billingGracePeriodEnabled" : false,
+    "_billingIssuesEnabled" : false,
+    "_disableDialogs" : false,
     "_failTransactionsEnabled" : false,
-    "_locale" : "ja_JP",
-    "_storefront" : "JPN"
+    "_locale" : "ja",
+    "_renewalBillingIssuesEnabled" : false,
+    "_storefront" : "JPN",
+    "_storeKitErrors" : [
+
+    ],
+    "_timeRate" : 0
   },
   "subscriptionGroups" : [
 
   ],
   "version" : {
-    "major" : 1,
+    "major" : 5,
     "minor" : 0
   }
 }

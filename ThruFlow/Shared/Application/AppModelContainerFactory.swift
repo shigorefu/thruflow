@@ -20,12 +20,7 @@ enum AppModelContainerFactory {
                 isStoredInMemoryOnly: true,
                 cloudKitDatabase: .none
             )
-        } else if !shouldUseCloudKit(
-            isRunningTests: isRunningTests,
-            isCloudKitDisabled: isCloudKitDisabled,
-            isRunningInSimulator: isRunningInSimulator,
-            hasCloudKitEntitlement: hasCloudKitEntitlement
-        ) {
+        } else if !usesCloudKitForCurrentProcess {
             configuration = ModelConfiguration(
                 schema: schema,
                 cloudKitDatabase: .none
@@ -42,6 +37,15 @@ enum AppModelContainerFactory {
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
         }
+    }
+
+    static var usesCloudKitForCurrentProcess: Bool {
+        shouldUseCloudKit(
+            isRunningTests: isRunningTests,
+            isCloudKitDisabled: isCloudKitDisabled,
+            isRunningInSimulator: isRunningInSimulator,
+            hasCloudKitEntitlement: hasCloudKitEntitlement
+        )
     }
 
     private static var isRunningTests: Bool {

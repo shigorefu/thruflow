@@ -10,27 +10,33 @@ marks superseded behavior.
 Reason: focused documents are easier to keep current and review than a second,
 monolithic product specification that duplicates them.
 
-## D-002: Direction Types
+## D-002: Area Types
 
-Current visible Direction types are:
+Current visible Area types are:
 
-- `通常`;
-- `習慣`;
-- `ナイス`.
+- `いつでも` / Anytime / Обычное;
+- `習慣` / Habit / Привычка;
+- `できたら` / Optional / Если получится.
 
-Reason: these terms match the current Japanese UI model.
+The persisted `DirectionType` raw values remain `neutral`, `habit`, and `nice`.
 
-## D-003: System Direction
+Reason: the visible names describe when work belongs on the daily surface,
+while stable internal identifiers preserve existing data.
 
-Tasks and Flow without a user-selected Direction are assigned to system Direction `その他`.
+## D-003: System Area
 
-`その他` is hidden only from Direction management to prevent editing. It may appear in task context and statistics.
+Tasks and Flow without a user-selected Area are assigned to the system Area
+`その他` / Other / Другое. Internally, it remains a `Direction` relationship.
 
-Reason: the app needs a stable Direction relationship without forcing the user to choose one every time.
+`その他` is hidden only from Area management to prevent editing. It may appear
+in Task context and Statistics.
+
+Reason: the app needs a stable Area relationship without forcing the user to
+choose one every time.
 
 ## D-004: Empty Todo Title Is Valid
 
-Todo title may be empty. UI displays `(Direction name)` when title is empty.
+Todo title may be empty. UI displays `(Area name)` when title is empty.
 
 Reason: generated Habit tasks should start as lightweight templates, and the same display rule remains available if automatic Flow Task creation is defined later.
 
@@ -99,9 +105,9 @@ Reason: calendar planning must not silently invalidate historical completion or 
 
 ## D-013: Flow Is The Daily Dashboard
 
-`Flow` is the first/default app section. Its wide dashboard gives roughly three quarters of the content to the animated stream and timeline, with a separate circular player panel on the right and today's Task/Habit/optional Nice sections plus compact Statistics below. It reuses the existing player behavior and derives all visual data from Todo and FlowSession records. A system Metal shader provides the broad, smooth visual layer without adding a persistence model or third-party rendering dependency; visual growth is capped at 6 Blocks and controlled by the testable `FlowVisualState` projection.
+`Flow` is the first/default app section. Its wide dashboard gives roughly three quarters of the content to the animated stream and timeline, with a separate circular player panel on the right and today's Task/Habit/optional `できたら` sections plus compact Statistics below. It reuses the existing player behavior and derives all visual data from Todo and FlowSession records. A system Metal shader provides the broad, smooth visual layer without adding a persistence model or third-party rendering dependency; visual growth is capped at 6 Blocks and controlled by the testable `FlowVisualState` projection.
 
-Reason: starting focused work and seeing its accumulated shape should be the primary app experience, while Tasks, History, Directions, and Statistics remain dedicated supporting surfaces.
+Reason: starting focused work and seeing its accumulated shape should be the primary app experience, while Tasks, History, Areas, and Statistics remain dedicated supporting surfaces.
 
 ## D-014: Day History Uses A Direct Record Timeline
 
@@ -109,13 +115,13 @@ The `日` History range directly renders every actual Flow and rest record for t
 
 Reason: day history needs enough vertical and horizontal space to inspect short Flow records without duplicating editors or compressing the timeline into an unreadable calendar column.
 
-`タスク` and `方向` reuse the two-column History workspace: aggregates on the left, mini-calendar and daily totals on the right. This keeps date navigation and visual hierarchy stable when switching modes.
+`タスク` and `分野` reuse the two-column History workspace: aggregates on the left, mini-calendar and daily totals on the right. This keeps date navigation and visual hierarchy stable when switching modes.
 
 Wide `週` keeps a week-selecting mini-calendar on the right; wide `月` replaces it with a twelve-month year picker. Week projects each connected Flow series as one composite block positioned by its exact outer interval. Selecting the block opens a vertical series timeline whose underlying Flow and rest records remain individually editable. A record editor is pushed inside the same sheet, and Back restores the series timeline. The projection does not merge persistence records or alter progress calculations.
 
 ## D-015: Dashboard Timeline Shows Flow Series
 
-The Flow dashboard groups connected Flow and rest entries by `seriesID`. One series has one continuous light-gray base line beneath its Direction-colored work and gray rest segments. A different series starts a separate line. History Calendar keeps every Flow and rest as an independent block.
+The Flow dashboard groups connected Flow and rest entries by `seriesID`. One series has one continuous light-gray base line beneath its Area-colored work and gray rest segments. A different series starts a separate line. History Calendar keeps every Flow and rest as an independent block.
 
 Double-clicking empty calendar time first creates an in-grid 25-minute draft block. Wide day editing occurs in the right inspector; compact day and week use a sheet. Saving creates a completed FlowSession and FlowSegment with a new independent series, uses the normal progress calculation, and does not support manual rest creation.
 
@@ -123,13 +129,13 @@ Reason: the dashboard should communicate uninterrupted Flow rhythm without destr
 
 ## D-016: Dashboard Statistics Are A Derived Carousel
 
-The fixed-height compact Dashboard Statistics card cycles between Flow-time distribution, a 7-day Flow trend with previous-day comparisons, and today's completion status. Distribution switches between Task and Direction without changing persistence. `DashboardStatisticsBuilder` owns historical calculations so SwiftUI only renders derived values.
+The fixed-height compact Dashboard Statistics card cycles between Flow-time distribution, a 7-day Flow trend with previous-day comparisons, and today's completion status. Distribution switches between Task and Area without changing persistence. `DashboardStatisticsBuilder` owns historical calculations so SwiftUI only renders derived values.
 
 Reason: the first screen should answer where time went, how the recent rhythm changed, and what remains today without duplicating the full Statistics screen.
 
 ## D-017: Manual History Reuses Domain Records
 
-Manual History entry creates a completed independent `FlowSession` and `FlowSegment`. A fixed linked Task receives measured progress but is never automatically completed. The Direction aggregate action creates a new Task with that Direction fixed and does not create Flow.
+Manual History entry creates a completed independent `FlowSession` and `FlowSegment`. A fixed linked Task receives measured progress but is never automatically completed. The Area aggregate action creates a new Task with that Area fixed and does not create Flow.
 
 Reason: correction workflows must use the same accounting path as timer-created work while keeping Task completion an explicit or measurement-driven action.
 
@@ -171,7 +177,7 @@ scope decision.
 
 The first iPhone target uses iOS 17.0 as its minimum deployment version and
 uses Flow as its root and default screen. Bottom navigation from Flow opens
-Tasks, History, and Directions, while Settings lives in the hamburger menu.
+Tasks, History, and Areas, while Settings lives in the hamburger menu.
 The timer and animated Flow stream share the first viewport; Tasks and compact
 Statistics are horizontal dashboard pages. History provides native day, week,
 and month browsing. Advanced Statistics and full calendar/history editing are
@@ -188,7 +194,7 @@ shared mode-selector and touch-presentation decisions remain active.
 
 The iPhone shell amends D-021 with four floating material navigation actions:
 Flow, Tasks, History, and Statistics. Settings moves to the trailing More menu.
-Direction management remains reachable from that menu. The Flow stream appears
+Area management remains reachable from that menu. The Flow stream appears
 before the player, and both platforms use one shared segmented Sprint, Focus,
 and Deep selector with a separate help presentation for work/rest duration and
 usage guidance. The iPhone Statistics screen is a compact contribution summary;
@@ -285,12 +291,12 @@ terminating the widget process.
 History exposes one shared macOS/iOS `+` command for recording forgotten work.
 It is a trailing toolbar action across History modes. macOS opens a trailing
 inspector and iOS opens the shared form in a sheet. Its Flow-style picker
-separates Tasks, Habits, and Directions. It can select an existing Todo
+separates Tasks, Habits, and Areas. It can select an existing Todo
 occurrence, create a new Task, materialize an eligible
-missing historical Habit occurrence from its Direction template, or record
-Direction-only Flow. Recording Check needs only a date, accepts optional time,
+missing historical Habit occurrence from its internal `Direction` template, or
+record Area-only Flow. Recording Check needs only a date, accepts optional time,
 writes manual completion, and creates no Flow. Recording Block, Minute, or
-Direction-only work requires start/end time, creates the normal completed manual
+Area-only work requires start/end time, creates the normal completed manual
 FlowSession/FlowSegment pair, and relies on standard history reconciliation for
 measured progress. Zero-Flow Todos remain absent from actual History summaries.
 
@@ -372,13 +378,13 @@ focused-time distribution, and Dots cards. A persistent calendar centers the
 Week/Month/Year control and selects the anchored period; a trailing icon-only
 `期間を指定` action opens the custom start/end popover. Trend and Dots
 own independent `Flow | タスク` display switches so comparison and contribution
-views can be inspected without rebuilding the projection. Direction filter and
+views can be inspected without rebuilding the projection. Area filter and
 text search apply before every aggregation, and CSV exports the combined visible
 projection by default. A direct Share action opens export controls for combined,
-Flow-only, or Task-only data, exact inclusive start/end dates, Direction, and
+Flow-only, or Task-only data, exact inclusive start/end dates, Area, and
 text filter. Pie selection is presentation-only: the chosen sector remains
 bright while other sectors are dimmed and the legend isolates that category.
-The toolbar Direction filter shares the navigation Direction symbol. Month trends
+The toolbar Area filter shares the navigation Area symbol. Month trends
 use seven-day totals rather than one noisy point per day and render current and
 previous values as separate line series. Month can place Pie and Dots in one row;
 its Dots columns fill their card, while Week and Year keep full-width Dots.
@@ -406,7 +412,7 @@ The standalone iPhone Statistics screen now consumes the same
 `StatisticsPeriodSnapshot` as macOS and supersedes only the compact-Statistics
 limits in D-021, D-022, and D-030. It exposes anchored Week, Month, Year, and
 exact custom periods; Summary, Trend, focused-time distribution, and Dots;
-independent Trend/Dots Flow/Task modes; Direction and text filters; interactive
+independent Trend/Dots Flow/Task modes; Area and text filters; interactive
 Pie isolation; and combined, Flow-only, or Task-only CSV export. The shared
 actor, period builder, export serializer, comparison interval, and bounded
 four-projection cache remain the numeric source of truth.
@@ -417,8 +423,8 @@ native export sheet and ShareLink, a compact full-width Canvas for Year Dots,
 and a daily detail sheet that can open History. Year Dots are intentionally
 non-interactive. Search begins as a toolbar magnifier and expands on demand;
 Search stays trailing while context actions occupy the leading side: Tasks and
-Directions use `その他`, History uses its report mode, and Statistics groups
-Share with the Direction filter. Creation actions remain trailing. The shared
+Areas use `その他`, History uses its report mode, and Statistics groups
+Share with the Area filter. Creation actions remain trailing. The shared
 principal title stays centered. All iPhone navigation destinations use this centered inline title
 contract. The widget Dots projection
 remains separate and compact.
@@ -442,61 +448,90 @@ Reason: one universal bundle preserves installation identity, CloudKit data,
 deep links, and release versioning while allowing each available width to use
 space appropriately.
 
-## D-033: Onboarding Teaches The Real Loop Without Demo Data
+## D-033: Guided Onboarding Teaches The Real Loop Safely
 
-macOS, iPhone, and iPad share one seven-card first-run introduction covering
-Welcome, Flow, `方向`, `タスク`, `履歴`, `統計`, and `使い方の流れ`. One compact card
-remains centered above a uniformly dimmed real workspace, and later steps
-navigate the real feature screens behind it. The journey deliberately has no
-spotlight, highlighted target, anchor projection, or automatic target scrolling.
-The last card summarizes `方向 → タスク → Flow → 履歴・統計 → 次の一歩`.
-Onboarding must never write sample records into the user's SwiftData or
-CloudKit store. Settings can reopen the journey, and dedicated preview schemes
-force it with an in-memory test store. watchOS does not repeat onboarding
-because it is a companion surface.
+Version 1.0.2 replaces the passive seven-card introduction with one shared
+ten-step journey on macOS, iPhone, and iPad: Welcome, Area, Task, Flow overview,
+timer guidance, a transient Flow demo, History, Statistics, workflow summary,
+and a final data/core-features card.
+Guidance stays independent of target geometry and presents the real Area editor
+and Task composer through platform-native surfaces.
 
-Reason: a short screen tour explains the complete product loop without fragile
-geometry-dependent coach marks, while the user's real workspace remains empty
-and safe to sync.
+An empty first installation may offer localized Work and report drafts. Opening
+a draft writes nothing; only the user's normal Save or Submit action creates the
+Area or Task. Those confirmed records are real user data and follow the standard
+SwiftData and private CloudKit path. The Flow preview reuses the complete
+production player appearance in a scripted, non-interactive sequence: Task
+selection, visual Play, accelerated Short focus from `12:00` to `00:00`, visual
+break action, and the demonstrated regular-break state at `03:00`. The demo
+transition omits the note panel; the real player keeps focus running and starts
+the break only after the user confirms that note. Demo controls, timer, phase,
+and progress are presentation state only. They create no session, segment,
+break, Task completion, focused progress, History, Statistics, Live Activity,
+notification, or CloudKit record.
+
+If user content already exists, first-run onboarding is a read-only tour.
+Settings replay is always read-only, dismisses Settings before it begins, and
+restarts from Welcome without clearing or modifying data. Every card has an
+icon-only Close control. Dedicated preview schemes use an in-memory store, and watchOS does not
+repeat onboarding because it is a companion surface.
+
+On signed CloudKit runs, an initially empty query snapshot is not accepted as
+final immediately. Onboarding waits for the first successful import event or a
+bounded four-second grace period, then inspects again. It performs the same fresh
+inspection before accepting an onboarding Area or Task save. Late imported
+content switches the remaining journey to read-only without silently discarding
+an editor draft.
+
+Reason: performing one real, user-confirmed Area and Task action teaches the
+product loop more clearly than a passive screen description, while a transient
+Flow preview and read-only replay protect History, Statistics, and existing
+CloudKit data from fabricated examples.
 
 ## D-034: Support Is Voluntary And Never Interrupts Work
 
 The app does not send promotional notifications. StoreKit's review prompt may
 be requested only at a natural post-Flow moment after seven days and either
 five active Flow days or ten completed Flows, at most once per app version.
-Settings owns permanent App Store, GitHub, Coffee JPY 100, and Ramen JPY 500
-support actions. Coffee and Ramen are consumable StoreKit products, unlock
-nothing, and create no entitlement.
+Settings owns permanent GitHub, Coffee JPY 100, and Ramen JPY 500 support
+actions. Coffee and Ramen are consumable StoreKit products, unlock
+nothing, and create no entitlement. Tasks, the Flow focus timer, History, and
+Statistics are free and ad-free and require no payment. This decision makes no
+pricing promise for possible future optional integrations or services.
 
 Reason: support should remain visible to people who seek it without turning a
-focus tool into an advertising surface or pressuring a new user.
+focus tool into an advertising surface, gating its core loop, or pressuring a
+new user, while leaving future optional services to be evaluated separately
+against their actual costs.
 
-## D-035: Settings Owns Complete Flow-History Deletion
+## D-035: Settings Owns Complete App-Data Reset
 
 macOS exposes the native Settings scene through a gear at the bottom of its
-sidebar. macOS, iPhone, and iPad Settings can delete all `FlowSession`,
-`FlowSegment`, and `FlowBreak` records after an irreversible confirmation. The
-operation is unavailable while a restorable Flow runtime is active, runs as one model-actor
-transaction, preserves Tasks, Directions, Task memos, archive/delete markers,
-and manually checked state, then resets progress derived from Flow history.
-Private CloudKit propagates the deletion to the user's other devices.
+sidebar. macOS, iPhone, and iPad Settings can delete every `Direction`, `Todo`,
+`FlowSession`, `FlowSegment`, and `FlowBreak` after an irreversible
+confirmation. The operation is unavailable while a restorable Flow runtime is
+active and runs as one model-actor transaction. Private CloudKit propagates the
+deletions to the user's other devices. Local appearance, language, calendar,
+and time preferences remain. After success, the timer selection is reset and
+the first-run onboarding journey begins again.
 
-Reason: users need a clear release-grade way to erase recorded activity without
-destroying their planning structure or leaving totals inconsistent with an
-empty history.
+Reason: users need one clear release-grade way to start over without leaving
+related Tasks, Areas, notes, history, or computed progress behind, while keeping
+device preferences that are not part of their productivity data.
 
-## D-036: Feedback Uses Existing Trusted Channels
+## D-036: Feedback Stays Outside The Settings Menu
 
-macOS, iPhone, and iPad Settings provide a permanent `フィードバックを送る`
-action that opens the public GitHub issue-template chooser. The same section
-warns users to remove private Task names and notes, and tells TestFlight testers
-that screenshot and TestFlight-app submissions can include device context.
-ThruFlow does not add a custom feedback server, analytics SDK, mail recipient,
-or undocumented TestFlight deep link.
+macOS, iPhone, and iPad Settings do not include a separate feedback section.
+TestFlight testers use TestFlight's native feedback tools, while the public
+GitHub repository remains available from the support section. ThruFlow does not
+add a custom feedback server, analytics SDK, mail recipient, or undocumented
+TestFlight deep link. The support section keeps the explicit App Store rating
+action, and the app may also request a system review at an appropriate post-Flow
+moment under the review policy.
 
-Reason: TestFlight already provides diagnostic feedback during beta, while
-GitHub Issues remains transparent and maintainable after release without
-inventing an account or data-collection service.
+Reason: the Settings screen stays compact while TestFlight and GitHub continue
+to provide established feedback channels without another account or data-
+collection service.
 
 ## D-037: The Flow Stream Acknowledges The Rest Lifecycle
 

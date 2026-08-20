@@ -6,43 +6,100 @@ final class OnboardingJourneyUITests: XCTestCase {
     }
 
     @MainActor
-    func testNewUserCanWalkThroughEveryOnboardingSection() throws {
-        let app = launchPreview()
+    func testTourWalksThroughAllTenSteps() throws {
+        let app = launchPreview(experience: "tour")
+        defer { terminate(app) }
 
         assertStep(0, in: app)
         capture(app, name: "Onboarding 1 Welcome")
 
-        let pages = ["Flow", "Directions", "Tasks", "History", "Statistics", "Workflow"]
-        for (index, pageName) in pages.enumerated() {
-            nextButton(step: index, in: app).tap()
-            assertStep(index + 1, in: app)
-            capture(app, name: "Onboarding \(index + 2) \(pageName)")
+        nextButton(step: 0, in: app).tap()
+        assertStep(1, in: app)
+        app.buttons["onboarding.back.step.1"].tap()
+        assertStep(0, in: app)
+        nextButton(step: 0, in: app).tap()
+
+        let pages = [
+            "Areas",
+            "Tasks",
+            "Flow",
+            "Timer",
+            "Demo",
+            "History",
+            "Statistics",
+            "Workflow",
+            "Privacy",
+        ]
+        for (offset, pageName) in pages.enumerated() {
+            let step = offset + 1
+            assertStep(step, in: app)
+            capture(app, name: "Onboarding \(step + 1) \(pageName)")
+
+            guard step < 9 else { continue }
+            advanceTour(from: step, in: app).tap()
         }
 
-        XCTAssertTrue(app.buttons["onboarding.finish.step.6"].exists)
-        app.buttons["onboarding.finish.step.6"].tap()
+        XCTAssertTrue(app.buttons["onboarding.finish.step.9"].exists)
+        app.buttons["onboarding.finish.step.9"].tap()
         XCTAssertFalse(element("onboarding.journey", in: app).waitForExistence(timeout: 1))
     }
 
     @MainActor
-    func testBackAndSkipControlsRemainAvailable() throws {
-        let app = launchPreview()
+    func testGuidedJourneyCreatesAreaAndTaskThenRunsEphemeralDemo() throws {
+        let app = launchPreview(experience: "guided")
+        defer { terminate(app) }
 
-        XCTAssertTrue(nextButton(step: 0, in: app).waitForExistence(timeout: 5))
+        assertStep(0, in: app)
         nextButton(step: 0, in: app).tap()
         assertStep(1, in: app)
-        XCTAssertTrue(app.buttons["onboarding.back.step.1"].exists)
-        app.buttons["onboarding.back.step.1"].tap()
-        assertStep(0, in: app)
+
+        let createArea = app.buttons["onboarding.create-area.step.1"]
+        XCTAssertTrue(createArea.waitForExistence(timeout: 2))
+        createArea.tap()
+
+        let saveArea = app.buttons["direction.editor.save"]
+        XCTAssertTrue(saveArea.waitForExistence(timeout: 3))
+        XCTAssertTrue(saveArea.isEnabled)
+        saveArea.tap()
+        assertStep(2, in: app)
+
+        let createTask = app.buttons["onboarding.create-task.step.2"]
+        XCTAssertTrue(createTask.waitForExistence(timeout: 2))
+        createTask.tap()
+
+        let saveTask = app.buttons["task.composer.submit"]
+        XCTAssertTrue(saveTask.waitForExistence(timeout: 3))
+        XCTAssertTrue(saveTask.isEnabled)
+        saveTask.tap()
+        assertStep(3, in: app)
+
+        nextButton(step: 3, in: app).tap()
+        assertStep(4, in: app)
+
+        nextButton(step: 4, in: app).tap()
+        assertStep(5, in: app)
+
+        let startDemo = app.buttons["onboarding.demo.start.step.5"]
+        XCTAssertTrue(startDemo.waitForExistence(timeout: 2))
+        startDemo.tap()
+
+        let continueAfterDemo = nextButton(step: 5, in: app)
+        XCTAssertTrue(continueAfterDemo.waitForExistence(timeout: 12))
+        continueAfterDemo.tap()
+        assertStep(6, in: app)
 
         app.buttons["onboarding.skip"].tap()
         XCTAssertFalse(element("onboarding.journey", in: app).waitForExistence(timeout: 1))
     }
 
     @MainActor
-    private func launchPreview() -> XCUIApplication {
+    private func launchPreview(experience: String) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = ["--uitesting", "--onboarding-preview"]
+        app.launchArguments = [
+            "--uitesting",
+            "--onboarding-preview",
+            "--onboarding-experience=\(experience)",
+        ]
         app.launch()
 
 #if os(macOS)
@@ -67,16 +124,19 @@ final class OnboardingJourneyUITests: XCTestCase {
     ) {
         let journey = element("onboarding.journey", in: app)
         XCTAssertTrue(journey.waitForExistence(timeout: 5), file: file, line: line)
-        let expectedIdentifier = step == 6
-            ? "onboarding.finish.step.6"
-            : "onboarding.next.step.\(step)"
-        let stepControl = app.buttons[expectedIdentifier]
-        XCTAssertTrue(stepControl.waitForExistence(timeout: 2), file: file, line: line)
-        XCTAssertEqual(stepControl.identifier, expectedIdentifier, file: file, line: line)
+        let card = element("onboarding.card.step.\(step)", in: app)
+        XCTAssertTrue(card.waitForExistence(timeout: 2), file: file, line: line)
     }
 
     private func nextButton(step: Int, in app: XCUIApplication) -> XCUIElement {
         app.buttons["onboarding.next.step.\(step)"]
+    }
+
+    private func advanceTour(from step: Int, in app: XCUIApplication) -> XCUIElement {
+        if step == 5 {
+            return app.buttons["onboarding.demo.skip.step.5"]
+        }
+        return nextButton(step: step, in: app)
     }
 
     private func capture(_ app: XCUIApplication, name: String) {
@@ -84,5 +144,10 @@ final class OnboardingJourneyUITests: XCTestCase {
         attachment.name = name
         attachment.lifetime = .keepAlways
         add(attachment)
+    }
+
+    private func terminate(_ app: XCUIApplication) {
+        app.terminate()
+        _ = app.wait(for: .notRunning, timeout: 5)
     }
 }
