@@ -261,26 +261,42 @@ struct IOSFlowView: View {
     }
 
     private func playerCard(minHeight: CGFloat? = nil) -> some View {
-        VStack(spacing: 12) {
+        FlowTimerPanelShell(
+            style: .mobile,
+            minHeight: minHeight,
+            timer: FlowTimerPresentation(
+                progress: activeFlowStore.phaseProgress(now: activeFlowStore.displayDate),
+                tint: tint,
+                eyebrow: activeFlowStore.phase.displayName,
+                timeText: timerText,
+                footer: activeFlowStore.selectedMode.displayName
+            )
+        ) {
             contextButton
+        } mode: {
             modePicker
-
-            HStack(spacing: 18) {
-                timer
-                controls
-            }
-            .frame(maxWidth: .infinity)
+        } controls: {
+            controls
         }
-        .padding(14)
-        .frame(minHeight: minHeight, alignment: .top)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
     }
 
     private var contextButton: some View {
-        Button {
-            showsContextPicker = true
-        } label: {
-            HStack(spacing: 12) {
+        FlowTimerContextButton(
+            style: .mobile,
+            presentation: FlowTimerContextPresentation(
+                symbol: selectedDirection?.symbolName ?? "🎯",
+                areaTitle: selectedDirection?.name ?? String(localized: "分野"),
+                tint: tint,
+                detail: nil,
+                isPlaceholder: selectedDirection == nil,
+                showsProgress: selectedTodo != nil
+            ),
+            accessibilityLabel: selectedContextTitle,
+            action: { showsContextPicker = true }
+        ) {
+            Text(selectedContextTitle)
+        } progress: {
+            Group {
                 if let todo = selectedTodo {
                     TodoProgressControl(
                         todo: todo,
@@ -291,45 +307,8 @@ struct IOSFlowView: View {
                         }
                     }
                 }
-
-                Text(selectedDirection?.symbolName ?? "🎯")
-                    .font(.title2)
-                    .frame(width: 46, height: 46)
-                    .background(tint.opacity(0.16), in: RoundedRectangle(cornerRadius: 11))
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(selectedContextTitle)
-                        .font(.headline)
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
-
-                    HStack(spacing: 5) {
-                        Circle()
-                            .fill(tint)
-                            .frame(width: 6, height: 6)
-                        Text(selectedDirection?.name ?? String(localized: "分野"))
-                            .lineLimit(1)
-                    }
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(selectedDirection == nil ? Color.secondary : tint)
-                }
-
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.down")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(tint)
-                    .frame(width: 28, height: 28)
-                    .background(tint.opacity(0.12), in: Circle())
             }
-            .padding(10)
-            .background(tint.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
-            .overlay {
-                RoundedRectangle(cornerRadius: 14)
-                    .strokeBorder(tint.opacity(selectedDirection == nil ? 0.55 : 0.28))
-            }
-            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
     }
 
     private var modePicker: some View {
@@ -340,86 +319,41 @@ struct IOSFlowView: View {
         )
     }
 
-    private var timer: some View {
-        FlowTimerDial(
-            progress: activeFlowStore.phaseProgress(now: activeFlowStore.displayDate),
-            tint: tint,
-            eyebrow: activeFlowStore.phase.displayName,
-            timeText: timerText,
-            footer: activeFlowStore.selectedMode.displayName,
-            style: .mobile
-        )
-    }
-
     private var controls: some View {
-        VStack(spacing: 10) {
-            HStack(spacing: 5) {
-                controlButton("gobackward.5") {
+        FlowTimerTransportControls(
+            style: .mobile,
+            presentation: FlowTimerTransportPresentation(
+                primarySymbol: primarySymbol,
+                primaryLabel: primaryActionTitle,
+                primaryTint: tint,
+                isPrimaryEnabled: selectedDirection != nil,
+                canSeek: canSeek,
+                canDestroy: activeFlowStore.timerState != nil,
+                canStop: activeFlowStore.timerState != nil,
+                canStartBreak: activeFlowStore.canRequestBreak,
+                destroyLabel: activeFlowStore.isBreakPhase
+                    ? String(localized: "休憩を削除")
+                    : String(localized: "Flowを破壊"),
+                visuallyPressedAction: nil
+            )
+        ) { action in
+            switch action {
+            case .seekBackward:
                     activeFlowStore.seekBackward(modelContext: modelContext)
-                }
-                .disabled(!canSeek)
-                .accessibilityLabel(String(localized: "残り時間を5分短縮"))
-
-                Button(action: primaryAction) {
-                    Image(systemName: primarySymbol)
-                        .font(.title2.weight(.bold))
-                        .foregroundStyle(.white)
-                        .frame(width: 62, height: 62)
-                        .background(tint, in: Circle())
-                        .contentShape(Circle())
-                }
-                .buttonStyle(.plain)
-                .disabled(selectedDirection == nil)
-                .accessibilityLabel(primaryActionTitle)
-
-                controlButton("goforward.5") {
+            case .primary:
+                primaryAction()
+            case .seekForward:
                     activeFlowStore.seekForward(modelContext: modelContext)
-                }
-                .disabled(!canSeek)
-                .accessibilityLabel(String(localized: "残り時間を5分延長"))
-            }
-
-            HStack(spacing: 8) {
-                controlButton("trash.fill", role: .destructive) {
-                    activeFlowStore.destroy(modelContext: modelContext)
-                }
-                .disabled(activeFlowStore.timerState == nil)
-                .accessibilityLabel(
-                    activeFlowStore.isBreakPhase
-                        ? String(localized: "休憩を削除")
-                        : String(localized: "Flowを破壊")
-                )
-
-                controlButton("stop.fill") {
-                    activeFlowStore.stop(modelContext: modelContext)
-                    presentMemoIfNeeded()
-                }
-                .disabled(activeFlowStore.timerState == nil)
-                .accessibilityLabel(String(localized: "Flowを停止して保存"))
-
-                controlButton("cup.and.saucer.fill") {
-                    activeFlowStore.requestBreakMemo(modelContext: modelContext)
-                    presentMemoIfNeeded()
-                }
-                .disabled(!activeFlowStore.canRequestBreak)
-                .accessibilityLabel(String(localized: "休憩を開始"))
+            case .destroy:
+                activeFlowStore.destroy(modelContext: modelContext)
+            case .stop:
+                activeFlowStore.stop(modelContext: modelContext)
+                presentMemoIfNeeded()
+            case .startBreak:
+                activeFlowStore.requestBreakMemo(modelContext: modelContext)
+                presentMemoIfNeeded()
             }
         }
-        .frame(maxWidth: .infinity)
-    }
-
-    private func controlButton(
-        _ systemName: String,
-        role: ButtonRole? = nil,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(role: role, action: action) {
-            Image(systemName: systemName)
-                .font(.body.weight(.semibold))
-                .frame(width: 38, height: 38)
-                .background(Color.primary.opacity(0.055), in: Circle())
-        }
-        .buttonStyle(.plain)
     }
 
     private func flowCard(

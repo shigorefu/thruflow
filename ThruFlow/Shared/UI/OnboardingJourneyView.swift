@@ -115,7 +115,7 @@ private struct OnboardingJourneyCard: View {
         case .welcome:
             OnboardingCallout(
                 title: String(localized: "ひとつずつ試せます"),
-                body: String(localized: "まず分野とタスクを作り、タイマーの短いプレビューを見ます。途中でいつでもスキップできます。"),
+                body: String(localized: "まず分野とタスクを作り、集中を始めるまでを短いデモで見てみましょう。途中でいつでもスキップできます。"),
                 systemImage: "sparkles"
             )
 
@@ -520,31 +520,42 @@ private struct OnboardingFlowDemo: View {
             )
         ) { timeline in
             let projection = store.demoState.projection(at: timeline.date)
-            let isBreak = projection.phase == .breakTime
+            let task = store.demoTaskPresentation
+            let tint = Color(hex: task.areaColorHex)
 
             VStack(spacing: 12) {
-                FlowTimerDial(
-                    progress: projection.timerProgress,
-                    tint: demoTimerTint(isBreak: isBreak),
-                    eyebrow: isBreak ? String(localized: "休憩") : String(localized: "集中"),
-                    timeText: String(
-                        format: "%02d:%02d",
-                        projection.remainingSeconds / 60,
-                        projection.remainingSeconds % 60
-                    ),
-                    footer: FlowMode.sprint.displayName,
-                    style: demoTimerStyle
+                FlowTimerPanelShell(
+                    style: demoPanelStyle,
+                    timer: FlowTimerPresentation(
+                        progress: projection.timerProgress,
+                        tint: timerTint(for: projection, taskTint: tint),
+                        eyebrow: timerEyebrow(for: projection),
+                        timeText: timerText(for: projection),
+                        footer: FlowMode.sprint.displayName
+                    )
+                ) {
+                    demoContextButton(projection: projection, task: task, tint: tint)
+                } mode: {
+                    FlowModeSelector(
+                        selection: .constant(.sprint),
+                        isSelectionEnabled: true,
+                        helpPresentation: demoPanelStyle == .mobile ? .sheet : .popover
+                    )
+                    .frame(maxWidth: demoPanelStyle == .dashboard ? 280 : nil)
+                } controls: {
+                    demoControls(projection: projection, taskTint: tint)
+                }
+                .padding(.horizontal, demoPanelStyle == .mobile ? -12 : 0)
+                .frame(
+                    width: demoPanelStyle == .dashboard ? 320 : nil,
+                    height: demoPanelStyle == .dashboard ? 410 : nil
                 )
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 8)
+                .allowsHitTesting(false)
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel(isBreak
-                                    ? String(localized: "3分の休憩")
-                                    : String(localized: "12分の集中を早送り中"))
+                .accessibilityLabel(demoAccessibilityLabel(for: projection))
+                .accessibilityIdentifier("onboarding.demo.panel")
 
-                Text(store.demoState.isCompleted
-                     ? String(localized: "休憩に切り替わりました。実際の流れでは、このままタイマーが続きます。")
-                     : String(localized: "タイマーを早送りしています。このプレビューは履歴や統計には保存されません。"))
+                Text(demoCaption(for: projection))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -577,7 +588,7 @@ private struct OnboardingFlowDemo: View {
         }
     }
 
-    private var demoTimerStyle: FlowTimerDial.Style {
+    private var demoPanelStyle: FlowTimerPanelStyle {
 #if os(macOS)
         .dashboard
 #else
@@ -585,13 +596,186 @@ private struct OnboardingFlowDemo: View {
 #endif
     }
 
-    private func demoTimerTint(isBreak: Bool) -> Color {
-        guard isBreak else { return .accentColor }
+    private func timerTint(
+        for projection: OnboardingDemoProjection,
+        taskTint: Color
+    ) -> Color {
+        guard projection.phase == .breakTime || projection.stage == .pressingBreak else {
+            return taskTint
+        }
 #if os(macOS)
-        return Color.secondary.opacity(0.72)
+        return projection.stage == .pressingBreak ? .blue : Color.secondary.opacity(0.72)
 #else
-        return .secondary
+        return projection.stage == .pressingBreak ? taskTint : .secondary
 #endif
+    }
+
+    private func timerEyebrow(for projection: OnboardingDemoProjection) -> String {
+        switch projection.phase {
+        case .idle:
+#if os(macOS)
+            String(localized: "待機中")
+#else
+            projection.contextIsSelected
+                ? String(localized: "準備完了")
+                : String(localized: "未設定")
+#endif
+        case .focusing:
+            String(localized: "集中")
+        case .breakTime:
+            String(localized: "休憩")
+        }
+    }
+
+    private func timerText(for projection: OnboardingDemoProjection) -> String {
+        String(
+            format: "%02d:%02d",
+            projection.remainingSeconds / 60,
+            projection.remainingSeconds % 60
+        )
+    }
+
+    @ViewBuilder
+    private func demoContextButton(
+        projection: OnboardingDemoProjection,
+        task: OnboardingTaskPresentation,
+        tint: Color
+    ) -> some View {
+        let isSelected = projection.contextIsSelected
+        let title = isSelected
+            ? task.title
+            : demoPanelStyle == .mobile
+                ? String(localized: "タスクを選択")
+                : String(localized: "具体的なタスクなし")
+        let area = isSelected
+            ? task.areaName
+            : demoPanelStyle == .mobile
+                ? String(localized: "分野")
+                : String(localized: "その他")
+        let symbol = isSelected
+            ? task.areaSymbol
+            : demoPanelStyle == .mobile ? "🎯" : "▶"
+
+        FlowTimerContextButton(
+            style: demoPanelStyle,
+            presentation: FlowTimerContextPresentation(
+                symbol: symbol,
+                areaTitle: area,
+                tint: isSelected ? tint : .accentColor,
+                detail: nil,
+                isPlaceholder: !isSelected,
+                showsProgress: isSelected
+            ),
+            isVisuallyPressed: !reduceMotion && projection.contextIsPressed,
+            animatesVisualPress: true,
+            accessibilityLabel: String(localized: "Flowタスクを選択"),
+            action: {}
+        ) {
+            Text(title)
+                .contentTransition(.opacity)
+                .animation(
+                    reduceMotion ? nil : .easeInOut(duration: 0.16),
+                    value: title
+                )
+        } progress: {
+            OnboardingDemoCheckbox(tint: tint)
+        }
+    }
+
+    private func demoControls(
+        projection: OnboardingDemoProjection,
+        taskTint: Color
+    ) -> some View {
+        let isBreak = projection.phase == .breakTime
+        let primarySymbol: String = {
+            switch projection.stage {
+            case .focusing:
+                return "pause.fill"
+            case .pressingBreak:
+                return "cup.and.saucer.fill"
+            case .breakTime:
+                return demoPanelStyle == .mobile ? "forward.fill" : "play.fill"
+            default:
+                return "play.fill"
+            }
+        }()
+        let primaryTint: Color = {
+            if projection.stage == .pressingBreak {
+                return demoPanelStyle == .dashboard ? .blue : taskTint
+            }
+            if isBreak {
+                return demoPanelStyle == .mobile ? .secondary : .blue
+            }
+            return taskTint
+        }()
+
+        return FlowTimerTransportControls(
+            style: demoPanelStyle,
+            presentation: FlowTimerTransportPresentation(
+                primarySymbol: primarySymbol,
+                primaryLabel: projection.stage == .pressingBreak
+                    ? String(localized: "休憩")
+                    : isBreak
+                        ? String(localized: "Flowを開始")
+                        : String(localized: "一時停止"),
+                primaryTint: primaryTint,
+                isPrimaryEnabled: projection.contextIsSelected,
+                canSeek: projection.canSeek,
+                canDestroy: projection.hasActiveTimer,
+                canStop: projection.hasActiveTimer,
+                canStartBreak: projection.canStartBreak,
+                destroyLabel: isBreak ? String(localized: "休憩を削除") : String(localized: "Flowを破壊"),
+                visuallyPressedAction: reduceMotion
+                    ? nil
+                    : projection.primaryIsPressed
+                        ? .primary
+                        : nil
+            ),
+            animatesVisualPress: true,
+            action: { _ in }
+        )
+    }
+
+    private func demoCaption(for projection: OnboardingDemoProjection) -> String {
+        switch projection.stage {
+        case .awaitingTask, .pressingContext:
+            String(localized: "タスクを選択")
+        case .ready, .pressingPlay:
+            String(localized: "Flowを開始")
+        case .focusing:
+            String(localized: "12分の集中を早送り中")
+        case .pressingBreak:
+            String(localized: "休憩を開始")
+        case .breakTime:
+            String(localized: "3分の休憩に切り替わりました")
+        }
+    }
+
+    private func demoAccessibilityLabel(for projection: OnboardingDemoProjection) -> String {
+        switch projection.stage {
+        case .awaitingTask, .pressingContext:
+            String(localized: "タスクを選択")
+        case .ready, .pressingPlay:
+            String(localized: "Flowを開始")
+        case .focusing:
+            String(localized: "12分の集中を早送り中")
+        case .pressingBreak:
+            String(localized: "休憩を開始")
+        case .breakTime:
+            String(localized: "3分の休憩")
+        }
+    }
+}
+
+private struct OnboardingDemoCheckbox: View {
+    let tint: Color
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 5)
+            .strokeBorder(tint, lineWidth: 1.6)
+            .frame(width: 20, height: 20)
+            .frame(width: 34, height: 34)
+            .accessibilityHidden(true)
     }
 }
 
@@ -692,7 +876,7 @@ extension OnboardingStep {
         case .areas: String(localized: "分野")
         case .tasks: String(localized: "タスク")
         case .flow: String(localized: "流れ")
-        case .demo: String(localized: "タイマー")
+        case .demo: String(localized: "流れを体験")
         case .history: String(localized: "履歴")
         case .statistics: String(localized: "統計")
         case .workflow: String(localized: "使い方の流れ")
@@ -718,7 +902,7 @@ extension OnboardingStep {
         case .areas: String(localized: "取り組むことを、分野で整理")
         case .tasks: String(localized: "やることを、具体的なタスクに")
         case .flow: String(localized: "タスクを選んで、集中を始める")
-        case .demo: String(localized: "タイマーの動きを見てみよう")
+        case .demo: String(localized: "集中から休憩までを見てみよう")
         case .history: String(localized: "一日の記録を、あとから振り返る")
         case .statistics: String(localized: "時間の使い方に気づく")
         case .workflow: String(localized: "すべてが、ひとつの流れに")
@@ -736,7 +920,7 @@ extension OnboardingStep {
         case .flow:
             String(localized: "流れは、今日の作業を進める中心の画面です。集中タイマー、今日のタスク、作業の流れ、今日の統計をまとめて確認できます。途中でタスクや長さを変えても、途切れない作業はひとつの流れとして残ります。")
         case .demo:
-            String(localized: "短いプレビューでは、12分の集中タイマーを早送りし、終了後に3分の休憩へ切り替わる様子を確認できます。実際のタスク、進捗、履歴、統計には影響しません。")
+            String(localized: "タスクを選んで集中を始め、12分の集中が終わって3分の休憩に切り替わるまでを早送りで再現します。デモのため、履歴や統計には記録されません。実際には、集中後にメモを確認してから休憩を始めます。")
         case .history:
             String(localized: "履歴には、実際に行った集中、休憩、途中のタスク切り替えが自動で残ります。")
         case .statistics:

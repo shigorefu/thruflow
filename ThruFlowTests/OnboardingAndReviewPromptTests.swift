@@ -100,6 +100,12 @@ struct OnboardingAndReviewPromptTests {
         let store = OnboardingStore(defaults: makeDefaults(), arguments: [])
         let areaID = UUID()
         let taskID = UUID()
+        let taskPresentation = OnboardingTaskPresentation(
+            title: "Report",
+            areaName: "Work",
+            areaSymbol: "💼",
+            areaColorHex: "#007AFF"
+        )
 
         store.resolveWorkspace(hasUserContent: false)
         #expect(store.experience == .guided)
@@ -119,8 +125,9 @@ struct OnboardingAndReviewPromptTests {
         #expect(store.requestTaskCreation())
         #expect(store.presentation == .taskComposer)
 
-        #expect(store.recordTask(id: taskID))
+        #expect(store.recordTask(id: taskID, presentation: taskPresentation))
         #expect(store.createdTaskID == taskID)
+        #expect(store.demoTaskPresentation == taskPresentation)
         #expect(store.step == .flow)
         #expect(store.canAdvance)
     }
@@ -227,49 +234,80 @@ struct OnboardingAndReviewPromptTests {
         let start = Date(timeIntervalSince1970: 1_000)
 
         #expect(store.step == .demo)
-        #expect(store.startDemo(at: start, duration: 6))
+        #expect(store.startDemo(at: start))
         #expect(store.demoState.isRunning)
-        #expect(store.demoProgress(at: start.addingTimeInterval(3)) == 0.5)
+        #expect(store.demoProgress(at: start.addingTimeInterval(4)) == 0.5)
 
         let initialProjection = store.demoState.projection(at: start)
-        #expect(initialProjection.phase == .focusing)
+        #expect(initialProjection.stage == .awaitingTask)
+        #expect(initialProjection.phase == .idle)
+        #expect(!initialProjection.contextIsSelected)
         #expect(initialProjection.remainingSeconds == 12 * 60)
         #expect(initialProjection.timerProgress == 0)
 
-        let focusProjection = store.demoState.projection(at: start.addingTimeInterval(1.9))
+        let contextPress = store.demoState.projection(at: start.addingTimeInterval(0.5))
+        #expect(contextPress.stage == .pressingContext)
+        #expect(contextPress.contextIsPressed)
+        #expect(!contextPress.contextIsSelected)
+
+        let readyProjection = OnboardingDemoProjection(
+            elapsed: OnboardingDemoProjection.contextSelectedAt
+        )
+        #expect(readyProjection.stage == .ready)
+        #expect(readyProjection.contextIsSelected)
+
+        let playPress = store.demoState.projection(at: start.addingTimeInterval(1.4))
+        #expect(playPress.stage == .pressingPlay)
+        #expect(playPress.primaryIsPressed)
+
+        let focusStart = OnboardingDemoProjection(
+            elapsed: OnboardingDemoProjection.focusStart
+        )
+        #expect(focusStart.stage == .focusing)
+        #expect(focusStart.remainingSeconds == 12 * 60)
+
+        let focusProjection = OnboardingDemoProjection(
+            elapsed: OnboardingDemoProjection.focusStart
+                + (OnboardingDemoProjection.focusEnd - OnboardingDemoProjection.focusStart) / 2
+        )
         #expect(focusProjection.phase == .focusing)
         #expect(focusProjection.remainingSeconds == 6 * 60)
         #expect(abs(focusProjection.timerProgress - 0.5) < 0.000_001)
 
         let finalFocusProjection = store.demoState.projection(
-            at: start.addingTimeInterval(3.8)
+            at: start.addingTimeInterval(5.449)
         )
         #expect(finalFocusProjection.phase == .focusing)
-        #expect(finalFocusProjection.remainingSeconds == 0)
-        #expect(abs(finalFocusProjection.timerProgress - 1) < 0.000_001)
+        #expect(finalFocusProjection.remainingSeconds <= 1)
 
         let heldFocusProjection = store.demoState.projection(
-            at: start.addingTimeInterval(3.999)
+            at: start.addingTimeInterval(5.45)
         )
+        #expect(heldFocusProjection.stage == .pressingBreak)
         #expect(heldFocusProjection.phase == .focusing)
         #expect(heldFocusProjection.remainingSeconds == 0)
+        #expect(heldFocusProjection.primaryIsPressed)
 
-        let breakProjection = store.demoState.projection(at: start.addingTimeInterval(4))
+        let breakProjection = OnboardingDemoProjection(
+            elapsed: OnboardingDemoProjection.breakTransition
+        )
+        #expect(breakProjection.stage == .breakTime)
         #expect(breakProjection.phase == .breakTime)
         #expect(breakProjection.remainingSeconds == 3 * 60)
         #expect(breakProjection.timerProgress == 1)
 
-        let laterBreakProjection = store.demoState.projection(at: start.addingTimeInterval(5))
+        let laterBreakProjection = store.demoState.projection(at: start.addingTimeInterval(7))
         #expect(laterBreakProjection.phase == .breakTime)
         #expect(laterBreakProjection.timerProgress == 1)
 
-        store.updateDemo(at: start.addingTimeInterval(5.9))
+        store.updateDemo(at: start.addingTimeInterval(7.9))
         #expect(store.demoState.isRunning)
-        store.updateDemo(at: start.addingTimeInterval(6))
+        store.updateDemo(at: start.addingTimeInterval(8))
         #expect(store.demoState.isCompleted)
-        #expect(store.demoProgress(at: start.addingTimeInterval(7)) == 1)
+        #expect(store.demoProgress(at: start.addingTimeInterval(9)) == 1)
 
-        let completedProjection = store.demoState.projection(at: start.addingTimeInterval(7))
+        let completedProjection = store.demoState.projection(at: start.addingTimeInterval(9))
+        #expect(completedProjection.stage == .breakTime)
         #expect(completedProjection.phase == .breakTime)
         #expect(completedProjection.remainingSeconds == 3 * 60)
         #expect(completedProjection.timerProgress == 1)

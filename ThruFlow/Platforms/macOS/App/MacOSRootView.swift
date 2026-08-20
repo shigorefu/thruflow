@@ -129,7 +129,7 @@ struct MacOSRootView: View {
                 title: String(localized: "Flow")
             ) {
                 FlowDashboardView(
-                    isVisible: true,
+                    isVisible: !onboarding.isPresented,
                     directions: directions,
                     cachedSnapshot: $flowSnapshotCache,
                     cachedTodoGroups: $flowTodoGroupsCache
@@ -226,13 +226,21 @@ struct MacOSRootView: View {
                         showsQuickInputLegend: true,
                         initialDraft: onboardingTaskDraft(area: area)
                     ) { todo in
-                        selectOnboardingTask(todo)
                         onboarding.resolveWorkspace(
                             hasUserContent: hasExternalOnboardingWorkspaceContent(
                                 excludingTaskID: todo.id
                             )
                         )
-                        _ = onboarding.recordTask(id: todo.id)
+                        guard let area = todo.direction else { return }
+                        _ = onboarding.recordTask(
+                            id: todo.id,
+                            presentation: OnboardingTaskPresentation(
+                                title: TodoDisplay.title(for: todo),
+                                areaName: area.name,
+                                areaSymbol: area.symbolName,
+                                areaColorHex: area.colorHex
+                            )
+                        )
                     }
                 }
                 .padding(18)
@@ -271,15 +279,6 @@ struct MacOSRootView: View {
             measurement: .checkbox,
             priority: .medium,
             scheduledDate: dayBoundary.day(containing: .now, calendar: calendar)
-        )
-    }
-
-    private func selectOnboardingTask(_ todo: Todo) {
-        guard activeFlowStore.timerState == nil, let area = todo.direction else { return }
-        activeFlowStore.configure(
-            direction: area,
-            todo: todo,
-            mode: .twentyFiveFive
         )
     }
 

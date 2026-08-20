@@ -79,7 +79,7 @@ final class OnboardingJourneyUITests: XCTestCase {
         startDemo.tap()
 
         let continueAfterDemo = nextButton(step: 4, in: app)
-        XCTAssertTrue(continueAfterDemo.waitForExistence(timeout: 8))
+        XCTAssertTrue(continueAfterDemo.waitForExistence(timeout: 12))
         continueAfterDemo.tap()
         assertStep(5, in: app)
 

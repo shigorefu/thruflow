@@ -459,11 +459,14 @@ and Task composer through platform-native surfaces.
 An empty first installation may offer localized Work and report drafts. Opening
 a draft writes nothing; only the user's normal Save or Submit action creates the
 Area or Task. Those confirmed records are real user data and follow the standard
-SwiftData and private CloudKit path. The Flow preview shows only the circular
-timer: it rapidly counts a canonical Short focus interval from `12:00` to
-`00:00`, then switches to the regular break at `03:00`. Its timer, phase, and
-progress are presentation state only. It creates no session, segment, break,
-Task completion, focused progress, History, Statistics, Live Activity,
+SwiftData and private CloudKit path. The Flow preview reuses the complete
+production player appearance in a scripted, non-interactive sequence: Task
+selection, visual Play, accelerated Short focus from `12:00` to `00:00`, visual
+break action, and the demonstrated regular-break state at `03:00`. The demo
+transition omits the note panel; the real player keeps focus running and starts
+the break only after the user confirms that note. Demo controls, timer, phase,
+and progress are presentation state only. They create no session, segment,
+break, Task completion, focused progress, History, Statistics, Live Activity,
 notification, or CloudKit record.
 
 If user content already exists, first-run onboarding is a read-only tour.

@@ -237,7 +237,7 @@ struct IOSRootView: View {
                 title: IOSAppRoute.flow.title
             ) {
                 IOSFlowView(
-                    isVisible: true,
+                    isVisible: !onboarding.isPresented,
                     cachedSnapshot: $flowSnapshotCache,
                     cachedTodoGroups: $flowTodoGroupsCache,
                     open: open
@@ -323,13 +323,21 @@ struct IOSRootView: View {
                             initialDraft: onboardingTaskDraft(area: area),
                             onClose: onboarding.dismissPresentation
                         ) { todo in
-                            selectOnboardingTask(todo)
                             onboarding.resolveWorkspace(
                                 hasUserContent: hasExternalOnboardingWorkspaceContent(
                                     excludingTaskID: todo.id
                                 )
                             )
-                            _ = onboarding.recordTask(id: todo.id)
+                            guard let area = todo.direction else { return }
+                            _ = onboarding.recordTask(
+                                id: todo.id,
+                                presentation: OnboardingTaskPresentation(
+                                    title: TodoDisplay.title(for: todo),
+                                    areaName: area.name,
+                                    areaSymbol: area.symbolName,
+                                    areaColorHex: area.colorHex
+                                )
+                            )
                         }
                     } else {
                         ContentUnavailableView(
@@ -383,15 +391,6 @@ struct IOSRootView: View {
             measurement: .checkbox,
             priority: .medium,
             scheduledDate: dayBoundary.day(containing: .now, calendar: calendar)
-        )
-    }
-
-    private func selectOnboardingTask(_ todo: Todo) {
-        guard activeFlowStore.timerState == nil, let area = todo.direction else { return }
-        activeFlowStore.configure(
-            direction: area,
-            todo: todo,
-            mode: .twentyFiveFive
         )
     }
 

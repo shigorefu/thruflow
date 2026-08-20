@@ -244,13 +244,17 @@ of the journey continues as a read-only tour.
   read-only tour mode. It explains the same product loop without offering
   example creation or changing existing data.
 
-The Flow step selects the just-created Task only as presentation context. The
-following preview shows only the circular timer. It rapidly counts a canonical
-Short focus interval from `12:00` to `00:00`, then switches to the regular break
-at `03:00`. Its timer, phase, and progress are entirely transient: it creates no
-session, segment, break, Task progress or completion, History, Statistics,
-notification, Live Activity, or CloudKit write. Leaving the step or skipping
-resets the preview.
+The Flow step keeps the just-created Task only as presentation context. The
+following preview uses the complete production Flow player in a scripted,
+non-interactive sequence: it visually presses the Task card, selects that Task,
+presses Play, rapidly counts a canonical Short focus interval from `12:00` to
+`00:00`, briefly shows the break action, then demonstrates the regular break at
+`03:00`. The preview deliberately skips the note panel; in a real Flow, pressing
+the break action keeps focus running until the user confirms the note, and only
+then begins the break. Demo selection, controls, timer, phase, and progress are
+entirely transient: they create no session, segment, break, Task progress or
+completion, History, Statistics, notification, Live Activity, or CloudKit write.
+Leaving the step or skipping resets the preview.
 The final step summarizes `分野 → タスク → 流れ → 履歴・統計 → 次の一歩`.
 
 `設定 > ヘルプ > 使い方を見る` first dismisses Settings, then starts the

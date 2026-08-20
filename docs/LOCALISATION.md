@@ -64,13 +64,17 @@ for the weekly-count Habit schedule, and `集中カレンダー` / Focus Calenda
 
 Version 1.0.2 onboarding has eight semantic steps: Welcome, Area, Task, Flow,
 the transient Flow preview, History, Statistics, and the final workflow summary.
-The preview shows only a circular timer that rapidly counts a Short focus
-interval from `12:00` to `00:00`, then switches to the regular break at `03:00`.
-Translations must not imply that this displayed time becomes real progress or a
-persisted record. Translations should describe the loop naturally rather than
-mirror Japanese sentence structure. The privacy step may say that records are
-stored on the device and, when iCloud is enabled, synchronize through the user's
-private CloudKit database. It may also say that
+The preview shows the complete Flow player in a short scripted sequence: Task
+selection, Play, accelerated Short focus from `12:00` to `00:00`, and the
+demonstrated regular break at `03:00`. Copy should explain naturally that this is
+only a demonstration and does not change History or Statistics. It must also
+distinguish the shortened demo transition from real use, where focus continues
+until the user confirms the note and only then begins the break. Translations
+must not imply that displayed demo time becomes real progress or a persisted
+record, and should describe the loop naturally rather than mirror Japanese
+sentence structure. The privacy step may say that records are stored on the
+device and, when iCloud is enabled, synchronize through the user's private
+CloudKit database. It may also say that
 ThruFlow does not send Tasks or History to a developer-operated server. It must
 not claim end-to-end encryption, anonymity, that Apple never processes the
 records, or that iCloud is required.

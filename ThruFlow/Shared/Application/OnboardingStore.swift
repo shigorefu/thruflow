@@ -10,6 +10,7 @@ final class OnboardingStore: ObservableObject {
     @Published private(set) var presentation: OnboardingPresentation?
     @Published private(set) var createdAreaID: UUID?
     @Published private(set) var createdTaskID: UUID?
+    @Published private(set) var createdTaskPresentation: OnboardingTaskPresentation?
     @Published private(set) var demoState: OnboardingDemoState = .idle
 
     let isPreviewMode: Bool
@@ -34,6 +35,7 @@ final class OnboardingStore: ObservableObject {
         presentation = nil
         createdAreaID = nil
         createdTaskID = nil
+        createdTaskPresentation = nil
     }
 
     var canOfferAreaCreation: Bool {
@@ -103,6 +105,7 @@ final class OnboardingStore: ObservableObject {
         presentation = nil
         createdAreaID = nil
         createdTaskID = nil
+        createdTaskPresentation = nil
         hasPendingExistingWorkspace = false
         demoState = .idle
         isPresented = true
@@ -144,7 +147,7 @@ final class OnboardingStore: ObservableObject {
     }
 
     @discardableResult
-    func recordTask(id: UUID) -> Bool {
+    func recordTask(id: UUID, presentation: OnboardingTaskPresentation) -> Bool {
         guard isPresented,
               experience == .guided,
               step == .tasks,
@@ -153,7 +156,8 @@ final class OnboardingStore: ObservableObject {
         }
 
         createdTaskID = id
-        presentation = nil
+        createdTaskPresentation = presentation
+        self.presentation = nil
         step = .flow
         if hasPendingExistingWorkspace {
             hasPendingExistingWorkspace = false
@@ -226,6 +230,10 @@ final class OnboardingStore: ObservableObject {
         demoState.progress(at: date)
     }
 
+    var demoTaskPresentation: OnboardingTaskPresentation {
+        createdTaskPresentation ?? .sample
+    }
+
     private func leaveCurrentStep() {
         presentation = nil
         hasPendingExistingWorkspace = false
@@ -275,8 +283,24 @@ enum OnboardingPresentation: String, Identifiable, Sendable {
     var id: String { rawValue }
 }
 
+struct OnboardingTaskPresentation: Equatable, Sendable {
+    let title: String
+    let areaName: String
+    let areaSymbol: String
+    let areaColorHex: String
+
+    static var sample: OnboardingTaskPresentation {
+        OnboardingTaskPresentation(
+            title: String(localized: "レポートを仕上げる"),
+            areaName: String(localized: "仕事"),
+            areaSymbol: "💼",
+            areaColorHex: "#007AFF"
+        )
+    }
+}
+
 enum OnboardingDemoState: Equatable, Sendable {
-    nonisolated static let defaultDuration: TimeInterval = 6
+    nonisolated static let defaultDuration: TimeInterval = OnboardingDemoProjection.totalDuration
     nonisolated static let minimumDuration: TimeInterval = 0.1
 
     case idle
@@ -304,49 +328,117 @@ enum OnboardingDemoState: Equatable, Sendable {
     }
 
     func projection(at date: Date) -> OnboardingDemoProjection {
-        let overallProgress = progress(at: date)
-        let focusFraction = OnboardingDemoProjection.focusFraction
-
-        if overallProgress < focusFraction {
-            let focusProgress = min(max(
-                overallProgress / OnboardingDemoProjection.focusCountdownFraction,
-                0
-            ), 1)
-            let remainingSeconds = Int((
-                Double(OnboardingDemoProjection.focusDurationSeconds) * (1 - focusProgress)
-            ).rounded())
-
-            return OnboardingDemoProjection(
-                phase: .focusing,
-                remainingSeconds: remainingSeconds,
-                timerProgress: focusProgress
-            )
-        }
-
-        return OnboardingDemoProjection(
-            phase: .breakTime,
-            remainingSeconds: OnboardingDemoProjection.breakDurationSeconds,
-            timerProgress: 1
-        )
+        OnboardingDemoProjection(elapsed: progress(at: date) * OnboardingDemoProjection.totalDuration)
     }
 }
 
 enum OnboardingDemoPhase: Equatable, Sendable {
+    case idle
     case focusing
     case breakTime
 }
 
+enum OnboardingDemoStage: Equatable, Sendable {
+    case awaitingTask
+    case pressingContext
+    case ready
+    case pressingPlay
+    case focusing
+    case pressingBreak
+    case breakTime
+}
+
 struct OnboardingDemoProjection: Equatable, Sendable {
-    /// The compressed countdown finishes at 3.8 seconds, leaving a short,
-    /// readable 00:00 hold before the regular break begins at 4 seconds.
-    nonisolated static let focusCountdownFraction = 19.0 / 30.0
-    nonisolated static let focusFraction = 2.0 / 3.0
+    nonisolated static let totalDuration: TimeInterval = 8
+    nonisolated static let contextPressStart: TimeInterval = 0.35
+    nonisolated static let contextSelectedAt: TimeInterval = 0.65
+    nonisolated static let playPressStart: TimeInterval = 1.35
+    nonisolated static let focusStart: TimeInterval = 1.65
+    nonisolated static let focusEnd: TimeInterval = 5.45
+    nonisolated static let breakTransition: TimeInterval = 5.65
     nonisolated static let focusDurationSeconds = FlowMode.sprint.initialFocusDurationSeconds
     nonisolated static let breakDurationSeconds = FlowMode.sprint.breakDurationSeconds
 
+    let stage: OnboardingDemoStage
     let phase: OnboardingDemoPhase
     let remainingSeconds: Int
     let timerProgress: Double
+
+    init(elapsed rawElapsed: TimeInterval) {
+        let elapsed = min(max(rawElapsed, 0), Self.totalDuration)
+
+        switch elapsed {
+        case ..<Self.contextPressStart:
+            stage = .awaitingTask
+            phase = .idle
+            remainingSeconds = Self.focusDurationSeconds
+            timerProgress = 0
+        case ..<Self.contextSelectedAt:
+            stage = .pressingContext
+            phase = .idle
+            remainingSeconds = Self.focusDurationSeconds
+            timerProgress = 0
+        case ..<Self.playPressStart:
+            stage = .ready
+            phase = .idle
+            remainingSeconds = Self.focusDurationSeconds
+            timerProgress = 0
+        case ..<Self.focusStart:
+            stage = .pressingPlay
+            phase = .idle
+            remainingSeconds = Self.focusDurationSeconds
+            timerProgress = 0
+        case ..<Self.focusEnd:
+            let focusProgress = min(max(
+                (elapsed - Self.focusStart) / (Self.focusEnd - Self.focusStart),
+                0
+            ), 1)
+            stage = .focusing
+            phase = .focusing
+            remainingSeconds = Int(ceil(Double(Self.focusDurationSeconds) * (1 - focusProgress)))
+            timerProgress = focusProgress
+        case ..<Self.breakTransition:
+            stage = .pressingBreak
+            phase = .focusing
+            remainingSeconds = 0
+            timerProgress = 1
+        default:
+            stage = .breakTime
+            phase = .breakTime
+            remainingSeconds = Self.breakDurationSeconds
+            timerProgress = 1
+        }
+    }
+
+    var contextIsSelected: Bool {
+        switch stage {
+        case .awaitingTask, .pressingContext: false
+        default: true
+        }
+    }
+
+    var contextIsPressed: Bool {
+        stage == .pressingContext
+    }
+
+    var primaryIsPressed: Bool {
+        stage == .pressingPlay || stage == .pressingBreak
+    }
+
+    var canSeek: Bool {
+        stage == .focusing || stage == .pressingBreak
+    }
+
+    var hasActiveTimer: Bool {
+        switch stage {
+        case .focusing, .pressingBreak, .breakTime: true
+        default: false
+        }
+    }
+
+    var canStartBreak: Bool {
+        stage == .focusing || stage == .pressingBreak
+    }
 }
 
 enum OnboardingStep: Int, CaseIterable, Sendable {
