@@ -224,8 +224,8 @@ The real application workspace remains visible beneath a dimmed onboarding
 surface, and the requested feature screen opens behind each guidance step.
 Guidance stays centered and uses platform-native editor, composer, sheet, and
 popover presentation instead of geometry-dependent spotlights or scrim cutouts.
-The header keeps its step label, progress indicator, and icon-only Close control
-on one row. Back and Close remain available throughout. Close and Finish close any onboarding
+The header centers its progress indicator with an icon-only Close control on the
+right, then gives the localized step label its own wrapping row below. Back and Close remain available throughout. Close and Finish close any onboarding
 presentation, return to Flow, and mark the first-run journey complete.
 
 After the workspace is available, onboarding selects one of two experiences:

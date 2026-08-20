@@ -88,7 +88,29 @@ private struct OnboardingJourneyCard: View {
     }
 
     private var header: some View {
-        HStack(alignment: .center, spacing: 10) {
+        VStack(alignment: .leading, spacing: 10) {
+            ZStack {
+                pageIndicator
+
+                HStack {
+                    Spacer()
+
+                    Button {
+                        store.skip()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.caption.weight(.bold))
+                            .frame(width: 28, height: 28)
+                            .background(Color.primary.opacity(0.07), in: Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.secondary)
+                    .contentShape(Circle())
+                    .accessibilityLabel(String(localized: "スキップ"))
+                    .accessibilityIdentifier("onboarding.skip")
+                }
+            }
+
             Label {
                 Text(store.step.eyebrow)
             } icon: {
@@ -96,24 +118,8 @@ private struct OnboardingJourneyCard: View {
             }
             .font(.subheadline.weight(.semibold))
             .foregroundStyle(.tint)
-            .lineLimit(1)
+            .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)
-
-            pageIndicator
-
-            Button {
-                store.skip()
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.caption.weight(.bold))
-                    .frame(width: 28, height: 28)
-                    .background(Color.primary.opacity(0.07), in: Circle())
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(.secondary)
-            .contentShape(Circle())
-            .accessibilityLabel(String(localized: "スキップ"))
-            .accessibilityIdentifier("onboarding.skip")
         }
     }
 
