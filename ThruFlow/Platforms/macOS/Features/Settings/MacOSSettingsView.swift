@@ -94,9 +94,9 @@ struct MacOSSettingsView: View {
 
             FeedbackSettingsSection()
 
-            historyDataSection
-
             SupportSettingsSection()
+
+            historyDataSection
         }
         .formStyle(.grouped)
         .padding(20)

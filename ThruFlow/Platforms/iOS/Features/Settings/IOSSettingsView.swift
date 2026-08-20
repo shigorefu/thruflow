@@ -86,9 +86,9 @@ struct IOSSettingsView: View {
 
             FeedbackSettingsSection()
 
-            historyDataSection
-
             SupportSettingsSection()
+
+            historyDataSection
         }
         .iosCenteredNavigationTitle(String(localized: "設定"))
         .alert(
