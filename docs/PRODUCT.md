@@ -173,11 +173,12 @@ Version 1.0.2 introduces an eight-step onboarding journey: `ようこそ`, `分�
 `タスク`, `流れ`, `集中のプレビュー`, `履歴`, `統計`, and `使い方の流れ`.
 An empty first installation uses guided mode. It opens the real Area editor and
 Task composer with localized starter values, but saves only an Area or Task that
-the user explicitly confirms. The Flow preview rapidly time-compresses a
-canonical Short focus interval into its regular break while rendering the real
-Flow stream. Its timer, phase, and progress are presentation-only: it creates no
-`FlowSession`, segment, break, Task progress, History, Statistics, notification,
-Live Activity, or CloudKit record. The final step summarizes
+the user explicitly confirms. The Flow preview shows only the circular timer:
+it rapidly counts a canonical Short focus interval from `12:00` to `00:00`, then
+switches to the regular break at `03:00`. Its timer, phase, and progress are
+presentation-only: it creates no `FlowSession`, segment, break, Task progress,
+History, Statistics, notification, Live Activity, or CloudKit record. The final
+step summarizes
 `分野 → タスク → 流れ → 履歴・統計 → 次の一歩`.
 
 If first launch already contains user data, onboarding becomes a read-only tour

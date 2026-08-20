@@ -1232,6 +1232,28 @@
         }
       }
     },
+    "3分の休憩" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3-minute break"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3分の休憩"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Трёхминутный перерыв"
+          }
+        }
+      }
+    },
     "7日" : {
       "localizations" : {
         "en" : {
@@ -1299,6 +1321,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Начать с 12 минут"
+          }
+        }
+      }
+    },
+    "12分の集中を早送り中" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fast-forwarding a 12-minute focus session"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "12分の集中を早送り中"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "12-минутная сессия фокуса в ускоренном режиме"
           }
         }
       }
@@ -4075,6 +4119,28 @@
         }
       }
     },
+    "タイマーを早送りしています。このプレビューは履歴や統計には保存されません。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The timer is running in fast-forward. This preview won’t be saved to History or Statistics."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タイマーを早送りしています。このプレビューは履歴や統計には保存されません。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Таймер идёт в ускоренном режиме. Демонстрация не сохранится в истории или статистике."
+          }
+        }
+      }
+    },
     "タグ" : {
       "localizations" : {
         "en" : {
@@ -4186,6 +4252,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Задачи, сферы и заметки к задачам останутся. Статус выполненных задач не изменится."
+          }
+        }
+      }
+    },
+    "タスク、集中タイマー、履歴、統計などの基本機能は、無料・広告なしで利用できます。利用に必須の支払いはありません。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Core features—including Tasks, the focus timer, History, and Statistics—are currently free and ad-free, with no payment required."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タスク、集中タイマー、履歴、統計などの基本機能は、無料・広告なしで利用できます。利用に必須の支払いはありません。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Основные функции — задачи, таймер фокуса, история и статистика — сейчас доступны бесплатно и без рекламы. Обязательных платежей нет."
           }
         }
       }
@@ -5068,24 +5156,24 @@
         }
       }
     },
-    "まず分野とタスクを作り、流れの短いプレビューを見ます。途中でいつでもスキップできます。" : {
+    "まず分野とタスクを作り、タイマーの短いプレビューを見ます。途中でいつでもスキップできます。" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "First, create an Area and a Task, then watch a quick Flow preview. You can skip at any time."
+            "value" : "First, create an Area and a Task, then watch a quick timer preview. You can skip at any time."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "まず分野とタスクを作り、流れの短いプレビューを見ます。途中でいつでもスキップできます。"
+            "value" : "まず分野とタスクを作り、タイマーの短いプレビューを見ます。途中でいつでもスキップできます。"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Сначала создайте сферу и задачу, затем посмотрите короткую демонстрацию Flow. Любой шаг можно пропустить."
+            "value" : "Сначала создайте сферу и задачу, затем посмотрите короткую демонстрацию таймера. Любой шаг можно пропустить."
           }
         }
       }
@@ -6018,6 +6106,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Перерыв окончен. Продолжить Flow?"
+          }
+        }
+      }
+    },
+    "休憩に切り替わりました。実際の流れでは、このままタイマーが続きます。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The timer has switched to a break. In a real Flow, it would keep running from here."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "休憩に切り替わりました。実際の流れでは、このままタイマーが続きます。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Таймер переключился на перерыв. В обычной сессии Flow он продолжит отсчёт."
           }
         }
       }
@@ -6985,6 +7095,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Основное"
+          }
+        }
+      }
+    },
+    "基本機能は無料・広告なし" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Core Features Are Free and Ad-Free"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "基本機能は無料・広告なし"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Основные функции — бесплатно и без рекламы"
           }
         }
       }
@@ -9162,6 +9294,50 @@
         }
       }
     },
+    "タイマー" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Timer"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タイマー"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Таймер"
+          }
+        }
+      }
+    },
+    "タイマーの動きを見てみよう" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See the Timer in Action"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タイマーの動きを見てみよう"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Посмотрите, как работает таймер"
+          }
+        }
+      }
+    },
     "満ちている流れ" : {
       "localizations" : {
         "en" : {
@@ -9380,6 +9556,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Цель по времени: %1$lld ч · %2$@"
+          }
+        }
+      }
+    },
+    "短いプレビューでは、12分の集中タイマーを早送りし、終了後に3分の休憩へ切り替わる様子を確認できます。実際のタスク、進捗、履歴、統計には影響しません。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In this quick preview, a 12-minute focus timer fast-forwards to zero, then switches to a 3-minute break. It won’t affect your real Tasks, progress, History, or Statistics."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "短いプレビューでは、12分の集中タイマーを早送りし、終了後に3分の休憩へ切り替わる様子を確認できます。実際のタスク、進捗、履歴、統計には影響しません。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В короткой демонстрации 12-минутный таймер фокуса в ускоренном режиме дойдёт до нуля и переключится на трёхминутный перерыв. Реальные задачи, прогресс, история и статистика не изменятся."
           }
         }
       }
@@ -11368,182 +11566,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Частота"
-          }
-        }
-      }
-    },
-    "流れを体験してみよう" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "See Flow in Action"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "流れを体験してみよう"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Посмотрите Flow в действии"
-          }
-        }
-      }
-    },
-    "短いプレビューで、タイマーが集中から休憩へ切り替わるまでの流れを見てみましょう。実際のタスク、進捗、履歴、統計には影響しません。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This quick preview shows the timer moving from focus into a break. It won’t affect your real Tasks, progress, History, or Statistics."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "短いプレビューで、タイマーが集中から休憩へ切り替わるまでの流れを見てみましょう。実際のタスク、進捗、履歴、統計には影響しません。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "В этой короткой демонстрации таймер перейдёт от фокуса к перерыву. Реальные задачи, прогресс, история и статистика не изменятся."
-          }
-        }
-      }
-    },
-    "タイマーを早送りしています。このプレビューは履歴や統計には保存されません。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The timer is running in fast-forward. This preview won’t be saved to History or Statistics."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "タイマーを早送りしています。このプレビューは履歴や統計には保存されません。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Таймер идёт в ускоренном режиме. Демонстрация не сохранится в истории или статистике."
-          }
-        }
-      }
-    },
-    "休憩に切り替わりました。実際の流れでは、このままタイマーが続きます。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The timer has switched to a break. In a real Flow, it would keep running from here."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "休憩に切り替わりました。実際の流れでは、このままタイマーが続きます。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Таймер переключился на перерыв. В обычной сессии Flow он продолжит отсчёт."
-          }
-        }
-      }
-    },
-    "基本機能は無料・広告なし" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Core Features Are Free and Ad-Free"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "基本機能は無料・広告なし"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Основные функции — бесплатно и без рекламы"
-          }
-        }
-      }
-    },
-    "タスク、集中タイマー、履歴、統計などの基本機能は、無料・広告なしで利用できます。利用に必須の支払いはありません。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Core features—including Tasks, the focus timer, History, and Statistics—are currently free and ad-free, with no payment required."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "タスク、集中タイマー、履歴、統計などの基本機能は、無料・広告なしで利用できます。利用に必須の支払いはありません。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Основные функции — задачи, таймер фокуса, история и статистика — сейчас доступны бесплатно и без рекламы. Обязательных платежей нет."
-          }
-        }
-      }
-    },
-    "12分の集中を早送り中" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fast-forwarding a 12-minute focus session"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "12分の集中を早送り中"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "12-минутная сессия фокуса в ускоренном режиме"
-          }
-        }
-      }
-    },
-    "3分の休憩" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "3-minute break"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "3分の休憩"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Трёхминутный перерыв"
           }
         }
       }

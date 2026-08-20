@@ -234,19 +234,19 @@ struct OnboardingAndReviewPromptTests {
         let initialProjection = store.demoState.projection(at: start)
         #expect(initialProjection.phase == .focusing)
         #expect(initialProjection.remainingSeconds == 12 * 60)
-        #expect(initialProjection.focusProgress == 0)
+        #expect(initialProjection.timerProgress == 0)
 
         let focusProjection = store.demoState.projection(at: start.addingTimeInterval(1.9))
         #expect(focusProjection.phase == .focusing)
         #expect(focusProjection.remainingSeconds == 6 * 60)
-        #expect(abs(focusProjection.focusProgress - 0.5) < 0.000_001)
+        #expect(abs(focusProjection.timerProgress - 0.5) < 0.000_001)
 
         let finalFocusProjection = store.demoState.projection(
             at: start.addingTimeInterval(3.8)
         )
         #expect(finalFocusProjection.phase == .focusing)
         #expect(finalFocusProjection.remainingSeconds == 0)
-        #expect(abs(finalFocusProjection.focusProgress - 1) < 0.000_001)
+        #expect(abs(finalFocusProjection.timerProgress - 1) < 0.000_001)
 
         let heldFocusProjection = store.demoState.projection(
             at: start.addingTimeInterval(3.999)
@@ -257,12 +257,11 @@ struct OnboardingAndReviewPromptTests {
         let breakProjection = store.demoState.projection(at: start.addingTimeInterval(4))
         #expect(breakProjection.phase == .breakTime)
         #expect(breakProjection.remainingSeconds == 3 * 60)
-        #expect(breakProjection.focusProgress == 1)
-        #expect(breakProjection.breakStartedAt == start.addingTimeInterval(4))
+        #expect(breakProjection.timerProgress == 1)
 
         let laterBreakProjection = store.demoState.projection(at: start.addingTimeInterval(5))
         #expect(laterBreakProjection.phase == .breakTime)
-        #expect(laterBreakProjection.breakStartedAt == breakProjection.breakStartedAt)
+        #expect(laterBreakProjection.timerProgress == 1)
 
         store.updateDemo(at: start.addingTimeInterval(5.9))
         #expect(store.demoState.isRunning)
@@ -273,7 +272,7 @@ struct OnboardingAndReviewPromptTests {
         let completedProjection = store.demoState.projection(at: start.addingTimeInterval(7))
         #expect(completedProjection.phase == .breakTime)
         #expect(completedProjection.remainingSeconds == 3 * 60)
-        #expect(completedProjection.breakStartedAt == nil)
+        #expect(completedProjection.timerProgress == 1)
 
         #expect(store.startDemo(at: start))
         store.goBack()

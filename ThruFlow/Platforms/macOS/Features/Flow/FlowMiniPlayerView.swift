@@ -127,33 +127,14 @@ struct FlowMiniPlayerView: View {
 
             modePickerButton
 
-            ZStack {
-                Circle()
-                    .stroke(Color.primary.opacity(0.08), lineWidth: 10)
-
-                Circle()
-                    .trim(from: 0, to: dashboardTimerProgress(now: now))
-                    .stroke(
-                        timerRingColor,
-                        style: StrokeStyle(lineWidth: 10, lineCap: .round)
-                    )
-                    .rotationEffect(.degrees(-90))
-
-                VStack(spacing: 5) {
-                    Text(timerEyebrow)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-
-                    Text(dashboardTimerText(now: now))
-                        .font(.system(.title, design: .rounded).weight(.bold))
-                        .monospacedDigit()
-
-                    Text(timerPhaseName)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .frame(width: 158, height: 158)
+            FlowTimerDial(
+                progress: dashboardTimerProgress(now: now),
+                tint: timerRingColor,
+                eyebrow: timerEyebrow,
+                timeText: dashboardTimerText(now: now),
+                footer: timerPhaseName,
+                style: .dashboard
+            )
             .accessibilityElement(children: .combine)
             .accessibilityLabel(String(localized: "Flowタイマー"))
 

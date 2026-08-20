@@ -308,7 +308,6 @@ enum OnboardingDemoState: Equatable, Sendable {
         let focusFraction = OnboardingDemoProjection.focusFraction
 
         if overallProgress < focusFraction {
-            let phaseProgress = min(max(overallProgress / focusFraction, 0), 1)
             let focusProgress = min(max(
                 overallProgress / OnboardingDemoProjection.focusCountdownFraction,
                 0
@@ -320,31 +319,14 @@ enum OnboardingDemoState: Equatable, Sendable {
             return OnboardingDemoProjection(
                 phase: .focusing,
                 remainingSeconds: remainingSeconds,
-                overallProgress: overallProgress,
-                phaseProgress: phaseProgress,
-                focusProgress: focusProgress,
-                breakStartedAt: nil
+                timerProgress: focusProgress
             )
-        }
-
-        let phaseProgress = min(max(
-            (overallProgress - focusFraction) / (1 - focusFraction),
-            0
-        ), 1)
-        let breakStartedAt: Date? = switch self {
-        case .running(let startedAt, let duration):
-            startedAt.addingTimeInterval(duration * focusFraction)
-        case .idle, .completed:
-            nil
         }
 
         return OnboardingDemoProjection(
             phase: .breakTime,
             remainingSeconds: OnboardingDemoProjection.breakDurationSeconds,
-            overallProgress: overallProgress,
-            phaseProgress: phaseProgress,
-            focusProgress: 1,
-            breakStartedAt: breakStartedAt
+            timerProgress: 1
         )
     }
 }
@@ -364,10 +346,7 @@ struct OnboardingDemoProjection: Equatable, Sendable {
 
     let phase: OnboardingDemoPhase
     let remainingSeconds: Int
-    let overallProgress: Double
-    let phaseProgress: Double
-    let focusProgress: Double
-    let breakStartedAt: Date?
+    let timerProgress: Double
 }
 
 enum OnboardingStep: Int, CaseIterable, Sendable {

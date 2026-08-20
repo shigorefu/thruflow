@@ -341,28 +341,14 @@ struct IOSFlowView: View {
     }
 
     private var timer: some View {
-        ZStack {
-            Circle()
-                .stroke(Color.secondary.opacity(0.13), lineWidth: 11)
-            Circle()
-                .trim(from: 0, to: activeFlowStore.phaseProgress(now: activeFlowStore.displayDate))
-                .stroke(tint, style: StrokeStyle(lineWidth: 11, lineCap: .round))
-                .rotationEffect(.degrees(-90))
-                .animation(.linear(duration: 0.25), value: activeFlowStore.displayDate)
-
-            VStack(spacing: 3) {
-                Text(activeFlowStore.phase.displayName)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                Text(timerText)
-                    .font(.system(size: 34, weight: .semibold, design: .rounded))
-                    .monospacedDigit()
-                Text(activeFlowStore.selectedMode.displayName)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .frame(width: 164, height: 164)
+        FlowTimerDial(
+            progress: activeFlowStore.phaseProgress(now: activeFlowStore.displayDate),
+            tint: tint,
+            eyebrow: activeFlowStore.phase.displayName,
+            timeText: timerText,
+            footer: activeFlowStore.selectedMode.displayName,
+            style: .mobile
+        )
     }
 
     private var controls: some View {

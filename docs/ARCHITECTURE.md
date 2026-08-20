@@ -116,10 +116,10 @@ Each platform owns its composition root:
   pending editor presentation, IDs of user-confirmed onboarding records, and
   transient Flow-preview state. It never inserts an Area or Task itself; the
   platform's normal editor/composer reports a saved stable ID only after the
-  user confirms creation. The preview rapidly time-compresses a canonical Short
-  focus interval into its regular break and renders the production Flow stream,
-  but its elapsed time, phase, and progress remain presentation state. It never
-  starts an `ActiveFlowStore` session or reaches persistence.
+  user confirms creation. The preview contains only a presentation-owned
+  circular timer that rapidly counts a canonical Short focus interval from
+  `12:00` to `00:00`, then switches to the regular break at `03:00`. Its elapsed
+  time, phase, and progress never enter `ActiveFlowStore` or persistence.
 - `OnboardingWorkspaceInspector` derives whether real user Areas, Tasks, or Flow
   history already exist. Platform roots use that value once the workspace is
   available: an empty first run can be guided, while an existing workspace and

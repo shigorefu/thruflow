@@ -245,11 +245,12 @@ of the journey continues as a read-only tour.
   example creation or changing existing data.
 
 The Flow step selects the just-created Task only as presentation context. The
-following preview rapidly time-compresses a canonical Short focus interval into
-its regular break while rendering the actual production Flow stream. Its timer,
-phase, and progress are entirely transient: it creates no session, segment,
-break, Task progress or completion, History, Statistics, notification, Live
-Activity, or CloudKit write. Leaving the step or skipping resets the preview.
+following preview shows only the circular timer. It rapidly counts a canonical
+Short focus interval from `12:00` to `00:00`, then switches to the regular break
+at `03:00`. Its timer, phase, and progress are entirely transient: it creates no
+session, segment, break, Task progress or completion, History, Statistics,
+notification, Live Activity, or CloudKit write. Leaving the step or skipping
+resets the preview.
 The final step summarizes `分野 → タスク → 流れ → 履歴・統計 → 次の一歩`.
 
 `設定 > ヘルプ > 使い方を見る` first dismisses Settings, then starts the

@@ -144,10 +144,10 @@ Cover:
   eight-step `ようこそ → 分野 → タスク → 流れ → 集中のプレビュー → 履歴 → 統計 →
   使い方の流れ` order on macOS and universal iOS. Coverage must prove that Area
   and Task records appear only after normal user confirmation, the Flow preview
-  rapidly time-compresses a Short focus interval into its regular break while
-  rendering the production Flow stream, cannot create credited or synchronized
-  data, every step can be skipped, and existing-workspace or Settings replay
-  remains read-only.
+  shows only a circular timer rapidly counting a Short focus interval from
+  `12:00` to `00:00` before switching to the regular break at `03:00`, cannot
+  create credited or synchronized data, every step can be skipped, and
+  existing-workspace or Settings replay remains read-only.
 - Review eligibility boundaries: seven-day delay, active-day/completed-Flow
   thresholds, and one request per application version.
 - StoreKit support configuration uses stable Coffee/Ramen product identifiers,

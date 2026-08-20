@@ -89,7 +89,11 @@ private struct OnboardingJourneyCard: View {
 
     private var header: some View {
         HStack(alignment: .center, spacing: 10) {
-            Label(store.step.eyebrow, systemImage: store.step.iconName)
+            Label {
+                Text(store.step.eyebrow)
+            } icon: {
+                OnboardingIconView(icon: store.step.icon, width: 18)
+            }
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.tint)
 
@@ -111,7 +115,7 @@ private struct OnboardingJourneyCard: View {
         case .welcome:
             OnboardingCallout(
                 title: String(localized: "ひとつずつ試せます"),
-                body: String(localized: "まず分野とタスクを作り、流れの短いプレビューを見ます。途中でいつでもスキップできます。"),
+                body: String(localized: "まず分野とタスクを作り、タイマーの短いプレビューを見ます。途中でいつでもスキップできます。"),
                 systemImage: "sparkles"
             )
 
@@ -180,7 +184,7 @@ private struct OnboardingJourneyCard: View {
                 OnboardingHintRow(
                     title: String(localized: "流れ"),
                     body: String(localized: "集中と休憩の積み重なりを映します。下のタイムラインでは、いつ・何に取り組んだかを確認できます。"),
-                    systemImage: "waveform.path"
+                    icon: .flow
                 )
                 OnboardingHintRow(
                     title: String(localized: "今日のタスク"),
@@ -385,17 +389,23 @@ private struct OnboardingJourneyCard: View {
 private struct OnboardingHintRow: View {
     let title: String
     let detail: String
-    let systemImage: String
+    let icon: OnboardingIcon
 
     init(title: String, body: String, systemImage: String) {
         self.title = title
         detail = body
-        self.systemImage = systemImage
+        icon = .system(systemImage)
+    }
+
+    init(title: String, body: String, icon: OnboardingIcon) {
+        self.title = title
+        detail = body
+        self.icon = icon
     }
 
     var body: some View {
         HStack(alignment: .top, spacing: 11) {
-            Image(systemName: systemImage)
+            OnboardingIconView(icon: icon, width: 18)
                 .font(.body.weight(.semibold))
                 .foregroundStyle(.tint)
                 .frame(width: 22, height: 22)
@@ -511,65 +521,26 @@ private struct OnboardingFlowDemo: View {
         ) { timeline in
             let projection = store.demoState.projection(at: timeline.date)
             let isBreak = projection.phase == .breakTime
-            let breakInteraction = projection.breakStartedAt.map {
-                FlowBreakInteraction(
-                    sequence: 1,
-                    kind: .started(isLong: false),
-                    occurredAt: $0
+
+            VStack(spacing: 12) {
+                FlowTimerDial(
+                    progress: projection.timerProgress,
+                    tint: demoTimerTint(isBreak: isBreak),
+                    eyebrow: isBreak ? String(localized: "休憩") : String(localized: "集中"),
+                    timeText: String(
+                        format: "%02d:%02d",
+                        projection.remainingSeconds / 60,
+                        projection.remainingSeconds % 60
+                    ),
+                    footer: FlowMode.sprint.displayName,
+                    style: demoTimerStyle
                 )
-            }
-
-            VStack(spacing: 10) {
-                ZStack(alignment: .top) {
-                    FlowStreamSurface(
-                        blocks: projection.focusProgress * 0.5,
-                        flowCount: projection.focusProgress > 0 ? 1 : 0,
-                        palette: ["#007AFF", "#30D5C8", "#AF52DE"],
-                        paletteWeights: [0.5, 0.3, 0.2],
-                        dailySeed: 12_250_310,
-                        isActive: store.demoState.isRunning && !isBreak,
-                        mode: .sprint,
-                        breakStyle: isBreak ? .regular : .none,
-                        breakInteraction: breakInteraction,
-                        isRenderingEnabled: true
-                    )
-                    .frame(height: 148)
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
-
-                    HStack(spacing: 8) {
-                        Label(
-                            isBreak ? String(localized: "休憩") : String(localized: "集中"),
-                            systemImage: isBreak ? "cup.and.saucer.fill" : "timer"
-                        )
-                        .font(.caption.weight(.semibold))
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 7)
-                        .background(.regularMaterial, in: Capsule())
-
-                        Spacer()
-
-                        Text(String(
-                            format: "%02d:%02d",
-                            projection.remainingSeconds / 60,
-                            projection.remainingSeconds % 60
-                        ))
-                        .font(.system(.headline, design: .rounded, weight: .bold))
-                        .monospacedDigit()
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 7)
-                        .background(.regularMaterial, in: Capsule())
-                        .accessibilityHidden(true)
-                    }
-                    .padding(10)
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityLabel(isBreak
-                                        ? String(localized: "3分の休憩")
-                                        : String(localized: "12分の集中を早送り中"))
-                }
-
-                ProgressView(value: projection.overallProgress)
-                    .tint(isBreak ? .green : .accentColor)
-                    .accessibilityHidden(true)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(isBreak
+                                    ? String(localized: "3分の休憩")
+                                    : String(localized: "12分の集中を早送り中"))
 
                 Text(store.demoState.isCompleted
                      ? String(localized: "休憩に切り替わりました。実際の流れでは、このままタイマーが続きます。")
@@ -605,15 +576,32 @@ private struct OnboardingFlowDemo: View {
         case .completed: 2
         }
     }
+
+    private var demoTimerStyle: FlowTimerDial.Style {
+#if os(macOS)
+        .dashboard
+#else
+        .mobile
+#endif
+    }
+
+    private func demoTimerTint(isBreak: Bool) -> Color {
+        guard isBreak else { return .accentColor }
+#if os(macOS)
+        return Color.secondary.opacity(0.72)
+#else
+        return .secondary
+#endif
+    }
 }
 
 private struct OnboardingWorkflowSummary: View {
     private let stages: [OnboardingWorkflowStage] = [
-        OnboardingWorkflowStage(title: String(localized: "分野"), iconName: ProductSymbol.area),
-        OnboardingWorkflowStage(title: String(localized: "タスク"), iconName: "checklist"),
-        OnboardingWorkflowStage(title: String(localized: "流れ"), iconName: "waveform.path"),
-        OnboardingWorkflowStage(title: String(localized: "履歴・統計"), iconName: "chart.bar.xaxis"),
-        OnboardingWorkflowStage(title: String(localized: "次の一歩"), iconName: "arrow.forward.circle")
+        OnboardingWorkflowStage(title: String(localized: "分野"), icon: .system(ProductSymbol.area)),
+        OnboardingWorkflowStage(title: String(localized: "タスク"), icon: .system("checklist")),
+        OnboardingWorkflowStage(title: String(localized: "流れ"), icon: .flow),
+        OnboardingWorkflowStage(title: String(localized: "履歴・統計"), icon: .system("chart.bar.xaxis")),
+        OnboardingWorkflowStage(title: String(localized: "次の一歩"), icon: .system("arrow.forward.circle"))
     ]
 
     var body: some View {
@@ -656,7 +644,11 @@ private struct OnboardingWorkflowSummary: View {
     }
 
     private func stageLabel(_ stage: OnboardingWorkflowStage) -> some View {
-        Label(stage.title, systemImage: stage.iconName)
+        Label {
+            Text(stage.title)
+        } icon: {
+            OnboardingIconView(icon: stage.icon, width: 14)
+        }
             .font(.caption.weight(.semibold))
             .foregroundStyle(.primary)
             .padding(.horizontal, 8)
@@ -668,7 +660,29 @@ private struct OnboardingWorkflowSummary: View {
 
 private struct OnboardingWorkflowStage {
     let title: String
-    let iconName: String
+    let icon: OnboardingIcon
+}
+
+fileprivate enum OnboardingIcon {
+    case system(String)
+    case flow
+}
+
+private struct OnboardingIconView: View {
+    let icon: OnboardingIcon
+    let width: CGFloat
+
+    @ViewBuilder
+    var body: some View {
+        switch icon {
+        case .system(let name):
+            Image(systemName: name)
+                .frame(width: width, height: width)
+        case .flow:
+            FlowMenuIcon(width: width)
+                .frame(width: width, height: width)
+        }
+    }
 }
 
 extension OnboardingStep {
@@ -677,22 +691,24 @@ extension OnboardingStep {
         case .welcome: String(localized: "ようこそ")
         case .areas: String(localized: "分野")
         case .tasks: String(localized: "タスク")
-        case .flow, .demo: String(localized: "流れ")
+        case .flow: String(localized: "流れ")
+        case .demo: String(localized: "タイマー")
         case .history: String(localized: "履歴")
         case .statistics: String(localized: "統計")
         case .workflow: String(localized: "使い方の流れ")
         }
     }
 
-    var iconName: String {
+    fileprivate var icon: OnboardingIcon {
         switch self {
-        case .welcome: "hand.wave.fill"
-        case .areas: ProductSymbol.area
-        case .tasks: "checklist"
-        case .flow, .demo: "waveform.path"
-        case .history: "clock.arrow.circlepath"
-        case .statistics: "chart.bar.xaxis"
-        case .workflow: "arrow.triangle.2.circlepath"
+        case .welcome: .system("hand.wave.fill")
+        case .areas: .system(ProductSymbol.area)
+        case .tasks: .system("checklist")
+        case .flow: .flow
+        case .demo: .system("timer")
+        case .history: .system("clock.arrow.circlepath")
+        case .statistics: .system("chart.bar.xaxis")
+        case .workflow: .system("arrow.triangle.2.circlepath")
         }
     }
 
@@ -702,7 +718,7 @@ extension OnboardingStep {
         case .areas: String(localized: "取り組むことを、分野で整理")
         case .tasks: String(localized: "やることを、具体的なタスクに")
         case .flow: String(localized: "タスクを選んで、集中を始める")
-        case .demo: String(localized: "流れを体験してみよう")
+        case .demo: String(localized: "タイマーの動きを見てみよう")
         case .history: String(localized: "一日の記録を、あとから振り返る")
         case .statistics: String(localized: "時間の使い方に気づく")
         case .workflow: String(localized: "すべてが、ひとつの流れに")
@@ -720,7 +736,7 @@ extension OnboardingStep {
         case .flow:
             String(localized: "流れは、今日の作業を進める中心の画面です。集中タイマー、今日のタスク、作業の流れ、今日の統計をまとめて確認できます。途中でタスクや長さを変えても、途切れない作業はひとつの流れとして残ります。")
         case .demo:
-            String(localized: "短いプレビューで、タイマーが集中から休憩へ切り替わるまでの流れを見てみましょう。実際のタスク、進捗、履歴、統計には影響しません。")
+            String(localized: "短いプレビューでは、12分の集中タイマーを早送りし、終了後に3分の休憩へ切り替わる様子を確認できます。実際のタスク、進捗、履歴、統計には影響しません。")
         case .history:
             String(localized: "履歴には、実際に行った集中、休憩、途中のタスク切り替えが自動で残ります。")
         case .statistics:

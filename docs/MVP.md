@@ -70,9 +70,10 @@ Area -> Task -> Flow -> actual focused time -> progress -> statistics
   time as macOS or iPhone.
 - Shared eight-step onboarding for macOS, iPhone, and iPad: an empty first run
   can create one real Area and Task only after user confirmation, then shows a
-  transient preview that rapidly time-compresses a Short focus interval into its
-  regular break while rendering the real Flow stream. It cannot affect progress,
-  History, Statistics, notifications, Live Activity, or CloudKit.
+  transient circular-timer preview that rapidly counts a Short focus interval
+  from `12:00` to `00:00`, then switches to the regular break at `03:00`. It
+  cannot affect progress, History, Statistics, notifications, Live Activity, or
+  CloudKit.
   Existing-workspace first launch and Settings replay are read-only, every step
   can be skipped, and preview schemes use an in-memory store. watchOS remains a
   companion and does not repeat onboarding.

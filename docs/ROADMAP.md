@@ -25,9 +25,9 @@ Area -> Task -> Flow -> focused time -> progress -> statistics
 - [x] Theme, language, first-weekday, time-format, and new-day-boundary settings.
 - [x] Version 1.0.2 eight-step onboarding on macOS, iPhone, and iPad. An empty
   first run can create a real Area and Task only after user confirmation, then
-  shows a transient preview that rapidly time-compresses a Short focus interval
-  into its regular break while rendering the real Flow stream, with no credited
-  or synchronized data.
+  shows a transient circular-timer preview that rapidly counts a Short focus
+  interval from `12:00` to `00:00`, then switches to the regular break at
+  `03:00`, with no credited or synchronized data.
   Existing-workspace first launch and Settings replay are read-only, every step
   is skippable, and preview schemes isolate confirmed examples in memory.
 - [x] A non-intrusive system review request after confirmed use, a GitHub link,
