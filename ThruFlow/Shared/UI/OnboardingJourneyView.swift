@@ -254,8 +254,8 @@ private struct OnboardingJourneyCard: View {
                     systemImage: "lock.shield"
                 )
                 OnboardingCallout(
-                    title: String(localized: "無料で、広告もサブスクリプションもありません"),
-                    body: String(localized: "すべての機能を無料で使えます。任意の応援で機能が解放されることもありません。"),
+                    title: String(localized: "基本機能は無料・広告なし"),
+                    body: String(localized: "タスク、集中タイマー、履歴、統計などの基本機能は、無料・広告なしで利用できます。利用に必須の支払いはありません。"),
                     systemImage: "heart.fill"
                 )
             }
@@ -500,6 +500,7 @@ private struct OnboardingMode: Identifiable {
 private struct OnboardingFlowDemo: View {
     @ObservedObject var store: OnboardingStore
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         TimelineView(
@@ -508,40 +509,71 @@ private struct OnboardingFlowDemo: View {
                 paused: !store.demoState.isRunning
             )
         ) { timeline in
-            let progress = store.demoProgress(at: timeline.date)
-            let elapsedSeconds = Int((progress * 5).rounded(.down))
-            let remainingSeconds = max(0, 12 * 60 - elapsedSeconds)
+            let projection = store.demoState.projection(at: timeline.date)
+            let isBreak = projection.phase == .breakTime
+            let breakInteraction = projection.breakStartedAt.map {
+                FlowBreakInteraction(
+                    sequence: 1,
+                    kind: .started(isLong: false),
+                    occurredAt: $0
+                )
+            }
 
             VStack(spacing: 10) {
-                ZStack(alignment: .topTrailing) {
+                ZStack(alignment: .top) {
                     FlowStreamSurface(
-                        blocks: progress * 0.5,
-                        flowCount: progress > 0 ? 1 : 0,
+                        blocks: projection.focusProgress * 0.5,
+                        flowCount: projection.focusProgress > 0 ? 1 : 0,
                         palette: ["#007AFF", "#30D5C8", "#AF52DE"],
                         paletteWeights: [0.5, 0.3, 0.2],
                         dailySeed: 12_250_310,
-                        isActive: store.demoState.isRunning,
+                        isActive: store.demoState.isRunning && !isBreak,
                         mode: .sprint,
+                        breakStyle: isBreak ? .regular : .none,
+                        breakInteraction: breakInteraction,
                         isRenderingEnabled: true
                     )
-                    .frame(height: 128)
+                    .frame(height: 148)
                     .clipShape(RoundedRectangle(cornerRadius: 14))
 
-                    Text(String(format: "%02d:%02d", remainingSeconds / 60, remainingSeconds % 60))
+                    HStack(spacing: 8) {
+                        Label(
+                            isBreak ? String(localized: "休憩") : String(localized: "集中"),
+                            systemImage: isBreak ? "cup.and.saucer.fill" : "timer"
+                        )
+                        .font(.caption.weight(.semibold))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 7)
+                        .background(.regularMaterial, in: Capsule())
+
+                        Spacer()
+
+                        Text(String(
+                            format: "%02d:%02d",
+                            projection.remainingSeconds / 60,
+                            projection.remainingSeconds % 60
+                        ))
                         .font(.system(.headline, design: .rounded, weight: .bold))
                         .monospacedDigit()
                         .padding(.horizontal, 10)
                         .padding(.vertical, 7)
                         .background(.regularMaterial, in: Capsule())
-                        .padding(10)
+                        .accessibilityHidden(true)
+                    }
+                    .padding(10)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(isBreak
+                                        ? String(localized: "3分の休憩")
+                                        : String(localized: "12分の集中を早送り中"))
                 }
 
-                ProgressView(value: progress)
-                    .tint(.accentColor)
+                ProgressView(value: projection.overallProgress)
+                    .tint(isBreak ? .green : .accentColor)
+                    .accessibilityHidden(true)
 
                 Text(store.demoState.isCompleted
-                     ? String(localized: "準備は完了です。取り組むときに、最初の集中を始めてみてください。")
-                     : String(localized: "このプレビューは履歴や統計には保存されません。"))
+                     ? String(localized: "休憩に切り替わりました。実際の流れでは、このままタイマーが続きます。")
+                     : String(localized: "タイマーを早送りしています。このプレビューは履歴や統計には保存されません。"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -557,6 +589,10 @@ private struct OnboardingFlowDemo: View {
             if store.demoState.isRunning {
                 store.cancelDemo()
             }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase != .active, store.demoState.isRunning else { return }
+            store.cancelDemo()
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("onboarding.demo.preview")
@@ -666,7 +702,7 @@ extension OnboardingStep {
         case .areas: String(localized: "取り組むことを、分野で整理")
         case .tasks: String(localized: "やることを、具体的なタスクに")
         case .flow: String(localized: "タスクを選んで、集中を始める")
-        case .demo: String(localized: "流れの動きを見てみよう")
+        case .demo: String(localized: "流れを体験してみよう")
         case .history: String(localized: "一日の記録を、あとから振り返る")
         case .statistics: String(localized: "時間の使い方に気づく")
         case .workflow: String(localized: "すべてが、ひとつの流れに")
@@ -684,7 +720,7 @@ extension OnboardingStep {
         case .flow:
             String(localized: "流れは、今日の作業を進める中心の画面です。集中タイマー、今日のタスク、作業の流れ、今日の統計をまとめて確認できます。途中でタスクや長さを変えても、途切れない作業はひとつの流れとして残ります。")
         case .demo:
-            String(localized: "短いプレビューで、集中を始めたときに流れがどう反応するか見てみましょう。実際のタスク、進捗、履歴、統計には影響しません。")
+            String(localized: "短いプレビューで、タイマーが集中から休憩へ切り替わるまでの流れを見てみましょう。実際のタスク、進捗、履歴、統計には影響しません。")
         case .history:
             String(localized: "履歴には、実際に行った集中、休憩、途中のタスク切り替えが自動で残ります。")
         case .statistics:

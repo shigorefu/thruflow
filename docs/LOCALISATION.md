@@ -64,12 +64,23 @@ for the weekly-count Habit schedule, and `集中カレンダー` / Focus Calenda
 
 Version 1.0.2 onboarding has eight semantic steps: Welcome, Area, Task, Flow,
 the transient Flow preview, History, Statistics, and the final workflow summary.
-Translations should describe that loop naturally rather than mirror Japanese
-sentence structure. The privacy step may say that records are stored on the
-device and, when iCloud is enabled, synchronize through the user's private
-CloudKit database. It may also say that ThruFlow does not send Tasks or History
-to a developer-operated server. It must not claim end-to-end encryption,
-anonymity, that Apple never processes the records, or that iCloud is required.
+The preview rapidly time-compresses a Short focus interval into its regular
+break while rendering the actual Flow stream; translations must not imply that
+its displayed time becomes real progress or a persisted record. Translations
+should describe the loop naturally rather than mirror Japanese sentence
+structure. The privacy step may say that records are stored on the device and,
+when iCloud is enabled, synchronize through the user's private CloudKit
+database. It may also say that
+ThruFlow does not send Tasks or History to a developer-operated server. It must
+not claim end-to-end encryption, anonymity, that Apple never processes the
+records, or that iCloud is required.
+
+Onboarding and product copy may promise that Tasks, the Flow focus timer,
+History, and Statistics are free and ad-free and require no payment. It must not
+expand that statement into a promise that every current or future feature will
+always be free: possible future optional integrations or services may have
+separate terms or costs. Coffee and Ramen remain optional tips, not subscriptions,
+and unlock no functionality.
 
 These copy choices never rename implementation or persisted identifiers.
 Swift types and properties such as `Direction`, `FlowSession`, and `FlowMode`,

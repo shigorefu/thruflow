@@ -173,10 +173,12 @@ Version 1.0.2 introduces an eight-step onboarding journey: `ようこそ`, `分�
 `タスク`, `流れ`, `集中のプレビュー`, `履歴`, `統計`, and `使い方の流れ`.
 An empty first installation uses guided mode. It opens the real Area editor and
 Task composer with localized starter values, but saves only an Area or Task that
-the user explicitly confirms. The Flow preview is a five-second transient
-presentation: it creates no `FlowSession`, progress, History, Statistics, or
-CloudKit record and never turns five seconds into credited focus time. The final
-step summarizes `分野 → タスク → 流れ → 履歴・統計 → 次の一歩`.
+the user explicitly confirms. The Flow preview rapidly time-compresses a
+canonical Short focus interval into its regular break while rendering the real
+Flow stream. Its timer, phase, and progress are presentation-only: it creates no
+`FlowSession`, segment, break, Task progress, History, Statistics, notification,
+Live Activity, or CloudKit record. The final step summarizes
+`分野 → タスク → 流れ → 履歴・統計 → 次の一歩`.
 
 If first launch already contains user data, onboarding becomes a read-only tour
 and creates nothing. `設定 > ヘルプ > 使い方を見る` closes the Settings
@@ -194,6 +196,9 @@ remain; measured Task and Area progress is reset to zero.
 Settings also contains voluntary support actions: App Store review, the public
 GitHub project, and two StoreKit consumable tips (`Coffee`, JPY 100, and
 `Ramen`, JPY 500). Tips unlock no feature and are not subscriptions. The app
+keeps its core productivity features—Tasks, the Flow focus timer, History, and
+Statistics—free and ad-free, with no payment required. This promise does not set
+terms or prices for possible future optional integrations or services. The app
 does not send a promotional notification after one week. Instead, after at
 least seven days and either five active Flow days or ten completed Flows, it may
 ask for a review at a natural post-Flow moment, at most once per app version.

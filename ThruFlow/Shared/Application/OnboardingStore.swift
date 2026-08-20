@@ -276,7 +276,7 @@ enum OnboardingPresentation: String, Identifiable, Sendable {
 }
 
 enum OnboardingDemoState: Equatable, Sendable {
-    nonisolated static let defaultDuration: TimeInterval = 5
+    nonisolated static let defaultDuration: TimeInterval = 6
     nonisolated static let minimumDuration: TimeInterval = 0.1
 
     case idle
@@ -302,6 +302,72 @@ enum OnboardingDemoState: Equatable, Sendable {
             1
         }
     }
+
+    func projection(at date: Date) -> OnboardingDemoProjection {
+        let overallProgress = progress(at: date)
+        let focusFraction = OnboardingDemoProjection.focusFraction
+
+        if overallProgress < focusFraction {
+            let phaseProgress = min(max(overallProgress / focusFraction, 0), 1)
+            let focusProgress = min(max(
+                overallProgress / OnboardingDemoProjection.focusCountdownFraction,
+                0
+            ), 1)
+            let remainingSeconds = Int((
+                Double(OnboardingDemoProjection.focusDurationSeconds) * (1 - focusProgress)
+            ).rounded())
+
+            return OnboardingDemoProjection(
+                phase: .focusing,
+                remainingSeconds: remainingSeconds,
+                overallProgress: overallProgress,
+                phaseProgress: phaseProgress,
+                focusProgress: focusProgress,
+                breakStartedAt: nil
+            )
+        }
+
+        let phaseProgress = min(max(
+            (overallProgress - focusFraction) / (1 - focusFraction),
+            0
+        ), 1)
+        let breakStartedAt: Date? = switch self {
+        case .running(let startedAt, let duration):
+            startedAt.addingTimeInterval(duration * focusFraction)
+        case .idle, .completed:
+            nil
+        }
+
+        return OnboardingDemoProjection(
+            phase: .breakTime,
+            remainingSeconds: OnboardingDemoProjection.breakDurationSeconds,
+            overallProgress: overallProgress,
+            phaseProgress: phaseProgress,
+            focusProgress: 1,
+            breakStartedAt: breakStartedAt
+        )
+    }
+}
+
+enum OnboardingDemoPhase: Equatable, Sendable {
+    case focusing
+    case breakTime
+}
+
+struct OnboardingDemoProjection: Equatable, Sendable {
+    /// The compressed countdown finishes at 3.8 seconds, leaving a short,
+    /// readable 00:00 hold before the regular break begins at 4 seconds.
+    nonisolated static let focusCountdownFraction = 19.0 / 30.0
+    nonisolated static let focusFraction = 2.0 / 3.0
+    nonisolated static let focusDurationSeconds = FlowMode.sprint.initialFocusDurationSeconds
+    nonisolated static let breakDurationSeconds = FlowMode.sprint.breakDurationSeconds
+
+    let phase: OnboardingDemoPhase
+    let remainingSeconds: Int
+    let overallProgress: Double
+    let phaseProgress: Double
+    let focusProgress: Double
+    let breakStartedAt: Date?
 }
 
 enum OnboardingStep: Int, CaseIterable, Sendable {

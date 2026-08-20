@@ -459,9 +459,11 @@ and Task composer through platform-native surfaces.
 An empty first installation may offer localized Work and report drafts. Opening
 a draft writes nothing; only the user's normal Save or Submit action creates the
 Area or Task. Those confirmed records are real user data and follow the standard
-SwiftData and private CloudKit path. The five-second Flow preview is presentation
-state only. It creates no session, segment, Task completion, focused progress,
-History, Statistics, Live Activity, notification, or CloudKit record.
+SwiftData and private CloudKit path. The Flow preview rapidly time-compresses a
+canonical Short focus interval into its regular break while rendering the real
+Flow stream. Its timer, phase, and progress are presentation state only. It
+creates no session, segment, break, Task completion, focused progress, History,
+Statistics, Live Activity, notification, or CloudKit record.
 
 If user content already exists, first-run onboarding is a read-only tour.
 Settings replay is always read-only, dismisses Settings before it begins, and
@@ -488,10 +490,14 @@ be requested only at a natural post-Flow moment after seven days and either
 five active Flow days or ten completed Flows, at most once per app version.
 Settings owns permanent App Store, GitHub, Coffee JPY 100, and Ramen JPY 500
 support actions. Coffee and Ramen are consumable StoreKit products, unlock
-nothing, and create no entitlement.
+nothing, and create no entitlement. Tasks, the Flow focus timer, History, and
+Statistics are free and ad-free and require no payment. This decision makes no
+pricing promise for possible future optional integrations or services.
 
 Reason: support should remain visible to people who seek it without turning a
-focus tool into an advertising surface or pressuring a new user.
+focus tool into an advertising surface, gating its core loop, or pressuring a
+new user, while leaving future optional services to be evaluated separately
+against their actual costs.
 
 ## D-035: Settings Owns Complete Flow-History Deletion
 

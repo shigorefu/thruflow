@@ -245,10 +245,11 @@ of the journey continues as a read-only tour.
   example creation or changing existing data.
 
 The Flow step selects the just-created Task only as presentation context. The
-following five-second preview animates the timer and stream but is entirely
-transient: it creates no session, segment, progress, completion, History,
-Statistics, notification, Live Activity, or CloudKit write. It never credits
-five seconds as five minutes. Leaving the step or skipping resets the preview.
+following preview rapidly time-compresses a canonical Short focus interval into
+its regular break while rendering the actual production Flow stream. Its timer,
+phase, and progress are entirely transient: it creates no session, segment,
+break, Task progress or completion, History, Statistics, notification, Live
+Activity, or CloudKit write. Leaving the step or skipping resets the preview.
 The final step summarizes `分野 → タスク → 流れ → 履歴・統計 → 次の一歩`.
 
 `設定 > ヘルプ > 使い方を見る` first dismisses Settings, then starts the
@@ -268,7 +269,10 @@ when the system chooses not to show the sheet.
 Store ID is configured, links to GitHub, and offers Coffee and Ramen as
 consumable StoreKit tips. A successful purchase shows thanks and finishes the
 verified transaction; cancellation is silent, pending approval is explained,
-and no purchase creates an entitlement or unlocks a feature.
+and no purchase creates an entitlement or unlocks a feature. Tasks, the Flow
+focus timer, History, and Statistics remain free and ad-free with no required
+payment. This core-product promise does not define the terms or prices of future
+optional integrations or services.
 
 `設定 > フィードバック > フィードバックを送る` opens the public GitHub
 issue-template chooser on macOS, iPhone, and iPad. The section warns that GitHub

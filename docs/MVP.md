@@ -70,12 +70,17 @@ Area -> Task -> Flow -> actual focused time -> progress -> statistics
   time as macOS or iPhone.
 - Shared eight-step onboarding for macOS, iPhone, and iPad: an empty first run
   can create one real Area and Task only after user confirmation, then shows a
-  transient five-second Flow preview that cannot affect progress, History,
-  Statistics, or CloudKit. Existing-workspace first launch and Settings replay
-  are read-only, every step can be skipped, and preview schemes use an in-memory
-  store. watchOS remains a companion and does not repeat onboarding.
+  transient preview that rapidly time-compresses a Short focus interval into its
+  regular break while rendering the real Flow stream. It cannot affect progress,
+  History, Statistics, notifications, Live Activity, or CloudKit.
+  Existing-workspace first launch and Settings replay are read-only, every step
+  can be skipped, and preview schemes use an in-memory store. watchOS remains a
+  companion and does not repeat onboarding.
 - Optional support in Settings: App Store review, GitHub, and consumable Coffee
   (JPY 100) / Ramen (JPY 500) StoreKit tips that unlock no features.
+- Tasks, the Flow focus timer, History, and Statistics are free and ad-free and
+  require no payment. Future optional integrations or services are outside this
+  pricing promise.
 - Cross-platform Settings feedback entry that opens the public GitHub issue
   templates, warns about private Task content, and explains TestFlight's native
   screenshot feedback path.
@@ -95,7 +100,7 @@ Area -> Task -> Flow -> actual focused time -> progress -> statistics
 - Non-Flow continuous timeline.
 - Food/sleep/game classification.
 - Complex rewards.
-- Accounts/subscriptions.
+- Required accounts, payments, or subscriptions for core productivity features.
 
 ## Known Product Gaps
 

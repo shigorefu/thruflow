@@ -219,7 +219,7 @@ struct OnboardingAndReviewPromptTests {
         #expect(!nextLaunch.isPresented)
     }
 
-    @Test func demoClockIsPureDeterministicAndCancelsWhenLeavingItsStep() {
+    @Test func demoClockRunsACompressedFocusIntoBreakAndCancelsWhenLeavingItsStep() {
         let store = OnboardingStore(
             defaults: makeDefaults(),
             arguments: ["--onboarding-preview", "--onboarding-step=4"]
@@ -227,15 +227,53 @@ struct OnboardingAndReviewPromptTests {
         let start = Date(timeIntervalSince1970: 1_000)
 
         #expect(store.step == .demo)
-        #expect(store.startDemo(at: start, duration: 5))
+        #expect(store.startDemo(at: start, duration: 6))
         #expect(store.demoState.isRunning)
-        #expect(store.demoProgress(at: start.addingTimeInterval(2.5)) == 0.5)
+        #expect(store.demoProgress(at: start.addingTimeInterval(3)) == 0.5)
 
-        store.updateDemo(at: start.addingTimeInterval(4.9))
+        let initialProjection = store.demoState.projection(at: start)
+        #expect(initialProjection.phase == .focusing)
+        #expect(initialProjection.remainingSeconds == 12 * 60)
+        #expect(initialProjection.focusProgress == 0)
+
+        let focusProjection = store.demoState.projection(at: start.addingTimeInterval(1.9))
+        #expect(focusProjection.phase == .focusing)
+        #expect(focusProjection.remainingSeconds == 6 * 60)
+        #expect(abs(focusProjection.focusProgress - 0.5) < 0.000_001)
+
+        let finalFocusProjection = store.demoState.projection(
+            at: start.addingTimeInterval(3.8)
+        )
+        #expect(finalFocusProjection.phase == .focusing)
+        #expect(finalFocusProjection.remainingSeconds == 0)
+        #expect(abs(finalFocusProjection.focusProgress - 1) < 0.000_001)
+
+        let heldFocusProjection = store.demoState.projection(
+            at: start.addingTimeInterval(3.999)
+        )
+        #expect(heldFocusProjection.phase == .focusing)
+        #expect(heldFocusProjection.remainingSeconds == 0)
+
+        let breakProjection = store.demoState.projection(at: start.addingTimeInterval(4))
+        #expect(breakProjection.phase == .breakTime)
+        #expect(breakProjection.remainingSeconds == 3 * 60)
+        #expect(breakProjection.focusProgress == 1)
+        #expect(breakProjection.breakStartedAt == start.addingTimeInterval(4))
+
+        let laterBreakProjection = store.demoState.projection(at: start.addingTimeInterval(5))
+        #expect(laterBreakProjection.phase == .breakTime)
+        #expect(laterBreakProjection.breakStartedAt == breakProjection.breakStartedAt)
+
+        store.updateDemo(at: start.addingTimeInterval(5.9))
         #expect(store.demoState.isRunning)
-        store.updateDemo(at: start.addingTimeInterval(5))
+        store.updateDemo(at: start.addingTimeInterval(6))
         #expect(store.demoState.isCompleted)
-        #expect(store.demoProgress(at: start.addingTimeInterval(6)) == 1)
+        #expect(store.demoProgress(at: start.addingTimeInterval(7)) == 1)
+
+        let completedProjection = store.demoState.projection(at: start.addingTimeInterval(7))
+        #expect(completedProjection.phase == .breakTime)
+        #expect(completedProjection.remainingSeconds == 3 * 60)
+        #expect(completedProjection.breakStartedAt == nil)
 
         #expect(store.startDemo(at: start))
         store.goBack()
