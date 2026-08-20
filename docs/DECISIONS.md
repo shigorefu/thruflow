@@ -493,8 +493,8 @@ CloudKit data from fabricated examples.
 The app does not send promotional notifications. StoreKit's review prompt may
 be requested only at a natural post-Flow moment after seven days and either
 five active Flow days or ten completed Flows, at most once per app version.
-Settings owns permanent App Store, GitHub, Coffee JPY 100, and Ramen JPY 500
-support actions. Coffee and Ramen are consumable StoreKit products, unlock
+Settings owns permanent GitHub, Coffee JPY 100, and Ramen JPY 500 support
+actions. Coffee and Ramen are consumable StoreKit products, unlock
 nothing, and create no entitlement. Tasks, the Flow focus timer, History, and
 Statistics are free and ad-free and require no payment. This decision makes no
 pricing promise for possible future optional integrations or services.
@@ -504,32 +504,34 @@ focus tool into an advertising surface, gating its core loop, or pressuring a
 new user, while leaving future optional services to be evaluated separately
 against their actual costs.
 
-## D-035: Settings Owns Complete Flow-History Deletion
+## D-035: Settings Owns Complete App-Data Reset
 
 macOS exposes the native Settings scene through a gear at the bottom of its
-sidebar. macOS, iPhone, and iPad Settings can delete all `FlowSession`,
-`FlowSegment`, and `FlowBreak` records after an irreversible confirmation. The
-operation is unavailable while a restorable Flow runtime is active, runs as one model-actor
-transaction, preserves Tasks, Areas, Task memos, archive/delete markers,
-and manually checked state, then resets progress derived from Flow history.
-Private CloudKit propagates the deletion to the user's other devices.
+sidebar. macOS, iPhone, and iPad Settings can delete every `Direction`, `Todo`,
+`FlowSession`, `FlowSegment`, and `FlowBreak` after an irreversible
+confirmation. The operation is unavailable while a restorable Flow runtime is
+active and runs as one model-actor transaction. Private CloudKit propagates the
+deletions to the user's other devices. Local appearance, language, calendar,
+and time preferences remain. After success, the timer selection is reset and
+the first-run onboarding journey begins again.
 
-Reason: users need a clear release-grade way to erase recorded activity without
-destroying their planning structure or leaving totals inconsistent with an
-empty history.
+Reason: users need one clear release-grade way to start over without leaving
+related Tasks, Areas, notes, history, or computed progress behind, while keeping
+device preferences that are not part of their productivity data.
 
-## D-036: Feedback Uses Existing Trusted Channels
+## D-036: Feedback Stays Outside The Settings Menu
 
-macOS, iPhone, and iPad Settings provide a permanent `フィードバックを送る`
-action that opens the public GitHub issue-template chooser. The same section
-warns users to remove private Task names and notes, and tells TestFlight testers
-that screenshot and TestFlight-app submissions can include device context.
-ThruFlow does not add a custom feedback server, analytics SDK, mail recipient,
-or undocumented TestFlight deep link.
+macOS, iPhone, and iPad Settings do not include a separate feedback section.
+TestFlight testers use TestFlight's native feedback tools, while the public
+GitHub repository remains available from the support section. ThruFlow does not
+add a custom feedback server, analytics SDK, mail recipient, or undocumented
+TestFlight deep link. The support section keeps the explicit App Store rating
+action, and the app may also request a system review at an appropriate post-Flow
+moment under the review policy.
 
-Reason: TestFlight already provides diagnostic feedback during beta, while
-GitHub Issues remains transparent and maintainable after release without
-inventing an account or data-collection service.
+Reason: the Settings screen stays compact while TestFlight and GitHub continue
+to provide established feedback channels without another account or data-
+collection service.
 
 ## D-037: The Flow Stream Acknowledges The Rest Lifecycle
 

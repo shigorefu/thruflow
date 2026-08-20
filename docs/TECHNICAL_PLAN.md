@@ -58,11 +58,11 @@ targets watchOS 10.0 to match the iOS 17 generation.
 - `HistoryCalendarSeriesProjector` groups connected Flow/rest records into week-only composite presentation blocks while preserving the underlying records for editing.
 - `HistoryOverlapLayout` assigns deterministic side-by-side lanes using actual and minimum visual duration so short records cannot overlap in rendering.
 - `FlowHistoryEditor` creates independent completed manual Flow records and delegates affected progress rebuilding to `FlowProgressReconciler` when history changes.
-- `FlowHistoryDeletionService` atomically purges all FlowSession/FlowSegment/
-  FlowBreak records only when no active Flow exists, preserves Task/Direction
-  entities and manual Check state, and resets Flow-derived progress.
-- `FlowHistoryDeletionActor` runs that purge away from the main UI for macOS,
-  iPhone, and iPad Settings.
+- `AppDataResetService` atomically deletes every Direction, Todo, FlowSession,
+  FlowSegment, and FlowBreak only when no active Flow exists.
+- `AppDataResetActor` runs that reset away from the main UI for macOS, iPhone,
+  and iPad Settings. After success, the platform clears the persisted timer
+  selection and restarts first-run onboarding while preserving AppSettings.
 - `FlowDashboardBuilder` derives today's totals, Direction palette, and timeline segments from `FlowSession`, with a live overlay for the active creditable Flow.
 - `DashboardStatisticsBuilder` derives seven-day bars, previous-day deltas, and the most-grown Direction outside SwiftUI.
 - `FlowVisualState` converts 0...6 daily Blocks into clamped speed, volume, detail, depth, glow, and mode-specific wave character without placing those rules in SwiftUI. Its separate `identityReveal` reaches 1 during the first Block. The complete idle and active phase-speed curves use one testable `1.25` multiplier; frame cadence is unchanged. `FlowAnimationClock` consumes the complete visual state through its production API, and an idle-only shader current makes the low end of that curve visually legible without applying a second speed multiplier.

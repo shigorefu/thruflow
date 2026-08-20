@@ -210,6 +210,9 @@ struct LocalisationTests {
             "Flow Dots": ("Focus Calendar", "Календарь фокуса"),
             "フローブロック": ("Focus Blocks", "Блоки фокуса"),
             "集中ブロック": ("Focus Blocks", "Блоки фокуса"),
+            "アプリのデータをリセット": ("Reset App Data", "Сбросить данные приложения"),
+            "アプリのデータをリセットしますか？": ("Reset App Data?", "Сбросить данные приложения?"),
+            "リセット": ("Reset", "Сбросить"),
         ]
 
         for (key, expected) in expectedTerms {

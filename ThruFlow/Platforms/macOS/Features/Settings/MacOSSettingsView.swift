@@ -16,9 +16,9 @@ struct MacOSSettingsView: View {
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
     @EnvironmentObject private var settings: AppSettings
     @EnvironmentObject private var onboarding: OnboardingStore
-    @State private var showsDeleteHistoryConfirmation = false
-    @State private var isDeletingHistory = false
-    @State private var deletionStatus: HistoryDeletionStatus?
+    @State private var showsResetConfirmation = false
+    @State private var isResetting = false
+    @State private var resetStatus: AppResetStatus?
 
     var body: some View {
         Form {
@@ -92,78 +92,84 @@ struct MacOSSettingsView: View {
                 }
             }
 
-            FeedbackSettingsSection()
-
             SupportSettingsSection()
 
-            historyDataSection
+            appDataSection
         }
         .formStyle(.grouped)
         .padding(20)
         .frame(width: 520)
         .navigationTitle(String(localized: "設定"))
         .alert(
-            String(localized: "すべてのFlow履歴を削除しますか？"),
-            isPresented: $showsDeleteHistoryConfirmation
+            String(localized: "アプリのデータをリセットしますか？"),
+            isPresented: $showsResetConfirmation
         ) {
             Button(String(localized: "キャンセル"), role: .cancel) {}
-            Button(String(localized: "すべて削除"), role: .destructive) {
-                deleteAllHistory()
+            Button(String(localized: "リセット"), role: .destructive) {
+                resetAppData()
             }
         } message: {
-            Text(String(localized: "すべての端末からFlowと休憩の履歴が削除されます。タスクと方向は残り、Flowから計算された進捗はリセットされます。この操作は取り消せません。"))
+            Text(String(localized: "タスク、分野、集中履歴、メモが、iCloudで同期しているすべての端末から削除されます。この端末の設定は残ります。この操作は取り消せません。"))
         }
     }
 
-    private var historyDataSection: some View {
+    private var appDataSection: some View {
         Section(String(localized: "データ")) {
             Button(role: .destructive) {
-                showsDeleteHistoryConfirmation = true
+                showsResetConfirmation = true
             } label: {
-                Label(String(localized: "Flow履歴をすべて削除"), systemImage: "trash")
+                Label(String(localized: "アプリのデータをリセット"), systemImage: "arrow.counterclockwise")
             }
-            .disabled(isDeletingHistory || activeFlowStore.timerState != nil)
+            .accessibilityIdentifier("settings.reset-app-data")
+            .disabled(isResetting || activeFlowStore.timerState != nil)
 
-            if isDeletingHistory {
+            if isResetting {
                 HStack(spacing: 8) {
                     ProgressView()
                         .controlSize(.small)
-                    Text(String(localized: "Flow履歴を削除しています…"))
+                    Text(String(localized: "アプリのデータをリセットしています…"))
                 }
                 .foregroundStyle(.secondary)
             } else if activeFlowStore.timerState != nil {
                 Label(
-                    String(localized: "履歴を削除する前に、現在のFlowを終了してください。"),
+                    String(localized: "リセットする前に、現在のFlowを終了してください。"),
                     systemImage: "timer"
                 )
                 .foregroundStyle(.secondary)
-            } else if let deletionStatus {
-                Label(deletionStatus.message, systemImage: deletionStatus.symbolName)
-                    .foregroundStyle(deletionStatus.isError ? Color.red : Color.secondary)
+            } else if let resetStatus {
+                Label(resetStatus.message, systemImage: resetStatus.symbolName)
+                    .foregroundStyle(resetStatus.isError ? Color.red : Color.secondary)
             }
 
-            Text(String(localized: "タスク、方向、タスクのメモは残ります。チェック済みタスクの状態も変更されません。"))
+            Text(String(localized: "タスク、分野、集中履歴、メモがすべて削除されます。設定は残ります。"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
     }
 
-    private func deleteAllHistory() {
-        guard !isDeletingHistory else { return }
-        isDeletingHistory = true
-        deletionStatus = nil
-        let deletionActor = FlowHistoryDeletionActor(modelContainer: modelContext.container)
+    private func resetAppData() {
+        guard !isResetting else { return }
+        isResetting = true
+        resetStatus = nil
+        let resetActor = AppDataResetActor(modelContainer: modelContext.container)
 
         Task {
             do {
-                _ = try await deletionActor.deleteAll()
-                deletionStatus = .success
-            } catch FlowHistoryDeletionError.activeFlowExists {
-                deletionStatus = .activeFlow
+                _ = try await resetActor.reset()
+                activeFlowStore.resetAfterApplicationDataReset()
+                let settingsWindow = NSApp.keyWindow
+                openWindow(id: MacOSWindowID.main)
+                dismiss()
+                settingsWindow?.performClose(nil)
+                await Task.yield()
+                NSApp.activate(ignoringOtherApps: true)
+                onboarding.presentAfterApplicationDataReset()
+            } catch AppDataResetError.activeFlowExists {
+                resetStatus = .activeFlow
             } catch {
-                deletionStatus = .failure
+                resetStatus = .failure
             }
-            isDeletingHistory = false
+            isResetting = false
         }
     }
 
@@ -197,22 +203,19 @@ struct MacOSSettingsView: View {
         .environmentObject(SupportPurchaseStore())
 }
 
-private enum HistoryDeletionStatus {
-    case success
+private enum AppResetStatus {
     case activeFlow
     case failure
 
     var message: String {
         switch self {
-        case .success: String(localized: "Flow履歴を削除しました")
-        case .activeFlow: String(localized: "履歴を削除する前に、現在のFlowを終了してください。")
-        case .failure: String(localized: "Flow履歴を削除できませんでした")
+        case .activeFlow: String(localized: "リセットする前に、現在のFlowを終了してください。")
+        case .failure: String(localized: "アプリのデータをリセットできませんでした")
         }
     }
 
     var symbolName: String {
         switch self {
-        case .success: "checkmark.circle"
         case .activeFlow: "timer"
         case .failure: "exclamationmark.triangle"
         }

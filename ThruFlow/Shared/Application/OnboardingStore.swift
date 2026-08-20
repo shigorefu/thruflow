@@ -111,6 +111,20 @@ final class OnboardingStore: ObservableObject {
         isPresented = true
     }
 
+    func presentAfterApplicationDataReset() {
+        defaults.removeObject(forKey: Keys.didComplete)
+        launchKind = isPreviewMode ? .preview : .firstRun
+        experience = isPreviewMode ? .guided : .undecided
+        step = .welcome
+        presentation = nil
+        createdAreaID = nil
+        createdTaskID = nil
+        createdTaskPresentation = nil
+        hasPendingExistingWorkspace = false
+        demoState = .idle
+        isPresented = true
+    }
+
     @discardableResult
     func requestAreaCreation() -> Bool {
         guard canOfferAreaCreation else { return false }

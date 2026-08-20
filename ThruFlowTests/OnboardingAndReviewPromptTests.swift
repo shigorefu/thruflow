@@ -22,6 +22,20 @@ struct OnboardingAndReviewPromptTests {
         #expect(nextLaunch.experience == .tour)
     }
 
+    @Test func applicationDataResetRestoresTheFirstRunJourney() {
+        let defaults = makeDefaults()
+        let store = OnboardingStore(defaults: defaults, arguments: [])
+        store.complete()
+
+        store.presentAfterApplicationDataReset()
+
+        #expect(store.isPresented)
+        #expect(store.launchKind == .firstRun)
+        #expect(store.experience == .undecided)
+        #expect(store.step == .welcome)
+        #expect(OnboardingStore(defaults: defaults, arguments: []).isPresented)
+    }
+
     @Test func previewModeNeverChangesFirstRunState() {
         let defaults = makeDefaults()
         let preview = OnboardingStore(

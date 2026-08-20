@@ -144,11 +144,12 @@ Each platform owns its composition root:
 - `SupportPurchaseStore` is the single StoreKit 2 boundary for optional
   consumable tips. It accepts only verified transactions, finishes them, and
   exposes no entitlement because support purchases unlock no functionality.
-- `FlowHistoryDeletionActor` performs the user-requested full Flow-history
-  purge away from the main UI. `FlowHistoryDeletionService` rejects an active
-  Flow, deletes Flow/segment/break records in one save, and resets only
-  Flow-derived Task and Area progress. Platform Settings own confirmation
-  and presentation, not deletion rules.
+- `AppDataResetActor` performs the user-requested application-data reset away
+  from the main UI. `AppDataResetService` rejects an active Flow and deletes
+  every Direction, Todo, FlowSession, FlowSegment, and FlowBreak in one save.
+  Platform Settings own confirmation and presentation, then clear the local
+  timer selection and restart first-run onboarding. AppSettings preferences are
+  intentionally outside the reset service.
 
 - `Platforms/iOS/App/ThruFlowiOSApp.swift` declares the universal iPhone/iPad scene and injects
   the same `ActiveFlowStore`, `AppSettings`, calendar, locale, and model schema.

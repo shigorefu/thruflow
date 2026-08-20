@@ -275,8 +275,7 @@ at least seven days old and the user has either five distinct completed-Flow
 days or ten completed Flows. A request is recorded once per app version even
 when the system chooses not to show the sheet.
 
-`設定 > ThruFlowを応援` links to the App Store review page when a production App
-Store ID is configured, links to GitHub, and offers Coffee and Ramen as
+`設定 > ThruFlowを応援` links to GitHub and offers Coffee and Ramen as
 consumable StoreKit tips. A successful purchase shows thanks and finishes the
 verified transaction; cancellation is silent, pending approval is explained,
 and no purchase creates an entitlement or unlocks a feature. Tasks, the Flow
@@ -284,12 +283,11 @@ focus timer, History, and Statistics remain free and ad-free with no required
 payment. This core-product promise does not define the terms or prices of future
 optional integrations or services.
 
-`設定 > フィードバック > フィードバックを送る` opens the public GitHub
-issue-template chooser on macOS, iPhone, and iPad. The section warns that GitHub
-reports are public and that private Task names and notes should be removed.
-TestFlight testers are also reminded that a screenshot or the TestFlight app
-can send feedback with device context. The app does not imitate TestFlight's
-submission UI or depend on an undocumented TestFlight URL scheme.
+Settings has no separate feedback section. TestFlight testers use TestFlight's
+native screenshot or in-app feedback tools. The public GitHub repository remains
+available from `設定 > ThruFlowを応援`, alongside the explicit App Store rating
+action. The app does not imitate TestFlight's submission UI or depend on an
+undocumented TestFlight URL scheme.
 
 ## iPhone and iPad
 
@@ -684,13 +682,14 @@ stored Task dates or Flow timestamps.
 
 The bottom of the macOS sidebar contains a system `設定` gear that opens this
 same Settings scene. The `データ` section on macOS, iPhone, and iPad offers
-`集中履歴をすべて削除`. It is disabled while a Flow is active. A destructive
-confirmation explains that all FlowSession, FlowSegment, and FlowBreak records
-will be removed from every device through private CloudKit and cannot be
+`アプリのデータをリセット`. It is disabled while a Flow is active. A
+destructive confirmation explains that Tasks, Areas, notes, Flow history, and
+breaks will be removed from every device through private CloudKit and cannot be
 restored. The operation runs in a model actor so Settings remains responsive.
-Tasks, Areas, Task notes, and manually checked state remain; all
-Flow-derived Task and Area progress is reset.
+Appearance, language, calendar, and time settings remain local. A successful
+reset clears the timer selection, closes Settings, and presents the first-run
+onboarding journey again.
 
-The shared `フィードバック` section appears before destructive data controls. It
-opens the GitHub issue-template chooser and presents the same public-data and
-TestFlight guidance on macOS, iPhone, and iPad.
+There is no separate `フィードバック` section. The support section remains
+immediately before destructive data controls and contains the App Store rating,
+GitHub project, and optional tip actions.

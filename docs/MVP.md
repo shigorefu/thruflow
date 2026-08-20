@@ -80,20 +80,20 @@ Area -> Task -> Flow -> actual focused time -> progress -> statistics
   card. Existing-workspace first launch and Settings replay are read-only, every step
   can be closed, and preview schemes use an in-memory store. watchOS remains a
   companion and does not repeat onboarding.
-- Optional support in Settings: App Store review, GitHub, and consumable Coffee
-  (JPY 100) / Ramen (JPY 500) StoreKit tips that unlock no features.
+- Optional support in Settings: GitHub and consumable Coffee (JPY 100) / Ramen
+  (JPY 500) StoreKit tips that unlock no features.
 - Tasks, the Flow focus timer, History, and Statistics are free and ad-free and
   require no payment. Future optional integrations or services are outside this
   pricing promise.
-- Cross-platform Settings feedback entry that opens the public GitHub issue
-  templates, warns about private Task content, and explains TestFlight's native
-  screenshot feedback path.
+- No separate feedback section in Settings; TestFlight's native feedback tools
+  remain available to testers, while support retains GitHub and App Store rating
+  actions.
 - A non-promotional StoreKit review request after seven days and meaningful
   completed-Flow use, at most once per app version.
-- Native Settings on macOS, iPhone, and iPad can irreversibly delete all Flow
-  and break history after confirmation while preserving Tasks, Areas,
-  Task memos, and manually checked state; the macOS sidebar exposes Settings
-  through a bottom gear.
+- Native Settings on macOS, iPhone, and iPad can irreversibly reset Tasks,
+  Areas, notes, Flow history, and breaks across synchronized devices while
+  preserving local preferences. The timer selection is cleared and first-run
+  onboarding restarts; the macOS sidebar exposes Settings through a bottom gear.
 
 ## Not Included
 

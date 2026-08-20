@@ -193,15 +193,17 @@ Every step can be skipped. Preview schemes isolate guided actions in an
 in-memory store, and watchOS remains a companion without a second onboarding.
 
 On macOS, a gear at the bottom of the sidebar opens the same native Settings
-window. The `データ` section on macOS, iPhone, and iPad can delete every Flow and
-break record after an irreversible-action confirmation. Deletion is unavailable
-while a Flow is active, runs away from the main UI, and synchronizes through the
-private CloudKit store. Tasks, Areas, Task notes, and manually checked Task state
-remain; measured Task and Area progress is reset to zero.
+window. The `データ` section on macOS, iPhone, and iPad can reset application
+data after an irreversible-action confirmation. Reset is unavailable while a
+Flow is active and runs away from the main UI. It deletes Tasks, Areas, notes,
+Flow history, and breaks from every device synchronized through the private
+CloudKit store. Local appearance, language, calendar, and time settings remain.
+The current timer selection is cleared, and Settings closes into the first-run
+onboarding journey so the user can start again.
 
-Settings also contains voluntary support actions: App Store review, the public
-GitHub project, and two StoreKit consumable tips (`Coffee`, JPY 100, and
-`Ramen`, JPY 500). Tips unlock no feature and are not subscriptions. The app
+Settings also contains voluntary support actions: the public GitHub project and
+two StoreKit consumable tips (`Coffee`, JPY 100, and `Ramen`, JPY 500). Tips
+unlock no feature and are not subscriptions. The app
 keeps its core productivity features—Tasks, the Flow focus timer, History, and
 Statistics—free and ad-free, with no payment required. This promise does not set
 terms or prices for possible future optional integrations or services. The app
@@ -210,11 +212,10 @@ least seven days and either five active Flow days or ten completed Flows, it may
 ask for a review at a natural post-Flow moment, at most once per app version.
 The system ultimately decides whether the review sheet is shown.
 
-A separate `フィードバック` section opens the repository's public issue-template
-chooser and warns the user to remove private Task names and notes. It also
-explains that TestFlight testers can submit a screenshot or use the TestFlight
-app to include device context. ThruFlow does not operate a separate feedback
-backend.
+Settings does not contain a separate feedback section. TestFlight testers use
+TestFlight's native feedback tools, while the support section keeps the public
+GitHub project link and the explicit App Store rating action. ThruFlow does not
+operate a separate feedback backend.
 
 ## Apple Watch
 

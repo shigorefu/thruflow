@@ -2241,94 +2241,6 @@
         }
       }
     },
-    "Flow履歴をすべて削除" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Delete All Flow History"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "集中履歴をすべて削除"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Удалить всю историю Flow"
-          }
-        }
-      }
-    },
-    "Flow履歴を削除しています…" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Deleting Flow history…"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "集中履歴を削除しています…"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Удаление истории Flow…"
-          }
-        }
-      }
-    },
-    "Flow履歴を削除しました" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Flow history deleted"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "集中履歴を削除しました"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "История Flow удалена"
-          }
-        }
-      }
-    },
-    "Flow履歴を削除できませんでした" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Couldn’t delete Flow history"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "集中履歴を削除できませんでした"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Не удалось удалить историю Flow"
-          }
-        }
-      }
-    },
     "Flow履歴を開く" : {
       "localizations" : {
         "en" : {
@@ -2435,28 +2347,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Еда"
-          }
-        }
-      }
-    },
-    "GitHub Issuesへの投稿は公開されます。個人情報や公開したくないタスク名・メモを含めないでください。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub Issues are public. Don’t include personal information or task names or notes you don’t want to make public."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub Issuesに投稿した内容は公開されます。個人情報や、公開したくないタスク名・メモは含めないでください。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Обращения в GitHub Issues видны всем. Не добавляйте личные данные, названия задач или заметки, которые не хотите публиковать."
           }
         }
       }
@@ -2693,28 +2583,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Символы"
-          }
-        }
-      }
-    },
-    "TestFlight版では、スクリーンショットまたはTestFlightアプリから端末情報付きのフィードバックを送信できます。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Send feedback with device details after taking a screenshot or from the TestFlight app."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TestFlightをご利用の場合は、スクリーンショットを撮ったとき、またはTestFlightアプリから、端末情報を添えてフィードバックを送れます。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Отзыв с данными об устройстве можно отправить после снимка экрана или из приложения TestFlight."
           }
         }
       }
@@ -3956,50 +3824,6 @@
         }
       }
     },
-    "すべてのFlow履歴を削除しますか？" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Delete all Flow history?"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "集中履歴をすべて削除しますか？"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Удалить всю историю Flow?"
-          }
-        }
-      }
-    },
-    "すべての端末からFlowと休憩の履歴が削除されます。タスクと方向は残り、Flowから計算された進捗はリセットされます。この操作は取り消せません。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Flow and break history will be deleted from every synced device. Tasks and areas will remain, and Flow-based progress will be reset. This can’t be undone."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "すべての端末から、集中と休憩の記録が削除されます。タスクと分野は残りますが、集中時間から計算された進捗はリセットされます。この操作は取り消せません。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "История Flow и перерывов будет удалена на всех синхронизируемых устройствах. Задачи и сферы останутся, а прогресс, рассчитанный по Flow, будет сброшен. Это действие нельзя отменить."
-          }
-        }
-      }
-    },
     "すべて今日へ" : {
       "localizations" : {
         "en" : {
@@ -4018,22 +3842,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Все на сегодня"
-          }
-        }
-      }
-    },
-    "すべて削除" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Delete All"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Удалить всё"
           }
         }
       }
@@ -4230,28 +4038,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Выберите задачу, привычку или сферу"
-          }
-        }
-      }
-    },
-    "タスク、方向、タスクのメモは残ります。チェック済みタスクの状態も変更されません。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tasks, areas, and task notes will remain. Completed tasks will stay completed."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "タスクと分野、タスクに付けたメモは削除されません。チェック済みの状態もそのまま残ります。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Задачи, сферы и заметки к задачам останутся. Статус выполненных задач не изменится."
           }
         }
       }
@@ -4500,6 +4286,28 @@
         }
       }
     },
+    "タスクを選ぶと、集中時間がそのタスクと分野の進捗に反映されます。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a Task to count focused time toward its progress and Area."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タスクを選ぶと、集中時間がそのタスクと分野の進捗に反映されます。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите задачу, чтобы время фокуса учитывалось в её прогрессе и сфере."
+          }
+        }
+      }
+    },
     "タスクを選んで、集中を始める" : {
       "localizations" : {
         "en" : {
@@ -4518,6 +4326,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Выберите задачу"
+          }
+        }
+      }
+    },
+    "タスクを選んで集中を始め、12分の集中が終わって3分の休憩に切り替わるまでを早送りで再現します。デモのため、履歴や統計には記録されません。実際には、集中後にメモを確認してから休憩を始めます。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The demo selects a Task, starts a focus session, and fast-forwards through 12 minutes of focus into a 3-minute break. Nothing is added to History or Statistics. In normal use, you confirm the note before starting the break."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タスクを選んで集中を始め、12分の集中が終わって3分の休憩に切り替わるまでを早送りで再現します。デモのため、履歴や統計には記録されません。実際には、集中後にメモを確認してから休憩を始めます。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Демо выберет задачу, запустит фокус и ускоренно покажет переход от 12 минут фокуса к трёхминутному перерыву. История и статистика не изменятся. В обычном Flow перед началом перерыва нужно подтвердить заметку."
           }
         }
       }
@@ -4718,28 +4548,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ваши данные и основные функции"
-          }
-        }
-      }
-    },
-    "最後に、データの保存先と無料で使える基本機能についてお伝えします。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "One last thing: where your data is stored and which core features are free to use."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "最後に、データの保存先と無料で使える基本機能についてお伝えします。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Напоследок — о хранении данных и бесплатных возможностях ThruFlow."
           }
         }
       }
@@ -4974,38 +4782,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Розовый"
-          }
-        }
-      }
-    },
-    "フィードバック" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Feedback"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Обратная связь"
-          }
-        }
-      }
-    },
-    "フィードバックを送る" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Send Feedback"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Отправить отзыв"
           }
         }
       }
@@ -5730,28 +5506,6 @@
         }
       }
     },
-    "今日の流れをひと目で" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "See Your Day at a Glance"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "今日の流れをひと目で"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Весь день перед глазами"
-          }
-        }
-      }
-    },
     "今日・%@" : {
       "localizations" : {
         "en" : {
@@ -5866,6 +5620,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Отдых сегодня"
+          }
+        }
+      }
+    },
+    "今日の流れをひと目で" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See Your Day at a Glance"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今日の流れをひと目で"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Весь день перед глазами"
           }
         }
       }
@@ -6672,6 +6448,28 @@
         }
       }
     },
+    "最後に、データの保存先と無料で使える基本機能についてお伝えします。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One last thing: where your data is stored and which core features are free to use."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最後に、データの保存先と無料で使える基本機能についてお伝えします。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Напоследок — о хранении данных и бесплатных возможностях ThruFlow."
+          }
+        }
+      }
+    },
     "最近" : {
       "localizations" : {
         "en" : {
@@ -6976,6 +6774,28 @@
         }
       }
     },
+    "取り組むことを、分野で整理" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Organize What Matters into Areas"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取り組むことを、分野で整理"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разделите дела по сферам"
+          }
+        }
+      }
+    },
     "取り組むタスク" : {
       "localizations" : {
         "en" : {
@@ -6998,28 +6818,6 @@
         }
       }
     },
-    "タスクを選ぶと、集中時間がそのタスクと分野の進捗に反映されます。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Choose a Task to count focused time toward its progress and Area."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "タスクを選ぶと、集中時間がそのタスクと分野の進捗に反映されます。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Выберите задачу, чтобы время фокуса учитывалось в её прогрессе и сфере."
-          }
-        }
-      }
-    },
     "取り組むタスクと集中時間を選び、準備ができたら再生ボタンを押します。途中で変更しても、途切れない作業はひとつの流れとして残ります。" : {
       "localizations" : {
         "en" : {
@@ -7038,28 +6836,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Выберите задачу и длительность, затем нажмите Play. Их можно менять во время работы — непрерывная сессия останется одной записью Flow."
-          }
-        }
-      }
-    },
-    "取り組むことを、分野で整理" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Organize What Matters into Areas"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "取り組むことを、分野で整理"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Разделите дела по сферам"
           }
         }
       }
@@ -7634,28 +7410,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Период истории"
-          }
-        }
-      }
-    },
-    "履歴を削除する前に、現在のFlowを終了してください。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Finish the current Flow before deleting history."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "集中履歴を削除するには、先に現在の集中を終了してください。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Завершите текущий Flow перед удалением истории."
           }
         }
       }
@@ -9426,28 +9180,6 @@
         }
       }
     },
-    "集中から休憩までを見てみよう" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "See Focus Turn into a Break"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "集中から休憩までを見てみよう"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Посмотрите, как фокус сменяется перерывом"
-          }
-        }
-      }
-    },
     "満ちている流れ" : {
       "localizations" : {
         "en" : {
@@ -9666,28 +9398,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Цель по времени: %1$lld ч · %2$@"
-          }
-        }
-      }
-    },
-    "タスクを選んで集中を始め、12分の集中が終わって3分の休憩に切り替わるまでを早送りで再現します。デモのため、履歴や統計には記録されません。実際には、集中後にメモを確認してから休憩を始めます。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The demo selects a Task, starts a focus session, and fast-forwards through 12 minutes of focus into a 3-minute break. Nothing is added to History or Statistics. In normal use, you confirm the note before starting the break."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "タスクを選んで集中を始め、12分の集中が終わって3分の休憩に切り替わるまでを早送りで再現します。デモのため、履歴や統計には記録されません。実際には、集中後にメモを確認してから休憩を始めます。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Демо выберет задачу, запустит фокус и ускоренно покажет переход от 12 минут фокуса к трёхминутному перерыву. История и статистика не изменятся. В обычном Flow перед началом перерыва нужно подтвердить заметку."
           }
         }
       }
@@ -11225,6 +10935,28 @@
         }
       }
     },
+    "集中から休憩までを見てみよう" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See Focus Turn into a Break"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中から休憩までを見てみよう"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Посмотрите, как фокус сменяется перерывом"
+          }
+        }
+      }
+    },
     "集中カレンダー" : {
       "localizations" : {
         "en" : {
@@ -11265,6 +10997,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Фактическое время фокуса накапливается в минутах."
+          }
+        }
+      }
+    },
+    "集中タイマー" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Focus Timer"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中タイマー"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Таймер фокуса"
           }
         }
       }
@@ -11638,6 +11392,182 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Группировать по"
+          }
+        }
+      }
+    },
+    "アプリのデータをリセット" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset App Data"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アプリのデータをリセット"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сбросить данные приложения"
+          }
+        }
+      }
+    },
+    "アプリのデータをリセットしています…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resetting app data…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アプリのデータをリセットしています…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сбрасываем данные приложения…"
+          }
+        }
+      }
+    },
+    "アプリのデータをリセットしますか？" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset App Data?"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アプリのデータをリセットしますか？"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сбросить данные приложения?"
+          }
+        }
+      }
+    },
+    "アプリのデータをリセットできませんでした" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App data could not be reset."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アプリのデータをリセットできませんでした"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось сбросить данные приложения."
+          }
+        }
+      }
+    },
+    "タスク、分野、集中履歴、メモが、iCloudで同期しているすべての端末から削除されます。この端末の設定は残ります。この操作は取り消せません。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All Tasks, Areas, Flow history, and notes will be deleted from every device synced through iCloud. Settings on this device will be kept. This cannot be undone."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タスク、分野、集中履歴、メモが、iCloudで同期しているすべての端末から削除されます。この端末の設定は残ります。この操作は取り消せません。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Все задачи, сферы, история Flow и заметки будут удалены со всех устройств, синхронизируемых через iCloud. Настройки на этом устройстве сохранятся. Это действие нельзя отменить."
+          }
+        }
+      }
+    },
+    "タスク、分野、集中履歴、メモがすべて削除されます。設定は残ります。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All Tasks, Areas, Flow history, and notes will be deleted. Settings will be kept."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タスク、分野、集中履歴、メモがすべて削除されます。設定は残ります。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Все задачи, сферы, история Flow и заметки будут удалены. Настройки сохранятся."
+          }
+        }
+      }
+    },
+    "リセット" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "リセット"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сбросить"
+          }
+        }
+      }
+    },
+    "リセットする前に、現在のFlowを終了してください。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "End the current Flow before resetting app data."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "リセットする前に、現在の集中を終了してください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Завершите текущий Flow перед сбросом данных приложения."
           }
         }
       }
