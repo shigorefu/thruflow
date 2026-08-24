@@ -34,7 +34,8 @@ Also build the iOS and Watch Release schemes without signing. CI performs the sa
 ## App Store Connect prerequisites
 
 - Create the ThruFlow app record with bundle ID `com.shigorefu.thruflow`.
-- Set `THRUFLOW_APP_STORE_ID` to the numeric App Store ID so the review action can open the correct product page.
+- Confirm `THRUFLOW_APP_STORE_ID = 6798609191` so the review action opens the
+  ThruFlow product page.
 - Add localized metadata, screenshots, review notes, support URL, and privacy-policy URL.
 - In `TestFlight > Test Information`, set a monitored public feedback email;
   do not use the GitHub noreply commit address.

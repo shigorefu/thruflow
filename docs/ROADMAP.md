@@ -71,7 +71,7 @@ Every item below is required before publishing 1.0:
   widget/Live Activity extension.
 - [ ] Complete App Store privacy answers, privacy-policy and support URLs, and
   the private-iCloud-sync description.
-- [ ] Define `THRUFLOW_APP_STORE_ID` for the direct App Store rating link.
+- [x] Define `THRUFLOW_APP_STORE_ID` for the direct App Store rating link.
 - [ ] Deploy the verified CloudKit Development schema to Production and verify
   a clean install against the Production environment.
 - [ ] Confirm app, extension, and Watch version `1.0.0`, aligned build numbers,
