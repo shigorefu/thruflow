@@ -84,8 +84,7 @@ Onboarding and product copy may promise that Tasks, the Flow focus timer,
 History, and Statistics are free and ad-free and require no payment. It must not
 expand that statement into a promise that every current or future feature will
 always be free: possible future optional integrations or services may have
-separate terms or costs. Coffee and Ramen remain optional tips, not subscriptions,
-and unlock no functionality.
+separate terms or costs. The first App Store release exposes no in-app purchases.
 
 These copy choices never rename implementation or persisted identifiers.
 Swift types and properties such as `Direction`, `FlowSession`, and `FlowMode`,

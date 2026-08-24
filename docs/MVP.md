@@ -80,8 +80,8 @@ Area -> Task -> Flow -> actual focused time -> progress -> statistics
   card. Existing-workspace first launch and Settings replay are read-only, every step
   can be closed, and preview schemes use an in-memory store. watchOS remains a
   companion and does not repeat onboarding.
-- Optional support in Settings: GitHub and consumable Coffee (JPY 100) / Ramen
-  (JPY 500) StoreKit tips that unlock no features.
+- Optional support in Settings: GitHub and an explicit App Store rating action.
+  The first App Store release exposes no in-app purchases.
 - Tasks, the Flow focus timer, History, and Statistics are free and ad-free and
   require no payment. Future optional integrations or services are outside this
   pricing promise.

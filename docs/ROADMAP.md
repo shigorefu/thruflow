@@ -34,8 +34,8 @@ Area -> Task -> Flow -> focused time -> progress -> statistics
   explains data storage and free core features. Existing-workspace first launch
   and Settings replay are read-only, every card can be closed, and preview
   schemes isolate confirmed examples in memory.
-- [x] A non-intrusive system review request after confirmed use, a GitHub link,
-  and optional StoreKit tips: coffee ¥100 / ramen ¥500.
+- [x] A non-intrusive system review request after confirmed use and a GitHub
+  link. The first App Store release exposes no in-app purchases.
 - [x] Core Tasks, Flow timer, History, and Statistics remain free and ad-free
   without required payment; future optional integrations are not covered by
   that pricing promise.
@@ -70,11 +70,7 @@ Every item below is required before publishing 1.0:
   widget/Live Activity extension.
 - [ ] Complete App Store privacy answers, privacy-policy and support URLs, and
   the private-iCloud-sync description.
-- [ ] Create consumable IAPs in App Store Connect with identifiers
-  `com.shigorefu.thruflow.tip.coffee` and
-  `com.shigorefu.thruflow.tip.ramen`; set Japanese prices to ¥100 and ¥500,
-  provide localizations and a review screenshot, then define
-  `THRUFLOW_APP_STORE_ID` for the direct review link.
+- [ ] Define `THRUFLOW_APP_STORE_ID` for the direct App Store rating link.
 - [ ] Deploy the verified CloudKit Development schema to Production and verify
   a clean install against the Production environment.
 - [ ] Confirm app, extension, and Watch version `1.0.2`, aligned build numbers,
@@ -111,6 +107,9 @@ outside Flow.
 
 ## Other work after 1.0
 
+- Reconsider optional Coffee and Ramen StoreKit tips only after the first App
+  Store release. If restored, configure the products, localizations, review
+  assets, agreements, tax, and banking before exposing their controls.
 - More detailed watchOS Statistics.
 - Further improvements to the quick Task composer.
 - A more deliberate reward system for Optional Areas (`できたら`).

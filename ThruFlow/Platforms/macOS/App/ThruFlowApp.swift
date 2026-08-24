@@ -21,7 +21,6 @@ struct ThruFlowApp: App {
     )
     @StateObject private var settings = AppSettings()
     @StateObject private var onboarding = OnboardingStore()
-    @StateObject private var supportPurchaseStore = SupportPurchaseStore()
     @NSApplicationDelegateAdaptor(MacOSAppDelegate.self) private var appDelegate
 
     private let sharedModelContainer = AppModelContainerFactory.make()
@@ -32,7 +31,6 @@ struct ThruFlowApp: App {
                 .onboardingJourney(store: onboarding)
                 .environmentObject(activeFlowStore)
                 .environmentObject(onboarding)
-                .environmentObject(supportPurchaseStore)
                 .appSettingsEnvironment(settings)
                 .onAppear {
                     activeFlowStore.clearNotificationBadge()
@@ -77,7 +75,6 @@ struct ThruFlowApp: App {
             MacOSSettingsView()
                 .environmentObject(activeFlowStore)
                 .environmentObject(onboarding)
-                .environmentObject(supportPurchaseStore)
                 .appSettingsEnvironment(settings)
         }
         .modelContainer(sharedModelContainer)

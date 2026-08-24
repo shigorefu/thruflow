@@ -35,16 +35,12 @@ Also build the iOS and Watch Release schemes without signing. CI performs the sa
 
 - Create the ThruFlow app record with bundle ID `com.shigorefu.thruflow`.
 - Set `THRUFLOW_APP_STORE_ID` to the numeric App Store ID so the review action can open the correct product page.
-- Create consumable in-app purchases:
-  - `com.shigorefu.thruflow.tip.coffee`;
-  - `com.shigorefu.thruflow.tip.ramen`.
 - Add localized metadata, screenshots, review notes, support URL, and privacy-policy URL.
 - In `TestFlight > Test Information`, set a monitored public feedback email;
   do not use the GitHub noreply commit address.
 - Keep tester feedback enabled for every TestFlight group unless a documented
   privacy or support reason requires email-only feedback.
 - Complete App Privacy answers from the behavior described in [`../PRIVACY.md`](../PRIVACY.md) and the checked-in privacy manifests.
-- Confirm agreements, tax, and banking status required for optional tips.
 - After the first external contribution, include
   [`../CONTRIBUTORS.md`](../CONTRIBUTORS.md) and the applicable files from
   [`../LICENSES/`](../LICENSES/) in the official binary's acknowledgements.
@@ -60,7 +56,7 @@ Recommended public URLs after the files are merged to `main`:
 2. Deploy the verified schema and indexes to Production.
 3. Install a clean Release build that uses the Production environment.
 4. Test signed macOS, physical iPhone/iPad, and paired Apple Watch builds.
-5. Verify offline-to-online changes, simultaneous edits, deletion, history recalculation, active Flow adoption, widgets, Live Activity, notifications, and StoreKit.
+5. Verify offline-to-online changes, simultaneous edits, deletion, history recalculation, active Flow adoption, widgets, Live Activity, and notifications.
 6. Verify migration using a copy of the current user database before changing or deleting any real store.
 
 ## Archive and upload

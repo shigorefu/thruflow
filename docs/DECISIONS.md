@@ -496,9 +496,9 @@ CloudKit data from fabricated examples.
 The app does not send promotional notifications. StoreKit's review prompt may
 be requested only at a natural post-Flow moment after seven days and either
 five active Flow days or ten completed Flows, at most once per app version.
-Settings owns permanent GitHub, Coffee JPY 100, and Ramen JPY 500 support
-actions. Coffee and Ramen are consumable StoreKit products, unlock
-nothing, and create no entitlement. Tasks, the Flow focus timer, History, and
+Settings owns permanent GitHub and App Store rating actions. The first App Store
+release exposes no in-app purchases; the dormant StoreKit tip implementation may
+be reconsidered in a later release. Tasks, the Flow focus timer, History, and
 Statistics are free and ad-free and require no payment. This decision makes no
 pricing promise for possible future optional integrations or services.
 

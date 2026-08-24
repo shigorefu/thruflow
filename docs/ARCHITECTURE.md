@@ -143,9 +143,11 @@ Each platform owns its composition root:
   `flowDidComplete` event, then delegates presentation to StoreKit's system
   `requestReview` action. The last requested application version stays in local
   preferences and is not synced.
-- `SupportPurchaseStore` is the single StoreKit 2 boundary for optional
-  consumable tips. It accepts only verified transactions, finishes them, and
-  exposes no entitlement because support purchases unlock no functionality.
+- `SupportPurchaseStore` remains a dormant StoreKit 2 boundary for possible
+  future optional consumable tips. The first App Store release does not inject
+  or present it. If re-enabled, it accepts only verified transactions, finishes
+  them, and exposes no entitlement because support purchases unlock no
+  functionality.
 - `AppDataResetActor` performs the user-requested application-data reset away
   from the main UI. `AppDataResetService` rejects an active Flow and deletes
   every Direction, Todo, FlowSession, FlowSegment, and FlowBreak in one save.

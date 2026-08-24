@@ -155,9 +155,10 @@ Cover:
   Settings replay read-only.
 - Review eligibility boundaries: seven-day delay, active-day/completed-Flow
   thresholds, and one request per application version.
-- StoreKit support configuration uses stable Coffee/Ramen product identifiers,
-  consumable product types, JPY 100/500 local test prices, and verified
-  transaction completion without entitlements.
+- The dormant StoreKit support configuration preserves stable Coffee/Ramen
+  product identifiers, consumable product types, JPY 100/500 local test prices,
+  and verified transaction completion without entitlements. It is not injected
+  or presented in the first App Store release.
 
 For interactive first-user QA, select `ThruFlow Onboarding Preview` on macOS or
 `ThruFlow iOS Onboarding Preview` on an iPhone/iPad simulator and Run. Both

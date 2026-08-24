@@ -275,10 +275,8 @@ at least seven days old and the user has either five distinct completed-Flow
 days or ten completed Flows. A request is recorded once per app version even
 when the system chooses not to show the sheet.
 
-`設定 > ThruFlowを応援` links to GitHub and offers Coffee and Ramen as
-consumable StoreKit tips. A successful purchase shows thanks and finishes the
-verified transaction; cancellation is silent, pending approval is explained,
-and no purchase creates an entitlement or unlocks a feature. Tasks, the Flow
+`設定 > ThruFlowを応援` links to GitHub and offers an explicit App Store rating
+action. The first App Store release exposes no in-app purchases. Tasks, the Flow
 focus timer, History, and Statistics remain free and ad-free with no required
 payment. This core-product promise does not define the terms or prices of future
 optional integrations or services.

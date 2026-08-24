@@ -2613,50 +2613,6 @@
         }
       }
     },
-    "ThruFlowが役に立っているなら、これからの開発を応援していただけるとうれしいです。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "If you find ThruFlow useful, you can support its continued development."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "スルフロがお役に立てているようでしたら、今後の開発を応援していただけるとうれしいです。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Если ThruFlow вам полезен, вы можете поддержать дальнейшую разработку."
-          }
-        }
-      }
-    },
-    "ThruFlowの開発を応援していただき、ありがとうございます。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Thank you for supporting ThruFlow's development."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "スルフロの開発を応援していただき、ありがとうございます。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Спасибо, что поддерживаете разработку ThruFlow."
-          }
-        }
-      }
-    },
     "ThruFlowは、タスク管理、柔軟な集中タイマー、時間の振り返りをひとつにまとめたアプリです。まずは分野とタスクをひとつずつ作り、基本の流れを試してみましょう。" : {
       "localizations" : {
         "en" : {
@@ -2921,22 +2877,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Не удалось сбросить данные приложения."
-          }
-        }
-      }
-    },
-    "ありがとうございます！" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Thank you!"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Спасибо!"
           }
         }
       }
@@ -3289,44 +3229,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Серый"
-          }
-        }
-      }
-    },
-    "コーヒーを贈る" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Buy Me a Coffee"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Угостить кофе"
-          }
-        }
-      }
-    },
-    "コーヒー一杯、あるいはラーメン一杯で開発を応援できます。購入しても機能は変わりません。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Support development with a coffee or a bowl of ramen. These purchases do not change app features."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "コーヒーやラーメン代として、開発を応援できます。どちらも任意の支援で、機能が追加されるものではありません。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Поддержите разработку чашкой кофе или рамэном. Эти покупки не открывают дополнительных функций."
           }
         }
       }
@@ -5297,22 +5199,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Добро пожаловать"
-          }
-        }
-      }
-    },
-    "ラーメンを贈る" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Buy Me Ramen"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Угостить рамэном"
           }
         }
       }
@@ -7733,28 +7619,6 @@
         }
       }
     },
-    "承認が完了すると購入が自動的に処理されます。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The purchase will be processed automatically once approval is complete."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "承認されると、自動的に購入が完了します。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Покупка будет обработана автоматически после подтверждения."
-          }
-        }
-      }
-    },
     "散歩" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -8570,28 +8434,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Поймите, куда уходит время"
-          }
-        }
-      }
-    },
-    "時間をおいてから、もう一度お試しください。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Please wait a moment and try again."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "しばらくしてから、もう一度お試しください。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Подождите немного и попробуйте снова."
           }
         }
       }
@@ -10541,44 +10383,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Отправить документ"
-          }
-        }
-      }
-    },
-    "購入できませんでした" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Purchase unavailable"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Не удалось совершить покупку"
-          }
-        }
-      }
-    },
-    "購入を確認しています" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Awaiting purchase approval"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "購入の承認を待っています"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ожидание подтверждения покупки"
           }
         }
       }

@@ -206,11 +206,11 @@ The current timer selection is cleared, and Settings closes into the first-run
 onboarding journey so the user can start again.
 
 Settings also contains voluntary support actions: the public GitHub project and
-two StoreKit consumable tips (`Coffee`, JPY 100, and `Ramen`, JPY 500). Tips
-unlock no feature and are not subscriptions. The app
-keeps its core productivity features—Tasks, the Flow focus timer, History, and
-Statistics—free and ad-free, with no payment required. This promise does not set
-terms or prices for possible future optional integrations or services. The app
+an explicit App Store rating action. The first App Store release does not expose
+in-app purchases. The app keeps its core productivity features—Tasks, the Flow
+focus timer, History, and Statistics—free and ad-free, with no payment required.
+This promise does not set terms or prices for possible future optional
+integrations or services. The app
 does not send a promotional notification after one week. Instead, after at
 least seven days and either five active Flow days or ten completed Flows, it may
 ask for a review at a natural post-Flow moment, at most once per app version.
