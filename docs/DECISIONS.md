@@ -496,7 +496,8 @@ CloudKit data from fabricated examples.
 The app does not send promotional notifications. StoreKit's review prompt may
 be requested only at a natural post-Flow moment after seven days and either
 five active Flow days or ten completed Flows, at most once per app version.
-Settings owns permanent GitHub and App Store rating actions. The first App Store
+Settings owns a permanent website support link, App Store rating action, and a
+secondary source-code link to the public GitHub repository. The first App Store
 release exposes no in-app purchases; the dormant StoreKit tip implementation may
 be reconsidered in a later release. Tasks, the Flow focus timer, History, and
 Statistics are free and ad-free and require no payment. This decision makes no
@@ -522,19 +523,19 @@ Reason: users need one clear release-grade way to start over without leaving
 related Tasks, Areas, notes, history, or computed progress behind, while keeping
 device preferences that are not part of their productivity data.
 
-## D-036: Feedback Stays Outside The Settings Menu
+## D-036: Feedback Uses The Website Support Form
 
-macOS, iPhone, and iPad Settings do not include a separate feedback section.
-TestFlight testers use TestFlight's native feedback tools, while the public
-GitHub repository remains available from the support section. ThruFlow does not
-add a custom feedback server, analytics SDK, mail recipient, or undocumented
-TestFlight deep link. The support section keeps the explicit App Store rating
-action, and the app may also request a system review at an appropriate post-Flow
-moment under the review policy.
+macOS, iPhone, and iPad Settings use one compact support section rather than a
+separate feedback screen. Its primary contact action opens the public website
+support form, followed by the explicit App Store rating action and a secondary
+`ソースコード` link to the public GitHub repository. TestFlight testers may
+additionally use TestFlight's native feedback tools. The app does not add an
+analytics SDK, expose GitHub Issues as the normal-user feedback path, or depend
+on an undocumented TestFlight deep link. It may also request a system review at
+an appropriate post-Flow moment under the review policy.
 
-Reason: the Settings screen stays compact while TestFlight and GitHub continue
-to provide established feedback channels without another account or data-
-collection service.
+Reason: ordinary users need a clear, non-technical contact path, while the
+open-source repository remains discoverable without dominating Settings.
 
 ## D-037: The Flow Stream Acknowledges The Rest Lifecycle
 

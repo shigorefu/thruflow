@@ -80,14 +80,15 @@ Area -> Task -> Flow -> actual focused time -> progress -> statistics
   card. Existing-workspace first launch and Settings replay are read-only, every step
   can be closed, and preview schemes use an in-memory store. watchOS remains a
   companion and does not repeat onboarding.
-- Optional support in Settings: GitHub and an explicit App Store rating action.
+- Support in Settings: the website contact form, an explicit App Store rating
+  action, and a secondary source-code link to GitHub.
   The first App Store release exposes no in-app purchases.
 - Tasks, the Flow focus timer, History, and Statistics are free and ad-free and
   require no payment. Future optional integrations or services are outside this
   pricing promise.
-- No separate feedback section in Settings; TestFlight's native feedback tools
-  remain available to testers, while support retains GitHub and App Store rating
-  actions.
+- No separate feedback screen in Settings; the website support form is the
+  primary contact path, GitHub is labeled as source code, and TestFlight's
+  native feedback tools remain additionally available to testers.
 - A non-promotional StoreKit review request after seven days and meaningful
   completed-Flow use, at most once per app version.
 - Native Settings on macOS, iPhone, and iPad can irreversibly reset Tasks,

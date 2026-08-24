@@ -1,9 +1,6 @@
 {
   "sourceLanguage" : "ja",
   "strings" : {
-    "" : {
-
-    },
     "–" : {
       "localizations" : {
         "en" : {
@@ -2354,24 +2351,68 @@
         }
       }
     },
-    "GitHubで開発に参加" : {
+    "お問い合わせ" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "View Project on GitHub"
+            "value" : "Contact Support"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "GitHubでプロジェクトを見る"
+            "value" : "お問い合わせ"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Открыть проект на GitHub"
+            "value" : "Обратная связь"
+          }
+        }
+      }
+    },
+    "サポート" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Support"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サポート"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поддержка"
+          }
+        }
+      }
+    },
+    "ソースコード" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Source Code"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ソースコード"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Исходный код"
           }
         }
       }
@@ -2631,28 +2672,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ThruFlow объединяет задачи, гибкий таймер фокуса и анализ времени. Создайте первую сферу и задачу, а затем попробуйте основной рабочий цикл."
-          }
-        }
-      }
-    },
-    "ThruFlowを応援" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Support ThruFlow"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "スルフロを応援する"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Поддержать ThruFlow"
           }
         }
       }

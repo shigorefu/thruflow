@@ -34,8 +34,9 @@ Area -> Task -> Flow -> focused time -> progress -> statistics
   explains data storage and free core features. Existing-workspace first launch
   and Settings replay are read-only, every card can be closed, and preview
   schemes isolate confirmed examples in memory.
-- [x] A non-intrusive system review request after confirmed use and a GitHub
-  link. The first App Store release exposes no in-app purchases.
+- [x] A non-intrusive system review request after confirmed use, a website
+  support link, and a secondary source-code link to GitHub. The first App Store
+  release exposes no in-app purchases.
 - [x] Core Tasks, Flow timer, History, and Statistics remain free and ad-free
   without required payment; future optional integrations are not covered by
   that pricing promise.

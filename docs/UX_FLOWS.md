@@ -275,17 +275,18 @@ at least seven days old and the user has either five distinct completed-Flow
 days or ten completed Flows. A request is recorded once per app version even
 when the system chooses not to show the sheet.
 
-`設定 > ThruFlowを応援` links to GitHub and offers an explicit App Store rating
-action. The first App Store release exposes no in-app purchases. Tasks, the Flow
+`設定 > サポート` opens the website support form first, offers an explicit App
+Store rating action, and keeps a secondary `ソースコード` link to the public
+GitHub repository. The first App Store release exposes no in-app purchases. Tasks, the Flow
 focus timer, History, and Statistics remain free and ad-free with no required
 payment. This core-product promise does not define the terms or prices of future
 optional integrations or services.
 
-Settings has no separate feedback section. TestFlight testers use TestFlight's
-native screenshot or in-app feedback tools. The public GitHub repository remains
-available from `設定 > ThruFlowを応援`, alongside the explicit App Store rating
-action. The app does not imitate TestFlight's submission UI or depend on an
-undocumented TestFlight URL scheme.
+Settings has no separate feedback screen. `設定 > サポート` uses the website
+support form as the primary contact path, followed by the App Store rating and
+secondary source-code actions. TestFlight testers may additionally use native
+screenshot or in-app feedback tools. The app does not imitate TestFlight's
+submission UI or depend on an undocumented TestFlight URL scheme.
 
 ## iPhone and iPad
 
@@ -695,6 +696,6 @@ Appearance, language, calendar, and time settings remain local. A successful
 reset clears the timer selection, closes Settings, and presents the first-run
 onboarding journey again.
 
-There is no separate `フィードバック` section. The support section remains
-immediately before destructive data controls and contains the App Store rating,
-GitHub project, and optional tip actions.
+There is no separate `フィードバック` screen. The support section remains
+immediately before destructive data controls and contains the website contact
+form, App Store rating, and secondary source-code actions.

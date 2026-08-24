@@ -5,6 +5,12 @@ struct SupportSettingsSection: View {
 
     var body: some View {
         Section {
+            Button {
+                openURL(SupportLinks.supportURL)
+            } label: {
+                Label(String(localized: "お問い合わせ"), systemImage: "bubble.left.and.bubble.right")
+            }
+
             if let reviewURL = SupportLinks.appStoreReviewURL {
                 Button {
                     openURL(reviewURL)
@@ -16,10 +22,10 @@ struct SupportSettingsSection: View {
             Button {
                 openURL(SupportLinks.projectURL)
             } label: {
-                Label(String(localized: "GitHubで開発に参加"), systemImage: "chevron.left.forwardslash.chevron.right")
+                Label(String(localized: "ソースコード"), systemImage: "chevron.left.forwardslash.chevron.right")
             }
         } header: {
-            Text(String(localized: "ThruFlowを応援"))
+            Text(String(localized: "サポート"))
         }
     }
 }

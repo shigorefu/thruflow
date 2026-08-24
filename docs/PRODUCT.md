@@ -205,8 +205,9 @@ CloudKit store. Local appearance, language, calendar, and time settings remain.
 The current timer selection is cleared, and Settings closes into the first-run
 onboarding journey so the user can start again.
 
-Settings also contains voluntary support actions: the public GitHub project and
-an explicit App Store rating action. The first App Store release does not expose
+Settings also contains a link to the website support form, an explicit App
+Store rating action, and a secondary `ソースコード` link to the public GitHub
+repository. The first App Store release does not expose
 in-app purchases. The app keeps its core productivity features—Tasks, the Flow
 focus timer, History, and Statistics—free and ad-free, with no payment required.
 This promise does not set terms or prices for possible future optional
@@ -216,10 +217,11 @@ least seven days and either five active Flow days or ten completed Flows, it may
 ask for a review at a natural post-Flow moment, at most once per app version.
 The system ultimately decides whether the review sheet is shown.
 
-Settings does not contain a separate feedback section. TestFlight testers use
-TestFlight's native feedback tools, while the support section keeps the public
-GitHub project link and the explicit App Store rating action. ThruFlow does not
-operate a separate feedback backend.
+Settings does not contain a separate feedback section. Its compact support
+section opens the website support form as the primary contact path, keeps the
+explicit App Store rating action, and exposes the public GitHub repository as
+secondary source-code information. TestFlight testers may additionally use
+TestFlight's native feedback tools.
 
 ## Apple Watch
 

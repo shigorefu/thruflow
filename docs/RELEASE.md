@@ -47,8 +47,8 @@ Also build the iOS and Watch Release schemes without signing. CI performs the sa
 
 Recommended public URLs after the files are merged to `main`:
 
-- support: `https://github.com/shigorefu/thruflow/blob/main/SUPPORT.md`;
-- privacy: `https://github.com/shigorefu/thruflow/blob/main/PRIVACY.md`.
+- support: `https://thruflow.shigorefu.com/support`;
+- privacy: `https://thruflow.shigorefu.com/privacy`.
 
 ## CloudKit and device gate
 
