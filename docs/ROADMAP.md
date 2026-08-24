@@ -119,8 +119,14 @@ outside Flow.
 
 - [ ] Add an optional serverless APNs backend:
   `API Gateway -> Lambda -> EventBridge Scheduler -> APNs`.
-- [ ] Register and update ActivityKit push tokens without storing the Apple
-  `.p8` key in the app.
+- [ ] Register, rotate, and revoke standard APNs device tokens and ActivityKit
+  push tokens without storing the Apple `.p8` key in the app.
+- [ ] Send idempotent runtime-revision pushes when Flow is stopped, paused,
+  resumed, or changes phase. Receiving devices must reconcile the canonical
+  CloudKit session and cancel or replace obsolete completion and forgotten-timer
+  notifications, including while suspended when iOS permits background delivery.
+- [ ] Cancel scheduled server reminders when a newer runtime revision stops or
+  changes Flow. Offline or force-quit clients must reconcile on the next launch.
 - [ ] Update Live Activity through APNs at the `00:00` boundary so a suspended
   iPhone reliably shows overtime as `+MM:SS`.
 - [ ] Add a server reminder for a Flow or break that continues for more than an
