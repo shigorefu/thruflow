@@ -30,6 +30,10 @@ Task title may be empty. When empty, UI displays `(分野)`, for example `(読�
 
 The screen is named `タスク`. There is no separate Inbox navigation item. When today is selected, overdue active normal Tasks appear in a leading `やり残し` section. A toolbar `日付なし` button with a count opens an inspector for active normal Tasks without a date. Habit instances are excluded from both projections because their schedule is owned by the Habit planner.
 
+When a completed Flow is edited from History, its selected Task can also be
+renamed inline. The edit updates that canonical Task everywhere; an empty draft
+never erases an existing title.
+
 `タスク` supports `日`, `週`, and `月` calendar ranges. Day uses a compact seven-day strip above the Task list and opens a full month only in a date-picker popover. Week is a seven-column kanban, while month is a calendar overview. Filters stay centered and `今日` remains prominent. Active Tasks can be moved between dates subject to Habit rules.
 
 On iPhone, the compact day and week period strips scroll horizontally with

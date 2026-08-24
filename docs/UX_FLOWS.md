@@ -441,8 +441,12 @@ copy starts with `お疲れ様です。`. Break completion prompts the user to r
 Focus and break each schedule an additional forgotten-timer reminder after 60
 minutes of active phase time. Paused time shifts that deadline and does not
 count toward the hour. Pausing, stopping, destroying, or changing phase cancels
-obsolete pending reminders. Every delivered Flow notification sets badge `1`;
-opening or foregrounding either app clears it.
+obsolete pending reminders. Notification request identifiers include a persisted
+generation. Cancellation rotates that generation and removes every identifier
+known to the previous one; if an asynchronous add finishes afterwards, its
+completion removes only that stale request and cannot cancel a newer timer's
+notification. Every delivered Flow notification sets badge `1`; opening or
+foregrounding either app clears it.
 
 ## Live Activity
 
@@ -634,7 +638,7 @@ In `日`, the right pane keeps the only wide-layout mini-calendar and no longer 
 
 Week keeps date headers fixed while hours scroll. Its right mini-calendar highlights the complete selected week, and choosing any date selects that week. Opening a day/week grid scrolls near the current time when today is visible, otherwise near the first Flow. A red line marks the current time. On macOS, Month keeps a minimum full-grid width and a right `1月...12月` year picker; a crowded day uses `詳細` to open its complete timeline. On iPhone, Month instead keeps the calendar and selected day's full timeline in one vertical scroll surface, so no second sheet or summary list interrupts navigation. Medium/narrow layouts preserve stable calendar widths through horizontal scrolling.
 
-Flow and FlowSegment records remain separate persisted records colored by Area. FlowBreak records remain separate light-gray records. In `週`, `seriesID` is used only to draw a composite series block; clicking it reveals each persisted Flow and rest record in a vertical detail timeline. Selecting a detail pushes its canonical editor inside that sheet, and the leading Back control returns to the series timeline rather than replacing the sheet. The Flow editor uses the same `タスク・習慣・分野` picker and Task composer as the player, while the rest editor uses a smaller content-fitted presentation. The sheet animates its window size while moving between the series timeline, Flow editor, and compact rest editor. The Flow dashboard independently uses `seriesID` for its continuous rail. Todo completions and pending Tasks never become independent History Calendar blocks.
+Flow and FlowSegment records remain separate persisted records colored by Area. FlowBreak records remain separate light-gray records. In `週`, `seriesID` is used only to draw a composite series block; clicking it reveals each persisted Flow and rest record in a vertical detail timeline. Selecting a detail pushes its canonical editor inside that sheet, and the leading Back control returns to the series timeline rather than replacing the sheet. The Flow editor uses the same `タスク・習慣・分野` picker and Task composer as the player, and shows an inline Task-name field whenever a Task is selected. Saving a non-empty changed title renames that canonical Task everywhere; clearing the draft does not erase its current title. The rest editor uses a smaller content-fitted presentation. The sheet animates its window size while moving between the series timeline, Flow editor, and compact rest editor. The Flow dashboard independently uses `seriesID` for its continuous rail. Todo completions and pending Tasks never become independent History Calendar blocks.
 
 Lane assignment uses exact stored start/end intervals. Contiguous Flow and rest records stay in one vertical lane, and only actual time overlap creates side-by-side lanes. Entries below 15 minutes use compact title-only rendering; short rests become thin gray bars and expose exact time through hover and accessibility.
 

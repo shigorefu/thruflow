@@ -179,6 +179,15 @@ final class Todo {
         set { focusDurationSeconds = max(0, newValue) }
     }
 
+    @discardableResult
+    func rename(to candidate: String, now: Date = .now) -> Bool {
+        let normalizedTitle = candidate.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalizedTitle.isEmpty, normalizedTitle != title else { return false }
+        title = normalizedTitle
+        updatedAt = now
+        return true
+    }
+
     func update(
         title: String,
         notes: String?,

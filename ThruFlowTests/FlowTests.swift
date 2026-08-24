@@ -8,6 +8,7 @@
 import Foundation
 import SwiftData
 import Testing
+import UserNotifications
 @testable import ThruFlow
 
 struct FlowTests {
@@ -961,6 +962,33 @@ struct FlowTests {
         #expect(notifications.runningTooLong.last?.fireDate == start.addingTimeInterval(70 * 60))
     }
 
+    @Test func staleNotificationRegistrationCannotSurviveCancellation() throws {
+        let suiteName = "FlowNotificationTests.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let center = TestFlowUserNotificationCenter()
+        let service = LocalFlowNotificationService(center: center, defaults: defaults)
+
+        service.scheduleRunningTooLong(
+            phase: .focus,
+            fireDate: Date.now.addingTimeInterval(60 * 60)
+        )
+        let staleIdentifier = try #require(center.requestedIdentifiers.last)
+
+        service.cancelPendingFlowNotifications()
+        service.scheduleRunningTooLong(
+            phase: .focus,
+            fireDate: Date.now.addingTimeInterval(60 * 60)
+        )
+        let currentIdentifier = try #require(center.requestedIdentifiers.last)
+
+        #expect(staleIdentifier != currentIdentifier)
+        center.completeAdd(for: staleIdentifier)
+        #expect(!center.pendingIdentifiers.contains(staleIdentifier))
+        #expect(center.pendingIdentifiers.contains(currentIdentifier))
+        #expect(!center.removedPendingBatches.contains([currentIdentifier]))
+    }
+
     @Test @MainActor func breakNotificationsWarnAfterOneActiveHourAndResumeAsBreak() throws {
         let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
@@ -1392,6 +1420,42 @@ private final class TestFlowNotificationService: FlowNotificationService {
     }
     func clearBadge() {
         clearBadgeCount += 1
+    }
+}
+
+private final class TestFlowUserNotificationCenter: FlowUserNotificationCenter {
+    private(set) var requestedIdentifiers: [String] = []
+    private(set) var pendingIdentifiers: Set<String> = []
+    private(set) var removedPendingBatches: [[String]] = []
+    private var addCompletions: [String: (@Sendable (Error?) -> Void)] = [:]
+
+    func requestAuthorization(
+        options: UNAuthorizationOptions,
+        completionHandler: @escaping @Sendable (Bool, Error?) -> Void
+    ) {
+        completionHandler(true, nil)
+    }
+
+    func add(
+        _ request: UNNotificationRequest,
+        withCompletionHandler completionHandler: (@Sendable (Error?) -> Void)?
+    ) {
+        requestedIdentifiers.append(request.identifier)
+        pendingIdentifiers.insert(request.identifier)
+        addCompletions[request.identifier] = completionHandler
+    }
+
+    func removePendingNotificationRequests(withIdentifiers identifiers: [String]) {
+        removedPendingBatches.append(identifiers)
+        pendingIdentifiers.subtract(identifiers)
+    }
+
+    func removeDeliveredNotifications(withIdentifiers identifiers: [String]) {}
+
+    func clearBadge() {}
+
+    func completeAdd(for identifier: String, error: Error? = nil) {
+        addCompletions.removeValue(forKey: identifier)?(error)
     }
 }
 

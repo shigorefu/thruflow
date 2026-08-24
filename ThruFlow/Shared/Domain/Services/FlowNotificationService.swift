@@ -8,6 +8,58 @@
 import Foundation
 import UserNotifications
 
+protocol FlowUserNotificationCenter: AnyObject {
+    func requestAuthorization(
+        options: UNAuthorizationOptions,
+        completionHandler: @escaping @Sendable (Bool, (any Error)?) -> Void
+    )
+    func add(
+        _ request: UNNotificationRequest,
+        withCompletionHandler completionHandler: (@Sendable ((any Error)?) -> Void)?
+    )
+    func removePendingNotificationRequests(withIdentifiers identifiers: [String])
+    func removeDeliveredNotifications(withIdentifiers identifiers: [String])
+    func clearBadge()
+}
+
+final class SystemFlowUserNotificationCenter: FlowUserNotificationCenter {
+    private let center: UNUserNotificationCenter
+
+    init(center: UNUserNotificationCenter = .current()) {
+        self.center = center
+    }
+
+    func requestAuthorization(
+        options: UNAuthorizationOptions,
+        completionHandler: @escaping @Sendable (Bool, (any Error)?) -> Void
+    ) {
+        center.requestAuthorization(options: options, completionHandler: completionHandler)
+    }
+
+    func add(
+        _ request: UNNotificationRequest,
+        withCompletionHandler completionHandler: (@Sendable ((any Error)?) -> Void)?
+    ) {
+        center.add(request, withCompletionHandler: completionHandler)
+    }
+
+    func removePendingNotificationRequests(withIdentifiers identifiers: [String]) {
+        center.removePendingNotificationRequests(withIdentifiers: identifiers)
+    }
+
+    func removeDeliveredNotifications(withIdentifiers identifiers: [String]) {
+        center.removeDeliveredNotifications(withIdentifiers: identifiers)
+    }
+
+    func clearBadge() {
+#if os(watchOS)
+        return
+#else
+        center.setBadgeCount(0, withCompletionHandler: nil)
+#endif
+    }
+}
+
 protocol FlowNotificationService {
     func requestAuthorizationIfNeeded()
     func scheduleFocusFinished(mode: FlowMode, focusedSeconds: Int, fireDate: Date)
@@ -24,6 +76,8 @@ enum FlowNotificationPhase: Equatable {
 
 final class LocalFlowNotificationService: FlowNotificationService {
     private static let authorizationDefaultsKey = "flow.notificationsRequested.v2"
+    private static let generationDefaultsKey = "flow.notificationGeneration.v1"
+    private static let knownIdentifiersDefaultsKey = "flow.notificationIdentifiers.v1"
 
     private enum NotificationID {
         static let focusFinished = "flow.focusFinished"
@@ -39,12 +93,25 @@ final class LocalFlowNotificationService: FlowNotificationService {
         ]
     }
 
-    private let center: UNUserNotificationCenter
+    private let center: any FlowUserNotificationCenter
     private let defaults: UserDefaults
+    private let stateLock = NSLock()
+    private var generation: String
 
-    init(center: UNUserNotificationCenter = .current(), defaults: UserDefaults = .standard) {
+    init(
+        center: any FlowUserNotificationCenter = SystemFlowUserNotificationCenter(),
+        defaults: UserDefaults = .standard
+    ) {
         self.center = center
         self.defaults = defaults
+
+        if let storedGeneration = defaults.string(forKey: Self.generationDefaultsKey) {
+            generation = storedGeneration
+        } else {
+            let initialGeneration = UUID().uuidString
+            generation = initialGeneration
+            defaults.set(initialGeneration, forKey: Self.generationDefaultsKey)
+        }
     }
 
     func requestAuthorizationIfNeeded() {
@@ -87,18 +154,32 @@ final class LocalFlowNotificationService: FlowNotificationService {
     }
 
     func cancelPendingFlowNotifications() {
-        center.removePendingNotificationRequests(withIdentifiers: NotificationID.all)
+        let identifiers = withStateLock { () -> [String] in
+            let knownIdentifiers = defaults.stringArray(
+                forKey: Self.knownIdentifiersDefaultsKey
+            ) ?? []
+            let currentIdentifiers = NotificationID.all.map {
+                versionedIdentifier(base: $0, generation: generation)
+            }
+            let identifiers = Array(
+                Set(knownIdentifiers + currentIdentifiers + NotificationID.all)
+            )
+
+            generation = UUID().uuidString
+            defaults.set(generation, forKey: Self.generationDefaultsKey)
+            defaults.removeObject(forKey: Self.knownIdentifiersDefaultsKey)
+            return identifiers
+        }
+
+        center.removePendingNotificationRequests(withIdentifiers: identifiers)
+        center.removeDeliveredNotifications(withIdentifiers: identifiers)
     }
 
     func clearBadge() {
-#if os(watchOS)
-        return
-#else
-        center.setBadgeCount(0)
-#endif
+        center.clearBadge()
     }
 
-    private func schedule(id: String, title: String, fireDate: Date) {
+    private func schedule(id baseIdentifier: String, title: String, fireDate: Date) {
         let interval = max(1, fireDate.timeIntervalSinceNow)
         let content = UNMutableNotificationContent()
         content.title = title
@@ -106,8 +187,60 @@ final class LocalFlowNotificationService: FlowNotificationService {
         content.badge = 1
 
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: interval, repeats: false)
-        let request = UNNotificationRequest(identifier: id, content: content, trigger: trigger)
-        center.add(request)
+        let scheduledGeneration = withStateLock { () -> String in
+            let scheduledGeneration = generation
+            let identifier = versionedIdentifier(
+                base: baseIdentifier,
+                generation: scheduledGeneration
+            )
+            var knownIdentifiers = Set(
+                defaults.stringArray(forKey: Self.knownIdentifiersDefaultsKey) ?? []
+            )
+            knownIdentifiers.insert(identifier)
+            defaults.set(Array(knownIdentifiers), forKey: Self.knownIdentifiersDefaultsKey)
+            return scheduledGeneration
+        }
+        let identifier = versionedIdentifier(
+            base: baseIdentifier,
+            generation: scheduledGeneration
+        )
+        let request = UNNotificationRequest(
+            identifier: identifier,
+            content: content,
+            trigger: trigger
+        )
+
+        center.add(request) { [weak self] error in
+            guard let self else { return }
+            let isStale = self.withStateLock {
+                scheduledGeneration != self.generation
+            }
+            guard error != nil || isStale else { return }
+
+            self.center.removePendingNotificationRequests(withIdentifiers: [identifier])
+            self.center.removeDeliveredNotifications(withIdentifiers: [identifier])
+            self.removeKnownIdentifier(identifier)
+        }
+    }
+
+    private func versionedIdentifier(base: String, generation: String) -> String {
+        "\(base).\(generation)"
+    }
+
+    private func removeKnownIdentifier(_ identifier: String) {
+        withStateLock {
+            var knownIdentifiers = Set(
+                defaults.stringArray(forKey: Self.knownIdentifiersDefaultsKey) ?? []
+            )
+            knownIdentifiers.remove(identifier)
+            defaults.set(Array(knownIdentifiers), forKey: Self.knownIdentifiersDefaultsKey)
+        }
+    }
+
+    private func withStateLock<Value>(_ operation: () -> Value) -> Value {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        return operation()
     }
 
     private func focusTitle(mode: FlowMode, focusedSeconds: Int) -> String {
