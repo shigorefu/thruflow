@@ -73,7 +73,11 @@ physical iPhone builds for synchronization diagnostics.
 The active timer is synchronized through the current `FlowSession`. Absolute
 timestamps, pause/break anchors, and a runtime revision allow another client to
 reconstruct the timer without transferring per-second ticks. macOS, iOS, and
-watchOS reconcile on launch, foreground entry, and while active. The same
+watchOS reconcile on launch, foreground entry, and while active. Once the
+synchronization lifecycle has started, a completed CloudKit import also invokes
+the same reconciliation path even after foreground polling stops. This allows a
+remote stop or phase change to cancel the receiving device's obsolete local
+completion and forgotten-timer notifications. The same timer reconciliation
 mechanism works in local-only mode.
 
 CloudKit does not provide a guaranteed real-time wakeup channel for a suspended
@@ -85,7 +89,10 @@ provider. That server-assisted transport is not part of the current private
 CloudKit implementation and is deferred to 2.0 together with external
 Connectors. In 1.x, a suspended iPhone Live Activity may remain at `00:00`
 until the application next launches or becomes active; the canonical Flow still
-advances from its absolute timestamps.
+advances from its absolute timestamps. The same delivery limitation applies to
+notification cancellation when a device is offline or the user has force-quit
+the app; the next received import or foreground reconciliation removes the
+obsolete requests.
 
 ## Production Schema
 

@@ -5,6 +5,7 @@
 //  Created by Codex on 2026/07/08.
 //
 
+import CoreData
 import Foundation
 import SwiftData
 import Testing
@@ -1331,6 +1332,53 @@ struct FlowTests {
         #expect(store.activeSession == nil)
         #expect(store.timerState == nil)
         #expect(liveActivities.endCount == 1)
+    }
+
+    @Test @MainActor func remotePersistenceChangeCancelsNotificationsWhilePollingIsStopped() async throws {
+        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let start = Date(timeIntervalSince1970: 77_000)
+        let completedAt = start.addingTimeInterval(6 * 60)
+        let direction = Direction(name: "開発", type: .neutral)
+        let session = FlowSession(
+            direction: direction,
+            mode: .sprint,
+            startedAt: start,
+            plannedEndAt: start.addingTimeInterval(12 * 60),
+            plannedFocusDurationSeconds: 12 * 60,
+            plannedBreakDurationSeconds: 3 * 60,
+            createdAt: start,
+            updatedAt: start
+        )
+        context.insert(direction)
+        context.insert(session)
+        try context.save()
+
+        let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
+        let notifications = TestFlowNotificationService()
+        let persistenceNotificationCenter = NotificationCenter()
+        let store = ActiveFlowStore(
+            defaults: defaults,
+            notifications: notifications,
+            persistenceNotificationCenter: persistenceNotificationCenter
+        )
+        store.beginSynchronization(modelContext: context, now: start)
+        store.endSynchronization()
+        let cancelCountBeforeRemoteCompletion = notifications.cancelCount
+
+        session.complete(now: completedAt)
+        try context.save()
+        persistenceNotificationCenter.post(
+            name: .NSPersistentStoreRemoteChange,
+            object: nil
+        )
+        try await Task.sleep(for: .milliseconds(50))
+
+        #expect(store.activeSession == nil)
+        #expect(store.timerState == nil)
+        #expect(notifications.cancelCount == cancelCountBeforeRemoteCompletion + 1)
     }
 
     @Test @MainActor func syncCoordinatorInterruptsOlderConcurrentActiveFlow() throws {

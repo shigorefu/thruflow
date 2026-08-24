@@ -313,9 +313,12 @@ advanced runtime revision and mutation identifier. `ActiveFlowStore` remains
 the only timer state machine; a shared coordinator only resolves the newest
 active persisted session and adopts its absolute timestamp-based state.
 
-macOS and iOS reconcile on launch, foreground entry, and while their scene is
-active. A command made on either platform updates the shared session, and the
-other active application adopts that revision without restarting elapsed time.
+macOS and iOS reconcile on launch, foreground entry, while their scene is
+active, and when the running process receives a completed CloudKit import. A
+command made on either platform updates the shared session, and the other
+application adopts that revision without restarting elapsed time. Import-driven
+reconciliation remains installed after foreground polling stops so remote timer
+completion can cancel obsolete local notifications.
 If concurrent offline starts produce multiple active sessions, the coordinator
 selects one deterministically and marks the others interrupted. Local-only and
 test stores use exactly the same reconciliation behavior without requiring

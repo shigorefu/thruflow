@@ -102,8 +102,10 @@ Each platform owns its composition root:
 - `ActiveFlowSyncCoordinator` resolves the canonical active `FlowSession` from
   SwiftData and reconstructs its `FlowTimerState`. It contains no timer
   calculations. Both composition roots invoke the same reconciliation path on
-  launch, foreground entry, and a low-frequency active-scene cadence so
-  CloudKit imports are adopted without view-specific logic.
+  launch, foreground entry, a low-frequency active-scene cadence, and completed
+  CloudKit imports received while the process can run. Foreground polling stops
+  with the scene, while import observation remains installed so a remote stop
+  can cancel obsolete local notifications without reopening the app.
 - `AppSettings` owns typed local preferences and derives the effective
   `Calendar`, `Locale`, and `AppDayBoundary`. Platform composition roots inject
   those values into their scene environments; settings never enter SwiftData.

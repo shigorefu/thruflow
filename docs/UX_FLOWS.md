@@ -445,8 +445,11 @@ obsolete pending reminders. Notification request identifiers include a persisted
 generation. Cancellation rotates that generation and removes every identifier
 known to the previous one; if an asynchronous add finishes afterwards, its
 completion removes only that stale request and cannot cancel a newer timer's
-notification. Every delivered Flow notification sets badge `1`; opening or
-foregrounding either app clears it.
+notification. A completed CloudKit import invokes the same active-runtime
+reconciliation after foreground polling has stopped, so stopping Flow on one
+device cancels obsolete completion and forgotten-timer requests on another
+device as soon as that import is processed. Every delivered Flow notification
+sets badge `1`; opening or foregrounding either app clears it.
 
 ## Live Activity
 
