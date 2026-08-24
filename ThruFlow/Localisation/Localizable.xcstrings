@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "ja",
   "strings" : {
+    "" : {
+
+    },
     "–" : {
       "localizations" : {
         "en" : {
@@ -2834,6 +2837,94 @@
         }
       }
     },
+    "アプリのデータをリセット" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset App Data"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アプリのデータをリセット"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сбросить данные приложения"
+          }
+        }
+      }
+    },
+    "アプリのデータをリセットしています…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resetting app data…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アプリのデータをリセットしています…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сбрасываем данные приложения…"
+          }
+        }
+      }
+    },
+    "アプリのデータをリセットしますか？" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset App Data?"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アプリのデータをリセットしますか？"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сбросить данные приложения?"
+          }
+        }
+      }
+    },
+    "アプリのデータをリセットできませんでした" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App data could not be reset."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アプリのデータをリセットできませんでした"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось сбросить данные приложения."
+          }
+        }
+      }
+    },
     "ありがとうございます！" : {
       "localizations" : {
         "en" : {
@@ -4042,7 +4133,51 @@
         }
       }
     },
-    "タスク、集中タイマー、履歴、統計などの基本機能は、無料・広告なしで利用できます。利用に必須の支払いはありません。" : {
+    "タスク、分野、集中履歴、メモが、iCloudで同期しているすべての端末から削除されます。この端末の設定は残ります。この操作は取り消せません。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All Tasks, Areas, Flow history, and notes will be deleted from every device synced through iCloud. Settings on this device will be kept. This cannot be undone."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タスク、分野、集中履歴、メモが、iCloudで同期しているすべての端末から削除されます。この端末の設定は残ります。この操作は取り消せません。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Все задачи, сферы, история Flow и заметки будут удалены со всех устройств, синхронизируемых через iCloud. Настройки на этом устройстве сохранятся. Это действие нельзя отменить."
+          }
+        }
+      }
+    },
+    "タスク、分野、集中履歴、メモがすべて削除されます。設定は残ります。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All Tasks, Areas, Flow history, and notes will be deleted. Settings will be kept."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タスク、分野、集中履歴、メモがすべて削除されます。設定は残ります。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Все задачи, сферы, история Flow и заметки будут удалены. Настройки сохранятся."
+          }
+        }
+      }
+    },
+    "タスク、集中タイマー、履歴、統計などの基本機能は、無料・広告なしで利用できます。料金は一切かかりません。" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4053,7 +4188,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "タスク、集中タイマー、履歴、統計などの基本機能は、無料・広告なしで利用できます。利用に必須の支払いはありません。"
+            "value" : "タスク、集中タイマー、履歴、統計などの基本機能は、無料・広告なしで利用できます。料金は一切かかりません。"
           }
         },
         "ru" : {
@@ -5194,6 +5329,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Светлая"
+          }
+        }
+      }
+    },
+    "リセット" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "リセット"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сбросить"
+          }
+        }
+      }
+    },
+    "リセットする前に、現在のFlowを終了してください。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "End the current Flow before resetting app data."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "リセットする前に、現在の集中を終了してください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Завершите текущий Flow перед сбросом данных приложения."
           }
         }
       }
@@ -11392,182 +11571,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Группировать по"
-          }
-        }
-      }
-    },
-    "アプリのデータをリセット" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reset App Data"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "アプリのデータをリセット"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сбросить данные приложения"
-          }
-        }
-      }
-    },
-    "アプリのデータをリセットしています…" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Resetting app data…"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "アプリのデータをリセットしています…"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сбрасываем данные приложения…"
-          }
-        }
-      }
-    },
-    "アプリのデータをリセットしますか？" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reset App Data?"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "アプリのデータをリセットしますか？"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сбросить данные приложения?"
-          }
-        }
-      }
-    },
-    "アプリのデータをリセットできませんでした" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "App data could not be reset."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "アプリのデータをリセットできませんでした"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Не удалось сбросить данные приложения."
-          }
-        }
-      }
-    },
-    "タスク、分野、集中履歴、メモが、iCloudで同期しているすべての端末から削除されます。この端末の設定は残ります。この操作は取り消せません。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "All Tasks, Areas, Flow history, and notes will be deleted from every device synced through iCloud. Settings on this device will be kept. This cannot be undone."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "タスク、分野、集中履歴、メモが、iCloudで同期しているすべての端末から削除されます。この端末の設定は残ります。この操作は取り消せません。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Все задачи, сферы, история Flow и заметки будут удалены со всех устройств, синхронизируемых через iCloud. Настройки на этом устройстве сохранятся. Это действие нельзя отменить."
-          }
-        }
-      }
-    },
-    "タスク、分野、集中履歴、メモがすべて削除されます。設定は残ります。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "All Tasks, Areas, Flow history, and notes will be deleted. Settings will be kept."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "タスク、分野、集中履歴、メモがすべて削除されます。設定は残ります。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Все задачи, сферы, история Flow и заметки будут удалены. Настройки сохранятся."
-          }
-        }
-      }
-    },
-    "リセット" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reset"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "リセット"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сбросить"
-          }
-        }
-      }
-    },
-    "リセットする前に、現在のFlowを終了してください。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "End the current Flow before resetting app data."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "リセットする前に、現在の集中を終了してください。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Завершите текущий Flow перед сбросом данных приложения."
           }
         }
       }

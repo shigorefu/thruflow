@@ -27,7 +27,7 @@ struct ThruFlowApp: App {
     private let sharedModelContainer = AppModelContainerFactory.make()
 
     var body: some Scene {
-        Window("ThruFlow", id: MacOSWindowID.main) {
+        WindowGroup("ThruFlow", id: MacOSWindowID.main) {
             MacOSRootView()
                 .onboardingJourney(store: onboarding)
                 .environmentObject(activeFlowStore)

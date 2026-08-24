@@ -533,16 +533,16 @@ struct FlowDashboardTests {
         let clock = FlowAnimationClock()
         let start = Date(timeIntervalSinceReferenceDate: 1_000)
 
-        #expect(clock.phase(at: start, speed: 0.1, isPaused: false) == 0)
-        #expect(abs(clock.phase(at: start.addingTimeInterval(2), speed: 0.1, isPaused: false) - 0.2) < 0.0001)
+        #expect(clock.phase(at: start.timeIntervalSinceReferenceDate, speed: 0.1, isPaused: false) == 0)
+        #expect(abs(clock.phase(at: start.addingTimeInterval(2).timeIntervalSinceReferenceDate, speed: 0.1, isPaused: false) - 0.2) < 0.0001)
 
         let transitionPhase = clock.phase(
-            at: start.addingTimeInterval(2),
+            at: start.addingTimeInterval(2).timeIntervalSinceReferenceDate,
             speed: 0.8,
             isPaused: false
         )
         #expect(abs(transitionPhase - 0.2) < 0.0001)
-        #expect(abs(clock.phase(at: start.addingTimeInterval(3), speed: 0.8, isPaused: false) - 1.0) < 0.0001)
+        #expect(abs(clock.phase(at: start.addingTimeInterval(3).timeIntervalSinceReferenceDate, speed: 0.8, isPaused: false) - 1.0) < 0.0001)
     }
 
     @Test func emptyIdleVisualStateAdvancesTheProductionAnimationClockAtBoostedSpeed() {
@@ -555,9 +555,9 @@ struct FlowDashboardTests {
         let clock = FlowAnimationClock()
         let start = Date(timeIntervalSinceReferenceDate: 1_500)
 
-        _ = clock.phase(at: start, visualState: state, isPaused: false)
+        _ = clock.phase(at: start.timeIntervalSinceReferenceDate, visualState: state, isPaused: false)
         let phase = clock.phase(
-            at: start.addingTimeInterval(8),
+            at: start.addingTimeInterval(8).timeIntervalSinceReferenceDate,
             visualState: state,
             isPaused: false
         )
@@ -570,11 +570,20 @@ struct FlowDashboardTests {
         let clock = FlowAnimationClock()
         let start = Date(timeIntervalSinceReferenceDate: 2_000)
 
-        _ = clock.phase(at: start, speed: 0.5, isPaused: false)
-        #expect(abs(clock.phase(at: start.addingTimeInterval(2), speed: 0.5, isPaused: false) - 1.0) < 0.0001)
-        #expect(abs(clock.phase(at: start.addingTimeInterval(20), speed: 0.5, isPaused: true) - 1.0) < 0.0001)
-        #expect(abs(clock.phase(at: start.addingTimeInterval(40), speed: 0.5, isPaused: false) - 1.0) < 0.0001)
-        #expect(abs(clock.phase(at: start.addingTimeInterval(41), speed: 0.5, isPaused: false) - 1.5) < 0.0001)
+        _ = clock.phase(at: start.timeIntervalSinceReferenceDate, speed: 0.5, isPaused: false)
+        #expect(abs(clock.phase(at: start.addingTimeInterval(2).timeIntervalSinceReferenceDate, speed: 0.5, isPaused: false) - 1.0) < 0.0001)
+        #expect(abs(clock.phase(at: start.addingTimeInterval(20).timeIntervalSinceReferenceDate, speed: 0.5, isPaused: true) - 1.0) < 0.0001)
+        #expect(abs(clock.phase(at: start.addingTimeInterval(40).timeIntervalSinceReferenceDate, speed: 0.5, isPaused: false) - 1.0) < 0.0001)
+        #expect(abs(clock.phase(at: start.addingTimeInterval(41).timeIntervalSinceReferenceDate, speed: 0.5, isPaused: false) - 1.5) < 0.0001)
+    }
+
+    @Test func animationClockIgnoresNonMonotonicRenderSamples() {
+        let clock = FlowAnimationClock()
+
+        _ = clock.phase(at: 1_000, speed: 0.5, isPaused: false)
+        #expect(abs(clock.phase(at: 1_001, speed: 0.5, isPaused: false) - 0.5) < 0.0001)
+        #expect(abs(clock.phase(at: 1_000.9, speed: 0.5, isPaused: false) - 0.5) < 0.0001)
+        #expect(abs(clock.phase(at: 1_001.1, speed: 0.5, isPaused: false) - 0.55) < 0.0001)
     }
 
     @Test func oneFlowWithTaskSwitchesBuildsMultipleTimelineSegments() {

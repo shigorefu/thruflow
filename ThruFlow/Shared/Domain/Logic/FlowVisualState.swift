@@ -238,33 +238,35 @@ enum FlowRenderCadence {
 
 final class FlowAnimationClock {
     private(set) var phase = 0.0
-    private var lastDate: Date?
+    private var lastTimestamp: TimeInterval?
     private var wasPaused = true
 
     func phase(
-        at date: Date,
+        at timestamp: TimeInterval,
         visualState: FlowVisualState,
         isPaused: Bool
     ) -> Double {
-        phase(at: date, speed: visualState.speed, isPaused: isPaused)
+        phase(at: timestamp, speed: visualState.speed, isPaused: isPaused)
     }
 
-    func phase(at date: Date, speed: Double, isPaused: Bool) -> Double {
+    func phase(at timestamp: TimeInterval, speed: Double, isPaused: Bool) -> Double {
         guard !isPaused else {
-            lastDate = date
+            lastTimestamp = timestamp
             wasPaused = true
             return phase
         }
 
-        guard !wasPaused, let lastDate else {
-            self.lastDate = date
+        guard !wasPaused, let lastTimestamp else {
+            self.lastTimestamp = timestamp
             wasPaused = false
             return phase
         }
 
-        let elapsed = max(0, date.timeIntervalSince(lastDate))
+        let elapsed = timestamp - lastTimestamp
+        guard elapsed > 0 else { return phase }
+
         phase = (phase + elapsed * speed).truncatingRemainder(dividingBy: 10_000)
-        self.lastDate = date
+        self.lastTimestamp = timestamp
         return phase
     }
 }

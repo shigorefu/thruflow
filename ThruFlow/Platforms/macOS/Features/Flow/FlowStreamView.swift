@@ -34,5 +34,6 @@ struct FlowStreamView: View {
             breakInteraction: breakInteraction,
             isRenderingEnabled: isRenderingEnabled && controlActiveState == .key
         )
+        .equatable()
     }
 }

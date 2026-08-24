@@ -24,7 +24,10 @@ final class ActiveFlowStore: ObservableObject {
         }
     }
     @Published var activeSession: FlowSession?
-    @Published private(set) var displayDate: Date = .now
+    // Timer presentation surfaces own their local one-second TimelineView.
+    // Publishing this value would invalidate every ActiveFlowStore observer,
+    // including the 60 FPS Metal stream, once per second.
+    private(set) var displayDate: Date = .now
     @Published private(set) var isAwaitingBreakMemo = false
     @Published private(set) var flowBreakInteraction: FlowBreakInteraction?
 

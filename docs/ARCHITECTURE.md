@@ -203,7 +203,11 @@ Each platform owns its composition root:
   `FlowRenderCadence` owns the explicit 30 FPS idle / 60 FPS active contract.
   Platform wrappers only decide when rendering pauses: macOS requires the key
   window, while iOS requires an active scene. Pausing freezes the shared
-  `FlowAnimationClock` phase instead of rebuilding the picture.
+  `FlowAnimationClock` phase instead of rebuilding the picture. The render
+  surface is equatable and advances from monotonic uptime, so unrelated
+  one-second timer updates neither rebuild it nor interrupt its phase. The
+  shared store keeps its display clock non-publishing; timer panels and the
+  macOS menu bar label own narrowly scoped periodic timelines instead.
 - `ActiveFlowStore` publishes a transient sequenced `FlowBreakInteraction` for
   each valid rest request and each confirmed rest start. It is application/UI
   state only: it never enters SwiftData, CloudKit, runtime synchronization, or

@@ -261,26 +261,32 @@ struct IOSFlowView: View {
     }
 
     private func playerCard(minHeight: CGFloat? = nil) -> some View {
+        TimelineView(.periodic(from: .now, by: 1)) { timeline in
+            playerCardContent(minHeight: minHeight, now: timeline.date)
+        }
+    }
+
+    private func playerCardContent(minHeight: CGFloat?, now: Date) -> some View {
         FlowTimerPanelShell(
             style: .mobile,
             minHeight: minHeight,
             timer: FlowTimerPresentation(
-                progress: activeFlowStore.phaseProgress(now: activeFlowStore.displayDate),
+                progress: activeFlowStore.phaseProgress(now: now),
                 tint: tint,
                 eyebrow: activeFlowStore.phase.displayName,
-                timeText: timerText,
+                timeText: timerText(at: now),
                 footer: activeFlowStore.selectedMode.displayName
             )
         ) {
-            contextButton
+            contextButton(now: now)
         } mode: {
             modePicker
         } controls: {
-            controls
+            controls(now: now)
         }
     }
 
-    private var contextButton: some View {
+    private func contextButton(now: Date) -> some View {
         FlowTimerContextButton(
             style: .mobile,
             presentation: FlowTimerContextPresentation(
@@ -300,7 +306,7 @@ struct IOSFlowView: View {
                 if let todo = selectedTodo {
                     TodoProgressControl(
                         todo: todo,
-                        additionalFocusSeconds: activeTodoFocusSeconds
+                        additionalFocusSeconds: activeTodoFocusSeconds(at: now)
                     ) {
                         if todo.setManuallyCompleted(!todo.isCompleted) {
                             try? modelContext.save()
@@ -319,12 +325,12 @@ struct IOSFlowView: View {
         )
     }
 
-    private var controls: some View {
+    private func controls(now: Date) -> some View {
         FlowTimerTransportControls(
             style: .mobile,
             presentation: FlowTimerTransportPresentation(
-                primarySymbol: primarySymbol,
-                primaryLabel: primaryActionTitle,
+                primarySymbol: primarySymbol(at: now),
+                primaryLabel: primaryActionTitle(at: now),
                 primaryTint: tint,
                 isPrimaryEnabled: selectedDirection != nil,
                 canSeek: canSeek,
@@ -486,17 +492,17 @@ struct IOSFlowView: View {
         )
     }
 
-    private var primarySymbol: String {
+    private func primarySymbol(at date: Date) -> String {
         guard let state = activeFlowStore.timerState else { return "play.fill" }
         if state.phase == .paused { return "play.fill" }
         if activeFlowStore.isBreakPhase { return "forward.fill" }
-        if activeFlowStore.isFocusOvertime(now: activeFlowStore.displayDate) {
+        if activeFlowStore.isFocusOvertime(now: date) {
             return "cup.and.saucer.fill"
         }
         return "pause.fill"
     }
 
-    private var primaryActionTitle: String {
+    private func primaryActionTitle(at date: Date) -> String {
         guard let state = activeFlowStore.timerState else {
             return String(localized: "Flowを開始")
         }
@@ -506,7 +512,7 @@ struct IOSFlowView: View {
         if activeFlowStore.isBreakPhase {
             return String(localized: "Flowを開始")
         }
-        if activeFlowStore.isFocusOvertime(now: activeFlowStore.displayDate) {
+        if activeFlowStore.isFocusOvertime(now: date) {
             return String(localized: "休憩")
         }
         return String(localized: "一時停止")
@@ -517,10 +523,10 @@ struct IOSFlowView: View {
             (activeFlowStore.phase == .paused && activeFlowStore.timerState?.phaseBeforePause == .focusing)
     }
 
-    private var timerText: String {
+    private func timerText(at date: Date) -> String {
         activeFlowStore.timerState == nil
             ? activeFlowStore.selectedMode.compactDurationText
-            : activeFlowStore.remainingText(now: activeFlowStore.displayDate)
+            : activeFlowStore.remainingText(now: date)
     }
 
     private var tint: Color {
@@ -543,9 +549,9 @@ struct IOSFlowView: View {
         }
     }
 
-    private var activeTodoFocusSeconds: Int {
+    private func activeTodoFocusSeconds(at date: Date) -> Int {
         guard activeFlowStore.timerState != nil else { return 0 }
-        return activeFlowStore.actualFocusSeconds(now: activeFlowStore.displayDate)
+        return activeFlowStore.actualFocusSeconds(now: date)
     }
 
     private func makeSnapshot(at date: Date) -> FlowDashboardSnapshot {
@@ -678,7 +684,7 @@ struct IOSFlowView: View {
         if let state = activeFlowStore.timerState {
             if state.phase == .paused {
                 activeFlowStore.resume(modelContext: modelContext)
-            } else if activeFlowStore.isFocusOvertime(now: activeFlowStore.displayDate) {
+            } else if activeFlowStore.isFocusOvertime(now: .now) {
                 activeFlowStore.requestBreakMemo(modelContext: modelContext)
                 presentMemoIfNeeded()
             } else {
