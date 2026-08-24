@@ -8,7 +8,6 @@ struct ThruFlowiOSApp: App {
     @StateObject private var activeFlowStore: ActiveFlowStore
     @StateObject private var settings = AppSettings()
     @StateObject private var onboarding = OnboardingStore()
-    @StateObject private var supportPurchaseStore = SupportPurchaseStore()
 
     private let modelContainer: ModelContainer
     private let liveActivityControl: FlowLiveActivityControl
@@ -64,7 +63,6 @@ struct ThruFlowiOSApp: App {
                 .environmentObject(activeFlowStore)
                 .environmentObject(settings)
                 .environmentObject(onboarding)
-                .environmentObject(supportPurchaseStore)
                 .environment(\.calendar, settings.effectiveCalendar)
                 .environment(\.appDayBoundary, settings.dayBoundary)
                 .environment(\.locale, settings.effectiveLocale)

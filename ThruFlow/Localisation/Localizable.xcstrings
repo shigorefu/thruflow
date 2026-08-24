@@ -2351,24 +2351,68 @@
         }
       }
     },
-    "GitHubで開発に参加" : {
+    "お問い合わせ" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "View Project on GitHub"
+            "value" : "Contact Support"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "GitHubでプロジェクトを見る"
+            "value" : "お問い合わせ"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Открыть проект на GitHub"
+            "value" : "Обратная связь"
+          }
+        }
+      }
+    },
+    "サポート" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Support"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サポート"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поддержка"
+          }
+        }
+      }
+    },
+    "ソースコード" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Source Code"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ソースコード"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Исходный код"
           }
         }
       }
@@ -2610,50 +2654,6 @@
         }
       }
     },
-    "ThruFlowが役に立っているなら、これからの開発を応援していただけるとうれしいです。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "If you find ThruFlow useful, you can support its continued development."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "スルフロがお役に立てているようでしたら、今後の開発を応援していただけるとうれしいです。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Если ThruFlow вам полезен, вы можете поддержать дальнейшую разработку."
-          }
-        }
-      }
-    },
-    "ThruFlowの開発を応援していただき、ありがとうございます。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Thank you for supporting ThruFlow's development."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "スルフロの開発を応援していただき、ありがとうございます。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Спасибо, что поддерживаете разработку ThruFlow."
-          }
-        }
-      }
-    },
     "ThruFlowは、タスク管理、柔軟な集中タイマー、時間の振り返りをひとつにまとめたアプリです。まずは分野とタスクをひとつずつ作り、基本の流れを試してみましょう。" : {
       "localizations" : {
         "en" : {
@@ -2672,28 +2672,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ThruFlow объединяет задачи, гибкий таймер фокуса и анализ времени. Создайте первую сферу и задачу, а затем попробуйте основной рабочий цикл."
-          }
-        }
-      }
-    },
-    "ThruFlowを応援" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Support ThruFlow"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "スルフロを応援する"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Поддержать ThruFlow"
           }
         }
       }
@@ -2834,18 +2812,90 @@
         }
       }
     },
-    "ありがとうございます！" : {
+    "アプリのデータをリセット" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Thank you!"
+            "value" : "Reset App Data"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アプリのデータをリセット"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Спасибо!"
+            "value" : "Сбросить данные приложения"
+          }
+        }
+      }
+    },
+    "アプリのデータをリセットしています…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resetting app data…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アプリのデータをリセットしています…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сбрасываем данные приложения…"
+          }
+        }
+      }
+    },
+    "アプリのデータをリセットしますか？" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset App Data?"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アプリのデータをリセットしますか？"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сбросить данные приложения?"
+          }
+        }
+      }
+    },
+    "アプリのデータをリセットできませんでした" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App data could not be reset."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アプリのデータをリセットできませんでした"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось сбросить данные приложения."
           }
         }
       }
@@ -3198,44 +3248,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Серый"
-          }
-        }
-      }
-    },
-    "コーヒーを贈る" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Buy Me a Coffee"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Угостить кофе"
-          }
-        }
-      }
-    },
-    "コーヒー一杯、あるいはラーメン一杯で開発を応援できます。購入しても機能は変わりません。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Support development with a coffee or a bowl of ramen. These purchases do not change app features."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "コーヒーやラーメン代として、開発を応援できます。どちらも任意の支援で、機能が追加されるものではありません。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Поддержите разработку чашкой кофе или рамэном. Эти покупки не открывают дополнительных функций."
           }
         }
       }
@@ -4042,7 +4054,51 @@
         }
       }
     },
-    "タスク、集中タイマー、履歴、統計などの基本機能は、無料・広告なしで利用できます。利用に必須の支払いはありません。" : {
+    "タスク、分野、集中履歴、メモが、iCloudで同期しているすべての端末から削除されます。この端末の設定は残ります。この操作は取り消せません。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All Tasks, Areas, Flow history, and notes will be deleted from every device synced through iCloud. Settings on this device will be kept. This cannot be undone."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タスク、分野、集中履歴、メモが、iCloudで同期しているすべての端末から削除されます。この端末の設定は残ります。この操作は取り消せません。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Все задачи, сферы, история Flow и заметки будут удалены со всех устройств, синхронизируемых через iCloud. Настройки на этом устройстве сохранятся. Это действие нельзя отменить."
+          }
+        }
+      }
+    },
+    "タスク、分野、集中履歴、メモがすべて削除されます。設定は残ります。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All Tasks, Areas, Flow history, and notes will be deleted. Settings will be kept."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タスク、分野、集中履歴、メモがすべて削除されます。設定は残ります。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Все задачи, сферы, история Flow и заметки будут удалены. Настройки сохранятся."
+          }
+        }
+      }
+    },
+    "タスク、集中タイマー、履歴、統計などの基本機能は、無料・広告なしで利用できます。料金は一切かかりません。" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4053,7 +4109,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "タスク、集中タイマー、履歴、統計などの基本機能は、無料・広告なしで利用できます。利用に必須の支払いはありません。"
+            "value" : "タスク、集中タイマー、履歴、統計などの基本機能は、無料・広告なしで利用できます。料金は一切かかりません。"
           }
         },
         "ru" : {
@@ -5166,22 +5222,6 @@
         }
       }
     },
-    "ラーメンを贈る" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Buy Me Ramen"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Угостить рамэном"
-          }
-        }
-      }
-    },
     "ライト" : {
       "localizations" : {
         "en" : {
@@ -5194,6 +5234,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Светлая"
+          }
+        }
+      }
+    },
+    "リセット" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "リセット"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сбросить"
+          }
+        }
+      }
+    },
+    "リセットする前に、現在のFlowを終了してください。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "End the current Flow before resetting app data."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "リセットする前に、現在の集中を終了してください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Завершите текущий Flow перед сбросом данных приложения."
           }
         }
       }
@@ -7554,28 +7638,6 @@
         }
       }
     },
-    "承認が完了すると購入が自動的に処理されます。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The purchase will be processed automatically once approval is complete."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "承認されると、自動的に購入が完了します。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Покупка будет обработана автоматически после подтверждения."
-          }
-        }
-      }
-    },
     "散歩" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -8391,28 +8453,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Поймите, куда уходит время"
-          }
-        }
-      }
-    },
-    "時間をおいてから、もう一度お試しください。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Please wait a moment and try again."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "しばらくしてから、もう一度お試しください。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Подождите немного и попробуйте снова."
           }
         }
       }
@@ -10366,44 +10406,6 @@
         }
       }
     },
-    "購入できませんでした" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Purchase unavailable"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Не удалось совершить покупку"
-          }
-        }
-      }
-    },
-    "購入を確認しています" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Awaiting purchase approval"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "購入の承認を待っています"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ожидание подтверждения покупки"
-          }
-        }
-      }
-    },
     "追加" : {
       "localizations" : {
         "en" : {
@@ -11392,182 +11394,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Группировать по"
-          }
-        }
-      }
-    },
-    "アプリのデータをリセット" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reset App Data"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "アプリのデータをリセット"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сбросить данные приложения"
-          }
-        }
-      }
-    },
-    "アプリのデータをリセットしています…" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Resetting app data…"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "アプリのデータをリセットしています…"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сбрасываем данные приложения…"
-          }
-        }
-      }
-    },
-    "アプリのデータをリセットしますか？" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reset App Data?"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "アプリのデータをリセットしますか？"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сбросить данные приложения?"
-          }
-        }
-      }
-    },
-    "アプリのデータをリセットできませんでした" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "App data could not be reset."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "アプリのデータをリセットできませんでした"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Не удалось сбросить данные приложения."
-          }
-        }
-      }
-    },
-    "タスク、分野、集中履歴、メモが、iCloudで同期しているすべての端末から削除されます。この端末の設定は残ります。この操作は取り消せません。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "All Tasks, Areas, Flow history, and notes will be deleted from every device synced through iCloud. Settings on this device will be kept. This cannot be undone."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "タスク、分野、集中履歴、メモが、iCloudで同期しているすべての端末から削除されます。この端末の設定は残ります。この操作は取り消せません。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Все задачи, сферы, история Flow и заметки будут удалены со всех устройств, синхронизируемых через iCloud. Настройки на этом устройстве сохранятся. Это действие нельзя отменить."
-          }
-        }
-      }
-    },
-    "タスク、分野、集中履歴、メモがすべて削除されます。設定は残ります。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "All Tasks, Areas, Flow history, and notes will be deleted. Settings will be kept."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "タスク、分野、集中履歴、メモがすべて削除されます。設定は残ります。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Все задачи, сферы, история Flow и заметки будут удалены. Настройки сохранятся."
-          }
-        }
-      }
-    },
-    "リセット" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reset"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "リセット"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сбросить"
-          }
-        }
-      }
-    },
-    "リセットする前に、現在のFlowを終了してください。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "End the current Flow before resetting app data."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "リセットする前に、現在の集中を終了してください。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Завершите текущий Flow перед сбросом данных приложения."
           }
         }
       }

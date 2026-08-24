@@ -22,6 +22,7 @@ struct FlowHistoryInspectorView: View {
 
     @State private var selectedTodoID: UUID?
     @State private var selectedDirectionID: UUID?
+    @State private var taskTitleDraft: String
     @State private var timeDraft: FlowHistoryTimeDraft
     @State private var memo: String
     @State private var showsTaskPicker = false
@@ -44,6 +45,7 @@ struct FlowHistoryInspectorView: View {
         let selectedDirection = segment?.direction ?? selectedTodo?.direction ?? session.direction
         _selectedTodoID = State(initialValue: selectedTodo?.id)
         _selectedDirectionID = State(initialValue: selectedDirection?.id)
+        _taskTitleDraft = State(initialValue: selectedTodo?.title ?? "")
         _timeDraft = State(initialValue: FlowHistoryTimeDraft(
             startedAt: segment?.startedAt ?? session.startedAt,
             endedAt: segment?.endedAt ?? session.endedAt,
@@ -100,6 +102,16 @@ struct FlowHistoryInspectorView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     taskSelectionButton
+
+                    if selectedTodo != nil {
+                        field(String(localized: "タスク名")) {
+                            TextField(
+                                String(localized: "何をしましたか？"),
+                                text: $taskTitleDraft
+                            )
+                            .textFieldStyle(.roundedBorder)
+                        }
+                    }
 
                     field(String(localized: "時間")) {
                         HStack(alignment: .bottom, spacing: 12) {
@@ -193,11 +205,13 @@ struct FlowHistoryInspectorView: View {
         }
         .frame(width: 540, height: 580)
         .onChange(of: selectedTodoID) { _, newValue in
-            guard let newValue, let todo = todos.first(where: { $0.id == newValue }) else {
+            guard let newValue, let todo = todo(withID: newValue) else {
+                taskTitleDraft = ""
                 return
             }
 
             selectedDirectionID = todo.direction?.id
+            taskTitleDraft = todo.title
             if memo.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 memo = todo.notes ?? ""
             }
@@ -261,6 +275,7 @@ struct FlowHistoryInspectorView: View {
         createdTodo = todo
         selectedTodoID = todo.id
         selectedDirectionID = todo.direction?.id
+        taskTitleDraft = todo.title
 
         if let segment {
             editor.attach(
@@ -404,6 +419,8 @@ struct FlowHistoryInspectorView: View {
 
     private func save() {
         guard let selectedDirection else { return }
+        let now = Date.now
+        selectedTodo?.rename(to: taskTitleDraft, now: now)
         if let segment {
             editor.update(
                 segment: segment,
@@ -413,7 +430,8 @@ struct FlowHistoryInspectorView: View {
                 startedAt: timeDraft.startedAt,
                 focusSeconds: timeDraft.focusSeconds,
                 memo: memo,
-                modelContext: modelContext
+                modelContext: modelContext,
+                now: now
             )
         } else {
             editor.update(
@@ -423,11 +441,17 @@ struct FlowHistoryInspectorView: View {
                 startedAt: timeDraft.startedAt,
                 focusSeconds: timeDraft.focusSeconds,
                 memo: memo,
-                modelContext: modelContext
+                modelContext: modelContext,
+                now: now
             )
         }
         try? modelContext.save()
         close()
+    }
+
+    private func todo(withID id: UUID) -> Todo? {
+        todos.first { $0.id == id }
+            ?? (createdTodo?.id == id ? createdTodo : nil)
     }
 
     private func presentTaskComposer() {

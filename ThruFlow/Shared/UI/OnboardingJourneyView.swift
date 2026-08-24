@@ -281,7 +281,7 @@ private struct OnboardingJourneyCard: View {
                 )
                 OnboardingCallout(
                     title: String(localized: "基本機能は無料・広告なし"),
-                    body: String(localized: "タスク、集中タイマー、履歴、統計などの基本機能は、無料・広告なしで利用できます。利用に必須の支払いはありません。"),
+                    body: String(localized: "タスク、集中タイマー、履歴、統計などの基本機能は、無料・広告なしで利用できます。料金は一切かかりません。"),
                     systemImage: "heart.fill"
                 )
             }

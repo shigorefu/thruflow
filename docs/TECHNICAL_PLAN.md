@@ -129,6 +129,8 @@ Cover:
 - Manual Flow creation, linked Task progress without implicit completion, and fixed-Direction Task creation.
 - Flow series continuation, `長休憩` thresholds, rest correction, and same-series downstream shifting.
 - Active Task/Direction switching transfers sub-minute context mistakes to the new context, merges an immediate return, and never creates another FlowSession.
+- Remote active-runtime completion cancels local Flow notifications when a
+  persistence-change event arrives after foreground polling has stopped.
 - Flow dashboard totals, palette ordering, day filtering, live minimum-credit behavior, and timeline normalization.
 - Dashboard statistics distribution, seven-day trend comparisons, and completion projection.
 - Live Activity content projection for focus, break, and paused phases, plus
@@ -153,9 +155,10 @@ Cover:
   Settings replay read-only.
 - Review eligibility boundaries: seven-day delay, active-day/completed-Flow
   thresholds, and one request per application version.
-- StoreKit support configuration uses stable Coffee/Ramen product identifiers,
-  consumable product types, JPY 100/500 local test prices, and verified
-  transaction completion without entitlements.
+- The dormant StoreKit support configuration preserves stable Coffee/Ramen
+  product identifiers, consumable product types, JPY 100/500 local test prices,
+  and verified transaction completion without entitlements. It is not injected
+  or presented in the first App Store release.
 
 For interactive first-user QA, select `ThruFlow Onboarding Preview` on macOS or
 `ThruFlow iOS Onboarding Preview` on an iPhone/iPad simulator and Run. Both

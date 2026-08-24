@@ -1029,6 +1029,7 @@ struct IOSHistoryItemDetail: View {
 
     @State private var selectedTodoID: UUID?
     @State private var selectedDirectionID: UUID?
+    @State private var taskTitleDraft: String
     @State private var timeDraft: FlowHistoryTimeDraft
     @State private var memo: String
     @State private var createdTodo: Todo?
@@ -1048,6 +1049,7 @@ struct IOSHistoryItemDetail: View {
         let selectedDirection = item.flowSegment?.direction ?? selectedTodo?.direction ?? session?.direction
         _selectedTodoID = State(initialValue: selectedTodo?.id)
         _selectedDirectionID = State(initialValue: selectedDirection?.id)
+        _taskTitleDraft = State(initialValue: selectedTodo?.title ?? "")
         _timeDraft = State(initialValue: FlowHistoryTimeDraft(
             startedAt: item.startedAt,
             endedAt: item.endedAt,
@@ -1106,8 +1108,12 @@ struct IOSHistoryItemDetail: View {
             }
         }
         .onChange(of: selectedTodoID) { _, newValue in
-            guard let newValue, let todo = todo(withID: newValue) else { return }
+            guard let newValue, let todo = todo(withID: newValue) else {
+                taskTitleDraft = ""
+                return
+            }
             selectedDirectionID = todo.direction?.id
+            taskTitleDraft = todo.title
             if memo.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 memo = todo.notes ?? ""
             }
@@ -1169,6 +1175,7 @@ struct IOSHistoryItemDetail: View {
         createdTodo = todo
         selectedTodoID = todo.id
         selectedDirectionID = todo.direction?.id
+        taskTitleDraft = todo.title
 
         if let segment = item.flowSegment {
             editor.attach(
@@ -1238,6 +1245,20 @@ struct IOSHistoryItemDetail: View {
                     ForEach(availableTodos) { todo in
                         Text("\(todo.direction?.symbolName ?? "📥") \(TodoDisplay.title(for: todo))")
                             .tag(Optional(todo.id))
+                    }
+                }
+
+                if selectedTodo != nil {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(String(localized: "タスク名"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        TextField(
+                            String(localized: "何をしましたか？"),
+                            text: $taskTitleDraft,
+                            axis: .vertical
+                        )
                     }
                 }
 
@@ -1350,6 +1371,8 @@ struct IOSHistoryItemDetail: View {
 
     private func save(session: FlowSession) {
         guard let selectedDirection else { return }
+        let now = Date.now
+        selectedTodo?.rename(to: taskTitleDraft, now: now)
         if let segment = item.flowSegment {
             editor.update(
                 segment: segment,
@@ -1359,7 +1382,8 @@ struct IOSHistoryItemDetail: View {
                 startedAt: timeDraft.startedAt,
                 focusSeconds: timeDraft.focusSeconds,
                 memo: memo,
-                modelContext: modelContext
+                modelContext: modelContext,
+                now: now
             )
         } else {
             editor.update(
@@ -1369,7 +1393,8 @@ struct IOSHistoryItemDetail: View {
                 startedAt: timeDraft.startedAt,
                 focusSeconds: timeDraft.focusSeconds,
                 memo: memo,
-                modelContext: modelContext
+                modelContext: modelContext,
+                now: now
             )
         }
         try? modelContext.save()

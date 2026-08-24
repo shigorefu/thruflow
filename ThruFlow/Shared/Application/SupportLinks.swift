@@ -1,6 +1,7 @@
 import Foundation
 
 enum SupportLinks {
+    static let supportURL = URL(string: "https://thruflow.shigorefu.com/support")!
     static let projectURL = URL(string: "https://github.com/shigorefu/thruflow")!
 
     static var appStoreReviewURL: URL? {

@@ -23,7 +23,7 @@ Area -> Task -> Flow -> focused time -> progress -> statistics
   editing, and deletion.
 - [x] Japanese, English, and Russian localizations.
 - [x] Theme, language, first-weekday, time-format, and new-day-boundary settings.
-- [x] Version 1.0.2 ten-step onboarding on macOS, iPhone, and iPad. An empty
+- [x] Version 1.0.0 ten-step onboarding on macOS, iPhone, and iPad. An empty
   first run can create a real Area and Task only after user confirmation, then
   shows the complete production Flow player in a transient scripted sequence:
   Task selection, visual Play, accelerated Short focus from `12:00` to `00:00`,
@@ -34,8 +34,9 @@ Area -> Task -> Flow -> focused time -> progress -> statistics
   explains data storage and free core features. Existing-workspace first launch
   and Settings replay are read-only, every card can be closed, and preview
   schemes isolate confirmed examples in memory.
-- [x] A non-intrusive system review request after confirmed use, a GitHub link,
-  and optional StoreKit tips: coffee ¥100 / ramen ¥500.
+- [x] A non-intrusive system review request after confirmed use, a website
+  support link, and a secondary source-code link to GitHub. The first App Store
+  release exposes no in-app purchases.
 - [x] Core Tasks, Flow timer, History, and Statistics remain free and ad-free
   without required payment; future optional integrations are not covered by
   that pricing promise.
@@ -70,14 +71,10 @@ Every item below is required before publishing 1.0:
   widget/Live Activity extension.
 - [ ] Complete App Store privacy answers, privacy-policy and support URLs, and
   the private-iCloud-sync description.
-- [ ] Create consumable IAPs in App Store Connect with identifiers
-  `com.shigorefu.thruflow.tip.coffee` and
-  `com.shigorefu.thruflow.tip.ramen`; set Japanese prices to ¥100 and ¥500,
-  provide localizations and a review screenshot, then define
-  `THRUFLOW_APP_STORE_ID` for the direct review link.
+- [x] Define `THRUFLOW_APP_STORE_ID` for the direct App Store rating link.
 - [ ] Deploy the verified CloudKit Development schema to Production and verify
   a clean install against the Production environment.
-- [ ] Confirm app, extension, and Watch version `1.0.2`, aligned build numbers,
+- [ ] Confirm app, extension, and Watch version `1.0.0`, aligned build numbers,
   Release signing, icons, and archives without validation errors.
 - [ ] Complete closed TestFlight and external smoke tests before submitting an
   App Store build.
@@ -111,6 +108,9 @@ outside Flow.
 
 ## Other work after 1.0
 
+- Reconsider optional Coffee and Ramen StoreKit tips only after the first App
+  Store release. If restored, configure the products, localizations, review
+  assets, agreements, tax, and banking before exposing their controls.
 - More detailed watchOS Statistics.
 - Further improvements to the quick Task composer.
 - A more deliberate reward system for Optional Areas (`できたら`).
@@ -119,8 +119,14 @@ outside Flow.
 
 - [ ] Add an optional serverless APNs backend:
   `API Gateway -> Lambda -> EventBridge Scheduler -> APNs`.
-- [ ] Register and update ActivityKit push tokens without storing the Apple
-  `.p8` key in the app.
+- [ ] Register, rotate, and revoke standard APNs device tokens and ActivityKit
+  push tokens without storing the Apple `.p8` key in the app.
+- [ ] Send idempotent runtime-revision pushes when Flow is stopped, paused,
+  resumed, or changes phase. Receiving devices must reconcile the canonical
+  CloudKit session and cancel or replace obsolete completion and forgotten-timer
+  notifications, including while suspended when iOS permits background delivery.
+- [ ] Cancel scheduled server reminders when a newer runtime revision stops or
+  changes Flow. Offline or force-quit clients must reconcile on the next launch.
 - [ ] Update Live Activity through APNs at the `00:00` boundary so a suspended
   iPhone reliably shows overtime as `+MM:SS`.
 - [ ] Add a server reminder for a Flow or break that continues for more than an

@@ -200,7 +200,6 @@ struct MacOSSettingsView: View {
         .environmentObject(ActiveFlowStore())
         .environmentObject(AppSettings())
         .environmentObject(OnboardingStore())
-        .environmentObject(SupportPurchaseStore())
 }
 
 private enum AppResetStatus {

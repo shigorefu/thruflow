@@ -36,3 +36,6 @@ Local.xcconfig
 *.swp
 *.tmp
 *~
+
+# Website is maintained in shigorefu/thruflow-site
+website/

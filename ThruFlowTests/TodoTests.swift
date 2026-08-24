@@ -64,6 +64,36 @@ struct TodoTests {
         #expect(errors == [.invalidPlannedAmount])
     }
 
+    @Test func historyRenameTrimsAndUpdatesAnyTaskTitle() {
+        let direction = Direction(name: "読書", type: .neutral)
+        let createdAt = Date(timeIntervalSince1970: 100)
+        let renamedAt = Date(timeIntervalSince1970: 200)
+        let todo = Todo(
+            title: "古い名前",
+            direction: direction,
+            createdAt: createdAt,
+            updatedAt: createdAt
+        )
+
+        #expect(todo.rename(to: "  新しい名前\n", now: renamedAt))
+        #expect(todo.title == "新しい名前")
+        #expect(todo.updatedAt == renamedAt)
+    }
+
+    @Test func historyRenameDoesNotReplaceATaskWithAnEmptyTitle() {
+        let direction = Direction(name: "読書", type: .neutral)
+        let updatedAt = Date(timeIntervalSince1970: 100)
+        let todo = Todo(
+            title: "本を読む",
+            direction: direction,
+            updatedAt: updatedAt
+        )
+
+        #expect(!todo.rename(to: "  \n", now: Date(timeIntervalSince1970: 200)))
+        #expect(todo.title == "本を読む")
+        #expect(todo.updatedAt == updatedAt)
+    }
+
     @Test func defaultTaskInboxUsesLocalizedNameAndStableSystemProperties() {
         let direction = DefaultDirections.makeTaskInbox(now: Date(timeIntervalSince1970: 0))
 

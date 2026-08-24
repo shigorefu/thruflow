@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct FlowStreamSurface: View {
+struct FlowStreamSurface: View, Equatable {
     let blocks: Double
     let flowCount: Int
     let palette: [String]
@@ -43,6 +43,19 @@ struct FlowStreamSurface: View {
         self.isRenderingEnabled = isRenderingEnabled
     }
 
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.blocks == rhs.blocks &&
+            lhs.flowCount == rhs.flowCount &&
+            lhs.palette == rhs.palette &&
+            lhs.paletteWeights == rhs.paletteWeights &&
+            lhs.dailySeed == rhs.dailySeed &&
+            lhs.isActive == rhs.isActive &&
+            lhs.mode == rhs.mode &&
+            lhs.breakStyle == rhs.breakStyle &&
+            lhs.breakInteraction == rhs.breakInteraction &&
+            lhs.isRenderingEnabled == rhs.isRenderingEnabled
+    }
+
     var body: some View {
         let state = FlowVisualState(
             blocks: blocks,
@@ -73,7 +86,7 @@ struct FlowStreamSurface: View {
                         ShaderLibrary.flowStream(
                             .float2(proxy.size),
                             .float(Float(animationClock.phase(
-                                at: timeline.date,
+                                at: ProcessInfo.processInfo.systemUptime,
                                 visualState: state,
                                 isPaused: animationIsPaused
                             ))),
@@ -146,7 +159,7 @@ struct FlowStreamSurface: View {
                 )
 
                 let phase = animationClock.phase(
-                    at: timeline.date,
+                    at: ProcessInfo.processInfo.systemUptime,
                     visualState: state,
                     isPaused: animationIsPaused
                 )

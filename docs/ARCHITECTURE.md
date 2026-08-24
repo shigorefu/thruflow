@@ -102,8 +102,10 @@ Each platform owns its composition root:
 - `ActiveFlowSyncCoordinator` resolves the canonical active `FlowSession` from
   SwiftData and reconstructs its `FlowTimerState`. It contains no timer
   calculations. Both composition roots invoke the same reconciliation path on
-  launch, foreground entry, and a low-frequency active-scene cadence so
-  CloudKit imports are adopted without view-specific logic.
+  launch, foreground entry, a low-frequency active-scene cadence, and completed
+  CloudKit imports received while the process can run. Foreground polling stops
+  with the scene, while import observation remains installed so a remote stop
+  can cancel obsolete local notifications without reopening the app.
 - `AppSettings` owns typed local preferences and derives the effective
   `Calendar`, `Locale`, and `AppDayBoundary`. Platform composition roots inject
   those values into their scene environments; settings never enter SwiftData.
@@ -141,9 +143,11 @@ Each platform owns its composition root:
   `flowDidComplete` event, then delegates presentation to StoreKit's system
   `requestReview` action. The last requested application version stays in local
   preferences and is not synced.
-- `SupportPurchaseStore` is the single StoreKit 2 boundary for optional
-  consumable tips. It accepts only verified transactions, finishes them, and
-  exposes no entitlement because support purchases unlock no functionality.
+- `SupportPurchaseStore` remains a dormant StoreKit 2 boundary for possible
+  future optional consumable tips. The first App Store release does not inject
+  or present it. If re-enabled, it accepts only verified transactions, finishes
+  them, and exposes no entitlement because support purchases unlock no
+  functionality.
 - `AppDataResetActor` performs the user-requested application-data reset away
   from the main UI. `AppDataResetService` rejects an active Flow and deletes
   every Direction, Todo, FlowSession, FlowSegment, and FlowBreak in one save.
@@ -203,7 +207,11 @@ Each platform owns its composition root:
   `FlowRenderCadence` owns the explicit 30 FPS idle / 60 FPS active contract.
   Platform wrappers only decide when rendering pauses: macOS requires the key
   window, while iOS requires an active scene. Pausing freezes the shared
-  `FlowAnimationClock` phase instead of rebuilding the picture.
+  `FlowAnimationClock` phase instead of rebuilding the picture. The render
+  surface is equatable and advances from monotonic uptime, so unrelated
+  one-second timer updates neither rebuild it nor interrupt its phase. The
+  shared store keeps its display clock non-publishing; timer panels and the
+  macOS menu bar label own narrowly scoped periodic timelines instead.
 - `ActiveFlowStore` publishes a transient sequenced `FlowBreakInteraction` for
   each valid rest request and each confirmed rest start. It is application/UI
   state only: it never enters SwiftData, CloudKit, runtime synchronization, or

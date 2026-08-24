@@ -62,7 +62,7 @@ context-sensitive terms include `日付なし` for the Inbox projection, `週に
 for the weekly-count Habit schedule, and `集中カレンダー` / Focus Calendar /
 Календарь фокуса for the calendar-style focus visualization.
 
-Version 1.0.2 onboarding has ten semantic steps: Welcome, Area, Task, Flow
+Version 1.0.0 onboarding has ten semantic steps: Welcome, Area, Task, Flow
 overview, timer guidance, the transient Flow demo, History, Statistics, workflow
 summary, and a final card for data storage and free core features.
 The preview shows the complete Flow player in a short scripted sequence: Task
@@ -84,8 +84,7 @@ Onboarding and product copy may promise that Tasks, the Flow focus timer,
 History, and Statistics are free and ad-free and require no payment. It must not
 expand that statement into a promise that every current or future feature will
 always be free: possible future optional integrations or services may have
-separate terms or costs. Coffee and Ramen remain optional tips, not subscriptions,
-and unlock no functionality.
+separate terms or costs. The first App Store release exposes no in-app purchases.
 
 These copy choices never rename implementation or persisted identifiers.
 Swift types and properties such as `Direction`, `FlowSession`, and `FlowMode`,

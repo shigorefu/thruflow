@@ -30,6 +30,10 @@ Task title may be empty. When empty, UI displays `(分野)`, for example `(読�
 
 The screen is named `タスク`. There is no separate Inbox navigation item. When today is selected, overdue active normal Tasks appear in a leading `やり残し` section. A toolbar `日付なし` button with a count opens an inspector for active normal Tasks without a date. Habit instances are excluded from both projections because their schedule is owned by the Habit planner.
 
+When a completed Flow is edited from History, its selected Task can also be
+renamed inline. The edit updates that canonical Task everywhere; an empty draft
+never erases an existing title.
+
 `タスク` supports `日`, `週`, and `月` calendar ranges. Day uses a compact seven-day strip above the Task list and opens a full month only in a date-picker popover. Week is a seven-column kanban, while month is a calendar overview. Filters stay centered and `今日` remains prominent. Active Tasks can be moved between dates subject to Habit rules.
 
 On iPhone, the compact day and week period strips scroll horizontally with
@@ -169,7 +173,7 @@ Language follows the shared String Catalog and takes effect after relaunch;
 available languages are discovered from the bundle so contributors can add a
 locale without changing Settings code.
 
-Version 1.0.2 introduces a ten-step onboarding journey: `ようこそ`, `分野`,
+Version 1.0.0 introduces a ten-step onboarding journey: `ようこそ`, `分野`,
 `タスク`, `流れ`, `集中タイマー`, `流れを体験`, `履歴`, `統計`,
 `使い方の流れ`, and `データ`.
 An empty first installation uses guided mode. It opens the real Area editor and
@@ -201,21 +205,23 @@ CloudKit store. Local appearance, language, calendar, and time settings remain.
 The current timer selection is cleared, and Settings closes into the first-run
 onboarding journey so the user can start again.
 
-Settings also contains voluntary support actions: the public GitHub project and
-two StoreKit consumable tips (`Coffee`, JPY 100, and `Ramen`, JPY 500). Tips
-unlock no feature and are not subscriptions. The app
-keeps its core productivity features—Tasks, the Flow focus timer, History, and
-Statistics—free and ad-free, with no payment required. This promise does not set
-terms or prices for possible future optional integrations or services. The app
+Settings also contains a link to the website support form, an explicit App
+Store rating action, and a secondary `ソースコード` link to the public GitHub
+repository. The first App Store release does not expose
+in-app purchases. The app keeps its core productivity features—Tasks, the Flow
+focus timer, History, and Statistics—free and ad-free, with no payment required.
+This promise does not set terms or prices for possible future optional
+integrations or services. The app
 does not send a promotional notification after one week. Instead, after at
 least seven days and either five active Flow days or ten completed Flows, it may
 ask for a review at a natural post-Flow moment, at most once per app version.
 The system ultimately decides whether the review sheet is shown.
 
-Settings does not contain a separate feedback section. TestFlight testers use
-TestFlight's native feedback tools, while the support section keeps the public
-GitHub project link and the explicit App Store rating action. ThruFlow does not
-operate a separate feedback backend.
+Settings does not contain a separate feedback section. Its compact support
+section opens the website support form as the primary contact path, keeps the
+explicit App Store rating action, and exposes the public GitHub repository as
+secondary source-code information. TestFlight testers may additionally use
+TestFlight's native feedback tools.
 
 ## Apple Watch
 

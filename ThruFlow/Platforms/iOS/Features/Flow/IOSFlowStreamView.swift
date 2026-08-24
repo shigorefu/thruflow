@@ -21,6 +21,7 @@ struct IOSFlowStreamView: View {
             breakInteraction: breakInteraction,
             isRenderingEnabled: isRenderingEnabled
         )
+        .equatable()
     }
 }
 

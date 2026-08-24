@@ -7,6 +7,7 @@
 
 import Foundation
 import Combine
+import CoreData
 import SwiftData
 
 @MainActor
@@ -24,7 +25,10 @@ final class ActiveFlowStore: ObservableObject {
         }
     }
     @Published var activeSession: FlowSession?
-    @Published private(set) var displayDate: Date = .now
+    // Timer presentation surfaces own their local one-second TimelineView.
+    // Publishing this value would invalidate every ActiveFlowStore observer,
+    // including the 60 FPS Metal stream, once per second.
+    private(set) var displayDate: Date = .now
     @Published private(set) var isAwaitingBreakMemo = false
     @Published private(set) var flowBreakInteraction: FlowBreakInteraction?
 
@@ -37,10 +41,12 @@ final class ActiveFlowStore: ObservableObject {
     private let notifications: FlowNotificationService
     private let liveActivities: any LiveActivityService
     private let defaults: UserDefaults
+    private let persistenceNotificationCenter: NotificationCenter
     private var didApplyProgress = false
     private var stateBeforeResultPrompt: FlowTimerState?
     private var displayClock: AnyCancellable?
     private var synchronizationClock: AnyCancellable?
+    private var persistenceChangeObservers: Set<AnyCancellable> = []
     private var lastAppliedRuntimeVersion: FlowRuntimeVersion?
     private var lastPublishedLiveActivityWasOvertime: Bool?
     private var lastPersistenceReconciliationAt: Date?
@@ -49,11 +55,13 @@ final class ActiveFlowStore: ObservableObject {
     init(
         defaults: UserDefaults = .standard,
         notifications: FlowNotificationService? = nil,
-        liveActivities: (any LiveActivityService)? = nil
+        liveActivities: (any LiveActivityService)? = nil,
+        persistenceNotificationCenter: NotificationCenter = .default
     ) {
         self.defaults = defaults
         self.notifications = notifications ?? LocalFlowNotificationService()
         self.liveActivities = liveActivities ?? NoopLiveActivityService()
+        self.persistenceNotificationCenter = persistenceNotificationCenter
         selectedDirectionID = defaults.uuid(forKey: "flow.selectedDirectionID")
         selectedTodoID = defaults.uuid(forKey: "flow.selectedTodoID")
         selectedMode = defaults.flowMode(forKey: "flow.selectedMode") ?? .twentyFiveFive
@@ -220,6 +228,7 @@ final class ActiveFlowStore: ObservableObject {
     }
 
     func beginSynchronization(modelContext: ModelContext, now: Date = .now) {
+        observePersistenceChangesIfNeeded(modelContext: modelContext)
         synchronizeFromPersistence(modelContext: modelContext, now: now)
         guard synchronizationClock == nil else { return }
 
@@ -233,6 +242,30 @@ final class ActiveFlowStore: ObservableObject {
     func endSynchronization() {
         synchronizationClock?.cancel()
         synchronizationClock = nil
+    }
+
+    private func observePersistenceChangesIfNeeded(modelContext: ModelContext) {
+        guard persistenceChangeObservers.isEmpty else { return }
+
+        persistenceNotificationCenter.publisher(
+            for: NSPersistentCloudKitContainer.eventChangedNotification
+        )
+        .compactMap(ActiveFlowPersistenceEvent.completedCloudKitImportDate)
+        .receive(on: RunLoop.main)
+        .sink { [weak self] importedAt in
+            self?.synchronizeFromPersistence(
+                modelContext: modelContext,
+                now: importedAt
+            )
+        }
+        .store(in: &persistenceChangeObservers)
+
+        persistenceNotificationCenter.publisher(for: .NSPersistentStoreRemoteChange)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.synchronizeFromPersistence(modelContext: modelContext)
+            }
+            .store(in: &persistenceChangeObservers)
     }
 
     func synchronizeFromPersistence(modelContext: ModelContext, now: Date = .now) {
@@ -954,6 +987,21 @@ final class ActiveFlowStore: ObservableObject {
 
         let clampedSeconds = max(0, seconds)
         return String(format: "%02d:%02d", clampedSeconds / 60, clampedSeconds % 60)
+    }
+}
+
+private enum ActiveFlowPersistenceEvent {
+    static func completedCloudKitImportDate(from notification: Notification) -> Date? {
+        guard let event = notification.userInfo?[
+            NSPersistentCloudKitContainer.eventNotificationUserInfoKey
+        ] as? NSPersistentCloudKitContainer.Event,
+        event.type == .import,
+        let endDate = event.endDate,
+        event.succeeded else {
+            return nil
+        }
+
+        return endDate
     }
 }
 
