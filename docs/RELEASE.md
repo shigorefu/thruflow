@@ -2,16 +2,16 @@
 
 This document is the operational checklist for ThruFlow releases. Product scope remains in [`ROADMAP.md`](ROADMAP.md), and CloudKit details remain in [`CLOUDKIT.md`](CLOUDKIT.md).
 
-## Version 1.0 build 1
+## Version 1.0.0 build 6
 
 All shipping targets must resolve to:
 
-- marketing version: `1.0`;
-- build number: `1`;
+- marketing version: `1.0.0`;
+- build number: `6`;
 - Release configuration;
 - matching app, widget/Live Activity extension, and Watch versions.
 
-Every later App Store Connect upload must use a build number greater than the last uploaded build, even when the marketing version remains `1.0`.
+Every later App Store Connect upload must use a build number greater than the last uploaded build, even when the marketing version remains `1.0.0`.
 
 ## Automated checks
 

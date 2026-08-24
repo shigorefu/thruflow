@@ -6,7 +6,7 @@ ThruFlow / スルフロ is an Apple-first productivity app that turns focused wo
 Direction -> Task -> Flow -> focused time -> progress -> statistics
 ```
 
-The project is preparing version `1.0 (1)` for TestFlight. It is pre-release software: back up important data and report reproducible problems through the [GitHub issue templates](https://github.com/shigorefu/thruflow/issues/new/choose).
+The project is preparing version `1.0.0 (6)` for the App Store. It is pre-release software: back up important data and report reproducible problems through the [GitHub issue templates](https://github.com/shigorefu/thruflow/issues/new/choose).
 
 ## What ThruFlow does
 

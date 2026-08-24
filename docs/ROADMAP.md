@@ -23,7 +23,7 @@ Area -> Task -> Flow -> focused time -> progress -> statistics
   editing, and deletion.
 - [x] Japanese, English, and Russian localizations.
 - [x] Theme, language, first-weekday, time-format, and new-day-boundary settings.
-- [x] Version 1.0.2 ten-step onboarding on macOS, iPhone, and iPad. An empty
+- [x] Version 1.0.0 ten-step onboarding on macOS, iPhone, and iPad. An empty
   first run can create a real Area and Task only after user confirmation, then
   shows the complete production Flow player in a transient scripted sequence:
   Task selection, visual Play, accelerated Short focus from `12:00` to `00:00`,
@@ -73,7 +73,7 @@ Every item below is required before publishing 1.0:
 - [ ] Define `THRUFLOW_APP_STORE_ID` for the direct App Store rating link.
 - [ ] Deploy the verified CloudKit Development schema to Production and verify
   a clean install against the Production environment.
-- [ ] Confirm app, extension, and Watch version `1.0.2`, aligned build numbers,
+- [ ] Confirm app, extension, and Watch version `1.0.0`, aligned build numbers,
   Release signing, icons, and archives without validation errors.
 - [ ] Complete closed TestFlight and external smoke tests before submitting an
   App Store build.

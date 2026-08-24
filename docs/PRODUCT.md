@@ -173,7 +173,7 @@ Language follows the shared String Catalog and takes effect after relaunch;
 available languages are discovered from the bundle so contributors can add a
 locale without changing Settings code.
 
-Version 1.0.2 introduces a ten-step onboarding journey: `ようこそ`, `分野`,
+Version 1.0.0 introduces a ten-step onboarding journey: `ようこそ`, `分野`,
 `タスク`, `流れ`, `集中タイマー`, `流れを体験`, `履歴`, `統計`,
 `使い方の流れ`, and `データ`.
 An empty first installation uses guided mode. It opens the real Area editor and

@@ -207,7 +207,7 @@ The Dashboard Task header `+` opens the shared messenger-style composer in a sep
 
 ## Onboarding And Voluntary Support
 
-Version 1.0.2 uses the same ten-step order on macOS, iPhone, and iPad:
+Version 1.0.0 uses the same ten-step order on macOS, iPhone, and iPad:
 
 1. `ようこそ`;
 2. `分野`;

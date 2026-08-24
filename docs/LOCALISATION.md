@@ -62,7 +62,7 @@ context-sensitive terms include `日付なし` for the Inbox projection, `週に
 for the weekly-count Habit schedule, and `集中カレンダー` / Focus Calendar /
 Календарь фокуса for the calendar-style focus visualization.
 
-Version 1.0.2 onboarding has ten semantic steps: Welcome, Area, Task, Flow
+Version 1.0.0 onboarding has ten semantic steps: Welcome, Area, Task, Flow
 overview, timer guidance, the transient Flow demo, History, Statistics, workflow
 summary, and a final card for data storage and free core features.
 The preview shows the complete Flow player in a short scripted sequence: Task

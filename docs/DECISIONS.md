@@ -453,7 +453,7 @@ space appropriately.
 
 ## D-033: Guided Onboarding Teaches The Real Loop Safely
 
-Version 1.0.2 replaces the passive seven-card introduction with one shared
+Version 1.0.0 replaces the passive seven-card introduction with one shared
 ten-step journey on macOS, iPhone, and iPad: Welcome, Area, Task, Flow overview,
 timer guidance, a transient Flow demo, History, Statistics, workflow summary,
 and a final data/core-features card.
