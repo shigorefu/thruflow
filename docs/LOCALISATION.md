@@ -17,6 +17,27 @@ The maintained application locales are Japanese (`ja`), English (`en`), and
 Russian (`ru`). Every catalog entry must contain complete English and Russian
 translations before the localisation tests pass.
 
+## Natural-Language Priority
+
+Natural Japanese is the primary product-copy requirement. Copy must read as if
+it was written for a Japanese Apple-platform application, not translated from
+English or Russian. Preserve the product meaning, tone, and interaction intent;
+rewrite sentence structure, terminology, labels, and explanatory copy whenever
+a literal translation would sound unnatural. Prefer concise labels and phrasing
+that fit the actual control and available UI space.
+
+Japanese priority does not reduce the quality requirement for other maintained
+locales. Every user-facing change must add or update Japanese, English, and
+Russian together. English and Russian must each be idiomatic in their own
+language and derived from the same product intent rather than mechanically from
+Japanese or from one another. Do not ship untranslated keys, placeholders, or
+machine-like wording in any maintained locale.
+
+When the user's draft is intentionally rough, treat it as semantic input rather
+than final copy. Preserve what the feature means, then rewrite all three locales
+naturally and keep terminology consistent with `Localisation/TERMS.csv` and the
+context tables in this document.
+
 ## Code Rules
 
 - SwiftUI literals and `String(localized:)` are extracted into the catalog.
