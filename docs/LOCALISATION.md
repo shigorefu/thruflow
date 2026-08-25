@@ -2,11 +2,16 @@
 
 ## Source of Truth
 
-`ThruFlow/Localisation/Localizable.xcstrings` owns all user-facing copy.
-Japanese is the development and fallback language. The catalog is part of the
-application target and uses Apple's String Catalog format so macOS and
-iOS/iPadOS presentation layers share translations without sharing screen
-layouts.
+`ThruFlow/Localisation/Localizable.xcstrings` owns in-app user-facing copy.
+`ThruFlow/Localisation/InfoPlist.xcstrings` owns the system-visible application
+name used below the icon and in the macOS menu bar. Japanese is the development
+and fallback language. The catalogs are part of the application targets and use
+Apple's String Catalog format so macOS, iOS/iPadOS, and watchOS share
+translations without sharing screen layouts.
+
+The system-visible application name is `スルフロ` in Japanese and `ThruFlow`
+in English and Russian. This localization does not change bundle identifiers,
+persisted values, or the separately maintained App Store product name.
 
 The maintained application locales are Japanese (`ja`), English (`en`), and
 Russian (`ru`). Every catalog entry must contain complete English and Russian

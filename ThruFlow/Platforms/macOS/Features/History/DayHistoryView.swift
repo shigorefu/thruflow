@@ -29,7 +29,7 @@ struct DayHistoryView: View {
     @State private var expandedTaskIDs: Set<String> = []
     @State private var expandedDirectionIDs: Set<UUID> = []
     @State private var editingTodo: Todo?
-    @State private var inspectedSession: FlowSession?
+    @State private var inspectedFlow: DayHistoryFlow?
     @State private var manualFlowRequest: HistoryManualFlowRequest?
     @State private var isAddingTaskRecord = false
     @State private var historyRecordStart = Date.now
@@ -133,8 +133,11 @@ struct DayHistoryView: View {
             TodoFormView(mode: .edit(todo))
                 .frame(minWidth: 480, idealWidth: 540, minHeight: 620, idealHeight: 700)
         }
-        .sheet(item: $inspectedSession) { session in
-            FlowHistoryInspectorView(session: session)
+        .sheet(item: $inspectedFlow) { flow in
+            FlowHistoryInspectorView(
+                session: flow.session,
+                segment: flow.segment
+            )
         }
         .sheet(item: $manualFlowRequest) { request in
             ManualFlowCreationView(
@@ -421,7 +424,7 @@ struct DayHistoryView: View {
                         directionOnlyFlows: snapshot.flows.filter {
                             $0.directionID == direction.directionID && $0.todoID == nil
                         },
-                        onEditFlow: { flow in inspectedSession = flow.session },
+                        onEditFlow: { flow in inspectedFlow = flow },
                         onAddTask: { taskDirection = self.direction(withID: direction.directionID) }
                     )
                 }
@@ -610,7 +613,7 @@ struct DayHistoryView: View {
                     ? { toggleCheckbox(task) }
                     : nil,
                 onEdit: { todo in editingTodo = todo },
-                onEditFlow: { flow in inspectedSession = flow.session },
+                onEditFlow: { flow in inspectedFlow = flow },
                 onAddFlow: { todo in presentManualFlow(for: todo) }
             )
         }

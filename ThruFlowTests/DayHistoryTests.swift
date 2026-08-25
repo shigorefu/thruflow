@@ -250,6 +250,61 @@ struct DayHistoryTests {
         #expect(snapshot.completedTasks.last?.completedAt == nil)
     }
 
+    @Test func historyKeepsExactTaskSwitchSegmentsForEditing() {
+        let day = Date(timeIntervalSince1970: 86_400)
+        let study = Direction(name: "勉強", type: .neutral)
+        let work = Direction(name: "仕事", type: .neutral)
+        let reading = Todo(title: "読書", direction: study)
+        let report = Todo(title: "報告書", direction: work)
+        let start = day.addingTimeInterval(10 * 60 * 60)
+        let session = FlowSession(
+            direction: work,
+            todo: report,
+            mode: .twentyFiveFive,
+            phase: .completed,
+            status: .completed,
+            startedAt: start,
+            plannedEndAt: start.addingTimeInterval(25 * 60),
+            endedAt: start.addingTimeInterval(25 * 60),
+            plannedFocusDurationSeconds: 25 * 60,
+            actualFocusDurationSeconds: 25 * 60,
+            plannedBreakDurationSeconds: 5 * 60
+        )
+        let readingSegment = FlowSegment(
+            session: session,
+            direction: study,
+            todo: reading,
+            startedAt: start,
+            startFocusSeconds: 0
+        )
+        readingSegment.close(
+            at: start.addingTimeInterval(10 * 60),
+            totalFocusSeconds: 10 * 60
+        )
+        let reportSegment = FlowSegment(
+            session: session,
+            direction: work,
+            todo: report,
+            startedAt: start.addingTimeInterval(10 * 60),
+            startFocusSeconds: 10 * 60
+        )
+        reportSegment.close(
+            at: start.addingTimeInterval(25 * 60),
+            totalFocusSeconds: 25 * 60
+        )
+        session.resolvedSegments = [readingSegment, reportSegment]
+
+        let snapshot = DayHistoryBuilder(calendar: calendar).build(
+            date: day,
+            sessions: [session],
+            todos: [reading, report]
+        )
+
+        #expect(snapshot.flows.map(\.id) == [readingSegment.id, reportSegment.id])
+        #expect(snapshot.flows.map(\.segment?.id) == [readingSegment.id, reportSegment.id])
+        #expect(snapshot.flows.allSatisfy { $0.session.id == session.id })
+    }
+
     @Test func historyIntervalAggregatesFlowsAndScheduledTasksAcrossTheSelectedRange() {
         let day = Date(timeIntervalSince1970: 10 * 86_400)
         let direction = Direction(name: "仕事", type: .neutral, symbolName: "💻", colorHex: "#0A84FF")
@@ -890,6 +945,98 @@ struct DayHistoryTests {
         #expect(shortened.shiftedSeconds == 0)
         #expect(editedBreak.adjustedEndAt == start.addingTimeInterval(27 * 60))
         #expect(second.startedAt == start.addingTimeInterval(35 * 60))
+    }
+
+    @Test func editingBreakStartUpdatesItsIntervalAndPushesOnlyAnOverlap() throws {
+        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let direction = Direction(name: "仕事", type: .neutral)
+        let seriesID = UUID()
+        let start = Date(timeIntervalSince1970: 200_000)
+        let first = FlowSession(
+            seriesID: seriesID,
+            direction: direction,
+            mode: .twentyFiveFive,
+            phase: .completed,
+            status: .completed,
+            startedAt: start,
+            plannedEndAt: start.addingTimeInterval(25 * 60),
+            endedAt: start.addingTimeInterval(25 * 60),
+            plannedFocusDurationSeconds: 25 * 60,
+            actualFocusDurationSeconds: 25 * 60,
+            plannedBreakDurationSeconds: 5 * 60
+        )
+        let second = FlowSession(
+            seriesID: seriesID,
+            direction: direction,
+            mode: .twentyFiveFive,
+            phase: .completed,
+            status: .completed,
+            startedAt: start.addingTimeInterval(30 * 60),
+            plannedEndAt: start.addingTimeInterval(55 * 60),
+            endedAt: start.addingTimeInterval(55 * 60),
+            plannedFocusDurationSeconds: 25 * 60,
+            actualFocusDurationSeconds: 25 * 60,
+            plannedBreakDurationSeconds: 5 * 60
+        )
+        let flowBreak = FlowBreak(
+            seriesID: seriesID,
+            previousSessionID: first.id,
+            nextSessionID: second.id,
+            startedAt: start.addingTimeInterval(25 * 60),
+            timerStoppedAt: start.addingTimeInterval(30 * 60),
+            connectedUntil: start.addingTimeInterval(30 * 60),
+            plannedDurationSeconds: 5 * 60
+        )
+        context.insert(direction)
+        context.insert(first)
+        context.insert(second)
+        context.insert(flowBreak)
+
+        let newStart = start.addingTimeInterval(27 * 60)
+        let result = try FlowBreakEditor().updateInterval(
+            of: flowBreak,
+            startedAt: newStart,
+            minutes: 5,
+            modelContext: context,
+            now: start.addingTimeInterval(2 * 3_600)
+        )
+
+        #expect(flowBreak.startedAt == newStart)
+        #expect(flowBreak.adjustedEndAt == start.addingTimeInterval(32 * 60))
+        #expect(result.shiftedSeconds == 2 * 60)
+        #expect(first.startedAt == start)
+        #expect(second.startedAt == start.addingTimeInterval(32 * 60))
+        #expect(second.endedAt == start.addingTimeInterval(57 * 60))
+    }
+
+    @Test func deletingBreakSoftDeletesOnlyThatHistoryRecord() throws {
+        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let start = Date(timeIntervalSince1970: 300_000)
+        let flowBreak = FlowBreak(
+            seriesID: UUID(),
+            previousSessionID: UUID(),
+            startedAt: start,
+            timerStoppedAt: start.addingTimeInterval(5 * 60),
+            plannedDurationSeconds: 5 * 60
+        )
+        context.insert(flowBreak)
+        let deletedAt = start.addingTimeInterval(60 * 60)
+
+        try FlowBreakEditor().delete(
+            flowBreak,
+            modelContext: context,
+            now: deletedAt
+        )
+
+        #expect(flowBreak.deletedAt == deletedAt)
+        #expect(flowBreak.updatedAt == deletedAt)
+        #expect(try context.fetch(FetchDescriptor<FlowBreak>()).count == 1)
     }
 
     @Test
