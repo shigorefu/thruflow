@@ -6,9 +6,7 @@ This repository uses [`CODEX.md`](CODEX.md) as its complete agent operating manu
 
 - Inspect the current Xcode project, affected Swift files, tests, SwiftData setup, CloudKit entitlements, documentation, and `git status` before changing code.
 - Preserve unrelated work and make small, testable vertical changes.
-- Use Japanese as the default and highest-priority user-facing language. Write natural Japanese for the product context instead of translating English structure literally.
-- Every user-facing change must include complete, idiomatic Japanese, English, and Russian copy in the same change. Natural Japanese has priority, but the other maintained locales must not be left as placeholders or mechanical translations.
-- Keep code identifiers and stable enum raw values in English.
+- Use Japanese as the default user-facing language. Keep code identifiers and stable enum raw values in English.
 - Prefer Swift, SwiftUI, SwiftData, Swift Testing, and Apple system frameworks. Do not add third-party runtime dependencies without explicit approval.
 - Keep local SwiftData operation independent of CloudKit.
 - Keep business logic outside SwiftUI views and test timer, progress, history, and persistence behavior independently.
