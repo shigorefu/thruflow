@@ -19,8 +19,15 @@ open the documents relevant to the task.
 - Do not hide unrelated refactors, features, or visual polish inside a task.
 - Make small, verifiable changes and keep the project buildable after each
   substantial step.
-- User-facing text defaults to Japanese. Code identifiers, enum raw values,
-  and internal technical documentation remain in English.
+- User-facing text defaults to Japanese, and natural Japanese is the highest
+  copy priority. Write or rewrite from the product meaning and Japanese usage;
+  never preserve English or Russian sentence structure through literal
+  translation.
+- Every user-facing change must include complete, idiomatic Japanese, English,
+  and Russian copy in the same change. Japanese priority must not leave another
+  maintained locale with placeholders, untranslated keys, or machine-like
+  wording. Code identifiers, enum raw values, and internal technical
+  documentation remain in English.
 - Xcode may update `Localizable.xcstrings` during builds or string extraction.
   Review those changes against the Swift source, remove empty or unused stale
   keys, use translator-readable keys, and preserve meaningful `ja`, `en`, and
