@@ -1178,9 +1178,11 @@ struct HistoryBreakEditorView: View {
 
     let flowBreak: FlowBreak
     let onClose: (() -> Void)?
+    @State private var startTime: Date
     @State private var minutes: Int
     @State private var endTime: Date
     @State private var errorMessage: String?
+    @State private var showsDeleteConfirmation = false
 
     private let editor = FlowBreakEditor()
 
@@ -1189,6 +1191,7 @@ struct HistoryBreakEditorView: View {
         self.onClose = onClose
         let resolvedEnd = flowBreak.resolvedEndAt(referenceDate: .now)
         let duration = resolvedEnd.timeIntervalSince(flowBreak.startedAt)
+        _startTime = State(initialValue: flowBreak.startedAt)
         _minutes = State(initialValue: max(1, Int(ceil(duration / 60))))
         _endTime = State(initialValue: resolvedEnd)
     }
@@ -1225,8 +1228,12 @@ struct HistoryBreakEditorView: View {
                     Text(String(localized: "開始"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    Text(flowBreak.startedAt.formatted(date: .omitted, time: .shortened))
-                        .monospacedDigit()
+                    DatePicker(
+                        String(localized: "開始"),
+                        selection: startTimeBinding,
+                        displayedComponents: .hourAndMinute
+                    )
+                    .labelsHidden()
                 }
 
                 Image(systemName: "arrow.right")
@@ -1257,7 +1264,7 @@ struct HistoryBreakEditorView: View {
                     .onChange(of: minutes) { _, newValue in
                         guard (FlowBreakEditor.minimumDurationMinutes...FlowBreakEditor.maximumDurationMinutes)
                             .contains(newValue) else { return }
-                        endTime = flowBreak.startedAt.addingTimeInterval(TimeInterval(newValue * 60))
+                        endTime = startTime.addingTimeInterval(TimeInterval(newValue * 60))
                     }
                 Text(String(localized: "分"))
                     .foregroundStyle(.secondary)
@@ -1269,6 +1276,14 @@ struct HistoryBreakEditorView: View {
                     .foregroundStyle(.red)
             }
 
+            Button(role: .destructive) {
+                showsDeleteConfirmation = true
+            } label: {
+                Label(String(localized: "休憩を削除"), systemImage: "trash")
+            }
+            .buttonStyle(.bordered)
+            .disabled(isActiveBreak)
+
             HStack {
                 Button(String(localized: "キャンセル")) { close() }
                 Spacer()
@@ -1278,7 +1293,39 @@ struct HistoryBreakEditorView: View {
             }
         }
         .padding(18)
-        .frame(width: 360, height: 280)
+        .frame(width: 360, height: 340)
+        .confirmationDialog(
+            String(localized: "休憩を削除"),
+            isPresented: $showsDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button(String(localized: "削除"), role: .destructive) {
+                guard !isActiveBreak else { return }
+                do {
+                    try editor.delete(flowBreak, modelContext: modelContext)
+                    close()
+                } catch {
+                    errorMessage = String(localized: "休憩を保存できませんでした。")
+                }
+            }
+            Button(String(localized: "キャンセル"), role: .cancel) {}
+        }
+    }
+
+    private var startTimeBinding: Binding<Date> {
+        Binding(
+            get: { startTime },
+            set: { selectedStart in
+                let previousMinutes = minutes
+                startTime = selectedStart
+                if endTime > selectedStart {
+                    minutes = editor.durationMinutes(from: selectedStart, to: endTime)
+                } else {
+                    minutes = previousMinutes
+                }
+                endTime = selectedStart.addingTimeInterval(TimeInterval(minutes * 60))
+            }
+        )
     }
 
     private var endTimeBinding: Binding<Date> {
@@ -1286,13 +1333,13 @@ struct HistoryBreakEditorView: View {
             get: { endTime },
             set: { selectedEnd in
                 let normalizedEnd = editor.normalizedEndTime(
-                    for: flowBreak,
+                    startedAt: startTime,
                     selectedTime: selectedEnd,
                     calendar: calendar
                 )
                 endTime = normalizedEnd
                 minutes = editor.durationMinutes(
-                    from: flowBreak.startedAt,
+                    from: startTime,
                     to: normalizedEnd
                 )
             }
@@ -1301,8 +1348,9 @@ struct HistoryBreakEditorView: View {
 
     private func save() {
         do {
-            _ = try editor.updateDuration(
+            _ = try editor.updateInterval(
                 of: flowBreak,
+                startedAt: startTime,
                 minutes: minutes,
                 modelContext: modelContext,
                 protectedSessionID: activeFlowStore.activeSession?.id
@@ -1313,6 +1361,12 @@ struct HistoryBreakEditorView: View {
         } catch {
             errorMessage = String(localized: "休憩を保存できませんでした。")
         }
+    }
+
+    private var isActiveBreak: Bool {
+        flowBreak.timerStoppedAt == nil &&
+            activeFlowStore.isBreakPhase &&
+            activeFlowStore.activeSession?.id == flowBreak.previousSessionID
     }
 
     private func close() {

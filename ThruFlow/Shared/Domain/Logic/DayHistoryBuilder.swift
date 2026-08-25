@@ -140,6 +140,7 @@ struct DayHistoryFlow: Identifiable {
     let id: UUID
     let sessionID: UUID
     let session: FlowSession
+    let segment: FlowSegment?
     let startedAt: Date
     let endedAt: Date
     let focusSeconds: Int
@@ -300,6 +301,7 @@ struct DayHistoryBuilder {
                 return makeFlow(
                     id: segment.id,
                     session: session,
+                    segment: segment,
                     direction: segment.direction,
                     todo: segment.todo,
                     startedAt: segment.startedAt,
@@ -313,6 +315,7 @@ struct DayHistoryBuilder {
         return [makeFlow(
             id: session.id,
             session: session,
+            segment: nil,
             direction: session.direction,
             todo: session.todo,
             startedAt: session.startedAt,
@@ -325,6 +328,7 @@ struct DayHistoryBuilder {
     private func makeFlow(
         id: UUID,
         session: FlowSession,
+        segment: FlowSegment?,
         direction: Direction?,
         todo: Todo?,
         startedAt: Date,
@@ -339,6 +343,7 @@ struct DayHistoryBuilder {
             id: id,
             sessionID: session.id,
             session: session,
+            segment: segment,
             startedAt: startedAt,
             endedAt: endedAt,
             focusSeconds: focusSeconds,

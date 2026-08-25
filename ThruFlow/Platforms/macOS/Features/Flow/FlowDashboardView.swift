@@ -29,7 +29,7 @@ struct FlowDashboardView: View {
     @Query private var sessions: [FlowSession]
     @Query private var flowBreaks: [FlowBreak]
 
-    @State private var inspectedSession: FlowSession?
+    @State private var inspectedSegment: FlowDashboardSegment?
     @State private var hoveredTimelineItem: TimelineItem?
     @State private var selectedTimelineItem: TimelineItem?
     @State private var editingTodo: Todo?
@@ -89,15 +89,18 @@ struct FlowDashboardView: View {
     var body: some View {
         dashboardContent
         .navigationTitle(isVisible ? String(localized: "Flow") : "")
-        .sheet(item: $inspectedSession) { session in
-            FlowHistoryInspectorView(session: session)
+        .sheet(item: $inspectedSegment) { segment in
+            FlowHistoryInspectorView(
+                session: segment.session,
+                segment: segment.storedSegment
+            )
         }
         .sheet(item: $editingTodo) { todo in
             TodoFormView(mode: .edit(todo))
         }
         .onChange(of: isVisible) { _, newValue in
             guard !newValue else { return }
-            inspectedSession = nil
+            inspectedSegment = nil
             editingTodo = nil
             showsQuickComposer = false
         }
@@ -579,7 +582,7 @@ struct FlowDashboardView: View {
                             },
                             onOpenHistory: selectedSegment.isActive ? nil : {
                                 selectedTimelineItem = nil
-                                inspectedSession = selectedSegment.session
+                                inspectedSegment = selectedSegment
                             }
                         )
                     } else if let selectedBreak {

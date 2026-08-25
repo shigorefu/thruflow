@@ -1035,6 +1035,8 @@ struct IOSHistoryItemDetail: View {
     @State private var createdTodo: Todo?
     @State private var isCreatingTask = false
     @State private var showsDeleteConfirmation = false
+    @State private var showsBreakDeleteConfirmation = false
+    @State private var breakStartAt: Date
     @State private var breakDurationMinutes: Int
     @State private var breakEndAt: Date
     @State private var breakEditError: String?
@@ -1056,6 +1058,7 @@ struct IOSHistoryItemDetail: View {
             focusSeconds: item.durationSeconds
         ))
         _memo = State(initialValue: session?.result ?? selectedTodo?.notes ?? "")
+        _breakStartAt = State(initialValue: item.startedAt)
         _breakDurationMinutes = State(
             initialValue: max(
                 FlowBreakEditor.minimumDurationMinutes,
@@ -1154,6 +1157,18 @@ struct IOSHistoryItemDetail: View {
             Button(String(localized: "キャンセル"), role: .cancel) {}
         } message: {
             Text(String(localized: "この記録分の集中時間を、タスクと分野の合計から差し引きます。"))
+        }
+        .confirmationDialog(
+            String(localized: "休憩を削除"),
+            isPresented: $showsBreakDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button(String(localized: "削除"), role: .destructive) {
+                guard let flowBreak = item.flowBreak, !isActiveBreak(flowBreak) else { return }
+                try? breakEditor.delete(flowBreak, modelContext: modelContext)
+                dismiss()
+            }
+            Button(String(localized: "キャンセル"), role: .cancel) {}
         }
         .alert(
             String(localized: "移動できません"),
@@ -1323,11 +1338,11 @@ struct IOSHistoryItemDetail: View {
     private func breakEditorView(flowBreak: FlowBreak) -> some View {
         Form {
             Section(String(localized: "時間")) {
-                LabeledContent(
+                DatePicker(
                     String(localized: "開始"),
-                    value: flowBreak.startedAt.formatted(
-                        date: .abbreviated,
-                        time: .shortened
+                    selection: Binding(
+                        get: { breakStartAt },
+                        set: { updateBreakStart($0) }
                     )
                 )
 
@@ -1335,20 +1350,8 @@ struct IOSHistoryItemDetail: View {
                     String(localized: "終了"),
                     selection: Binding(
                         get: { breakEndAt },
-                        set: { selectedTime in
-                            let normalized = breakEditor.normalizedEndTime(
-                                for: flowBreak,
-                                selectedTime: selectedTime,
-                                calendar: calendar
-                            )
-                            breakEndAt = normalized
-                            breakDurationMinutes = breakEditor.durationMinutes(
-                                from: flowBreak.startedAt,
-                                to: normalized
-                            )
-                        }
-                    ),
-                    displayedComponents: [.hourAndMinute]
+                        set: { updateBreakEnd($0) }
+                    )
                 )
 
                 Stepper(
@@ -1357,7 +1360,7 @@ struct IOSHistoryItemDetail: View {
                         get: { breakDurationMinutes },
                         set: { minutes in
                             breakDurationMinutes = minutes
-                            breakEndAt = flowBreak.startedAt.addingTimeInterval(
+                            breakEndAt = breakStartAt.addingTimeInterval(
                                 TimeInterval(minutes * 60)
                             )
                         }
@@ -1366,7 +1369,37 @@ struct IOSHistoryItemDetail: View {
                         ... FlowBreakEditor.maximumDurationMinutes
                 )
             }
+
+            Section {
+                Button(String(localized: "休憩を削除"), role: .destructive) {
+                    showsBreakDeleteConfirmation = true
+                }
+                .disabled(isActiveBreak(flowBreak))
+            }
         }
+    }
+
+    private func updateBreakStart(_ startedAt: Date) {
+        let previousMinutes = breakDurationMinutes
+        breakStartAt = startedAt
+
+        if breakEndAt > startedAt {
+            breakDurationMinutes = breakEditor.durationMinutes(
+                from: startedAt,
+                to: breakEndAt
+            )
+        } else {
+            breakDurationMinutes = previousMinutes
+        }
+        breakEndAt = startedAt.addingTimeInterval(TimeInterval(breakDurationMinutes * 60))
+    }
+
+    private func updateBreakEnd(_ endedAt: Date) {
+        breakDurationMinutes = breakEditor.durationMinutes(
+            from: breakStartAt,
+            to: endedAt
+        )
+        breakEndAt = breakStartAt.addingTimeInterval(TimeInterval(breakDurationMinutes * 60))
     }
 
     private func save(session: FlowSession) {
@@ -1403,8 +1436,9 @@ struct IOSHistoryItemDetail: View {
 
     private func save(flowBreak: FlowBreak) {
         do {
-            _ = try breakEditor.updateDuration(
+            _ = try breakEditor.updateInterval(
                 of: flowBreak,
+                startedAt: breakStartAt,
                 minutes: breakDurationMinutes,
                 modelContext: modelContext,
                 protectedSessionID: activeFlowStore.activeSession?.id
@@ -1415,6 +1449,12 @@ struct IOSHistoryItemDetail: View {
         } catch {
             breakEditError = error.localizedDescription
         }
+    }
+
+    private func isActiveBreak(_ flowBreak: FlowBreak) -> Bool {
+        flowBreak.timerStoppedAt == nil &&
+            activeFlowStore.isBreakPhase &&
+            activeFlowStore.activeSession?.id == flowBreak.previousSessionID
     }
 
     private var timeRange: String {

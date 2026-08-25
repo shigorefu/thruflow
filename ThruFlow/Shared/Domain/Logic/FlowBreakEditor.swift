@@ -26,19 +26,31 @@ struct FlowBreakEditor {
         selectedTime: Date,
         calendar: Calendar
     ) -> Date {
+        normalizedEndTime(
+            startedAt: flowBreak.startedAt,
+            selectedTime: selectedTime,
+            calendar: calendar
+        )
+    }
+
+    func normalizedEndTime(
+        startedAt: Date,
+        selectedTime: Date,
+        calendar: Calendar
+    ) -> Date {
         let components = calendar.dateComponents([.hour, .minute], from: selectedTime)
         var candidate = calendar.date(
             bySettingHour: components.hour ?? 0,
             minute: components.minute ?? 0,
             second: 0,
-            of: flowBreak.startedAt
+            of: startedAt
         ) ?? selectedTime
 
-        if candidate <= flowBreak.startedAt {
+        if candidate <= startedAt {
             candidate = calendar.date(byAdding: .day, value: 1, to: candidate) ?? candidate
         }
 
-        let maximumEnd = flowBreak.startedAt.addingTimeInterval(
+        let maximumEnd = startedAt.addingTimeInterval(
             TimeInterval(Self.maximumDurationMinutes * 60)
         )
         return min(candidate, maximumEnd)
@@ -61,12 +73,30 @@ struct FlowBreakEditor {
         protectedSessionID: UUID? = nil,
         now: Date = .now
     ) throws -> FlowBreakEditResult {
+        try updateInterval(
+            of: flowBreak,
+            startedAt: flowBreak.startedAt,
+            minutes: minutes,
+            modelContext: modelContext,
+            protectedSessionID: protectedSessionID,
+            now: now
+        )
+    }
+
+    func updateInterval(
+        of flowBreak: FlowBreak,
+        startedAt: Date,
+        minutes: Int,
+        modelContext: ModelContext,
+        protectedSessionID: UUID? = nil,
+        now: Date = .now
+    ) throws -> FlowBreakEditResult {
         let clampedMinutes = min(
             max(minutes, Self.minimumDurationMinutes),
             Self.maximumDurationMinutes
         )
         let durationSeconds = clampedMinutes * 60
-        let adjustedEnd = flowBreak.startedAt.addingTimeInterval(TimeInterval(durationSeconds))
+        let adjustedEnd = startedAt.addingTimeInterval(TimeInterval(durationSeconds))
         let sessions = (try? modelContext.fetch(FetchDescriptor<FlowSession>())) ?? []
         let seriesSessions = sessions
             .filter { ($0.seriesID ?? $0.id) == flowBreak.seriesID }
@@ -86,6 +116,7 @@ struct FlowBreakEditor {
             throw FlowBreakEditorError.activeFlowWouldMove
         }
 
+        flowBreak.startedAt = startedAt
         flowBreak.adjustedEndAt = adjustedEnd
         flowBreak.updatedAt = now
 
@@ -110,6 +141,16 @@ struct FlowBreakEditor {
             durationSeconds: durationSeconds,
             shiftedSeconds: shiftedSeconds
         )
+    }
+
+    func delete(
+        _ flowBreak: FlowBreak,
+        modelContext: ModelContext,
+        now: Date = .now
+    ) throws {
+        flowBreak.deletedAt = now
+        flowBreak.updatedAt = now
+        try modelContext.save()
     }
 
     private func shift(session: FlowSession, by seconds: TimeInterval, now: Date) {
