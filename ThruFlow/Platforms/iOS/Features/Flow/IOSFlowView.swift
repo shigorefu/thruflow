@@ -309,7 +309,7 @@ struct IOSFlowView: View {
                         additionalFocusSeconds: activeTodoFocusSeconds(at: now)
                     ) {
                         if todo.setManuallyCompleted(!todo.isCompleted) {
-                            try? modelContext.save()
+                            _ = modelContext.saveReporting(.flowUpdate)
                         }
                     }
                 }
@@ -706,17 +706,22 @@ struct IOSFlowView: View {
         _ = inbox
         let now = Date.now
         let today = dayBoundary.day(containing: now, calendar: calendar)
-        _ = try? HabitTodoMaterializer(
-            calendar: calendar,
-            dayBoundary: dayBoundary
-        ).materialize(
-            directions: directions,
-            dates: [today],
-            modelContext: modelContext,
-            now: now,
-            knownTodos: todos,
-            reconcilesDuplicates: false
-        )
+        do {
+            _ = try HabitTodoMaterializer(
+                calendar: calendar,
+                dayBoundary: dayBoundary
+            ).materialize(
+                directions: directions,
+                dates: [today],
+                modelContext: modelContext,
+                now: now,
+                knownTodos: todos,
+                reconcilesDuplicates: false
+            )
+        } catch {
+            modelContext.rollback()
+            PersistenceIssueCenter.shared.report(error, operation: .habitMaterialization)
+        }
     }
 
     private func configureInitialContextIfNeeded() {

@@ -1142,16 +1142,19 @@ struct IOSHistoryItemDetail: View {
         ) {
             Button(String(localized: "削除"), role: .destructive) {
                 guard let session = item.session else { return }
-                if let segment = item.flowSegment {
-                    editor.delete(
-                        segment: segment,
-                        from: session,
-                        modelContext: modelContext
-                    )
-                } else {
-                    editor.delete(session: session, modelContext: modelContext)
+                guard performHistoryMutation({
+                    if let segment = item.flowSegment {
+                        try editor.delete(
+                            segment: segment,
+                            from: session,
+                            modelContext: modelContext
+                        )
+                    } else {
+                        try editor.delete(session: session, modelContext: modelContext)
+                    }
+                }) else {
+                    return
                 }
-                try? modelContext.save()
                 dismiss()
             }
             Button(String(localized: "キャンセル"), role: .cancel) {}
@@ -1165,8 +1168,13 @@ struct IOSHistoryItemDetail: View {
         ) {
             Button(String(localized: "削除"), role: .destructive) {
                 guard let flowBreak = item.flowBreak, !isActiveBreak(flowBreak) else { return }
-                try? breakEditor.delete(flowBreak, modelContext: modelContext)
-                dismiss()
+                do {
+                    try breakEditor.delete(flowBreak, modelContext: modelContext)
+                    dismiss()
+                } catch {
+                    modelContext.rollback()
+                    PersistenceIssueCenter.shared.report(error, operation: .historyUpdate)
+                }
             }
             Button(String(localized: "キャンセル"), role: .cancel) {}
         }
@@ -1192,21 +1200,22 @@ struct IOSHistoryItemDetail: View {
         selectedDirectionID = todo.direction?.id
         taskTitleDraft = todo.title
 
-        if let segment = item.flowSegment {
-            editor.attach(
-                todo: todo,
-                to: segment,
-                in: session,
-                modelContext: modelContext
-            )
-        } else {
-            editor.attach(
-                todo: todo,
-                to: session,
-                modelContext: modelContext
-            )
+        _ = performHistoryMutation {
+            if let segment = item.flowSegment {
+                try editor.attach(
+                    todo: todo,
+                    to: segment,
+                    in: session,
+                    modelContext: modelContext
+                )
+            } else {
+                try editor.attach(
+                    todo: todo,
+                    to: session,
+                    modelContext: modelContext
+                )
+            }
         }
-        try? modelContext.save()
     }
 
     private var selectedTodo: Todo? {
@@ -1406,32 +1415,46 @@ struct IOSHistoryItemDetail: View {
         guard let selectedDirection else { return }
         let now = Date.now
         selectedTodo?.rename(to: taskTitleDraft, now: now)
-        if let segment = item.flowSegment {
-            editor.update(
-                segment: segment,
-                in: session,
-                todo: selectedTodo,
-                direction: selectedDirection,
-                startedAt: timeDraft.startedAt,
-                focusSeconds: timeDraft.focusSeconds,
-                memo: memo,
-                modelContext: modelContext,
-                now: now
-            )
-        } else {
-            editor.update(
-                session: session,
-                todo: selectedTodo,
-                direction: selectedDirection,
-                startedAt: timeDraft.startedAt,
-                focusSeconds: timeDraft.focusSeconds,
-                memo: memo,
-                modelContext: modelContext,
-                now: now
-            )
+        guard performHistoryMutation({
+            if let segment = item.flowSegment {
+                try editor.update(
+                    segment: segment,
+                    in: session,
+                    todo: selectedTodo,
+                    direction: selectedDirection,
+                    startedAt: timeDraft.startedAt,
+                    focusSeconds: timeDraft.focusSeconds,
+                    memo: memo,
+                    modelContext: modelContext,
+                    now: now
+                )
+            } else {
+                try editor.update(
+                    session: session,
+                    todo: selectedTodo,
+                    direction: selectedDirection,
+                    startedAt: timeDraft.startedAt,
+                    focusSeconds: timeDraft.focusSeconds,
+                    memo: memo,
+                    modelContext: modelContext,
+                    now: now
+                )
+            }
+        }) else {
+            return
         }
-        try? modelContext.save()
         dismiss()
+    }
+
+    private func performHistoryMutation(_ mutation: () throws -> Void) -> Bool {
+        do {
+            try mutation()
+            return modelContext.saveReporting(.historyUpdate)
+        } catch {
+            modelContext.rollback()
+            PersistenceIssueCenter.shared.report(error, operation: .historyUpdate)
+            return false
+        }
     }
 
     private func save(flowBreak: FlowBreak) {

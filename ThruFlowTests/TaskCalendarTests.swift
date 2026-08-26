@@ -2,7 +2,6 @@
 //  TaskCalendarTests.swift
 //  ThruFlowTests
 //
-//  Created by Codex on 2026/07/10.
 //
 
 import Foundation

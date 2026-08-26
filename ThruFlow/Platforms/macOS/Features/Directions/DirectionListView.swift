@@ -2,7 +2,6 @@
 //  DirectionListView.swift
 //  ThruFlow
 //
-//  Created by Codex on 2026/07/08.
 //
 
 import SwiftData
@@ -117,7 +116,7 @@ struct DirectionListView: View {
                                         if !direction.isArchived {
                                             Button(String(localized: "アーカイブする"), systemImage: "archivebox", role: .destructive) {
                                                 direction.archive()
-                                                try? modelContext.save()
+                                                _ = modelContext.saveReporting(.areaUpdate)
                                             }
                                         }
                                     }
@@ -203,7 +202,7 @@ struct DirectionListView: View {
             direction.setSortIndex(index)
         }
 
-        try? modelContext.save()
+        _ = modelContext.saveReporting(.areaUpdate)
     }
 
     private func normalizeSortIndexesIfNeeded() {
@@ -223,7 +222,7 @@ struct DirectionListView: View {
             direction.setSortIndex(index)
         }
 
-        try? modelContext.save()
+        _ = modelContext.saveReporting(.areaUpdate)
     }
 
     private func directionSort(_ lhs: Direction, _ rhs: Direction) -> Bool {

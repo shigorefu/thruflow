@@ -2,7 +2,6 @@
 //  DayHistoryTests.swift
 //  ThruFlowTests
 //
-//  Created by Codex on 2026/07/11.
 //
 
 import Foundation
@@ -70,7 +69,7 @@ struct DayHistoryTests {
         context.insert(direction)
         context.insert(todo)
 
-        let session = FlowHistoryEditor().createManual(
+        let session = try FlowHistoryEditor().createManual(
             todo: todo,
             direction: direction,
             mode: .twentyFiveFive,
@@ -108,7 +107,7 @@ struct DayHistoryTests {
         context.insert(direction)
 
         let editor = FlowHistoryEditor()
-        let session = editor.createManual(
+        let session = try editor.createManual(
             todo: nil,
             direction: direction,
             mode: .twentyFiveFive,
@@ -141,7 +140,7 @@ struct DayHistoryTests {
         context.insert(todo)
         let segment = try #require(session.resolvedSegments.first)
 
-        editor.attach(
+        try editor.attach(
             todo: todo,
             to: segment,
             in: session,
@@ -174,7 +173,7 @@ struct DayHistoryTests {
         context.insert(todo)
 
         let editor = FlowHistoryEditor()
-        let session = editor.createManual(
+        let session = try editor.createManual(
             todo: todo,
             direction: direction,
             mode: .twentyFiveFive,
@@ -187,7 +186,7 @@ struct DayHistoryTests {
         let originalSegmentCreatedAt = try #require(session.resolvedSegments.first?.createdAt)
         let target = start.addingTimeInterval(24 * 60 * 60 + 90 * 60)
 
-        editor.move(
+        try editor.move(
             session: session,
             itemStartedAt: start,
             to: target,
@@ -528,7 +527,7 @@ struct DayHistoryTests {
         context.insert(session)
 
         let adjustedStart = start.addingTimeInterval(60 * 60)
-        FlowHistoryEditor().update(
+        try FlowHistoryEditor().update(
             session: session,
             todo: newTodo,
             direction: newDirection,
@@ -577,7 +576,7 @@ struct DayHistoryTests {
         context.insert(updatedDirection)
         context.insert(session)
 
-        FlowHistoryEditor().update(
+        try FlowHistoryEditor().update(
             session: session,
             todo: nil,
             direction: updatedDirection,
@@ -642,7 +641,7 @@ struct DayHistoryTests {
         context.insert(deletedSession)
         context.insert(remainingSession)
 
-        FlowHistoryEditor().delete(session: deletedSession, modelContext: context)
+        try FlowHistoryEditor().delete(session: deletedSession, modelContext: context)
 
         #expect(todo.recordedFocusSeconds == 30 * 60)
         #expect(todo.actualProgress == 1)
@@ -687,7 +686,7 @@ struct DayHistoryTests {
         context.insert(todo)
         context.insert(session)
 
-        FlowHistoryEditor().delete(segment: first, from: session, modelContext: context)
+        try FlowHistoryEditor().delete(segment: first, from: session, modelContext: context)
 
         #expect(session.resolvedSegments.map(\.id) == [second.id])
         #expect(session.actualFocusDurationSeconds == 15 * 60)
@@ -759,7 +758,7 @@ struct DayHistoryTests {
         context.insert(session)
 
         let editor = FlowHistoryEditor()
-        editor.update(
+        try editor.update(
             segment: ankiSegment,
             in: session,
             todo: hiroconTodo,
@@ -815,7 +814,11 @@ struct DayHistoryTests {
         context.insert(session)
         context.insert(flowBreak)
 
-        FlowHistoryEditor().delete(session: session, modelContext: context, now: start.addingTimeInterval(40 * 60))
+        try FlowHistoryEditor().delete(
+            session: session,
+            modelContext: context,
+            now: start.addingTimeInterval(40 * 60)
+        )
 
         #expect(flowBreak.deletedAt == start.addingTimeInterval(40 * 60))
     }

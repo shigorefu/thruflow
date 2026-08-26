@@ -76,7 +76,7 @@ struct OrphanTodoReconciler {
             now: now
         )
         if habitReconciliation.changed {
-            FlowProgressReconciler().reconcile(
+            try FlowProgressReconciler().reconcile(
                 todos: habitReconciliation.canonicalTodos.map(Optional.some),
                 directions: habitReconciliation.affectedDirections.map(Optional.some),
                 modelContext: modelContext,

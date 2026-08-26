@@ -2,7 +2,6 @@
 //  MacOSSettingsView.swift
 //  ThruFlow
 //
-//  Created by Codex on 2026/07/17.
 //
 
 import SwiftData
@@ -75,6 +74,8 @@ struct MacOSSettingsView: View {
             Section(String(localized: "タスク")) {
                 Toggle(String(localized: "クイック入力のヒントを表示"), isOn: $settings.showsTaskQuickInputLegend)
             }
+
+            CloudSyncSettingsSection()
 
             Section(String(localized: "ヘルプ")) {
                 Button {

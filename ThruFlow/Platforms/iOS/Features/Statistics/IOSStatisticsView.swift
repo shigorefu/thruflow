@@ -540,7 +540,7 @@ struct IOSStatisticsView: View {
             guard !Task.isCancelled, requestedFilter == filter, isVisible else { return }
             cache(projection)
         } catch {
-            // Keep the last valid projection on transient SwiftData/CloudKit reads.
+            PersistenceIssueCenter.shared.log(error, operation: .dataLoad)
         }
     }
 
@@ -734,6 +734,7 @@ struct IOSStatisticsView: View {
                 )
             } catch {
                 guard !Task.isCancelled, configuration == exportConfiguration else { return }
+                PersistenceIssueCenter.shared.report(error, operation: .export)
                 isPreparingExport = false
                 return
             }
@@ -742,17 +743,23 @@ struct IOSStatisticsView: View {
         guard !Task.isCancelled, configuration == exportConfiguration else { return }
         let exportCalendar = calendar
         let filename = exportFilename(for: projection, content: configuration.content)
-        let result = await Task.detached(priority: .utility) {
-            let csv = StatisticsCSVExporter().export(
-                rows: projection.csvRows,
-                content: configuration.content,
-                calendar: exportCalendar
-            )
-            return try? IOSStatisticsCSVTemporaryFileWriter().write(
-                csv: csv,
-                filename: filename
-            )
-        }.value
+        let result: URL?
+        do {
+            result = try await Task.detached(priority: .utility) {
+                let csv = StatisticsCSVExporter().export(
+                    rows: projection.csvRows,
+                    content: configuration.content,
+                    calendar: exportCalendar
+                )
+                return try IOSStatisticsCSVTemporaryFileWriter().write(
+                    csv: csv,
+                    filename: filename
+                )
+            }.value
+        } catch {
+            PersistenceIssueCenter.shared.report(error, operation: .export)
+            result = nil
+        }
 
         guard !Task.isCancelled, configuration == exportConfiguration else { return }
         exportShareURL = result

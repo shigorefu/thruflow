@@ -96,7 +96,7 @@ struct HistoryTaskRecordTests {
         context.insert(direction)
         context.insert(todo)
 
-        let result = HistoryTaskRecordEditor(calendar: calendar).recordFlow(
+        let result = try HistoryTaskRecordEditor(calendar: calendar).recordFlow(
             todo: todo,
             direction: direction,
             recordedAt: recordedAt,
@@ -249,7 +249,7 @@ struct HistoryTaskRecordTests {
         let recordedAt = Date(timeIntervalSince1970: 1_800_000_000)
         context.insert(direction)
 
-        let result = HistoryTaskRecordEditor(calendar: calendar).record(
+        let result = try HistoryTaskRecordEditor(calendar: calendar).record(
             direction: direction,
             recordedAt: recordedAt,
             mode: .sprint,

@@ -264,7 +264,7 @@ struct IOSTaskEditorView: View {
             onSave?(todo)
         }
 
-        try? modelContext.save()
+        _ = modelContext.saveReporting(.taskUpdate)
         dismiss()
     }
 }

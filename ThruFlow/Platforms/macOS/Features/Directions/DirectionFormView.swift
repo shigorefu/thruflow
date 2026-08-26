@@ -2,7 +2,6 @@
 //  DirectionFormView.swift
 //  ThruFlow
 //
-//  Created by Codex on 2026/07/08.
 //
 
 import SwiftData
@@ -542,24 +541,33 @@ struct DirectionFormView: View {
         let service = HabitPauseService(calendar: calendar, dayBoundary: dayBoundary)
         guard service.resume(direction) else { return }
 
-        let todos = (try? modelContext.fetch(FetchDescriptor<Todo>())) ?? []
-        try? modelContext.save()
-        _ = try? HabitTodoMaterializer(
-            calendar: calendar,
-            dayBoundary: dayBoundary
-        ).materialize(
-            directions: [direction],
-            dates: [logicalToday],
-            modelContext: modelContext,
-            knownTodos: todos,
-            reconcilesDuplicates: false
-        )
+        do {
+            let todos = try modelContext.fetch(FetchDescriptor<Todo>())
+            _ = try HabitTodoMaterializer(
+                calendar: calendar,
+                dayBoundary: dayBoundary
+            ).materialize(
+                directions: [direction],
+                dates: [logicalToday],
+                modelContext: modelContext,
+                knownTodos: todos,
+                reconcilesDuplicates: false
+            )
+            _ = modelContext.saveReporting(.areaUpdate)
+        } catch {
+            modelContext.rollback()
+            PersistenceIssueCenter.shared.report(error, operation: .habitMaterialization)
+        }
     }
 
     private func withHabitTodos(_ action: ([Todo]) -> Void) {
-        let todos = (try? modelContext.fetch(FetchDescriptor<Todo>())) ?? []
-        action(todos)
-        try? modelContext.save()
+        do {
+            let todos = try modelContext.fetch(FetchDescriptor<Todo>())
+            action(todos)
+            _ = modelContext.saveReporting(.areaUpdate)
+        } catch {
+            PersistenceIssueCenter.shared.report(error, operation: .dataLoad)
+        }
     }
 
     private func normalizeGoalState(for type: DirectionType) {

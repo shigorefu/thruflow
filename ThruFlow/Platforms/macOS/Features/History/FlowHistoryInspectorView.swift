@@ -2,7 +2,6 @@
 //  FlowHistoryInspectorView.swift
 //  ThruFlow
 //
-//  Created by Codex on 2026/07/11.
 //
 
 import SwiftData
@@ -222,16 +221,19 @@ struct FlowHistoryInspectorView: View {
             titleVisibility: .visible
         ) {
             Button(String(localized: "削除"), role: .destructive) {
-                if let segment {
-                    editor.delete(
-                        segment: segment,
-                        from: session,
-                        modelContext: modelContext
-                    )
-                } else {
-                    editor.delete(session: session, modelContext: modelContext)
+                guard performHistoryMutation({
+                    if let segment {
+                        try editor.delete(
+                            segment: segment,
+                            from: session,
+                            modelContext: modelContext
+                        )
+                    } else {
+                        try editor.delete(session: session, modelContext: modelContext)
+                    }
+                }) else {
+                    return
                 }
-                try? modelContext.save()
                 close()
             }
             Button(String(localized: "キャンセル"), role: .cancel) {}
@@ -277,21 +279,22 @@ struct FlowHistoryInspectorView: View {
         selectedDirectionID = todo.direction?.id
         taskTitleDraft = todo.title
 
-        if let segment {
-            editor.attach(
-                todo: todo,
-                to: segment,
-                in: session,
-                modelContext: modelContext
-            )
-        } else {
-            editor.attach(
-                todo: todo,
-                to: session,
-                modelContext: modelContext
-            )
+        _ = performHistoryMutation {
+            if let segment {
+                try editor.attach(
+                    todo: todo,
+                    to: segment,
+                    in: session,
+                    modelContext: modelContext
+                )
+            } else {
+                try editor.attach(
+                    todo: todo,
+                    to: session,
+                    modelContext: modelContext
+                )
+            }
         }
-        try? modelContext.save()
     }
 
     private var header: some View {
@@ -421,32 +424,46 @@ struct FlowHistoryInspectorView: View {
         guard let selectedDirection else { return }
         let now = Date.now
         selectedTodo?.rename(to: taskTitleDraft, now: now)
-        if let segment {
-            editor.update(
-                segment: segment,
-                in: session,
-                todo: selectedTodo,
-                direction: selectedDirection,
-                startedAt: timeDraft.startedAt,
-                focusSeconds: timeDraft.focusSeconds,
-                memo: memo,
-                modelContext: modelContext,
-                now: now
-            )
-        } else {
-            editor.update(
-                session: session,
-                todo: selectedTodo,
-                direction: selectedDirection,
-                startedAt: timeDraft.startedAt,
-                focusSeconds: timeDraft.focusSeconds,
-                memo: memo,
-                modelContext: modelContext,
-                now: now
-            )
+        guard performHistoryMutation({
+            if let segment {
+                try editor.update(
+                    segment: segment,
+                    in: session,
+                    todo: selectedTodo,
+                    direction: selectedDirection,
+                    startedAt: timeDraft.startedAt,
+                    focusSeconds: timeDraft.focusSeconds,
+                    memo: memo,
+                    modelContext: modelContext,
+                    now: now
+                )
+            } else {
+                try editor.update(
+                    session: session,
+                    todo: selectedTodo,
+                    direction: selectedDirection,
+                    startedAt: timeDraft.startedAt,
+                    focusSeconds: timeDraft.focusSeconds,
+                    memo: memo,
+                    modelContext: modelContext,
+                    now: now
+                )
+            }
+        }) else {
+            return
         }
-        try? modelContext.save()
         close()
+    }
+
+    private func performHistoryMutation(_ mutation: () throws -> Void) -> Bool {
+        do {
+            try mutation()
+            return modelContext.saveReporting(.historyUpdate)
+        } catch {
+            modelContext.rollback()
+            PersistenceIssueCenter.shared.report(error, operation: .historyUpdate)
+            return false
+        }
     }
 
     private func todo(withID id: UUID) -> Todo? {

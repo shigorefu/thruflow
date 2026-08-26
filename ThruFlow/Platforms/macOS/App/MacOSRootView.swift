@@ -96,7 +96,11 @@ struct MacOSRootView: View {
             try? await Task.sleep(for: .milliseconds(750))
             guard !Task.isCancelled else { return }
             let reconciler = FlowProgressReconciliationActor(modelContainer: modelContainer)
-            try? await reconciler.reconcileAll()
+            do {
+                try await reconciler.reconcileAll()
+            } catch {
+                PersistenceIssueCenter.shared.log(error, operation: .flowSynchronization)
+            }
         }
         .onAppear {
             showOnboardingScreenIfNeeded()

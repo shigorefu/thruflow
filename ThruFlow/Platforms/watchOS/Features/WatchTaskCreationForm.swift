@@ -129,7 +129,7 @@ struct WatchTaskCreationForm: View {
             sortIndex: (todos.map(\.sortIndex).max() ?? -1) + 1
         )
         modelContext.insert(todo)
-        try? modelContext.save()
+        _ = modelContext.saveReporting(.taskUpdate)
         dismiss()
     }
 }

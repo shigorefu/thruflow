@@ -32,7 +32,7 @@ struct AppDataResetTests {
         context.insert(todo)
         context.insert(deletedTodo)
 
-        let session = FlowHistoryEditor().createManual(
+        let session = try FlowHistoryEditor().createManual(
             todo: todo,
             direction: direction,
             mode: .twentyFiveFive,

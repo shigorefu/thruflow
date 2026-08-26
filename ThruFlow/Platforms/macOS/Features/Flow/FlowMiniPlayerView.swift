@@ -2,7 +2,6 @@
 //  FlowMiniPlayerView.swift
 //  ThruFlow
 //
-//  Created by Codex on 2026/07/08.
 //
 
 import AppKit
@@ -183,7 +182,7 @@ struct FlowMiniPlayerView: View {
                         additionalFocusSeconds: liveSelectedTaskFocusSeconds(now: now)
                     ) {
                         if selectedTodo.setManuallyCompleted(!selectedTodo.isCompleted) {
-                            try? modelContext.save()
+                            _ = modelContext.saveReporting(.flowUpdate)
                         }
                     }
                 }
@@ -420,7 +419,7 @@ struct FlowMiniPlayerView: View {
         if selectedTodo.title != normalizedTitle {
             selectedTodo.title = normalizedTitle
             selectedTodo.updatedAt = .now
-            try? modelContext.save()
+            _ = modelContext.saveReporting(.flowUpdate)
         }
 
         editingTaskTitleID = nil

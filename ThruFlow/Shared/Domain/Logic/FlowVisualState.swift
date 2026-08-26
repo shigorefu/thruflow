@@ -2,7 +2,6 @@
 //  FlowVisualState.swift
 //  ThruFlow
 //
-//  Created by Codex on 2026/07/26.
 //
 
 import Foundation

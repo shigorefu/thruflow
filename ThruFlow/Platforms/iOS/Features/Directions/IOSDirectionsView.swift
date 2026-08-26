@@ -55,7 +55,7 @@ struct IOSDirectionsView: View {
                             if !direction.isArchived {
                                 Button(role: .destructive) {
                                     direction.archive()
-                                    try? modelContext.save()
+                                    _ = modelContext.saveReporting(.areaUpdate)
                                 } label: {
                                     Label(String(localized: "アーカイブする"), systemImage: "archivebox")
                                 }
@@ -163,7 +163,7 @@ struct IOSDirectionsView: View {
         for (index, direction) in ordered.enumerated() {
             direction.setSortIndex(index)
         }
-        try? modelContext.save()
+        _ = modelContext.saveReporting(.areaUpdate)
     }
 
     private func directionSort(_ lhs: Direction, _ rhs: Direction) -> Bool {

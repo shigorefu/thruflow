@@ -2,7 +2,6 @@
 //  FlowContextSwitchPolicy.swift
 //  ThruFlow
 //
-//  Created by Codex on 2026/07/28.
 //
 
 import Foundation

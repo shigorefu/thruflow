@@ -72,6 +72,8 @@ struct IOSSettingsView: View {
                 )
             }
 
+            CloudSyncSettingsSection()
+
             Section(String(localized: "ヘルプ")) {
                 Button {
                     dismiss()

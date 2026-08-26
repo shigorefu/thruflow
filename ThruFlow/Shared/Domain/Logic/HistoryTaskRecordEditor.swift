@@ -2,7 +2,6 @@
 //  HistoryTaskRecordEditor.swift
 //  ThruFlow
 //
-//  Created by Codex on 2026/07/24.
 //
 
 import Foundation
@@ -56,7 +55,7 @@ struct HistoryTaskRecordEditor {
         guard let direction = todo.direction else {
             throw HistoryTaskRecordError.missingDirection
         }
-        let session = FlowHistoryEditor().createManual(
+        let session = try FlowHistoryEditor().createManual(
             todo: todo,
             direction: direction,
             mode: mode,
@@ -76,8 +75,8 @@ struct HistoryTaskRecordEditor {
         focusSeconds: Int,
         modelContext: ModelContext,
         now: Date = .now
-    ) -> HistoryTaskRecordResult {
-        let session = FlowHistoryEditor().createManual(
+    ) throws -> HistoryTaskRecordResult {
+        let session = try FlowHistoryEditor().createManual(
             todo: nil,
             direction: direction,
             mode: mode,
@@ -98,8 +97,8 @@ struct HistoryTaskRecordEditor {
         focusSeconds: Int,
         modelContext: ModelContext,
         now: Date = .now
-    ) -> HistoryTaskRecordResult {
-        let session = FlowHistoryEditor().createManual(
+    ) throws -> HistoryTaskRecordResult {
+        let session = try FlowHistoryEditor().createManual(
             todo: todo,
             direction: direction,
             mode: mode,
@@ -164,7 +163,7 @@ struct HistoryTaskRecordEditor {
             modelContext: modelContext,
             now: now
         )
-        return recordFlow(
+        return try recordFlow(
             todo: todo,
             direction: direction,
             recordedAt: recordedAt,

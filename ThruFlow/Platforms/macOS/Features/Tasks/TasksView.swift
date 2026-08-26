@@ -2,7 +2,6 @@
 //  TasksView.swift
 //  ThruFlow
 //
-//  Created by Codex on 2026/07/08.
 //
 
 import SwiftData
@@ -647,7 +646,7 @@ struct TasksView: View {
 
     private func toggleTodo(_ todo: Todo) {
         guard todo.setManuallyCompleted(!todo.isCompleted) else { return }
-        try? modelContext.save()
+        _ = modelContext.saveReporting(.taskUpdate)
     }
 
     private func startFlow(_ todo: Todo) {
@@ -656,7 +655,7 @@ struct TasksView: View {
 
     private func deleteTodo(_ todo: Todo) {
         todo.softDelete()
-        try? modelContext.save()
+        _ = modelContext.saveReporting(.taskUpdate)
     }
 
     @discardableResult
@@ -775,7 +774,7 @@ struct TasksView: View {
 
     private func reschedule(_ todo: Todo, to date: Date?) {
         todo.reschedule(to: date)
-        try? modelContext.save()
+        _ = modelContext.saveReporting(.taskUpdate)
     }
 
     private func rescheduleLabel(for date: Date) -> String {
@@ -833,7 +832,7 @@ struct TasksView: View {
             todo.setSortIndex(index)
         }
 
-        try? modelContext.save()
+        _ = modelContext.saveReporting(.taskUpdate)
     }
 
     private func createInlineTodo() {
@@ -878,7 +877,7 @@ struct TasksView: View {
             sortIndex: (todos.map(\.sortIndex).min() ?? 0) - 1
         )
         modelContext.insert(todo)
-        try? modelContext.save()
+        _ = modelContext.saveReporting(.taskUpdate)
 
         newTodoTitle = ""
         newTodoHashtags = []
@@ -902,17 +901,22 @@ struct TasksView: View {
 
         guard !dates.isEmpty else { return }
 
-        _ = try? HabitTodoMaterializer(
-            calendar: calendar,
-            dayBoundary: dayBoundary
-        ).materialize(
-            directions: activeDirections,
-            dates: dates,
-            modelContext: modelContext,
-            now: now,
-            knownTodos: todos,
-            reconcilesDuplicates: reconcilesDuplicates
-        )
+        do {
+            _ = try HabitTodoMaterializer(
+                calendar: calendar,
+                dayBoundary: dayBoundary
+            ).materialize(
+                directions: activeDirections,
+                dates: dates,
+                modelContext: modelContext,
+                now: now,
+                knownTodos: todos,
+                reconcilesDuplicates: reconcilesDuplicates
+            )
+        } catch {
+            modelContext.rollback()
+            PersistenceIssueCenter.shared.report(error, operation: .habitMaterialization)
+        }
     }
 
     private func selectedDateTodos(in snapshot: TaskCalendarSnapshot) -> [Todo] {
@@ -2571,7 +2575,7 @@ private struct TodoRow: View {
         HStack(alignment: .top, spacing: 12) {
             TodoProgressControl(todo: todo) {
                 if todo.setManuallyCompleted(!todo.isCompleted) {
-                    try? modelContext.save()
+                    _ = modelContext.saveReporting(.taskUpdate)
                 }
             }
 
@@ -2671,7 +2675,7 @@ private struct TodoRow: View {
 
         isEditingTitle = false
         isTitleFocused = false
-        try? modelContext.save()
+        _ = modelContext.saveReporting(.taskUpdate)
     }
 
     private func commitTitleIfNeeded() {

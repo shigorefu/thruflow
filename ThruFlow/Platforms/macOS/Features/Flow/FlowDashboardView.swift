@@ -2,7 +2,6 @@
 //  FlowDashboardView.swift
 //  ThruFlow
 //
-//  Created by Codex on 2026/07/12.
 //
 
 import SwiftData
@@ -1025,22 +1024,27 @@ struct FlowDashboardView: View {
 
     private func toggleTodo(_ todo: Todo) {
         guard todo.setManuallyCompleted(!todo.isCompleted) else { return }
-        try? modelContext.save()
+        _ = modelContext.saveReporting(.flowUpdate)
     }
 
     private func ensureTodayHabits(now: Date = .now) {
         let today = dayBoundary.day(containing: now, calendar: calendar)
-        _ = try? HabitTodoMaterializer(
-            calendar: calendar,
-            dayBoundary: dayBoundary
-        ).materialize(
-            directions: directions,
-            dates: [today],
-            modelContext: modelContext,
-            now: now,
-            knownTodos: todos,
-            reconcilesDuplicates: false
-        )
+        do {
+            _ = try HabitTodoMaterializer(
+                calendar: calendar,
+                dayBoundary: dayBoundary
+            ).materialize(
+                directions: directions,
+                dates: [today],
+                modelContext: modelContext,
+                now: now,
+                knownTodos: todos,
+                reconcilesDuplicates: false
+            )
+        } catch {
+            modelContext.rollback()
+            PersistenceIssueCenter.shared.report(error, operation: .habitMaterialization)
+        }
     }
 
     private var timelineTrackColor: Color {
@@ -1171,17 +1175,23 @@ struct FlowDashboardView: View {
     private func deleteTimelineSegment(_ segment: FlowDashboardSegment) {
         selectedTimelineItem = nil
 
-        if let storedSegment = segment.storedSegment {
-            historyEditor.delete(
-                segment: storedSegment,
-                from: segment.session,
-                modelContext: modelContext
-            )
-        } else {
-            historyEditor.delete(session: segment.session, modelContext: modelContext)
+        do {
+            if let storedSegment = segment.storedSegment {
+                try historyEditor.delete(
+                    segment: storedSegment,
+                    from: segment.session,
+                    modelContext: modelContext
+                )
+            } else {
+                try historyEditor.delete(session: segment.session, modelContext: modelContext)
+            }
+        } catch {
+            modelContext.rollback()
+            PersistenceIssueCenter.shared.report(error, operation: .historyUpdate)
+            return
         }
 
-        try? modelContext.save()
+        _ = modelContext.saveReporting(.flowUpdate)
     }
 
     private func dateText(_ date: Date) -> String {

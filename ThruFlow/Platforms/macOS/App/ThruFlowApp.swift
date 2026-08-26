@@ -29,6 +29,7 @@ struct ThruFlowApp: App {
         WindowGroup("ThruFlow", id: MacOSWindowID.main) {
             MacOSRootView()
                 .onboardingJourney(store: onboarding)
+                .persistenceIssuePresenter()
                 .environmentObject(activeFlowStore)
                 .environmentObject(onboarding)
                 .appSettingsEnvironment(settings)
@@ -36,6 +37,12 @@ struct ThruFlowApp: App {
                     activeFlowStore.clearNotificationBadge()
                     activeFlowStore.beginSynchronization(
                         modelContext: sharedModelContainer.mainContext
+                    )
+                }
+                .task {
+                    await PersistenceIssueCenter.shared.beginCloudKitMonitoring(
+                        isEnabled: AppModelContainerFactory.usesCloudKitForCurrentProcess,
+                        containerIdentifier: AppModelContainerFactory.cloudKitContainerIdentifier
                     )
                 }
                 .onChange(of: scenePhase) { _, phase in

@@ -2,7 +2,6 @@
 //  StatisticsView.swift
 //  ThruFlow
 //
-//  Created by Codex on 2026/07/09.
 //
 
 import Charts
@@ -669,7 +668,7 @@ struct StatisticsView: View {
                 loadingFilter = nil
             }
         } catch {
-            // Keep the last valid projection on transient SwiftData/CloudKit reads.
+            PersistenceIssueCenter.shared.log(error, operation: .dataLoad)
         }
     }
 
@@ -831,6 +830,7 @@ struct StatisticsView: View {
                 )
             } catch {
                 guard !Task.isCancelled, configuration == exportConfiguration else { return }
+                PersistenceIssueCenter.shared.report(error, operation: .export)
                 isPreparingExport = false
                 return
             }
@@ -839,17 +839,23 @@ struct StatisticsView: View {
         guard !Task.isCancelled, configuration == exportConfiguration else { return }
         let exportCalendar = calendar
         let filename = exportFilename(for: projection, content: configuration.content)
-        let result = await Task.detached(priority: .utility) {
-            let csv = StatisticsCSVExporter().export(
-                rows: projection.csvRows,
-                content: configuration.content,
-                calendar: exportCalendar
-            )
-            return try? StatisticsCSVTemporaryFileWriter().write(
-                csv: csv,
-                filename: filename
-            )
-        }.value
+        let result: URL?
+        do {
+            result = try await Task.detached(priority: .utility) {
+                let csv = StatisticsCSVExporter().export(
+                    rows: projection.csvRows,
+                    content: configuration.content,
+                    calendar: exportCalendar
+                )
+                return try StatisticsCSVTemporaryFileWriter().write(
+                    csv: csv,
+                    filename: filename
+                )
+            }.value
+        } catch {
+            PersistenceIssueCenter.shared.report(error, operation: .export)
+            result = nil
+        }
         guard !Task.isCancelled, configuration == exportConfiguration else { return }
         exportShareURL = result
         preparedExportConfiguration = result == nil ? nil : configuration

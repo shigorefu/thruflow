@@ -40,7 +40,13 @@ struct ReviewRequestGate: View {
         )
         descriptor.fetchLimit = 50
 
-        guard let sessions = try? modelContext.fetch(descriptor) else { return }
+        let sessions: [FlowSession]
+        do {
+            sessions = try modelContext.fetch(descriptor)
+        } catch {
+            PersistenceIssueCenter.shared.log(error, operation: .dataLoad)
+            return
+        }
         let activeDays = Set(sessions.compactMap { session in
             session.completedAt.map { calendar.startOfDay(for: $0) }
         })
