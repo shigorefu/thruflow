@@ -2,7 +2,6 @@
 //  FlowStreamView.swift
 //  ThruFlow
 //
-//  Created by Codex on 2026/07/12.
 //
 
 import SwiftUI

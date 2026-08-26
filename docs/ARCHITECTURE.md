@@ -238,6 +238,14 @@ All derived progress must be reproducible from persisted history. Mutations to
 Flow history go through the shared reconciliation logic rather than applying
 view-local relative deltas.
 
+SwiftData fetches and saves that affect user data propagate errors to an
+application boundary; they must not use `try?` or substitute an empty result.
+`PersistenceIssueCenter` owns structured logging, rollback for failed saves,
+and one platform-neutral recovery alert. Background maintenance may log an
+error without interrupting the user. Lossy widget caches, optional JSON
+preferences, and cancellation-only sleeps may still discard errors because
+their failure does not claim that user data was saved or loaded successfully.
+
 Every shipped executable declares its required-reason API use in a bundled
 `PrivacyInfo.xcprivacy`. The main app and Watch bundle declare app-local
 UserDefaults (`CA92.1`) and App Group defaults (`1C8F.1`); the widget/Live

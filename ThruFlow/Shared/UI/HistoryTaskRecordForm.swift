@@ -2,7 +2,6 @@
 //  HistoryTaskRecordForm.swift
 //  ThruFlow
 //
-//  Created by Codex on 2026/07/24.
 //
 
 import SwiftData
@@ -581,7 +580,7 @@ struct HistoryTaskRecordForm: View {
                 guard let todo = dayTodos.first(where: { $0.id == id }) else { return }
                 if context == .flow {
                     guard let direction = todo.direction else { return }
-                    editor.recordFlow(
+                    try editor.recordFlow(
                         todo: todo,
                         direction: direction,
                         recordedAt: recordedAt,
@@ -602,7 +601,7 @@ struct HistoryTaskRecordForm: View {
                 guard let option = habitOptions.first(where: { $0.id == directionID }) else { return }
                 if let todo = option.todo {
                     if context == .flow {
-                        editor.recordFlow(
+                        try editor.recordFlow(
                             todo: todo,
                             direction: option.direction,
                             recordedAt: recordedAt,
@@ -642,7 +641,7 @@ struct HistoryTaskRecordForm: View {
                 }
             case let .direction(directionID):
                 guard let direction = availableDirections.first(where: { $0.id == directionID }) else { return }
-                editor.record(
+                try editor.record(
                     direction: direction,
                     recordedAt: timeDraft.startedAt,
                     mode: mode,
@@ -675,6 +674,7 @@ struct HistoryTaskRecordForm: View {
             errorMessage = error.localizedMessage
         } catch {
             modelContext.rollback()
+            PersistenceIssueCenter.shared.report(error, operation: .historyUpdate)
             errorMessage = String(localized: "記録を保存できませんでした。")
         }
     }

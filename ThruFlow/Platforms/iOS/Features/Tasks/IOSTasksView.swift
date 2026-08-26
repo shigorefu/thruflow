@@ -643,17 +643,22 @@ struct IOSTasksView: View {
             .filter { range != .month || calendarBuilder.isDate($0, inMonthContaining: selectedDate) }
             .sorted()
 
-        _ = try? HabitTodoMaterializer(
-            calendar: calendar,
-            dayBoundary: dayBoundary
-        ).materialize(
-            directions: activeDirections,
-            dates: dates,
-            modelContext: modelContext,
-            now: now,
-            knownTodos: todos,
-            reconcilesDuplicates: reconcilesDuplicates
-        )
+        do {
+            _ = try HabitTodoMaterializer(
+                calendar: calendar,
+                dayBoundary: dayBoundary
+            ).materialize(
+                directions: activeDirections,
+                dates: dates,
+                modelContext: modelContext,
+                now: now,
+                knownTodos: todos,
+                reconcilesDuplicates: reconcilesDuplicates
+            )
+        } catch {
+            modelContext.rollback()
+            PersistenceIssueCenter.shared.report(error, operation: .habitMaterialization)
+        }
     }
 
     private func alignInitialSelectionWithCurrentAppDay(now: Date = .now) {
@@ -985,7 +990,7 @@ struct IOSTaskRow: View {
         HStack(spacing: 10) {
             TodoProgressControl(todo: todo) {
                 if todo.setManuallyCompleted(!todo.isCompleted) {
-                    try? modelContext.save()
+                    _ = modelContext.saveReporting(.taskUpdate)
                 }
             }
 

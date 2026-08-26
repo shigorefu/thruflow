@@ -3,7 +3,6 @@
 //  HistorySeriesTimelineView.swift
 //  ThruFlow
 //
-//  Created by Codex on 2026/07/29.
 //
 
 import AppKit

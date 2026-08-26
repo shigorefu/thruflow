@@ -2,7 +2,6 @@
 //  TodoProgressControl.swift
 //  ThruFlow
 //
-//  Created by Codex on 2026/07/13.
 //
 
 import SwiftUI

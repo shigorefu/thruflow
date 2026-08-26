@@ -34,6 +34,17 @@ local-only.
 These modes exist for deterministic development. They must not introduce a
 second model schema or different domain behavior.
 
+## Error And Sync Visibility
+
+A successful local SwiftData save means the change is durable on that device;
+it does not prove that CloudKit has already exported it. SwiftData save and
+fetch failures are handled explicitly and logged by `PersistenceIssueCenter`.
+User-initiated failures roll back pending changes and show a recoverable alert.
+CloudKit account status and persistent-container import/export events drive the
+read-only iCloud status in Settings. A failed CloudKit event is shown as a sync
+problem without blocking subsequent local work or changing the local-first data
+model.
+
 ## System Direction Convergence
 
 The built-in `その他` Direction is identified by the stable optional

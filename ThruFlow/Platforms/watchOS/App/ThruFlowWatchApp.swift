@@ -12,6 +12,7 @@ struct ThruFlowWatchApp: App {
     var body: some Scene {
         WindowGroup {
             WatchFlowDashboardView()
+                .persistenceIssuePresenter()
                 .environmentObject(activeFlowStore)
                 .environment(\.calendar, settings.effectiveCalendar)
                 .environment(\.appDayBoundary, settings.dayBoundary)
@@ -20,6 +21,12 @@ struct ThruFlowWatchApp: App {
                     activeFlowStore.clearNotificationBadge()
                     activeFlowStore.beginSynchronization(
                         modelContext: modelContainer.mainContext
+                    )
+                }
+                .task {
+                    await PersistenceIssueCenter.shared.beginCloudKitMonitoring(
+                        isEnabled: AppModelContainerFactory.usesCloudKitForCurrentProcess,
+                        containerIdentifier: AppModelContainerFactory.cloudKitContainerIdentifier
                     )
                 }
                 .onChange(of: scenePhase) { _, phase in

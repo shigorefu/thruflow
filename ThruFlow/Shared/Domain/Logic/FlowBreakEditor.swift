@@ -2,7 +2,6 @@
 //  FlowBreakEditor.swift
 //  ThruFlow
 //
-//  Created by Codex on 2026/07/14.
 //
 
 import Foundation
@@ -97,7 +96,7 @@ struct FlowBreakEditor {
         )
         let durationSeconds = clampedMinutes * 60
         let adjustedEnd = startedAt.addingTimeInterval(TimeInterval(durationSeconds))
-        let sessions = (try? modelContext.fetch(FetchDescriptor<FlowSession>())) ?? []
+        let sessions = try modelContext.fetch(FetchDescriptor<FlowSession>())
         let seriesSessions = sessions
             .filter { ($0.seriesID ?? $0.id) == flowBreak.seriesID }
             .sorted { $0.startedAt < $1.startedAt }
@@ -126,7 +125,7 @@ struct FlowBreakEditor {
                 shift(session: session, by: offset, now: now)
             }
 
-            let breaks = (try? modelContext.fetch(FetchDescriptor<FlowBreak>())) ?? []
+            let breaks = try modelContext.fetch(FetchDescriptor<FlowBreak>())
             for laterBreak in breaks where
                 laterBreak.id != flowBreak.id &&
                 laterBreak.seriesID == flowBreak.seriesID &&

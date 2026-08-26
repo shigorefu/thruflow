@@ -2,7 +2,6 @@
 //  StatisticsPeriodBuilder.swift
 //  ThruFlow
 //
-//  Created by Codex on 2026/08/03.
 //
 
 import Foundation

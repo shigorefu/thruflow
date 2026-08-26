@@ -40,7 +40,7 @@ struct HabitTodoMaterializer {
             changed = reconciliation.changed
 
             if reconciliation.changed {
-                FlowProgressReconciler().reconcile(
+                try FlowProgressReconciler().reconcile(
                     todos: reconciliation.canonicalTodos.map(Optional.some),
                     directions: reconciliation.affectedDirections.map(Optional.some),
                     modelContext: modelContext,

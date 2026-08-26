@@ -60,6 +60,7 @@ struct ThruFlowiOSApp: App {
         WindowGroup {
             IOSRootView()
                 .onboardingJourney(store: onboarding)
+                .persistenceIssuePresenter()
                 .environmentObject(activeFlowStore)
                 .environmentObject(settings)
                 .environmentObject(onboarding)
@@ -71,6 +72,12 @@ struct ThruFlowiOSApp: App {
                     activeFlowStore.clearNotificationBadge()
                     activeFlowStore.beginSynchronization(
                         modelContext: modelContainer.mainContext
+                    )
+                }
+                .task {
+                    await PersistenceIssueCenter.shared.beginCloudKitMonitoring(
+                        isEnabled: AppModelContainerFactory.usesCloudKitForCurrentProcess,
+                        containerIdentifier: AppModelContainerFactory.cloudKitContainerIdentifier
                     )
                 }
                 .onChange(of: scenePhase) { _, phase in

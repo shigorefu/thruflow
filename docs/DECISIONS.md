@@ -558,3 +558,21 @@ Reason: the stream should feel directly connected to the player's controls and
 reward the four-Block milestone, while memo cancellation, timer history,
 CloudKit synchronization, and render performance retain their existing
 semantics.
+
+## D-038: Persistence Failures Are Explicit And Local Work Remains Available
+
+User-data fetches and saves propagate errors to the application boundary rather
+than using `try?` or treating a failed fetch as an empty database. Failed saves
+roll back pending context changes, emit structured diagnostics, and show one
+shared recovery alert. Background repair logs failures without interrupting the
+current task. CloudKit account and import/export events are surfaced separately
+in Settings because a successful local save does not guarantee that its remote
+export has completed. CloudKit availability never gates local SwiftData work.
+
+Lossy widget snapshots, optional encoded preferences, and cancellation-only
+delays may deliberately discard errors because they are reconstructable and do
+not represent persistence success.
+
+Reason: silent persistence failure can produce incorrect history and progress,
+while treating CloudKit as a prerequisite would make an offline-first focus
+tool unreliable.

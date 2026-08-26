@@ -62,14 +62,19 @@ struct WatchFlowDashboardView: View {
     private func prepareToday() {
         guard !activeDirections.isEmpty else { return }
         let today = dayBoundary.day(containing: .now, calendar: calendar)
-        _ = try? HabitTodoMaterializer(
-            calendar: calendar,
-            dayBoundary: dayBoundary
-        ).materialize(
-            directions: activeDirections,
-            dates: [today],
-            modelContext: modelContext
-        )
+        do {
+            _ = try HabitTodoMaterializer(
+                calendar: calendar,
+                dayBoundary: dayBoundary
+            ).materialize(
+                directions: activeDirections,
+                dates: [today],
+                modelContext: modelContext
+            )
+        } catch {
+            modelContext.rollback()
+            PersistenceIssueCenter.shared.report(error, operation: .habitMaterialization)
+        }
     }
 
     private func configureInitialContextIfNeeded() {
@@ -669,7 +674,7 @@ private struct WatchTasksView: View {
                         TodoProgressControl(todo: todo) {
                             guard todo.measurement == .checkbox else { return }
                             todo.setCompleted(!todo.isCompleted)
-                            try? modelContext.save()
+                            _ = modelContext.saveReporting(.flowUpdate)
                         }
                         Text(todo.direction?.symbolName ?? "📝")
                         VStack(alignment: .leading, spacing: 1) {

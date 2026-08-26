@@ -2,7 +2,6 @@
 //  InboxView.swift
 //  ThruFlow
 //
-//  Created by Codex on 2026/07/09.
 //
 
 import SwiftData
@@ -57,7 +56,7 @@ struct InboxView: View {
 
                             Button(String(localized: "削除"), systemImage: "trash", role: .destructive) {
                                 todo.softDelete()
-                                try? modelContext.save()
+                                _ = modelContext.saveReporting(.taskUpdate)
                             }
                         }
                 }
@@ -73,7 +72,7 @@ struct InboxView: View {
 
     private func schedule(_ todo: Todo, to date: Date?) {
         todo.reschedule(to: date)
-        try? modelContext.save()
+        _ = modelContext.saveReporting(.taskUpdate)
     }
 }
 

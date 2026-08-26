@@ -2,7 +2,6 @@
 //  HistoryCalendarView.swift
 //  ThruFlow
 //
-//  Created by Codex on 2026/07/14.
 //
 
 import SwiftData
@@ -311,19 +310,20 @@ struct HistoryCalendarView: View {
               let session = item.session,
               activeFlowStore.activeSession?.id != session.id else { return false }
 
-        historyEditor.move(
-            session: session,
-            itemStartedAt: item.startedAt,
-            to: targetDate,
-            modelContext: modelContext
-        )
         do {
+            try historyEditor.move(
+                session: session,
+                itemStartedAt: item.startedAt,
+                to: targetDate,
+                modelContext: modelContext
+            )
             try modelContext.save()
             selectedDate = calendar.startOfDay(for: targetDate)
             selectedDayItemID = item.id
             return true
         } catch {
             modelContext.rollback()
+            PersistenceIssueCenter.shared.report(error, operation: .historyUpdate)
             return false
         }
     }

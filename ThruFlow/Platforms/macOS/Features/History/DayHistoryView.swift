@@ -2,7 +2,6 @@
 //  DayHistoryView.swift
 //  ThruFlow
 //
-//  Created by Codex on 2026/07/11.
 //
 
 import SwiftData
@@ -653,7 +652,7 @@ struct DayHistoryView: View {
               task.todos.allSatisfy({ $0.measurement == .checkbox }) else { return }
         let shouldComplete = !task.todos.allSatisfy(\.isCompleted)
         task.todos.forEach { $0.setManuallyCompleted(shouldComplete) }
-        try? modelContext.save()
+        _ = modelContext.saveReporting(.historyUpdate)
     }
 
     private func direction(withID id: UUID) -> Direction? {

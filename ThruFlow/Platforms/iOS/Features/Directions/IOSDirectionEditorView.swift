@@ -157,7 +157,7 @@ struct IOSDirectionEditorView: View {
                 Section {
                     Button(String(localized: "方向を削除"), role: .destructive) {
                         direction.archive()
-                        try? modelContext.save()
+                        _ = modelContext.saveReporting(.areaUpdate)
                         dismiss()
                     }
                 }

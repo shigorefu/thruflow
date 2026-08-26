@@ -2,7 +2,6 @@
 //  StatisticsPeriodTests.swift
 //  ThruFlowTests
 //
-//  Created by Codex on 2026/08/03.
 //
 
 import Foundation

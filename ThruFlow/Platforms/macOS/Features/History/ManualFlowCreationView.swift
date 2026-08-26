@@ -2,7 +2,6 @@
 //  ManualFlowCreationView.swift
 //  ThruFlow
 //
-//  Created by Codex on 2026/07/14.
 //
 
 import SwiftData
@@ -280,19 +279,20 @@ struct ManualFlowCreationView: View {
             return
         }
 
-        editor.createManual(
-            todo: selectedTodo,
-            direction: selectedDirection,
-            mode: mode,
-            startedAt: timeDraft.startedAt,
-            focusSeconds: timeDraft.focusSeconds,
-            modelContext: modelContext
-        )
-
         do {
+            try editor.createManual(
+                todo: selectedTodo,
+                direction: selectedDirection,
+                mode: mode,
+                startedAt: timeDraft.startedAt,
+                focusSeconds: timeDraft.focusSeconds,
+                modelContext: modelContext
+            )
             try modelContext.save()
             onDismiss()
         } catch {
+            modelContext.rollback()
+            PersistenceIssueCenter.shared.report(error, operation: .historyUpdate)
             errorMessage = String(localized: "集中記録を保存できませんでした。")
         }
     }

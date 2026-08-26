@@ -2,7 +2,6 @@
 //  TaskCalendarSnapshot.swift
 //  ThruFlow
 //
-//  Created by Codex on 2026/08/02.
 //
 
 import Foundation

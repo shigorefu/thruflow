@@ -2,7 +2,6 @@
 //  AppSettingsTests.swift
 //  ThruFlowTests
 //
-//  Created by Codex on 2026/07/17.
 //
 
 import Foundation

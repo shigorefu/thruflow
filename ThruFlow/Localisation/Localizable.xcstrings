@@ -2439,6 +2439,97 @@
         }
       }
     },
+    "iCloud Driveと、ThruFlowのiCloud利用設定を確認してから、アプリを開き直してください。" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Check iCloud Drive and ThruFlow’s iCloud access, then reopen the app." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "iCloud Driveと、ThruFlowのiCloud利用設定を確認してから、アプリを開き直してください。" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Проверьте iCloud Drive и доступ ThruFlow к iCloud, затем снова откройте приложение." } }
+      }
+    },
+    "iCloudと同期できませんでした" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Couldn’t Sync with iCloud" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "iCloudと同期できませんでした" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Не удалось синхронизироваться с iCloud" } }
+      }
+    },
+    "iCloudを確認しています…" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Checking iCloud…" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "iCloudを確認しています…" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Проверяем iCloud…" } }
+      }
+    },
+    "iCloudを利用できます" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "iCloud Is Available" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "iCloudを利用できます" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "iCloud доступен" } }
+      }
+    },
+    "iCloudを利用できません" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "iCloud Is Unavailable" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "iCloudを利用できません" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "iCloud недоступен" } }
+      }
+    },
+    "iCloud同期" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "iCloud Sync" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "iCloud同期" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Синхронизация с iCloud" } }
+      }
+    },
+    "このビルドでは端末内にのみ保存されます" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This build saves data only on this device" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "このビルドでは端末内にのみ保存されます" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "В этой сборке данные сохраняются только на устройстве" } }
+      }
+    },
+    "同期しています…" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Syncing…" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "同期しています…" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Синхронизация…" } }
+      }
+    },
+    "同期済み" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Synced" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "同期済み" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Синхронизировано" } }
+      }
+    },
+    "変更内容は保存されていません。もう一度お試しください。" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Your changes weren’t saved. Please try again." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "変更内容は保存されていません。もう一度お試しください。" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Изменения не сохранились. Попробуйте ещё раз." } }
+      }
+    },
+    "もう一度お試しください。" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Please try again." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "もう一度お試しください。" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Попробуйте ещё раз." } }
+      }
+    },
+    "データを読み込めませんでした。" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Couldn’t load your data." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "データを読み込めませんでした。" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Не удалось загрузить данные." } }
+      }
+    },
+    "書き出せませんでした。" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Couldn’t export the file." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "書き出せませんでした。" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Не удалось экспортировать файл." } }
+      }
+    },
     "Inbox" : {
       "localizations" : {
         "en" : {

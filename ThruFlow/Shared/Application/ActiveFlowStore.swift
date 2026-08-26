@@ -2,7 +2,6 @@
 //  ActiveFlowStore.swift
 //  ThruFlow
 //
-//  Created by Codex on 2026/07/08.
 //
 
 import Foundation
@@ -135,7 +134,13 @@ final class ActiveFlowStore: ObservableObject {
         stateBeforeResultPrompt = nil
         let state = engine.start(mode: selectedMode, now: now)
         let sessionID = UUID()
-        let pendingBreak = eligiblePendingBreak(modelContext: modelContext, at: now)
+        let pendingBreak: FlowBreak?
+        do {
+            pendingBreak = try eligiblePendingBreak(modelContext: modelContext, at: now)
+        } catch {
+            PersistenceIssueCenter.shared.report(error, operation: .dataLoad)
+            return
+        }
         let seriesID = pendingBreak?.seriesID ?? sessionID
         let session = FlowSession(
             id: sessionID,
@@ -169,9 +174,14 @@ final class ActiveFlowStore: ObservableObject {
         timerState = state
         didApplyProgress = false
         persistConfiguration()
+        guard modelContext.saveReporting(.flowStart) else {
+            activeSession = nil
+            timerState = nil
+            didApplyProgress = false
+            return
+        }
         notifications.requestAuthorizationIfNeeded()
-        scheduleNotifications(for: state)
-        try? modelContext.save()
+        replaceNotifications(for: state)
         lastAppliedRuntimeVersion = session.runtimeVersion
         startLiveActivity(now: now)
     }
@@ -183,6 +193,8 @@ final class ActiveFlowStore: ObservableObject {
         now: Date = .now
     ) {
         guard let direction else { return }
+        let previousDirectionID = selectedDirectionID
+        let previousTodoID = selectedTodoID
 
         if let state = timerState,
            state.phase == .focusing || state.phase == .paused || state.phase == .awaitingExtensionDecision,
@@ -222,7 +234,12 @@ final class ActiveFlowStore: ObservableObject {
         }
 
         configure(direction: direction, todo: todo)
-        try? modelContext.save()
+        guard modelContext.saveReporting(.flowUpdate) else {
+            selectedDirectionID = previousDirectionID
+            selectedTodoID = previousTodoID
+            persistConfiguration()
+            return
+        }
         lastAppliedRuntimeVersion = activeSession?.runtimeVersion
         synchronizeLiveActivity(now: now)
     }
@@ -270,7 +287,13 @@ final class ActiveFlowStore: ObservableObject {
 
     func synchronizeFromPersistence(modelContext: ModelContext, now: Date = .now) {
         reconcilePersistenceIfNeeded(modelContext: modelContext, now: now)
-        let resolution = syncCoordinator.resolve(modelContext: modelContext)
+        let resolution: ActiveFlowSyncResolution
+        do {
+            resolution = try syncCoordinator.resolve(modelContext: modelContext)
+        } catch {
+            PersistenceIssueCenter.shared.report(error, operation: .flowSynchronization)
+            return
+        }
 
         if let canonicalSession = resolution.canonicalSession,
            !resolution.supersededSessions.isEmpty {
@@ -279,7 +302,7 @@ final class ActiveFlowStore: ObservableObject {
                 canonicalSession: canonicalSession,
                 now: now
             )
-            try? modelContext.save()
+            guard modelContext.saveReporting(.flowSynchronization) else { return }
         }
 
         guard let canonicalSession = resolution.canonicalSession,
@@ -312,7 +335,7 @@ final class ActiveFlowStore: ObservableObject {
             try OrphanTodoReconciler().reconcile(modelContext: modelContext, now: now)
             lastPersistenceReconciliationAt = now
         } catch {
-            // Retry on the next synchronization pass if persistence is temporarily unavailable.
+            PersistenceIssueCenter.shared.log(error, operation: .flowSynchronization)
         }
     }
 
@@ -320,33 +343,30 @@ final class ActiveFlowStore: ObservableObject {
         guard let timerState else { return }
         let next = engine.advanceIfNeeded(timerState, now: now)
         guard next != timerState else { return }
-        apply(next, modelContext: modelContext, now: now)
+        _ = apply(next, modelContext: modelContext, now: now)
     }
 
     func pause(modelContext: ModelContext, now: Date = .now) {
         guard let timerState else { return }
-        notifications.cancelPendingFlowNotifications()
-        apply(engine.pause(timerState, now: now), modelContext: modelContext, now: now)
+        _ = apply(engine.pause(timerState, now: now), modelContext: modelContext, now: now)
     }
 
     func resume(modelContext: ModelContext, now: Date = .now) {
         guard let timerState else { return }
         let next = engine.resume(timerState, now: now)
-        scheduleNotifications(for: next)
-        apply(next, modelContext: modelContext, now: now)
+        _ = apply(next, modelContext: modelContext, now: now)
     }
 
     func finish(modelContext: ModelContext, now: Date = .now) {
         guard let timerState else { return }
-        notifications.cancelPendingFlowNotifications()
         if timerState.phase == .breakTime {
-            completeBreak(modelContext: modelContext, now: now)
+            _ = completeBreak(modelContext: modelContext, now: now)
             return
         }
 
         guard !discardShortFlowIfNeeded(timerState, modelContext: modelContext, now: now) else { return }
         stateBeforeResultPrompt = timerState
-        apply(engine.finish(timerState, now: now), modelContext: modelContext, now: now)
+        _ = apply(engine.finish(timerState, now: now), modelContext: modelContext, now: now)
     }
 
     func completeResult(_ result: String?, modelContext: ModelContext, now: Date = .now) {
@@ -359,7 +379,11 @@ final class ActiveFlowStore: ObservableObject {
         activeSession?.complete(now: now)
 
         if let timerState {
-            apply(engine.completeResult(timerState, now: now), modelContext: modelContext, now: now)
+            guard apply(
+                engine.completeResult(timerState, now: now),
+                modelContext: modelContext,
+                now: now
+            ) else { return }
         }
 
         activeSession = nil
@@ -382,38 +406,48 @@ final class ActiveFlowStore: ObservableObject {
               let activeSession else {
             return
         }
+        let previousState = timerState
+        let previousDidApplyProgress = didApplyProgress
+        let previousStateBeforeResultPrompt = stateBeforeResultPrompt
 
         activeSession.resolvedSegments.max(by: { $0.startedAt < $1.startedAt })?.reopen()
         timerState = restoredState
         activeSession.apply(timerState: restoredState, now: now)
-        progressReconciler.reconcile(
-            session: activeSession,
-            modelContext: modelContext,
-            now: now
-        )
+        do {
+            try progressReconciler.reconcile(
+                session: activeSession,
+                modelContext: modelContext,
+                now: now
+            )
+        } catch {
+            modelContext.rollback()
+            timerState = previousState
+            PersistenceIssueCenter.shared.report(error, operation: .flowUpdate)
+            return
+        }
         didApplyProgress = false
         stateBeforeResultPrompt = nil
 
-        if restoredState.phase == .focusing {
-            scheduleNotifications(for: restoredState)
+        guard modelContext.saveReporting(.flowUpdate) else {
+            timerState = previousState
+            didApplyProgress = previousDidApplyProgress
+            stateBeforeResultPrompt = previousStateBeforeResultPrompt
+            return
         }
-
-        try? modelContext.save()
+        replaceNotifications(for: restoredState)
         synchronizeLiveActivity(now: now)
     }
 
     func extendAdaptive(modelContext: ModelContext, now: Date = .now) {
         guard let timerState else { return }
         let next = engine.extendAdaptive(timerState, now: now)
-        scheduleNotifications(for: next)
-        apply(next, modelContext: modelContext, now: now)
+        _ = apply(next, modelContext: modelContext, now: now)
     }
 
     func startBreak(modelContext: ModelContext, now: Date = .now) {
         guard let timerState else { return }
-        notifications.cancelPendingFlowNotifications()
         guard !discardShortFlowIfNeeded(timerState, modelContext: modelContext, now: now) else { return }
-        beginBreak(from: timerState, modelContext: modelContext, now: now)
+        _ = beginBreak(from: timerState, modelContext: modelContext, now: now)
     }
 
     func requestBreakMemo(modelContext: ModelContext, now: Date = .now) {
@@ -439,8 +473,7 @@ final class ActiveFlowStore: ObservableObject {
             activeSession?.todo?.setMemo(normalizedResult, now: now)
         }
         isAwaitingBreakMemo = false
-        notifications.cancelPendingFlowNotifications()
-        beginBreak(from: timerState, modelContext: modelContext, now: now)
+        _ = beginBreak(from: timerState, modelContext: modelContext, now: now)
     }
 
     private func normalizedResult(_ result: String?) -> String? {
@@ -456,21 +489,20 @@ final class ActiveFlowStore: ObservableObject {
         guard let timerState else { return }
         let next = engine.seekForward(timerState, now: now)
         guard next != timerState else { return }
-        scheduleNotifications(for: next)
-        apply(next, modelContext: modelContext, now: now)
+        _ = apply(next, modelContext: modelContext, now: now)
     }
 
     func seekBackward(modelContext: ModelContext, now: Date = .now) {
         guard let timerState else { return }
         let next = engine.seekBackward(timerState, now: now)
         guard next != timerState else { return }
-        scheduleNotifications(for: next)
-        apply(next, modelContext: modelContext, now: now)
+        _ = apply(next, modelContext: modelContext, now: now)
     }
 
     func selectMode(_ mode: FlowMode, modelContext: ModelContext, now: Date = .now) {
         guard mode != selectedMode else { return }
 
+        let previousMode = selectedMode
         selectedMode = mode
         persistConfiguration()
 
@@ -478,46 +510,54 @@ final class ActiveFlowStore: ObservableObject {
         let next = engine.changeMode(mode, for: timerState)
         guard next != timerState else { return }
 
-        notifications.cancelPendingFlowNotifications()
-        if next.phase == .focusing {
-            scheduleNotifications(for: next)
+        guard apply(next, modelContext: modelContext, now: now) else {
+            selectedMode = previousMode
+            persistConfiguration()
+            return
         }
-        apply(next, modelContext: modelContext, now: now)
     }
 
     func stop(modelContext: ModelContext, now: Date = .now) {
-        notifications.cancelPendingFlowNotifications()
-
         guard let timerState else { return }
         if timerState.phase == .breakTime {
-            completeBreak(modelContext: modelContext, now: now)
+            _ = completeBreak(modelContext: modelContext, now: now)
             return
         }
 
         guard !discardShortFlowIfNeeded(timerState, modelContext: modelContext, now: now) else { return }
         stateBeforeResultPrompt = timerState
-        apply(engine.finish(timerState, now: now), modelContext: modelContext, now: now)
+        _ = apply(engine.finish(timerState, now: now), modelContext: modelContext, now: now)
     }
 
     func destroy(modelContext: ModelContext, now: Date = .now) {
-        notifications.cancelPendingFlowNotifications()
-
         if isBreakPhase {
             if let activeSession {
-                if let flowBreak = openBreak(for: activeSession.id, modelContext: modelContext) {
-                    flowBreak.deletedAt = now
-                    flowBreak.updatedAt = now
+                do {
+                    if let flowBreak = try openBreak(for: activeSession.id, modelContext: modelContext) {
+                        flowBreak.deletedAt = now
+                        flowBreak.updatedAt = now
+                    }
+                } catch {
+                    PersistenceIssueCenter.shared.report(error, operation: .dataLoad)
+                    return
                 }
                 activeSession.complete(now: now)
             }
         } else if let activeSession {
             if didApplyProgress {
-                historyEditor.delete(session: activeSession, modelContext: modelContext, now: now)
+                do {
+                    try historyEditor.delete(session: activeSession, modelContext: modelContext, now: now)
+                } catch {
+                    modelContext.rollback()
+                    PersistenceIssueCenter.shared.report(error, operation: .flowDelete)
+                    return
+                }
             } else {
                 modelContext.delete(activeSession)
             }
         }
 
+        guard modelContext.saveReporting(.flowDelete) else { return }
         activeSession = nil
         timerState = nil
         flowBreakInteraction = nil
@@ -525,15 +565,14 @@ final class ActiveFlowStore: ObservableObject {
         isAwaitingBreakMemo = false
         stateBeforeResultPrompt = nil
         lastAppliedRuntimeVersion = nil
-        try? modelContext.save()
+        notifications.cancelPendingFlowNotifications()
         liveActivities.end()
     }
 
     func skipBreak(modelContext: ModelContext, now: Date = .now) {
         guard let timerState else { return }
-        notifications.cancelPendingFlowNotifications()
         guard timerState.phase == .breakTime else { return }
-        completeBreak(modelContext: modelContext, now: now)
+        _ = completeBreak(modelContext: modelContext, now: now)
     }
 
     func startNextFlow(
@@ -544,41 +583,60 @@ final class ActiveFlowStore: ObservableObject {
     ) {
         guard timerState?.phase == .breakTime else { return }
 
-        notifications.cancelPendingFlowNotifications()
-        completeBreak(modelContext: modelContext, now: now)
+        guard completeBreak(modelContext: modelContext, now: now) else { return }
         configure(direction: direction, todo: todo)
         start(direction: direction, todo: todo, modelContext: modelContext, now: now)
     }
 
-    private func completeBreak(modelContext: ModelContext, now: Date) {
-        guard let timerState else { return }
+    @discardableResult
+    private func completeBreak(modelContext: ModelContext, now: Date) -> Bool {
+        guard let timerState else { return false }
         if let activeSession {
-            openBreak(for: activeSession.id, modelContext: modelContext)?.stopTimer(at: now)
+            do {
+                try openBreak(for: activeSession.id, modelContext: modelContext)?.stopTimer(at: now)
+            } catch {
+                PersistenceIssueCenter.shared.report(error, operation: .dataLoad)
+                return false
+            }
         }
-        apply(engine.skipBreak(timerState, now: now), modelContext: modelContext, now: now)
+        guard apply(
+            engine.skipBreak(timerState, now: now),
+            modelContext: modelContext,
+            now: now
+        ) else { return false }
         activeSession = nil
         self.timerState = nil
         flowBreakInteraction = nil
         didApplyProgress = false
         isAwaitingBreakMemo = false
         lastAppliedRuntimeVersion = nil
-        try? modelContext.save()
         liveActivities.end()
+        return true
     }
 
+    @discardableResult
     private func beginBreak(
         from state: FlowTimerState,
         modelContext: ModelContext,
         now: Date
-    ) {
-        guard let activeSession else { return }
+    ) -> Bool {
+        guard let activeSession else { return false }
 
         let focusedSeconds = engine.actualFocusDuration(for: state, now: now)
         let seriesID = activeSession.seriesID ?? activeSession.id
-        let priorSeriesSeconds = sessions(modelContext: modelContext)
+        let storedSessions: [FlowSession]
+        let storedBreaks: [FlowBreak]
+        do {
+            storedSessions = try sessions(modelContext: modelContext)
+            storedBreaks = try flowBreaks(modelContext: modelContext)
+        } catch {
+            PersistenceIssueCenter.shared.report(error, operation: .dataLoad)
+            return false
+        }
+        let priorSeriesSeconds = storedSessions
             .filter { $0.id != activeSession.id && ($0.seriesID ?? $0.id) == seriesID }
             .reduce(0) { $0 + $1.resolvedActualFocusDurationSeconds }
-        let completedLongBreaks = flowBreaks(modelContext: modelContext)
+        let completedLongBreaks = storedBreaks
             .filter { $0.seriesID == seriesID && $0.isLongBreak && !$0.isDeleted }
             .count
         let usesLongBreak = seriesPolicy.shouldUseLongBreak(
@@ -603,9 +661,10 @@ final class ActiveFlowStore: ObservableObject {
         )
 
         modelContext.insert(flowBreak)
-        apply(next, modelContext: modelContext, now: now)
+        guard apply(next, modelContext: modelContext, now: now) else { return false }
         publishFlowBreakInteraction(.started(isLong: usesLongBreak), at: now)
         TaskCompletionFeedbackPlayer.shared.playFlow(for: activeSession.id, now: now)
+        return true
     }
 
     private func publishFlowBreakInteraction(
@@ -620,16 +679,16 @@ final class ActiveFlowStore: ObservableObject {
         )
     }
 
-    private func eligiblePendingBreak(modelContext: ModelContext, at date: Date) -> FlowBreak? {
-        flowBreaks(modelContext: modelContext)
+    private func eligiblePendingBreak(modelContext: ModelContext, at date: Date) throws -> FlowBreak? {
+        try flowBreaks(modelContext: modelContext)
             .filter { flowBreak in
                 flowBreak.timerStoppedAt != nil && seriesPolicy.canContinueSeries(after: flowBreak, at: date)
             }
             .max { $0.startedAt < $1.startedAt }
     }
 
-    private func openBreak(for sessionID: UUID, modelContext: ModelContext) -> FlowBreak? {
-        flowBreaks(modelContext: modelContext)
+    private func openBreak(for sessionID: UUID, modelContext: ModelContext) throws -> FlowBreak? {
+        try flowBreaks(modelContext: modelContext)
             .filter {
                 $0.previousSessionID == sessionID &&
                     $0.timerStoppedAt == nil &&
@@ -638,12 +697,12 @@ final class ActiveFlowStore: ObservableObject {
             .max { $0.startedAt < $1.startedAt }
     }
 
-    private func sessions(modelContext: ModelContext) -> [FlowSession] {
-        (try? modelContext.fetch(FetchDescriptor<FlowSession>())) ?? []
+    private func sessions(modelContext: ModelContext) throws -> [FlowSession] {
+        try modelContext.fetch(FetchDescriptor<FlowSession>())
     }
 
-    private func flowBreaks(modelContext: ModelContext) -> [FlowBreak] {
-        (try? modelContext.fetch(FetchDescriptor<FlowBreak>())) ?? []
+    private func flowBreaks(modelContext: ModelContext) throws -> [FlowBreak] {
+        try modelContext.fetch(FetchDescriptor<FlowBreak>())
     }
 
     func remainingText(now: Date = .now) -> String {
@@ -686,26 +745,38 @@ final class ActiveFlowStore: ObservableObject {
         notifications.clearBadge()
     }
 
-    private func apply(_ state: FlowTimerState, modelContext: ModelContext, now: Date) {
-        guard state != timerState else { return }
+    @discardableResult
+    private func apply(_ state: FlowTimerState, modelContext: ModelContext, now: Date) -> Bool {
+        guard state != timerState else { return true }
 
-        let previousPhase = timerState?.phase
+        let previousState = timerState
+        let previousDidApplyProgress = didApplyProgress
         timerState = state
         activeSession?.apply(timerState: state, now: now)
 
         if state.phase == .breakTime || state.phase == .awaitingResult || state.phase == .completed {
             let focusedSeconds = state.actualFocusDurationSeconds ?? engine.actualFocusDuration(for: state, now: now)
             closeCurrentSegment(at: now, totalFocusSeconds: focusedSeconds)
-            applyProgressIfNeeded(modelContext: modelContext, now: now)
+            do {
+                try applyProgressIfNeeded(modelContext: modelContext, now: now)
+            } catch {
+                modelContext.rollback()
+                timerState = previousState
+                didApplyProgress = previousDidApplyProgress
+                PersistenceIssueCenter.shared.report(error, operation: .flowUpdate)
+                return false
+            }
         }
 
-        if state.phase == .breakTime && previousPhase != .breakTime {
-            scheduleNotifications(for: state)
+        guard modelContext.saveReporting(.flowUpdate) else {
+            timerState = previousState
+            didApplyProgress = previousDidApplyProgress
+            return false
         }
-
-        try? modelContext.save()
+        replaceNotifications(for: state)
         lastAppliedRuntimeVersion = activeSession?.runtimeVersion
         synchronizeLiveActivity(now: now)
+        return true
     }
 
     private func adopt(
@@ -770,6 +841,11 @@ final class ActiveFlowStore: ObservableObject {
         }
     }
 
+    private func replaceNotifications(for state: FlowTimerState) {
+        notifications.cancelPendingFlowNotifications()
+        scheduleNotifications(for: state)
+    }
+
     private func runningTooLongReminderDate(for state: FlowTimerState) -> Date {
         let plannedDuration = state.phase == .breakTime
             ? state.plannedBreakDurationSeconds
@@ -797,11 +873,11 @@ final class ActiveFlowStore: ObservableObject {
             }
     }
 
-    private func applyProgressIfNeeded(modelContext: ModelContext, now: Date) {
+    private func applyProgressIfNeeded(modelContext: ModelContext, now: Date) throws {
         guard !didApplyProgress else { return }
 
         if let activeSession {
-            progressReconciler.reconcile(
+            try progressReconciler.reconcile(
                 session: activeSession,
                 modelContext: modelContext,
                 now: now
@@ -874,13 +950,14 @@ final class ActiveFlowStore: ObservableObject {
             modelContext.delete(activeSession)
         }
 
+        guard modelContext.saveReporting(.flowDelete) else { return true }
         activeSession = nil
         timerState = nil
         didApplyProgress = false
         isAwaitingBreakMemo = false
         stateBeforeResultPrompt = nil
         lastAppliedRuntimeVersion = nil
-        try? modelContext.save()
+        notifications.cancelPendingFlowNotifications()
         liveActivities.end()
         return true
     }

@@ -7,8 +7,8 @@ struct ActiveFlowSyncResolution {
 }
 
 struct ActiveFlowSyncCoordinator {
-    func resolve(modelContext: ModelContext) -> ActiveFlowSyncResolution {
-        let sessions = (try? modelContext.fetch(FetchDescriptor<FlowSession>())) ?? []
+    func resolve(modelContext: ModelContext) throws -> ActiveFlowSyncResolution {
+        let sessions = try modelContext.fetch(FetchDescriptor<FlowSession>())
         return resolve(sessions: sessions)
     }
 

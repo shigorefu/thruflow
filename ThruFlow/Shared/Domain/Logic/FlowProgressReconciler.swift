@@ -9,12 +9,10 @@ import SwiftData
 struct FlowProgressReconciler {
     nonisolated init() {}
 
-    nonisolated func reconcileAll(modelContext: ModelContext, now: Date = .now) {
-        guard let todos = try? modelContext.fetch(FetchDescriptor<Todo>()),
-              let directions = try? modelContext.fetch(FetchDescriptor<Direction>()) else {
-            return
-        }
-        reconcile(
+    nonisolated func reconcileAll(modelContext: ModelContext, now: Date = .now) throws {
+        let todos = try modelContext.fetch(FetchDescriptor<Todo>())
+        let directions = try modelContext.fetch(FetchDescriptor<Direction>())
+        try reconcile(
             todos: todos,
             directions: directions,
             modelContext: modelContext,
@@ -28,8 +26,8 @@ struct FlowProgressReconciler {
         excludingSessionIDs: Set<UUID> = [],
         excludingSegmentIDs: Set<UUID> = [],
         now: Date = .now
-    ) {
-        reconcile(
+    ) throws {
+        try reconcile(
             todos: [session.todo] + session.resolvedSegments.map(\.todo),
             directions: [session.direction] + session.resolvedSegments.map(\.direction),
             modelContext: modelContext,
@@ -46,10 +44,8 @@ struct FlowProgressReconciler {
         excludingSessionIDs: Set<UUID> = [],
         excludingSegmentIDs: Set<UUID> = [],
         now: Date = .now
-    ) {
-        guard let storedSessions = try? modelContext.fetch(FetchDescriptor<FlowSession>()) else {
-            return
-        }
+    ) throws {
+        let storedSessions = try modelContext.fetch(FetchDescriptor<FlowSession>())
         let sessions = storedSessions.filter {
             !excludingSessionIDs.contains($0.id) && contributesToProgress($0)
         }
