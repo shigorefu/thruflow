@@ -561,8 +561,9 @@ month regardless of the configured Flow-day boundary. Year uses a compact year p
 the current year and which omits future years. Switching Week/Month/Year uses a
 short opacity-and-scale layout transition. Clicking a focus-calendar day switches to the
 single canonical `履歴` destination for that date; Statistics does not embed
-History. The current period is clipped to today: future calendar dates are
-disabled, Trend and the focus calendar omit future buckets, custom/export date fields cannot
+History. Dots always renders the complete selected Week, Month, or Year grid;
+future cells stay empty and disabled while Elastic and the selected date remain
+unchanged. Trend still omits future buckets, custom/export date fields cannot
 pass today, and Next remains unavailable until a complete non-future period
 exists.
 

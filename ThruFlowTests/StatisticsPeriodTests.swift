@@ -159,6 +159,7 @@ struct StatisticsPeriodTests {
         )
 
         #expect(snapshot.trend.count == 7)
+        #expect(snapshot.flowDays.count == 7)
         #expect(snapshot.trend[1].focusSeconds == 50 * 60)
         #expect(snapshot.trend[1].previousFocusSeconds == 25 * 60)
         #expect(snapshot.previousSummary.totalFocusSeconds == 25 * 60)
@@ -224,6 +225,8 @@ struct StatisticsPeriodTests {
         )
 
         #expect(snapshot.trend.count == 5)
+        #expect(snapshot.flowDays.count == 31)
+        #expect(snapshot.flowDays.last?.date == date(2026, 8, 31))
         #expect(snapshot.trend[0].focusSeconds == 75 * 60)
         #expect(snapshot.trend[0].previousFocusSeconds == 20 * 60)
         #expect(snapshot.trend[1].focusSeconds == 75 * 60)
