@@ -501,10 +501,10 @@ struct StatisticsView: View {
             set: {
                 customStartDate = nil
                 customEndDate = nil
-                anchorDate = min(
-                    dayBoundary.day(containing: $0, calendar: calendar),
-                    today
-                )
+                anchorDate = StatisticsPeriodBuilder(
+                    calendar: calendar,
+                    dayBoundary: dayBoundary
+                ).anchorDate(forCalendarSelection: $0, maximumDate: today)
             }
         )
     }

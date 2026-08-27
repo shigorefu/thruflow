@@ -84,7 +84,11 @@ struct IOSFlowView: View {
             if showsTaskComposer, horizontalSizeClass != .regular {
                 taskComposer
                     .transition(.move(edge: .bottom).combined(with: .opacity))
-                    .background(backgroundColor.ignoresSafeArea())
+                    .background {
+                        Rectangle()
+                            .fill(.background)
+                            .ignoresSafeArea()
+                    }
             }
         }
         .sheet(isPresented: $showsContextPicker) {
@@ -874,14 +878,7 @@ private struct IOSDashboardStatisticsView: View {
                             .frame(width: 5, height: 5)
                     }
                 }
-                Button { movePage(-1) } label: {
-                    Image(systemName: "chevron.left")
-                }
-                Button { movePage(1) } label: {
-                    Image(systemName: "chevron.right")
-                }
             }
-            .buttonStyle(.plain)
 
             Text(page.title)
                 .font(.caption.weight(.semibold))
@@ -903,6 +900,9 @@ private struct IOSDashboardStatisticsView: View {
         .padding(16)
         .frame(maxWidth: .infinity, minHeight: 330, alignment: .topLeading)
         .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 16))
+        .iosHorizontalPeriodSwipe { offset in
+            movePage(offset)
+        }
     }
 
     private var distributionPage: some View {

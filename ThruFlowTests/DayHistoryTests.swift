@@ -350,22 +350,20 @@ struct DayHistoryTests {
         #expect(snapshot.directionSummaries.first?.flowCount == 2)
     }
 
-    @Test func historyCombinesRecordedHabitOccurrencesButKeepsNormalTodosSeparate() {
+    @Test func historyKeepsRecordedHabitOccurrencesAsSeparateTasks() {
         let day = Date(timeIntervalSince1970: 20 * 86_400)
-        let habit = Direction(name: "AWS", type: .habit, symbolName: "☁️", colorHex: "#FFD60A")
+        let habit = Direction(name: "筋トレ", type: .habit, symbolName: "💪", colorHex: "#FFD60A")
         let normal = Direction(name: "仕事", type: .neutral)
         let firstHabit = Todo(
-            title: "",
+            title: "筋トレ B",
             direction: habit,
-            measurement: .focusBlocks,
-            plannedAmount: 2,
+            measurement: .checkbox,
             scheduledDate: day
         )
         let secondHabit = Todo(
-            title: "",
+            title: "筋トレ C",
             direction: habit,
-            measurement: .focusBlocks,
-            plannedAmount: 2,
+            measurement: .checkbox,
             scheduledDate: day.addingTimeInterval(86_400)
         )
         let firstNormal = Todo(title: "レビュー", direction: normal, scheduledDate: day)
@@ -386,10 +384,18 @@ struct DayHistoryTests {
 
         let habitSummaries = snapshot.taskSummaries.filter { $0.directionID == habit.id }
         let normalSummaries = snapshot.taskSummaries.filter { $0.directionID == normal.id }
-        #expect(habitSummaries.count == 1)
-        #expect(habitSummaries.first?.todos.count == 2)
+        #expect(habitSummaries.count == 2)
+        #expect(Set(habitSummaries.map(\.title)) == ["筋トレ B", "筋トレ C"])
+        #expect(habitSummaries.allSatisfy { $0.todos.count == 1 })
         #expect(normalSummaries.count == 2)
-        #expect(snapshot.directionSummaries.first(where: { $0.directionID == habit.id })?.taskCount == 1)
+        #expect(snapshot.directionSummaries.first(where: { $0.directionID == habit.id })?.taskCount == 2)
+
+        secondHabit.setManuallyCompleted(true, now: day.addingTimeInterval(86_400 + 12 * 3_600))
+
+        #expect(firstHabit.title == "筋トレ B")
+        #expect(!firstHabit.isCompleted)
+        #expect(secondHabit.title == "筋トレ C")
+        #expect(secondHabit.isCompleted)
     }
 
     @Test func historyHidesScheduledTasksWithoutRecordedFlow() {
@@ -406,7 +412,7 @@ struct DayHistoryTests {
         #expect(snapshot.taskSummaries.isEmpty)
     }
 
-    @Test func dailyHabitUsesScheduledOccurrenceWhileKeepingFlowFromAnotherOccurrence() {
+    @Test func dailyHabitUsesTheTodoActuallyLinkedToFlow() {
         let calendar = Calendar(identifier: .gregorian)
         let day = calendar.startOfDay(for: Date(timeIntervalSince1970: 30 * 86_400))
         let habit = Direction(name: "AWS", type: .habit, symbolName: "☁️", colorHex: "#FFD60A")
@@ -446,8 +452,8 @@ struct DayHistoryTests {
 
         let summary = snapshot.taskSummaries.first
         #expect(snapshot.taskSummaries.count == 1)
-        #expect(summary?.todos.map(\.id) == [currentHabit.id])
-        #expect(summary?.linkedTodoIDs == [previousHabit.id, currentHabit.id])
+        #expect(summary?.todos.map(\.id) == [previousHabit.id])
+        #expect(summary?.linkedTodoIDs == [previousHabit.id])
         #expect(summary?.focusSeconds == 25 * 60)
     }
 
