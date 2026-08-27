@@ -655,10 +655,10 @@ struct IOSStatisticsView: View {
         withAnimation(.snappy(duration: 0.32, extraBounce: 0)) {
             customStartDate = nil
             customEndDate = nil
-            anchorDate = min(
-                dayBoundary.day(containing: anchorDateDraft, calendar: calendar),
-                today
-            )
+            anchorDate = StatisticsPeriodBuilder(
+                calendar: calendar,
+                dayBoundary: dayBoundary
+            ).anchorDate(forCalendarSelection: anchorDateDraft, maximumDate: today)
             isAnchorPickerPresented = false
         }
     }

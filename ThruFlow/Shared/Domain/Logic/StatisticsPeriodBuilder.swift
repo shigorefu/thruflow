@@ -169,6 +169,16 @@ struct StatisticsPeriodBuilder: Sendable {
         self.dayBoundary = dayBoundary
     }
 
+    nonisolated func anchorDate(
+        forCalendarSelection selectedDate: Date,
+        maximumDate: Date
+    ) -> Date {
+        min(
+            calendar.startOfDay(for: selectedDate),
+            calendar.startOfDay(for: maximumDate)
+        )
+    }
+
     nonisolated func bounds(for filter: StatisticsPeriodFilter) -> StatisticsPeriodBounds {
         let anchorDay = dayBoundary.day(containing: filter.anchorDate, calendar: calendar)
         let current: DateInterval

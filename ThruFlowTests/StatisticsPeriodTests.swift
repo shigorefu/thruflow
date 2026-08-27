@@ -18,6 +18,21 @@ struct StatisticsPeriodTests {
         return calendar
     }
 
+    @Test func calendarMonthSelectionDoesNotMoveToPreviousMonthAtAMidnightBoundary() {
+        let builder = StatisticsPeriodBuilder(
+            calendar: calendar,
+            dayBoundary: AppDayBoundary(hour: 2)
+        )
+
+        let selectedDate = builder.anchorDate(
+            forCalendarSelection: date(2026, 8, 1),
+            maximumDate: date(2026, 8, 27)
+        )
+
+        #expect(selectedDate == date(2026, 8, 1))
+        #expect(calendar.component(.month, from: selectedDate) == 8)
+    }
+
     @Test func weekBoundsIncludeTheEquivalentPreviousWeek() {
         let filter = StatisticsPeriodFilter(
             period: .week,

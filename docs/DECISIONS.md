@@ -576,3 +576,15 @@ not represent persistence success.
 Reason: silent persistence failure can produce incorrect history and progress,
 while treating CloudKit as a prerequisite would make an offline-first focus
 tool unreliable.
+
+## D-039: History Preserves Individual Habit Task Occurrences
+
+Task History groups and identifies rows by Todo identity, including Habit
+occurrences that share one Direction. A Flow remains linked to its exact Todo.
+Editing a History title renames that linked Todo, and toggling Check changes
+only that Todo's completion state. Another day's Habit occurrence remains a
+separate row with its own title and status. No Flow title or completion
+override is added to the persistence schema.
+
+Reason: `筋トレ B` on Monday and `筋トレ C` on Wednesday are separate Tasks,
+not interchangeable representatives of one Habit Direction.

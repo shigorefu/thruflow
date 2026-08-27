@@ -184,15 +184,8 @@ struct DayHistoryTaskSummary: Identifiable {
 
     var todo: Todo? { todos.first }
 
-    var isHabit: Bool {
-        todo?.direction?.type == .habit
-    }
-
     var id: String {
-        if isHabit, let directionID {
-            return "habit-\(directionID.uuidString)"
-        }
-        return todoID?.uuidString ?? "direction-only-\(directionName)"
+        todoID?.uuidString ?? "direction-only-\(directionName)"
     }
 }
 
@@ -214,11 +207,7 @@ private struct DayHistoryTaskGroupKey: Hashable {
     let value: String
 
     init(todo: Todo) {
-        if todo.direction?.type == .habit, let directionID = todo.direction?.id {
-            value = "habit-\(directionID.uuidString)"
-        } else {
-            value = "todo-\(todo.id.uuidString)"
-        }
+        value = "todo-\(todo.id.uuidString)"
     }
 }
 

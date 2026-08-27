@@ -201,9 +201,15 @@ The dashboard timeline uses a neutral dark rail for time without Flow. Every ser
 
 Hovering a rest shows its type, interval, and duration above the timeline. Clicking a completed rest opens a duration editor anchored to that rest. Start time is fixed. If the new end overlaps the next Flow, that Flow and all later Flow/rest records in the same series move forward by the overlap. Free space absorbs an extension without shifting, shortening does not pull history backward, and unrelated series never move.
 
-Below the Flow stage are today's `タスク` and `習慣` columns. `できたら` is omitted when empty. Rows use the same square Check and circular Block/Minute progress controls as the Tasks screen. Check can be completed manually; Block and Minute rings are read-only because recorded Flow owns their progress. Rows can be opened for editing. The fixed-height compact `統計` carousel provides Task/Area focused-time distribution, a seven-day Flow trend with previous-day comparisons, and today's completion status.
+Below the Flow stage are today's `タスク` and `習慣` columns. `できたら` is omitted when empty. Rows use the same square Check and circular Block/Minute progress controls as the Tasks screen. Check can be completed manually; Block and Minute rings are read-only because recorded Flow owns their progress. Rows can be opened for editing. The fixed-height compact `統計` carousel provides Task/Area focused-time distribution, a seven-day Flow trend with previous-day comparisons, and today's completion status. On iOS its pages change with a horizontal swipe; page dots remain visible and previous/next arrow buttons are omitted.
 
-The Dashboard Task header `+` opens the shared messenger-style composer in a separate popover. The Flow Task picker's `タスク` tab also ends with an add row that opens the same popover; a Task created there is immediately selected for Flow. Area, measurement, and priority remain editable, while the date is fixed to `今日`. The composer has an explicit close button that discards the unfinished action. Habit has no manual add action.
+The Dashboard Task header `+` opens the shared messenger-style composer. On
+compact iOS layouts it slides above the tab bar on an opaque system background;
+regular layouts use a separate popover. The Flow Task picker's `タスク` tab also
+ends with an add row that opens the same composer; a Task created there is
+immediately selected for Flow. Area, measurement, and priority remain editable,
+while the date is fixed to `今日`. The composer has an explicit close button that
+discards the unfinished action. Habit has no manual add action.
 
 ## Onboarding And Voluntary Support
 
@@ -550,7 +556,8 @@ contains the centered preset control, trailing custom-range action,
 selected-period title, previous, Today, and next navigation. Previous/next move
 a custom range by its complete day count, while Today preserves that count and
 ends the range today. Week uses direct week selection in the mini-calendar, Month uses
-the year/month picker, and Year uses a compact year picker whose first entry is
+the year/month picker; selecting a numbered month preserves that exact calendar
+month regardless of the configured Flow-day boundary. Year uses a compact year picker whose first entry is
 the current year and which omits future years. Switching Week/Month/Year uses a
 short opacity-and-scale layout transition. Clicking a focus-calendar day switches to the
 single canonical `履歴` destination for that date; Statistics does not embed
@@ -640,7 +647,7 @@ In `日`, the right pane keeps the only wide-layout mini-calendar and no longer 
 
 Week keeps date headers fixed while hours scroll. Its right mini-calendar highlights the complete selected week, and choosing any date selects that week. Opening a day/week grid scrolls near the current time when today is visible, otherwise near the first Flow. A red line marks the current time. On macOS, Month keeps a minimum full-grid width and a right `1月...12月` year picker; a crowded day uses `詳細` to open its complete timeline. On iPhone, Month instead keeps the calendar and selected day's full timeline in one vertical scroll surface, so no second sheet or summary list interrupts navigation. Medium/narrow layouts preserve stable calendar widths through horizontal scrolling.
 
-Flow and FlowSegment records remain separate persisted records colored by Area. FlowBreak records remain separate light-gray records. In `週`, `seriesID` is used only to draw a composite series block; clicking it reveals each persisted Flow and rest record in a vertical detail timeline. Selecting a detail pushes its canonical editor inside that sheet, and the leading Back control returns to the series timeline rather than replacing the sheet. The Flow editor uses the same `タスク・習慣・分野` picker and Task composer as the player, and shows an inline Task-name field whenever a Task is selected. Saving a non-empty changed title renames that canonical Task everywhere; clearing the draft does not erase its current title. The rest editor uses a smaller content-fitted presentation. The sheet animates its window size while moving between the series timeline, Flow editor, and compact rest editor. The Flow dashboard independently uses `seriesID` for its continuous rail. Todo completions and pending Tasks never become independent History Calendar blocks.
+Flow and FlowSegment records remain separate persisted records colored by Area. FlowBreak records remain separate light-gray records. In `週`, `seriesID` is used only to draw a composite series block; clicking it reveals each persisted Flow and rest record in a vertical detail timeline. Selecting a detail pushes its canonical editor inside that sheet, and the leading Back control returns to the series timeline rather than replacing the sheet. The Flow editor uses the same `タスク・習慣・分野` picker and Task composer as the player, and shows an inline Task-name field whenever a Task is selected. Saving a non-empty changed title renames that exact linked Task; other Habit occurrences remain separate even when they share the same Area. Clearing the draft does not erase its current title. The rest editor uses a smaller content-fitted presentation. The sheet animates its window size while moving between the series timeline, Flow editor, and compact rest editor. The Flow dashboard independently uses `seriesID` for its continuous rail. Todo completions and pending Tasks never become independent History Calendar blocks.
 
 Lane assignment uses exact stored start/end intervals. Contiguous Flow and rest records stay in one vertical lane, and only actual time overlap creates side-by-side lanes. Entries below 15 minutes use compact title-only rendering; short rests become thin gray bars and expose exact time through hover and accessibility.
 
