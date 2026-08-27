@@ -154,8 +154,9 @@ struct IOSStatisticsView: View {
                     IOSStatisticsDotsCard(
                         mode: $dotsMode,
                         period: presentationPeriod,
-                        flowDays: currentSnapshot.flowDays.filter { $0.date <= today },
-                        achievementDays: currentSnapshot.achievementDays.filter { $0.date <= today },
+                        flowDays: currentSnapshot.flowDays,
+                        achievementDays: currentSnapshot.achievementDays,
+                        maximumInteractiveDate: today,
                         onSelectDay: { selectedContributionDay = $0 }
                     )
                 } else {
@@ -1133,6 +1134,7 @@ private struct IOSStatisticsDotsCard: View {
     let period: StatisticsPeriod
     let flowDays: [StatisticsDay]
     let achievementDays: [AchievementDay]
+    let maximumInteractiveDate: Date
     let onSelectDay: (IOSStatisticsContributionDay) -> Void
 
     private var days: [IOSStatisticsContributionDay] {
@@ -1147,7 +1149,8 @@ private struct IOSStatisticsDotsCard: View {
                 colorHex: mode == .flow ? flowDay.mixedColorHex : achievement?.mixedColorHex,
                 focusedSeconds: flowDay.totalFocusSeconds,
                 flowCount: flowDay.sessionCount,
-                completedTaskCount: achievement?.completedCount ?? 0
+                completedTaskCount: achievement?.completedCount ?? 0,
+                isSelectable: flowDay.date <= maximumInteractiveDate
             )
         }
     }
@@ -1255,7 +1258,7 @@ private struct IOSStatisticsContributionCell: View {
 
     var body: some View {
         Button {
-            if let day {
+            if let day, day.isSelectable {
                 onSelectDay(day)
             }
         } label: {
@@ -1267,7 +1270,7 @@ private struct IOSStatisticsContributionCell: View {
                 }
         }
         .buttonStyle(.plain)
-        .disabled(day == nil)
+        .disabled(day?.isSelectable != true)
         .accessibilityLabel(day?.accessibilityLabel ?? "")
         .accessibilityHint(String(localized: "選択"))
     }
@@ -1613,6 +1616,7 @@ private struct IOSStatisticsContributionDay: Identifiable {
     let focusedSeconds: Int
     let flowCount: Int
     let completedTaskCount: Int
+    let isSelectable: Bool
 
     var id: Date { date }
 

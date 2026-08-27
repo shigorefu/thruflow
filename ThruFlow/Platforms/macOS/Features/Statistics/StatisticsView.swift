@@ -213,8 +213,9 @@ struct StatisticsView: View {
                     mode: $dotsMode,
                     period: presentationPeriod,
                     usesCompactCustomGrid: usesCustomRange && displayedDayCount > 7,
-                    flowDays: snapshot.flowDays.filter { $0.date <= today },
-                    achievementDays: snapshot.achievementDays.filter { $0.date <= today },
+                    flowDays: snapshot.flowDays,
+                    achievementDays: snapshot.achievementDays,
+                    maximumInteractiveDate: today,
                     onSelectDate: onSelectHistoryDate
                 )
             case .month:
@@ -238,8 +239,9 @@ struct StatisticsView: View {
                             mode: $dotsMode,
                             period: presentationPeriod,
                             usesCompactCustomGrid: usesCustomRange && displayedDayCount > 7,
-                            flowDays: snapshot.flowDays.filter { $0.date <= today },
-                            achievementDays: snapshot.achievementDays.filter { $0.date <= today },
+                            flowDays: snapshot.flowDays,
+                            achievementDays: snapshot.achievementDays,
+                            maximumInteractiveDate: today,
                             onSelectDate: onSelectHistoryDate
                         )
                         .frame(
@@ -262,8 +264,9 @@ struct StatisticsView: View {
                             mode: $dotsMode,
                             period: presentationPeriod,
                             usesCompactCustomGrid: usesCustomRange && displayedDayCount > 7,
-                            flowDays: snapshot.flowDays.filter { $0.date <= today },
-                            achievementDays: snapshot.achievementDays.filter { $0.date <= today },
+                            flowDays: snapshot.flowDays,
+                            achievementDays: snapshot.achievementDays,
+                            maximumInteractiveDate: today,
                             onSelectDate: onSelectHistoryDate
                         )
                     }
@@ -279,8 +282,9 @@ struct StatisticsView: View {
                     mode: $dotsMode,
                     period: presentationPeriod,
                     usesCompactCustomGrid: usesCustomRange && displayedDayCount > 7,
-                    flowDays: snapshot.flowDays.filter { $0.date <= today },
-                    achievementDays: snapshot.achievementDays.filter { $0.date <= today },
+                    flowDays: snapshot.flowDays,
+                    achievementDays: snapshot.achievementDays,
+                    maximumInteractiveDate: today,
                     onSelectDate: onSelectHistoryDate
                 )
             }
@@ -1344,6 +1348,7 @@ private struct StatisticsDotsCard: View {
     let usesCompactCustomGrid: Bool
     let flowDays: [StatisticsDay]
     let achievementDays: [AchievementDay]
+    let maximumInteractiveDate: Date
     let onSelectDate: (Date) -> Void
 
     private var contributionDays: [StatisticsContributionDay] {
@@ -1356,7 +1361,8 @@ private struct StatisticsDotsCard: View {
                 colorHex: mode == .flow ? flowDay.mixedColorHex : achievement?.mixedColorHex,
                 focusedSeconds: flowDay.totalFocusSeconds,
                 flowCount: flowDay.sessionCount,
-                completedTaskCount: achievement?.completedCount ?? 0
+                completedTaskCount: achievement?.completedCount ?? 0,
+                isSelectable: flowDay.date <= maximumInteractiveDate
             )
         }
     }
@@ -1406,6 +1412,7 @@ private struct StatisticsContributionDay: Identifiable {
     let focusedSeconds: Int
     let flowCount: Int
     let completedTaskCount: Int
+    let isSelectable: Bool
 
     var id: Date { date }
 }
@@ -1475,6 +1482,7 @@ private struct StatisticsContributionGrid: View {
                     StatisticsContributionCell(
                         day: day,
                         maxValue: maxValue,
+                        isInteractive: day.isSelectable,
                         onSelectDate: onSelectDate
                     )
                     .frame(maxWidth: .infinity)
@@ -1506,6 +1514,7 @@ private struct StatisticsContributionGrid: View {
                 StatisticsContributionCell(
                     day: day,
                     maxValue: maxValue,
+                    isInteractive: day?.isSelectable == true,
                     onSelectDate: onSelectDate
                 )
                 .frame(
