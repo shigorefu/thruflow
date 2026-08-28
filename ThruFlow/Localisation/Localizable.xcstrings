@@ -10750,6 +10750,7 @@
       }
     },
     "週 %lld 回" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

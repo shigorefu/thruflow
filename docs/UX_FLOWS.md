@@ -21,6 +21,12 @@ Areas:
 The system Area `その他` / Other / Другое is not shown here and cannot be edited
 from this screen.
 
+On macOS and iPhone, the Area editor presents its type control in the fixed
+user-facing order `いつでも | 習慣 | できたら`. For a `週に数回` Habit, the weekly
+target uses a compact discrete slider with seven positions, with the selected
+count inside its thumb and no redundant count label. The macOS editor uses a
+content-fitted width rather than leaving an unused column beside the form.
+
 On macOS, the `いつでも`, `習慣`, and `できたら` groups use an adaptive grid: wide
 windows show them side by side, while narrower windows wrap the remaining groups
 onto following rows in the same vertical scroll surface instead of clipping them.

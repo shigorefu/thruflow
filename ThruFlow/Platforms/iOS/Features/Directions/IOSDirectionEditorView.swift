@@ -25,6 +25,7 @@ struct IOSDirectionEditorView: View {
         "#007AFF", "#34C759", "#00C7BE", "#32ADE6", "#5856D6", "#AF52DE",
         "#FF2D55", "#FF3B30", "#FF9500", "#FFCC00", "#8E8E93"
     ]
+    private let typeOptions: [DirectionType] = [.neutral, .habit, .nice]
 
     init(
         mode: IOSDirectionEditorMode,
@@ -82,7 +83,7 @@ struct IOSDirectionEditorView: View {
 
             Section(String(localized: "種類")) {
                 Picker(String(localized: "種類"), selection: $type) {
-                    ForEach(DirectionType.allCases) { type in
+                    ForEach(typeOptions) { type in
                         Text(type.displayName).tag(type)
                     }
                 }
@@ -128,9 +129,9 @@ struct IOSDirectionEditorView: View {
                         }
                     }
                     if goalSchedule == .weeklyCount {
-                        Stepper(value: $weeklyTargetCount, in: 1...7) {
-                            Text(String(localized: "週 \(weeklyTargetCount) 回"))
-                        }
+                        WeeklyFrequencySlider(value: $weeklyTargetCount)
+                            .frame(maxWidth: 260)
+                            .padding(.horizontal, 8)
                     }
 
                     if goalSchedule != .everyDay {
