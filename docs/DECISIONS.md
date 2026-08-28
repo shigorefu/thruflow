@@ -588,3 +588,18 @@ override is added to the persistence schema.
 
 Reason: `筋トレ B` on Monday and `筋トレ C` on Wednesday are separate Tasks,
 not interchangeable representatives of one Habit Direction.
+
+## D-040: Task Title Suggestions Copy Text, Not Todo Identity
+
+The Task composers on macOS, iPhone, and iPad suggest matching non-deleted Todo
+titles from local history. Prefix matches precede substring matches; frequency,
+then recency, resolves ranking within each group. Suggestions are deduplicated
+by case-, width-, and diacritic-insensitive title and limited to five. Selecting
+one creates no relationship to the historical Todo and copies no status,
+progress, Area, measurement, or date. In the macOS Flow timer's existing inline
+rename field, the same history source supplies up to three suggestions, but a
+selection renames only the currently attached Todo rather than switching Flow
+context.
+
+Reason: recurring work should be quick to type without reviving a completed
+Todo or recreating the cross-day identity confusion fixed for Habit history.

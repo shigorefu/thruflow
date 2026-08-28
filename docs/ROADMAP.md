@@ -86,7 +86,16 @@ Every item below is required before publishing 1.0:
 - A continuous non-Flow timeline.
 - New rewards, AI, or external connectors.
 
-## 1.1 — Intentional unrecorded time
+## 1.1.0 — Faster repeated Task capture
+
+- [x] Suggest previously used Task titles during Task creation on macOS,
+  iPhone, and iPad.
+- [x] Reuse the same title-only suggestions while renaming the current Task in
+  the macOS Flow timer.
+- [x] Keep every newly created Task independent from the historical Todo whose
+  title was suggested.
+
+## Later — Intentional unrecorded time
 
 This feature does not block TestFlight or 1.0. In 1.0, History continues to
 show unrecorded gaps and lets the user fill them manually. After validating the

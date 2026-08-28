@@ -98,6 +98,29 @@ struct FlowMiniPlayerView: View {
         .onTapGesture {
             dismissTaskTitleEditor()
         }
+        .overlayPreferenceValue(TaskTitleEditorBoundsPreferenceKey.self) { anchor in
+            GeometryReader { proxy in
+                if let anchor, !taskTitleSuggestions.isEmpty {
+                    let fieldBounds = proxy[anchor]
+                    let panelWidth = max(fieldBounds.width, 180)
+
+                    Color.clear
+                        .frame(
+                            width: panelWidth,
+                            height: 0
+                        )
+                        .overlay(alignment: .topLeading) {
+                            taskTitleSuggestionPanel
+                                .frame(width: panelWidth)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .offset(
+                            x: fieldBounds.minX,
+                            y: fieldBounds.maxY + 6
+                        )
+                }
+            }
+        }
     }
 
     private func headerPlayer(now: Date) -> some View {
@@ -343,6 +366,11 @@ struct FlowMiniPlayerView: View {
                 .onSubmit(commitTaskTitle)
                 .onExitCommand(perform: cancelTaskTitleEdit)
                 .accessibilityLabel(String(localized: "タスク名"))
+                .anchorPreference(
+                    key: TaskTitleEditorBoundsPreferenceKey.self,
+                    value: .bounds,
+                    transform: { $0 }
+                )
         } else {
             Text(flowTaskTitle)
                 .font(contextTitleFont)
@@ -406,6 +434,46 @@ struct FlowMiniPlayerView: View {
         editingTaskTitleID = selectedTodo.id
         Task { @MainActor in
             isTaskTitleFocused = true
+        }
+    }
+
+    private var taskTitleSuggestions: [TaskTitleSuggestion] {
+        guard isTaskTitleFocused, let selectedTodo else { return [] }
+        return TaskTitleSuggestionBuilder().suggestions(
+            query: taskTitleDraft,
+            todos: todos,
+            excludingTodoID: selectedTodo.id,
+            limit: 3
+        )
+    }
+
+    private var taskTitleSuggestionPanel: some View {
+        VStack(alignment: .leading, spacing: 1) {
+            ForEach(taskTitleSuggestions) { suggestion in
+                Button {
+                    taskTitleDraft = suggestion.title
+                    commitTaskTitle()
+                } label: {
+                    HStack(spacing: 7) {
+                        Image(systemName: "clock.arrow.circlepath")
+                            .foregroundStyle(.tint)
+                            .frame(width: 16)
+                        Text(suggestion.title)
+                            .lineLimit(1)
+                        Spacer(minLength: 0)
+                    }
+                    .padding(.horizontal, 8)
+                    .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(4)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+        .overlay {
+            RoundedRectangle(cornerRadius: 8)
+                .strokeBorder(Color.primary.opacity(0.12))
         }
     }
 
@@ -985,6 +1053,14 @@ struct FlowMiniPlayerView: View {
         }
 
         return "\(taskText)（\(direction.name)）"
+    }
+}
+
+private struct TaskTitleEditorBoundsPreferenceKey: PreferenceKey {
+    static let defaultValue: Anchor<CGRect>? = nil
+
+    static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) {
+        value = nextValue() ?? value
     }
 }
 

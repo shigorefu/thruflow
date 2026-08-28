@@ -1098,6 +1098,7 @@ enum QuickTodoDate: Hashable {
 struct MessengerTodoComposer: View {
     @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.calendar) private var calendar
+    @Query(sort: \Todo.updatedAt, order: .reverse) private var suggestionTodos: [Todo]
 
     @Binding var title: String
     @Binding var selectedDirectionID: UUID?
@@ -1134,20 +1135,20 @@ struct MessengerTodoComposer: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            if allowsQuickInputLegend && showsQuickInputLegend && isFocused && hasComposerContent && autocompleteToken == nil {
+            if allowsQuickInputLegend && showsQuickInputLegend && isFocused && hasComposerContent && activeAutocompleteSuggestions.isEmpty {
                 quickInputLegend
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
 
-            if let autocompleteToken {
-                autocompleteSuggestions(for: autocompleteToken)
+            if !activeAutocompleteSuggestions.isEmpty {
+                autocompleteSuggestions(activeAutocompleteSuggestions)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
 
             composerSurface
         }
         .animation(.snappy(duration: 0.22), value: hasComposerContent)
-        .animation(.snappy(duration: 0.18), value: autocompleteToken)
+        .animation(.snappy(duration: 0.18), value: activeAutocompleteSuggestions.map(\.id))
         .padding(.horizontal, showsOuterBackground ? 12 : 0)
         .padding(.vertical, showsOuterBackground ? 8 : 0)
         .background {
@@ -1185,7 +1186,7 @@ struct MessengerTodoComposer: View {
         .onChange(of: dateOption) { _, newValue in
             updateExistingInlineToken(.date(newValue))
         }
-        .onChange(of: autocompleteToken) { _, _ in
+        .onChange(of: activeAutocompleteSuggestions.map(\.id)) { _, _ in
             selectedAutocompleteSuggestionID = nil
         }
     }
@@ -1374,6 +1375,23 @@ struct MessengerTodoComposer: View {
         return parser.trailingAutocompleteToken(in: title)
     }
 
+    private var activeAutocompleteSuggestions: [TaskComposerAutocompleteSuggestion] {
+        guard isFocused else { return [] }
+        if let autocompleteToken {
+            return autocompleteSuggestionItems(for: autocompleteToken)
+        }
+        return TaskTitleSuggestionBuilder()
+            .suggestions(query: title, todos: suggestionTodos)
+            .map { suggestion in
+                TaskComposerAutocompleteSuggestion(
+                    id: "title:\(suggestion.id)",
+                    icon: "clock.arrow.circlepath",
+                    title: suggestion.title,
+                    action: .title(suggestion.title)
+                )
+            }
+    }
+
     private var submitButton: some View {
         Button(action: submit) {
             Image(systemName: "arrow.up")
@@ -1447,9 +1465,7 @@ struct MessengerTodoComposer: View {
     }
 
     @ViewBuilder
-    private func autocompleteSuggestions(for token: String) -> some View {
-        let suggestions = autocompleteSuggestionItems(for: token)
-
+    private func autocompleteSuggestions(_ suggestions: [TaskComposerAutocompleteSuggestion]) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             ForEach(suggestions) { suggestion in
                 suggestionRow(
@@ -1615,8 +1631,7 @@ struct MessengerTodoComposer: View {
     }
 
     private func moveAutocompleteSelection(by offset: Int) -> Bool {
-        guard let token = autocompleteToken else { return false }
-        let suggestions = autocompleteSuggestionItems(for: token)
+        let suggestions = activeAutocompleteSuggestions
         guard !suggestions.isEmpty else { return false }
         let currentID = selectedSuggestionID(in: suggestions)
         let currentIndex = suggestions.firstIndex { $0.id == currentID } ?? 0
@@ -1626,8 +1641,7 @@ struct MessengerTodoComposer: View {
     }
 
     private func activateSelectedAutocompleteSuggestion() -> Bool {
-        guard let token = autocompleteToken else { return false }
-        let suggestions = autocompleteSuggestionItems(for: token)
+        let suggestions = activeAutocompleteSuggestions
         guard let selectedID = selectedSuggestionID(in: suggestions),
               let suggestion = suggestions.first(where: { $0.id == selectedID }) else {
             return false
@@ -1646,6 +1660,9 @@ struct MessengerTodoComposer: View {
             isCreatingDirection = true
         case .token(let token):
             completeAutocompleteToken(token)
+        case .title(let value):
+            title = value
+            isFocused = true
         }
         selectedAutocompleteSuggestionID = nil
     }
@@ -1887,6 +1904,7 @@ private struct TaskComposerAutocompleteSuggestion: Identifiable {
         case direction(UUID)
         case createDirection(String)
         case token(String)
+        case title(String)
     }
 
     let id: String

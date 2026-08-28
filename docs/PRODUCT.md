@@ -28,6 +28,15 @@ Tasks are the daily Todo surface.
 
 Task title may be empty. When empty, UI displays `(分野)`, for example `(読書)` or `(その他)`.
 
+Task creation on macOS, iPhone, and iPad suggests matching titles from local
+Task history as ordinary text is entered. Prefix matches rank ahead of substring
+matches, repeated titles rank ahead of one-off titles, and recent use breaks
+remaining ties. Choosing a suggestion copies only its title into a newly
+created Todo; it never reuses the historical Todo identity, completion,
+progress, Area, or date. The same title-only suggestions appear while renaming
+the current Task in the macOS Flow timer. Choosing one there renames only the
+currently attached Todo and never switches Flow to a different historical Todo.
+
 The screen is named `タスク`. There is no separate Inbox navigation item. When today is selected, overdue active normal Tasks appear in a leading `やり残し` section. A toolbar `日付なし` button with a count opens an inspector for active normal Tasks without a date. Habit instances are excluded from both projections because their schedule is owned by the Habit planner.
 
 When a completed Flow is edited from History, its selected Task can also be
