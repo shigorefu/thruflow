@@ -1,9 +1,6 @@
 {
   "sourceLanguage" : "ja",
   "strings" : {
-    "" : {
-
-    },
     "–" : {
       "localizations" : {
         "en" : {
@@ -10745,29 +10742,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Неделя"
-          }
-        }
-      }
-    },
-    "週 %lld 回" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Times per Week: %lld"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "週に%lld回"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "В неделю: %lld"
           }
         }
       }
