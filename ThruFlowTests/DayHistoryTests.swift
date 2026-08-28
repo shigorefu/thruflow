@@ -309,6 +309,7 @@ struct DayHistoryTests {
         let direction = Direction(name: "仕事", type: .neutral, symbolName: "💻", colorHex: "#0A84FF")
         let firstTodo = Todo(title: "設計", direction: direction, scheduledDate: day)
         let secondTodo = Todo(title: "実装", direction: direction, scheduledDate: day.addingTimeInterval(86_400))
+        let unworkedTodo = Todo(title: "未着手", direction: direction, scheduledDate: day.addingTimeInterval(12 * 3_600))
         let firstSession = FlowSession(
             direction: direction,
             todo: firstTodo,
@@ -340,7 +341,7 @@ struct DayHistoryTests {
         let snapshot = DayHistoryBuilder(calendar: calendar).build(
             interval: interval,
             sessions: [firstSession, secondSession],
-            todos: [firstTodo, secondTodo]
+            todos: [firstTodo, secondTodo, unworkedTodo]
         )
 
         #expect(snapshot.interval == interval)

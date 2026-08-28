@@ -1004,6 +1004,8 @@ private struct HistoryTodoProgressIndicator: View {
 }
 
 private struct HistoryExpandableDirectionRow: View {
+    @Environment(\.locale) private var locale
+
     let direction: DayHistoryDirectionSummary
     let tasks: [DayHistoryTaskSummary]
     let isExpanded: Bool
@@ -1064,13 +1066,18 @@ private struct HistoryExpandableDirectionRow: View {
                                 )
                             }
                             Text(task.directionSymbol)
-                            Text(task.title)
-                                .strikethrough(task.todo?.isCompleted == true)
-                                .lineLimit(1)
-                                .contentShape(Rectangle())
-                                .onTapGesture(count: 2) {
-                                    if let todo = task.todo { onEditTask(todo) }
-                                }
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(task.title)
+                                    .strikethrough(task.todo?.isCompleted == true)
+                                    .lineLimit(1)
+                                Text(taskSubtitle(task))
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .contentShape(Rectangle())
+                            .onTapGesture(count: 2) {
+                                if let todo = task.todo { onEditTask(todo) }
+                            }
                             Spacer()
                             Text(durationText(task.focusSeconds))
                                 .font(.caption.monospacedDigit())
@@ -1105,6 +1112,15 @@ private struct HistoryExpandableDirectionRow: View {
     private func durationText(_ seconds: Int) -> String {
         let minutes = max(0, seconds) / 60
         return minutes < 60 ? String(localized: "\(minutes)分") : String(localized: "\(minutes / 60)時間\(minutes % 60)分")
+    }
+
+    private func taskSubtitle(_ task: DayHistoryTaskSummary) -> String {
+        let flowCount = String(localized: "集中\(task.flowCount)回")
+        guard let scheduledDate = task.todo?.scheduledDate else { return flowCount }
+        let date = scheduledDate.formatted(
+            .dateTime.locale(locale).month().day().weekday(.abbreviated)
+        )
+        return "\(date)・\(flowCount)"
     }
 }
 

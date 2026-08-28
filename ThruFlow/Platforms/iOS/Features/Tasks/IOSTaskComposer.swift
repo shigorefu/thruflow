@@ -5,6 +5,7 @@ struct IOSTaskComposer: View {
     @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.calendar) private var calendar
     @Environment(\.modelContext) private var modelContext
+    @Query(sort: \Todo.updatedAt, order: .reverse) private var suggestionTodos: [Todo]
 
     let directions: [Direction]
     let initialDraft: TodoDraft?
@@ -380,8 +381,13 @@ struct IOSTaskComposer: View {
         VStack(spacing: 0) {
             ForEach(autocompleteSuggestions) { suggestion in
                 Button {
-                    title = parser.replacingTrailingAutocompleteToken(in: title, with: suggestion.replacement) + " "
-                    applyRecognizedQuickInput()
+                    switch suggestion.action {
+                    case .token(let replacement):
+                        title = parser.replacingTrailingAutocompleteToken(in: title, with: replacement) + " "
+                        applyRecognizedQuickInput()
+                    case .title(let value):
+                        title = value
+                    }
                     isFocused = true
                 } label: {
                     HStack(spacing: 10) {
@@ -391,9 +397,11 @@ struct IOSTaskComposer: View {
                         Text(suggestion.title)
                             .foregroundStyle(.primary)
                         Spacer(minLength: 0)
-                        Text(suggestion.replacement)
-                            .font(.caption.monospaced())
-                            .foregroundStyle(.secondary)
+                        if let detail = suggestion.detail {
+                            Text(detail)
+                                .font(.caption.monospaced())
+                                .foregroundStyle(.secondary)
+                        }
                     }
                     .padding(.horizontal, 12)
                     .frame(minHeight: 42)
@@ -502,7 +510,20 @@ struct IOSTaskComposer: View {
     }
 
     private var autocompleteSuggestions: [IOSQuickInputSuggestion] {
-        guard let token = parser.trailingAutocompleteToken(in: title) else { return [] }
+        guard isFocused else { return [] }
+        guard let token = parser.trailingAutocompleteToken(in: title) else {
+            return TaskTitleSuggestionBuilder()
+                .suggestions(query: title, todos: suggestionTodos)
+                .map { suggestion in
+                    IOSQuickInputSuggestion(
+                        id: "title:\(suggestion.id)",
+                        title: suggestion.title,
+                        detail: nil,
+                        systemImage: "clock.arrow.circlepath",
+                        action: .title(suggestion.title)
+                    )
+                }
+        }
         let query = String(token.dropFirst()).lowercased()
 
         switch token.first {
@@ -514,8 +535,9 @@ struct IOSTaskComposer: View {
                     IOSQuickInputSuggestion(
                         id: $0.id.uuidString,
                         title: "\($0.symbolName) \($0.name)",
-                        replacement: "@\($0.name)",
-                        systemImage: ProductSymbol.area
+                        detail: "@\($0.name)",
+                        systemImage: ProductSymbol.area,
+                        action: .token("@\($0.name)")
                     )
                 }
         case "!":
@@ -526,7 +548,7 @@ struct IOSTaskComposer: View {
                 ("later", String(localized: "余裕があれば")),
             ]
             .filter { query.isEmpty || $0.0.hasPrefix(query) }
-            .map { IOSQuickInputSuggestion(id: "!\($0.0)", title: $0.1, replacement: "!\($0.0)", systemImage: "flag") }
+            .map { IOSQuickInputSuggestion(id: "!\($0.0)", title: $0.1, detail: "!\($0.0)", systemImage: "flag", action: .token("!\($0.0)")) }
         case "/":
             return [
                 ("today", String(localized: "今日")),
@@ -534,12 +556,12 @@ struct IOSTaskComposer: View {
                 ("nodate", String(localized: "日付なし")),
             ]
             .filter { query.isEmpty || $0.0.hasPrefix(query) }
-            .map { IOSQuickInputSuggestion(id: "/\($0.0)", title: $0.1, replacement: "/\($0.0)", systemImage: "calendar") }
+            .map { IOSQuickInputSuggestion(id: "/\($0.0)", title: $0.1, detail: "/\($0.0)", systemImage: "calendar", action: .token("/\($0.0)")) }
         case "[":
             return [
-                IOSQuickInputSuggestion(id: "check", title: TodoMeasurement.checkbox.displayName, replacement: "[]", systemImage: "checkmark.square"),
-                IOSQuickInputSuggestion(id: "block", title: "1 \(String(localized: "ブロック"))", replacement: "[1b]", systemImage: "circle"),
-                IOSQuickInputSuggestion(id: "minutes", title: "25 \(String(localized: "分"))", replacement: "[25m]", systemImage: "timer"),
+                IOSQuickInputSuggestion(id: "check", title: TodoMeasurement.checkbox.displayName, detail: "[]", systemImage: "checkmark.square", action: .token("[]")),
+                IOSQuickInputSuggestion(id: "block", title: "1 \(String(localized: "ブロック"))", detail: "[1b]", systemImage: "circle", action: .token("[1b]")),
+                IOSQuickInputSuggestion(id: "minutes", title: "25 \(String(localized: "分"))", detail: "[25m]", systemImage: "timer", action: .token("[25m]")),
             ]
         default:
             return []
@@ -685,10 +707,16 @@ struct IOSTaskComposer: View {
 }
 
 private struct IOSQuickInputSuggestion: Identifiable {
+    enum Action {
+        case token(String)
+        case title(String)
+    }
+
     let id: String
     let title: String
-    let replacement: String
+    let detail: String?
     let systemImage: String
+    let action: Action
 }
 
 private struct IOSDirectionDraft: Identifiable {

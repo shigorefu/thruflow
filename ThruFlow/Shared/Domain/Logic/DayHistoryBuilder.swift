@@ -31,6 +31,7 @@ struct DayHistorySnapshot {
         let todoGroups = Dictionary(grouping: relevantTodos) { todo in
             todo.direction?.id
         }
+        let workedTaskSummaries = taskSummaries.filter { $0.todo != nil }
         let directionIDs = Set(flowGroups.keys).union(todoGroups.keys.compactMap { $0 })
 
         return directionIDs.compactMap { directionID in
@@ -46,7 +47,9 @@ struct DayHistorySnapshot {
                     colorHex: direction.colorHex,
                     focusSeconds: 0,
                     flowCount: 0,
-                    taskCount: Set(directionTodos.map(DayHistoryTaskGroupKey.init)).count
+                    taskCount: workedTaskSummaries.filter {
+                        $0.directionID == directionID
+                    }.count
                 )
             }
             return DayHistoryDirectionSummary(
@@ -57,7 +60,9 @@ struct DayHistorySnapshot {
                 colorHex: firstFlow.directionColorHex,
                 focusSeconds: directionFlows.reduce(0) { $0 + $1.focusSeconds },
                 flowCount: Set(directionFlows.map(\.sessionID)).count,
-                taskCount: Set(directionTodos.map(DayHistoryTaskGroupKey.init)).count
+                taskCount: workedTaskSummaries.filter {
+                    $0.directionID == directionID
+                }.count
             )
         }
         .sorted {
