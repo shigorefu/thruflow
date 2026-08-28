@@ -69,6 +69,10 @@ struct IOSHistoryView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .background {
+            Color(uiColor: .systemBackground)
+                .ignoresSafeArea(edges: .bottom)
+        }
         .iosCenteredNavigationTitle(String(localized: "履歴"))
         .iosToolbarSearch(
             text: $searchText,

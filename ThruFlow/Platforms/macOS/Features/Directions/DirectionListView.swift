@@ -163,6 +163,7 @@ struct DirectionListView: View {
         .onAppear(perform: normalizeSortIndexesIfNeeded)
         .sheet(isPresented: $isShowingAddSheet) {
             DirectionFormView(mode: .create)
+                .frame(width: 420)
         }
         .sheet(
             isPresented: Binding(
@@ -172,6 +173,7 @@ struct DirectionListView: View {
         ) {
             if let editingDirection {
                 DirectionFormView(mode: .edit(editingDirection))
+                    .frame(width: 420)
             }
         }
     }

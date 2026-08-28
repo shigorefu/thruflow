@@ -39,6 +39,7 @@ struct DirectionFormView: View {
     @State private var habitPauseEndDate = Date.now
 
     private let validator = DirectionValidator()
+    private let typeOptions: [DirectionType] = [.neutral, .habit, .nice]
 
     init(
         mode: Mode,
@@ -161,7 +162,7 @@ struct DirectionFormView: View {
     private var typeCard: some View {
         DirectionSectionCard(title: String(localized: "種類")) {
             Picker(String(localized: "種類"), selection: $draft.type) {
-                ForEach(DirectionType.allCases) { type in
+                ForEach(typeOptions) { type in
                     Text(type.displayName).tag(type)
                 }
             }
@@ -409,7 +410,9 @@ struct DirectionFormView: View {
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         case .weeklyCount:
-            Stepper(String(localized: "週 \(draft.weeklyTargetCount ?? 1) 回"), value: weeklyTargetCountBinding, in: 1...7)
+            WeeklyFrequencySlider(value: weeklyTargetCountBinding)
+                .frame(maxWidth: 260)
+                .padding(.horizontal, 8)
 
             VStack(alignment: .leading, spacing: 8) {
                 Text(String(localized: "任意: 曜日も選べます"))

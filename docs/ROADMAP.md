@@ -86,68 +86,53 @@ Every item below is required before publishing 1.0:
 - A continuous non-Flow timeline.
 - New rewards, AI, or external connectors.
 
-## 1.1.0 — Faster repeated Task capture
+## 1.1.0 — History correctness and workflow polish
+
+### Task capture and Flow
 
 - [x] Suggest previously used Task titles during Task creation on macOS,
-  iPhone, and iPad.
+  iPhone, and iPad. Rank prefix matches before substring matches, then use
+  frequency and recency while deduplicating equivalent titles.
 - [x] Reuse the same title-only suggestions while renaming the current Task in
-  the macOS Flow timer.
+  the macOS Flow timer. Present them as a floating list below the field so the
+  timer layout does not change height.
 - [x] Keep every newly created Task independent from the historical Todo whose
-  title was suggested.
+  title was suggested; copy no completion, progress, Area, measurement, or
+  date.
+- [x] Give the compact iPhone Flow Task composer an opaque system background so
+  opening `+` never exposes transparent content behind the messenger surface.
+- [x] Make the compact iPhone Flow Statistics card a swipeable carousel with
+  persistent page dots and no previous/next arrow buttons.
 
-## Later — Intentional unrecorded time
+### History and Statistics correctness
 
-This feature does not block TestFlight or 1.0. In 1.0, History continues to
-show unrecorded gaps and lets the user fill them manually. After validating the
-core loop with real users, the app may gently offer to classify long periods
-outside Flow.
+- [x] Preserve the identity of every Habit Todo occurrence in History. Editing
+  a Monday occurrence's title or completion state never mutates a separate
+  Wednesday occurrence from the same Habit Area.
+- [x] In the History `分野` aggregate, distribute focused time across the exact
+  Todo occurrences that recorded it. Show each occurrence's date, Flow count,
+  and duration instead of collapsing a whole week into one misleading Task
+  row.
+- [x] Fix Statistics calendar selection on macOS and iOS so choosing a numbered
+  month opens that exact month instead of the previous month, independently of
+  the configured Flow-day boundary.
+- [x] Keep the complete selected Week, Month, or Year visible in Statistics
+  Dots. Future cells remain empty and disabled; Elastic continues to represent
+  only the selected date.
+- [x] Extend the iPhone History background through the bottom safe area so no
+  separate black strip appears below the content.
 
-- [ ] Validate a useful threshold from TestFlight feedback before building it;
-  the initial assumption is `60–90` minutes without a record.
-- [ ] Present an optional suggestion when opening the app or History, not an
-  interrupting popup or automatic notification.
-- [ ] Ask neutrally, “What occupied this time?”, without implying inactivity.
-- [ ] Offer quick choices for Sleep, Rest, Meal, Travel, Other, and Skip.
-- [ ] Allow dismissing the question, disabling suggestions for the current day,
-  or turning the feature off entirely.
-- [ ] Avoid a series of prompts after a night or long absence; combine gaps into
-  one calm review.
-- [ ] Store non-Flow time separately from Task and Area progress. These
-  records never earn Blocks or count as focused time.
+### Area editor polish
 
-## Other work after 1.0
+- [x] Use the fixed Area type order `いつでも | 習慣 | できたら` in the macOS and
+  iPhone editors without changing persisted enum values or ordering elsewhere.
+- [x] Replace the `週に数回` stepper with a compact seven-position slider on
+  macOS and iPhone. Show the selected value inside the thumb and keep the
+  control accessible through adjustable VoiceOver actions.
+- [x] Fit the macOS Area editor window to its content instead of leaving an
+  unused column on the right.
 
-- Reconsider optional Coffee and Ramen StoreKit tips only after the first App
-  Store release. If restored, configure the products, localizations, review
-  assets, agreements, tax, and banking before exposing their controls.
-- More detailed watchOS Statistics.
-- Further improvements to the quick Task composer.
-- A more deliberate reward system for Optional Areas (`できたら`).
+### Release metadata
 
-## 2.0 — Server transport and connectors
-
-- [ ] Add an optional serverless APNs backend:
-  `API Gateway -> Lambda -> EventBridge Scheduler -> APNs`.
-- [ ] Register, rotate, and revoke standard APNs device tokens and ActivityKit
-  push tokens without storing the Apple `.p8` key in the app.
-- [ ] Send idempotent runtime-revision pushes when Flow is stopped, paused,
-  resumed, or changes phase. Receiving devices must reconcile the canonical
-  CloudKit session and cancel or replace obsolete completion and forgotten-timer
-  notifications, including while suspended when iOS permits background delivery.
-- [ ] Cancel scheduled server reminders when a newer runtime revision stops or
-  changes Flow. Offline or force-quit clients must reconcile on the next launch.
-- [ ] Update Live Activity through APNs at the `00:00` boundary so a suspended
-  iPhone reliably shows overtime as `+MM:SS`.
-- [ ] Add a server reminder for a Flow or break that continues for more than an
-  hour.
-- [ ] Add retry and idempotency, one-shot schedule cleanup, minimal CloudWatch
-  logs, and AWS Budget alerts.
-- [ ] Keep the local timer and CloudKit as the source of truth: missing backend
-  connectivity must never prevent starting or saving Flow.
-- [ ] Add connectors such as Toggl, Strava, Jira, and other OAuth/webhook
-  integrations.
-
-## After 2.0
-
-- AI summaries.
-- Pets.
+- [x] Align the app and extension marketing versions to `1.1.0` while retaining
+  build number `8`.

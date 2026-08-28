@@ -1,0 +1,42 @@
+# Changelog
+
+All notable user-facing changes to ThruFlow are documented in this file.
+
+## [1.1.0] - Unreleased
+
+### Added
+
+- Added Task-title suggestions based on previously used titles when creating a
+  Task on macOS, iPhone, and iPad.
+- Added the same title-only suggestions when renaming the current Task in the
+  macOS Flow timer. Suggestions open below the field without changing the
+  timer layout height.
+- Added a compact seven-position slider for the `Times per Week` Habit
+  frequency on macOS and iPhone. The selected value appears inside the slider
+  thumb and remains adjustable with VoiceOver.
+
+### Changed
+
+- Task-title suggestions copy only text. They never reuse completion, progress,
+  Area, measurement, date, or the identity of a historical Todo.
+- The compact iPhone Flow Statistics card now changes pages with a horizontal
+  swipe, keeps page dots visible, and no longer shows arrow buttons.
+- Statistics Dots now keeps the complete selected Week, Month, or Year visible.
+  Future cells remain empty and disabled, while Elastic continues to represent
+  only the selected date.
+- Area editors now show types in the fixed order
+  `Anytime | Habit | Optional` on macOS and iPhone.
+- The macOS Area editor now uses a content-fitted window width.
+
+### Fixed
+
+- Fixed the compact iPhone Flow Task composer appearing transparent after
+  pressing `+`.
+- Fixed editing one Habit Task occurrence in History also changing a different
+  occurrence from another day.
+- Fixed History Area summaries collapsing a whole period's focused time into a
+  single misleading Task row. Focused time is now distributed across the exact
+  Todo occurrences that recorded it.
+- Fixed Statistics opening the previous month after selecting a numbered month
+  on macOS or iOS.
+- Fixed a separate black strip appearing below iPhone History content.
