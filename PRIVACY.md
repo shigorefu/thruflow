@@ -6,7 +6,7 @@ ThruFlow is designed to keep productivity data under the user's control.
 
 ## Data handled by the app
 
-ThruFlow stores the information users enter or create, including Directions, Tasks, Flow sessions, breaks, notes, settings, and calculated statistics. This data is required to provide the app's core functionality.
+ThruFlow stores the information users enter or create, including Areas, Tasks, Flow sessions, breaks, notes, settings, and calculated statistics. This data is required to provide the app's core functionality.
 
 By default, supported signed builds may synchronize this data through the user's private Apple iCloud/CloudKit database. Apple processes that data under the user's Apple account and Apple's terms. ThruFlow's developer does not operate a separate analytics, advertising, or account server and cannot browse records stored in a user's private CloudKit database.
 

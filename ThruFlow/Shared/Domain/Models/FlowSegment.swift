@@ -11,7 +11,8 @@ import SwiftData
 final class FlowSegment {
     var id: UUID = UUID()
     var session: FlowSession?
-    var direction: Direction?
+    /// Persisted as `direction` for SwiftData and CloudKit compatibility.
+    var direction: Area?
     var todo: Todo?
     var startedAt: Date = Date.now
     var endedAt: Date?
@@ -22,18 +23,23 @@ final class FlowSegment {
     init(
         id: UUID = UUID(),
         session: FlowSession,
-        direction: Direction,
+        area: Area,
         todo: Todo?,
         startedAt: Date,
         startFocusSeconds: Int
     ) {
         self.id = id
         self.session = session
-        self.direction = direction
+        self.direction = area
         self.todo = todo
         self.startedAt = startedAt
         self.startFocusSeconds = max(0, startFocusSeconds)
         self.createdAt = startedAt
+    }
+
+    var area: Area? {
+        get { direction }
+        set { direction = newValue }
     }
 
     var resolvedFocusSeconds: Int {

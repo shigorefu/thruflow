@@ -21,9 +21,9 @@ struct FlowLiveActivityContent: Equatable {
     var sessionID: UUID
     var taskEmoji: String
     var taskTitle: String
-    var directionEmoji: String
-    var directionName: String
-    var directionColorHex: String
+    var areaEmoji: String
+    var areaName: String
+    var areaColorHex: String
     var modeRawValue: String
     var modeName: String
     var status: FlowLiveActivityStatus
@@ -79,10 +79,10 @@ enum FlowLiveActivityPresentation {
         timerKind == .breakTime ? String(localized: "休憩") : taskTitle
     }
 
-    nonisolated static func directionName(
-        _ directionName: String,
+    nonisolated static func areaName(
+        _ areaName: String,
         timerKind: FlowLiveActivityTimerKind
     ) -> String {
-        timerKind == .breakTime ? "" : directionName
+        timerKind == .breakTime ? "" : areaName
     }
 }

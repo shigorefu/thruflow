@@ -9,18 +9,20 @@ Area -> Task -> Flow -> focused time -> progress -> statistics
 ```
 
 User-facing English uses `Area` / `Areas`, and user-facing Russian uses
-`Сфера` / `Сферы`. `Direction` remains the internal Swift model,
-property, persistence, and machine-readable CSV identifier.
+`Сфера` / `Сферы`. Application code, file names, and the machine-readable CSV
+column use `Area` / `area`. The compatibility boundary alone retains the
+SwiftData/CloudKit entity name `Direction` and the stored relationship name
+`direction`, so existing synchronized data requires no migration.
 
 ## 分野
 
-`分野` is the Japanese UI label for the persistent `Direction` model. The same
-entity is shown as `Area` in English and `Сфера` in Russian.
+`分野` is the Japanese UI label for the code-facing `Area` model. The same
+concept is shown as `Area` in English and `Сфера` in Russian.
 
 - `いつでも` / Anytime / Обычное: no automatic daily Task.
 - `習慣` / Habit / Привычка: scheduled recurring requirement that creates Habit Tasks.
 - `できたら` / Optional / Если получится: positive activity that does not block day completion.
-- `その他` / Other / Другое: system Area for Tasks and Flow without a chosen Area. Its internal role remains a `Direction`; it is hidden only from Area management, not from Statistics.
+- `その他` / Other / Другое: system Area for Tasks and Flow without a chosen Area. Its stable role is `taskInbox`; it is hidden only from Area management, not from Statistics.
 
 ## Tasks
 
@@ -99,7 +101,7 @@ The active creditable Flow updates the dashboard live. Completed timeline
 segments open the existing platform History detail/editor.
 
 Flow may start with a Task, only an Area, or neither. Area-only work is persisted
-through its internal `Direction` relationship without an implicit Todo; work
+through its selected `Area` relationship without an implicit Todo; work
 without either resolves to system `その他`. Version 1.0 never creates a Task
 implicitly from Flow.
 

@@ -156,8 +156,8 @@ private struct TaskDayColumn: View {
 
     private func canDrag(_ todo: Todo) -> Bool {
         guard !todo.isCompleted else { return false }
-        guard todo.direction?.type == .habit else { return true }
-        return todo.direction?.goalSchedule == .weeklyCount
+        guard todo.area?.type == .habit else { return true }
+        return todo.area?.goalSchedule == .weeklyCount
     }
 
     private func taskID(from payload: String) -> UUID? {
@@ -230,7 +230,7 @@ struct TaskMonthGrid: View {
                 ForEach(dayTodos.prefix(2)) { todo in
                     let label = HStack(spacing: 4) {
                         Circle()
-                            .fill(todo.direction.map { Color(hex: $0.colorHex) } ?? .secondary)
+                            .fill(todo.area.map { Color(hex: $0.colorHex) } ?? .secondary)
                             .frame(width: 5, height: 5)
                         Text(TodoDisplay.title(for: todo))
                             .lineLimit(1)
@@ -245,7 +245,7 @@ struct TaskMonthGrid: View {
                     }
                 }
 
-                if dayTodos.contains(where: { $0.direction?.type == .habit && !$0.isCompleted }) {
+                if dayTodos.contains(where: { $0.area?.type == .habit && !$0.isCompleted }) {
                     Label(String(localized: "習慣一覧"), systemImage: "exclamationmark.circle.fill")
                         .font(.caption2)
                         .foregroundStyle(.red)
@@ -288,8 +288,8 @@ struct TaskMonthGrid: View {
 
     private func canDrag(_ todo: Todo) -> Bool {
         guard !todo.isCompleted else { return false }
-        guard todo.direction?.type == .habit else { return true }
-        return todo.direction?.goalSchedule == .weeklyCount
+        guard todo.area?.type == .habit else { return true }
+        return todo.area?.goalSchedule == .weeklyCount
     }
 
     private var weekdaySymbols: [String] {
@@ -327,8 +327,8 @@ private struct TaskBoardCard: View {
                     .lineLimit(3)
 
                 HStack(spacing: 5) {
-                    if let direction = todo.direction, !DefaultDirections.isTaskInbox(direction) {
-                        Text("\(direction.symbolName) \(direction.name)")
+                    if let area = todo.area, !DefaultAreas.isTaskInbox(area) {
+                        Text("\(area.symbolName) \(area.name)")
                             .foregroundStyle(tint)
                     }
 
@@ -361,10 +361,10 @@ private struct TaskBoardCard: View {
     }
 
     private var tint: Color {
-        guard let direction = todo.direction, !DefaultDirections.isTaskInbox(direction) else {
+        guard let area = todo.area, !DefaultAreas.isTaskInbox(area) else {
             return .secondary
         }
-        return Color(hex: direction.colorHex)
+        return Color(hex: area.colorHex)
     }
 
     private var summary: String {
@@ -396,7 +396,7 @@ private struct TaskBoardGroupHeader: View {
 }
 
 private struct TaskBoardGroup: Identifiable {
-    let type: DirectionType
+    let type: AreaType
     let todos: [Todo]
 
     var id: String { type.rawValue }
@@ -414,9 +414,9 @@ private struct TaskBoardGroup: Identifiable {
     }
 
     static func groups(for todos: [Todo]) -> [TaskBoardGroup] {
-        let order: [DirectionType] = [.habit, .neutral, .nice]
+        let order: [AreaType] = [.habit, .neutral, .nice]
         return order.compactMap { type in
-            let matching = todos.filter { ($0.direction?.type ?? .neutral) == type }
+            let matching = todos.filter { ($0.area?.type ?? .neutral) == type }
             return matching.isEmpty ? nil : TaskBoardGroup(type: type, todos: matching)
         }
     }

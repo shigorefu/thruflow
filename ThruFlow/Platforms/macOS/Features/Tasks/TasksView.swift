@@ -14,12 +14,12 @@ struct TasksView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
 
-    @Query(sort: \Direction.name, order: .forward) private var directions: [Direction]
+    @Query(sort: \Area.name, order: .forward) private var areas: [Area]
     @Query(sort: \Todo.sortIndex, order: .forward) private var todos: [Todo]
 
     @State private var editingTodo: Todo?
     @State private var newTodoTitle = ""
-    @State private var newTodoDirectionID: UUID?
+    @State private var newTodoAreaID: UUID?
     @State private var newTodoVolume: QuickTodoVolume = .unspecified
     @State private var newTodoPriority: TodoPriority = .medium
     @State private var newTodoIsRoomIfPossible = false
@@ -59,15 +59,15 @@ struct TasksView: View {
         )
     }
 
-    private var activeDirections: [Direction] {
-        directions.filter { !$0.isArchived }
+    private var activeAreas: [Area] {
+        areas.filter { !$0.isArchived }
     }
 
-    private var visibleDirections: [Direction] {
-        activeDirections.filter { !DefaultDirections.isTaskInbox($0) }
+    private var visibleAreas: [Area] {
+        activeAreas.filter { !DefaultAreas.isTaskInbox($0) }
     }
 
-    private var groupOrder: [DirectionType] {
+    private var groupOrder: [AreaType] {
         TasksTodoGroup.order(from: groupOrderRaw)
     }
 
@@ -137,13 +137,13 @@ struct TasksView: View {
         .safeAreaInset(edge: .bottom) {
             MessengerTodoComposer(
                 title: $newTodoTitle,
-                selectedDirectionID: $newTodoDirectionID,
+                selectedAreaID: $newTodoAreaID,
                 volume: $newTodoVolume,
                 priority: $newTodoPriority,
                 isRoomIfPossible: $newTodoIsRoomIfPossible,
                 dateOption: $newTodoDateOption,
                 hashtags: $newTodoHashtags,
-                directions: visibleDirections,
+                areas: visibleAreas,
                 validationMessage: newTodoError,
                 onSubmit: createInlineTodo
             )
@@ -565,11 +565,11 @@ struct TasksView: View {
         selectedDate = today
     }
 
-    private func moveTaskPeriod(by direction: Int) {
+    private func moveTaskPeriod(by area: Int) {
         let date = calendarBuilder.advancedDate(
             from: anchorDate,
             range: calendarRange,
-            direction: direction
+            area: area
         )
         anchorDate = calendar.startOfDay(for: date)
         selectedDate = anchorDate
@@ -650,7 +650,7 @@ struct TasksView: View {
     }
 
     private func startFlow(_ todo: Todo) {
-        activeFlowStore.configure(direction: todo.direction, todo: todo)
+        activeFlowStore.configure(area: todo.area, todo: todo)
     }
 
     private func deleteTodo(_ todo: Todo) {
@@ -696,8 +696,8 @@ struct TasksView: View {
 
     private func canDrag(_ todo: Todo) -> Bool {
         guard !todo.isCompleted else { return false }
-        guard todo.direction?.type == .habit else { return true }
-        return todo.direction?.goalSchedule == .weeklyCount
+        guard todo.area?.type == .habit else { return true }
+        return todo.area?.goalSchedule == .weeklyCount
     }
 
     private func todoRow(_ todo: Todo) -> some View {
@@ -715,8 +715,8 @@ struct TasksView: View {
                 editingTodo = todo
             }
 
-            if todo.direction?.type == .habit {
-                if todo.direction?.goalSchedule == .weeklyCount {
+            if todo.area?.type == .habit {
+                if todo.area?.goalSchedule == .weeklyCount {
                     weeklyHabitMoveMenu(for: todo)
                 }
             } else {
@@ -726,7 +726,7 @@ struct TasksView: View {
             Divider()
 
             Button(String(localized: "Flowを開始"), systemImage: "play.fill") {
-                activeFlowStore.configure(direction: todo.direction, todo: todo)
+                activeFlowStore.configure(area: todo.area, todo: todo)
             }
 
             Divider()
@@ -813,7 +813,7 @@ struct TasksView: View {
     }
 
     private func moveTodos(
-        in type: DirectionType,
+        in type: AreaType,
         from source: IndexSet,
         to destination: Int,
         selectedTodos: [Todo]
@@ -839,7 +839,7 @@ struct TasksView: View {
         let draft = TodoDraft(
             title: newTodoTitle,
             hashtags: newTodoHashtags,
-            direction: direction(for: newTodoDirectionID),
+            area: area(for: newTodoAreaID),
             measurement: newTodoVolume.measurement,
             priority: newTodoPriority,
             isRoomIfPossible: newTodoPriority == .low && newTodoIsRoomIfPossible,
@@ -856,11 +856,11 @@ struct TasksView: View {
             return
         }
 
-        let direction = resolvedDirection(for: newTodoDirectionID)
+        let area = resolvedArea(for: newTodoAreaID)
         let todo = Todo(
             title: draft.trimmedTitle,
             hashtags: draft.hashtags,
-            direction: direction,
+            area: area,
             measurement: newTodoVolume.measurement,
             priority: newTodoPriority,
             isRoomIfPossible: newTodoPriority == .low && newTodoIsRoomIfPossible,
@@ -906,7 +906,7 @@ struct TasksView: View {
                 calendar: calendar,
                 dayBoundary: dayBoundary
             ).materialize(
-                directions: activeDirections,
+                areas: activeAreas,
                 dates: dates,
                 modelContext: modelContext,
                 now: now,
@@ -936,7 +936,7 @@ struct TasksView: View {
         MacRequiredTodoMaterializationID(
             rangeRawValue: calendarRange.rawValue,
             visibleDates: visibleDates.map { calendar.startOfDay(for: $0) },
-            habitRevisions: activeDirections
+            habitRevisions: activeAreas
                 .filter { $0.type == .habit }
                 .map {
                     MacHabitMaterializationRevision(
@@ -957,23 +957,23 @@ struct TasksView: View {
         anchorDate = appToday
     }
 
-    private func resolvedDirection(for id: UUID?) -> Direction {
-        if let direction = direction(for: id) {
-            return direction
+    private func resolvedArea(for id: UUID?) -> Area {
+        if let area = area(for: id) {
+            return area
         }
 
-        if let taskInbox = DefaultDirections.existingTaskInbox(in: activeDirections) {
+        if let taskInbox = DefaultAreas.existingTaskInbox(in: activeAreas) {
             return taskInbox
         }
 
-        let taskInbox = DefaultDirections.makeTaskInbox()
+        let taskInbox = DefaultAreas.makeTaskInbox()
         modelContext.insert(taskInbox)
         return taskInbox
     }
 
-    private func direction(for id: UUID?) -> Direction? {
+    private func area(for id: UUID?) -> Area? {
         guard let id else { return nil }
-        return visibleDirections.first { $0.id == id }
+        return visibleAreas.first { $0.id == id }
     }
 }
 
@@ -1101,14 +1101,14 @@ struct MessengerTodoComposer: View {
     @Query(sort: \Todo.updatedAt, order: .reverse) private var suggestionTodos: [Todo]
 
     @Binding var title: String
-    @Binding var selectedDirectionID: UUID?
+    @Binding var selectedAreaID: UUID?
     @Binding var volume: QuickTodoVolume
     @Binding var priority: TodoPriority
     @Binding var isRoomIfPossible: Bool
     @Binding var dateOption: QuickTodoDate
     @Binding var hashtags: [String]
 
-    let directions: [Direction]
+    let areas: [Area]
     let validationMessage: String?
     var allowsDateSelection = true
     var showsOuterBackground = true
@@ -1119,10 +1119,10 @@ struct MessengerTodoComposer: View {
     @FocusState private var isFocused: Bool
     @AppStorage("settings.showsTaskQuickInputLegend") private var showsQuickInputLegend = true
     @State private var parserMessage: String?
-    @State private var pendingDirectionName: String?
+    @State private var pendingAreaName: String?
     @State private var isApplyingParserResult = false
     @State private var inlineTokens: [TaskComposerInlineToken] = []
-    @State private var hasExplicitDirection = false
+    @State private var hasExplicitArea = false
     @State private var hasExplicitPriority = false
     @State private var hasExplicitDate = false
     @State private var selectedAutocompleteSuggestionID: String?
@@ -1156,16 +1156,16 @@ struct MessengerTodoComposer: View {
                 Rectangle().fill(.bar)
             }
         }
-        .sheet(isPresented: pendingDirectionSheetBinding) {
-            DirectionFormView(
+        .sheet(isPresented: pendingAreaSheetBinding) {
+            AreaFormView(
                 mode: .create,
-                initialName: pendingDirectionName
-            ) { direction in
-                selectedDirectionID = direction.id
-                hasExplicitDirection = true
-                replaceInlineToken(.direction(direction.id))
-                removeDirectionToken(named: direction.name)
-                pendingDirectionName = nil
+                initialName: pendingAreaName
+            ) { area in
+                selectedAreaID = area.id
+                hasExplicitArea = true
+                replaceInlineToken(.area(area.id))
+                removeAreaToken(named: area.name)
+                pendingAreaName = nil
                 parserMessage = nil
             }
         }
@@ -1174,8 +1174,8 @@ struct MessengerTodoComposer: View {
                 .measurement(newValue.measurement, newValue.plannedAmount)
             )
         }
-        .onChange(of: selectedDirectionID) { _, newValue in
-            updateExistingInlineToken(newValue.map(TaskComposerInlineToken.direction), id: "direction")
+        .onChange(of: selectedAreaID) { _, newValue in
+            updateExistingInlineToken(newValue.map(TaskComposerInlineToken.area), id: "area")
         }
         .onChange(of: priority) { _, newValue in
             updateExistingInlineToken(.priority(newValue, isRoomIfPossible))
@@ -1203,8 +1203,8 @@ struct MessengerTodoComposer: View {
                     .foregroundStyle(.red)
             }
 
-            if let pendingDirectionName {
-                unresolvedDirectionActions(name: pendingDirectionName)
+            if let pendingAreaName {
+                unresolvedAreaActions(name: pendingAreaName)
             }
         }
         .padding(.horizontal, 16)
@@ -1284,10 +1284,10 @@ struct MessengerTodoComposer: View {
         HStack(spacing: 8) {
             VolumeChip(volume: $volume)
 
-            DirectionChip(
-                selectedDirectionID: $selectedDirectionID,
-                isExplicit: $hasExplicitDirection,
-                directions: directions
+            AreaChip(
+                selectedAreaID: $selectedAreaID,
+                isExplicit: $hasExplicitArea,
+                areas: areas
             )
                 .fixedSize(horizontal: true, vertical: false)
                 .layoutPriority(3)
@@ -1331,40 +1331,40 @@ struct MessengerTodoComposer: View {
     private func submit() {
         let result = parser.parse(
             title,
-            directions: parserDirections,
+            areas: parserAreas,
             anchorDate: dayBoundary.day(containing: .now, calendar: calendar),
             calendar: calendar,
             consumeTrailingToken: true
         )
         apply(result)
-        if let unresolved = result.unresolvedDirection, !unresolved.isEmpty {
-            pendingDirectionName = unresolved
+        if let unresolved = result.unresolvedArea, !unresolved.isEmpty {
+            pendingAreaName = unresolved
             parserMessage = String(localized: "方向「\(unresolved)」が見つかりません")
-            isCreatingDirection = true
+            isCreatingArea = true
             isFocused = true
             return
         }
-        pendingDirectionName = nil
+        pendingAreaName = nil
         parserMessage = nil
         onSubmit()
         clearInlineTokensAfterSubmission()
         isFocused = true
     }
 
-    private var parserDirections: [TaskQuickInputDirection] {
-        directions.map { TaskQuickInputDirection(id: $0.id, name: $0.name) }
+    private var parserAreas: [TaskQuickInputArea] {
+        areas.map { TaskQuickInputArea(id: $0.id, name: $0.name) }
     }
 
-    private var pendingDirectionSheetBinding: Binding<Bool> {
+    private var pendingAreaSheetBinding: Binding<Bool> {
         Binding(
-            get: { pendingDirectionName != nil && isCreatingDirection },
+            get: { pendingAreaName != nil && isCreatingArea },
             set: { newValue in
-                if !newValue { isCreatingDirection = false }
+                if !newValue { isCreatingArea = false }
             }
         )
     }
 
-    @State private var isCreatingDirection = false
+    @State private var isCreatingArea = false
 
     private var hasComposerContent: Bool {
         !trimmedTitle.isEmpty || !inlineTokens.isEmpty
@@ -1487,7 +1487,7 @@ struct MessengerTodoComposer: View {
     private func autocompleteSuggestionItems(for token: String) -> [TaskComposerAutocompleteSuggestion] {
         let query = String(token.dropFirst())
         switch token.first {
-        case "@": return directionAutocompleteSuggestions(query: query)
+        case "@": return areaAutocompleteSuggestions(query: query)
         case "!": return priorityAutocompleteSuggestions(query: query)
         case "/": return dateAutocompleteSuggestions(query: query)
         case "[": return measurementAutocompleteSuggestions(query: query)
@@ -1495,29 +1495,29 @@ struct MessengerTodoComposer: View {
         }
     }
 
-    private func directionAutocompleteSuggestions(query: String) -> [TaskComposerAutocompleteSuggestion] {
+    private func areaAutocompleteSuggestions(query: String) -> [TaskComposerAutocompleteSuggestion] {
         let matches = Array(
-            directions
+            areas
                 .filter { query.isEmpty || $0.name.localizedCaseInsensitiveContains(query) }
                 .prefix(6)
         )
         guard !matches.isEmpty else {
             return [
                 TaskComposerAutocompleteSuggestion(
-                    id: "create-direction:\(query)",
+                    id: "create-area:\(query)",
                     icon: "plus.circle",
                     title: String(localized: "新しい方向を作成"),
                     detail: query.isEmpty ? nil : query,
-                    action: .createDirection(query)
+                    action: .createArea(query)
                 )
             ]
         }
-        return matches.map { direction in
+        return matches.map { area in
             TaskComposerAutocompleteSuggestion(
-                id: "direction:\(direction.id.uuidString)",
-                symbol: direction.symbolName,
-                title: direction.name,
-                action: .direction(direction.id)
+                id: "area:\(area.id.uuidString)",
+                symbol: area.symbolName,
+                title: area.name,
+                action: .area(area.id)
             )
         }
     }
@@ -1652,12 +1652,12 @@ struct MessengerTodoComposer: View {
 
     private func activateAutocompleteSuggestion(_ suggestion: TaskComposerAutocompleteSuggestion) {
         switch suggestion.action {
-        case .direction(let id):
-            guard let direction = directions.first(where: { $0.id == id }) else { return }
-            choose(direction)
-        case .createDirection(let name):
-            pendingDirectionName = name
-            isCreatingDirection = true
+        case .area(let id):
+            guard let area = areas.first(where: { $0.id == id }) else { return }
+            choose(area)
+        case .createArea(let name):
+            pendingAreaName = name
+            isCreatingArea = true
         case .token(let token):
             completeAutocompleteToken(token)
         case .title(let value):
@@ -1667,18 +1667,18 @@ struct MessengerTodoComposer: View {
         selectedAutocompleteSuggestionID = nil
     }
 
-    private func unresolvedDirectionActions(name: String) -> some View {
+    private func unresolvedAreaActions(name: String) -> some View {
         HStack(spacing: 8) {
             Button(String(localized: "新規作成")) {
-                isCreatingDirection = true
+                isCreatingArea = true
             }
             .buttonStyle(.borderedProminent)
 
             Button(String(localized: "その他として追加")) {
-                selectedDirectionID = nil
-                hasExplicitDirection = true
-                removeDirectionToken(named: name)
-                pendingDirectionName = nil
+                selectedAreaID = nil
+                hasExplicitArea = true
+                removeAreaToken(named: name)
+                pendingAreaName = nil
                 parserMessage = nil
                 onSubmit()
                 clearInlineTokensAfterSubmission()
@@ -1691,7 +1691,7 @@ struct MessengerTodoComposer: View {
         guard !isApplyingParserResult else { return }
         let result = parser.parse(
             input,
-            directions: parserDirections,
+            areas: parserAreas,
             anchorDate: dayBoundary.day(containing: .now, calendar: calendar),
             calendar: calendar,
             consumeTrailingToken: false
@@ -1715,9 +1715,9 @@ struct MessengerTodoComposer: View {
             case .minutes: volume = .minutes(amount)
             }
         }
-        if let directionID = result.directionID {
-            selectedDirectionID = directionID
-            hasExplicitDirection = true
+        if let areaID = result.areaID {
+            selectedAreaID = areaID
+            hasExplicitArea = true
         }
         if let priority = result.priority {
             self.priority = priority
@@ -1731,12 +1731,12 @@ struct MessengerTodoComposer: View {
         hashtags = TodoHashtagNormalizer.normalize(hashtags + result.hashtags)
     }
 
-    private func choose(_ direction: Direction) {
-        guard let query = parser.trailingDirectionQuery(in: title) else { return }
-        removeDirectionToken(named: query)
-        selectedDirectionID = direction.id
-        hasExplicitDirection = true
-        replaceInlineToken(.direction(direction.id))
+    private func choose(_ area: Area) {
+        guard let query = parser.trailingAreaQuery(in: title) else { return }
+        removeAreaToken(named: query)
+        selectedAreaID = area.id
+        hasExplicitArea = true
+        replaceInlineToken(.area(area.id))
         parserMessage = nil
     }
 
@@ -1750,8 +1750,8 @@ struct MessengerTodoComposer: View {
         if let measurement = result.measurement {
             replaceInlineToken(.measurement(measurement, result.plannedAmount))
         }
-        if let directionID = result.directionID {
-            replaceInlineToken(.direction(directionID))
+        if let areaID = result.areaID {
+            replaceInlineToken(.area(areaID))
         }
         if let priority = result.priority {
             replaceInlineToken(.priority(priority, result.isRoomIfPossible ?? false))
@@ -1781,7 +1781,7 @@ struct MessengerTodoComposer: View {
     private func clearInlineTokensAfterSubmission() {
         if trimmedTitle.isEmpty {
             inlineTokens = []
-            hasExplicitDirection = false
+            hasExplicitArea = false
             hasExplicitPriority = false
             hasExplicitDate = false
         }
@@ -1792,9 +1792,9 @@ struct MessengerTodoComposer: View {
         switch token {
         case .measurement:
             volume = .unspecified
-        case .direction:
-            selectedDirectionID = nil
-            hasExplicitDirection = false
+        case .area:
+            selectedAreaID = nil
+            hasExplicitArea = false
         case .priority:
             priority = .medium
             isRoomIfPossible = false
@@ -1848,8 +1848,8 @@ struct MessengerTodoComposer: View {
         case .measurement(let measurement, _):
             Image(systemName: measurement == .checkbox ? "square" :
                 (measurement == .focusBlocks ? "circle" : "circle.lefthalf.filled"))
-        case .direction(let id):
-            Text(directions.first(where: { $0.id == id })?.symbolName ?? "@")
+        case .area(let id):
+            Text(areas.first(where: { $0.id == id })?.symbolName ?? "@")
         case .priority:
             Image(systemName: "exclamationmark")
         case .date:
@@ -1870,8 +1870,8 @@ struct MessengerTodoComposer: View {
             case .minutes:
                 return "\(max(1, amount ?? 1)) \(String(localized: "分"))"
             }
-        case .direction(let id):
-            return directions.first(where: { $0.id == id })?.name ?? String(localized: "分野")
+        case .area(let id):
+            return areas.first(where: { $0.id == id })?.name ?? String(localized: "分野")
         case .priority(let priority, let later):
             return later ? String(localized: "余裕があれば") : priority.displayName
         case .date(let date):
@@ -1882,15 +1882,15 @@ struct MessengerTodoComposer: View {
     }
 
     private func inlineTokenTint(_ token: TaskComposerInlineToken) -> Color {
-        if case .direction(let id) = token,
-           let direction = directions.first(where: { $0.id == id }),
-           !DefaultDirections.isTaskInbox(direction) {
-            return Color(hex: direction.colorHex)
+        if case .area(let id) = token,
+           let area = areas.first(where: { $0.id == id }),
+           !DefaultAreas.isTaskInbox(area) {
+            return Color(hex: area.colorHex)
         }
         return .accentColor
     }
 
-    private func removeDirectionToken(named name: String) {
+    private func removeAreaToken(named name: String) {
         let target = "@\(name)"
         title = title
             .split(whereSeparator: \.isWhitespace)
@@ -1901,8 +1901,8 @@ struct MessengerTodoComposer: View {
 
 private struct TaskComposerAutocompleteSuggestion: Identifiable {
     enum Action {
-        case direction(UUID)
-        case createDirection(String)
+        case area(UUID)
+        case createArea(String)
         case token(String)
         case title(String)
     }
@@ -1917,7 +1917,7 @@ private struct TaskComposerAutocompleteSuggestion: Identifiable {
 
 private enum TaskComposerInlineToken: Equatable, Identifiable {
     case measurement(TodoMeasurement, Int?)
-    case direction(UUID)
+    case area(UUID)
     case priority(TodoPriority, Bool)
     case date(QuickTodoDate)
     case hashtag(String)
@@ -1925,7 +1925,7 @@ private enum TaskComposerInlineToken: Equatable, Identifiable {
     var id: String {
         switch self {
         case .measurement: "measurement"
-        case .direction: "direction"
+        case .area: "area"
         case .priority: "priority"
         case .date: "date"
         case .hashtag(let value): "hashtag:\(value.lowercased(with: Locale(identifier: "en_US_POSIX")))"
@@ -1943,14 +1943,14 @@ struct QuickTodoCreationPopover: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Todo.sortIndex, order: .forward) private var allTodos: [Todo]
 
-    let directions: [Direction]
+    let areas: [Area]
     let scheduledDate: Date?
     let showsQuickInputLegend: Bool
     let initialDraft: TodoDraft?
     let onCreated: ((Todo) -> Void)?
 
     @State private var title = ""
-    @State private var selectedDirectionID: UUID?
+    @State private var selectedAreaID: UUID?
     @State private var volume: QuickTodoVolume = .unspecified
     @State private var priority: TodoPriority = .medium
     @State private var isRoomIfPossible = false
@@ -1962,13 +1962,13 @@ struct QuickTodoCreationPopover: View {
     private let progressCalculator = TodoProgressCalculator()
 
     init(
-        directions: [Direction],
+        areas: [Area],
         scheduledDate: Date? = .now,
         showsQuickInputLegend: Bool = true,
         initialDraft: TodoDraft? = nil,
         onCreated: ((Todo) -> Void)? = nil
     ) {
-        self.directions = directions
+        self.areas = areas
         self.showsQuickInputLegend = showsQuickInputLegend
         self.initialDraft = initialDraft
         self.onCreated = onCreated
@@ -1992,7 +1992,7 @@ struct QuickTodoCreationPopover: View {
         self.scheduledDate = resolvedScheduledDate
 
         _title = State(initialValue: initialDraft?.title ?? "")
-        _selectedDirectionID = State(initialValue: initialDraft?.direction?.id)
+        _selectedAreaID = State(initialValue: initialDraft?.area?.id)
         _volume = State(initialValue: initialVolume)
         _priority = State(initialValue: initialDraft?.priority ?? .medium)
         _isRoomIfPossible = State(
@@ -2005,24 +2005,24 @@ struct QuickTodoCreationPopover: View {
         _validationMessage = State(initialValue: nil)
     }
 
-    private var activeDirections: [Direction] {
-        directions.filter { !$0.isArchived }
+    private var activeAreas: [Area] {
+        areas.filter { !$0.isArchived }
     }
 
-    private var selectableDirections: [Direction] {
-        activeDirections.filter { !DefaultDirections.isTaskInbox($0) }
+    private var selectableAreas: [Area] {
+        activeAreas.filter { !DefaultAreas.isTaskInbox($0) }
     }
 
     var body: some View {
         MessengerTodoComposer(
             title: $title,
-            selectedDirectionID: $selectedDirectionID,
+            selectedAreaID: $selectedAreaID,
             volume: $volume,
             priority: $priority,
             isRoomIfPossible: $isRoomIfPossible,
             dateOption: $dateOption,
             hashtags: $hashtags,
-            directions: selectableDirections,
+            areas: selectableAreas,
             validationMessage: validationMessage,
             allowsDateSelection: false,
             showsOuterBackground: false,
@@ -2035,14 +2035,14 @@ struct QuickTodoCreationPopover: View {
 
     private func createTodo() {
         validationMessage = nil
-        let selectedDirection = selectedDirectionID.flatMap { id in
-            selectableDirections.first { $0.id == id }
+        let selectedArea = selectedAreaID.flatMap { id in
+            selectableAreas.first { $0.id == id }
         }
         let draft = TodoDraft(
             title: title,
             notes: initialDraft?.notes ?? "",
             hashtags: hashtags,
-            direction: selectedDirection,
+            area: selectedArea,
             measurement: volume.measurement,
             priority: priority,
             isRoomIfPossible: priority == .low && isRoomIfPossible,
@@ -2058,12 +2058,12 @@ struct QuickTodoCreationPopover: View {
             return
         }
 
-        let direction = selectedDirection ?? resolvedOtherDirection()
+        let area = selectedArea ?? resolvedOtherArea()
         let todo = Todo(
             title: draft.trimmedTitle,
             notes: draft.trimmedNotes,
             hashtags: draft.hashtags,
-            direction: direction,
+            area: area,
             measurement: volume.measurement,
             priority: priority,
             isRoomIfPossible: priority == .low && isRoomIfPossible,
@@ -2090,14 +2090,14 @@ struct QuickTodoCreationPopover: View {
         }
     }
 
-    private func resolvedOtherDirection() -> Direction {
-        if let existing = DefaultDirections.existingTaskInbox(in: activeDirections) {
+    private func resolvedOtherArea() -> Area {
+        if let existing = DefaultAreas.existingTaskInbox(in: activeAreas) {
             return existing
         }
 
-        let direction = DefaultDirections.makeTaskInbox()
-        modelContext.insert(direction)
-        return direction
+        let area = DefaultAreas.makeTaskInbox()
+        modelContext.insert(area)
+        return area
     }
 }
 
@@ -2196,49 +2196,49 @@ private struct RoomIfPossibleChip: View {
     }
 }
 
-private struct DirectionChip: View {
-    @Binding var selectedDirectionID: UUID?
+private struct AreaChip: View {
+    @Binding var selectedAreaID: UUID?
     @Binding var isExplicit: Bool
 
-    let directions: [Direction]
+    let areas: [Area]
 
-    private var selectedDirection: Direction? {
-        guard let selectedDirectionID else { return nil }
-        return directions.first { $0.id == selectedDirectionID }
+    private var selectedArea: Area? {
+        guard let selectedAreaID else { return nil }
+        return areas.first { $0.id == selectedAreaID }
     }
 
     private var labelText: String {
         guard isExplicit else {
             return String(localized: "分野")
         }
-        guard let selectedDirection else {
+        guard let selectedArea else {
             return String(localized: "その他")
         }
 
-        return "\(selectedDirection.symbolName) \(selectedDirection.name)"
+        return "\(selectedArea.symbolName) \(selectedArea.name)"
     }
 
     var body: some View {
         Menu {
-            ForEach(directions) { direction in
+            ForEach(areas) { area in
                 Button {
-                    selectedDirectionID = direction.id
+                    selectedAreaID = area.id
                     isExplicit = true
                 } label: {
                     menuRow(
-                        text: "\(direction.symbolName) \(direction.name)",
-                        isSelected: selectedDirectionID == direction.id
+                        text: "\(area.symbolName) \(area.name)",
+                        isSelected: selectedAreaID == area.id
                     )
                 }
             }
 
-            if !directions.isEmpty { Divider() }
+            if !areas.isEmpty { Divider() }
 
             Button {
-                selectedDirectionID = nil
+                selectedAreaID = nil
                 isExplicit = true
             } label: {
-                menuRow(text: String(localized: "その他"), isSelected: selectedDirectionID == nil)
+                menuRow(text: String(localized: "その他"), isSelected: selectedAreaID == nil)
             }
         } label: {
             Text(labelText)
@@ -2260,10 +2260,10 @@ private struct DirectionChip: View {
     }
 
     private var chipColor: Color {
-        guard let selectedDirection, !DefaultDirections.isTaskInbox(selectedDirection) else {
+        guard let selectedArea, !DefaultAreas.isTaskInbox(selectedArea) else {
             return .secondary
         }
-        return Color(hex: selectedDirection.colorHex)
+        return Color(hex: selectedArea.colorHex)
     }
 }
 
@@ -2454,7 +2454,7 @@ private extension View {
 }
 
 private struct TasksTodoGroup: Identifiable {
-    let type: DirectionType
+    let type: AreaType
     let todos: [Todo]
 
     var id: String { type.rawValue }
@@ -2483,15 +2483,15 @@ private struct TasksTodoGroup: Identifiable {
 
     static let defaultOrderRaw = "habit,neutral,nice"
 
-    static func order(from rawValue: String) -> [DirectionType] {
+    static func order(from rawValue: String) -> [AreaType] {
         let parsed = rawValue
             .split(separator: ",")
-            .compactMap { DirectionType.normalized(rawValue: String($0)) }
-        let missing = DirectionType.allCases.filter { !parsed.contains($0) }
+            .compactMap { AreaType.normalized(rawValue: String($0)) }
+        let missing = AreaType.allCases.filter { !parsed.contains($0) }
         return parsed.isEmpty ? [.habit, .neutral, .nice] : parsed + missing
     }
 
-    static func groups(for todos: [Todo], order: [DirectionType]) -> [TasksTodoGroup] {
+    static func groups(for todos: [Todo], order: [AreaType]) -> [TasksTodoGroup] {
         order.compactMap { type in
             let items = todos
                 .filter { Self.type(for: $0) == type }
@@ -2501,8 +2501,8 @@ private struct TasksTodoGroup: Identifiable {
         }
     }
 
-    static func type(for todo: Todo) -> DirectionType {
-        todo.direction?.type ?? .neutral
+    static func type(for todo: Todo) -> AreaType {
+        todo.area?.type ?? .neutral
     }
 
     nonisolated private static func todoSort(_ lhs: Todo, _ rhs: Todo) -> Bool {
@@ -2601,8 +2601,8 @@ private struct TodoRow: View {
                 titleEditor
 
                 HStack(spacing: 6) {
-                    if let direction = todo.direction, !DefaultDirections.isTaskInbox(direction) {
-                        Text("\(direction.symbolName) \(direction.name)")
+                    if let area = todo.area, !DefaultAreas.isTaskInbox(area) {
+                        Text("\(area.symbolName) \(area.name)")
                             .foregroundStyle(checkboxTint)
                         Text("·")
                     }
@@ -2735,19 +2735,19 @@ private struct TodoRow: View {
     }
 
     private var tintColor: Color {
-        guard let direction = todo.direction, !DefaultDirections.isTaskInbox(direction) else {
+        guard let area = todo.area, !DefaultAreas.isTaskInbox(area) else {
             return .clear
         }
 
-        return Color(hex: direction.colorHex).opacity(0.08)
+        return Color(hex: area.colorHex).opacity(0.08)
     }
 
     private var checkboxTint: Color {
-        guard let direction = todo.direction, !DefaultDirections.isTaskInbox(direction) else {
+        guard let area = todo.area, !DefaultAreas.isTaskInbox(area) else {
             return Color.secondary.opacity(0.6)
         }
 
-        return Color(hex: direction.colorHex)
+        return Color(hex: area.colorHex)
     }
 }
 
@@ -2763,5 +2763,5 @@ private struct EmptyRow: View {
 #Preview {
     TasksView()
         .environmentObject(ActiveFlowStore())
-        .modelContainer(for: [Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self], inMemory: true)
+        .modelContainer(for: [Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self], inMemory: true)
 }

@@ -150,7 +150,7 @@ Each platform owns its composition root:
   functionality.
 - `AppDataResetActor` performs the user-requested application-data reset away
   from the main UI. `AppDataResetService` rejects an active Flow and deletes
-  every Direction, Todo, FlowSession, FlowSegment, and FlowBreak in one save.
+  every Area, Todo, FlowSession, FlowSegment, and FlowBreak in one save.
   Platform Settings own confirmation and presentation, then clear the local
   timer selection and restart first-run onboarding. AppSettings preferences are
   intentionally outside the reset service.
@@ -194,7 +194,7 @@ Each platform owns its composition root:
   platform-native presentation is not a valid abstraction.
 - `FlowStreamSurface` and `FlowStreamShader.metal` form one shared Metal render
   path for macOS and iOS. `DailyFlowAppearance` derives a deterministic daily
-  seed from the local calendar date and the oldest synced Direction UUID, so
+  seed from the local calendar date and the oldest synced Area UUID, so
   the same user's devices render the same daily topology without adding a new
   persisted setting. The topology is independent of time of day.
 - `FlowVisualState` maps actual daily focus into depth, glow, detail, and
@@ -219,13 +219,18 @@ Each platform owns its composition root:
   break style. macOS and iOS use the shared Metal pass; watchOS mirrors the same
   spread and glow parameters in its shared Canvas renderer.
 - The renderer has separate dark additive and light ink-style composition
-  paths. Palette weights come from actual focused seconds per Direction.
+  paths. Palette weights come from actual focused seconds per Area.
 - Desktop-specific dashboard layout remains macOS-owned.
   Each other platform receives its own explicit implementation and performance budget.
 
 ## Persistence
 
 The existing SwiftData models and schema remain the single source of truth.
+Application layers use `Area` / `area`; the persistence boundary intentionally
+implements that type as an alias of the `@Model` runtime class `Direction` and
+keeps the three stored relationship fields named `direction`. This preserves
+the existing local and CloudKit schema without a migration while keeping the
+legacy name out of feature, domain-logic, widget, and test APIs.
 Normal signed app runs use the private CloudKit database in
 `iCloud.com.shigorefu.thruflow`. Tests use an in-memory local configuration, and
 the iOS Simulator uses a persistent local configuration because its builds do

@@ -14,13 +14,13 @@ struct StatisticsView: View {
     @Environment(\.locale) private var locale
     @Environment(\.modelContext) private var modelContext
 
-    let directions: [Direction]
+    let areas: [Area]
     @Binding private var cachedSnapshot: StatisticsPeriodSnapshot?
     let isVisible: Bool
     let onSelectHistoryDate: (Date) -> Void
 
     @State private var selectedPeriod: StatisticsPeriod = .week
-    @State private var selectedDirectionID: UUID?
+    @State private var selectedAreaID: UUID?
     @State private var anchorDate = Date.now
     @State private var customStartDate: Date?
     @State private var customEndDate: Date?
@@ -39,7 +39,7 @@ struct StatisticsView: View {
     @State private var exportContent: StatisticsCSVContent = .all
     @State private var exportStartDate = Date.now
     @State private var exportEndDate = Date.now
-    @State private var exportDirectionID: UUID?
+    @State private var exportAreaID: UUID?
     @State private var exportQuery = ""
     @State private var exportShareURL: URL?
     @State private var preparedExportConfiguration: StatisticsExportConfiguration?
@@ -47,25 +47,25 @@ struct StatisticsView: View {
 
     init(
         isVisible: Bool = true,
-        directions: [Direction],
+        areas: [Area],
         cachedSnapshot: Binding<StatisticsPeriodSnapshot?>,
         onSelectHistoryDate: @escaping (Date) -> Void = { _ in }
     ) {
         self.isVisible = isVisible
-        self.directions = directions
+        self.areas = areas
         _cachedSnapshot = cachedSnapshot
         self.onSelectHistoryDate = onSelectHistoryDate
     }
 
-    private var activeDirections: [Direction] {
-        directions
+    private var activeAreas: [Area] {
+        areas
             .filter { !$0.isArchived }
             .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 
-    private var selectedDirection: Direction? {
-        guard let selectedDirectionID else { return nil }
-        return directions.first { $0.id == selectedDirectionID }
+    private var selectedArea: Area? {
+        guard let selectedAreaID else { return nil }
+        return areas.first { $0.id == selectedAreaID }
     }
 
     private var filter: StatisticsPeriodFilter {
@@ -74,7 +74,7 @@ struct StatisticsView: View {
             anchorDate: anchorDate,
             customStartDate: customStartDate,
             customEndDate: customEndDate,
-            directionID: selectedDirectionID,
+            areaID: selectedAreaID,
             query: searchText
         )
     }
@@ -85,7 +85,7 @@ struct StatisticsView: View {
             anchorDate: exportStartDate,
             customStartDate: exportStartDate,
             customEndDate: exportEndDate,
-            directionID: exportDirectionID,
+            areaID: exportAreaID,
             query: exportQuery
         )
     }
@@ -315,10 +315,10 @@ struct StatisticsView: View {
         }
 
         ToolbarItem(placement: .primaryAction) {
-            StatisticsDirectionFilterMenu(
-                selectedDirectionID: $selectedDirectionID,
-                directions: activeDirections,
-                selectedDirection: selectedDirection
+            StatisticsAreaFilterMenu(
+                selectedAreaID: $selectedAreaID,
+                areas: activeAreas,
+                selectedArea: selectedArea
             )
         }
 
@@ -357,11 +357,11 @@ struct StatisticsView: View {
             )
             .datePickerStyle(.field)
 
-            Picker(String(localized: "方向フィルター"), selection: $exportDirectionID) {
+            Picker(String(localized: "方向フィルター"), selection: $exportAreaID) {
                 Text(String(localized: "すべて")).tag(nil as UUID?)
-                ForEach(activeDirections) { direction in
-                    Text("\(direction.symbolName) \(direction.name)")
-                        .tag(Optional(direction.id))
+                ForEach(activeAreas) { area in
+                    Text("\(area.symbolName) \(area.name)")
+                        .tag(Optional(area.id))
                 }
             }
             .pickerStyle(.menu)
@@ -534,8 +534,8 @@ struct StatisticsView: View {
         switch distributionDimension {
         case .task:
             snapshot.taskDistribution
-        case .direction:
-            snapshot.directionDistribution
+        case .area:
+            snapshot.areaDistribution
         }
     }
 
@@ -615,10 +615,10 @@ struct StatisticsView: View {
             anchorDate: anchorDate,
             customStartDate: customStartDate,
             customEndDate: customEndDate,
-            directionID: selectedDirectionID,
+            areaID: selectedAreaID,
             query: searchText,
-            directionCount: directions.count,
-            latestDirectionUpdate: directions.map(\.updatedAt).max()
+            areaCount: areas.count,
+            latestAreaUpdate: areas.map(\.updatedAt).max()
         )
     }
 
@@ -794,7 +794,7 @@ struct StatisticsView: View {
             value: -1,
             to: periodBounds.currentEnd
         ) ?? periodBounds.currentStart, today)
-        exportDirectionID = selectedDirectionID
+        exportAreaID = selectedAreaID
         exportQuery = searchText
         exportShareURL = nil
         preparedExportConfiguration = nil
@@ -917,7 +917,7 @@ private struct StatisticsCustomRangePopover: View {
 
 private enum StatisticsDistributionDimension: String, CaseIterable, Identifiable {
     case task
-    case direction
+    case area
 
     var id: String { rawValue }
 
@@ -925,50 +925,50 @@ private enum StatisticsDistributionDimension: String, CaseIterable, Identifiable
         switch self {
         case .task:
             String(localized: "タスク別")
-        case .direction:
+        case .area:
             String(localized: "方向別")
         }
     }
 }
 
-private struct StatisticsDirectionFilterMenu: View {
-    @Binding var selectedDirectionID: UUID?
-    let directions: [Direction]
-    let selectedDirection: Direction?
+private struct StatisticsAreaFilterMenu: View {
+    @Binding var selectedAreaID: UUID?
+    let areas: [Area]
+    let selectedArea: Area?
 
     var body: some View {
         Menu {
             Button {
-                selectedDirectionID = nil
+                selectedAreaID = nil
             } label: {
-                menuRow(text: String(localized: "すべて"), isSelected: selectedDirectionID == nil)
+                menuRow(text: String(localized: "すべて"), isSelected: selectedAreaID == nil)
             }
 
-            if !directions.isEmpty {
+            if !areas.isEmpty {
                 Divider()
-                ForEach(directions) { direction in
+                ForEach(areas) { area in
                     Button {
-                        selectedDirectionID = direction.id
+                        selectedAreaID = area.id
                     } label: {
                         menuRow(
-                            text: "\(direction.symbolName) \(direction.name)",
-                            isSelected: selectedDirectionID == direction.id
+                            text: "\(area.symbolName) \(area.name)",
+                            isSelected: selectedAreaID == area.id
                         )
                     }
                 }
             }
         } label: {
             Image(systemName: ProductSymbol.area)
-                .foregroundStyle(selectedDirectionID == nil ? Color.primary : Color.accentColor)
+                .foregroundStyle(selectedAreaID == nil ? Color.primary : Color.accentColor)
         }
         .menuStyle(.borderlessButton)
         .help(filterHelp)
         .accessibilityLabel(String(localized: "方向フィルター"))
-        .accessibilityValue(selectedDirection?.name ?? String(localized: "すべて"))
+        .accessibilityValue(selectedArea?.name ?? String(localized: "すべて"))
     }
 
     private var filterHelp: String {
-        selectedDirection.map { "\(String(localized: "方向フィルター")): \($0.name)" }
+        selectedArea.map { "\(String(localized: "方向フィルター")): \($0.name)" }
             ?? String(localized: "方向フィルター")
     }
 
@@ -1934,10 +1934,10 @@ private struct StatisticsPeriodRefreshID: Hashable {
     let anchorDate: Date
     let customStartDate: Date?
     let customEndDate: Date?
-    let directionID: UUID?
+    let areaID: UUID?
     let query: String
-    let directionCount: Int
-    let latestDirectionUpdate: Date?
+    let areaCount: Int
+    let latestAreaUpdate: Date?
 }
 
 #Preview {
@@ -1950,13 +1950,13 @@ private struct StatisticsPreviewHost: View {
     var body: some View {
         NavigationStack {
             StatisticsView(
-                directions: [],
+                areas: [],
                 cachedSnapshot: $snapshot
             )
         }
         .frame(width: 1180, height: 820)
         .modelContainer(
-            for: [Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self],
+            for: [Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self],
             inMemory: true
         )
     }

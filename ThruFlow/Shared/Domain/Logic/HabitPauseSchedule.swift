@@ -49,20 +49,20 @@ struct HabitPauseService {
     var calendar: Calendar = .current
     var dayBoundary: AppDayBoundary = .midnight
 
-    func isPaused(_ direction: Direction, on day: Date) -> Bool {
-        guard direction.type == .habit else { return false }
+    func isPaused(_ area: Area, on day: Date) -> Bool {
+        guard area.type == .habit else { return false }
         let normalizedDay = calendar.startOfDay(for: day)
-        return normalizedPeriods(for: direction).contains { $0.contains(normalizedDay) }
+        return normalizedPeriods(for: area).contains { $0.contains(normalizedDay) }
     }
 
-    func activePeriod(for direction: Direction, on day: Date) -> HabitPausePeriod? {
+    func activePeriod(for area: Area, on day: Date) -> HabitPausePeriod? {
         let normalizedDay = calendar.startOfDay(for: day)
-        return normalizedPeriods(for: direction).first { $0.contains(normalizedDay) }
+        return normalizedPeriods(for: area).first { $0.contains(normalizedDay) }
     }
 
     @discardableResult
     func pauseToday(
-        _ direction: Direction,
+        _ area: Area,
         todos: [Todo],
         now: Date = .now
     ) -> Bool {
@@ -70,7 +70,7 @@ struct HabitPauseService {
         let tomorrow = calendar.date(byAdding: .day, value: 1, to: today)
             ?? today.addingTimeInterval(86_400)
         return pause(
-            direction,
+            area,
             startsOn: today,
             endsBefore: tomorrow,
             todos: todos,
@@ -80,7 +80,7 @@ struct HabitPauseService {
 
     @discardableResult
     func pause(
-        _ direction: Direction,
+        _ area: Area,
         through inclusiveEndDate: Date,
         todos: [Todo],
         now: Date = .now
@@ -90,7 +90,7 @@ struct HabitPauseService {
         let endsBefore = calendar.date(byAdding: .day, value: 1, to: normalizedEnd)
             ?? normalizedEnd.addingTimeInterval(86_400)
         return pause(
-            direction,
+            area,
             startsOn: today,
             endsBefore: endsBefore,
             todos: todos,
@@ -100,12 +100,12 @@ struct HabitPauseService {
 
     @discardableResult
     func pauseIndefinitely(
-        _ direction: Direction,
+        _ area: Area,
         todos: [Todo],
         now: Date = .now
     ) -> Bool {
         pause(
-            direction,
+            area,
             startsOn: dayBoundary.day(containing: now, calendar: calendar),
             endsBefore: nil,
             todos: todos,
@@ -114,12 +114,12 @@ struct HabitPauseService {
     }
 
     @discardableResult
-    func resume(_ direction: Direction, now: Date = .now) -> Bool {
+    func resume(_ area: Area, now: Date = .now) -> Bool {
         let today = dayBoundary.day(containing: now, calendar: calendar)
         var changed = false
         var periods: [HabitPausePeriod] = []
 
-        for var period in normalizedPeriods(for: direction) {
+        for var period in normalizedPeriods(for: area) {
             guard period.contains(today) else {
                 periods.append(period)
                 continue
@@ -133,39 +133,39 @@ struct HabitPauseService {
         }
 
         guard changed else { return false }
-        direction.habitPausePeriods = normalized(periods)
-        direction.updatedAt = now
+        area.habitPausePeriods = normalized(periods)
+        area.updatedAt = now
         return true
     }
 
     private func pause(
-        _ direction: Direction,
+        _ area: Area,
         startsOn: Date,
         endsBefore: Date?,
         todos: [Todo],
         now: Date
     ) -> Bool {
-        guard direction.type == .habit else { return false }
+        guard area.type == .habit else { return false }
 
         let period = HabitPausePeriod(
             startsOn: calendar.startOfDay(for: startsOn),
             endsBefore: endsBefore.map { calendar.startOfDay(for: $0) },
             createdAt: now
         )
-        direction.habitPausePeriods = normalized(direction.habitPausePeriods + [period])
-        direction.updatedAt = now
-        suppressUnstartedTodos(for: direction, during: period, in: todos, now: now)
+        area.habitPausePeriods = normalized(area.habitPausePeriods + [period])
+        area.updatedAt = now
+        suppressUnstartedTodos(for: area, during: period, in: todos, now: now)
         return true
     }
 
     private func suppressUnstartedTodos(
-        for direction: Direction,
+        for area: Area,
         during period: HabitPausePeriod,
         in todos: [Todo],
         now: Date
     ) {
         for todo in todos {
-            guard todo.direction?.id == direction.id,
+            guard todo.area?.id == area.id,
                   !todo.isArchived,
                   !todo.isDeleted,
                   !todo.isCompleted,
@@ -180,8 +180,8 @@ struct HabitPauseService {
         }
     }
 
-    private func normalizedPeriods(for direction: Direction) -> [HabitPausePeriod] {
-        normalized(direction.habitPausePeriods)
+    private func normalizedPeriods(for area: Area) -> [HabitPausePeriod] {
+        normalized(area.habitPausePeriods)
     }
 
     private func normalized(_ periods: [HabitPausePeriod]) -> [HabitPausePeriod] {

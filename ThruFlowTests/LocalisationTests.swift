@@ -228,7 +228,7 @@ struct LocalisationTests {
             )
         }
 
-        var legacyAreaTerms: [String] = []
+        var legacyTerminologyViolations: [String] = []
         for (key, rawEntry) in strings {
             guard
                 let entry = rawEntry as? [String: Any],
@@ -237,17 +237,17 @@ struct LocalisationTests {
 
             if let english = localisedValue(language: "en", from: localisations),
                english.range(of: #"\bdirections?\b"#, options: [.regularExpression, .caseInsensitive]) != nil {
-                legacyAreaTerms.append("en:\(key)")
+                legacyTerminologyViolations.append("en:\(key)")
             }
             if let russian = localisedValue(language: "ru", from: localisations),
                russian.range(of: "направ", options: [.caseInsensitive]) != nil {
-                legacyAreaTerms.append("ru:\(key)")
+                legacyTerminologyViolations.append("ru:\(key)")
             }
         }
 
         #expect(
-            legacyAreaTerms.isEmpty,
-            "Legacy Area terms: \(legacyAreaTerms.sorted().joined(separator: ", "))"
+            legacyTerminologyViolations.isEmpty,
+            "Legacy product terms: \(legacyTerminologyViolations.sorted().joined(separator: ", "))"
         )
     }
 

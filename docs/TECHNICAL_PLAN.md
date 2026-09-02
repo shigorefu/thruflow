@@ -5,7 +5,7 @@
 The canonical source layout and dependency rules are documented in
 `docs/ARCHITECTURE.md`. Keep separation between:
 
-- domain models: Direction, Todo, FlowSession, FlowSegment, FlowBreak;
+- domain models: Area, Todo, FlowSession, FlowSegment, FlowBreak;
 - domain logic: validation, filtering, planning, progress, timer, statistics;
 - services: notifications and platform bridges;
 - SwiftUI features.
@@ -28,9 +28,9 @@ targets watchOS 10.0 to match the iOS 17 generation.
 
 ## Current Data Rules
 
-- `DefaultDirections` identifies system `その他` by the stable `taskInbox` role,
+- `DefaultAreas` identifies system `その他` by the stable `taskInbox` role,
   with a reserved-signature fallback for legacy stores.
-- `DefaultDirectionReconciler` enforces one active system Direction, reconnects
+- `DefaultAreaReconciler` enforces one active system Area, reconnects
   Todo/Flow relationships, and soft-archives duplicates. It runs through the
   existing active persistence synchronization cycle so late CloudKit imports
   converge without adding another timer.
@@ -41,32 +41,32 @@ targets watchOS 10.0 to match the iOS 17 generation.
 - `TaskBacklogBuilder` derives overdue and undated active normal Tasks for the Today section and Tasks inspector without adding persistence state.
 - `RequiredTodoPlanner` decides whether a scheduled Habit Task is eligible.
 - `HabitTodoMaterializer` is the only macOS/iOS persistence entry point for automatic Habit generation. Its full path fetches fresh SwiftData state, normalizes dates, runs `HabitTodoReconciler`, and invokes the planner. Tasks surfaces run that path after their initial frame. Date navigation uses a cancellable, debounced lightweight path with the current Todo snapshot; it skips Flow-history reconciliation and persists only when a Habit occurrence must actually be created or moved.
-- `HabitTodoReconciler` repairs duplicate active Habit occurrences for the same Direction/day, preserves related Flow history and progress, and soft-deletes redundant rows.
-- `OrphanTodoReconciler` runs with the existing persistence synchronization cycle, restores a missing Todo-to-Direction relationship only from unambiguous Flow history or a matching fixed-schedule Habit template, and leaves ambiguous records hidden rather than relabeling them as `その他`.
+- `HabitTodoReconciler` repairs duplicate active Habit occurrences for the same Area/day, preserves related Flow history and progress, and soft-deletes redundant rows.
+- `OrphanTodoReconciler` runs with the existing persistence synchronization cycle, restores a missing Todo-to-Area relationship only from unambiguous Flow history or a matching fixed-schedule Habit template, and leaves ambiguous records hidden rather than relabeling them as `その他`.
 - `FlowProgressCalculator` defines focused-time conversion for isolated calculations.
-- `FlowProgressReconciler` rebuilds measured Todo progress/completion and Direction focus totals from credited Flow history after every history mutation and once at app launch.
+- `FlowProgressReconciler` rebuilds measured Todo progress/completion and Area focus totals from credited Flow history after every history mutation and once at app launch.
 - `FlowSession.result` stores the memo for one Flow; linked writes mirror to
   `Todo.notes` for Task-level continuity.
 - `FlowSession` stores timing/history.
-- `FlowSegment` stores Task/Direction intervals and cumulative focused-second boundaries within a FlowSession.
+- `FlowSegment` stores Task/Area intervals and cumulative focused-second boundaries within a FlowSession.
 - `FlowBreak` stores explicit rest and UUID links between adjacent sessions in a Flow series; `FlowSeriesPolicy` owns continuation windows and `長休憩` thresholds.
 - `Todo.completedAt` stores the exact completion time for new completions.
-- `DayHistoryBuilder` creates daily Task/Direction aggregates and legacy day projections.
+- `DayHistoryBuilder` creates daily Task/Area aggregates and legacy day projections.
 - `HistoryCalendarBuilder` creates day/week/month calendar projections from actual Flow and break records; Todo completion never creates a calendar item. `FlowHistoryEditor` moves a completed FlowSession and all of its segments by one shared time offset for calendar drag-and-drop.
 - `FlowDashboardBuilder` groups connected records by `seriesID` into continuous dashboard series spans without mutating calendar history.
 - `HistoryTimelineGapBuilder` derives long internal gaps for the macOS chronological day timeline independently from SwiftUI, while `HistoryTimelineChainPolicy` connects its rail only across continuous persisted records of the same Flow series.
 - `HistoryCalendarSeriesProjector` groups connected Flow/rest records into week-only composite presentation blocks while preserving the underlying records for editing.
 - `HistoryOverlapLayout` assigns deterministic side-by-side lanes using actual and minimum visual duration so short records cannot overlap in rendering.
 - `FlowHistoryEditor` creates independent completed manual Flow records and delegates affected progress rebuilding to `FlowProgressReconciler` when history changes.
-- `AppDataResetService` atomically deletes every Direction, Todo, FlowSession,
+- `AppDataResetService` atomically deletes every Area, Todo, FlowSession,
   FlowSegment, and FlowBreak only when no active Flow exists.
 - `AppDataResetActor` runs that reset away from the main UI for macOS, iPhone,
   and iPad Settings. After success, the platform clears the persisted timer
   selection and restarts first-run onboarding while preserving AppSettings.
-- `FlowDashboardBuilder` derives today's totals, Direction palette, and timeline segments from `FlowSession`, with a live overlay for the active creditable Flow.
-- `DashboardStatisticsBuilder` derives seven-day bars, previous-day deltas, and the most-grown Direction outside SwiftUI.
+- `FlowDashboardBuilder` derives today's totals, Area palette, and timeline segments from `FlowSession`, with a live overlay for the active creditable Flow.
+- `DashboardStatisticsBuilder` derives seven-day bars, previous-day deltas, and the most-grown Area outside SwiftUI.
 - `FlowVisualState` converts 0...6 daily Blocks into clamped speed, volume, detail, depth, glow, and mode-specific wave character without placing those rules in SwiftUI. Its separate `identityReveal` reaches 1 during the first Block. The complete idle and active phase-speed curves use one testable `1.25` multiplier; frame cadence is unchanged. `FlowAnimationClock` consumes the complete visual state through its production API, and an idle-only shader current makes the low end of that curve visually legible without applying a second speed multiplier.
-- `DailyFlowAppearance` derives a stable cross-device topology from the local date and oldest synced Direction UUID. It has no time-of-day input. `FlowStreamShader.metal` renders the neutral six-ribbon baseline at zero progress, then continuously blends it into the seven-ribbon daily topology during the first Block. Before rendering, the shared palette layout gives every active Direction color, up to the seven available ribbons, at least one visible ribbon; remaining ribbons are distributed by actual focused-time weight. Ribbon cores and broad colored halos are accumulated independently so progress can increase diffusion without flattening the stream into solid bands or white highlights. The SwiftUI host supplies only accumulated phase and visual-state uniforms, targets 30 FPS while idle and 60 FPS while active, and pauses when its window is not key, the scene is inactive, or Reduce Motion is enabled. `FlowAnimationClock` preserves phase when speed changes or rendering pauses, so starting Flow and returning to the window never replace the current stream frame. Dark and light themes use separate compositing paths, including the baseline-to-daily transition. `FlowBreakInteraction` is a sequenced, non-persisted presentation cue: a request triggers an acknowledgement wave, while confirmed regular and long rests trigger distinct transitions. The long-rest style remains derivable from canonical timer state after restoration, and watchOS reproduces the same effect parameters in Canvas.
+- `DailyFlowAppearance` derives a stable cross-device topology from the local date and oldest synced Area UUID. It has no time-of-day input. `FlowStreamShader.metal` renders the neutral six-ribbon baseline at zero progress, then continuously blends it into the seven-ribbon daily topology during the first Block. Before rendering, the shared palette layout gives every active Area color, up to the seven available ribbons, at least one visible ribbon; remaining ribbons are distributed by actual focused-time weight. Ribbon cores and broad colored halos are accumulated independently so progress can increase diffusion without flattening the stream into solid bands or white highlights. The SwiftUI host supplies only accumulated phase and visual-state uniforms, targets 30 FPS while idle and 60 FPS while active, and pauses when its window is not key, the scene is inactive, or Reduce Motion is enabled. `FlowAnimationClock` preserves phase when speed changes or rendering pauses, so starting Flow and returning to the window never replace the current stream frame. Dark and light themes use separate compositing paths, including the baseline-to-daily transition. `FlowBreakInteraction` is a sequenced, non-persisted presentation cue: a request triggers an acknowledgement wave, while confirmed regular and long rests trigger distinct transitions. The long-rest style remains derivable from canonical timer state after restoration, and watchOS reproduces the same effect parameters in Canvas.
 - The dashboard reuses `FlowMiniPlayerView` behavior through its dedicated dashboard layout instead of creating a second timer controller. `ActiveFlowStore.phaseProgress` provides the circular timer progress.
 - The dashboard and Tasks surfaces project Todo groups and use the shared `HabitTodoMaterializer` to ensure Habit instances exist without creating duplicates across views or platforms.
 - `TodoProgressControl` is the shared Check/Block/Minute control used by Tasks and the dashboard.
@@ -91,7 +91,7 @@ targets watchOS 10.0 to match the iOS 17 generation.
   Extension reads that Codable snapshot and uses system date-backed timer and
   progress views. The Home Screen widget never opens SwiftData, schedules a
   per-second timeline, or owns transport behavior.
-- `ProductWidgetSnapshotSyncView` observes Todo, Direction, and FlowSession
+- `ProductWidgetSnapshotSyncView` observes Todo, Area, and FlowSession
   changes in the iOS and macOS applications. `ProductWidgetSnapshotBuilder`
   produces the canonical Today Tasks and 180-day Flow Dots projections, then stores Codable
   snapshots in the same App Group and reloads `TasksWidget` and
@@ -110,7 +110,7 @@ targets watchOS 10.0 to match the iOS 17 generation.
 
 Cover:
 
-- Direction validation and legacy raw value normalization.
+- Area validation and legacy raw value normalization.
 - Todo validation and daily Task filtering.
 - Calendar range, filtering, and rescheduling tests.
 - Habit task generation.
@@ -126,9 +126,9 @@ Cover:
   current/previous Flow and Task comparisons, seven-day Month trend buckets,
   distribution grouping, and deterministic CSV.
 - Day-history grouping, legacy untimed completions, deterministic Flow progress reconciliation after create/edit/delete, and duration-preserving Flow moves.
-- Manual Flow creation, linked Task progress without implicit completion, and fixed-Direction Task creation.
+- Manual Flow creation, linked Task progress without implicit completion, and fixed-Area Task creation.
 - Flow series continuation, `長休憩` thresholds, rest correction, and same-series downstream shifting.
-- Active Task/Direction switching transfers sub-minute context mistakes to the new context, merges an immediate return, and never creates another FlowSession.
+- Active Task/Area switching transfers sub-minute context mistakes to the new context, merges an immediate return, and never creates another FlowSession.
 - Remote active-runtime completion cancels local Flow notifications when a
   persistence-change event arrives after foreground polling has stopped.
 - Flow dashboard totals, palette ordering, day filtering, live minimum-credit behavior, and timeline normalization.
@@ -140,7 +140,7 @@ Cover:
 - Today Tasks widget filtering, priority ordering, measurement progress, and
   Tasks/Dots snapshot persistence.
 - Flow Dots reuse of the canonical 180-day statistics projection and mixed
-  Direction color.
+  Area color.
 - First-run onboarding persistence, workspace-content detection, guided versus
   read-only experience selection, real-screen navigation, and the exact
   ten-step `ようこそ → 分野 → タスク → 流れ → 集中タイマー → 流れを体験 → 履歴 → 統計 →

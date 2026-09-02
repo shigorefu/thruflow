@@ -26,7 +26,7 @@ struct DatabaseSearchQuery {
         if let todo = session.todo, matchesHistory(todo) {
             return true
         }
-        if matches(directionCandidates(for: session.direction)) {
+        if matches(areaCandidates(for: session.area)) {
             return true
         }
 
@@ -34,7 +34,7 @@ struct DatabaseSearchQuery {
             if let todo = segment.todo, matchesHistory(todo) {
                 return true
             }
-            if matches(directionCandidates(for: segment.direction)) {
+            if matches(areaCandidates(for: segment.area)) {
                 return true
             }
         }
@@ -61,8 +61,8 @@ struct DatabaseSearchQuery {
     private func taskCandidates(for todo: Todo, includesNotes: Bool) -> [String] {
         var candidates = [
             TodoDisplay.title(for: todo),
-            todo.direction?.name ?? "",
-            todo.direction?.symbolName ?? ""
+            todo.area?.name ?? "",
+            todo.area?.symbolName ?? ""
         ] + todo.hashtags.flatMap { [$0, "#\($0)"] }
 
         if includesNotes {
@@ -71,8 +71,8 @@ struct DatabaseSearchQuery {
         return candidates
     }
 
-    private func directionCandidates(for direction: Direction?) -> [String] {
-        [direction?.name ?? "", direction?.symbolName ?? ""]
+    private func areaCandidates(for area: Area?) -> [String] {
+        [area?.name ?? "", area?.symbolName ?? ""]
     }
 
     private func matches(_ candidates: [String]) -> Bool {

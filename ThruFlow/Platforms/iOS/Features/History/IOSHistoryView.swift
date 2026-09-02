@@ -14,8 +14,8 @@ struct IOSHistoryView: View {
     @State private var range = HistoryCalendarRange.day
     @State private var selectedMode = DayHistoryMode.calendar
     @State private var visibleKinds = Set(HistoryCalendarItemKind.allCases)
-    @State private var visibleTaskTypes = Set(DirectionType.allCases)
-    @State private var visibleDirectionTypes = Set(DirectionType.allCases)
+    @State private var visibleTaskTypes = Set(AreaType.allCases)
+    @State private var visibleAreaTypes = Set(AreaType.allCases)
     @State private var selectedItem: HistoryCalendarItem?
     @State private var selectedSeries: HistoryCalendarSeriesBlock?
     @State private var isAddingTaskRecord = false
@@ -226,11 +226,11 @@ struct IOSHistoryView: View {
                 searchText: searchText,
                 visibleTypes: visibleTaskTypes
             )
-        case .directions:
-            IOSHistoryDirectionSummaryList(
+        case .areas:
+            IOSHistoryAreaSummaryList(
                 snapshot: historySnapshot(for: date),
                 searchText: searchText,
-                visibleTypes: visibleDirectionTypes
+                visibleTypes: visibleAreaTypes
             )
         }
     }
@@ -271,11 +271,11 @@ struct IOSHistoryView: View {
                 searchText: "",
                 visibleTypes: visibleTaskTypes
             )
-        case .directions:
-            IOSHistoryDirectionSummaryList(
+        case .areas:
+            IOSHistoryAreaSummaryList(
                 snapshot: globalHistorySnapshot,
                 searchText: "",
-                visibleTypes: visibleDirectionTypes
+                visibleTypes: visibleAreaTypes
             )
         }
     }
@@ -286,9 +286,9 @@ struct IOSHistoryView: View {
         case .calendar:
             return true
         case .tasks:
-            return visibleTaskTypes.contains(item.directionType)
-        case .directions:
-            return visibleDirectionTypes.contains(item.directionType)
+            return visibleTaskTypes.contains(item.areaType)
+        case .areas:
+            return visibleAreaTypes.contains(item.areaType)
         }
     }
 
@@ -347,13 +347,13 @@ struct IOSHistoryView: View {
                 IOSHistoryDayStrip(
                     selectedDate: $selectedDate,
                     sessions: sessions,
-                    visibleDirectionTypes: selectedIndicatorTypes
+                    visibleAreaTypes: selectedIndicatorTypes
                 )
             case .week:
                 IOSHistoryWeekStrip(
                     selectedDate: $selectedDate,
                     sessions: sessions,
-                    visibleDirectionTypes: selectedIndicatorTypes
+                    visibleAreaTypes: selectedIndicatorTypes
                 )
             case .month:
                 if selectedMode != .calendar {
@@ -383,22 +383,22 @@ struct IOSHistoryView: View {
                 visibleTypes: $visibleTaskTypes,
                 neutralLabel: String(localized: "タスク")
             )
-        case .directions:
+        case .areas:
             IOSHistoryAggregateFilterMenu(
-                visibleTypes: $visibleDirectionTypes,
+                visibleTypes: $visibleAreaTypes,
                 neutralLabel: String(localized: "通常")
             )
         }
     }
 
-    private var selectedIndicatorTypes: Set<DirectionType>? {
+    private var selectedIndicatorTypes: Set<AreaType>? {
         switch selectedMode {
         case .calendar:
             nil
         case .tasks:
             visibleTaskTypes
-        case .directions:
-            visibleDirectionTypes
+        case .areas:
+            visibleAreaTypes
         }
     }
 
@@ -496,12 +496,12 @@ private struct IOSHistoryDayStrip: View {
 
     @Binding var selectedDate: Date
     let sessions: [FlowSession]
-    let visibleDirectionTypes: Set<DirectionType>?
+    let visibleAreaTypes: Set<AreaType>?
 
     var body: some View {
         let activityIndex = IOSHistoryActivityColorIndex(
             sessions: sessions,
-            visibleDirectionTypes: visibleDirectionTypes,
+            visibleAreaTypes: visibleAreaTypes,
             calendar: calendar
         )
 
@@ -546,12 +546,12 @@ private struct IOSHistoryWeekStrip: View {
 
     @Binding var selectedDate: Date
     let sessions: [FlowSession]
-    let visibleDirectionTypes: Set<DirectionType>?
+    let visibleAreaTypes: Set<AreaType>?
 
     var body: some View {
         let activityIndex = IOSHistoryActivityColorIndex(
             sessions: sessions,
-            visibleDirectionTypes: visibleDirectionTypes,
+            visibleAreaTypes: visibleAreaTypes,
             calendar: calendar
         )
 
@@ -613,16 +613,16 @@ private struct IOSHistoryActivityColorIndex {
 
     init(
         sessions: [FlowSession],
-        visibleDirectionTypes: Set<DirectionType>?,
+        visibleAreaTypes: Set<AreaType>?,
         calendar: Calendar
     ) {
         for session in sessions
         where session.status != .interrupted && session.resolvedActualFocusDurationSeconds > 0 {
             if session.resolvedSegments.isEmpty {
-                let directionType = session.direction?.type ?? .neutral
-                guard visibleDirectionTypes?.contains(directionType) != false else { continue }
+                let areaType = session.area?.type ?? .neutral
+                guard visibleAreaTypes?.contains(areaType) != false else { continue }
                 append(
-                    colorHex: session.direction?.colorHex ?? "#8E8E93",
+                    colorHex: session.area?.colorHex ?? "#8E8E93",
                     at: session.startedAt,
                     calendar: calendar
                 )
@@ -630,10 +630,10 @@ private struct IOSHistoryActivityColorIndex {
             }
 
             for segment in session.resolvedSegments where segment.resolvedFocusSeconds > 0 {
-                let directionType = segment.direction?.type ?? session.direction?.type ?? .neutral
-                guard visibleDirectionTypes?.contains(directionType) != false else { continue }
+                let areaType = segment.area?.type ?? session.area?.type ?? .neutral
+                guard visibleAreaTypes?.contains(areaType) != false else { continue }
                 append(
-                    colorHex: segment.direction?.colorHex ?? "#8E8E93",
+                    colorHex: segment.area?.colorHex ?? "#8E8E93",
                     at: segment.startedAt,
                     calendar: calendar
                 )
@@ -746,14 +746,14 @@ private struct IOSHistoryGlobalSearchRow: View {
 private struct IOSHistoryTaskSummaryList: View {
     let snapshot: DayHistorySnapshot
     let searchText: String
-    let visibleTypes: Set<DirectionType>
+    let visibleTypes: Set<AreaType>
 
     private var visibleTasks: [DayHistoryTaskSummary] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         return snapshot.taskSummaries.filter { task in
-            guard visibleTypes.contains(task.directionType) else { return false }
+            guard visibleTypes.contains(task.areaType) else { return false }
             guard !query.isEmpty else { return true }
-            return [task.title, task.directionName, task.directionSymbol]
+            return [task.title, task.areaName, task.areaSymbol]
                 .contains { $0.localizedCaseInsensitiveContains(query) }
         }
     }
@@ -771,10 +771,10 @@ private struct IOSHistoryTaskSummaryList: View {
                 } else {
                     ForEach(visibleTasks) { task in
                         IOSHistorySummaryRow(
-                            symbol: task.directionSymbol,
+                            symbol: task.areaSymbol,
                             title: task.title,
-                            subtitle: task.directionName,
-                            colorHex: task.directionColorHex,
+                            subtitle: task.areaName,
+                            colorHex: task.areaColorHex,
                             focusSeconds: task.focusSeconds,
                             flowCount: task.flowCount
                         )
@@ -786,18 +786,18 @@ private struct IOSHistoryTaskSummaryList: View {
     }
 }
 
-private struct IOSHistoryDirectionSummaryList: View {
+private struct IOSHistoryAreaSummaryList: View {
     let snapshot: DayHistorySnapshot
     let searchText: String
-    let visibleTypes: Set<DirectionType>
+    let visibleTypes: Set<AreaType>
 
-    private var recordedDirections: [DayHistoryDirectionSummary] {
+    private var recordedAreas: [DayHistoryAreaSummary] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        return snapshot.directionSummaries.filter { direction in
-            guard direction.focusSeconds > 0 else { return false }
-            guard visibleTypes.contains(direction.directionType) else { return false }
+        return snapshot.areaSummaries.filter { area in
+            guard area.focusSeconds > 0 else { return false }
+            guard visibleTypes.contains(area.areaType) else { return false }
             guard !query.isEmpty else { return true }
-            return [direction.name, direction.symbol]
+            return [area.name, area.symbol]
                 .contains { $0.localizedCaseInsensitiveContains(query) }
         }
     }
@@ -805,7 +805,7 @@ private struct IOSHistoryDirectionSummaryList: View {
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 10) {
-                if recordedDirections.isEmpty {
+                if recordedAreas.isEmpty {
                     ContentUnavailableView(
                         String(localized: "記録なし"),
                         systemImage: "clock.arrow.circlepath",
@@ -813,14 +813,14 @@ private struct IOSHistoryDirectionSummaryList: View {
                     )
                     .padding(.top, 72)
                 } else {
-                    ForEach(recordedDirections) { direction in
+                    ForEach(recordedAreas) { area in
                         IOSHistorySummaryRow(
-                            symbol: direction.symbol,
-                            title: direction.name,
+                            symbol: area.symbol,
+                            title: area.name,
                             subtitle: nil,
-                            colorHex: direction.colorHex,
-                            focusSeconds: direction.focusSeconds,
-                            flowCount: direction.flowCount
+                            colorHex: area.colorHex,
+                            focusSeconds: area.focusSeconds,
+                            flowCount: area.flowCount
                         )
                     }
                 }
@@ -831,7 +831,7 @@ private struct IOSHistoryDirectionSummaryList: View {
 }
 
 private struct IOSHistoryAggregateFilterMenu: View {
-    @Binding var visibleTypes: Set<DirectionType>
+    @Binding var visibleTypes: Set<AreaType>
     let neutralLabel: String
 
     var body: some View {
@@ -841,7 +841,7 @@ private struct IOSHistoryAggregateFilterMenu: View {
             filterToggle(String(localized: "ナイス"), type: .nice)
         } label: {
             Image(
-                systemName: visibleTypes.count == DirectionType.allCases.count
+                systemName: visibleTypes.count == AreaType.allCases.count
                     ? "line.3.horizontal.decrease"
                     : "line.3.horizontal.decrease.circle.fill"
             )
@@ -850,7 +850,7 @@ private struct IOSHistoryAggregateFilterMenu: View {
         .accessibilityLabel(String(localized: "表示内容"))
     }
 
-    private func filterToggle(_ title: String, type: DirectionType) -> some View {
+    private func filterToggle(_ title: String, type: AreaType) -> some View {
         Toggle(
             title,
             isOn: Binding(
@@ -1026,13 +1026,13 @@ struct IOSHistoryItemDetail: View {
     @Environment(\.calendar) private var calendar
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
 
-    @Query(sort: \Direction.sortIndex) private var directions: [Direction]
+    @Query(sort: \Area.sortIndex) private var areas: [Area]
     @Query(sort: \Todo.updatedAt, order: .reverse) private var todos: [Todo]
 
     let item: HistoryCalendarItem
 
     @State private var selectedTodoID: UUID?
-    @State private var selectedDirectionID: UUID?
+    @State private var selectedAreaID: UUID?
     @State private var taskTitleDraft: String
     @State private var timeDraft: FlowHistoryTimeDraft
     @State private var memo: String
@@ -1052,9 +1052,9 @@ struct IOSHistoryItemDetail: View {
         self.item = item
         let session = item.session
         let selectedTodo = item.todo ?? session?.todo
-        let selectedDirection = item.flowSegment?.direction ?? selectedTodo?.direction ?? session?.direction
+        let selectedArea = item.flowSegment?.area ?? selectedTodo?.area ?? session?.area
         _selectedTodoID = State(initialValue: selectedTodo?.id)
-        _selectedDirectionID = State(initialValue: selectedDirection?.id)
+        _selectedAreaID = State(initialValue: selectedArea?.id)
         _taskTitleDraft = State(initialValue: selectedTodo?.title ?? "")
         _timeDraft = State(initialValue: FlowHistoryTimeDraft(
             startedAt: item.startedAt,
@@ -1102,7 +1102,7 @@ struct IOSHistoryItemDetail: View {
                             Button(String(localized: "保存")) {
                                 save(session: session)
                             }
-                            .disabled(selectedDirection == nil)
+                            .disabled(selectedArea == nil)
                         }
                     case .rest:
                         if let flowBreak = item.flowBreak {
@@ -1119,19 +1119,19 @@ struct IOSHistoryItemDetail: View {
                 taskTitleDraft = ""
                 return
             }
-            selectedDirectionID = todo.direction?.id
+            selectedAreaID = todo.area?.id
             taskTitleDraft = todo.title
             if memo.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 memo = todo.notes ?? ""
             }
         }
         .sheet(isPresented: $isCreatingTask) {
-            if let selectedDirection {
+            if let selectedArea {
                 NavigationStack {
                     IOSTaskEditorView(
                         mode: .create,
-                        directions: availableDirections,
-                        fixedDirection: selectedDirection,
+                        areas: availableAreas,
+                        fixedArea: selectedArea,
                         scheduledDate: item.startedAt
                     ) { todo in
                         attachCreatedTodo(todo)
@@ -1201,7 +1201,7 @@ struct IOSHistoryItemDetail: View {
         guard let session = item.session else { return }
         createdTodo = todo
         selectedTodoID = todo.id
-        selectedDirectionID = todo.direction?.id
+        selectedAreaID = todo.area?.id
         taskTitleDraft = todo.title
 
         _ = performHistoryMutation {
@@ -1227,15 +1227,15 @@ struct IOSHistoryItemDetail: View {
         return todo(withID: selectedTodoID)
     }
 
-    private var selectedDirection: Direction? {
-        selectedTodo?.direction
-            ?? selectedDirectionID.flatMap { id in
-                availableDirections.first { $0.id == id }
+    private var selectedArea: Area? {
+        selectedTodo?.area
+            ?? selectedAreaID.flatMap { id in
+                availableAreas.first { $0.id == id }
             }
     }
 
-    private var availableDirections: [Direction] {
-        directions.filter { !$0.isArchived }
+    private var availableAreas: [Area] {
+        areas.filter { !$0.isArchived }
     }
 
     private var availableTodos: [Todo] {
@@ -1271,7 +1271,7 @@ struct IOSHistoryItemDetail: View {
                 Picker(String(localized: "対象タスク"), selection: $selectedTodoID) {
                     Text(String(localized: "タスクなし")).tag(UUID?.none)
                     ForEach(availableTodos) { todo in
-                        Text("\(todo.direction?.symbolName ?? "📥") \(TodoDisplay.title(for: todo))")
+                        Text("\(todo.area?.symbolName ?? "📥") \(TodoDisplay.title(for: todo))")
                             .tag(Optional(todo.id))
                     }
                 }
@@ -1295,14 +1295,14 @@ struct IOSHistoryItemDetail: View {
                 } label: {
                     Label(String(localized: "タスクを追加"), systemImage: "plus")
                 }
-                .disabled(selectedDirection == nil)
+                .disabled(selectedArea == nil)
             }
 
             Section(String(localized: "分野")) {
-                Picker(String(localized: "分野"), selection: $selectedDirectionID) {
-                    ForEach(availableDirections) { direction in
-                        Text("\(direction.symbolName) \(direction.name)")
-                            .tag(Optional(direction.id))
+                Picker(String(localized: "分野"), selection: $selectedAreaID) {
+                    ForEach(availableAreas) { area in
+                        Text("\(area.symbolName) \(area.name)")
+                            .tag(Optional(area.id))
                     }
                 }
                 .disabled(selectedTodo != nil)
@@ -1416,7 +1416,7 @@ struct IOSHistoryItemDetail: View {
     }
 
     private func save(session: FlowSession) {
-        guard let selectedDirection else { return }
+        guard let selectedArea else { return }
         let now = Date.now
         selectedTodo?.rename(to: taskTitleDraft, now: now)
         guard performHistoryMutation({
@@ -1425,7 +1425,7 @@ struct IOSHistoryItemDetail: View {
                     segment: segment,
                     in: session,
                     todo: selectedTodo,
-                    direction: selectedDirection,
+                    area: selectedArea,
                     startedAt: timeDraft.startedAt,
                     focusSeconds: timeDraft.focusSeconds,
                     memo: memo,
@@ -1436,7 +1436,7 @@ struct IOSHistoryItemDetail: View {
                 try editor.update(
                     session: session,
                     todo: selectedTodo,
-                    direction: selectedDirection,
+                    area: selectedArea,
                     startedAt: timeDraft.startedAt,
                     focusSeconds: timeDraft.focusSeconds,
                     memo: memo,

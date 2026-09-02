@@ -8,7 +8,7 @@ struct IOSFlowView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
 
-    @Query(sort: \Direction.updatedAt, order: .reverse) private var directions: [Direction]
+    @Query(sort: \Area.updatedAt, order: .reverse) private var areas: [Area]
     @Query private var todos: [Todo]
     @Query private var sessions: [FlowSession]
     @Query private var flowBreaks: [FlowBreak]
@@ -95,11 +95,11 @@ struct IOSFlowView: View {
             NavigationStack {
                 IOSFlowContextPicker(
                     todos: todayTodos,
-                    directions: activeDirections,
+                    areas: activeAreas,
                     selectedTodoID: activeFlowStore.selectedTodoID,
-                    selectedDirectionID: activeFlowStore.selectedDirectionID
-                ) { direction, todo in
-                    select(direction: direction, todo: todo)
+                    selectedAreaID: activeFlowStore.selectedAreaID
+                ) { area, todo in
+                    select(area: area, todo: todo)
                     showsContextPicker = false
                 }
             }
@@ -115,7 +115,7 @@ struct IOSFlowView: View {
         }
         .sheet(item: $editorMode) { mode in
             NavigationStack {
-                IOSTaskEditorView(mode: mode, directions: activeDirections)
+                IOSTaskEditorView(mode: mode, areas: activeAreas)
             }
         }
         .sheet(item: $selectedHistoryItem) { item in
@@ -227,8 +227,8 @@ struct IOSFlowView: View {
         )
     }
 
-    private var activeDirections: [Direction] {
-        directions
+    private var activeAreas: [Area] {
+        areas
             .filter { !$0.isArchived }
             .sorted { lhs, rhs in
                 if lhs.sortIndex != rhs.sortIndex {
@@ -258,14 +258,14 @@ struct IOSFlowView: View {
         todos.first { $0.id == activeFlowStore.selectedTodoID }
     }
 
-    private var selectedDirection: Direction? {
-        if let direction = selectedTodo?.direction { return direction }
-        return directions.first { $0.id == activeFlowStore.selectedDirectionID }
+    private var selectedArea: Area? {
+        if let area = selectedTodo?.area { return area }
+        return areas.first { $0.id == activeFlowStore.selectedAreaID }
     }
 
     private var selectedContextTitle: String {
         if let selectedTodo { return TodoDisplay.title(for: selectedTodo) }
-        return selectedDirection?.name ?? String(localized: "タスクを選択")
+        return selectedArea?.name ?? String(localized: "タスクを選択")
     }
 
     private func playerCard(minHeight: CGFloat? = nil) -> some View {
@@ -303,11 +303,11 @@ struct IOSFlowView: View {
         FlowTimerContextButton(
             style: .mobile,
             presentation: FlowTimerContextPresentation(
-                symbol: selectedDirection?.symbolName ?? "🎯",
-                areaTitle: selectedDirection?.name ?? String(localized: "分野"),
+                symbol: selectedArea?.symbolName ?? "🎯",
+                areaTitle: selectedArea?.name ?? String(localized: "分野"),
                 tint: tint,
                 detail: nil,
-                isPlaceholder: selectedDirection == nil,
+                isPlaceholder: selectedArea == nil,
                 showsProgress: selectedTodo != nil
             ),
             accessibilityLabel: selectedContextTitle,
@@ -345,7 +345,7 @@ struct IOSFlowView: View {
                 primarySymbol: primarySymbol(at: now),
                 primaryLabel: primaryActionTitle(at: now),
                 primaryTint: tint,
-                isPrimaryEnabled: selectedDirection != nil,
+                isPrimaryEnabled: selectedArea != nil,
                 canSeek: canSeek,
                 canDestroy: activeFlowStore.timerState != nil,
                 canStop: activeFlowStore.timerState != nil,
@@ -544,7 +544,7 @@ struct IOSFlowView: View {
 
     private var tint: Color {
         if activeFlowStore.isBreakPhase { return Color.secondary }
-        return Color(hex: selectedDirection?.colorHex ?? "#007AFF")
+        return Color(hex: selectedArea?.colorHex ?? "#007AFF")
     }
 
     private var backgroundColor: Color {
@@ -579,7 +579,7 @@ struct IOSFlowView: View {
             breaks: dayBreaks,
             activeSessionID: activeFlowStore.activeSession?.id,
             activeFocusSeconds: activeFlowStore.actualFocusSeconds(now: date),
-            visualIdentityID: DailyFlowIdentity.resolve(from: directions)
+            visualIdentityID: DailyFlowIdentity.resolve(from: areas)
         )
     }
 
@@ -590,8 +590,8 @@ struct IOSFlowView: View {
             latestSessionUpdate: sessions.first?.updatedAt,
             breakCount: flowBreaks.count,
             latestBreakUpdate: flowBreaks.first?.updatedAt,
-            directionCount: directions.count,
-            latestDirectionUpdate: directions.first?.updatedAt,
+            areaCount: areas.count,
+            latestAreaUpdate: areas.first?.updatedAt,
             activeSessionID: activeFlowStore.activeSession?.id,
             phase: activeFlowStore.timerState?.phase.rawValue
         )
@@ -600,8 +600,8 @@ struct IOSFlowView: View {
     private var preparationTaskID: IOSFlowPreparationID {
         IOSFlowPreparationID(
             isVisible: isVisible,
-            directionCount: directions.count,
-            latestDirectionUpdate: directions.first?.updatedAt,
+            areaCount: areas.count,
+            latestAreaUpdate: areas.first?.updatedAt,
             todoCount: todos.count,
             latestTodoUpdate: todos.first?.updatedAt,
             revision: preparationRevision
@@ -655,11 +655,11 @@ struct IOSFlowView: View {
         ).build(from: todos)
     }
 
-    private func select(direction: Direction, todo: Todo?) {
+    private func select(area: Area, todo: Todo?) {
         if activeFlowStore.timerState == nil {
-            activeFlowStore.configure(direction: direction, todo: todo)
+            activeFlowStore.configure(area: area, todo: todo)
         } else {
-            activeFlowStore.selectContext(direction: direction, todo: todo, modelContext: modelContext)
+            activeFlowStore.selectContext(area: area, todo: todo, modelContext: modelContext)
         }
     }
 
@@ -686,9 +686,9 @@ struct IOSFlowView: View {
 
     private func primaryAction() {
         if activeFlowStore.isBreakPhase {
-            guard let direction = selectedDirection else { return }
+            guard let area = selectedArea else { return }
             activeFlowStore.startNextFlow(
-                direction: direction,
+                area: area,
                 todo: selectedTodo,
                 modelContext: modelContext
             )
@@ -707,15 +707,15 @@ struct IOSFlowView: View {
             return
         }
 
-        guard let direction = selectedDirection else { return }
-        activeFlowStore.start(direction: direction, todo: selectedTodo, modelContext: modelContext)
+        guard let area = selectedArea else { return }
+        activeFlowStore.start(area: area, todo: selectedTodo, modelContext: modelContext)
     }
 
     private func prepareToday() {
-        let inbox = DefaultDirections.existingTaskInbox(in: directions) ?? {
-            let direction = DefaultDirections.makeTaskInbox()
-            modelContext.insert(direction)
-            return direction
+        let inbox = DefaultAreas.existingTaskInbox(in: areas) ?? {
+            let area = DefaultAreas.makeTaskInbox()
+            modelContext.insert(area)
+            return area
         }()
         _ = inbox
         let now = Date.now
@@ -725,7 +725,7 @@ struct IOSFlowView: View {
                 calendar: calendar,
                 dayBoundary: dayBoundary
             ).materialize(
-                directions: directions,
+                areas: areas,
                 dates: [today],
                 modelContext: modelContext,
                 now: now,
@@ -739,18 +739,18 @@ struct IOSFlowView: View {
     }
 
     private func configureInitialContextIfNeeded() {
-        guard activeFlowStore.selectedDirectionID == nil else { return }
-        if let todo = todayTodos.first(where: { !$0.isCompleted }), let direction = todo.direction {
-            activeFlowStore.configure(direction: direction, todo: todo)
-        } else if let direction = activeDirections.first {
-            activeFlowStore.configure(direction: direction, todo: nil)
+        guard activeFlowStore.selectedAreaID == nil else { return }
+        if let todo = todayTodos.first(where: { !$0.isCompleted }), let area = todo.area {
+            activeFlowStore.configure(area: area, todo: todo)
+        } else if let area = activeAreas.first {
+            activeFlowStore.configure(area: area, todo: nil)
         }
     }
 
     private func reconcileSelectedTodo(now: Date = .now) {
         activeFlowStore.reconcileSelectedTodoForCurrentDay(
             todos: todos,
-            directions: directions,
+            areas: areas,
             now: now,
             calendar: calendar,
             dayBoundary: dayBoundary
@@ -793,7 +793,7 @@ struct IOSFlowView: View {
 
     private var taskComposer: some View {
         IOSTaskComposer(
-            directions: activeDirections,
+            areas: activeAreas,
             onClose: dismissTaskComposer
         )
     }
@@ -830,8 +830,8 @@ private struct IOSFlowDashboardRefreshID: Hashable {
     let latestSessionUpdate: Date?
     let breakCount: Int
     let latestBreakUpdate: Date?
-    let directionCount: Int
-    let latestDirectionUpdate: Date?
+    let areaCount: Int
+    let latestAreaUpdate: Date?
     let activeSessionID: UUID?
     let phase: String?
 }
@@ -844,8 +844,8 @@ private struct IOSFlowTodoRefreshID: Hashable {
 
 private struct IOSFlowPreparationID: Hashable {
     let isVisible: Bool
-    let directionCount: Int
-    let latestDirectionUpdate: Date?
+    let areaCount: Int
+    let latestAreaUpdate: Date?
     let todoCount: Int
     let latestTodoUpdate: Date?
     let revision: Int
@@ -1045,7 +1045,7 @@ private struct IOSDashboardStatisticsView: View {
             )
             comparisonRow(
                 String(localized: "伸びた方向"),
-                value: growthText(comparison.growingDirection),
+                value: growthText(comparison.growingArea),
                 systemImage: "arrow.up.right"
             )
         }
@@ -1111,8 +1111,8 @@ private struct IOSDashboardStatisticsView: View {
                     focusSeconds: $0.focusSeconds
                 )
             }
-        case .direction:
-            snapshot.directionSummaries.map {
+        case .area:
+            snapshot.areaSummaries.map {
                 IOSDashboardDistributionRow(
                     id: $0.id.uuidString,
                     symbol: $0.symbol,
@@ -1205,7 +1205,7 @@ private struct IOSDashboardStatisticsView: View {
         return "\(sign)\(value)\(suffix)"
     }
 
-    private func growthText(_ growth: DashboardStatisticsDirectionGrowth?) -> String {
+    private func growthText(_ growth: DashboardStatisticsAreaGrowth?) -> String {
         guard let growth else { return String(localized: "変化なし") }
         let minutes = max(1, growth.focusSecondsDelta / 60)
         return "\(growth.symbol) \(growth.name) +\(minutes)\(String(localized: "分"))"
@@ -1230,7 +1230,7 @@ private enum IOSDashboardStatisticsPage: Int, CaseIterable, Identifiable {
 
 private enum IOSDashboardDistributionMode: String, CaseIterable, Identifiable {
     case task
-    case direction
+    case area
 
     var id: String { rawValue }
     var title: String { self == .task ? String(localized: "タスク別") : String(localized: "方向別") }

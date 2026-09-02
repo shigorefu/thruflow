@@ -2,7 +2,7 @@ import Foundation
 
 @MainActor
 struct FlowContextPickerTaskGroup: Identifiable {
-    let type: DirectionType
+    let type: AreaType
     let todos: [Todo]
 
     var id: String { type.rawValue }
@@ -10,32 +10,32 @@ struct FlowContextPickerTaskGroup: Identifiable {
 
 @MainActor
 struct FlowContextPickerProjection {
-    private static let taskGroupOrder: [DirectionType] = [.neutral, .nice]
-    private static let directionOrder: [DirectionType] = [.habit, .neutral, .nice]
+    private static let taskGroupOrder: [AreaType] = [.neutral, .nice]
+    private static let areaOrder: [AreaType] = [.habit, .neutral, .nice]
 
     let taskGroups: [FlowContextPickerTaskGroup]
     let habitTodos: [Todo]
-    let otherDirection: Direction?
-    let userDirections: [Direction]
+    let otherArea: Area?
+    let userAreas: [Area]
 
-    init(directions: [Direction], todos: [Todo]) {
-        let activeDirections = directions.filter { !$0.isArchived }
+    init(areas: [Area], todos: [Todo]) {
+        let activeAreas = areas.filter { !$0.isArchived }
         let activeTodos = todos.filter { !$0.isArchived && !$0.isDeleted }
 
         taskGroups = Self.taskGroupOrder.compactMap { type in
             let items = activeTodos
-                .filter { ($0.direction?.type ?? .neutral) == type }
+                .filter { ($0.area?.type ?? .neutral) == type }
                 .sorted(by: Self.sortTodos)
             guard !items.isEmpty else { return nil }
             return FlowContextPickerTaskGroup(type: type, todos: items)
         }
         habitTodos = activeTodos
-            .filter { $0.direction?.type == .habit }
+            .filter { $0.area?.type == .habit }
             .sorted(by: Self.sortTodos)
-        otherDirection = DefaultDirections.existingTaskInbox(in: activeDirections)
-        userDirections = activeDirections
-            .filter { !DefaultDirections.isTaskInbox($0) }
-            .sorted(by: Self.sortDirections)
+        otherArea = DefaultAreas.existingTaskInbox(in: activeAreas)
+        userAreas = activeAreas
+            .filter { !DefaultAreas.isTaskInbox($0) }
+            .sorted(by: Self.sortAreas)
     }
 
     nonisolated static func sortTodos(_ lhs: Todo, _ rhs: Todo) -> Bool {
@@ -50,9 +50,9 @@ struct FlowContextPickerProjection {
         return lhs.createdAt < rhs.createdAt
     }
 
-    private static func sortDirections(_ lhs: Direction, _ rhs: Direction) -> Bool {
-        let lhsType = directionOrder.firstIndex(of: lhs.type) ?? directionOrder.count
-        let rhsType = directionOrder.firstIndex(of: rhs.type) ?? directionOrder.count
+    private static func sortAreas(_ lhs: Area, _ rhs: Area) -> Bool {
+        let lhsType = areaOrder.firstIndex(of: lhs.type) ?? areaOrder.count
+        let rhsType = areaOrder.firstIndex(of: rhs.type) ?? areaOrder.count
         if lhsType != rhsType {
             return lhsType < rhsType
         }

@@ -296,7 +296,7 @@ private struct IOSFlowTimelineSegmentPopover: View {
                     Text(segment.taskTitle)
                         .font(.headline)
                         .lineLimit(2)
-                    Text(segment.directionName)
+                    Text(segment.areaName)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)

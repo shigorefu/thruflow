@@ -20,45 +20,45 @@ struct OrphanTodoReconciler {
         now: Date = .now
     ) throws -> OrphanTodoReconciliationResult {
         let todos = try modelContext.fetch(FetchDescriptor<Todo>())
-        let directions = try modelContext.fetch(FetchDescriptor<Direction>())
+        let areas = try modelContext.fetch(FetchDescriptor<Area>())
         let sessions = try modelContext.fetch(FetchDescriptor<FlowSession>())
         let segments = try modelContext.fetch(FetchDescriptor<FlowSegment>())
-        let orphanTodos = todos.filter { !$0.isDeleted && $0.direction == nil }
+        let orphanTodos = todos.filter { !$0.isDeleted && $0.area == nil }
         let planner = RequiredTodoPlanner(calendar: calendar)
 
         var historyCount = 0
         var templateCount = 0
 
         for todo in orphanTodos {
-            if let direction = uniqueHistoryDirection(
+            if let area = uniqueHistoryArea(
                 for: todo,
                 sessions: sessions,
                 segments: segments
             ) {
-                todo.direction = direction
+                todo.area = area
                 todo.updatedAt = now
                 historyCount += 1
                 continue
             }
 
-            let candidates = directions.filter { direction in
-                guard planner.matchesGeneratedTemplate(todo, for: direction),
+            let candidates = areas.filter { area in
+                guard planner.matchesGeneratedTemplate(todo, for: area),
                       let scheduledDate = todo.scheduledDate else {
                     return false
                 }
 
                 return planner.existingRequiredTodo(
-                    for: direction,
+                    for: area,
                     in: todos,
                     on: scheduledDate
                 ) == nil
             }
 
-            guard candidates.count == 1, let direction = candidates.first else {
+            guard candidates.count == 1, let area = candidates.first else {
                 continue
             }
 
-            todo.direction = direction
+            todo.area = area
             todo.updatedAt = now
             templateCount += 1
         }
@@ -78,7 +78,7 @@ struct OrphanTodoReconciler {
         if habitReconciliation.changed {
             try FlowProgressReconciler().reconcile(
                 todos: habitReconciliation.canonicalTodos.map(Optional.some),
-                directions: habitReconciliation.affectedDirections.map(Optional.some),
+                areas: habitReconciliation.affectedAreas.map(Optional.some),
                 modelContext: modelContext,
                 now: now
             )
@@ -88,24 +88,24 @@ struct OrphanTodoReconciler {
         return result
     }
 
-    private func uniqueHistoryDirection(
+    private func uniqueHistoryArea(
         for todo: Todo,
         sessions: [FlowSession],
         segments: [FlowSegment]
-    ) -> Direction? {
-        let sessionDirections = sessions.compactMap { session -> Direction? in
+    ) -> Area? {
+        let sessionAreas = sessions.compactMap { session -> Area? in
             guard session.todo?.id == todo.id else { return nil }
-            return session.direction
+            return session.area
         }
-        let segmentDirections = segments.compactMap { segment -> Direction? in
+        let segmentAreas = segments.compactMap { segment -> Area? in
             guard segment.todo?.id == todo.id else { return nil }
-            return segment.direction
+            return segment.area
         }
-        let directions = sessionDirections + segmentDirections
-        let uniqueDirections = Dictionary(grouping: directions, by: \.id)
+        let areas = sessionAreas + segmentAreas
+        let uniqueAreas = Dictionary(grouping: areas, by: \.id)
             .compactMap { $0.value.first }
 
-        guard uniqueDirections.count == 1 else { return nil }
-        return uniqueDirections[0]
+        guard uniqueAreas.count == 1 else { return nil }
+        return uniqueAreas[0]
     }
 }

@@ -13,7 +13,7 @@ struct HabitTodoMaterializer {
 
     @discardableResult
     func materialize(
-        directions: [Direction],
+        areas: [Area],
         dates: [Date],
         modelContext: ModelContext,
         now: Date = .now,
@@ -42,7 +42,7 @@ struct HabitTodoMaterializer {
             if reconciliation.changed {
                 try FlowProgressReconciler().reconcile(
                     todos: reconciliation.canonicalTodos.map(Optional.some),
-                    directions: reconciliation.affectedDirections.map(Optional.some),
+                    areas: reconciliation.affectedAreas.map(Optional.some),
                     modelContext: modelContext,
                     now: now
                 )
@@ -55,17 +55,17 @@ struct HabitTodoMaterializer {
         let today = dayBoundary.day(containing: now, calendar: calendar)
         let normalizedDates = uniqueDays(dates).sorted()
         let planner = RequiredTodoPlanner(calendar: calendar)
-        let activeHabits = directions.filter { $0.type == .habit && !$0.isArchived }
+        let activeHabits = areas.filter { $0.type == .habit && !$0.isArchived }
 
         for date in normalizedDates {
-            for direction in activeHabits {
-                if direction.goalSchedule == .weeklyCount &&
+            for area in activeHabits {
+                if area.goalSchedule == .weeklyCount &&
                     !calendar.isDate(date, inSameDayAs: today) {
                     continue
                 }
 
                 if let pendingTodo = planner.pendingWeeklyTodoToRollForward(
-                    for: direction,
+                    for: area,
                     in: knownTodos,
                     on: date
                 ) {
@@ -75,7 +75,7 @@ struct HabitTodoMaterializer {
                 }
 
                 guard let todo = planner.makeRequiredTodo(
-                    for: direction,
+                    for: area,
                     existingTodos: knownTodos,
                     on: date,
                     sortIndex: nextSortIndex

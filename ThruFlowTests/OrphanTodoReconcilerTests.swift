@@ -12,11 +12,11 @@ struct OrphanTodoReconcilerTests {
         let habit = dailyOccurrenceHabit(name: "Anki")
         let orphan = Todo(
             title: "",
-            direction: habit,
+            area: habit,
             priority: .high,
             scheduledDate: day
         )
-        orphan.direction = nil
+        orphan.area = nil
         context.insert(habit)
         context.insert(orphan)
         try context.save()
@@ -28,7 +28,7 @@ struct OrphanTodoReconcilerTests {
 
         #expect(result.reconnectedFromHistoryCount == 0)
         #expect(result.reconnectedFromHabitTemplateCount == 1)
-        #expect(orphan.direction?.id == habit.id)
+        #expect(orphan.area?.id == habit.id)
         #expect(
             TaskBacklogBuilder(calendar: testCalendar())
                 .build(todos: [orphan], now: day.addingTimeInterval(86_400))
@@ -41,10 +41,10 @@ struct OrphanTodoReconcilerTests {
         let container = try makeContainer()
         let context = container.mainContext
         let day = Date(timeIntervalSince1970: 5 * 86_400)
-        let direction = Direction(name: "仕事", type: .neutral)
-        let orphan = Todo(title: "設計", direction: direction, scheduledDate: day)
+        let area = Area(name: "仕事", type: .neutral)
+        let orphan = Todo(title: "設計", area: area, scheduledDate: day)
         let session = FlowSession(
-            direction: direction,
+            area: area,
             todo: orphan,
             mode: .sprint,
             startedAt: day,
@@ -52,8 +52,8 @@ struct OrphanTodoReconcilerTests {
             plannedFocusDurationSeconds: 720,
             plannedBreakDurationSeconds: 180
         )
-        orphan.direction = nil
-        context.insert(direction)
+        orphan.area = nil
+        context.insert(area)
         context.insert(orphan)
         context.insert(session)
         try context.save()
@@ -65,7 +65,7 @@ struct OrphanTodoReconcilerTests {
 
         #expect(result.reconnectedFromHistoryCount == 1)
         #expect(result.reconnectedFromHabitTemplateCount == 0)
-        #expect(orphan.direction?.id == direction.id)
+        #expect(orphan.area?.id == area.id)
     }
 
     @Test func ambiguousOrphanIsNotGuessedAndDoesNotAppearAsOther() throws {
@@ -76,11 +76,11 @@ struct OrphanTodoReconcilerTests {
         let secondHabit = dailyOccurrenceHabit(name: "運動")
         let orphan = Todo(
             title: "",
-            direction: firstHabit,
+            area: firstHabit,
             priority: .high,
             scheduledDate: day
         )
-        orphan.direction = nil
+        orphan.area = nil
         context.insert(firstHabit)
         context.insert(secondHabit)
         context.insert(orphan)
@@ -92,7 +92,7 @@ struct OrphanTodoReconcilerTests {
         )
 
         #expect(!result.changed)
-        #expect(orphan.direction == nil)
+        #expect(orphan.area == nil)
         #expect(!TodayTodoFilter(calendar: testCalendar()).includes(orphan, on: day))
         #expect(!TaskCalendarFilter.all.includes(orphan))
         #expect(
@@ -103,8 +103,8 @@ struct OrphanTodoReconcilerTests {
         )
     }
 
-    private func dailyOccurrenceHabit(name: String) -> Direction {
-        Direction(
+    private func dailyOccurrenceHabit(name: String) -> Area {
+        Area(
             name: name,
             type: .habit,
             goalTarget: 1,
@@ -122,7 +122,7 @@ struct OrphanTodoReconcilerTests {
 
     private func makeContainer() throws -> ModelContainer {
         let schema = Schema([
-            Direction.self,
+            Area.self,
             Todo.self,
             FlowSession.self,
             FlowSegment.self,

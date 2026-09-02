@@ -30,15 +30,15 @@ struct FlowDashboardTests {
 
     @Test func dashboardBuildsDailyTotalsPaletteAndTimelineFractions() {
         let day = Date(timeIntervalSince1970: 86_400)
-        let reading = Direction(name: "読書", type: .neutral, symbolName: "📚", colorHex: "#34C759")
-        let writing = Direction(name: "執筆", type: .neutral, symbolName: "✍️", colorHex: "#0A84FF")
+        let reading = Area(name: "読書", type: .neutral, symbolName: "📚", colorHex: "#34C759")
+        let writing = Area(name: "執筆", type: .neutral, symbolName: "✍️", colorHex: "#0A84FF")
         let first = makeSession(
-            direction: reading,
+            area: reading,
             start: day.addingTimeInterval(6 * 3_600),
             duration: 25 * 60
         )
         let second = makeSession(
-            direction: writing,
+            area: writing,
             start: day.addingTimeInterval(18 * 3_600),
             duration: 50 * 60
         )
@@ -54,8 +54,8 @@ struct FlowDashboardTests {
         #expect(snapshot.palette == ["#0A84FF", "#34C759"])
         #expect(abs(snapshot.paletteWeights[0] - (2.0 / 3.0)) < 0.0001)
         #expect(abs(snapshot.paletteWeights[1] - (1.0 / 3.0)) < 0.0001)
-        #expect(snapshot.directionSummaries.map(\.name) == ["執筆", "読書"])
-        #expect(snapshot.directionSummaries.map(\.focusSeconds) == [50 * 60, 25 * 60])
+        #expect(snapshot.areaSummaries.map(\.name) == ["執筆", "読書"])
+        #expect(snapshot.areaSummaries.map(\.focusSeconds) == [50 * 60, 25 * 60])
         #expect(abs(snapshot.focusShare(for: 50 * 60) - (2.0 / 3.0)) < 0.0001)
         #expect(abs(snapshot.focusShare(for: 25 * 60) - (1.0 / 3.0)) < 0.0001)
         #expect(abs(snapshot.segments[0].startFraction - 0.25) < 0.0001)
@@ -70,9 +70,9 @@ struct FlowDashboardTests {
         let earlyMorning = calendar.date(
             from: DateComponents(year: 2026, month: 7, day: 17, hour: 1)
         )!
-        let direction = Direction(name: "深夜作業", type: .neutral)
+        let area = Area(name: "深夜作業", type: .neutral)
         let session = makeSession(
-            direction: direction,
+            area: area,
             start: earlyMorning,
             duration: 25 * 60
         )
@@ -112,14 +112,14 @@ struct FlowDashboardTests {
 
     @Test func elasticTimelineGrowsFromFirstFlowHourThroughLastFlowHour() {
         let day = Date(timeIntervalSince1970: 86_400)
-        let direction = Direction(name: "仕事", type: .neutral)
+        let area = Area(name: "仕事", type: .neutral)
         let morning = makeSession(
-            direction: direction,
+            area: area,
             start: day.addingTimeInterval(10 * 3_600 + 15 * 60),
             duration: 25 * 60
         )
         let afternoon = makeSession(
-            direction: direction,
+            area: area,
             start: day.addingTimeInterval(16 * 3_600 + 10 * 60),
             duration: 25 * 60
         )
@@ -147,9 +147,9 @@ struct FlowDashboardTests {
 
     @Test func elasticTimelineKeepsTwoHourMinimumForOneFlow() {
         let day = Date(timeIntervalSince1970: 86_400)
-        let direction = Direction(name: "仕事", type: .neutral)
+        let area = Area(name: "仕事", type: .neutral)
         let session = makeSession(
-            direction: direction,
+            area: area,
             start: day.addingTimeInterval(10 * 3_600 + 15 * 60),
             duration: 25 * 60
         )
@@ -169,17 +169,17 @@ struct FlowDashboardTests {
 
     @Test func dashboardBuildsPersistedBreakAndConnectedSeriesSpan() {
         let day = Date(timeIntervalSince1970: 86_400)
-        let direction = Direction(name: "仕事", type: .neutral)
+        let area = Area(name: "仕事", type: .neutral)
         let seriesID = UUID()
         let first = makeSession(
-            direction: direction,
+            area: area,
             start: day.addingTimeInterval(10 * 3_600),
             duration: 25 * 60,
             seriesID: seriesID
         )
         let secondStart = day.addingTimeInterval(10 * 3_600 + 30 * 60)
         let second = makeSession(
-            direction: direction,
+            area: area,
             start: secondStart,
             duration: 25 * 60,
             seriesID: seriesID
@@ -210,10 +210,10 @@ struct FlowDashboardTests {
 
     @Test func dashboardSeriesSpanIncludesTrailingBreakWithoutConnectingNextSeries() {
         let day = Date(timeIntervalSince1970: 86_400)
-        let direction = Direction(name: "仕事", type: .neutral)
+        let area = Area(name: "仕事", type: .neutral)
         let firstSeriesID = UUID()
         let first = makeSession(
-            direction: direction,
+            area: area,
             start: day.addingTimeInterval(10 * 3_600),
             duration: 25 * 60,
             seriesID: firstSeriesID
@@ -227,7 +227,7 @@ struct FlowDashboardTests {
             plannedDurationSeconds: 5 * 60
         )
         let second = makeSession(
-            direction: direction,
+            area: area,
             start: breakEnd.addingTimeInterval(30 * 60),
             duration: 25 * 60,
             seriesID: UUID()
@@ -247,10 +247,10 @@ struct FlowDashboardTests {
 
     @Test func liveFlowAppearsOnlyAfterCreditableMinuteAndUsesCurrentEndTime() {
         let day = Date(timeIntervalSince1970: 172_800)
-        let direction = Direction(name: "仕事", type: .neutral, colorHex: "#FF9F0A")
+        let area = Area(name: "仕事", type: .neutral, colorHex: "#FF9F0A")
         let start = day.addingTimeInterval(9 * 3_600)
         let session = FlowSession(
-            direction: direction,
+            area: area,
             mode: .twentyFiveFive,
             startedAt: start,
             plannedEndAt: start.addingTimeInterval(25 * 60),
@@ -280,15 +280,15 @@ struct FlowDashboardTests {
 
     @Test func dashboardExcludesOtherDaysAndInterruptedSessions() {
         let day = Date(timeIntervalSince1970: 259_200)
-        let direction = Direction(name: "学習", type: .neutral)
-        let valid = makeSession(direction: direction, start: day.addingTimeInterval(3_600), duration: 12 * 60)
+        let area = Area(name: "学習", type: .neutral)
+        let valid = makeSession(area: area, start: day.addingTimeInterval(3_600), duration: 12 * 60)
         let interrupted = makeSession(
-            direction: direction,
+            area: area,
             start: day.addingTimeInterval(2 * 3_600),
             duration: 25 * 60,
             status: .interrupted
         )
-        let tomorrow = makeSession(direction: direction, start: day.addingTimeInterval(26 * 3_600), duration: 25 * 60)
+        let tomorrow = makeSession(area: area, start: day.addingTimeInterval(26 * 3_600), duration: 25 * 60)
 
         let snapshot = FlowDashboardBuilder(calendar: calendar).build(
             date: day.addingTimeInterval(12 * 3_600),
@@ -394,16 +394,16 @@ struct FlowDashboardTests {
         #expect(baseline.seed != anotherProfile.seed)
     }
 
-    @Test func dailyIdentityUsesOldestSyncedDirection() {
+    @Test func dailyIdentityUsesOldestSyncedArea() {
         let firstID = UUID(uuidString: "A5220B23-7957-49AA-A796-65D20424BE06")!
         let secondID = UUID(uuidString: "81F71AD5-9D05-4A99-892B-0F733D083EB4")!
-        let first = Direction(
+        let first = Area(
             id: firstID,
             name: "First",
             type: .neutral,
             createdAt: Date(timeIntervalSince1970: 100)
         )
-        let second = Direction(
+        let second = Area(
             id: secondID,
             name: "Second",
             type: .neutral,
@@ -587,14 +587,14 @@ struct FlowDashboardTests {
 
     @Test func oneFlowWithTaskSwitchesBuildsMultipleTimelineSegments() {
         let day = Date(timeIntervalSince1970: 518_400)
-        let writing = Direction(name: "執筆", type: .neutral, colorHex: "#0A84FF")
-        let review = Direction(name: "レビュー", type: .neutral, colorHex: "#FF9F0A")
-        let firstTodo = Todo(title: "本文", direction: writing)
-        let secondTodo = Todo(title: "確認", direction: review)
-        let session = makeSession(direction: review, start: day.addingTimeInterval(9 * 3_600), duration: 25 * 60)
+        let writing = Area(name: "執筆", type: .neutral, colorHex: "#0A84FF")
+        let review = Area(name: "レビュー", type: .neutral, colorHex: "#FF9F0A")
+        let firstTodo = Todo(title: "本文", area: writing)
+        let secondTodo = Todo(title: "確認", area: review)
+        let session = makeSession(area: review, start: day.addingTimeInterval(9 * 3_600), duration: 25 * 60)
         let first = FlowSegment(
             session: session,
-            direction: writing,
+            area: writing,
             todo: firstTodo,
             startedAt: session.startedAt,
             startFocusSeconds: 0
@@ -602,7 +602,7 @@ struct FlowDashboardTests {
         first.close(at: session.startedAt.addingTimeInterval(16 * 60), totalFocusSeconds: 16 * 60)
         let second = FlowSegment(
             session: session,
-            direction: review,
+            area: review,
             todo: secondTodo,
             startedAt: session.startedAt.addingTimeInterval(16 * 60),
             startFocusSeconds: 16 * 60
@@ -631,15 +631,15 @@ struct FlowDashboardTests {
 
     @Test func dashboardTaskSummaryCombinesFocusFromRepeatedFlows() {
         let day = Date(timeIntervalSince1970: 604_800)
-        let direction = Direction(name: "開発", type: .neutral, colorHex: "#BF5AF2")
-        let todo = Todo(title: "実装", direction: direction)
+        let area = Area(name: "開発", type: .neutral, colorHex: "#BF5AF2")
+        let todo = Todo(title: "実装", area: area)
         let morning = makeSession(
-            direction: direction,
+            area: area,
             start: day.addingTimeInterval(9 * 3_600),
             duration: 25 * 60
         )
         let afternoon = makeSession(
-            direction: direction,
+            area: area,
             start: day.addingTimeInterval(14 * 3_600),
             duration: 50 * 60
         )
@@ -658,25 +658,25 @@ struct FlowDashboardTests {
     }
 
     @Test func dashboardTodosSortByCompletionThenPriority() {
-        let direction = Direction(name: "仕事", type: .neutral)
+        let area = Area(name: "仕事", type: .neutral)
         let completedHigh = Todo(
             title: "完了済み",
-            direction: direction,
+            area: area,
             priority: .high,
             status: .completed,
             sortIndex: 0
         )
         let roomIfPossible = Todo(
             title: "余裕",
-            direction: direction,
+            area: area,
             priority: .low,
             isRoomIfPossible: true,
             sortIndex: 1
         )
-        let low = Todo(title: "低", direction: direction, priority: .low, sortIndex: 2)
-        let medium = Todo(title: "中", direction: direction, priority: .medium, sortIndex: 3)
-        let highLater = Todo(title: "高2", direction: direction, priority: .high, sortIndex: 5)
-        let highEarlier = Todo(title: "高1", direction: direction, priority: .high, sortIndex: 4)
+        let low = Todo(title: "低", area: area, priority: .low, sortIndex: 2)
+        let medium = Todo(title: "中", area: area, priority: .medium, sortIndex: 3)
+        let highLater = Todo(title: "高2", area: area, priority: .high, sortIndex: 5)
+        let highEarlier = Todo(title: "高1", area: area, priority: .high, sortIndex: 4)
 
         let sorted = FlowDashboardTodoSorter().sorted([
             completedHigh,
@@ -692,14 +692,14 @@ struct FlowDashboardTests {
 
     @Test func dashboardStatisticsBuildsRequestedDayRange() {
         let day = Date(timeIntervalSince1970: 10 * 86_400)
-        let direction = Direction(name: "開発", type: .neutral, colorHex: "#0A84FF")
+        let area = Area(name: "開発", type: .neutral, colorHex: "#0A84FF")
         let earlier = makeSession(
-            direction: direction,
+            area: area,
             start: day.addingTimeInterval(-2 * 86_400 + 9 * 3_600),
             duration: 25 * 60
         )
         let current = makeSession(
-            direction: direction,
+            area: area,
             start: day.addingTimeInterval(9 * 3_600),
             duration: 50 * 60
         )
@@ -716,34 +716,34 @@ struct FlowDashboardTests {
         #expect(days.last?.colorHex == "#0A84FF")
     }
 
-    @Test func dashboardStatisticsComparesPreviousDayAndFindsGrowingDirection() {
+    @Test func dashboardStatisticsComparesPreviousDayAndFindsGrowingArea() {
         let day = Date(timeIntervalSince1970: 12 * 86_400)
-        let direction = Direction(name: "開発", type: .neutral, symbolName: "💻")
+        let area = Area(name: "開発", type: .neutral, symbolName: "💻")
         let previous = makeSession(
-            direction: direction,
+            area: area,
             start: day.addingTimeInterval(-86_400 + 9 * 3_600),
             duration: 25 * 60
         )
         let current = makeSession(
-            direction: direction,
+            area: area,
             start: day.addingTimeInterval(9 * 3_600),
             duration: 50 * 60
         )
         let previousTodo = Todo(
             title: "昨日",
-            direction: direction,
+            area: area,
             status: .completed,
             completedAt: day.addingTimeInterval(-86_400 + 12 * 3_600)
         )
         let firstTodayTodo = Todo(
             title: "今日1",
-            direction: direction,
+            area: area,
             status: .completed,
             completedAt: day.addingTimeInterval(12 * 3_600)
         )
         let secondTodayTodo = Todo(
             title: "今日2",
-            direction: direction,
+            area: area,
             status: .completed,
             completedAt: day.addingTimeInterval(13 * 3_600)
         )
@@ -758,12 +758,12 @@ struct FlowDashboardTests {
         #expect(comparison.focusSecondsDelta == 25 * 60)
         #expect(comparison.completedTaskDelta == 1)
         #expect(comparison.blocksDelta == 1)
-        #expect(comparison.growingDirection?.name == "開発")
-        #expect(comparison.growingDirection?.focusSecondsDelta == 25 * 60)
+        #expect(comparison.growingArea?.name == "開発")
+        #expect(comparison.growingArea?.focusSecondsDelta == 25 * 60)
     }
 
     private func makeSession(
-        direction: Direction,
+        area: Area,
         start: Date,
         duration: Int,
         status: FlowSessionStatus = .completed,
@@ -771,7 +771,7 @@ struct FlowDashboardTests {
     ) -> FlowSession {
         FlowSession(
             seriesID: seriesID,
-            direction: direction,
+            area: area,
             mode: .twentyFiveFive,
             phase: status == .completed ? .completed : .focusing,
             status: status,

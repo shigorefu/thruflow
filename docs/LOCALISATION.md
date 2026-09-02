@@ -92,10 +92,11 @@ always be free: possible future optional integrations or services may have
 separate terms or costs. The first App Store release exposes no in-app purchases.
 
 These copy choices never rename implementation or persisted identifiers.
-Swift types and properties such as `Direction`, `FlowSession`, and `FlowMode`,
+Swift types and properties such as `Area`, `FlowSession`, and `FlowMode`,
 enum cases, raw values, storage keys, and stable code references remain in
-English. A terminology update must not migrate user data or user-authored
-content.
+English. The persistence-only `Direction` entity and `direction` relationship
+names remain unchanged for existing SwiftData/CloudKit data. A terminology
+update must not migrate user data or user-authored content.
 
 ## Contributor Workflow
 
@@ -128,9 +129,9 @@ or remove the universal English forms.
 ## Context-Specific Labels
 
 Entity names remain singular in prose and editors (`Task`, `Area`), while
-navigation labels name collections and therefore use plurals. `Direction`
-remains the internal Swift, persistence, and machine-readable CSV identifier;
-it is not visible English UI copy:
+navigation labels name collections and therefore use plurals. `Area` is the
+code and machine-readable CSV identifier as well as visible English product
+copy; persisted compatibility names are documented separately:
 
 | Context | Japanese key | English | Russian |
 | --- | --- | --- | --- |

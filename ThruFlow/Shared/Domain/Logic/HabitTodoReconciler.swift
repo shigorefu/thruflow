@@ -8,7 +8,7 @@ import Foundation
 struct HabitTodoReconciliationResult {
     let changed: Bool
     let canonicalTodos: [Todo]
-    let affectedDirections: [Direction]
+    let affectedAreas: [Area]
 }
 
 struct HabitTodoReconciler {
@@ -21,8 +21,8 @@ struct HabitTodoReconciler {
         now: Date = .now
     ) -> HabitTodoReconciliationResult {
         let candidates = todos.filter { todo in
-            guard let direction = todo.direction else { return false }
-            return direction.type == .habit &&
+            guard let area = todo.area else { return false }
+            return area.type == .habit &&
                 !todo.isArchived &&
                 !todo.isDeleted &&
                 todo.scheduledDate != nil
@@ -30,7 +30,7 @@ struct HabitTodoReconciler {
         let groups = Dictionary(grouping: candidates, by: occurrenceKey)
 
         var canonicalTodos: [Todo] = []
-        var affectedDirections: [Direction] = []
+        var affectedAreas: [Area] = []
         var changed = false
 
         for group in groups.values where group.count > 1 {
@@ -41,8 +41,8 @@ struct HabitTodoReconciler {
 
             merge(duplicates, into: canonical, sessions: sessions, segments: segments, now: now)
             canonicalTodos.append(canonical)
-            if let direction = canonical.direction {
-                affectedDirections.append(direction)
+            if let area = canonical.area {
+                affectedAreas.append(area)
             }
             changed = true
         }
@@ -50,14 +50,14 @@ struct HabitTodoReconciler {
         return HabitTodoReconciliationResult(
             changed: changed,
             canonicalTodos: unique(canonicalTodos),
-            affectedDirections: unique(affectedDirections)
+            affectedAreas: unique(affectedAreas)
         )
     }
 
     private func occurrenceKey(_ todo: Todo) -> String {
-        let directionID = todo.direction?.id.uuidString ?? ""
+        let areaID = todo.area?.id.uuidString ?? ""
         let day = calendar.startOfDay(for: todo.scheduledDate ?? .distantPast)
-        return "\(directionID)|\(day.timeIntervalSinceReferenceDate)"
+        return "\(areaID)|\(day.timeIntervalSinceReferenceDate)"
     }
 
     private func isPreferred(

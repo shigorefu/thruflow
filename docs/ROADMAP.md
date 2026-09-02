@@ -144,3 +144,26 @@ Every item below is required before publishing 1.0:
 
 - [x] Align the app and extension marketing versions to `1.1.0` while retaining
   build number `8`.
+
+## 1.2.0 — Area naming and compatibility
+
+### Code and persistence
+
+- [x] Rename source files, feature folders, domain/application APIs, views,
+  widgets, and tests from Direction to Area.
+- [x] Keep the existing SwiftData/CloudKit runtime entity `Direction` and the
+  stored Todo/Flow relationship fields `direction`; expose the same records to
+  application code through `Area` / `area` without a data migration.
+- [x] Preserve stable enum raw values, legacy preference keys, and existing
+  Widget/Live Activity Codable wire keys.
+- [x] Add a schema contract test that detects an accidental `Area` entity or
+  persisted `area` relationship.
+- [x] Rename the Statistics CSV column from `direction` to `area`.
+
+### Delivery
+
+- [x] Align the app, extension, and Watch marketing versions to `1.2.0` while
+  retaining build number `8`.
+- [x] Skip Apple build/test jobs for Markdown-only changes while keeping the
+  required GitHub CI status resolvable. Run the complete Apple gate whenever
+  any non-Markdown file changes.

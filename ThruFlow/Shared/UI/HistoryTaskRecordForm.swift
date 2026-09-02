@@ -11,7 +11,7 @@ struct HistoryTaskRecordForm: View {
     @Environment(\.calendar) private var calendar
     @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \Direction.sortIndex) private var directions: [Direction]
+    @Query(sort: \Area.sortIndex) private var areas: [Area]
     @Query(sort: \Todo.updatedAt, order: .reverse) private var todos: [Todo]
 
     let context: HistoryRecordContext
@@ -20,7 +20,7 @@ struct HistoryTaskRecordForm: View {
     @State private var selectedTarget: HistoryRecordTarget?
     @State private var isChoosingTarget = false
     @State private var title = ""
-    @State private var selectedDirectionID: UUID?
+    @State private var selectedAreaID: UUID?
     @State private var measurement: TodoMeasurement = .checkbox
     @State private var priority: TodoPriority = .medium
     @State private var isRoomIfPossible = false
@@ -82,10 +82,10 @@ struct HistoryTaskRecordForm: View {
             }
             .onChange(of: selectedTarget) { _, newTarget in
                 errorMessage = nil
-                if newTarget == .newTask, selectedDirectionID == nil {
-                    selectedDirectionID = (
-                        DefaultDirections.existingTaskInbox(in: availableDirections)
-                            ?? availableDirections.first
+                if newTarget == .newTask, selectedAreaID == nil {
+                    selectedAreaID = (
+                        DefaultAreas.existingTaskInbox(in: availableAreas)
+                            ?? availableAreas.first
                     )?.id
                 }
             }
@@ -116,8 +116,8 @@ struct HistoryTaskRecordForm: View {
         }
     }
 
-    private var availableDirections: [Direction] {
-        directions.filter { !$0.isArchived }
+    private var availableAreas: [Area] {
+        areas.filter { !$0.isArchived }
     }
 
     private var dayTodos: [Todo] {
@@ -125,36 +125,36 @@ struct HistoryTaskRecordForm: View {
     }
 
     private var taskTodos: [Todo] {
-        dayTodos.filter { $0.direction?.type != .habit }
+        dayTodos.filter { $0.area?.type != .habit }
     }
 
     private var habitOptions: [HistoryHabitOption] {
-        let existingByDirection = Dictionary(
+        let existingByArea = Dictionary(
             dayTodos
-                .filter { $0.direction?.type == .habit }
+                .filter { $0.area?.type == .habit }
                 .compactMap { todo -> (UUID, Todo)? in
-                    guard let directionID = todo.direction?.id else { return nil }
-                    return (directionID, todo)
+                    guard let areaID = todo.area?.id else { return nil }
+                    return (areaID, todo)
                 },
             uniquingKeysWith: { current, _ in current }
         )
 
-        return availableDirections
-            .filter { direction in
-                direction.type == .habit
-                    && direction.goalUnit != nil
+        return availableAreas
+            .filter { area in
+                area.type == .habit
+                    && area.goalUnit != nil
                     && (
-                        existingByDirection[direction.id] != nil
+                        existingByArea[area.id] != nil
                             || RequiredTodoPlanner(calendar: calendar).shouldAppearToday(
-                                direction,
+                                area,
                                 on: dayBoundary.day(containing: timeDraft.startedAt, calendar: calendar)
                             )
                     )
             }
-            .map { direction in
+            .map { area in
                 HistoryHabitOption(
-                    direction: direction,
-                    todo: existingByDirection[direction.id]
+                    area: area,
+                    todo: existingByArea[area.id]
                 )
             }
     }
@@ -163,22 +163,22 @@ struct HistoryTaskRecordForm: View {
         switch selectedTarget {
         case let .todo(id):
             return dayTodos.first { $0.id == id }
-        case let .habit(directionID):
-            return habitOptions.first { $0.id == directionID }?.todo
-        case .direction, .newTask, nil:
+        case let .habit(areaID):
+            return habitOptions.first { $0.id == areaID }?.todo
+        case .area, .newTask, nil:
             return nil
         }
     }
 
-    private var selectedDirection: Direction? {
+    private var selectedArea: Area? {
         switch selectedTarget {
         case let .todo(id):
-            return dayTodos.first { $0.id == id }?.direction
-        case let .habit(id), let .direction(id):
-            return availableDirections.first { $0.id == id }
+            return dayTodos.first { $0.id == id }?.area
+        case let .habit(id), let .area(id):
+            return availableAreas.first { $0.id == id }
         case .newTask:
-            guard let selectedDirectionID else { return nil }
-            return availableDirections.first { $0.id == selectedDirectionID }
+            guard let selectedAreaID else { return nil }
+            return availableAreas.first { $0.id == selectedAreaID }
         case nil:
             return nil
         }
@@ -190,15 +190,15 @@ struct HistoryTaskRecordForm: View {
         }
 
         switch selectedTarget {
-        case let .habit(directionID):
-            guard let direction = availableDirections.first(where: { $0.id == directionID }),
-                  let goalUnit = direction.goalUnit else {
+        case let .habit(areaID):
+            guard let area = availableAreas.first(where: { $0.id == areaID }),
+                  let goalUnit = area.goalUnit else {
                 return nil
             }
             return measurement(for: goalUnit)
         case .newTask:
             return measurement
-        case .todo, .direction, nil:
+        case .todo, .area, nil:
             return nil
         }
     }
@@ -209,15 +209,15 @@ struct HistoryTaskRecordForm: View {
         }
 
         switch selectedTarget {
-        case let .habit(directionID):
-            guard let direction = availableDirections.first(where: { $0.id == directionID }),
-                  let goalUnit = direction.goalUnit else {
+        case let .habit(areaID):
+            guard let area = availableAreas.first(where: { $0.id == areaID }),
+                  let goalUnit = area.goalUnit else {
                 return nil
             }
-            return plannedAmount(for: goalUnit, target: max(1, direction.goalTarget ?? 1))
+            return plannedAmount(for: goalUnit, target: max(1, area.goalTarget ?? 1))
         case .newTask:
             return measurement == .checkbox ? nil : plannedAmount
-        case .todo, .direction, nil:
+        case .todo, .area, nil:
             return nil
         }
     }
@@ -226,7 +226,7 @@ struct HistoryTaskRecordForm: View {
         if context != .task {
             return selectedTarget != nil
         }
-        if case .direction = selectedTarget {
+        if case .area = selectedTarget {
             return true
         }
         guard let activeMeasurement else { return false }
@@ -237,21 +237,21 @@ struct HistoryTaskRecordForm: View {
         guard selectedTarget != nil else { return false }
 
         if context == .flow {
-            return selectedDirection != nil && selectedTarget != .newTask
+            return selectedArea != nil && selectedTarget != .newTask
         }
 
-        if context == .direction {
-            guard case .direction = selectedTarget else { return false }
-            return selectedDirection != nil
+        if context == .area {
+            guard case .area = selectedTarget else { return false }
+            return selectedArea != nil
         }
 
         if selectedTarget == .newTask {
             return !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                && selectedDirection != nil
+                && selectedArea != nil
                 && (measurement == .checkbox || plannedAmount > 0)
         }
 
-        return selectedDirection != nil
+        return selectedArea != nil
     }
 
     private var targetPickerButton: some View {
@@ -265,7 +265,7 @@ struct HistoryTaskRecordForm: View {
                     RoundedRectangle(cornerRadius: 9)
                         .fill(targetTint.opacity(0.16))
 
-                    Text(selectedDirection?.symbolName ?? "＋")
+                    Text(selectedArea?.symbolName ?? "＋")
                         .font(.title2)
                 }
                 .frame(width: 42, height: 42)
@@ -306,7 +306,7 @@ struct HistoryTaskRecordForm: View {
                 context: context,
                 taskTodos: taskTodos,
                 habitOptions: habitOptions,
-                directions: availableDirections,
+                areas: availableAreas,
                 selectedTarget: selectedTarget,
                 onSelect: { target in
                     selectedTarget = target
@@ -343,10 +343,10 @@ struct HistoryTaskRecordForm: View {
             TextField(String(localized: "タスク名"), text: $title, axis: .vertical)
                 .lineLimit(1...3)
 
-            Picker(String(localized: "分野"), selection: $selectedDirectionID) {
-                ForEach(availableDirections) { direction in
-                    Text("\(direction.symbolName) \(direction.name)")
-                        .tag(Optional(direction.id))
+            Picker(String(localized: "分野"), selection: $selectedAreaID) {
+                ForEach(availableAreas) { area in
+                    Text("\(area.symbolName) \(area.name)")
+                        .tag(Optional(area.id))
                 }
             }
         }
@@ -444,19 +444,19 @@ struct HistoryTaskRecordForm: View {
         }
 
         switch selectedTarget {
-        case let .habit(directionID):
-            guard let direction = availableDirections.first(where: { $0.id == directionID }) else {
+        case let .habit(areaID):
+            guard let area = availableAreas.first(where: { $0.id == areaID }) else {
                 return String(localized: "習慣")
             }
-            return "(\(direction.name))"
-        case let .direction(directionID):
+            return "(\(area.name))"
+        case let .area(areaID):
             if context == .flow {
                 return String(localized: "タスクなし")
             }
-            guard let direction = availableDirections.first(where: { $0.id == directionID }) else {
+            guard let area = availableAreas.first(where: { $0.id == areaID }) else {
                 return String(localized: "分野")
             }
-            return "(\(direction.name))"
+            return "(\(area.name))"
         case .newTask:
             let normalized = title.trimmingCharacters(in: .whitespacesAndNewlines)
             return normalized.isEmpty ? String(localized: "新しいタスク") : normalized
@@ -472,11 +472,11 @@ struct HistoryTaskRecordForm: View {
 
         switch selectedTarget {
         case .habit:
-            return selectedDirection?.name ?? String(localized: "習慣")
-        case .direction:
+            return selectedArea?.name ?? String(localized: "習慣")
+        case .area:
             return String(localized: "タスクなし")
         case .todo, .newTask:
-            return selectedDirection?.name ?? String(localized: "その他")
+            return selectedArea?.name ?? String(localized: "その他")
         case nil:
             return nil
         }
@@ -514,10 +514,10 @@ struct HistoryTaskRecordForm: View {
     }
 
     private var targetTint: Color {
-        guard let selectedDirection, !DefaultDirections.isTaskInbox(selectedDirection) else {
+        guard let selectedArea, !DefaultAreas.isTaskInbox(selectedArea) else {
             return .accentColor
         }
-        return Color(hex: selectedDirection.colorHex)
+        return Color(hex: selectedArea.colorHex)
     }
 
     private var targetText: String {
@@ -547,11 +547,11 @@ struct HistoryTaskRecordForm: View {
             if !dayTodos.contains(where: { $0.id == id }) {
                 selectedTarget = nil
             }
-        case let .habit(directionID):
-            if !habitOptions.contains(where: { $0.id == directionID }) {
+        case let .habit(areaID):
+            if !habitOptions.contains(where: { $0.id == areaID }) {
                 selectedTarget = nil
             }
-        case .direction, .newTask, nil:
+        case .area, .newTask, nil:
             break
         }
     }
@@ -561,11 +561,11 @@ struct HistoryTaskRecordForm: View {
 
         switch context {
         case .flow:
-            if let direction = DefaultDirections.existingTaskInbox(in: availableDirections)
-                ?? availableDirections.first {
-                selectedTarget = .direction(direction.id)
+            if let area = DefaultAreas.existingTaskInbox(in: availableAreas)
+                ?? availableAreas.first {
+                selectedTarget = .area(area.id)
             }
-        case .task, .direction:
+        case .task, .area:
             break
         }
     }
@@ -579,10 +579,10 @@ struct HistoryTaskRecordForm: View {
             case let .todo(id):
                 guard let todo = dayTodos.first(where: { $0.id == id }) else { return }
                 if context == .flow {
-                    guard let direction = todo.direction else { return }
+                    guard let area = todo.area else { return }
                     try editor.recordFlow(
                         todo: todo,
-                        direction: direction,
+                        area: area,
                         recordedAt: recordedAt,
                         mode: mode,
                         focusSeconds: timeDraft.focusSeconds,
@@ -597,13 +597,13 @@ struct HistoryTaskRecordForm: View {
                         modelContext: modelContext
                     )
                 }
-            case let .habit(directionID):
-                guard let option = habitOptions.first(where: { $0.id == directionID }) else { return }
+            case let .habit(areaID):
+                guard let option = habitOptions.first(where: { $0.id == areaID }) else { return }
                 if let todo = option.todo {
                     if context == .flow {
                         try editor.recordFlow(
                             todo: todo,
-                            direction: option.direction,
+                            area: option.area,
                             recordedAt: recordedAt,
                             mode: mode,
                             focusSeconds: timeDraft.focusSeconds,
@@ -621,7 +621,7 @@ struct HistoryTaskRecordForm: View {
                 } else {
                     if context == .flow {
                         try editor.createHabitOccurrenceAndRecordFlow(
-                            direction: option.direction,
+                            area: option.area,
                             scheduledDate: timeDraft.startedAt,
                             recordedAt: recordedAt,
                             mode: mode,
@@ -630,7 +630,7 @@ struct HistoryTaskRecordForm: View {
                         )
                     } else {
                         try editor.createHabitOccurrenceAndRecord(
-                            direction: option.direction,
+                            area: option.area,
                             scheduledDate: timeDraft.startedAt,
                             recordedAt: recordedAt,
                             mode: mode,
@@ -639,20 +639,20 @@ struct HistoryTaskRecordForm: View {
                         )
                     }
                 }
-            case let .direction(directionID):
-                guard let direction = availableDirections.first(where: { $0.id == directionID }) else { return }
+            case let .area(areaID):
+                guard let area = availableAreas.first(where: { $0.id == areaID }) else { return }
                 try editor.record(
-                    direction: direction,
+                    area: area,
                     recordedAt: timeDraft.startedAt,
                     mode: mode,
                     focusSeconds: timeDraft.focusSeconds,
                     modelContext: modelContext
                 )
             case .newTask:
-                guard let selectedDirection else { return }
+                guard let selectedArea else { return }
                 try editor.createAndRecord(
                     title: title,
-                    direction: selectedDirection,
+                    area: selectedArea,
                     measurement: measurement,
                     priority: priority,
                     isRoomIfPossible: isRoomIfPossible,
@@ -705,7 +705,7 @@ struct HistoryTaskRecordForm: View {
 enum HistoryRecordContext: Equatable {
     case flow
     case task
-    case direction
+    case area
 
     init(_ mode: DayHistoryMode) {
         switch mode {
@@ -713,8 +713,8 @@ enum HistoryRecordContext: Equatable {
             self = .flow
         case .tasks:
             self = .task
-        case .directions:
-            self = .direction
+        case .areas:
+            self = .area
         }
     }
 
@@ -722,7 +722,7 @@ enum HistoryRecordContext: Equatable {
         switch self {
         case .flow, .task:
             String(localized: "対象タスク")
-        case .direction:
+        case .area:
             String(localized: "分野")
         }
     }
@@ -733,7 +733,7 @@ enum HistoryRecordContext: Equatable {
             String(localized: "タスク・習慣・方向を選択")
         case .task:
             String(localized: "タスクを選択")
-        case .direction:
+        case .area:
             String(localized: "方向を選択")
         }
     }
@@ -744,7 +744,7 @@ enum HistoryRecordContext: Equatable {
             String(localized: "タスクなし")
         case .task:
             String(localized: "タスクを選択")
-        case .direction:
+        case .area:
             String(localized: "方向を選択")
         }
     }
@@ -753,21 +753,21 @@ enum HistoryRecordContext: Equatable {
 private enum HistoryRecordTarget: Equatable {
     case todo(UUID)
     case habit(UUID)
-    case direction(UUID)
+    case area(UUID)
     case newTask
 }
 
 private struct HistoryHabitOption: Identifiable {
-    let direction: Direction
+    let area: Area
     let todo: Todo?
 
-    var id: UUID { direction.id }
+    var id: UUID { area.id }
 }
 
 private enum HistoryRecordPickerTab: String, CaseIterable, Identifiable {
     case tasks
     case habits
-    case directions
+    case areas
 
     var id: String { rawValue }
 
@@ -777,7 +777,7 @@ private enum HistoryRecordPickerTab: String, CaseIterable, Identifiable {
             String(localized: "タスク")
         case .habits:
             String(localized: "習慣一覧")
-        case .directions:
+        case .areas:
             String(localized: "方向")
         }
     }
@@ -787,7 +787,7 @@ private struct HistoryRecordTargetPicker: View {
     let context: HistoryRecordContext
     let taskTodos: [Todo]
     let habitOptions: [HistoryHabitOption]
-    let directions: [Direction]
+    let areas: [Area]
     let selectedTarget: HistoryRecordTarget?
     let onSelect: (HistoryRecordTarget) -> Void
 
@@ -798,14 +798,14 @@ private struct HistoryRecordTargetPicker: View {
         context: HistoryRecordContext,
         taskTodos: [Todo],
         habitOptions: [HistoryHabitOption],
-        directions: [Direction],
+        areas: [Area],
         selectedTarget: HistoryRecordTarget?,
         onSelect: @escaping (HistoryRecordTarget) -> Void
     ) {
         self.context = context
         self.taskTodos = taskTodos
         self.habitOptions = habitOptions
-        self.directions = directions
+        self.areas = areas
         self.selectedTarget = selectedTarget
         self.onSelect = onSelect
 
@@ -813,10 +813,10 @@ private struct HistoryRecordTargetPicker: View {
         switch selectedTarget {
         case .habit:
             initialTab = .habits
-        case .direction:
-            initialTab = .directions
+        case .area:
+            initialTab = .areas
         case .todo, .newTask, nil:
-            initialTab = context == .direction ? .directions : .tasks
+            initialTab = context == .area ? .areas : .tasks
         }
         _selectedTab = State(initialValue: initialTab)
     }
@@ -854,8 +854,8 @@ private struct HistoryRecordTargetPicker: View {
                     taskTab
                 case .habits:
                     habitTab
-                case .directions:
-                    directionTab
+                case .areas:
+                    areaTab
                 }
             }
             .scrollIndicators(.hidden)
@@ -867,11 +867,11 @@ private struct HistoryRecordTargetPicker: View {
     private var availableTabs: [HistoryRecordPickerTab] {
         switch context {
         case .flow:
-            [.tasks, .habits, .directions]
+            [.tasks, .habits, .areas]
         case .task:
             [.tasks, .habits]
-        case .direction:
-            [.directions]
+        case .area:
+            [.areas]
         }
     }
 
@@ -894,10 +894,10 @@ private struct HistoryRecordTargetPicker: View {
             } else {
                 ForEach(taskTodos) { todo in
                     targetRow(
-                        emoji: todo.direction?.symbolName ?? DefaultDirections.taskInboxSymbol,
+                        emoji: todo.area?.symbolName ?? DefaultAreas.taskInboxSymbol,
                         title: TodoDisplay.title(for: todo),
-                        subtitle: todo.direction?.name ?? String(localized: "その他"),
-                        tint: directionColor(todo.direction),
+                        subtitle: todo.area?.name ?? String(localized: "その他"),
+                        tint: areaColor(todo.area),
                         isSelected: selectedTarget == .todo(todo.id)
                     ) {
                         onSelect(.todo(todo.id))
@@ -914,10 +914,10 @@ private struct HistoryRecordTargetPicker: View {
             } else {
                 ForEach(habitOptions) { option in
                     targetRow(
-                        emoji: option.direction.symbolName,
-                        title: TodoDisplay.title(for: option.todo, direction: option.direction),
+                        emoji: option.area.symbolName,
+                        title: TodoDisplay.title(for: option.todo, area: option.area),
                         subtitle: habitSubtitle(option),
-                        tint: directionColor(option.direction),
+                        tint: areaColor(option.area),
                         isSelected: selectedTarget == .habit(option.id)
                     ) {
                         onSelect(.habit(option.id))
@@ -927,23 +927,23 @@ private struct HistoryRecordTargetPicker: View {
         }
     }
 
-    private var directionTab: some View {
+    private var areaTab: some View {
         LazyVGrid(
             columns: [GridItem(.adaptive(minimum: 120, maximum: 170), spacing: 10)],
             spacing: 10
         ) {
-            ForEach(directions) { direction in
+            ForEach(areas) { area in
                 Button {
-                    onSelect(.direction(direction.id))
+                    onSelect(.area(area.id))
                 } label: {
                     VStack(spacing: 8) {
-                        Text(direction.symbolName)
+                        Text(area.symbolName)
                             .font(.system(size: 28))
                             .frame(width: 46, height: 46)
-                            .background(directionColor(direction).opacity(0.14))
+                            .background(areaColor(area).opacity(0.14))
                             .clipShape(RoundedRectangle(cornerRadius: 8))
 
-                        Text(direction.name)
+                        Text(area.name)
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(.primary)
                             .lineLimit(2)
@@ -953,16 +953,16 @@ private struct HistoryRecordTargetPicker: View {
                     .frame(maxWidth: .infinity, minHeight: 92)
                     .padding(8)
                     .background(
-                        selectedTarget == .direction(direction.id)
-                            ? directionColor(direction).opacity(0.14)
+                        selectedTarget == .area(area.id)
+                            ? areaColor(area).opacity(0.14)
                             : Color.primary.opacity(0.05)
                     )
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                     .overlay {
                         RoundedRectangle(cornerRadius: 8)
                             .strokeBorder(
-                                selectedTarget == .direction(direction.id)
-                                    ? directionColor(direction).opacity(0.65)
+                                selectedTarget == .area(area.id)
+                                    ? areaColor(area).opacity(0.65)
                                     : .clear,
                                 lineWidth: 1
                             )
@@ -1028,11 +1028,11 @@ private struct HistoryRecordTargetPicker: View {
         )
     }
 
-    private func directionColor(_ direction: Direction?) -> Color {
-        guard let direction, !DefaultDirections.isTaskInbox(direction) else {
+    private func areaColor(_ area: Area?) -> Color {
+        guard let area, !DefaultAreas.isTaskInbox(area) else {
             return .secondary
         }
-        return Color(hex: direction.colorHex)
+        return Color(hex: area.colorHex)
     }
 
     private func emptyState(_ text: String) -> some View {
@@ -1134,8 +1134,8 @@ private struct HistoryRecordProgressPie: Shape {
 }
 
 private extension TodoDisplay {
-    static func title(for todo: Todo?, direction: Direction) -> String {
-        guard let todo else { return "(\(direction.name))" }
+    static func title(for todo: Todo?, area: Area) -> String {
+        guard let todo else { return "(\(area.name))" }
         return title(for: todo)
     }
 }
@@ -1147,7 +1147,7 @@ private extension HistoryTaskRecordError {
             return String(localized: "タスク名を入力してください。")
         case .invalidPlannedAmount:
             return String(localized: "目標値は1以上にしてください。")
-        case .missingDirection:
+        case .missingArea:
             return String(localized: "方向を選択してください。")
         }
     }

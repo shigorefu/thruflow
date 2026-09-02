@@ -7,7 +7,7 @@ struct IOSTasksView: View {
     @Environment(\.modelContext) private var modelContext
 
     @Query(sort: \Todo.sortIndex) private var todos: [Todo]
-    @Query(sort: \Direction.sortIndex) private var directions: [Direction]
+    @Query(sort: \Area.sortIndex) private var areas: [Area]
 
     @State private var selectedDate = Calendar.current.startOfDay(for: .now)
     @State private var range = TaskCalendarRange.oneDay
@@ -41,8 +41,8 @@ struct IOSTasksView: View {
         )
     }
 
-    private var activeDirections: [Direction] {
-        directions.filter { !$0.isArchived }
+    private var activeAreas: [Area] {
+        areas.filter { !$0.isArchived }
     }
 
     private var visibleDates: [Date] {
@@ -114,7 +114,7 @@ struct IOSTasksView: View {
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if showsComposer {
                 IOSTaskComposer(
-                    directions: activeDirections,
+                    areas: activeAreas,
                     onClose: dismissComposer
                 )
                     .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -127,7 +127,7 @@ struct IOSTasksView: View {
         }
         .sheet(item: $editorMode) { mode in
             NavigationStack {
-                IOSTaskEditorView(mode: mode, directions: activeDirections)
+                IOSTaskEditorView(mode: mode, areas: activeAreas)
             }
         }
         .sheet(item: $backlogMode) { mode in
@@ -214,7 +214,7 @@ struct IOSTasksView: View {
         let date = calendarBuilder.advancedDate(
             from: selectedDate,
             range: range,
-            direction: offset
+            area: offset
         )
         selectedDate = calendar.startOfDay(for: date)
     }
@@ -612,7 +612,7 @@ struct IOSTasksView: View {
         IOSRequiredTodoMaterializationID(
             rangeRawValue: range.rawValue,
             visibleDates: visibleDates.map { calendar.startOfDay(for: $0) },
-            habitRevisions: activeDirections
+            habitRevisions: activeAreas
                 .filter { $0.type == .habit }
                 .map {
                     IOSHabitMaterializationRevision(
@@ -633,8 +633,8 @@ struct IOSTasksView: View {
         now: Date = .now,
         reconcilesDuplicates: Bool
     ) {
-        if DefaultDirections.existingTaskInbox(in: directions) == nil {
-            modelContext.insert(DefaultDirections.makeTaskInbox())
+        if DefaultAreas.existingTaskInbox(in: areas) == nil {
+            modelContext.insert(DefaultAreas.makeTaskInbox())
         }
 
         let today = dayBoundary.day(containing: now, calendar: calendar)
@@ -648,7 +648,7 @@ struct IOSTasksView: View {
                 calendar: calendar,
                 dayBoundary: dayBoundary
             ).materialize(
-                directions: activeDirections,
+                areas: activeAreas,
                 dates: dates,
                 modelContext: modelContext,
                 now: now,
@@ -936,12 +936,12 @@ private struct IOSGroupedTodos {
     let nice: [Todo]
 
     init(todos: [Todo]) {
-        habits = todos.filter { $0.direction?.type == .habit }
+        habits = todos.filter { $0.area?.type == .habit }
         tasks = todos.filter { todo in
-            guard let direction = todo.direction else { return true }
-            return direction.type == .neutral || DefaultDirections.isTaskInbox(direction)
+            guard let area = todo.area else { return true }
+            return area.type == .neutral || DefaultAreas.isTaskInbox(area)
         }
-        nice = todos.filter { $0.direction?.type == .nice }
+        nice = todos.filter { $0.area?.type == .nice }
     }
 }
 
@@ -994,7 +994,7 @@ struct IOSTaskRow: View {
                 }
             }
 
-            Text(todo.direction?.symbolName ?? DefaultDirections.taskInboxSymbol)
+            Text(todo.area?.symbolName ?? DefaultAreas.taskInboxSymbol)
                 .font(.title3)
 
             VStack(alignment: .leading, spacing: 3) {
@@ -1004,9 +1004,9 @@ struct IOSTaskRow: View {
                     .foregroundStyle(todo.isCompleted ? .secondary : .primary)
 
                 HStack(spacing: 5) {
-                    if let direction = todo.direction, !DefaultDirections.isTaskInbox(direction) {
-                        Text(direction.name)
-                            .foregroundStyle(Color(hex: direction.colorHex))
+                    if let area = todo.area, !DefaultAreas.isTaskInbox(area) {
+                        Text(area.name)
+                            .foregroundStyle(Color(hex: area.colorHex))
                     }
                     Text(todo.priority.displayName)
                     Text(progressText)

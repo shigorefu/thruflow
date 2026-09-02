@@ -2,6 +2,27 @@
 
 All notable user-facing changes to ThruFlow are documented in this file.
 
+## [1.2.0] - Unreleased
+
+### Changed
+
+- Renamed source files, application/domain APIs, views, widgets, tests, and
+  developer documentation from Direction to Area.
+- Renamed the machine-readable Statistics CSV column from `direction` to
+  `area`.
+- Markdown-only pull requests and pushes now skip Apple builds while retaining
+  the required CI status. Any non-Markdown change still runs macOS tests and
+  macOS/iOS Release builds.
+
+### Compatibility
+
+- Preserved the existing SwiftData/CloudKit entity name `Direction`, the
+  stored Todo/Flow relationship name `direction`, stable enum raw values, and
+  legacy preference and Widget/Live Activity wire keys. Existing local and
+  synchronized data requires no migration.
+- Added a schema contract test that rejects an accidental persisted `Area`
+  entity or `area` relationship.
+
 ## [1.1.0] - Unreleased
 
 ### Added

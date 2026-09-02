@@ -25,14 +25,14 @@ struct TodoFormView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
 
-    @Query(sort: \Direction.name, order: .forward) private var directions: [Direction]
+    @Query(sort: \Area.name, order: .forward) private var areas: [Area]
 
     let mode: Mode
-    private let fixedDirection: Direction?
+    private let fixedArea: Area?
     private let onSave: ((Todo) -> Void)?
 
     @State private var draft: TodoDraft
-    @State private var selectedDirectionID: UUID?
+    @State private var selectedAreaID: UUID?
     @State private var usesScheduledDate: Bool
     @State private var usesDeadline: Bool
     @State private var validationErrors: [TodoValidationError] = []
@@ -40,12 +40,12 @@ struct TodoFormView: View {
 
     private let validator = TodoValidator()
 
-    private var activeDirections: [Direction] {
-        directions.filter { !$0.isArchived }
+    private var activeAreas: [Area] {
+        areas.filter { !$0.isArchived }
     }
 
-    private var visibleDirections: [Direction] {
-        activeDirections.filter { !DefaultDirections.isTaskInbox($0) }
+    private var visibleAreas: [Area] {
+        activeAreas.filter { !DefaultAreas.isTaskInbox($0) }
     }
 
     private var editedTodo: Todo? {
@@ -57,32 +57,32 @@ struct TodoFormView: View {
     }
 
     private var isHabitTodoEdit: Bool {
-        editedTodo?.direction?.type == .habit
+        editedTodo?.area?.type == .habit
     }
 
     init(
         mode: Mode,
-        fixedDirection: Direction? = nil,
+        fixedArea: Area? = nil,
         scheduledDate: Date? = nil,
         onSave: ((Todo) -> Void)? = nil
     ) {
         self.mode = mode
-        self.fixedDirection = fixedDirection
+        self.fixedArea = fixedArea
         self.onSave = onSave
 
         switch mode {
         case .create:
             var draft = TodoDraft()
-            draft.direction = fixedDirection
+            draft.area = fixedArea
             draft.scheduledDate = scheduledDate ?? .now
             _draft = State(initialValue: draft)
-            _selectedDirectionID = State(initialValue: fixedDirection?.id)
+            _selectedAreaID = State(initialValue: fixedArea?.id)
             _usesScheduledDate = State(initialValue: true)
             _usesDeadline = State(initialValue: false)
         case .edit(let todo):
             let draft = TodoDraft(todo: todo)
             _draft = State(initialValue: draft)
-            _selectedDirectionID = State(initialValue: todo.direction?.id)
+            _selectedAreaID = State(initialValue: todo.area?.id)
             _usesScheduledDate = State(initialValue: todo.scheduledDate != nil)
             _usesDeadline = State(initialValue: todo.deadline != nil)
         }
@@ -123,7 +123,7 @@ struct TodoFormView: View {
         }
         .frame(minWidth: 620, idealWidth: 680, minHeight: 620, idealHeight: 700)
         .onAppear {
-            selectInitialDirectionIfNeeded()
+            selectInitialAreaIfNeeded()
             isTitleFocused = true
         }
         .onChange(of: draft.measurement) { _, measurement in
@@ -136,7 +136,7 @@ struct TodoFormView: View {
     private var taskContentCard: some View {
         TodoEditorCard {
             HStack(alignment: .center, spacing: 14) {
-                Text(selectedDirection?.symbolName ?? "📝")
+                Text(selectedArea?.symbolName ?? "📝")
                     .font(.system(size: 30))
                     .frame(width: 52, height: 52)
                     .background(editorTint.opacity(0.14))
@@ -178,7 +178,7 @@ struct TodoFormView: View {
                 title: String(localized: "分野"),
                 systemImage: ProductSymbol.area
             ) {
-                directionControl
+                areaControl
             }
 
             Divider()
@@ -247,24 +247,24 @@ struct TodoFormView: View {
     }
 
     @ViewBuilder
-    private var directionControl: some View {
-        if let fixedDirection {
+    private var areaControl: some View {
+        if let fixedArea {
             readOnlyValue(
-                "\(fixedDirection.symbolName) \(fixedDirection.name)",
-                tint: Color(hex: fixedDirection.colorHex)
+                "\(fixedArea.symbolName) \(fixedArea.name)",
+                tint: Color(hex: fixedArea.colorHex)
             )
-        } else if isHabitTodoEdit, let direction = editedTodo?.direction {
+        } else if isHabitTodoEdit, let area = editedTodo?.area {
             readOnlyValue(
-                "\(direction.symbolName) \(direction.name)",
-                tint: Color(hex: direction.colorHex)
+                "\(area.symbolName) \(area.name)",
+                tint: Color(hex: area.colorHex)
             )
         } else {
-            Picker(String(localized: "分野"), selection: selectedDirectionBinding) {
+            Picker(String(localized: "分野"), selection: selectedAreaBinding) {
                 Text(String(localized: "未選択")).tag(UUID?.none)
 
-                ForEach(visibleDirections) { direction in
-                    Text("\(direction.symbolName) \(direction.name)")
-                        .tag(Optional(direction.id))
+                ForEach(visibleAreas) { area in
+                    Text("\(area.symbolName) \(area.name)")
+                        .tag(Optional(area.id))
                 }
             }
             .labelsHidden()
@@ -340,13 +340,13 @@ struct TodoFormView: View {
         }
     }
 
-    private var selectedDirection: Direction? {
-        fixedDirection ?? direction(for: selectedDirectionID) ?? editedTodo?.direction
+    private var selectedArea: Area? {
+        fixedArea ?? area(for: selectedAreaID) ?? editedTodo?.area
     }
 
     private var editorTint: Color {
-        guard let selectedDirection else { return .secondary }
-        return Color(hex: selectedDirection.colorHex)
+        guard let selectedArea else { return .secondary }
+        return Color(hex: selectedArea.colorHex)
     }
 
     private var measurementUnit: String {
@@ -439,12 +439,12 @@ struct TodoFormView: View {
             .clipShape(RoundedRectangle(cornerRadius: 6))
     }
 
-    private var selectedDirectionBinding: Binding<UUID?> {
+    private var selectedAreaBinding: Binding<UUID?> {
         Binding(
-            get: { selectedDirectionID },
+            get: { selectedAreaID },
             set: {
-                selectedDirectionID = $0
-                draft.direction = direction(for: $0)
+                selectedAreaID = $0
+                draft.area = area(for: $0)
             }
         )
     }
@@ -477,23 +477,23 @@ struct TodoFormView: View {
         )
     }
 
-    private func selectInitialDirectionIfNeeded() {
-        if let fixedDirection {
-            selectedDirectionID = fixedDirection.id
-            draft.direction = fixedDirection
-        } else if draft.direction == nil {
-            draft.direction = direction(for: selectedDirectionID)
+    private func selectInitialAreaIfNeeded() {
+        if let fixedArea {
+            selectedAreaID = fixedArea.id
+            draft.area = fixedArea
+        } else if draft.area == nil {
+            draft.area = area(for: selectedAreaID)
         }
     }
 
-    private func direction(for id: UUID?) -> Direction? {
+    private func area(for id: UUID?) -> Area? {
         guard let id else { return nil }
-        return visibleDirections.first { $0.id == id }
+        return visibleAreas.first { $0.id == id }
     }
 
     private func save() {
         if !isHabitTodoEdit {
-            draft.direction = fixedDirection ?? direction(for: selectedDirectionID)
+            draft.area = fixedArea ?? area(for: selectedAreaID)
             draft.scheduledDate = usesScheduledDate ? draft.scheduledDate ?? .now : nil
             draft.deadline = usesDeadline ? draft.deadline ?? .now : nil
         }
@@ -501,13 +501,13 @@ struct TodoFormView: View {
         validationErrors = validator.validate(draft)
         guard validationErrors.isEmpty else { return }
 
-        let direction = fixedDirection ?? (isHabitTodoEdit ? editedTodo?.direction ?? resolvedDirection(for: selectedDirectionID) : resolvedDirection(for: selectedDirectionID))
+        let area = fixedArea ?? (isHabitTodoEdit ? editedTodo?.area ?? resolvedArea(for: selectedAreaID) : resolvedArea(for: selectedAreaID))
         let measurement = isHabitTodoEdit ? editedTodo?.measurement ?? draft.measurement : draft.measurement
         let priority = isHabitTodoEdit ? editedTodo?.priority ?? draft.priority : draft.priority
         let isRoomIfPossible = isHabitTodoEdit ? editedTodo?.isRoomIfPossible ?? false : draft.priority == .low && draft.isRoomIfPossible
         let scheduledDate = isHabitTodoEdit ? editedTodo?.scheduledDate : draft.scheduledDate
         let deadline = isHabitTodoEdit ? editedTodo?.deadline : draft.deadline
-        draft.direction = direction
+        draft.area = area
 
         let plannedAmount = measurement == .checkbox ? nil : isHabitTodoEdit ? editedTodo?.plannedAmount : draft.plannedAmount
         let actualProgress = measurement == .checkbox ? min(max(draft.actualProgress, 0), 1) : max(0, draft.actualProgress)
@@ -518,7 +518,7 @@ struct TodoFormView: View {
                 title: draft.trimmedTitle,
                 notes: draft.trimmedNotes,
                 hashtags: draft.hashtags,
-                direction: direction,
+                area: area,
                 measurement: measurement,
                 priority: priority,
                 isRoomIfPossible: isRoomIfPossible,
@@ -539,7 +539,7 @@ struct TodoFormView: View {
                 title: draft.trimmedTitle,
                 notes: draft.trimmedNotes,
                 hashtags: draft.hashtags,
-                direction: direction,
+                area: area,
                 measurement: measurement,
                 priority: priority,
                 isRoomIfPossible: isRoomIfPossible,
@@ -554,16 +554,16 @@ struct TodoFormView: View {
         dismiss()
     }
 
-    private func resolvedDirection(for id: UUID?) -> Direction {
-        if let direction = direction(for: id) {
-            return direction
+    private func resolvedArea(for id: UUID?) -> Area {
+        if let area = area(for: id) {
+            return area
         }
 
-        if let taskInbox = DefaultDirections.existingTaskInbox(in: activeDirections) {
+        if let taskInbox = DefaultAreas.existingTaskInbox(in: activeAreas) {
             return taskInbox
         }
 
-        let taskInbox = DefaultDirections.makeTaskInbox()
+        let taskInbox = DefaultAreas.makeTaskInbox()
         modelContext.insert(taskInbox)
         return taskInbox
     }
@@ -620,5 +620,5 @@ private extension TodoMeasurement {
 
 #Preview(String(localized: "タスクを作成")) {
     TodoFormView(mode: .create)
-        .modelContainer(for: [Direction.self, Todo.self], inMemory: true)
+        .modelContainer(for: [Area.self, Todo.self], inMemory: true)
 }

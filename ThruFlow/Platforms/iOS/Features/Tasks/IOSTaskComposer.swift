@@ -7,13 +7,13 @@ struct IOSTaskComposer: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Todo.updatedAt, order: .reverse) private var suggestionTodos: [Todo]
 
-    let directions: [Direction]
+    let areas: [Area]
     let initialDraft: TodoDraft?
     let onClose: (() -> Void)?
     let onCreated: ((Todo) -> Void)?
 
     @State private var title = ""
-    @State private var directionID: UUID?
+    @State private var areaID: UUID?
     @State private var measurement = TodoMeasurement.checkbox
     @State private var plannedAmount = 1
     @State private var priority = TodoPriority.medium
@@ -21,11 +21,11 @@ struct IOSTaskComposer: View {
     @State private var scheduledDate: Date? = .now
     @State private var datePickerValue = Date.now
     @State private var showsDatePicker = false
-    @State private var unresolvedDirection: String?
-    @State private var directionDraft: IOSDirectionDraft?
-    @State private var pendingCreatedDirectionName: String?
+    @State private var unresolvedArea: String?
+    @State private var areaDraft: IOSAreaDraft?
+    @State private var pendingCreatedAreaName: String?
     @State private var hasExplicitMeasurement = false
-    @State private var hasExplicitDirection = false
+    @State private var hasExplicitArea = false
     @State private var hasExplicitPriority = false
     @State private var hasExplicitDate = false
     @State private var saveErrorMessage: String?
@@ -35,12 +35,12 @@ struct IOSTaskComposer: View {
     private let parser = TaskQuickInputParser()
 
     init(
-        directions: [Direction],
+        areas: [Area],
         initialDraft: TodoDraft? = nil,
         onClose: (() -> Void)? = nil,
         onCreated: ((Todo) -> Void)? = nil
     ) {
-        self.directions = directions
+        self.areas = areas
         self.initialDraft = initialDraft
         self.onClose = onClose
         self.onCreated = onCreated
@@ -51,7 +51,7 @@ struct IOSTaskComposer: View {
             .joined(separator: " ")
 
         _title = State(initialValue: initialTitle)
-        _directionID = State(initialValue: draft.direction?.id)
+        _areaID = State(initialValue: draft.area?.id)
         _measurement = State(initialValue: draft.measurement)
         _plannedAmount = State(initialValue: max(1, draft.plannedAmount ?? 1))
         _priority = State(initialValue: draft.priority)
@@ -59,7 +59,7 @@ struct IOSTaskComposer: View {
         _scheduledDate = State(initialValue: draft.scheduledDate)
         _datePickerValue = State(initialValue: draft.scheduledDate ?? .now)
         _hasExplicitMeasurement = State(initialValue: initialDraft != nil)
-        _hasExplicitDirection = State(initialValue: initialDraft?.direction != nil)
+        _hasExplicitArea = State(initialValue: initialDraft?.area != nil)
         _hasExplicitPriority = State(initialValue: initialDraft != nil)
         _hasExplicitDate = State(initialValue: initialDraft != nil)
         _saveErrorMessage = State(initialValue: nil)
@@ -115,7 +115,7 @@ struct IOSTaskComposer: View {
                     ScrollView(.horizontal) {
                         HStack(spacing: 6) {
                             measurementMenu
-                            directionMenu
+                            areaMenu
                             priorityMenu
                             dateMenu
                         }
@@ -144,7 +144,7 @@ struct IOSTaskComposer: View {
         .padding(.bottom, 8)
         .task {
             if initialDraft == nil {
-                directionID = nil
+                areaID = nil
                 scheduledDate = currentAppDay
             }
             await Task.yield()
@@ -176,33 +176,33 @@ struct IOSTaskComposer: View {
             }
             .presentationDetents([.medium, .large])
         }
-        .sheet(item: $directionDraft, onDismiss: selectCreatedDirectionIfAvailable) { draft in
+        .sheet(item: $areaDraft, onDismiss: selectCreatedAreaIfAvailable) { draft in
             NavigationStack {
-                IOSDirectionEditorView(mode: .create(initialName: draft.name))
+                IOSAreaEditorView(mode: .create(initialName: draft.name))
             }
         }
         .alert(
             String(localized: "分野"),
             isPresented: Binding(
-                get: { unresolvedDirection != nil },
-                set: { if !$0 { unresolvedDirection = nil } }
+                get: { unresolvedArea != nil },
+                set: { if !$0 { unresolvedArea = nil } }
             )
         ) {
             Button(String(localized: "新規作成")) {
-                guard let unresolvedDirection else { return }
-                pendingCreatedDirectionName = unresolvedDirection
-                directionDraft = IOSDirectionDraft(name: unresolvedDirection)
+                guard let unresolvedArea else { return }
+                pendingCreatedAreaName = unresolvedArea
+                areaDraft = IOSAreaDraft(name: unresolvedArea)
             }
             Button(String(localized: "その他として追加")) {
-                useInboxForUnresolvedDirection()
+                useInboxForUnresolvedArea()
             }
             Button(String(localized: "キャンセル"), role: .cancel) {}
         } message: {
-            if let unresolvedDirection {
+            if let unresolvedArea {
                 Text(
                     String.localizedStringWithFormat(
                         String(localized: "方向「%@」が見つかりません"),
-                        unresolvedDirection
+                        unresolvedArea
                     )
                 )
             }
@@ -248,21 +248,21 @@ struct IOSTaskComposer: View {
         .menuOrder(.fixed)
     }
 
-    private var directionMenu: some View {
+    private var areaMenu: some View {
         Menu {
-            ForEach(directions) { direction in
+            ForEach(areas) { area in
                 Button {
-                    directionID = direction.id
-                    hasExplicitDirection = true
+                    areaID = area.id
+                    hasExplicitArea = true
                 } label: {
-                    Text("\(direction.symbolName) \(direction.name)")
+                    Text("\(area.symbolName) \(area.name)")
                 }
             }
         } label: {
             compactLabel(
-                hasExplicitDirection ? selectedDirection?.name ?? String(localized: "分野") : String(localized: "分野"),
-                tint: directionTint,
-                isExplicit: hasExplicitDirection
+                hasExplicitArea ? selectedArea?.name ?? String(localized: "分野") : String(localized: "分野"),
+                tint: areaTint,
+                isExplicit: hasExplicitArea
             )
         }
         .buttonStyle(.plain)
@@ -446,17 +446,17 @@ struct IOSTaskComposer: View {
             .fixedSize(horizontal: true, vertical: false)
     }
 
-    private var selectedDirection: Direction? {
-        directions.first { $0.id == directionID }
+    private var selectedArea: Area? {
+        areas.first { $0.id == areaID }
     }
 
-    private var directionTint: Color {
-        guard hasExplicitDirection,
-              let selectedDirection,
-              !DefaultDirections.isTaskInbox(selectedDirection) else {
+    private var areaTint: Color {
+        guard hasExplicitArea,
+              let selectedArea,
+              !DefaultAreas.isTaskInbox(selectedArea) else {
             return .secondary
         }
-        return Color(hex: selectedDirection.colorHex)
+        return Color(hex: selectedArea.colorHex)
     }
 
     private var priorityTint: Color {
@@ -474,12 +474,12 @@ struct IOSTaskComposer: View {
         return isRoomIfPossible ? String(localized: "余裕があれば") : priority.displayName
     }
 
-    private var defaultDirection: Direction? {
-        DefaultDirections.existingTaskInbox(in: directions) ?? directions.first
+    private var defaultArea: Area? {
+        DefaultAreas.existingTaskInbox(in: areas) ?? areas.first
     }
 
     private var canSubmit: Bool {
-        !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && defaultDirection != nil
+        !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && defaultArea != nil
     }
 
     private var measurementTitle: String {
@@ -528,7 +528,7 @@ struct IOSTaskComposer: View {
 
         switch token.first {
         case "@":
-            return directions
+            return areas
                 .filter { !$0.isArchived && (query.isEmpty || $0.name.lowercased().contains(query)) }
                 .prefix(6)
                 .map {
@@ -571,7 +571,7 @@ struct IOSTaskComposer: View {
     private func applyRecognizedQuickInput() {
         let result = parser.parse(
             title,
-            directions: directions.map { TaskQuickInputDirection(id: $0.id, name: $0.name) },
+            areas: areas.map { TaskQuickInputArea(id: $0.id, name: $0.name) },
             anchorDate: currentAppDay,
             calendar: calendar,
             consumeTrailingToken: false
@@ -582,9 +582,9 @@ struct IOSTaskComposer: View {
             plannedAmount = result.plannedAmount ?? 1
             hasExplicitMeasurement = true
         }
-        if let id = result.directionID {
-            directionID = id
-            hasExplicitDirection = true
+        if let id = result.areaID {
+            areaID = id
+            hasExplicitArea = true
         }
         if let value = result.priority {
             priority = value
@@ -602,29 +602,29 @@ struct IOSTaskComposer: View {
 
     private func submit() {
         saveErrorMessage = nil
-        let parserDirections = directions.map { TaskQuickInputDirection(id: $0.id, name: $0.name) }
+        let parserAreas = areas.map { TaskQuickInputArea(id: $0.id, name: $0.name) }
         let result = parser.parse(
             title,
-            directions: parserDirections,
+            areas: parserAreas,
             anchorDate: currentAppDay,
             calendar: calendar
         )
-        if let unresolved = result.unresolvedDirection {
-            unresolvedDirection = unresolved
+        if let unresolved = result.unresolvedArea {
+            unresolvedArea = unresolved
             return
         }
 
         let normalizedTitle = result.title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !normalizedTitle.isEmpty,
-              let direction = directions.first(where: { $0.id == result.directionID ?? directionID })
-                ?? defaultDirection else { return }
+              let area = areas.first(where: { $0.id == result.areaID ?? areaID })
+                ?? defaultArea else { return }
 
         let resolvedMeasurement = result.measurement ?? measurement
         let resolvedPlannedAmount = result.measurement == nil ? plannedAmount : result.plannedAmount ?? 1
         let todo = Todo(
             title: normalizedTitle,
             hashtags: result.hashtags,
-            direction: direction,
+            area: area,
             measurement: resolvedMeasurement,
             priority: result.priority ?? priority,
             isRoomIfPossible: result.isRoomIfPossible ?? isRoomIfPossible,
@@ -649,9 +649,9 @@ struct IOSTaskComposer: View {
         priority = .medium
         isRoomIfPossible = false
         scheduledDate = currentAppDay
-        directionID = nil
+        areaID = nil
         hasExplicitMeasurement = false
-        hasExplicitDirection = false
+        hasExplicitArea = false
         hasExplicitPriority = false
         hasExplicitDate = false
         isFocused = true
@@ -672,33 +672,33 @@ struct IOSTaskComposer: View {
         dayBoundary.day(containing: .now, calendar: calendar)
     }
 
-    private func useInboxForUnresolvedDirection() {
-        guard let unresolvedDirection else { return }
-        title = removingDirectionToken(unresolvedDirection, from: title)
-        directionID = defaultDirection?.id
-        hasExplicitDirection = true
-        self.unresolvedDirection = nil
+    private func useInboxForUnresolvedArea() {
+        guard let unresolvedArea else { return }
+        title = removingAreaToken(unresolvedArea, from: title)
+        areaID = defaultArea?.id
+        hasExplicitArea = true
+        self.unresolvedArea = nil
         isFocused = true
     }
 
-    private func selectCreatedDirectionIfAvailable() {
-        guard let name = pendingCreatedDirectionName,
-              let direction = directions.first(where: {
+    private func selectCreatedAreaIfAvailable() {
+        guard let name = pendingCreatedAreaName,
+              let area = areas.first(where: {
                   $0.name.compare(name, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame
               }) else {
-            pendingCreatedDirectionName = nil
+            pendingCreatedAreaName = nil
             return
         }
 
-        title = title.replacingOccurrences(of: "@\(name)", with: "@\(direction.name)")
-        directionID = direction.id
-        hasExplicitDirection = true
-        unresolvedDirection = nil
-        pendingCreatedDirectionName = nil
+        title = title.replacingOccurrences(of: "@\(name)", with: "@\(area.name)")
+        areaID = area.id
+        hasExplicitArea = true
+        unresolvedArea = nil
+        pendingCreatedAreaName = nil
         isFocused = true
     }
 
-    private func removingDirectionToken(_ name: String, from source: String) -> String {
+    private func removingAreaToken(_ name: String, from source: String) -> String {
         source
             .replacingOccurrences(of: "@\(name)", with: "")
             .replacingOccurrences(of: "  ", with: " ")
@@ -719,7 +719,7 @@ private struct IOSQuickInputSuggestion: Identifiable {
     let action: Action
 }
 
-private struct IOSDirectionDraft: Identifiable {
+private struct IOSAreaDraft: Identifiable {
     let id = UUID()
     let name: String
 }

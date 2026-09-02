@@ -11,10 +11,10 @@ struct FlowProgressReconciler {
 
     nonisolated func reconcileAll(modelContext: ModelContext, now: Date = .now) throws {
         let todos = try modelContext.fetch(FetchDescriptor<Todo>())
-        let directions = try modelContext.fetch(FetchDescriptor<Direction>())
+        let areas = try modelContext.fetch(FetchDescriptor<Area>())
         try reconcile(
             todos: todos,
-            directions: directions,
+            areas: areas,
             modelContext: modelContext,
             now: now
         )
@@ -29,7 +29,7 @@ struct FlowProgressReconciler {
     ) throws {
         try reconcile(
             todos: [session.todo] + session.resolvedSegments.map(\.todo),
-            directions: [session.direction] + session.resolvedSegments.map(\.direction),
+            areas: [session.area] + session.resolvedSegments.map(\.area),
             modelContext: modelContext,
             excludingSessionIDs: excludingSessionIDs,
             excludingSegmentIDs: excludingSegmentIDs,
@@ -39,7 +39,7 @@ struct FlowProgressReconciler {
 
     nonisolated func reconcile(
         todos: [Todo?],
-        directions: [Direction?],
+        areas: [Area?],
         modelContext: ModelContext,
         excludingSessionIDs: Set<UUID> = [],
         excludingSegmentIDs: Set<UUID> = [],
@@ -50,7 +50,7 @@ struct FlowProgressReconciler {
             !excludingSessionIDs.contains($0.id) && contributesToProgress($0)
         }
         let uniqueTodos = unique(todos.compactMap { $0 })
-        let uniqueDirections = unique(directions.compactMap { $0 })
+        let uniqueAreas = unique(areas.compactMap { $0 })
 
         for todo in uniqueTodos where todo.measurement != .checkbox {
             let seconds = sessions.reduce(0) { total, session in
@@ -72,15 +72,15 @@ struct FlowProgressReconciler {
             }
         }
 
-        for direction in uniqueDirections {
-            direction.recordedFocusSeconds = sessions.reduce(0) { total, session in
+        for area in uniqueAreas {
+            area.recordedFocusSeconds = sessions.reduce(0) { total, session in
                 total + focusSeconds(
                     in: session,
-                    directionID: direction.id,
+                    areaID: area.id,
                     excludingSegmentIDs: excludingSegmentIDs
                 )
             }
-            direction.updatedAt = now
+            area.updatedAt = now
         }
     }
 
@@ -112,19 +112,19 @@ struct FlowProgressReconciler {
 
     nonisolated private func focusSeconds(
         in session: FlowSession,
-        directionID: UUID,
+        areaID: UUID,
         excludingSegmentIDs: Set<UUID>
     ) -> Int {
         if !session.resolvedSegments.isEmpty {
             return session.resolvedSegments.reduce(0) { total, segment in
-                guard !excludingSegmentIDs.contains(segment.id), segment.direction?.id == directionID else {
+                guard !excludingSegmentIDs.contains(segment.id), segment.area?.id == areaID else {
                     return total
                 }
                 return total + segment.resolvedFocusSeconds
             }
         }
 
-        return session.direction?.id == directionID ? session.resolvedActualFocusDurationSeconds : 0
+        return session.area?.id == areaID ? session.resolvedActualFocusDurationSeconds : 0
     }
 
     nonisolated private func unique<Model: AnyObject & Identifiable>(_ models: [Model]) -> [Model] where Model.ID == UUID {

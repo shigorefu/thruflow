@@ -54,14 +54,14 @@ enum StatisticsMode: String, CaseIterable, Identifiable, Sendable {
 
 struct StatisticsFilter: Equatable, Sendable {
     var range: StatisticsRange = .calendarYear
-    var directionID: UUID?
+    var areaID: UUID?
 }
 
 struct StatisticsDay: Identifiable, Equatable, Sendable {
     let date: Date
     let totalFocusSeconds: Int
     let mixedColorHex: String?
-    let directionCount: Int
+    let areaCount: Int
     let sessionCount: Int
 
     var id: Date { date }
@@ -90,7 +90,7 @@ struct AchievementDay: Identifiable, Equatable, Sendable {
     let date: Date
     let completedCount: Int
     let mixedColorHex: String?
-    let directionCount: Int
+    let areaCount: Int
 
     var id: Date { date }
 
@@ -102,7 +102,7 @@ struct AchievementDay: Identifiable, Equatable, Sendable {
 struct AchievementSummary: Equatable, Sendable {
     let completedCount: Int
     let activeDayCount: Int
-    let directionCount: Int
+    let areaCount: Int
 }
 
 struct AchievementHeatmapResult: Equatable, Sendable {
@@ -113,15 +113,15 @@ struct AchievementHeatmapResult: Equatable, Sendable {
 struct StatisticsFlowRecord: Sendable {
     let sessionID: UUID
     let startedAt: Date
-    let directionID: UUID?
-    let directionColorHex: String?
+    let areaID: UUID?
+    let areaColorHex: String?
     let focusSeconds: Int
 }
 
 struct StatisticsAchievementRecord: Sendable {
     let completedAt: Date
-    let directionID: UUID?
-    let directionColorHex: String?
+    let areaID: UUID?
+    let areaColorHex: String?
 }
 
 struct StatisticsHeatmapBuilder: Sendable {
@@ -163,8 +163,8 @@ struct StatisticsHeatmapBuilder: Sendable {
                 calendar: calendar
             )
             guard contributionDate >= startDate, contributionDate <= endDate else { return false }
-            guard let directionID = filter.directionID else { return true }
-            return contribution.directionID == directionID
+            guard let areaID = filter.areaID else { return true }
+            return contribution.areaID == areaID
         }
 
         let groupedByDay = Dictionary(grouping: contributions) { contribution in
@@ -222,7 +222,7 @@ struct StatisticsHeatmapBuilder: Sendable {
     nonisolated private func makeDay(date: Date, contributions: [StatisticsFlowRecord]) -> StatisticsDay {
         let totalSeconds = contributions.reduce(0) { $0 + $1.focusSeconds }
         let weightedColors = contributions.compactMap { contribution -> WeightedHexColor? in
-            guard let colorHex = contribution.directionColorHex else { return nil }
+            guard let colorHex = contribution.areaColorHex else { return nil }
             return WeightedHexColor(
                 hex: colorHex,
                 weight: contribution.focusSeconds
@@ -233,7 +233,7 @@ struct StatisticsHeatmapBuilder: Sendable {
             date: date,
             totalFocusSeconds: totalSeconds,
             mixedColorHex: Self.mixedHexColor(weightedColors),
-            directionCount: Set(contributions.compactMap(\.directionID)).count,
+            areaCount: Set(contributions.compactMap(\.areaID)).count,
             sessionCount: Set(contributions.map(\.sessionID)).count
         )
     }
@@ -248,8 +248,8 @@ struct StatisticsHeatmapBuilder: Sendable {
                 return StatisticsFlowRecord(
                     sessionID: session.id,
                     startedAt: segment.startedAt,
-                    directionID: segment.direction?.id,
-                    directionColorHex: segment.direction?.colorHex,
+                    areaID: segment.area?.id,
+                    areaColorHex: segment.area?.colorHex,
                     focusSeconds: segment.resolvedFocusSeconds
                 )
             }
@@ -259,8 +259,8 @@ struct StatisticsHeatmapBuilder: Sendable {
         return [StatisticsFlowRecord(
             sessionID: session.id,
             startedAt: session.startedAt,
-            directionID: session.direction?.id,
-            directionColorHex: session.direction?.colorHex,
+            areaID: session.area?.id,
+            areaColorHex: session.area?.colorHex,
             focusSeconds: session.resolvedActualFocusDurationSeconds
         )]
     }
@@ -324,8 +324,8 @@ struct AchievementHeatmapBuilder: Sendable {
                 calendar: calendar
             )
             guard completionDate >= startDate, completionDate <= endDate else { return false }
-            guard let directionID = filter.directionID else { return true }
-            return todo.directionID == directionID
+            guard let areaID = filter.areaID else { return true }
+            return todo.areaID == areaID
         }
 
         let groupedByDay = Dictionary(grouping: eligibleTodos) { todo in
@@ -339,11 +339,11 @@ struct AchievementHeatmapBuilder: Sendable {
             makeDay(date: date, todos: groupedByDay[date] ?? [])
         }
 
-        let directionIDs = Set(eligibleTodos.compactMap(\.directionID))
+        let areaIDs = Set(eligibleTodos.compactMap(\.areaID))
         let summary = AchievementSummary(
             completedCount: eligibleTodos.count,
             activeDayCount: days.filter { !$0.isEmpty }.count,
-            directionCount: directionIDs.count
+            areaCount: areaIDs.count
         )
 
         return AchievementHeatmapResult(days: days, summary: summary)
@@ -386,7 +386,7 @@ struct AchievementHeatmapBuilder: Sendable {
 
     nonisolated private func makeDay(date: Date, todos: [StatisticsAchievementRecord]) -> AchievementDay {
         let weightedColors = todos.compactMap { todo -> WeightedHexColor? in
-            guard let colorHex = todo.directionColorHex else { return nil }
+            guard let colorHex = todo.areaColorHex else { return nil }
             return WeightedHexColor(hex: colorHex, weight: 1)
         }
 
@@ -394,7 +394,7 @@ struct AchievementHeatmapBuilder: Sendable {
             date: date,
             completedCount: todos.count,
             mixedColorHex: StatisticsHeatmapBuilder.mixedHexColor(weightedColors),
-            directionCount: Set(todos.compactMap(\.directionID)).count
+            areaCount: Set(todos.compactMap(\.areaID)).count
         )
     }
 
@@ -403,8 +403,8 @@ struct AchievementHeatmapBuilder: Sendable {
         guard todo.status == .completed, !todo.isDeleted else { return nil }
         return StatisticsAchievementRecord(
             completedAt: todo.completedAt ?? todo.updatedAt,
-            directionID: todo.direction?.id,
-            directionColorHex: todo.direction?.colorHex
+            areaID: todo.area?.id,
+            areaColorHex: todo.area?.colorHex
         )
     }
 }

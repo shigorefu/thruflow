@@ -9,14 +9,27 @@ enum TaskWidgetMeasurement: String, Codable, Equatable {
 struct TaskWidgetItemSnapshot: Codable, Equatable, Identifiable {
     var id: UUID
     var title: String
-    var directionSymbol: String
-    var directionName: String
-    var directionColorHex: String
+    var areaSymbol: String
+    var areaName: String
+    var areaColorHex: String
     var measurement: TaskWidgetMeasurement
     var plannedAmount: Int
     var actualProgress: Int
     var focusedSeconds: Int
     var isCompleted: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case title
+        case areaSymbol = "directionSymbol"
+        case areaName = "directionName"
+        case areaColorHex = "directionColorHex"
+        case measurement
+        case plannedAmount
+        case actualProgress
+        case focusedSeconds
+        case isCompleted
+    }
 
     var progress: Double {
         switch measurement {

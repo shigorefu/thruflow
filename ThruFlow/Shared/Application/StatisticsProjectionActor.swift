@@ -134,8 +134,8 @@ actor StatisticsProjectionActor {
                 return StatisticsFlowRecord(
                     sessionID: session.id,
                     startedAt: segment.startedAt,
-                    directionID: segment.direction?.id,
-                    directionColorHex: segment.direction?.colorHex,
+                    areaID: segment.area?.id,
+                    areaColorHex: segment.area?.colorHex,
                     focusSeconds: segment.resolvedFocusSeconds
                 )
             }
@@ -146,8 +146,8 @@ actor StatisticsProjectionActor {
         return [StatisticsFlowRecord(
             sessionID: session.id,
             startedAt: session.startedAt,
-            directionID: session.direction?.id,
-            directionColorHex: session.direction?.colorHex,
+            areaID: session.area?.id,
+            areaColorHex: session.area?.colorHex,
             focusSeconds: focusSeconds
         )]
     }
@@ -156,8 +156,8 @@ actor StatisticsProjectionActor {
         guard todo.status == .completed, !todo.isDeleted else { return nil }
         return StatisticsAchievementRecord(
             completedAt: todo.completedAt ?? todo.updatedAt,
-            directionID: todo.direction?.id,
-            directionColorHex: todo.direction?.colorHex
+            areaID: todo.area?.id,
+            areaColorHex: todo.area?.colorHex
         )
     }
 
@@ -172,7 +172,7 @@ actor StatisticsProjectionActor {
                     session: session,
                     startedAt: segment.startedAt,
                     focusSeconds: focusSeconds,
-                    direction: segment.direction,
+                    area: segment.area,
                     todo: segment.todo
                 )
             }
@@ -184,7 +184,7 @@ actor StatisticsProjectionActor {
             session: session,
             startedAt: session.startedAt,
             focusSeconds: focusSeconds,
-            direction: session.direction,
+            area: session.area,
             todo: session.todo
         )]
     }
@@ -193,17 +193,17 @@ actor StatisticsProjectionActor {
         session: FlowSession,
         startedAt: Date,
         focusSeconds: Int,
-        direction: Direction?,
+        area: Area?,
         todo: Todo?
     ) -> StatisticsPeriodFlowRecord {
         StatisticsPeriodFlowRecord(
             sessionID: session.id,
             startedAt: startedAt,
             focusSeconds: focusSeconds,
-            directionID: direction?.id,
-            directionName: direction?.name ?? "",
-            directionSymbol: direction?.symbolName ?? "",
-            directionColorHex: direction?.colorHex,
+            areaID: area?.id,
+            areaName: area?.name ?? "",
+            areaSymbol: area?.symbolName ?? "",
+            areaColorHex: area?.colorHex,
             todoID: todo?.id,
             todoTitle: todo?.title ?? "",
             todoHashtags: todo?.hashtags ?? [],
@@ -221,10 +221,10 @@ actor StatisticsProjectionActor {
             todoTitle: todo.title,
             todoHashtags: todo.hashtags,
             todoNotes: todo.notes ?? "",
-            directionID: todo.direction?.id,
-            directionName: todo.direction?.name ?? "",
-            directionSymbol: todo.direction?.symbolName ?? "",
-            directionColorHex: todo.direction?.colorHex
+            areaID: todo.area?.id,
+            areaName: todo.area?.name ?? "",
+            areaSymbol: todo.area?.symbolName ?? "",
+            areaColorHex: todo.area?.colorHex
         )
     }
 

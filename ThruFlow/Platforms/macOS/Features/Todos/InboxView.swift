@@ -91,8 +91,8 @@ private struct InboxTodoRow: View {
                     .font(.body.weight(.medium))
 
                 HStack(spacing: 6) {
-                    if let direction = todo.direction, !DefaultDirections.isTaskInbox(direction) {
-                        Text("\(direction.symbolName) \(direction.name)")
+                    if let area = todo.area, !DefaultAreas.isTaskInbox(area) {
+                        Text("\(area.symbolName) \(area.name)")
                         Text("·")
                     }
 
@@ -123,15 +123,15 @@ private struct InboxTodoRow: View {
     }
 
     private var tint: Color {
-        guard let direction = todo.direction, !DefaultDirections.isTaskInbox(direction) else {
+        guard let area = todo.area, !DefaultAreas.isTaskInbox(area) else {
             return Color.secondary.opacity(0.6)
         }
 
-        return Color(hex: direction.colorHex)
+        return Color(hex: area.colorHex)
     }
 }
 
 #Preview {
     InboxView()
-        .modelContainer(for: [Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self], inMemory: true)
+        .modelContainer(for: [Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self], inMemory: true)
 }

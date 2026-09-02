@@ -13,17 +13,17 @@ struct HabitScheduleChangeReconciler {
 
     @discardableResult
     func reconcile(
-        direction: Direction,
+        area: Area,
         todos: [Todo],
         modelContext: ModelContext,
         now: Date = .now
     ) -> Bool {
-        guard direction.type == .habit else { return false }
+        guard area.type == .habit else { return false }
 
         let today = dayBoundary.day(containing: now, calendar: calendar)
         let planner = RequiredTodoPlanner(calendar: calendar)
         let futureTodos = todos.filter { todo in
-            guard todo.direction?.id == direction.id,
+            guard todo.area?.id == area.id,
                   !todo.isArchived,
                   !todo.isDeleted,
                   let scheduledDate = todo.scheduledDate else {
@@ -41,8 +41,8 @@ struct HabitScheduleChangeReconciler {
             guard let scheduledDate = todo.scheduledDate else { continue }
             let day = calendar.startOfDay(for: scheduledDate)
 
-            if direction.goalSchedule == .weeklyCount ||
-                !planner.shouldAppearToday(direction, on: day) {
+            if area.goalSchedule == .weeklyCount ||
+                !planner.shouldAppearToday(area, on: day) {
                 todo.softDelete(now: now)
                 changed = true
                 continue
@@ -50,20 +50,20 @@ struct HabitScheduleChangeReconciler {
 
             changed = planner.applyGeneratedTemplate(
                 to: todo,
-                for: direction,
+                for: area,
                 now: now
             ) || changed
         }
 
         var knownTodos = todos
         var nextSortIndex = (todos.map(\.sortIndex).min() ?? 0) - 1
-        let planningDates = direction.goalSchedule == .weeklyCount
+        let planningDates = area.goalSchedule == .weeklyCount
             ? [today]
             : dates(from: today, through: finalPlannedDay)
 
         for date in planningDates {
             guard let todo = planner.makeRequiredTodo(
-                for: direction,
+                for: area,
                 existingTodos: knownTodos,
                 on: date,
                 sortIndex: nextSortIndex

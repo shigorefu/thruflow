@@ -6,7 +6,7 @@ import Testing
 struct OnboardingWorkspaceInspectorTests {
     @Test func builtInOtherAreaAloneDoesNotCountAsUserContent() {
         let state = OnboardingWorkspaceInspector.inspect(
-            directions: [DefaultDirections.makeTaskInbox()],
+            areas: [DefaultAreas.makeTaskInbox()],
             todos: [],
             flowSessions: [],
             flowBreaks: []
@@ -19,11 +19,11 @@ struct OnboardingWorkspaceInspectorTests {
     }
 
     @Test func aRealAreaCountsEvenWhenArchived() {
-        let area = Direction(name: "Work", type: .neutral)
+        let area = Area(name: "Work", type: .neutral)
         area.archive()
 
         let state = OnboardingWorkspaceInspector.inspect(
-            directions: [DefaultDirections.makeTaskInbox(), area],
+            areas: [DefaultAreas.makeTaskInbox(), area],
             todos: [],
             flowSessions: [],
             flowBreaks: []
@@ -34,21 +34,21 @@ struct OnboardingWorkspaceInspectorTests {
     }
 
     @Test func nonDeletedTasksCountButSoftDeletedTasksDoNot() {
-        let area = DefaultDirections.makeTaskInbox()
-        let deleted = Todo(title: "Deleted", direction: area)
+        let area = DefaultAreas.makeTaskInbox()
+        let deleted = Todo(title: "Deleted", area: area)
         deleted.softDelete()
 
         var state = OnboardingWorkspaceInspector.inspect(
-            directions: [area],
+            areas: [area],
             todos: [deleted],
             flowSessions: [],
             flowBreaks: []
         )
         #expect(!state.hasUserContent)
 
-        let active = Todo(title: "Active", direction: area)
+        let active = Todo(title: "Active", area: area)
         state = OnboardingWorkspaceInspector.inspect(
-            directions: [area],
+            areas: [area],
             todos: [deleted, active],
             flowSessions: [],
             flowBreaks: []
@@ -58,10 +58,10 @@ struct OnboardingWorkspaceInspectorTests {
     }
 
     @Test func flowSessionOrActiveBreakCountsAsHistory() {
-        let area = DefaultDirections.makeTaskInbox()
+        let area = DefaultAreas.makeTaskInbox()
         let start = Date(timeIntervalSince1970: 1_000)
         let session = FlowSession(
-            direction: area,
+            area: area,
             mode: .twentyFiveFive,
             startedAt: start,
             plannedEndAt: start.addingTimeInterval(1_500),
@@ -70,7 +70,7 @@ struct OnboardingWorkspaceInspectorTests {
         )
 
         var state = OnboardingWorkspaceInspector.inspect(
-            directions: [area],
+            areas: [area],
             todos: [],
             flowSessions: [session],
             flowBreaks: []
@@ -84,7 +84,7 @@ struct OnboardingWorkspaceInspectorTests {
             plannedDurationSeconds: 300
         )
         state = OnboardingWorkspaceInspector.inspect(
-            directions: [area],
+            areas: [area],
             todos: [],
             flowSessions: [],
             flowBreaks: [flowBreak]
@@ -93,7 +93,7 @@ struct OnboardingWorkspaceInspectorTests {
 
         flowBreak.deletedAt = start
         state = OnboardingWorkspaceInspector.inspect(
-            directions: [area],
+            areas: [area],
             todos: [],
             flowSessions: [],
             flowBreaks: [flowBreak]

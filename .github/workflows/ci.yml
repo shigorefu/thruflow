@@ -14,8 +14,53 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changed_files:
+    name: Classify changed files
+    runs-on: ubuntu-latest
+    outputs:
+      run_apple: ${{ steps.classify.outputs.run_apple }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Detect Markdown-only changes
+        id: classify
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE_SHA: ${{ github.event.before }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          CURRENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            base="$BASE_SHA"
+            head="$HEAD_SHA"
+          else
+            base="$BEFORE_SHA"
+            head="$CURRENT_SHA"
+          fi
+
+          if [[ -z "$base" || "$base" =~ ^0+$ ]] || ! git cat-file -e "$base^{commit}"; then
+            echo "run_apple=true" >> "$GITHUB_OUTPUT"
+          elif [[ -z "$(git diff --name-only "$base" "$head")" ]]; then
+            echo "run_apple=true" >> "$GITHUB_OUTPUT"
+          elif git diff --name-only "$base" "$head" | grep -Eiv '\.md$' >/dev/null; then
+            echo "run_apple=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run_apple=false" >> "$GITHUB_OUTPUT"
+            echo "Only Markdown files changed; Apple builds are not required." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
   build-and-test:
     name: Build and test Apple targets
+    needs: changed_files
+    if: needs.changed_files.outputs.run_apple == 'true'
     runs-on: macos-26
     timeout-minutes: 45
     env:

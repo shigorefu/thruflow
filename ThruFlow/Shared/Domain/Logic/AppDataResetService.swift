@@ -7,7 +7,7 @@ import Foundation
 import SwiftData
 
 struct AppDataResetResult: Equatable, Sendable {
-    let deletedDirectionCount: Int
+    let deletedAreaCount: Int
     let deletedTodoCount: Int
     let deletedFlowCount: Int
     let deletedBreakCount: Int
@@ -32,7 +32,7 @@ struct AppDataResetService {
             let segments = try modelContext.fetch(FetchDescriptor<FlowSegment>())
             let breaks = try modelContext.fetch(FetchDescriptor<FlowBreak>())
             let todos = try modelContext.fetch(FetchDescriptor<Todo>())
-            let directions = try modelContext.fetch(FetchDescriptor<Direction>())
+            let areas = try modelContext.fetch(FetchDescriptor<Area>())
 
             for segment in segments {
                 modelContext.delete(segment)
@@ -46,15 +46,15 @@ struct AppDataResetService {
             for todo in todos {
                 modelContext.delete(todo)
             }
-            for direction in directions {
-                modelContext.delete(direction)
+            for area in areas {
+                modelContext.delete(area)
             }
 
             let hasChanges = !segments.isEmpty ||
                 !breaks.isEmpty ||
                 !sessions.isEmpty ||
                 !todos.isEmpty ||
-                !directions.isEmpty
+                !areas.isEmpty
 
             if hasChanges {
                 let latestSessions = try modelContext.fetch(FetchDescriptor<FlowSession>())
@@ -65,7 +65,7 @@ struct AppDataResetService {
             }
 
             return AppDataResetResult(
-                deletedDirectionCount: directions.count,
+                deletedAreaCount: areas.count,
                 deletedTodoCount: todos.count,
                 deletedFlowCount: sessions.count,
                 deletedBreakCount: breaks.count

@@ -18,7 +18,7 @@ Current visible Area types are:
 - `習慣` / Habit / Привычка;
 - `できたら` / Optional / Если получится.
 
-The persisted `DirectionType` raw values remain `neutral`, `habit`, and `nice`.
+The persisted `AreaType` raw values remain `neutral`, `habit`, and `nice`.
 
 Reason: the visible names describe when work belongs on the daily surface,
 while stable internal identifiers preserve existing data.
@@ -26,7 +26,7 @@ while stable internal identifiers preserve existing data.
 ## D-003: System Area
 
 Tasks and Flow without a user-selected Area are assigned to the system Area
-`その他` / Other / Другое. Internally, it remains a `Direction` relationship.
+`その他` / Other / Другое. It keeps the stable `taskInbox` system role.
 
 `その他` is hidden only from Area management to prevent editing. It may appear
 in Task context and Statistics.
@@ -293,7 +293,7 @@ It is a trailing toolbar action across History modes. macOS opens a trailing
 inspector and iOS opens the shared form in a sheet. Its Flow-style picker
 separates Tasks, Habits, and Areas. It can select an existing Todo
 occurrence, create a new Task, materialize an eligible
-missing historical Habit occurrence from its internal `Direction` template, or
+missing historical Habit occurrence from its Area template, or
 record Area-only Flow. Recording Check needs only a date, accepts optional time,
 writes manual completion, and creates no Flow. Recording Block, Minute, or
 Area-only work requires start/end time, creates the normal completed manual
@@ -337,9 +337,9 @@ one conflict and restoration model.
 
 ## D-028: Habit Pause Removes Expectations, Not History
 
-A Habit Direction can be paused for today, through an inclusive date, or until
+A Habit Area can be paused for today, through an inclusive date, or until
 the user resumes it. Pause periods are optional JSON-backed scalar data on the
-Direction and are interpreted by shared `HabitPauseService` and
+Area and are interpreted by shared `HabitPauseService` and
 `RequiredTodoPlanner` logic. They do not add a second schedule entity.
 
 Paused days cannot generate or receive a Habit Todo. When a pause begins, only
@@ -511,7 +511,7 @@ against their actual costs.
 ## D-035: Settings Owns Complete App-Data Reset
 
 macOS exposes the native Settings scene through a gear at the bottom of its
-sidebar. macOS, iPhone, and iPad Settings can delete every `Direction`, `Todo`,
+sidebar. macOS, iPhone, and iPad Settings can delete every `Area`, `Todo`,
 `FlowSession`, `FlowSegment`, and `FlowBreak` after an irreversible
 confirmation. The operation is unavailable while a restorable Flow runtime is
 active and runs as one model-actor transaction. Private CloudKit propagates the
@@ -580,14 +580,14 @@ tool unreliable.
 ## D-039: History Preserves Individual Habit Task Occurrences
 
 Task History groups and identifies rows by Todo identity, including Habit
-occurrences that share one Direction. A Flow remains linked to its exact Todo.
+occurrences that share one Area. A Flow remains linked to its exact Todo.
 Editing a History title renames that linked Todo, and toggling Check changes
 only that Todo's completion state. Another day's Habit occurrence remains a
 separate row with its own title and status. No Flow title or completion
 override is added to the persistence schema.
 
 Reason: `筋トレ B` on Monday and `筋トレ C` on Wednesday are separate Tasks,
-not interchangeable representatives of one Habit Direction.
+not interchangeable representatives of one Habit Area.
 
 ## D-040: Task Title Suggestions Copy Text, Not Todo Identity
 
@@ -603,3 +603,22 @@ context.
 
 Reason: recurring work should be quick to type without reviving a completed
 Todo or recreating the cross-day identity confusion fixed for Habit history.
+
+## D-041: Area Is The Code Name While Direction Remains The Persistence Name
+
+Version 1.2.0 uses `Area` / `area` for source files, application and domain
+types, variables, UI helpers, widgets, tests, and CSV columns. The persistence
+boundary is intentionally narrower: the SwiftData `@Model` runtime class
+remains `Direction`, and the stored Todo, FlowSession, and FlowSegment
+relationships remain `direction`. `Area` is a code-facing alias of that same
+model, not a second entity. Existing raw values and legacy preference keys also
+remain unchanged. Codable Widget and Live Activity properties use Area names in
+Swift while retaining their existing `direction…` wire keys.
+
+A schema contract test requires the `Direction` entity and `direction`
+relationships and rejects an `Area` entity or persisted `area` field.
+
+Reason: Production CloudKit entity and field names are forward-only. Keeping
+their existing identities avoids data migration, duplicate records, and sync
+risk while making current product terminology consistent for users and
+developers.

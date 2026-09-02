@@ -23,7 +23,7 @@ struct FlowDashboardView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
 
-    let directions: [Direction]
+    let areas: [Area]
     @Query private var todos: [Todo]
     @Query private var sessions: [FlowSession]
     @Query private var flowBreaks: [FlowBreak]
@@ -54,7 +54,7 @@ struct FlowDashboardView: View {
 
     init(
         isVisible: Bool = true,
-        directions: [Direction],
+        areas: [Area],
         cachedSnapshot: Binding<FlowDashboardSnapshot?>,
         cachedTodoGroups: Binding<FlowDashboardTodoGroups?>
     ) {
@@ -62,7 +62,7 @@ struct FlowDashboardView: View {
         let todoUpperBound = Calendar.current.date(byAdding: .day, value: 2, to: .now) ?? .distantFuture
         let missingScheduledDate = Date.distantPast
         self.isVisible = isVisible
-        self.directions = directions
+        self.areas = areas
         _todos = Query(
             filter: #Predicate<Todo> { todo in
                 (todo.scheduledDate ?? missingScheduledDate) >= cutoff &&
@@ -151,7 +151,7 @@ struct FlowDashboardView: View {
             breaks: dayBreaks,
             activeSessionID: activeFlowStore.activeSession?.id,
             activeFocusSeconds: activeFlowStore.actualFocusSeconds(now: now),
-            visualIdentityID: DailyFlowIdentity.resolve(from: directions)
+            visualIdentityID: DailyFlowIdentity.resolve(from: areas)
         )
     }
 
@@ -162,8 +162,8 @@ struct FlowDashboardView: View {
             latestSessionUpdate: sessions.first?.updatedAt,
             breakCount: flowBreaks.count,
             latestBreakUpdate: flowBreaks.first?.updatedAt,
-            directionCount: directions.count,
-            latestDirectionUpdate: directions.first?.updatedAt,
+            areaCount: areas.count,
+            latestAreaUpdate: areas.first?.updatedAt,
             activeSessionID: activeFlowStore.activeSession?.id,
             phase: activeFlowStore.timerState?.phase.rawValue
         )
@@ -172,8 +172,8 @@ struct FlowDashboardView: View {
     private var habitPreparationID: FlowDashboardHabitPreparationID {
         FlowDashboardHabitPreparationID(
             isVisible: isVisible,
-            directionCount: directions.count,
-            latestDirectionUpdate: directions.first?.updatedAt,
+            areaCount: areas.count,
+            latestAreaUpdate: areas.first?.updatedAt,
             todoCount: todos.count,
             latestTodoUpdate: todos.first?.updatedAt,
             revision: habitPreparationRevision
@@ -802,7 +802,7 @@ struct FlowDashboardView: View {
             comparisonRow(String(localized: "ブロック"), value: signedBlocks(comparison.blocksDelta), systemImage: "square.stack.3d.up")
             comparisonRow(
                 String(localized: "伸びた方向"),
-                value: growthText(comparison.growingDirection),
+                value: growthText(comparison.growingArea),
                 systemImage: "arrow.up.right"
             )
         }
@@ -860,8 +860,8 @@ struct FlowDashboardView: View {
         cachedTodoGroups?.nice ?? []
     }
 
-    private var activeDirections: [Direction] {
-        directions
+    private var activeAreas: [Area] {
+        areas
             .filter { !$0.isArchived }
             .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
@@ -876,7 +876,7 @@ struct FlowDashboardView: View {
         .help(String(localized: "タスクを追加"))
         .accessibilityLabel(String(localized: "タスクを追加"))
         .popover(isPresented: $showsQuickComposer, arrowEdge: .top) {
-            QuickTodoCreationPopover(directions: activeDirections)
+            QuickTodoCreationPopover(areas: activeAreas)
         }
     }
 
@@ -901,8 +901,8 @@ struct FlowDashboardView: View {
                     focusSeconds: $0.focusSeconds
                 )
             }
-        case .direction:
-            snapshot.directionSummaries.map {
+        case .area:
+            snapshot.areaSummaries.map {
                 DashboardDistributionRow(
                     id: $0.id.uuidString,
                     symbol: $0.symbol,
@@ -986,7 +986,7 @@ struct FlowDashboardView: View {
         return "\(sign)\(value)\(suffix)"
     }
 
-    private func growthText(_ growth: DashboardStatisticsDirectionGrowth?) -> String {
+    private func growthText(_ growth: DashboardStatisticsAreaGrowth?) -> String {
         guard let growth else { return String(localized: "変化なし") }
         return String(localized: "\(growth.symbol) \(growth.name) +\(max(1, growth.focusSecondsDelta / 60))分")
     }
@@ -1034,7 +1034,7 @@ struct FlowDashboardView: View {
                 calendar: calendar,
                 dayBoundary: dayBoundary
             ).materialize(
-                directions: directions,
+                areas: areas,
                 dates: [today],
                 modelContext: modelContext,
                 now: now,
@@ -1398,7 +1398,7 @@ private struct TimelineSegmentPopover: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(segment.taskTitle)
                         .font(.headline)
-                    Text(segment.directionName)
+                    Text(segment.areaName)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -1512,7 +1512,7 @@ private enum DashboardStatisticsPage: Int, CaseIterable, Identifiable {
 
 private enum DashboardDistributionMode: String, CaseIterable, Identifiable {
     case task
-    case direction
+    case area
 
     var id: String { rawValue }
     var title: String { self == .task ? String(localized: "タスク別") : String(localized: "方向別") }
@@ -1638,7 +1638,7 @@ private struct DashboardTodoColumn: View {
                 onOpen(todo)
             } label: {
                 HStack(spacing: 8) {
-                    Text(todo.direction?.symbolName ?? "📥")
+                    Text(todo.area?.symbolName ?? "📥")
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text(TodoDisplay.title(for: todo))
@@ -1705,12 +1705,12 @@ private struct FlowDashboardPreviewHost: View {
 
     var body: some View {
         FlowDashboardView(
-            directions: [],
+            areas: [],
             cachedSnapshot: $snapshot,
             cachedTodoGroups: $todoGroups
         )
         .environmentObject(ActiveFlowStore())
-        .modelContainer(for: [Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self], inMemory: true)
+        .modelContainer(for: [Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self], inMemory: true)
     }
 }
 
@@ -1720,8 +1720,8 @@ private struct FlowDashboardRefreshID: Hashable {
     let latestSessionUpdate: Date?
     let breakCount: Int
     let latestBreakUpdate: Date?
-    let directionCount: Int
-    let latestDirectionUpdate: Date?
+    let areaCount: Int
+    let latestAreaUpdate: Date?
     let activeSessionID: UUID?
     let phase: String?
 }
@@ -1734,8 +1734,8 @@ private struct FlowDashboardTodoRefreshID: Hashable {
 
 private struct FlowDashboardHabitPreparationID: Hashable {
     let isVisible: Bool
-    let directionCount: Int
-    let latestDirectionUpdate: Date?
+    let areaCount: Int
+    let latestAreaUpdate: Date?
     let todoCount: Int
     let latestTodoUpdate: Date?
     let revision: Int

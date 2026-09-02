@@ -20,7 +20,7 @@ struct StatisticsCSVExporter: Sendable {
     nonisolated static let commonHeader = [
         "date",
         "task",
-        "direction",
+        "area",
         "hashtags"
     ]
 
@@ -70,7 +70,7 @@ struct StatisticsCSVExporter: Sendable {
             let commonValues = [
                 dateFormatter.string(from: row.date),
                 row.task,
-                row.direction,
+                row.area,
                 row.hashtags.joined(separator: " ")
             ]
             let flowValues = [

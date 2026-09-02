@@ -11,21 +11,21 @@ import Testing
 
 struct ThruFlowTests {
 
-    @Test func directionDraftRequiresName() {
-        let draft = DirectionDraft(name: "   ", type: .neutral)
-        let errors = DirectionValidator().validate(draft)
+    @Test func areaDraftRequiresName() {
+        let draft = AreaDraft(name: "   ", type: .neutral)
+        let errors = AreaValidator().validate(draft)
 
         #expect(errors == [.emptyName])
     }
 
-    @Test func directionDraftNormalizesSymbolToFirstEmojiCharacter() {
-        let draft = DirectionDraft(symbolName: "📚🎯")
+    @Test func areaDraftNormalizesSymbolToFirstEmojiCharacter() {
+        let draft = AreaDraft(symbolName: "📚🎯")
 
         #expect(draft.normalizedSymbolName == "📚")
     }
 
-    @Test func directionDraftRejectsPlainTextSymbol() {
-        let draft = DirectionDraft(symbolName: "book")
+    @Test func areaDraftRejectsPlainTextSymbol() {
+        let draft = AreaDraft(symbolName: "book")
 
         #expect(draft.normalizedSymbolName == "🎯")
     }
@@ -36,7 +36,7 @@ struct ThruFlowTests {
     }
 
     @Test func enabledGoalRequiresPositiveTargetPeriodAndUnit() {
-        let draft = DirectionDraft(
+        let draft = AreaDraft(
             name: "Training",
             type: .habit,
             goalEnabled: true,
@@ -46,13 +46,13 @@ struct ThruFlowTests {
             goalSchedule: nil
         )
 
-        let errors = DirectionValidator().validate(draft)
+        let errors = AreaValidator().validate(draft)
 
         #expect(errors == [.invalidGoalTarget, .missingGoalUnit, .missingGoalSchedule])
     }
 
     @Test func disabledGoalAllowsMissingGoalFields() {
-        let draft = DirectionDraft(
+        let draft = AreaDraft(
             name: "Work",
             type: .neutral,
             goalEnabled: false,
@@ -61,13 +61,13 @@ struct ThruFlowTests {
             goalUnit: nil
         )
 
-        let errors = DirectionValidator().validate(draft)
+        let errors = AreaValidator().validate(draft)
 
         #expect(errors.isEmpty)
     }
 
     @Test func weekdayGoalRequiresSelectedWeekdays() {
-        let draft = DirectionDraft(
+        let draft = AreaDraft(
             name: "Training",
             type: .habit,
             goalTarget: 1,
@@ -76,15 +76,15 @@ struct ThruFlowTests {
             weekdayMask: nil
         )
 
-        let errors = DirectionValidator().validate(draft)
+        let errors = AreaValidator().validate(draft)
 
         #expect(errors == [.missingWeekdays])
     }
 
-    @Test func directionArchivesWithoutChangingStableIdentifier() {
+    @Test func areaArchivesWithoutChangingStableIdentifier() {
         let id = UUID()
         let now = Date(timeIntervalSince1970: 100)
-        let direction = Direction(
+        let area = Area(
             id: id,
             name: "Reading",
             type: .habit,
@@ -93,18 +93,18 @@ struct ThruFlowTests {
         )
 
         let archivedAt = Date(timeIntervalSince1970: 200)
-        direction.archive(now: archivedAt)
+        area.archive(now: archivedAt)
 
-        #expect(direction.id == id)
-        #expect(direction.isArchived)
-        #expect(direction.archivedAt == archivedAt)
-        #expect(direction.updatedAt == archivedAt)
+        #expect(area.id == id)
+        #expect(area.isArchived)
+        #expect(area.archivedAt == archivedAt)
+        #expect(area.updatedAt == archivedAt)
     }
 
-    @Test func directionUpdateNormalizesGoalRawValues() {
-        let direction = Direction(name: "Japanese", type: .nice)
+    @Test func areaUpdateNormalizesGoalRawValues() {
+        let area = Area(name: "Japanese", type: .nice)
 
-        direction.update(
+        area.update(
             name: "Japanese",
             type: .habit,
             symbolName: "character.book.closed",
@@ -117,19 +117,19 @@ struct ThruFlowTests {
             now: Date(timeIntervalSince1970: 300)
         )
 
-        #expect(direction.typeRawValue == "habit")
-        #expect(direction.goalPeriodRawValue == "weekly")
-        #expect(direction.goalUnitRawValue == "hours")
-        #expect(direction.goalScheduleRawValue == "weeklyCount")
-        #expect(direction.weeklyTargetCount == 3)
-        #expect(direction.hasGoal)
+        #expect(area.typeRawValue == "habit")
+        #expect(area.goalPeriodRawValue == "weekly")
+        #expect(area.goalUnitRawValue == "hours")
+        #expect(area.goalScheduleRawValue == "weeklyCount")
+        #expect(area.weeklyTargetCount == 3)
+        #expect(area.hasGoal)
     }
 
-    @Test func directionTypeReadsLegacyRawValues() {
-        let habit = Direction(name: "Anki", type: .neutral)
+    @Test func areaTypeReadsLegacyRawValues() {
+        let habit = Area(name: "Anki", type: .neutral)
         habit.typeRawValue = "must"
 
-        let nice = Direction(name: "散歩", type: .neutral)
+        let nice = Area(name: "散歩", type: .neutral)
         nice.typeRawValue = "bonus"
 
         #expect(habit.type == .habit)

@@ -20,10 +20,10 @@ struct TodoTests {
     }
 
     @Test func manualCompletionOnlyChangesCheckboxTasks() {
-        let direction = Direction(name: "生活", type: .neutral)
-        let checkbox = Todo(title: "確認", direction: direction, measurement: .checkbox)
-        let blocks = Todo(title: "読書", direction: direction, measurement: .focusBlocks, plannedAmount: 2)
-        let minutes = Todo(title: "散歩", direction: direction, measurement: .minutes, plannedAmount: 30)
+        let area = Area(name: "生活", type: .neutral)
+        let checkbox = Todo(title: "確認", area: area, measurement: .checkbox)
+        let blocks = Todo(title: "読書", area: area, measurement: .focusBlocks, plannedAmount: 2)
+        let minutes = Todo(title: "散歩", area: area, measurement: .minutes, plannedAmount: 30)
 
         #expect(checkbox.setManuallyCompleted(true))
         #expect(checkbox.isCompleted)
@@ -50,10 +50,10 @@ struct TodoTests {
         #expect(calculator.progress(measurement: .minutes, plannedAmount: 30, actualProgress: -5) == 0)
     }
 
-    @Test func todoDraftAllowsEmptyTitleAndMissingDirectionButRequiresPlannedAmount() {
+    @Test func todoDraftAllowsEmptyTitleAndMissingAreaButRequiresPlannedAmount() {
         let draft = TodoDraft(
             title: " ",
-            direction: nil,
+            area: nil,
             measurement: .focusBlocks,
             plannedAmount: 0
         )
@@ -64,12 +64,12 @@ struct TodoTests {
     }
 
     @Test func historyRenameTrimsAndUpdatesAnyTaskTitle() {
-        let direction = Direction(name: "読書", type: .neutral)
+        let area = Area(name: "読書", type: .neutral)
         let createdAt = Date(timeIntervalSince1970: 100)
         let renamedAt = Date(timeIntervalSince1970: 200)
         let todo = Todo(
             title: "古い名前",
-            direction: direction,
+            area: area,
             createdAt: createdAt,
             updatedAt: createdAt
         )
@@ -80,11 +80,11 @@ struct TodoTests {
     }
 
     @Test func historyRenameDoesNotReplaceATaskWithAnEmptyTitle() {
-        let direction = Direction(name: "読書", type: .neutral)
+        let area = Area(name: "読書", type: .neutral)
         let updatedAt = Date(timeIntervalSince1970: 100)
         let todo = Todo(
             title: "本を読む",
-            direction: direction,
+            area: area,
             updatedAt: updatedAt
         )
 
@@ -94,31 +94,31 @@ struct TodoTests {
     }
 
     @Test func defaultTaskInboxUsesLocalizedNameAndStableSystemProperties() {
-        let direction = DefaultDirections.makeTaskInbox(now: Date(timeIntervalSince1970: 0))
+        let area = DefaultAreas.makeTaskInbox(now: Date(timeIntervalSince1970: 0))
 
-        #expect(direction.name == DefaultDirections.taskInboxName)
-        #expect(direction.type == .neutral)
-        #expect(direction.symbolName == "📝")
-        #expect(direction.colorHex == "#007AFF")
-        #expect(DefaultDirections.isTaskInbox(direction))
+        #expect(area.name == DefaultAreas.taskInboxName)
+        #expect(area.type == .neutral)
+        #expect(area.symbolName == "📝")
+        #expect(area.colorHex == "#007AFF")
+        #expect(DefaultAreas.isTaskInbox(area))
     }
 
-    @Test func userDirectionIsNotTaskInboxColorlessDefault() {
-        let direction = Direction(name: "仕事", type: .neutral)
+    @Test func userAreaIsNotTaskInboxColorlessDefault() {
+        let area = Area(name: "仕事", type: .neutral)
 
-        #expect(!DefaultDirections.isTaskInbox(direction))
+        #expect(!DefaultAreas.isTaskInbox(area))
     }
 
     @Test func activeUnscheduledTodoDoesNotAppearInDailyTasks() {
-        let direction = Direction(name: "仕事", type: .neutral)
-        let todo = Todo(title: "資料を作る", direction: direction)
+        let area = Area(name: "仕事", type: .neutral)
+        let todo = Todo(title: "資料を作る", area: area)
 
         #expect(!TodayTodoFilter().includes(todo, on: Date(timeIntervalSince1970: 0)))
     }
 
     @Test func archivedTodoDoesNotAppearInToday() {
-        let direction = Direction(name: "仕事", type: .neutral)
-        let todo = Todo(title: "資料を作る", direction: direction)
+        let area = Area(name: "仕事", type: .neutral)
+        let todo = Todo(title: "資料を作る", area: area)
 
         todo.archive(now: Date(timeIntervalSince1970: 100))
 
@@ -129,9 +129,9 @@ struct TodoTests {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
 
-        let direction = Direction(name: "仕事", type: .neutral)
+        let area = Area(name: "仕事", type: .neutral)
         let scheduledDate = Date(timeIntervalSince1970: 86_400)
-        let todo = Todo(title: "資料を作る", direction: direction, scheduledDate: scheduledDate)
+        let todo = Todo(title: "資料を作る", area: area, scheduledDate: scheduledDate)
 
         let filter = TodayTodoFilter(calendar: calendar)
 
@@ -139,11 +139,11 @@ struct TodoTests {
         #expect(!filter.includes(todo, on: Date(timeIntervalSince1970: 0)))
     }
 
-    @Test func dailyHabitDirectionCreatesTodayTodoDraft() {
+    @Test func dailyHabitAreaCreatesTodayTodoDraft() {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
 
-        let direction = Direction(
+        let area = Area(
             name: "読書",
             type: .habit,
             goalTarget: 1,
@@ -153,7 +153,7 @@ struct TodoTests {
         )
         let planner = RequiredTodoPlanner(calendar: calendar)
         let date = Date(timeIntervalSince1970: 0)
-        let todo = planner.makeRequiredTodo(for: direction, on: date)
+        let todo = planner.makeRequiredTodo(for: area, on: date)
 
         #expect(todo?.title == "")
         #expect(todo?.measurement == .focusBlocks)
@@ -167,7 +167,7 @@ struct TodoTests {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
 
-        let direction = Direction(
+        let area = Area(
             name: "読書",
             type: .habit,
             goalTarget: 1,
@@ -179,7 +179,7 @@ struct TodoTests {
         let afternoon = date(2026, 7, 24, calendar: calendar).addingTimeInterval(15 * 3_600)
 
         #expect(
-            planner.makeRequiredTodo(for: direction, on: afternoon)?.scheduledDate ==
+            planner.makeRequiredTodo(for: area, on: afternoon)?.scheduledDate ==
                 calendar.startOfDay(for: afternoon)
         )
     }
@@ -189,21 +189,21 @@ struct TodoTests {
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
 
         let day = date(2026, 7, 24, calendar: calendar)
-        let direction = weeklyHabitDirection()
+        let area = weeklyHabitArea()
         let emptyDuplicate = Todo(
             title: "",
-            direction: direction,
+            area: area,
             scheduledDate: day,
             createdAt: day
         )
         let recordedDuplicate = Todo(
             title: "上半身",
-            direction: direction,
+            area: area,
             scheduledDate: day.addingTimeInterval(15 * 3_600),
             createdAt: day.addingTimeInterval(60)
         )
         let session = FlowSession(
-            direction: direction,
+            area: area,
             todo: recordedDuplicate,
             mode: .sprint,
             startedAt: day.addingTimeInterval(15 * 3_600),
@@ -232,11 +232,11 @@ struct TodoTests {
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
 
         let day = date(2026, 7, 24, calendar: calendar)
-        let direction = weeklyHabitDirection()
-        let active = Todo(title: "", direction: direction, scheduledDate: day, createdAt: day)
+        let area = weeklyHabitArea()
+        let active = Todo(title: "", area: area, scheduledDate: day, createdAt: day)
         let completed = Todo(
             title: "",
-            direction: direction,
+            area: area,
             scheduledDate: day.addingTimeInterval(9 * 3_600),
             createdAt: day.addingTimeInterval(60)
         )
@@ -259,7 +259,7 @@ struct TodoTests {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
 
-        let direction = Direction(
+        let area = Area(
             name: "筋トレ",
             type: .habit,
             goalTarget: 1,
@@ -271,36 +271,36 @@ struct TodoTests {
         let planner = RequiredTodoPlanner(calendar: calendar)
         let date = Date(timeIntervalSince1970: 0)
 
-        #expect(planner.shouldAppearToday(direction, on: date))
-        #expect(planner.makeRequiredTodo(for: direction, on: date) != nil)
+        #expect(planner.shouldAppearToday(area, on: date))
+        #expect(planner.makeRequiredTodo(for: area, on: date) != nil)
     }
 
     @Test func movedWeeklyHabitDoesNotCreateReplacement() {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
 
-        let direction = weeklyHabitDirection()
+        let area = weeklyHabitArea()
         let planner = RequiredTodoPlanner(calendar: calendar)
         let today = date(2026, 7, 6, calendar: calendar)
         let tomorrow = date(2026, 7, 7, calendar: calendar)
-        let movedTodo = Todo(title: "", direction: direction, scheduledDate: tomorrow)
+        let movedTodo = Todo(title: "", area: area, scheduledDate: tomorrow)
 
-        #expect(!planner.shouldCreateRequiredTodo(for: direction, in: [movedTodo], on: today))
+        #expect(!planner.shouldCreateRequiredTodo(for: area, in: [movedTodo], on: today))
     }
 
     @Test func nextWeeklyHabitAppearsOnFollowingDayAfterCompletion() {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
 
-        let direction = weeklyHabitDirection()
+        let area = weeklyHabitArea()
         let planner = RequiredTodoPlanner(calendar: calendar)
         let monday = date(2026, 7, 6, calendar: calendar)
         let tuesday = date(2026, 7, 7, calendar: calendar)
-        let completedTodo = Todo(title: "", direction: direction, scheduledDate: monday)
+        let completedTodo = Todo(title: "", area: area, scheduledDate: monday)
         completedTodo.setCompleted(true, now: monday)
 
-        #expect(!planner.shouldCreateRequiredTodo(for: direction, in: [completedTodo], on: monday))
-        #expect(planner.shouldCreateRequiredTodo(for: direction, in: [completedTodo], on: tuesday))
+        #expect(!planner.shouldCreateRequiredTodo(for: area, in: [completedTodo], on: monday))
+        #expect(planner.shouldCreateRequiredTodo(for: area, in: [completedTodo], on: tuesday))
     }
 
     @Test func pendingWeeklyHabitRollsForwardWithinCurrentWeek() {
@@ -308,15 +308,15 @@ struct TodoTests {
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         calendar.firstWeekday = 1
 
-        let direction = weeklyHabitDirection()
+        let area = weeklyHabitArea()
         let planner = RequiredTodoPlanner(calendar: calendar)
         let sunday = date(2026, 7, 12, calendar: calendar)
         let wednesday = date(2026, 7, 15, calendar: calendar)
-        let pendingTodo = Todo(title: "", direction: direction, scheduledDate: sunday)
+        let pendingTodo = Todo(title: "", area: area, scheduledDate: sunday)
 
         #expect(
             planner.pendingWeeklyTodoToRollForward(
-                for: direction,
+                for: area,
                 in: [pendingTodo],
                 on: wednesday
             )?.id == pendingTodo.id
@@ -328,17 +328,17 @@ struct TodoTests {
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         calendar.firstWeekday = 1
 
-        let direction = weeklyHabitDirection()
+        let area = weeklyHabitArea()
         let planner = RequiredTodoPlanner(calendar: calendar)
         let saturday = date(2026, 7, 11, calendar: calendar)
         let wednesday = date(2026, 7, 15, calendar: calendar)
         let friday = date(2026, 7, 17, calendar: calendar)
-        let previousWeekTodo = Todo(title: "", direction: direction, scheduledDate: saturday)
-        let futureTodo = Todo(title: "", direction: direction, scheduledDate: friday)
+        let previousWeekTodo = Todo(title: "", area: area, scheduledDate: saturday)
+        let futureTodo = Todo(title: "", area: area, scheduledDate: friday)
 
         #expect(
             planner.pendingWeeklyTodoToRollForward(
-                for: direction,
+                for: area,
                 in: [previousWeekTodo, futureTodo],
                 on: wednesday
             ) == nil
@@ -350,23 +350,23 @@ struct TodoTests {
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         calendar.firstWeekday = 2
 
-        let direction = weeklyHabitDirection(target: 4)
+        let area = weeklyHabitArea(target: 4)
         let planner = RequiredTodoPlanner(calendar: calendar)
         let friday = date(2026, 7, 10, calendar: calendar)
-        let todo = Todo(title: "", direction: direction, scheduledDate: friday)
+        let todo = Todo(title: "", area: area, scheduledDate: friday)
         let options = planner.weeklyRescheduleOptions(for: todo, in: [todo], now: friday)
 
         #expect(options.first?.date == friday)
         #expect(options.allSatisfy { !$0.isAllowed })
     }
 
-    @Test func selectedWeekdayHabitDirectionAppearsOnlyOnThatWeekday() {
+    @Test func selectedWeekdayHabitAreaAppearsOnlyOnThatWeekday() {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
 
         let monday = Date(timeIntervalSince1970: 4 * 86_400)
         let tuesday = Date(timeIntervalSince1970: 5 * 86_400)
-        let direction = Direction(
+        let area = Area(
             name: "Anki",
             type: .habit,
             goalTarget: 1,
@@ -377,8 +377,8 @@ struct TodoTests {
         )
         let planner = RequiredTodoPlanner(calendar: calendar)
 
-        #expect(planner.shouldAppearToday(direction, on: monday))
-        #expect(!planner.shouldAppearToday(direction, on: tuesday))
+        #expect(planner.shouldAppearToday(area, on: monday))
+        #expect(!planner.shouldAppearToday(area, on: tuesday))
     }
 
     @Test func pausedDailyHabitDoesNotAppearUntilPauseEnds() {
@@ -386,7 +386,7 @@ struct TodoTests {
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         let monday = date(2026, 7, 6, calendar: calendar)
         let tuesday = date(2026, 7, 7, calendar: calendar)
-        let direction = Direction(
+        let area = Area(
             name: "読書",
             type: .habit,
             goalTarget: 1,
@@ -397,47 +397,47 @@ struct TodoTests {
         let pauseService = HabitPauseService(calendar: calendar)
         let planner = RequiredTodoPlanner(calendar: calendar)
 
-        #expect(pauseService.pauseToday(direction, todos: [], now: monday))
-        #expect(!planner.shouldAppearToday(direction, on: monday))
-        #expect(planner.makeRequiredTodo(for: direction, on: monday) == nil)
-        #expect(planner.shouldAppearToday(direction, on: tuesday))
+        #expect(pauseService.pauseToday(area, todos: [], now: monday))
+        #expect(!planner.shouldAppearToday(area, on: monday))
+        #expect(planner.makeRequiredTodo(for: area, on: monday) == nil)
+        #expect(planner.shouldAppearToday(area, on: tuesday))
     }
 
     @Test func indefinitelyPausedHabitCanResumeOnCurrentDay() {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         let monday = date(2026, 7, 6, calendar: calendar)
-        let direction = weeklyHabitDirection()
+        let area = weeklyHabitArea()
         let pauseService = HabitPauseService(calendar: calendar)
 
-        #expect(pauseService.pauseIndefinitely(direction, todos: [], now: monday))
-        #expect(pauseService.isPaused(direction, on: monday))
-        #expect(pauseService.resume(direction, now: monday))
-        #expect(!pauseService.isPaused(direction, on: monday))
+        #expect(pauseService.pauseIndefinitely(area, todos: [], now: monday))
+        #expect(pauseService.isPaused(area, on: monday))
+        #expect(pauseService.resume(area, now: monday))
+        #expect(!pauseService.isPaused(area, on: monday))
     }
 
     @Test func pausingHabitSuppressesOnlyUnstartedGeneratedTodos() {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         let monday = date(2026, 7, 6, calendar: calendar)
-        let direction = weeklyHabitDirection()
-        let pending = Todo(title: "", direction: direction, scheduledDate: monday)
-        let completed = Todo(title: "", direction: direction, scheduledDate: monday)
+        let area = weeklyHabitArea()
+        let pending = Todo(title: "", area: area, scheduledDate: monday)
+        let completed = Todo(title: "", area: area, scheduledDate: monday)
         completed.setCompleted(true, now: monday)
         let progressed = Todo(
             title: "",
-            direction: direction,
+            area: area,
             measurement: .minutes,
             plannedAmount: 30,
             actualProgress: 5,
             scheduledDate: monday
         )
-        let recorded = Todo(title: "", direction: direction, scheduledDate: monday)
+        let recorded = Todo(title: "", area: area, scheduledDate: monday)
         recorded.recordedFocusSeconds = 60
 
         #expect(
             HabitPauseService(calendar: calendar).pauseToday(
-                direction,
+                area,
                 todos: [pending, completed, progressed, recorded],
                 now: monday
             )
@@ -452,7 +452,7 @@ struct TodoTests {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         let schema = Schema([
-            Direction.self,
+            Area.self,
             Todo.self,
             FlowSession.self,
             FlowSegment.self,
@@ -462,7 +462,7 @@ struct TodoTests {
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let date = Date(timeIntervalSince1970: 4 * 86_400)
-        let direction = Direction(
+        let area = Area(
             name: "読書",
             type: .habit,
             goalTarget: 1,
@@ -470,14 +470,14 @@ struct TodoTests {
             goalUnit: .occurrences,
             goalSchedule: .everyDay
         )
-        let first = Todo(title: "", direction: direction, scheduledDate: date)
-        let duplicate = Todo(title: "", direction: direction, scheduledDate: date)
-        context.insert(direction)
+        let first = Todo(title: "", area: area, scheduledDate: date)
+        let duplicate = Todo(title: "", area: area, scheduledDate: date)
+        context.insert(area)
         context.insert(first)
         context.insert(duplicate)
 
         let changed = try HabitTodoMaterializer(calendar: calendar).materialize(
-            directions: [direction],
+            areas: [area],
             dates: [date],
             modelContext: context,
             now: date,
@@ -494,7 +494,7 @@ struct TodoTests {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         let schema = Schema([
-            Direction.self,
+            Area.self,
             Todo.self,
             FlowSession.self,
             FlowSegment.self,
@@ -507,7 +507,7 @@ struct TodoTests {
         let sunday = date(2026, 7, 5, calendar: calendar)
         let wednesday = date(2026, 7, 8, calendar: calendar)
         let friday = date(2026, 7, 10, calendar: calendar)
-        let direction = Direction(
+        let area = Area(
             name: "運動",
             type: .habit,
             goalTarget: 1,
@@ -518,18 +518,18 @@ struct TodoTests {
                 GoalWeekday.wednesday.rawValue |
                 GoalWeekday.friday.rawValue
         )
-        let past = Todo(title: "", direction: direction, scheduledDate: sunday)
-        let oldMonday = Todo(title: "", direction: direction, scheduledDate: monday)
-        let oldWednesday = Todo(title: "", direction: direction, scheduledDate: wednesday)
-        let oldFriday = Todo(title: "", direction: direction, scheduledDate: friday)
-        context.insert(direction)
+        let past = Todo(title: "", area: area, scheduledDate: sunday)
+        let oldMonday = Todo(title: "", area: area, scheduledDate: monday)
+        let oldWednesday = Todo(title: "", area: area, scheduledDate: wednesday)
+        let oldFriday = Todo(title: "", area: area, scheduledDate: friday)
+        context.insert(area)
         [past, oldMonday, oldWednesday, oldFriday].forEach(context.insert)
 
-        direction.update(
-            name: direction.name,
+        area.update(
+            name: area.name,
             type: .habit,
-            symbolName: direction.symbolName,
-            colorHex: direction.colorHex,
+            symbolName: area.symbolName,
+            colorHex: area.colorHex,
             goalTarget: 1,
             goalPeriod: .weekly,
             goalUnit: .occurrences,
@@ -540,7 +540,7 @@ struct TodoTests {
 
         #expect(
             HabitScheduleChangeReconciler(calendar: calendar).reconcile(
-                direction: direction,
+                area: area,
                 todos: [past, oldMonday, oldWednesday, oldFriday],
                 modelContext: context,
                 now: monday
@@ -568,7 +568,7 @@ struct TodoTests {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         let schema = Schema([
-            Direction.self,
+            Area.self,
             Todo.self,
             FlowSession.self,
             FlowSegment.self,
@@ -579,7 +579,7 @@ struct TodoTests {
         let context = container.mainContext
         let monday = date(2026, 7, 6, calendar: calendar)
         let tuesday = date(2026, 7, 7, calendar: calendar)
-        let direction = Direction(
+        let area = Area(
             name: "日本語",
             type: .habit,
             goalTarget: 30,
@@ -589,28 +589,28 @@ struct TodoTests {
         )
         let unstarted = Todo(
             title: "復習",
-            direction: direction,
+            area: area,
             measurement: .minutes,
             plannedAmount: 30,
             scheduledDate: monday
         )
         let progressed = Todo(
             title: "会話",
-            direction: direction,
+            area: area,
             measurement: .minutes,
             plannedAmount: 30,
             actualProgress: 5,
             scheduledDate: tuesday
         )
-        context.insert(direction)
+        context.insert(area)
         context.insert(unstarted)
         context.insert(progressed)
 
-        direction.update(
-            name: direction.name,
+        area.update(
+            name: area.name,
             type: .habit,
-            symbolName: direction.symbolName,
-            colorHex: direction.colorHex,
+            symbolName: area.symbolName,
+            colorHex: area.colorHex,
             goalTarget: 2,
             goalPeriod: .daily,
             goalUnit: .hours,
@@ -620,7 +620,7 @@ struct TodoTests {
 
         #expect(
             HabitScheduleChangeReconciler(calendar: calendar).reconcile(
-                direction: direction,
+                area: area,
                 todos: [unstarted, progressed],
                 modelContext: context,
                 now: monday
@@ -638,7 +638,7 @@ struct TodoTests {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         let schema = Schema([
-            Direction.self,
+            Area.self,
             Todo.self,
             FlowSession.self,
             FlowSegment.self,
@@ -648,7 +648,7 @@ struct TodoTests {
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let monday = date(2026, 7, 6, calendar: calendar)
-        let direction = Direction(
+        let area = Area(
             name: "運動",
             type: .habit,
             goalTarget: 1,
@@ -657,9 +657,9 @@ struct TodoTests {
             goalSchedule: .weekdays,
             weekdayMask: GoalWeekday.monday.rawValue
         )
-        let started = Todo(title: "筋トレ", direction: direction, scheduledDate: monday)
+        let started = Todo(title: "筋トレ", area: area, scheduledDate: monday)
         let session = FlowSession(
-            direction: direction,
+            area: area,
             todo: started,
             mode: .sprint,
             startedAt: monday,
@@ -667,15 +667,15 @@ struct TodoTests {
             plannedFocusDurationSeconds: 12 * 60,
             plannedBreakDurationSeconds: 3 * 60
         )
-        context.insert(direction)
+        context.insert(area)
         context.insert(started)
         context.insert(session)
 
-        direction.update(
-            name: direction.name,
+        area.update(
+            name: area.name,
             type: .habit,
-            symbolName: direction.symbolName,
-            colorHex: direction.colorHex,
+            symbolName: area.symbolName,
+            colorHex: area.colorHex,
             goalTarget: 1,
             goalPeriod: .weekly,
             goalUnit: .occurrences,
@@ -685,7 +685,7 @@ struct TodoTests {
         )
 
         _ = HabitScheduleChangeReconciler(calendar: calendar).reconcile(
-            direction: direction,
+            area: area,
             todos: [started],
             modelContext: context,
             now: monday
@@ -695,8 +695,8 @@ struct TodoTests {
         #expect(started.flowSessions?.contains(where: { $0.id == session.id }) == true)
     }
 
-    private func weeklyHabitDirection(target: Int = 3) -> Direction {
-        Direction(
+    private func weeklyHabitArea(target: Int = 3) -> Area {
+        Area(
             name: "筋トレ",
             type: .habit,
             goalTarget: 1,

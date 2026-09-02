@@ -9,13 +9,13 @@ struct FlowDashboardHistoryItemResolverTests {
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
 
         let day = Date(timeIntervalSince1970: 1_786_060_800)
-        let writing = Direction(name: "執筆", type: .neutral, colorHex: "#0A84FF")
-        let review = Direction(name: "確認", type: .neutral, colorHex: "#FF9F0A")
-        let writingTodo = Todo(title: "本文", direction: writing)
-        let reviewTodo = Todo(title: "校正", direction: review)
+        let writing = Area(name: "執筆", type: .neutral, colorHex: "#0A84FF")
+        let review = Area(name: "確認", type: .neutral, colorHex: "#FF9F0A")
+        let writingTodo = Todo(title: "本文", area: writing)
+        let reviewTodo = Todo(title: "校正", area: review)
         let start = day.addingTimeInterval(9 * 3_600)
         let session = FlowSession(
-            direction: writing,
+            area: writing,
             todo: writingTodo,
             mode: .twentyFiveFive,
             phase: .completed,
@@ -29,7 +29,7 @@ struct FlowDashboardHistoryItemResolverTests {
         )
         let writingSegment = FlowSegment(
             session: session,
-            direction: writing,
+            area: writing,
             todo: writingTodo,
             startedAt: start,
             startFocusSeconds: 0
@@ -40,7 +40,7 @@ struct FlowDashboardHistoryItemResolverTests {
         )
         let reviewSegment = FlowSegment(
             session: session,
-            direction: review,
+            area: review,
             todo: reviewTodo,
             startedAt: start.addingTimeInterval(15 * 60),
             startFocusSeconds: 15 * 60

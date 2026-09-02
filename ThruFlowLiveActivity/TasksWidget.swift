@@ -137,7 +137,7 @@ private struct TaskWidgetRow: View {
                 .frame(width: 22, height: 22)
 
             if !compact {
-                Text(item.directionSymbol)
+                Text(item.areaSymbol)
                     .font(.body)
             }
 
@@ -164,7 +164,7 @@ private struct TaskWidgetRow: View {
     private var progressText: String {
         switch item.measurement {
         case .checkbox:
-            return item.directionName
+            return item.areaName
         case .focusBlocks:
             let blocks = Double(item.focusedSeconds) / 1_500
             return "\(blocks.formatted(.number.precision(.fractionLength(0...1)))) / \(item.plannedAmount) Block"
@@ -218,7 +218,7 @@ private struct TaskWidgetProgress: View {
 
 private extension TaskWidgetItemSnapshot {
     var tintColor: Color {
-        Color(productHex: directionColorHex)
+        Color(productHex: areaColorHex)
     }
 }
 
@@ -230,9 +230,9 @@ private extension TasksWidgetSnapshot {
             TaskWidgetItemSnapshot(
                 id: UUID(),
                 title: String(localized: "発表資料を作る"),
-                directionSymbol: "💻",
-                directionName: String(localized: "その他"),
-                directionColorHex: "#34C759",
+                areaSymbol: "💻",
+                areaName: String(localized: "その他"),
+                areaColorHex: "#34C759",
                 measurement: .focusBlocks,
                 plannedAmount: 2,
                 actualProgress: 1,
@@ -242,9 +242,9 @@ private extension TasksWidgetSnapshot {
             TaskWidgetItemSnapshot(
                 id: UUID(),
                 title: String(localized: "読書"),
-                directionSymbol: "📚",
-                directionName: String(localized: "読書"),
-                directionColorHex: "#AF52DE",
+                areaSymbol: "📚",
+                areaName: String(localized: "読書"),
+                areaColorHex: "#AF52DE",
                 measurement: .checkbox,
                 plannedAmount: 1,
                 actualProgress: 1,

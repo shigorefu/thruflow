@@ -3,7 +3,7 @@ import Foundation
 enum DayHistoryMode: String, CaseIterable, Identifiable {
     case calendar
     case tasks
-    case directions
+    case areas
 
     var id: String { rawValue }
 
@@ -11,7 +11,7 @@ enum DayHistoryMode: String, CaseIterable, Identifiable {
         switch self {
         case .calendar: String(localized: "集中記録")
         case .tasks: String(localized: "タスク")
-        case .directions: String(localized: "方向")
+        case .areas: String(localized: "方向")
         }
     }
 }

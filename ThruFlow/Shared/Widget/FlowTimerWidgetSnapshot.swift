@@ -4,8 +4,8 @@ struct FlowTimerWidgetSnapshot: Codable, Equatable {
     var sessionID: UUID
     var taskEmoji: String
     var taskTitle: String
-    var directionName: String
-    var directionColorHex: String
+    var areaName: String
+    var areaColorHex: String
     var modeName: String
     var status: FlowLiveActivityStatus
     var timerKind: FlowLiveActivityTimerKind
@@ -14,6 +14,22 @@ struct FlowTimerWidgetSnapshot: Codable, Equatable {
     var remainingSeconds: Int
     var progress: Double
     var updatedAt: Date
+
+    enum CodingKeys: String, CodingKey {
+        case sessionID
+        case taskEmoji
+        case taskTitle
+        case areaName = "directionName"
+        case areaColorHex = "directionColorHex"
+        case modeName
+        case status
+        case timerKind
+        case timerStartedAt
+        case plannedEndAt
+        case remainingSeconds
+        case progress
+        case updatedAt
+    }
 
     var timerRange: ClosedRange<Date> {
         timerStartedAt...max(timerStartedAt.addingTimeInterval(1), plannedEndAt)
@@ -45,8 +61,8 @@ extension FlowLiveActivityContent {
             sessionID: sessionID,
             taskEmoji: taskEmoji,
             taskTitle: taskTitle,
-            directionName: directionName,
-            directionColorHex: directionColorHex,
+            areaName: areaName,
+            areaColorHex: areaColorHex,
             modeName: modeName,
             status: status,
             timerKind: timerKind,

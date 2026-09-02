@@ -104,8 +104,8 @@ private struct FlowActivityIdentity: View {
                     .font(.headline)
                     .lineLimit(1)
 
-                if !state.presentationDirectionName.isEmpty {
-                    Text(state.presentationDirectionName)
+                if !state.presentationAreaName.isEmpty {
+                    Text(state.presentationAreaName)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
@@ -263,7 +263,7 @@ private enum FlowLiveActivityView {
 
 private extension FlowActivityAttributes.ContentState {
     var tintColor: Color {
-        Color(flowHex: timerKind == .breakTime ? "#8E8E93" : directionColorHex)
+        Color(flowHex: timerKind == .breakTime ? "#8E8E93" : areaColorHex)
     }
 }
 

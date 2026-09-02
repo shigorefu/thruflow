@@ -55,6 +55,6 @@ struct CalendarTaskIndicators: View {
     }
 
     private func markerColor(for todo: Todo) -> Color {
-        todo.direction.map { Color(hex: $0.colorHex) } ?? .secondary
+        todo.area.map { Color(hex: $0.colorHex) } ?? .secondary
     }
 }

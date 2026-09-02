@@ -65,8 +65,9 @@ meaning in each UI context instead of performing a project-wide text
 replacement.
 
 Visible English uses `Area` / `Areas`, while visible Russian uses
-`Сфера` / `Сферы`. `Direction` remains the Swift model name,
-property name, persisted identifier, and stable machine-readable CSV column.
+`Сфера` / `Сферы`. `Area` / `area` are the code, file, and stable
+machine-readable CSV names. The legacy `Direction` / `direction` names are
+reserved for the persisted SwiftData/CloudKit compatibility boundary.
 The source keys `Sprint`, `Focus`, `Deep`, and `Dots` are likewise implementation
 details: the visible English labels are `Short`, `Standard`, `Deep`, and
 `Focus Calendar`.

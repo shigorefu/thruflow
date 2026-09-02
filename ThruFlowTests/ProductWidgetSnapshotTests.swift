@@ -12,7 +12,7 @@ struct ProductWidgetSnapshotTests {
 
     @Test func tasksSnapshotUsesTodayFilterAndDashboardOrdering() {
         let now = Date(timeIntervalSince1970: 5 * 86_400 + 12 * 3_600)
-        let work = Direction(
+        let work = Area(
             name: "仕事",
             type: .neutral,
             symbolName: "💻",
@@ -20,14 +20,14 @@ struct ProductWidgetSnapshotTests {
         )
         let medium = Todo(
             title: "Medium",
-            direction: work,
+            area: work,
             measurement: .checkbox,
             priority: .medium,
             scheduledDate: now
         )
         let high = Todo(
             title: "High",
-            direction: work,
+            area: work,
             measurement: .focusBlocks,
             priority: .high,
             plannedAmount: 2,
@@ -36,7 +36,7 @@ struct ProductWidgetSnapshotTests {
         )
         let tomorrow = Todo(
             title: "Tomorrow",
-            direction: work,
+            area: work,
             scheduledDate: now.addingTimeInterval(86_400)
         )
 
@@ -49,19 +49,19 @@ struct ProductWidgetSnapshotTests {
         #expect(snapshot.items.map(\.title) == ["High", "Medium"])
         #expect(snapshot.items[0].measurement == .focusBlocks)
         #expect(snapshot.items[0].progress == 0.5)
-        #expect(snapshot.items[0].directionColorHex == "#34C759")
+        #expect(snapshot.items[0].areaColorHex == "#34C759")
     }
 
     @Test func dotsSnapshotUsesCanonical180DayFlowProjection() {
         let now = Date(timeIntervalSince1970: 200 * 86_400)
-        let direction = Direction(
+        let area = Area(
             name: "読書",
             type: .habit,
             symbolName: "📚",
             colorHex: "#AF52DE"
         )
         let flow = FlowSession(
-            direction: direction,
+            area: area,
             mode: .twentyFiveFive,
             phase: .completed,
             status: .completed,
@@ -111,5 +111,32 @@ struct ProductWidgetSnapshotTests {
 
         #expect(store.loadTasks() == tasks)
         #expect(store.loadDots() == dots)
+    }
+
+    @Test func taskWidgetItemKeepsLegacySnapshotKeys() throws {
+        let item = TaskWidgetItemSnapshot(
+            id: UUID(),
+            title: "Task",
+            areaSymbol: "💻",
+            areaName: "Work",
+            areaColorHex: "#007AFF",
+            measurement: .checkbox,
+            plannedAmount: 1,
+            actualProgress: 0,
+            focusedSeconds: 0,
+            isCompleted: false
+        )
+
+        let encoded = try JSONEncoder().encode(item)
+        let json = try #require(
+            JSONSerialization.jsonObject(with: encoded) as? [String: Any]
+        )
+
+        #expect(json["directionSymbol"] as? String == "💻")
+        #expect(json["directionName"] as? String == "Work")
+        #expect(json["directionColorHex"] as? String == "#007AFF")
+        #expect(json["areaSymbol"] == nil)
+        #expect(json["areaName"] == nil)
+        #expect(json["areaColorHex"] == nil)
     }
 }

@@ -6,14 +6,14 @@ struct IOSTaskEditorView: View {
     @Environment(\.modelContext) private var modelContext
 
     let mode: IOSTaskEditorMode
-    let directions: [Direction]
-    private let fixedDirection: Direction?
+    let areas: [Area]
+    private let fixedArea: Area?
     private let onSave: ((Todo) -> Void)?
 
     @State private var title: String
     @State private var notes: String
     @State private var hashtags: String
-    @State private var directionID: UUID?
+    @State private var areaID: UUID?
     @State private var measurement: TodoMeasurement
     @State private var priority: TodoPriority
     @State private var isRoomIfPossible: Bool
@@ -23,14 +23,14 @@ struct IOSTaskEditorView: View {
 
     init(
         mode: IOSTaskEditorMode,
-        directions: [Direction],
-        fixedDirection: Direction? = nil,
+        areas: [Area],
+        fixedArea: Area? = nil,
         scheduledDate: Date? = nil,
         onSave: ((Todo) -> Void)? = nil
     ) {
         self.mode = mode
-        self.directions = directions
-        self.fixedDirection = fixedDirection
+        self.areas = areas
+        self.fixedArea = fixedArea
         self.onSave = onSave
 
         let todo: Todo?
@@ -39,7 +39,7 @@ struct IOSTaskEditorView: View {
         _title = State(initialValue: todo?.title ?? "")
         _notes = State(initialValue: todo?.notes ?? "")
         _hashtags = State(initialValue: todo?.hashtags.map { "#\($0)" }.joined(separator: " ") ?? "")
-        _directionID = State(initialValue: todo?.direction?.id ?? fixedDirection?.id ?? directions.first?.id)
+        _areaID = State(initialValue: todo?.area?.id ?? fixedArea?.id ?? areas.first?.id)
         _measurement = State(initialValue: todo?.measurement ?? .checkbox)
         _priority = State(initialValue: todo?.priority ?? .medium)
         _isRoomIfPossible = State(initialValue: todo?.isRoomIfPossible ?? false)
@@ -63,13 +63,13 @@ struct IOSTaskEditorView: View {
                 habitStructureSection
             } else {
                 Section {
-                    Picker(String(localized: "分野"), selection: $directionID) {
-                        ForEach(directions) { direction in
-                            Text("\(direction.symbolName) \(direction.name)")
-                                .tag(Optional(direction.id))
+                    Picker(String(localized: "分野"), selection: $areaID) {
+                        ForEach(areas) { area in
+                            Text("\(area.symbolName) \(area.name)")
+                                .tag(Optional(area.id))
                         }
                     }
-                    .disabled(fixedDirection != nil)
+                    .disabled(fixedArea != nil)
 
                     Picker(String(localized: "種類"), selection: $measurement) {
                         ForEach(TodoMeasurement.allCases) { measurement in
@@ -141,16 +141,16 @@ struct IOSTaskEditorView: View {
     }
 
     private var isHabitTodoEdit: Bool {
-        editedTodo?.direction?.type == .habit
+        editedTodo?.area?.type == .habit
     }
 
-    private var selectedDirection: Direction? {
-        directions.first { $0.id == directionID }
-            ?? (isHabitTodoEdit ? editedTodo?.direction : nil)
+    private var selectedArea: Area? {
+        areas.first { $0.id == areaID }
+            ?? (isHabitTodoEdit ? editedTodo?.area : nil)
     }
 
     private var canSave: Bool {
-        !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && selectedDirection != nil
+        !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && selectedArea != nil
     }
 
     private var targetText: String {
@@ -166,7 +166,7 @@ struct IOSTaskEditorView: View {
         if let todo = editedTodo {
             Section {
                 LabeledContent(String(localized: "分野")) {
-                    Text("\(todo.direction?.symbolName ?? "📝") \(todo.direction?.name ?? String(localized: "分野"))")
+                    Text("\(todo.area?.symbolName ?? "📝") \(todo.area?.name ?? String(localized: "分野"))")
                 }
 
                 LabeledContent(String(localized: "種類"), value: todo.measurement.displayName)
@@ -216,7 +216,7 @@ struct IOSTaskEditorView: View {
     }
 
     private func save() {
-        guard let direction = isHabitTodoEdit ? editedTodo?.direction : selectedDirection else { return }
+        guard let area = isHabitTodoEdit ? editedTodo?.area : selectedArea else { return }
         let normalizedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
         let tags = hashtags
             .split(whereSeparator: { $0.isWhitespace || $0 == "," })
@@ -228,7 +228,7 @@ struct IOSTaskEditorView: View {
                 title: normalizedTitle,
                 notes: notes,
                 hashtags: tags,
-                direction: direction,
+                area: area,
                 measurement: measurement,
                 priority: priority,
                 isRoomIfPossible: priority == .low && isRoomIfPossible,
@@ -252,7 +252,7 @@ struct IOSTaskEditorView: View {
                 title: normalizedTitle,
                 notes: notes,
                 hashtags: tags,
-                direction: direction,
+                area: area,
                 measurement: savedMeasurement,
                 priority: savedPriority,
                 isRoomIfPossible: savedRoomIfPossible,

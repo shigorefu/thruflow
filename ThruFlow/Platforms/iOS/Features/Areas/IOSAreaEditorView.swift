@@ -1,19 +1,19 @@
 import SwiftData
 import SwiftUI
 
-struct IOSDirectionEditorView: View {
+struct IOSAreaEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.calendar) private var calendar
     @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \Direction.sortIndex) private var directions: [Direction]
+    @Query(sort: \Area.sortIndex) private var areas: [Area]
 
-    let mode: IOSDirectionEditorMode
-    let onSaved: ((Direction) -> Void)?
+    let mode: IOSAreaEditorMode
+    let onSaved: ((Area) -> Void)?
 
     @State private var name: String
     @State private var symbolName: String
-    @State private var type: DirectionType
+    @State private var type: AreaType
     @State private var colorHex: String
     @State private var goalTarget: Int
     @State private var goalUnit: GoalUnit
@@ -27,26 +27,26 @@ struct IOSDirectionEditorView: View {
         "#007AFF", "#34C759", "#00C7BE", "#32ADE6", "#5856D6", "#AF52DE",
         "#FF2D55", "#FF3B30", "#FF9500", "#FFCC00", "#8E8E93"
     ]
-    private let typeOptions: [DirectionType] = [.neutral, .habit, .nice]
+    private let typeOptions: [AreaType] = [.neutral, .habit, .nice]
 
     init(
-        mode: IOSDirectionEditorMode,
-        initialDraft: DirectionDraft? = nil,
-        onSaved: ((Direction) -> Void)? = nil
+        mode: IOSAreaEditorMode,
+        initialDraft: AreaDraft? = nil,
+        onSaved: ((Area) -> Void)? = nil
     ) {
         self.mode = mode
         self.onSaved = onSaved
 
-        let draft: DirectionDraft
+        let draft: AreaDraft
         switch mode {
         case .create(let name):
             if let initialDraft {
                 draft = initialDraft
             } else {
-                draft = DirectionDraft(name: name ?? "")
+                draft = AreaDraft(name: name ?? "")
             }
         case .edit(let value):
-            draft = DirectionDraft(direction: value)
+            draft = AreaDraft(area: value)
         }
 
         _name = State(initialValue: draft.name)
@@ -156,10 +156,10 @@ struct IOSDirectionEditorView: View {
                 }
             }
 
-            if case .edit(let direction) = mode {
+            if case .edit(let area) = mode {
                 Section {
                     Button(String(localized: "方向を削除"), role: .destructive) {
-                        direction.archive()
+                        area.archive()
                         _ = modelContext.saveReporting(.areaUpdate)
                         dismiss()
                     }
@@ -186,7 +186,7 @@ struct IOSDirectionEditorView: View {
             ToolbarItem(placement: .confirmationAction) {
                 Button(String(localized: "保存"), action: save)
                     .disabled(!canSave)
-                    .accessibilityIdentifier("direction.editor.save")
+                    .accessibilityIdentifier("area.editor.save")
             }
         }
     }
@@ -232,10 +232,10 @@ struct IOSDirectionEditorView: View {
         let selectedWeekdays: Int? = type == .habit && goalSchedule != .everyDay ? weekdayMask : nil
 
         do {
-            let savedDirection: Direction
+            let savedArea: Area
             switch mode {
             case .create:
-                let direction = Direction(
+                let area = Area(
                     name: normalizedName,
                     type: type,
                     symbolName: emoji,
@@ -246,16 +246,16 @@ struct IOSDirectionEditorView: View {
                     goalSchedule: schedule,
                     weeklyTargetCount: weeklyCount,
                     weekdayMask: selectedWeekdays,
-                    sortIndex: (directions.map(\.sortIndex).max() ?? -1) + 1
+                    sortIndex: (areas.map(\.sortIndex).max() ?? -1) + 1
                 )
-                modelContext.insert(direction)
-                savedDirection = direction
-            case .edit(let direction):
-                let wasHabit = direction.type == .habit
+                modelContext.insert(area)
+                savedArea = area
+            case .edit(let area):
+                let wasHabit = area.type == .habit
                 let todos = wasHabit && type == .habit
                     ? try modelContext.fetch(FetchDescriptor<Todo>())
                     : []
-                direction.update(
+                area.update(
                     name: normalizedName,
                     type: type,
                     symbolName: emoji,
@@ -267,14 +267,14 @@ struct IOSDirectionEditorView: View {
                     weeklyTargetCount: weeklyCount,
                     weekdayMask: selectedWeekdays
                 )
-                if wasHabit, direction.type == .habit {
-                    reconcileFutureHabitTodos(for: direction, todos: todos)
+                if wasHabit, area.type == .habit {
+                    reconcileFutureHabitTodos(for: area, todos: todos)
                 }
-                savedDirection = direction
+                savedArea = area
             }
 
             try modelContext.save()
-            onSaved?(savedDirection)
+            onSaved?(savedArea)
             dismiss()
         } catch {
             modelContext.rollback()
@@ -282,12 +282,12 @@ struct IOSDirectionEditorView: View {
         }
     }
 
-    private func reconcileFutureHabitTodos(for direction: Direction, todos: [Todo]) {
+    private func reconcileFutureHabitTodos(for area: Area, todos: [Todo]) {
         _ = HabitScheduleChangeReconciler(
             calendar: calendar,
             dayBoundary: dayBoundary
         ).reconcile(
-            direction: direction,
+            area: area,
             todos: todos,
             modelContext: modelContext
         )

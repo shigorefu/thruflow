@@ -83,24 +83,24 @@ struct StatisticsPeriodTests {
                 sessionID: firstSessionID,
                 date: date(2026, 8, 4, 9),
                 seconds: 25 * 60,
-                directionID: readingID,
-                direction: "読書",
+                areaID: readingID,
+                area: "読書",
                 task: "Dune"
             ),
             flowRecord(
                 sessionID: switchedSessionID,
                 date: date(2026, 8, 5, 9),
                 seconds: 12 * 60,
-                directionID: readingID,
-                direction: "読書",
+                areaID: readingID,
+                area: "読書",
                 task: "Dune"
             ),
             flowRecord(
                 sessionID: switchedSessionID,
                 date: date(2026, 8, 5, 9, 12),
                 seconds: 13 * 60,
-                directionID: UUID(),
-                direction: "仕事",
+                areaID: UUID(),
+                area: "仕事",
                 task: "Release notes"
             )
         ]
@@ -110,10 +110,10 @@ struct StatisticsPeriodTests {
             todoTitle: "Dune",
             todoHashtags: ["books"],
             todoNotes: "",
-            directionID: readingID,
-            directionName: "読書",
-            directionSymbol: "📚",
-            directionColorHex: "#00AA66"
+            areaID: readingID,
+            areaName: "読書",
+            areaSymbol: "📚",
+            areaColorHex: "#00AA66"
         )
 
         let snapshot = StatisticsPeriodBuilder(calendar: calendar).build(
@@ -139,16 +139,16 @@ struct StatisticsPeriodTests {
             sessionID: UUID(),
             date: date(2026, 8, 4, 9),
             seconds: 50 * 60,
-            directionID: nil,
-            direction: "",
+            areaID: nil,
+            area: "",
             task: "Deep work"
         )
         let previous = flowRecord(
             sessionID: UUID(),
             date: date(2026, 7, 28, 9),
             seconds: 25 * 60,
-            directionID: nil,
-            direction: "",
+            areaID: nil,
+            area: "",
             task: "Deep work"
         )
 
@@ -182,32 +182,32 @@ struct StatisticsPeriodTests {
                 sessionID: UUID(),
                 date: date(2026, 8, 1, 9),
                 seconds: 25 * 60,
-                directionID: nil,
-                direction: "",
+                areaID: nil,
+                area: "",
                 task: "Reading"
             ),
             flowRecord(
                 sessionID: UUID(),
                 date: date(2026, 8, 7, 9),
                 seconds: 50 * 60,
-                directionID: nil,
-                direction: "",
+                areaID: nil,
+                area: "",
                 task: "Reading"
             ),
             flowRecord(
                 sessionID: UUID(),
                 date: date(2026, 8, 8, 9),
                 seconds: 75 * 60,
-                directionID: nil,
-                direction: "",
+                areaID: nil,
+                area: "",
                 task: "Reading"
             ),
             flowRecord(
                 sessionID: UUID(),
                 date: date(2026, 7, 1, 9),
                 seconds: 20 * 60,
-                directionID: nil,
-                direction: "",
+                areaID: nil,
+                area: "",
                 task: "Reading"
             )
         ]
@@ -239,7 +239,7 @@ struct StatisticsPeriodTests {
         let rows = [StatisticsCSVRow(
             date: date(2026, 8, 5),
             task: "Book, \"Dune\"",
-            direction: "Reading",
+            area: "Reading",
             hashtags: ["books", "sci-fi"],
             focusedSeconds: 25 * 60,
             flowCount: 2,
@@ -248,7 +248,7 @@ struct StatisticsPeriodTests {
 
         let csv = StatisticsCSVExporter().export(rows: rows, calendar: calendar)
 
-        #expect(csv.hasPrefix("date,task,direction,hashtags,focused_seconds,focused_minutes,blocks,flow_count,completed_tasks\n"))
+        #expect(csv.hasPrefix("date,task,area,hashtags,focused_seconds,focused_minutes,blocks,flow_count,completed_tasks\n"))
         #expect(csv.contains("2026-08-05,\"Book, \"\"Dune\"\"\",Reading,books sci-fi,1500,25,1,2,1"))
     }
 
@@ -257,7 +257,7 @@ struct StatisticsPeriodTests {
             StatisticsCSVRow(
                 date: date(2026, 8, 5),
                 task: "Deep work",
-                direction: "Work",
+                area: "Work",
                 hashtags: [],
                 focusedSeconds: 25 * 60,
                 flowCount: 1,
@@ -266,7 +266,7 @@ struct StatisticsPeriodTests {
             StatisticsCSVRow(
                 date: date(2026, 8, 6),
                 task: "Release",
-                direction: "Work",
+                area: "Work",
                 hashtags: ["ship"],
                 focusedSeconds: 0,
                 flowCount: 0,
@@ -278,26 +278,26 @@ struct StatisticsPeriodTests {
         let flowCSV = exporter.export(rows: rows, content: .flow, calendar: calendar)
         let taskCSV = exporter.export(rows: rows, content: .task, calendar: calendar)
 
-        #expect(flowCSV.hasPrefix("date,task,direction,hashtags,focused_seconds,focused_minutes,blocks,flow_count\n"))
+        #expect(flowCSV.hasPrefix("date,task,area,hashtags,focused_seconds,focused_minutes,blocks,flow_count\n"))
         #expect(flowCSV.contains("Deep work"))
         #expect(!flowCSV.contains("Release"))
-        #expect(taskCSV.hasPrefix("date,task,direction,hashtags,completed_tasks\n"))
+        #expect(taskCSV.hasPrefix("date,task,area,hashtags,completed_tasks\n"))
         #expect(taskCSV.contains("Release"))
         #expect(!taskCSV.contains("Deep work"))
     }
 
     @Test func projectionActorMapsSearchableSegmentContext() async throws {
-        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
-        let reading = Direction(name: "読書", type: .habit, symbolName: "📚", colorHex: "#00AA66")
-        let work = Direction(name: "仕事", type: .neutral, symbolName: "💻", colorHex: "#3366FF")
-        let dune = Todo(title: "Dune", hashtags: ["books"], direction: reading)
-        let release = Todo(title: "Release", direction: work)
+        let reading = Area(name: "読書", type: .habit, symbolName: "📚", colorHex: "#00AA66")
+        let work = Area(name: "仕事", type: .neutral, symbolName: "💻", colorHex: "#3366FF")
+        let dune = Todo(title: "Dune", hashtags: ["books"], area: reading)
+        let release = Todo(title: "Release", area: work)
         let start = date(2026, 8, 5, 9)
         let session = FlowSession(
-            direction: reading,
+            area: reading,
             todo: dune,
             mode: .twentyFiveFive,
             phase: .completed,
@@ -311,7 +311,7 @@ struct StatisticsPeriodTests {
         )
         let first = FlowSegment(
             session: session,
-            direction: reading,
+            area: reading,
             todo: dune,
             startedAt: start,
             startFocusSeconds: 0
@@ -319,7 +319,7 @@ struct StatisticsPeriodTests {
         first.close(at: start.addingTimeInterval(12 * 60), totalFocusSeconds: 12 * 60)
         let second = FlowSegment(
             session: session,
-            direction: work,
+            area: work,
             todo: release,
             startedAt: start.addingTimeInterval(12 * 60),
             startFocusSeconds: 12 * 60
@@ -352,18 +352,18 @@ struct StatisticsPeriodTests {
         sessionID: UUID,
         date: Date,
         seconds: Int,
-        directionID: UUID?,
-        direction: String,
+        areaID: UUID?,
+        area: String,
         task: String
     ) -> StatisticsPeriodFlowRecord {
         StatisticsPeriodFlowRecord(
             sessionID: sessionID,
             startedAt: date,
             focusSeconds: seconds,
-            directionID: directionID,
-            directionName: direction,
-            directionSymbol: direction.isEmpty ? "" : "🎯",
-            directionColorHex: "#00AA66",
+            areaID: areaID,
+            areaName: area,
+            areaSymbol: area.isEmpty ? "" : "🎯",
+            areaColorHex: "#00AA66",
             todoID: UUID(),
             todoTitle: task,
             todoHashtags: [],
@@ -380,10 +380,10 @@ struct StatisticsPeriodTests {
             todoTitle: title,
             todoHashtags: [],
             todoNotes: "",
-            directionID: nil,
-            directionName: "",
-            directionSymbol: "",
-            directionColorHex: "#00AA66"
+            areaID: nil,
+            areaName: "",
+            areaSymbol: "",
+            areaColorHex: "#00AA66"
         )
     }
 

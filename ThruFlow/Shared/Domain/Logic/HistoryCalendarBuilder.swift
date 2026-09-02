@@ -145,7 +145,7 @@ struct HistoryCalendarItem: Identifiable {
     let subtitle: String
     let symbol: String
     let colorHex: String
-    let directionType: DirectionType
+    let areaType: AreaType
     let session: FlowSession?
     let flowBreak: FlowBreak?
     let todo: Todo?
@@ -160,7 +160,7 @@ struct HistoryCalendarItem: Identifiable {
         subtitle: String,
         symbol: String,
         colorHex: String,
-        directionType: DirectionType,
+        areaType: AreaType,
         session: FlowSession?,
         flowBreak: FlowBreak?,
         todo: Todo?,
@@ -174,7 +174,7 @@ struct HistoryCalendarItem: Identifiable {
         self.subtitle = subtitle
         self.symbol = symbol
         self.colorHex = colorHex
-        self.directionType = directionType
+        self.areaType = areaType
         self.session = session
         self.flowBreak = flowBreak
         self.todo = todo
@@ -189,31 +189,31 @@ struct HistoryCalendarItem: Identifiable {
     var displayTitle: String {
         guard kind == .flow else { return title }
         return currentTodo.map(TodoDisplay.title(for:))
-            ?? "(\(currentDirection?.name ?? String(localized: "その他")))"
+            ?? "(\(currentArea?.name ?? String(localized: "その他")))"
     }
 
     @MainActor
     var displaySubtitle: String {
         guard kind == .flow else { return subtitle }
-        return currentDirection?.name ?? String(localized: "その他")
+        return currentArea?.name ?? String(localized: "その他")
     }
 
     @MainActor
     var displaySymbol: String {
         guard kind == .flow else { return symbol }
-        return currentDirection?.symbolName ?? "📝"
+        return currentArea?.symbolName ?? "📝"
     }
 
     @MainActor
     var displayColorHex: String {
         guard kind == .flow else { return colorHex }
-        return currentDirection?.colorHex ?? "#8E8E93"
+        return currentArea?.colorHex ?? "#8E8E93"
     }
 
     @MainActor
-    var displayDirectionType: DirectionType {
-        guard kind == .flow else { return directionType }
-        return currentDirection?.type ?? directionType
+    var displayAreaType: AreaType {
+        guard kind == .flow else { return areaType }
+        return currentArea?.type ?? areaType
     }
 
     var seriesID: UUID? {
@@ -233,11 +233,11 @@ struct HistoryCalendarItem: Identifiable {
     }
 
     @MainActor
-    private var currentDirection: Direction? {
+    private var currentArea: Area? {
         if let flowSegment {
-            return flowSegment.todo?.direction ?? flowSegment.direction
+            return flowSegment.todo?.area ?? flowSegment.area
         }
-        return session?.todo?.direction ?? session?.direction
+        return session?.todo?.area ?? session?.area
     }
 }
 
@@ -414,17 +414,17 @@ struct HistoryCalendarBuilder {
             guard end > flowBreak.startedAt,
                   overlaps(start: flowBreak.startedAt, end: end, interval: interval) else { return nil }
             let previousSession = sessionsByID[flowBreak.previousSessionID]
-            let direction = previousSession?.direction
+            let area = previousSession?.area
             return HistoryCalendarItem(
                 id: "rest-\(flowBreak.id.uuidString)",
                 kind: .rest,
                 startedAt: flowBreak.startedAt,
                 endedAt: end,
                 title: flowBreak.isLongBreak ? String(localized: "長休憩") : String(localized: "休憩"),
-                subtitle: direction?.name ?? String(localized: "Flowシリーズ"),
+                subtitle: area?.name ?? String(localized: "Flowシリーズ"),
                 symbol: "☕️",
                 colorHex: "#8E8E93",
-                directionType: direction?.type ?? .neutral,
+                areaType: area?.type ?? .neutral,
                 session: previousSession,
                 flowBreak: flowBreak,
                 todo: nil
@@ -449,7 +449,7 @@ struct HistoryCalendarBuilder {
                     id: segment.id,
                     session: session,
                     segment: segment,
-                    direction: segment.direction,
+                    area: segment.area,
                     todo: segment.todo,
                     start: segment.startedAt,
                     end: end
@@ -461,7 +461,7 @@ struct HistoryCalendarBuilder {
             id: session.id,
             session: session,
             segment: nil,
-            direction: session.direction,
+            area: session.area,
             todo: session.todo,
             start: session.startedAt,
             end: resolvedEnd(of: session)
@@ -472,22 +472,22 @@ struct HistoryCalendarBuilder {
         id: UUID,
         session: FlowSession,
         segment: FlowSegment?,
-        direction: Direction?,
+        area: Area?,
         todo: Todo?,
         start: Date,
         end: Date
     ) -> HistoryCalendarItem {
-        let directionName = direction?.name ?? String(localized: "その他")
+        let areaName = area?.name ?? String(localized: "その他")
         return HistoryCalendarItem(
             id: "flow-\(id.uuidString)",
             kind: .flow,
             startedAt: start,
             endedAt: max(end, start.addingTimeInterval(60)),
-            title: todo.map(TodoDisplay.title(for:)) ?? "(\(directionName))",
-            subtitle: directionName,
-            symbol: direction?.symbolName ?? "📝",
-            colorHex: direction?.colorHex ?? "#8E8E93",
-            directionType: direction?.type ?? .neutral,
+            title: todo.map(TodoDisplay.title(for:)) ?? "(\(areaName))",
+            subtitle: areaName,
+            symbol: area?.symbolName ?? "📝",
+            colorHex: area?.colorHex ?? "#8E8E93",
+            areaType: area?.type ?? .neutral,
             session: session,
             flowBreak: nil,
             todo: todo,
@@ -509,10 +509,10 @@ struct HistoryCalendarIndicatorFilter {
     @MainActor
     func items(
         from items: [HistoryCalendarItem],
-        visibleDirectionTypes: Set<DirectionType>
+        visibleAreaTypes: Set<AreaType>
     ) -> [HistoryCalendarItem] {
         items.filter {
-            $0.kind == .flow && visibleDirectionTypes.contains($0.displayDirectionType)
+            $0.kind == .flow && visibleAreaTypes.contains($0.displayAreaType)
         }
     }
 }

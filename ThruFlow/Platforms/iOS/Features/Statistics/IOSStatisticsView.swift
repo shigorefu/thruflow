@@ -8,14 +8,14 @@ struct IOSStatisticsView: View {
     @Environment(\.locale) private var locale
     @Environment(\.modelContext) private var modelContext
 
-    @Query(sort: \Direction.updatedAt, order: .reverse) private var directions: [Direction]
+    @Query(sort: \Area.updatedAt, order: .reverse) private var areas: [Area]
 
     @Binding private var cachedSnapshot: StatisticsPeriodSnapshot?
     let isVisible: Bool
     let onOpenHistoryDate: (Date) -> Void
 
     @State private var selectedPeriod: StatisticsPeriod = .week
-    @State private var selectedDirectionID: UUID?
+    @State private var selectedAreaID: UUID?
     @State private var anchorDate = Date.now
     @State private var anchorDateDraft = Date.now
     @State private var customStartDate: Date?
@@ -37,7 +37,7 @@ struct IOSStatisticsView: View {
     @State private var exportContent: StatisticsCSVContent = .all
     @State private var exportStartDate = Date.now
     @State private var exportEndDate = Date.now
-    @State private var exportDirectionID: UUID?
+    @State private var exportAreaID: UUID?
     @State private var exportQuery = ""
     @State private var exportShareURL: URL?
     @State private var preparedExportConfiguration: IOSStatisticsExportConfiguration?
@@ -53,8 +53,8 @@ struct IOSStatisticsView: View {
         self.onOpenHistoryDate = onOpenHistoryDate
     }
 
-    private var activeDirections: [Direction] {
-        directions
+    private var activeAreas: [Area] {
+        areas
             .filter { !$0.isArchived }
             .sorted {
                 if $0.sortIndex != $1.sortIndex {
@@ -70,7 +70,7 @@ struct IOSStatisticsView: View {
             anchorDate: anchorDate,
             customStartDate: customStartDate,
             customEndDate: customEndDate,
-            directionID: selectedDirectionID,
+            areaID: selectedAreaID,
             query: searchText
         )
     }
@@ -121,7 +121,7 @@ struct IOSStatisticsView: View {
             anchorDate: exportStartDate,
             customStartDate: exportStartDate,
             customEndDate: exportEndDate,
-            directionID: exportDirectionID,
+            areaID: exportAreaID,
             query: exportQuery
         )
     }
@@ -298,22 +298,22 @@ struct IOSStatisticsView: View {
 
                 Menu {
                     Button {
-                        selectedDirectionID = nil
+                        selectedAreaID = nil
                     } label: {
-                        directionMenuLabel(
+                        areaMenuLabel(
                             String(localized: "すべて"),
-                            isSelected: selectedDirectionID == nil
+                            isSelected: selectedAreaID == nil
                         )
                     }
-                    if !activeDirections.isEmpty {
+                    if !activeAreas.isEmpty {
                         Divider()
-                        ForEach(activeDirections) { direction in
+                        ForEach(activeAreas) { area in
                             Button {
-                                selectedDirectionID = direction.id
+                                selectedAreaID = area.id
                             } label: {
-                                directionMenuLabel(
-                                    "\(direction.symbolName) \(direction.name)",
-                                    isSelected: selectedDirectionID == direction.id
+                                areaMenuLabel(
+                                    "\(area.symbolName) \(area.name)",
+                                    isSelected: selectedAreaID == area.id
                                 )
                             }
                         }
@@ -321,7 +321,7 @@ struct IOSStatisticsView: View {
                 } label: {
                     Image(systemName: ProductSymbol.area)
                         .foregroundStyle(
-                            selectedDirectionID == nil ? Color.primary : Color.accentColor
+                            selectedAreaID == nil ? Color.primary : Color.accentColor
                         )
                 }
                 .accessibilityLabel(String(localized: "方向フィルター"))
@@ -331,7 +331,7 @@ struct IOSStatisticsView: View {
     }
 
     @ViewBuilder
-    private func directionMenuLabel(_ title: String, isSelected: Bool) -> some View {
+    private func areaMenuLabel(_ title: String, isSelected: Bool) -> some View {
         if isSelected {
             Label(title, systemImage: "checkmark")
         } else {
@@ -367,11 +367,11 @@ struct IOSStatisticsView: View {
                 }
 
                 Section {
-                    Picker(String(localized: "方向フィルター"), selection: $exportDirectionID) {
+                    Picker(String(localized: "方向フィルター"), selection: $exportAreaID) {
                         Text(String(localized: "すべて")).tag(nil as UUID?)
-                        ForEach(activeDirections) { direction in
-                            Text("\(direction.symbolName) \(direction.name)")
-                                .tag(Optional(direction.id))
+                        ForEach(activeAreas) { area in
+                            Text("\(area.symbolName) \(area.name)")
+                                .tag(Optional(area.id))
                         }
                     }
 
@@ -438,8 +438,8 @@ struct IOSStatisticsView: View {
         switch distributionDimension {
         case .task:
             snapshot.taskDistribution
-        case .direction:
-            snapshot.directionDistribution
+        case .area:
+            snapshot.areaDistribution
         }
     }
 
@@ -490,10 +490,10 @@ struct IOSStatisticsView: View {
             anchorDate: anchorDate,
             customStartDate: customStartDate,
             customEndDate: customEndDate,
-            directionID: selectedDirectionID,
+            areaID: selectedAreaID,
             query: searchText,
-            directionCount: directions.count,
-            latestDirectionUpdate: directions.map(\.updatedAt).max()
+            areaCount: areas.count,
+            latestAreaUpdate: areas.map(\.updatedAt).max()
         )
     }
 
@@ -707,7 +707,7 @@ struct IOSStatisticsView: View {
             value: -1,
             to: periodBounds.currentEnd
         ) ?? periodBounds.currentStart, today)
-        exportDirectionID = selectedDirectionID
+        exportAreaID = selectedAreaID
         exportQuery = searchText
         exportShareURL = nil
         preparedExportConfiguration = nil
@@ -1595,7 +1595,7 @@ private struct IOSStatisticsEmptyState: View {
 
 private enum IOSStatisticsDistributionDimension: String, CaseIterable, Identifiable {
     case task
-    case direction
+    case area
 
     var id: String { rawValue }
 
@@ -1603,7 +1603,7 @@ private enum IOSStatisticsDistributionDimension: String, CaseIterable, Identifia
         switch self {
         case .task:
             String(localized: "タスク別")
-        case .direction:
+        case .area:
             String(localized: "方向別")
         }
     }
@@ -1681,8 +1681,8 @@ private struct IOSStatisticsPeriodRefreshID: Hashable {
     let anchorDate: Date
     let customStartDate: Date?
     let customEndDate: Date?
-    let directionID: UUID?
+    let areaID: UUID?
     let query: String
-    let directionCount: Int
-    let latestDirectionUpdate: Date?
+    let areaCount: Int
+    let latestAreaUpdate: Date?
 }

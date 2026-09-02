@@ -1,33 +1,33 @@
 import SwiftData
 import SwiftUI
 
-struct IOSDirectionsView: View {
+struct IOSAreasView: View {
     @Environment(\.modelContext) private var modelContext
-    @AppStorage("directionKanbanColumnOrder") private var groupOrderRaw = DirectionGroupOrder.encode(DirectionGroupOrder.defaultValue)
+    @AppStorage("directionKanbanColumnOrder") private var groupOrderRaw = AreaGroupOrder.encode(AreaGroupOrder.defaultValue)
 
-    @Query(sort: \Direction.sortIndex) private var directions: [Direction]
+    @Query(sort: \Area.sortIndex) private var areas: [Area]
 
-    @State private var selectedType: DirectionType
-    @State private var editorMode: IOSDirectionEditorMode?
+    @State private var selectedType: AreaType
+    @State private var editorMode: IOSAreaEditorMode?
     @State private var showingArchived = false
     @State private var isEditingOrder = false
     @State private var showsGroupOrder = false
 
     init() {
-        let first = DirectionGroupOrder.defaultValue.first ?? .habit
+        let first = AreaGroupOrder.defaultValue.first ?? .habit
         _selectedType = State(initialValue: first)
     }
 
-    private var groupOrder: [DirectionType] {
-        DirectionGroupOrder.decode(groupOrderRaw)
+    private var groupOrder: [AreaType] {
+        AreaGroupOrder.decode(groupOrderRaw)
     }
 
-    private var visibleDirections: [Direction] {
-        directions
-            .filter { !DefaultDirections.isTaskInbox($0) }
+    private var visibleAreas: [Area] {
+        areas
+            .filter { !DefaultAreas.isTaskInbox($0) }
             .filter { showingArchived ? $0.isArchived : !$0.isArchived }
             .filter { $0.type == selectedType }
-            .sorted(by: directionSort)
+            .sorted(by: areaSort)
     }
 
     var body: some View {
@@ -44,17 +44,17 @@ struct IOSDirectionsView: View {
 
             List {
                 Section {
-                    ForEach(visibleDirections) { direction in
+                    ForEach(visibleAreas) { area in
                         Button {
-                            editorMode = .edit(direction)
+                            editorMode = .edit(area)
                         } label: {
-                            directionRow(direction)
+                            areaRow(area)
                         }
                         .buttonStyle(.plain)
                         .swipeActions(edge: .trailing) {
-                            if !direction.isArchived {
+                            if !area.isArchived {
                                 Button(role: .destructive) {
-                                    direction.archive()
+                                    area.archive()
                                     _ = modelContext.saveReporting(.areaUpdate)
                                 } label: {
                                     Label(String(localized: "アーカイブする"), systemImage: "archivebox")
@@ -62,7 +62,7 @@ struct IOSDirectionsView: View {
                             }
                         }
                     }
-                    .onMove(perform: moveDirections)
+                    .onMove(perform: moveAreas)
                 } header: {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(selectedType.displayName)
@@ -74,7 +74,7 @@ struct IOSDirectionsView: View {
             }
             .listStyle(.insetGrouped)
             .overlay {
-                if visibleDirections.isEmpty {
+                if visibleAreas.isEmpty {
                     ContentUnavailableView(
                         showingArchived ? String(localized: "アーカイブはありません") : String(localized: "方向はありません"),
                         systemImage: showingArchived ? "archivebox" : ProductSymbol.area
@@ -109,12 +109,12 @@ struct IOSDirectionsView: View {
         }
         .sheet(item: $editorMode) { mode in
             NavigationStack {
-                IOSDirectionEditorView(mode: mode)
+                IOSAreaEditorView(mode: mode)
             }
         }
         .sheet(isPresented: $showsGroupOrder) {
             NavigationStack {
-                IOSDirectionGroupOrderView(orderRawValue: $groupOrderRaw)
+                IOSAreaGroupOrderView(orderRawValue: $groupOrderRaw)
             }
             .presentationDetents([.medium])
         }
@@ -125,18 +125,18 @@ struct IOSDirectionsView: View {
         }
     }
 
-    private func directionRow(_ direction: Direction) -> some View {
+    private func areaRow(_ area: Area) -> some View {
         HStack(spacing: 12) {
-            Text(direction.symbolName)
+            Text(area.symbolName)
                 .font(.title2)
                 .frame(width: 44, height: 44)
-                .background(Color(hex: direction.colorHex).opacity(0.16), in: RoundedRectangle(cornerRadius: 10))
+                .background(Color(hex: area.colorHex).opacity(0.16), in: RoundedRectangle(cornerRadius: 10))
 
             VStack(alignment: .leading, spacing: 3) {
-                Text(direction.name)
+                Text(area.name)
                     .font(.body.weight(.semibold))
                     .foregroundStyle(.primary)
-                Text(direction.hasGoal ? goalText(direction) : direction.type.description)
+                Text(area.hasGoal ? goalText(area) : area.type.description)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
@@ -150,32 +150,32 @@ struct IOSDirectionsView: View {
         .contentShape(Rectangle())
     }
 
-    private func moveDirections(from offsets: IndexSet, to destination: Int) {
-        var reordered = visibleDirections
+    private func moveAreas(from offsets: IndexSet, to destination: Int) {
+        var reordered = visibleAreas
         reordered.move(fromOffsets: offsets, toOffset: destination)
 
-        let remaining = directions
-            .filter { !$0.isArchived && !DefaultDirections.isTaskInbox($0) && $0.type != selectedType }
-            .sorted(by: directionSort)
-        let ordered = groupOrder.flatMap { type -> [Direction] in
+        let remaining = areas
+            .filter { !$0.isArchived && !DefaultAreas.isTaskInbox($0) && $0.type != selectedType }
+            .sorted(by: areaSort)
+        let ordered = groupOrder.flatMap { type -> [Area] in
             type == selectedType ? reordered : remaining.filter { $0.type == type }
         }
-        for (index, direction) in ordered.enumerated() {
-            direction.setSortIndex(index)
+        for (index, area) in ordered.enumerated() {
+            area.setSortIndex(index)
         }
         _ = modelContext.saveReporting(.areaUpdate)
     }
 
-    private func directionSort(_ lhs: Direction, _ rhs: Direction) -> Bool {
+    private func areaSort(_ lhs: Area, _ rhs: Area) -> Bool {
         if lhs.sortIndex != rhs.sortIndex { return lhs.sortIndex < rhs.sortIndex }
         return lhs.name.localizedStandardCompare(rhs.name) == .orderedAscending
     }
 
-    private func goalText(_ direction: Direction) -> String {
-        let target = direction.goalTarget ?? 1
-        let schedule = direction.goalSchedule?.displayName ?? ""
+    private func goalText(_ area: Area) -> String {
+        let target = area.goalTarget ?? 1
+        let schedule = area.goalSchedule?.displayName ?? ""
 
-        switch direction.goalUnit {
+        switch area.goalUnit {
         case .occurrences:
             return String(localized: "目標回数：\(target)回・\(schedule)")
         case .focusBlocks:
@@ -190,15 +190,15 @@ struct IOSDirectionsView: View {
     }
 }
 
-private struct IOSDirectionGroupOrderView: View {
+private struct IOSAreaGroupOrderView: View {
     @Environment(\.dismiss) private var dismiss
     @Binding var orderRawValue: String
 
-    @State private var order: [DirectionType]
+    @State private var order: [AreaType]
 
     init(orderRawValue: Binding<String>) {
         _orderRawValue = orderRawValue
-        _order = State(initialValue: DirectionGroupOrder.decode(orderRawValue.wrappedValue))
+        _order = State(initialValue: AreaGroupOrder.decode(orderRawValue.wrappedValue))
     }
 
     var body: some View {
@@ -208,7 +208,7 @@ private struct IOSDirectionGroupOrderView: View {
             }
             .onMove { offsets, destination in
                 order.move(fromOffsets: offsets, toOffset: destination)
-                orderRawValue = DirectionGroupOrder.encode(order)
+                orderRawValue = AreaGroupOrder.encode(order)
             }
         }
         .environment(\.editMode, .constant(.active))
@@ -221,7 +221,7 @@ private struct IOSDirectionGroupOrderView: View {
     }
 }
 
-private extension DirectionType {
+private extension AreaType {
     var systemImage: String {
         switch self {
         case .neutral: "checklist"
@@ -231,14 +231,14 @@ private extension DirectionType {
     }
 }
 
-enum IOSDirectionEditorMode: Identifiable {
+enum IOSAreaEditorMode: Identifiable {
     case create(initialName: String? = nil)
-    case edit(Direction)
+    case edit(Area)
 
     var id: String {
         switch self {
         case .create: "create"
-        case .edit(let direction): direction.id.uuidString
+        case .edit(let area): area.id.uuidString
         }
     }
 }

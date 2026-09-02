@@ -216,8 +216,8 @@ struct DailyFlowAppearance: Equatable {
 }
 
 enum DailyFlowIdentity {
-    static func resolve(from directions: [Direction]) -> UUID? {
-        directions.min {
+    static func resolve(from areas: [Area]) -> UUID? {
+        areas.min {
             if $0.createdAt != $1.createdAt {
                 return $0.createdAt < $1.createdAt
             }

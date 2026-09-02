@@ -271,12 +271,12 @@ struct FlowStreamSurface: View, Equatable {
         idleAmount: Double
     ) -> Path {
         let ribbonProgress = Double(ribbon) / Double(max(ribbonCount - 1, 1))
-        let laneDirection = ribbonProgress * 2 - 1
+        let laneArea = ribbonProgress * 2 - 1
         let spread = requestEnvelope * 0.032
             + regularBreakEnvelope * 0.044
             + longBreakEnvelope * 0.092
             + longBreakAmount * 0.018
-        let baseY = size.height * (0.14 + ribbonProgress * 0.72 + laneDirection * spread)
+        let baseY = size.height * (0.14 + ribbonProgress * 0.72 + laneArea * spread)
         let phaseOffset = Double(ribbon) * (0.61 + appearance.spacing * 0.42)
         let frequency = state.waveFrequency * (0.82 + appearance.topology * 0.28)
         let bend = 0.72 + appearance.bend * 0.58

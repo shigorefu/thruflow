@@ -26,42 +26,42 @@ struct DayHistorySnapshot {
         Set(flows.map(\.sessionID)).count
     }
 
-    var directionSummaries: [DayHistoryDirectionSummary] {
-        let flowGroups = Dictionary(grouping: flows, by: \DayHistoryFlow.directionID)
+    var areaSummaries: [DayHistoryAreaSummary] {
+        let flowGroups = Dictionary(grouping: flows, by: \DayHistoryFlow.areaID)
         let todoGroups = Dictionary(grouping: relevantTodos) { todo in
-            todo.direction?.id
+            todo.area?.id
         }
         let workedTaskSummaries = taskSummaries.filter { $0.todo != nil }
-        let directionIDs = Set(flowGroups.keys).union(todoGroups.keys.compactMap { $0 })
+        let areaIDs = Set(flowGroups.keys).union(todoGroups.keys.compactMap { $0 })
 
-        return directionIDs.compactMap { directionID in
-            let directionFlows = flowGroups[directionID] ?? []
-            let directionTodos = todoGroups[directionID] ?? []
-            guard let firstFlow = directionFlows.first else {
-                guard let direction = directionTodos.first?.direction else { return nil }
-                return DayHistoryDirectionSummary(
-                    directionID: direction.id,
-                    directionType: direction.type,
-                    symbol: direction.symbolName,
-                    name: direction.name,
-                    colorHex: direction.colorHex,
+        return areaIDs.compactMap { areaID in
+            let areaFlows = flowGroups[areaID] ?? []
+            let areaTodos = todoGroups[areaID] ?? []
+            guard let firstFlow = areaFlows.first else {
+                guard let area = areaTodos.first?.area else { return nil }
+                return DayHistoryAreaSummary(
+                    areaID: area.id,
+                    areaType: area.type,
+                    symbol: area.symbolName,
+                    name: area.name,
+                    colorHex: area.colorHex,
                     focusSeconds: 0,
                     flowCount: 0,
                     taskCount: workedTaskSummaries.filter {
-                        $0.directionID == directionID
+                        $0.areaID == areaID
                     }.count
                 )
             }
-            return DayHistoryDirectionSummary(
-                directionID: firstFlow.directionID,
-                directionType: firstFlow.directionType,
-                symbol: firstFlow.directionSymbol,
-                name: firstFlow.directionName,
-                colorHex: firstFlow.directionColorHex,
-                focusSeconds: directionFlows.reduce(0) { $0 + $1.focusSeconds },
-                flowCount: Set(directionFlows.map(\.sessionID)).count,
+            return DayHistoryAreaSummary(
+                areaID: firstFlow.areaID,
+                areaType: firstFlow.areaType,
+                symbol: firstFlow.areaSymbol,
+                name: firstFlow.areaName,
+                colorHex: firstFlow.areaColorHex,
+                focusSeconds: areaFlows.reduce(0) { $0 + $1.focusSeconds },
+                flowCount: Set(areaFlows.map(\.sessionID)).count,
                 taskCount: workedTaskSummaries.filter {
-                    $0.directionID == directionID
+                    $0.areaID == areaID
                 }.count
             )
         }
@@ -93,37 +93,37 @@ struct DayHistorySnapshot {
             }).first else { return nil }
             let todoIDs = Set(groupedTodos.map(\.id))
             let todoFlows = todoIDs.flatMap { flowsByTodo[$0] ?? [] }
-            let direction = representative.direction
+            let area = representative.area
             return DayHistoryTaskSummary(
                 todoID: representative.id,
                 todos: [representative] + displayedTodos.filter { $0.id != representative.id },
                 linkedTodoIDs: todoIDs,
-                directionID: direction?.id,
-                directionType: direction?.type ?? .neutral,
+                areaID: area?.id,
+                areaType: area?.type ?? .neutral,
                 title: TodoDisplay.title(for: representative),
-                directionSymbol: direction?.symbolName ?? "📥",
-                directionName: direction?.name ?? String(localized: "その他"),
-                directionColorHex: direction?.colorHex ?? "#8E8E93",
+                areaSymbol: area?.symbolName ?? "📥",
+                areaName: area?.name ?? String(localized: "その他"),
+                areaColorHex: area?.colorHex ?? "#8E8E93",
                 focusSeconds: todoFlows.reduce(0) { $0 + $1.focusSeconds },
                 flowCount: Set(todoFlows.map(\.sessionID)).count
             )
         }
 
-        let directionOnlyGroups = Dictionary(grouping: flows.filter { $0.todoID == nil }) {
-            $0.directionID
+        let areaOnlyGroups = Dictionary(grouping: flows.filter { $0.todoID == nil }) {
+            $0.areaID
         }
-        summaries.append(contentsOf: directionOnlyGroups.values.map { flows in
+        summaries.append(contentsOf: areaOnlyGroups.values.map { flows in
             let first = flows[0]
             return DayHistoryTaskSummary(
                 todoID: first.todoID,
                 todos: [],
                 linkedTodoIDs: [],
-                directionID: first.directionID,
-                directionType: first.directionType,
+                areaID: first.areaID,
+                areaType: first.areaType,
                 title: first.taskTitle,
-                directionSymbol: first.directionSymbol,
-                directionName: first.directionName,
-                directionColorHex: first.directionColorHex,
+                areaSymbol: first.areaSymbol,
+                areaName: first.areaName,
+                areaColorHex: first.areaColorHex,
                 focusSeconds: flows.reduce(0) { $0 + $1.focusSeconds },
                 flowCount: Set(flows.map(\.sessionID)).count
             )
@@ -151,11 +151,11 @@ struct DayHistoryFlow: Identifiable {
     let breakSeconds: Int
     let todoID: UUID?
     let taskTitle: String
-    let directionID: UUID
-    let directionType: DirectionType
-    let directionSymbol: String
-    let directionName: String
-    let directionColorHex: String
+    let areaID: UUID
+    let areaType: AreaType
+    let areaSymbol: String
+    let areaName: String
+    let areaColorHex: String
     let memo: String?
 }
 
@@ -164,9 +164,9 @@ struct DayHistoryTask: Identifiable {
     let todo: Todo
     let title: String
     let completedAt: Date?
-    let directionSymbol: String
-    let directionName: String
-    let directionColorHex: String
+    let areaSymbol: String
+    let areaName: String
+    let areaColorHex: String
 
     var hasExactCompletionTime: Bool {
         completedAt != nil
@@ -178,25 +178,25 @@ struct DayHistoryTaskSummary: Identifiable {
     let todoID: UUID?
     let todos: [Todo]
     let linkedTodoIDs: Set<UUID>
-    let directionID: UUID?
-    let directionType: DirectionType
+    let areaID: UUID?
+    let areaType: AreaType
     let title: String
-    let directionSymbol: String
-    let directionName: String
-    let directionColorHex: String
+    let areaSymbol: String
+    let areaName: String
+    let areaColorHex: String
     let focusSeconds: Int
     let flowCount: Int
 
     var todo: Todo? { todos.first }
 
     var id: String {
-        todoID?.uuidString ?? "direction-only-\(directionName)"
+        todoID?.uuidString ?? "area-only-\(areaName)"
     }
 }
 
-struct DayHistoryDirectionSummary: Identifiable {
-    let directionID: UUID
-    let directionType: DirectionType
+struct DayHistoryAreaSummary: Identifiable {
+    let areaID: UUID
+    let areaType: AreaType
     let symbol: String
     let name: String
     let colorHex: String
@@ -204,7 +204,7 @@ struct DayHistoryDirectionSummary: Identifiable {
     let flowCount: Int
     let taskCount: Int
 
-    var id: UUID { directionID }
+    var id: UUID { areaID }
 }
 
 @MainActor
@@ -295,7 +295,7 @@ struct DayHistoryBuilder {
                     id: segment.id,
                     session: session,
                     segment: segment,
-                    direction: segment.direction,
+                    area: segment.area,
                     todo: segment.todo,
                     startedAt: segment.startedAt,
                     endedAt: segment.endedAt ?? segment.startedAt.addingTimeInterval(TimeInterval(focusSeconds)),
@@ -309,7 +309,7 @@ struct DayHistoryBuilder {
             id: session.id,
             session: session,
             segment: nil,
-            direction: session.direction,
+            area: session.area,
             todo: session.todo,
             startedAt: session.startedAt,
             endedAt: session.endedAt ?? session.startedAt.addingTimeInterval(TimeInterval(session.resolvedActualFocusDurationSeconds)),
@@ -322,7 +322,7 @@ struct DayHistoryBuilder {
         id: UUID,
         session: FlowSession,
         segment: FlowSegment?,
-        direction: Direction?,
+        area: Area?,
         todo: Todo?,
         startedAt: Date,
         endedAt: Date,
@@ -330,7 +330,7 @@ struct DayHistoryBuilder {
         breakSeconds: Int
     ) -> DayHistoryFlow {
         let fallbackName = String(localized: "その他")
-        let taskTitle = todo.map(TodoDisplay.title(for:)) ?? "(\(direction?.name ?? fallbackName))"
+        let taskTitle = todo.map(TodoDisplay.title(for:)) ?? "(\(area?.name ?? fallbackName))"
 
         return DayHistoryFlow(
             id: id,
@@ -343,26 +343,26 @@ struct DayHistoryBuilder {
             breakSeconds: breakSeconds,
             todoID: todo?.id,
             taskTitle: taskTitle,
-            directionID: direction?.id ?? session.id,
-            directionType: direction?.type ?? .neutral,
-            directionSymbol: direction?.symbolName ?? "📥",
-            directionName: direction?.name ?? fallbackName,
-            directionColorHex: direction?.colorHex ?? "#8E8E93",
+            areaID: area?.id ?? session.id,
+            areaType: area?.type ?? .neutral,
+            areaSymbol: area?.symbolName ?? "📥",
+            areaName: area?.name ?? fallbackName,
+            areaColorHex: area?.colorHex ?? "#8E8E93",
             memo: session.result ?? todo?.notes
         )
     }
 
     private func makeTask(_ todo: Todo) -> DayHistoryTask {
-        let direction = todo.direction
-        let directionName = direction?.name ?? String(localized: "その他")
+        let area = todo.area
+        let areaName = area?.name ?? String(localized: "その他")
         return DayHistoryTask(
             id: todo.id,
             todo: todo,
             title: TodoDisplay.title(for: todo),
             completedAt: todo.completedAt,
-            directionSymbol: direction?.symbolName ?? "📥",
-            directionName: directionName,
-            directionColorHex: direction?.colorHex ?? "#8E8E93"
+            areaSymbol: area?.symbolName ?? "📥",
+            areaName: areaName,
+            areaColorHex: area?.colorHex ?? "#8E8E93"
         )
     }
 }
