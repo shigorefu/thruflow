@@ -19,6 +19,14 @@ opening the CloudKit-backed store. iOS device builds rely on the signed target
 entitlement; the simulator is rejected earlier by the platform check and stays
 local-only.
 
+Development and Production use separate persistent store files so Core Data's
+CloudKit export metadata cannot leak between environments. Debug builds use
+`default-development.store`; Release, TestFlight, and App Store builds retain
+the existing `default.store`. The Production filename must not change because
+it owns shipped user data. A new Debug store repopulates from Development
+CloudKit on its first signed run. Widgets continue using App Group snapshots
+and never open either SwiftData store.
+
 ## Persistence Naming Compatibility
 
 Version 1.2.0 renames application symbols and files to `Area`, but does not

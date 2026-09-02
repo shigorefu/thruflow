@@ -22,6 +22,10 @@ All notable user-facing changes to ThruFlow are documented in this file.
   synchronized data requires no migration.
 - Added a schema contract test that rejects an accidental persisted `Area`
   entity or `area` relationship.
+- Separated Debug and Production SwiftData files so Development CloudKit
+  metadata cannot cause History records to be skipped during a Production
+  export. Production continues using the existing `default.store`; no shipped
+  data is moved.
 
 ## [1.1.0] - Unreleased
 

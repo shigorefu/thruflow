@@ -5,6 +5,21 @@ import Testing
 
 @MainActor
 struct PersistenceSchemaTests {
+    @Test func developmentAndProductionUseDifferentPersistentStores() {
+        #expect(
+            AppModelContainerFactory.storeFilename(for: .development) ==
+                "default-development.store"
+        )
+        #expect(
+            AppModelContainerFactory.storeFilename(for: .production) ==
+                "default.store"
+        )
+        #expect(
+            AppModelContainerFactory.storeFilename(for: .development) !=
+                AppModelContainerFactory.storeFilename(for: .production)
+        )
+    }
+
     @Test func simulatorUsesLocalStoreWithoutCloudKitEntitlement() {
         #expect(
             !AppModelContainerFactory.shouldUseCloudKit(

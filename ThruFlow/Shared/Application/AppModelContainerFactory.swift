@@ -4,6 +4,7 @@ import SwiftData
 
 enum AppModelContainerFactory {
     static let cloudKitContainerIdentifier = "iCloud.com.shigorefu.thruflow"
+    static let appGroupIdentifier = "group.com.shigorefu.thruflow"
     static let schema = Schema([
         Area.self,
         Todo.self,
@@ -23,11 +24,13 @@ enum AppModelContainerFactory {
         } else if !usesCloudKitForCurrentProcess {
             configuration = ModelConfiguration(
                 schema: schema,
+                url: persistentStoreURL,
                 cloudKitDatabase: .none
             )
         } else {
             configuration = ModelConfiguration(
                 schema: schema,
+                url: persistentStoreURL,
                 cloudKitDatabase: .private(cloudKitContainerIdentifier)
             )
         }
@@ -66,6 +69,62 @@ enum AppModelContainerFactory {
 #else
         false
 #endif
+    }
+
+    private static var persistentStoreURL: URL {
+        let fileManager = FileManager.default
+        let applicationSupportDirectory: URL
+
+        if let appGroupDirectory = fileManager.containerURL(
+            forSecurityApplicationGroupIdentifier: appGroupIdentifier
+        ) {
+            applicationSupportDirectory = appGroupDirectory
+                .appendingPathComponent("Library", isDirectory: true)
+                .appendingPathComponent("Application Support", isDirectory: true)
+        } else if let localApplicationSupportDirectory = fileManager.urls(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask
+        ).first {
+            applicationSupportDirectory = localApplicationSupportDirectory
+        } else {
+            fatalError("Could not resolve the Application Support directory")
+        }
+
+        do {
+            try fileManager.createDirectory(
+                at: applicationSupportDirectory,
+                withIntermediateDirectories: true
+            )
+        } catch {
+            fatalError("Could not create the Application Support directory: \(error)")
+        }
+
+        return applicationSupportDirectory.appendingPathComponent(
+            storeFilename(for: currentStoreEnvironment),
+            isDirectory: false
+        )
+    }
+
+    private static var currentStoreEnvironment: StoreEnvironment {
+#if DEBUG
+        .development
+#else
+        .production
+#endif
+    }
+
+    enum StoreEnvironment: Sendable {
+        case development
+        case production
+    }
+
+    static func storeFilename(for environment: StoreEnvironment) -> String {
+        switch environment {
+        case .development:
+            "default-development.store"
+        case .production:
+            "default.store"
+        }
     }
 
     private static var hasCloudKitEntitlement: Bool {
