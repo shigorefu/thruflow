@@ -446,40 +446,47 @@ struct DirectionFormView: View {
         let weeklyTargetCount = requiresGoal && goalSchedule == .weeklyCount ? draft.weeklyTargetCount : nil
         let weekdayMask = requiresGoal && goalSchedule != .everyDay ? draft.weekdayMask : nil
 
-        let savedDirection: Direction
-        switch mode {
-        case .create:
-            let direction = Direction(
-                name: draft.trimmedName,
-                type: draft.type,
-                symbolName: draft.normalizedSymbolName,
-                colorHex: draft.colorHex,
-                goalTarget: goalTarget,
-                goalPeriod: goalPeriod,
-                goalUnit: goalUnit,
-                goalSchedule: goalSchedule,
-                weeklyTargetCount: weeklyTargetCount,
-                weekdayMask: weekdayMask
-            )
-            modelContext.insert(direction)
-            savedDirection = direction
-        case .edit(let direction):
-            direction.update(
-                name: draft.trimmedName,
-                type: draft.type,
-                symbolName: draft.normalizedSymbolName,
-                colorHex: draft.colorHex,
-                goalTarget: goalTarget,
-                goalPeriod: goalPeriod,
-                goalUnit: goalUnit,
-                goalSchedule: goalSchedule,
-                weeklyTargetCount: weeklyTargetCount,
-                weekdayMask: weekdayMask
-            )
-            savedDirection = direction
-        }
-
         do {
+            let savedDirection: Direction
+            switch mode {
+            case .create:
+                let direction = Direction(
+                    name: draft.trimmedName,
+                    type: draft.type,
+                    symbolName: draft.normalizedSymbolName,
+                    colorHex: draft.colorHex,
+                    goalTarget: goalTarget,
+                    goalPeriod: goalPeriod,
+                    goalUnit: goalUnit,
+                    goalSchedule: goalSchedule,
+                    weeklyTargetCount: weeklyTargetCount,
+                    weekdayMask: weekdayMask
+                )
+                modelContext.insert(direction)
+                savedDirection = direction
+            case .edit(let direction):
+                let wasHabit = direction.type == .habit
+                let todos = wasHabit && draft.type == .habit
+                    ? try modelContext.fetch(FetchDescriptor<Todo>())
+                    : []
+                direction.update(
+                    name: draft.trimmedName,
+                    type: draft.type,
+                    symbolName: draft.normalizedSymbolName,
+                    colorHex: draft.colorHex,
+                    goalTarget: goalTarget,
+                    goalPeriod: goalPeriod,
+                    goalUnit: goalUnit,
+                    goalSchedule: goalSchedule,
+                    weeklyTargetCount: weeklyTargetCount,
+                    weekdayMask: weekdayMask
+                )
+                if wasHabit, direction.type == .habit {
+                    reconcileFutureHabitTodos(for: direction, todos: todos)
+                }
+                savedDirection = direction
+            }
+
             try modelContext.save()
             onSaved?(savedDirection)
             dismiss()
@@ -487,6 +494,17 @@ struct DirectionFormView: View {
             modelContext.rollback()
             saveErrorMessage = String(localized: "記録を保存できませんでした。")
         }
+    }
+
+    private func reconcileFutureHabitTodos(for direction: Direction, todos: [Todo]) {
+        _ = HabitScheduleChangeReconciler(
+            calendar: calendar,
+            dayBoundary: dayBoundary
+        ).reconcile(
+            direction: direction,
+            todos: todos,
+            modelContext: modelContext
+        )
     }
 
     private func deleteDirection() {

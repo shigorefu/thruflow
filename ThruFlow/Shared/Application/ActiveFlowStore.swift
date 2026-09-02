@@ -111,6 +111,38 @@ final class ActiveFlowStore: ObservableObject {
         persistConfiguration()
     }
 
+    @discardableResult
+    func reconcileSelectedTodoForCurrentDay(
+        todos: [Todo],
+        directions: [Direction],
+        now: Date = .now,
+        calendar: Calendar = .current,
+        dayBoundary: AppDayBoundary = .midnight
+    ) -> Bool {
+        guard timerState == nil, let selectedTodoID else { return false }
+
+        let filter = TodayTodoFilter(calendar: calendar, dayBoundary: dayBoundary)
+        let todayTodos = FlowDashboardTodoSorter().sorted(
+            todos.filter { filter.includes($0, now: now) }
+        )
+        guard !todayTodos.contains(where: { $0.id == selectedTodoID }) else {
+            return false
+        }
+
+        let previousTodo = todos.first { $0.id == selectedTodoID }
+        let preferredDirectionID = previousTodo?.direction?.id ?? selectedDirectionID
+        let replacement = todayTodos.first {
+            !$0.isCompleted && $0.direction?.id == preferredDirectionID
+        } ?? todayTodos.first(where: { !$0.isCompleted })
+
+        let activeDirections = directions.filter { !$0.isArchived }
+        let replacementDirection = replacement?.direction
+            ?? activeDirections.first(where: { $0.id == preferredDirectionID })
+            ?? activeDirections.first
+        configure(direction: replacementDirection, todo: replacement)
+        return true
+    }
+
     func resetAfterApplicationDataReset() {
         guard timerState == nil else { return }
 

@@ -146,6 +146,31 @@ struct RequiredTodoPlanner {
             todo.plannedAmount == plannedAmount(for: goalUnit, target: target)
     }
 
+    @discardableResult
+    func applyGeneratedTemplate(
+        to todo: Todo,
+        for direction: Direction,
+        now: Date = .now
+    ) -> Bool {
+        guard let goalUnit = direction.goalUnit else { return false }
+
+        let target = max(1, direction.goalTarget ?? direction.weeklyTargetCount ?? 1)
+        let nextMeasurement = measurement(for: goalUnit)
+        let nextPlannedAmount = plannedAmount(for: goalUnit, target: target)
+        let changed = todo.measurement != nextMeasurement ||
+            todo.plannedAmount != nextPlannedAmount ||
+            todo.priority != .high ||
+            todo.isRoomIfPossible
+
+        guard changed else { return false }
+        todo.measurement = nextMeasurement
+        todo.plannedAmount = nextPlannedAmount
+        todo.priority = .high
+        todo.isRoomIfPossible = false
+        todo.updatedAt = now
+        return true
+    }
+
     func weeklyRescheduleOptions(
         for todo: Todo,
         in todos: [Todo],

@@ -3,6 +3,8 @@ import SwiftUI
 
 struct IOSDirectionEditorView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.calendar) private var calendar
+    @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Direction.sortIndex) private var directions: [Direction]
 
@@ -229,41 +231,48 @@ struct IOSDirectionEditorView: View {
         let weeklyCount: Int? = type == .habit && goalSchedule == .weeklyCount ? weeklyTargetCount : nil
         let selectedWeekdays: Int? = type == .habit && goalSchedule != .everyDay ? weekdayMask : nil
 
-        let savedDirection: Direction
-        switch mode {
-        case .create:
-            let direction = Direction(
-                name: normalizedName,
-                type: type,
-                symbolName: emoji,
-                colorHex: colorHex,
-                goalTarget: target,
-                goalPeriod: goalPeriod,
-                goalUnit: unit,
-                goalSchedule: schedule,
-                weeklyTargetCount: weeklyCount,
-                weekdayMask: selectedWeekdays,
-                sortIndex: (directions.map(\.sortIndex).max() ?? -1) + 1
-            )
-            modelContext.insert(direction)
-            savedDirection = direction
-        case .edit(let direction):
-            direction.update(
-                name: normalizedName,
-                type: type,
-                symbolName: emoji,
-                colorHex: colorHex,
-                goalTarget: target,
-                goalPeriod: goalPeriod,
-                goalUnit: unit,
-                goalSchedule: schedule,
-                weeklyTargetCount: weeklyCount,
-                weekdayMask: selectedWeekdays
-            )
-            savedDirection = direction
-        }
-
         do {
+            let savedDirection: Direction
+            switch mode {
+            case .create:
+                let direction = Direction(
+                    name: normalizedName,
+                    type: type,
+                    symbolName: emoji,
+                    colorHex: colorHex,
+                    goalTarget: target,
+                    goalPeriod: goalPeriod,
+                    goalUnit: unit,
+                    goalSchedule: schedule,
+                    weeklyTargetCount: weeklyCount,
+                    weekdayMask: selectedWeekdays,
+                    sortIndex: (directions.map(\.sortIndex).max() ?? -1) + 1
+                )
+                modelContext.insert(direction)
+                savedDirection = direction
+            case .edit(let direction):
+                let wasHabit = direction.type == .habit
+                let todos = wasHabit && type == .habit
+                    ? try modelContext.fetch(FetchDescriptor<Todo>())
+                    : []
+                direction.update(
+                    name: normalizedName,
+                    type: type,
+                    symbolName: emoji,
+                    colorHex: colorHex,
+                    goalTarget: target,
+                    goalPeriod: goalPeriod,
+                    goalUnit: unit,
+                    goalSchedule: schedule,
+                    weeklyTargetCount: weeklyCount,
+                    weekdayMask: selectedWeekdays
+                )
+                if wasHabit, direction.type == .habit {
+                    reconcileFutureHabitTodos(for: direction, todos: todos)
+                }
+                savedDirection = direction
+            }
+
             try modelContext.save()
             onSaved?(savedDirection)
             dismiss()
@@ -271,6 +280,17 @@ struct IOSDirectionEditorView: View {
             modelContext.rollback()
             saveErrorMessage = String(localized: "記録を保存できませんでした。")
         }
+    }
+
+    private func reconcileFutureHabitTodos(for direction: Direction, todos: [Todo]) {
+        _ = HabitScheduleChangeReconciler(
+            calendar: calendar,
+            dayBoundary: dayBoundary
+        ).reconcile(
+            direction: direction,
+            todos: todos,
+            modelContext: modelContext
+        )
     }
 }
 

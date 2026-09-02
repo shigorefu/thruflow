@@ -490,6 +490,211 @@ struct TodoTests {
         #expect(!duplicate.isDeleted)
     }
 
+    @Test @MainActor func habitScheduleChangeRebuildsUnstartedFutureOccurrences() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let schema = Schema([
+            Direction.self,
+            Todo.self,
+            FlowSession.self,
+            FlowSegment.self,
+            FlowBreak.self,
+        ])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let monday = date(2026, 7, 6, calendar: calendar)
+        let sunday = date(2026, 7, 5, calendar: calendar)
+        let wednesday = date(2026, 7, 8, calendar: calendar)
+        let friday = date(2026, 7, 10, calendar: calendar)
+        let direction = Direction(
+            name: "運動",
+            type: .habit,
+            goalTarget: 1,
+            goalPeriod: .weekly,
+            goalUnit: .occurrences,
+            goalSchedule: .weekdays,
+            weekdayMask: GoalWeekday.monday.rawValue |
+                GoalWeekday.wednesday.rawValue |
+                GoalWeekday.friday.rawValue
+        )
+        let past = Todo(title: "", direction: direction, scheduledDate: sunday)
+        let oldMonday = Todo(title: "", direction: direction, scheduledDate: monday)
+        let oldWednesday = Todo(title: "", direction: direction, scheduledDate: wednesday)
+        let oldFriday = Todo(title: "", direction: direction, scheduledDate: friday)
+        context.insert(direction)
+        [past, oldMonday, oldWednesday, oldFriday].forEach(context.insert)
+
+        direction.update(
+            name: direction.name,
+            type: .habit,
+            symbolName: direction.symbolName,
+            colorHex: direction.colorHex,
+            goalTarget: 1,
+            goalPeriod: .weekly,
+            goalUnit: .occurrences,
+            goalSchedule: .weekdays,
+            weekdayMask: GoalWeekday.tuesday.rawValue | GoalWeekday.thursday.rawValue,
+            now: monday
+        )
+
+        #expect(
+            HabitScheduleChangeReconciler(calendar: calendar).reconcile(
+                direction: direction,
+                todos: [past, oldMonday, oldWednesday, oldFriday],
+                modelContext: context,
+                now: monday
+            )
+        )
+        try context.save()
+
+        let activeFutureDates = try context.fetch(FetchDescriptor<Todo>())
+            .filter { !$0.isDeleted && ($0.scheduledDate ?? .distantPast) >= monday }
+            .compactMap(\.scheduledDate)
+            .map(calendar.startOfDay(for:))
+            .sorted()
+
+        #expect(activeFutureDates == [
+            date(2026, 7, 7, calendar: calendar),
+            date(2026, 7, 9, calendar: calendar),
+        ])
+        #expect(!past.isDeleted)
+        #expect(oldMonday.isDeleted)
+        #expect(oldWednesday.isDeleted)
+        #expect(oldFriday.isDeleted)
+    }
+
+    @Test @MainActor func habitGoalChangeUpdatesOnlyUnstartedOccurrences() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let schema = Schema([
+            Direction.self,
+            Todo.self,
+            FlowSession.self,
+            FlowSegment.self,
+            FlowBreak.self,
+        ])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let monday = date(2026, 7, 6, calendar: calendar)
+        let tuesday = date(2026, 7, 7, calendar: calendar)
+        let direction = Direction(
+            name: "日本語",
+            type: .habit,
+            goalTarget: 30,
+            goalPeriod: .daily,
+            goalUnit: .minutes,
+            goalSchedule: .everyDay
+        )
+        let unstarted = Todo(
+            title: "復習",
+            direction: direction,
+            measurement: .minutes,
+            plannedAmount: 30,
+            scheduledDate: monday
+        )
+        let progressed = Todo(
+            title: "会話",
+            direction: direction,
+            measurement: .minutes,
+            plannedAmount: 30,
+            actualProgress: 5,
+            scheduledDate: tuesday
+        )
+        context.insert(direction)
+        context.insert(unstarted)
+        context.insert(progressed)
+
+        direction.update(
+            name: direction.name,
+            type: .habit,
+            symbolName: direction.symbolName,
+            colorHex: direction.colorHex,
+            goalTarget: 2,
+            goalPeriod: .daily,
+            goalUnit: .hours,
+            goalSchedule: .everyDay,
+            now: monday
+        )
+
+        #expect(
+            HabitScheduleChangeReconciler(calendar: calendar).reconcile(
+                direction: direction,
+                todos: [unstarted, progressed],
+                modelContext: context,
+                now: monday
+            )
+        )
+
+        #expect(unstarted.measurement == .minutes)
+        #expect(unstarted.plannedAmount == 120)
+        #expect(progressed.measurement == .minutes)
+        #expect(progressed.plannedAmount == 30)
+        #expect(progressed.actualProgress == 5)
+    }
+
+    @Test @MainActor func habitScheduleChangePreservesZeroProgressTodoWithFlowHistory() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let schema = Schema([
+            Direction.self,
+            Todo.self,
+            FlowSession.self,
+            FlowSegment.self,
+            FlowBreak.self,
+        ])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let monday = date(2026, 7, 6, calendar: calendar)
+        let direction = Direction(
+            name: "運動",
+            type: .habit,
+            goalTarget: 1,
+            goalPeriod: .weekly,
+            goalUnit: .occurrences,
+            goalSchedule: .weekdays,
+            weekdayMask: GoalWeekday.monday.rawValue
+        )
+        let started = Todo(title: "筋トレ", direction: direction, scheduledDate: monday)
+        let session = FlowSession(
+            direction: direction,
+            todo: started,
+            mode: .sprint,
+            startedAt: monday,
+            plannedEndAt: monday.addingTimeInterval(12 * 60),
+            plannedFocusDurationSeconds: 12 * 60,
+            plannedBreakDurationSeconds: 3 * 60
+        )
+        context.insert(direction)
+        context.insert(started)
+        context.insert(session)
+
+        direction.update(
+            name: direction.name,
+            type: .habit,
+            symbolName: direction.symbolName,
+            colorHex: direction.colorHex,
+            goalTarget: 1,
+            goalPeriod: .weekly,
+            goalUnit: .occurrences,
+            goalSchedule: .weekdays,
+            weekdayMask: GoalWeekday.tuesday.rawValue,
+            now: monday
+        )
+
+        _ = HabitScheduleChangeReconciler(calendar: calendar).reconcile(
+            direction: direction,
+            todos: [started],
+            modelContext: context,
+            now: monday
+        )
+
+        #expect(!started.isDeleted)
+        #expect(started.flowSessions?.contains(where: { $0.id == session.id }) == true)
+    }
+
     private func weeklyHabitDirection(target: Int = 3) -> Direction {
         Direction(
             name: "筋トレ",

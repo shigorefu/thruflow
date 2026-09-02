@@ -1061,6 +1061,85 @@ struct FlowTests {
         #expect(restored.intent.isEmpty)
     }
 
+    @Test @MainActor func idleSelectionMovesFromYesterdayToTodaysTaskInTheSameArea() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let yesterday = Date(timeIntervalSince1970: 1_800_000_000)
+        let today = calendar.date(byAdding: .day, value: 1, to: yesterday)!
+        let direction = Direction(name: "筋トレ", type: .habit)
+        let oldTodo = Todo(title: "筋トレ B", direction: direction, scheduledDate: yesterday)
+        let currentTodo = Todo(title: "筋トレ C", direction: direction, scheduledDate: today)
+        let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
+        let store = ActiveFlowStore(defaults: defaults, notifications: TestFlowNotificationService())
+        store.configure(direction: direction, todo: oldTodo)
+
+        let changed = store.reconcileSelectedTodoForCurrentDay(
+            todos: [oldTodo, currentTodo],
+            directions: [direction],
+            now: today,
+            calendar: calendar
+        )
+
+        #expect(changed)
+        #expect(store.selectedDirectionID == direction.id)
+        #expect(store.selectedTodoID == currentTodo.id)
+    }
+
+    @Test @MainActor func idleSelectionClearsYesterdayTaskWhenTodayHasNoTasks() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let yesterday = Date(timeIntervalSince1970: 1_800_000_000)
+        let today = calendar.date(byAdding: .day, value: 1, to: yesterday)!
+        let direction = Direction(name: "開発", type: .neutral)
+        let oldTodo = Todo(title: "昨日の作業", direction: direction, scheduledDate: yesterday)
+        let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
+        let store = ActiveFlowStore(defaults: defaults, notifications: TestFlowNotificationService())
+        store.configure(direction: direction, todo: oldTodo)
+
+        let changed = store.reconcileSelectedTodoForCurrentDay(
+            todos: [oldTodo],
+            directions: [direction],
+            now: today,
+            calendar: calendar
+        )
+
+        #expect(changed)
+        #expect(store.selectedDirectionID == direction.id)
+        #expect(store.selectedTodoID == nil)
+    }
+
+    @Test @MainActor func runningFlowKeepsItsTaskAcrossTheDayBoundary() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let yesterday = Date(timeIntervalSince1970: 1_800_000_000)
+        let today = calendar.date(byAdding: .day, value: 1, to: yesterday)!
+        let direction = Direction(name: "夜間作業", type: .neutral)
+        let oldTodo = Todo(title: "継続中", direction: direction, scheduledDate: yesterday)
+        let currentTodo = Todo(title: "今日の作業", direction: direction, scheduledDate: today)
+        context.insert(direction)
+        context.insert(oldTodo)
+        context.insert(currentTodo)
+        let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
+        let store = ActiveFlowStore(defaults: defaults, notifications: TestFlowNotificationService())
+        store.configure(direction: direction, todo: oldTodo)
+        store.start(direction: direction, todo: oldTodo, modelContext: context, now: yesterday)
+
+        let changed = store.reconcileSelectedTodoForCurrentDay(
+            todos: [oldTodo, currentTodo],
+            directions: [direction],
+            now: today,
+            calendar: calendar
+        )
+
+        #expect(!changed)
+        #expect(store.selectedTodoID == oldTodo.id)
+        #expect(store.activeSession?.todo?.id == oldTodo.id)
+    }
+
     @Test @MainActor func activeFlowPublishesLiveActivityContextAndPauseState() throws {
         let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)

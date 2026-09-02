@@ -27,6 +27,13 @@ target uses a compact discrete slider with seven positions, with the selected
 count inside its thumb and no redundant count label. The macOS editor uses a
 content-fitted width rather than leaving an unused column beside the form.
 
+Saving changes to an existing Habit Area reconciles its planned Tasks from the
+current logical app day forward. Unstarted occurrences are removed, retained,
+or created to match the new schedule, and retained occurrences receive the new
+measurement and target. A completed Task, a Task with measured progress, or a
+Task linked to any FlowSession or FlowSegment is historical work and is never
+rewritten by this reconciliation.
+
 On macOS, the `いつでも`, `習慣`, and `できたら` groups use an adaptive grid: wide
 windows show them side by side, while narrower windows wrap the remaining groups
 onto following rows in the same vertical scroll surface instead of clipping them.
@@ -136,6 +143,11 @@ In the narrow vertical dashboard layout, the player comes first, followed by the
 - starting rest derives its duration from actual focused time rather than the selected mode: under 24 minutes gives 3 minutes, 24...48:59 gives 5 minutes, and 49 minutes or more gives 10 minutes. The 24- and 49-minute boundaries normalize Block credit to 25 and 50 minutes while longer actual time remains exact;
 - break time counts down past zero with a positive overtime sign; its neutral-gray progress ring drains while the Area-colored focus ring fills. Starting work during rest completes the previous Flow and immediately starts the next one, while the Japanese menu bar status becomes `☕️ 休憩 - time` or `☕️ 長休憩 - time`;
 - choosing another Task during focus or pause keeps the current Flow running and starts a new history segment; no memo prompt is shown for this switch;
+- when the configured app day changes while Flow is idle, a selected Task from
+  the previous day is replaced with today's incomplete occurrence from the
+  same Area when possible, otherwise with another incomplete Task for today.
+  If today has no Task, the Task selection clears while its active Area remains
+  selected. A running Flow keeps its exact Task across the day boundary;
 - the Task card reuses the canonical completion/progress control; only Check is interactive, while Block and Minute rings are read-only and show progress and the remaining amount;
 - generated titles for empty Tasks and Habits are consistently italic and visually muted in the player, picker, Tasks screen, and dashboard panels;
 - dashboard `タスク` rows show priority before progress, including `余裕があれば` for low-priority optional work; fixed Habit priority is not displayed;

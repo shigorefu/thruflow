@@ -149,6 +149,10 @@ struct IOSFlowView: View {
         .onChange(of: activeFlowStore.phase) { _, _ in
             presentMemoIfNeeded()
         }
+        .onChange(of: activeFlowStore.timerState == nil) { _, isIdle in
+            guard isIdle else { return }
+            reconcileSelectedTodo()
+        }
         .onChange(of: isVisible) { _, newValue in
             guard !newValue else { return }
             selectedHistoryItem = nil
@@ -266,7 +270,12 @@ struct IOSFlowView: View {
 
     private func playerCard(minHeight: CGFloat? = nil) -> some View {
         TimelineView(.periodic(from: .now, by: 1)) { timeline in
+            let activeDay = dayBoundary.day(containing: timeline.date, calendar: calendar)
+
             playerCardContent(minHeight: minHeight, now: timeline.date)
+                .task(id: activeDay) {
+                    reconcileSelectedTodo(now: timeline.date)
+                }
         }
     }
 
@@ -613,6 +622,7 @@ struct IOSFlowView: View {
         try? await Task.sleep(for: .milliseconds(220))
         guard !Task.isCancelled, isVisible else { return }
         prepareToday()
+        reconcileSelectedTodo()
         configureInitialContextIfNeeded()
     }
 
@@ -735,6 +745,16 @@ struct IOSFlowView: View {
         } else if let direction = activeDirections.first {
             activeFlowStore.configure(direction: direction, todo: nil)
         }
+    }
+
+    private func reconcileSelectedTodo(now: Date = .now) {
+        activeFlowStore.reconcileSelectedTodoForCurrentDay(
+            todos: todos,
+            directions: directions,
+            now: now,
+            calendar: calendar,
+            dayBoundary: dayBoundary
+        )
     }
 
     private func presentMemoIfNeeded() {

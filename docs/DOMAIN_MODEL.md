@@ -26,6 +26,13 @@ Pausing soft-deletes only generated occurrences that have not been completed and
 have no measured progress or Flow history. Existing completed/progressed records
 remain intact. Resuming re-enables planning from the current logical day.
 
+Editing the schedule or goal of an existing Habit Direction reconciles its Todo
+occurrences from the current logical day through the already planned future
+range. An occurrence is eligible for rebuilding only when it is incomplete,
+has no measured or focused progress, and has no FlowSession or FlowSegment
+relationship. Past and started occurrences preserve their identity and original
+goal snapshot.
+
 ## Todo
 
 `Todo` is the task model used by the daily `タスク` screen.
