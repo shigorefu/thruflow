@@ -11,14 +11,14 @@ struct ManualFlowCreationView: View {
     @Environment(\.locale) private var locale
     @Environment(\.modelContext) private var modelContext
 
-    @Query(sort: \Direction.sortIndex) private var directions: [Direction]
+    @Query(sort: \Area.sortIndex) private var areas: [Area]
     @Query(sort: \Todo.updatedAt, order: .reverse) private var todos: [Todo]
 
     let onTimeChange: (Date, Date) -> Void
     let onDismiss: () -> Void
 
     @State private var selectedTodoID: UUID?
-    @State private var selectedDirectionID: UUID?
+    @State private var selectedAreaID: UUID?
     @State private var mode: FlowMode = .twentyFiveFive
     @State private var timeDraft: FlowHistoryTimeDraft
     @State private var errorMessage: String?
@@ -37,7 +37,7 @@ struct ManualFlowCreationView: View {
         self.onDismiss = onDismiss
         lockedTodoID = locksTodo ? todo?.id : nil
         _selectedTodoID = State(initialValue: todo?.id)
-        _selectedDirectionID = State(initialValue: todo?.direction?.id)
+        _selectedAreaID = State(initialValue: todo?.area?.id)
         _timeDraft = State(initialValue: FlowHistoryTimeDraft(
             startedAt: startedAt,
             endedAt: startedAt.addingTimeInterval(25 * 60),
@@ -45,8 +45,8 @@ struct ManualFlowCreationView: View {
         ))
     }
 
-    private var availableDirections: [Direction] {
-        directions.filter { !$0.isArchived }
+    private var availableAreas: [Area] {
+        areas.filter { !$0.isArchived }
     }
 
     private var availableTodos: [Todo] {
@@ -67,12 +67,12 @@ struct ManualFlowCreationView: View {
         return todos.first { $0.id == selectedTodoID }
     }
 
-    private var selectedDirection: Direction? {
-        if let direction = selectedTodo?.direction {
-            return direction
+    private var selectedArea: Area? {
+        if let area = selectedTodo?.area {
+            return area
         }
-        guard let selectedDirectionID else { return availableDirections.first }
-        return availableDirections.first { $0.id == selectedDirectionID }
+        guard let selectedAreaID else { return availableAreas.first }
+        return availableAreas.first { $0.id == selectedAreaID }
     }
 
     var body: some View {
@@ -87,7 +87,7 @@ struct ManualFlowCreationView: View {
                             Label {
                                 Text(TodoDisplay.title(for: selectedTodo))
                             } icon: {
-                                Text(selectedTodo.direction?.symbolName ?? "📥")
+                                Text(selectedTodo.area?.symbolName ?? "📥")
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.vertical, 6)
@@ -95,7 +95,7 @@ struct ManualFlowCreationView: View {
                             Picker(String(localized: "対象タスク"), selection: $selectedTodoID) {
                                 Text(String(localized: "タスクなし")).tag(UUID?.none)
                                 ForEach(availableTodos) { todo in
-                                    Text("\(todo.direction?.symbolName ?? "📥") \(TodoDisplay.title(for: todo))")
+                                    Text("\(todo.area?.symbolName ?? "📥") \(TodoDisplay.title(for: todo))")
                                         .tag(Optional(todo.id))
                                 }
                             }
@@ -104,10 +104,10 @@ struct ManualFlowCreationView: View {
                     }
 
                     field(String(localized: "分野")) {
-                        Picker(String(localized: "分野"), selection: directionSelection) {
-                            ForEach(availableDirections) { direction in
-                                Text("\(direction.symbolName) \(direction.name)")
-                                    .tag(Optional(direction.id))
+                        Picker(String(localized: "分野"), selection: areaSelection) {
+                            ForEach(availableAreas) { area in
+                                Text("\(area.symbolName) \(area.name)")
+                                    .tag(Optional(area.id))
                             }
                         }
                         .labelsHidden()
@@ -192,15 +192,15 @@ struct ManualFlowCreationView: View {
         }
         .frame(minWidth: 300, idealWidth: 440, minHeight: 390)
         .onAppear {
-            if let directionID = selectedTodo?.direction?.id {
-                selectedDirectionID = directionID
-            } else if selectedDirectionID == nil {
-                selectedDirectionID = availableDirections.first?.id
+            if let areaID = selectedTodo?.area?.id {
+                selectedAreaID = areaID
+            } else if selectedAreaID == nil {
+                selectedAreaID = availableAreas.first?.id
             }
         }
         .onChange(of: selectedTodoID) { _, _ in
-            if let directionID = selectedTodo?.direction?.id {
-                selectedDirectionID = directionID
+            if let areaID = selectedTodo?.area?.id {
+                selectedAreaID = areaID
             }
         }
         .onChange(of: mode) { _, newMode in
@@ -238,15 +238,15 @@ struct ManualFlowCreationView: View {
             Spacer()
             Button(String(localized: "追加"), action: save)
                 .buttonStyle(.borderedProminent)
-                .disabled(selectedDirection == nil)
+                .disabled(selectedArea == nil)
         }
         .padding(14)
     }
 
-    private var directionSelection: Binding<UUID?> {
+    private var areaSelection: Binding<UUID?> {
         Binding(
-            get: { selectedDirection?.id ?? selectedDirectionID },
-            set: { selectedDirectionID = $0 }
+            get: { selectedArea?.id ?? selectedAreaID },
+            set: { selectedAreaID = $0 }
         )
     }
 
@@ -274,7 +274,7 @@ struct ManualFlowCreationView: View {
     }
 
     private func save() {
-        guard let selectedDirection else {
+        guard let selectedArea else {
             errorMessage = String(localized: "方向を選択してください")
             return
         }
@@ -282,7 +282,7 @@ struct ManualFlowCreationView: View {
         do {
             try editor.createManual(
                 todo: selectedTodo,
-                direction: selectedDirection,
+                area: selectedArea,
                 mode: mode,
                 startedAt: timeDraft.startedAt,
                 focusSeconds: timeDraft.focusSeconds,

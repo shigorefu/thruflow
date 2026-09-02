@@ -14,39 +14,39 @@ struct RequiredTodoPlanner {
         let isAllowed: Bool
     }
 
-    func shouldAppearToday(_ direction: Direction, on date: Date = .now) -> Bool {
-        guard direction.type == .habit,
-              !direction.isArchived,
-              direction.hasGoal,
-              direction.goalUnit != nil,
-              !HabitPauseService(calendar: calendar).isPaused(direction, on: date) else {
+    func shouldAppearToday(_ area: Area, on date: Date = .now) -> Bool {
+        guard area.type == .habit,
+              !area.isArchived,
+              area.hasGoal,
+              area.goalUnit != nil,
+              !HabitPauseService(calendar: calendar).isPaused(area, on: date) else {
             return false
         }
 
-        switch direction.goalSchedule {
+        switch area.goalSchedule {
         case .everyDay:
             return true
         case .weekdays:
-            return isSelectedWeekday(date, in: direction.weekdayMask)
+            return isSelectedWeekday(date, in: area.weekdayMask)
         case .weeklyCount:
-            return isEligibleWeeklyDate(date, for: direction)
+            return isEligibleWeeklyDate(date, for: area)
         case nil:
             return false
         }
     }
 
     func shouldCreateRequiredTodo(
-        for direction: Direction,
+        for area: Area,
         in todos: [Todo],
         on date: Date = .now
     ) -> Bool {
-        guard shouldAppearToday(direction, on: date) else { return false }
+        guard shouldAppearToday(area, on: date) else { return false }
 
-        if direction.goalSchedule != .weeklyCount {
-            return existingRequiredTodo(for: direction, in: todos, on: date) == nil
+        if area.goalSchedule != .weeklyCount {
+            return existingRequiredTodo(for: area, in: todos, on: date) == nil
         }
 
-        let weeklyTodos = todosForCurrentWeek(direction: direction, in: todos, containing: date)
+        let weeklyTodos = todosForCurrentWeek(area: area, in: todos, containing: date)
         guard !weeklyTodos.contains(where: { todo in
             guard let scheduledDate = todo.scheduledDate else { return false }
             return calendar.isDate(scheduledDate, inSameDayAs: date)
@@ -55,15 +55,15 @@ struct RequiredTodoPlanner {
         }
 
         let completedCount = weeklyTodos.filter(\.isCompleted).count
-        let targetCount = max(1, direction.weeklyTargetCount ?? 1)
+        let targetCount = max(1, area.weeklyTargetCount ?? 1)
         guard completedCount < targetCount else { return false }
 
         return !weeklyTodos.contains(where: { !$0.isCompleted })
     }
 
-    func existingRequiredTodo(for direction: Direction, in todos: [Todo], on date: Date = .now) -> Todo? {
+    func existingRequiredTodo(for area: Area, in todos: [Todo], on date: Date = .now) -> Todo? {
         todos.first { todo in
-            guard todo.direction?.id == direction.id,
+            guard todo.area?.id == area.id,
                   !todo.isArchived,
                   !todo.isDeleted,
                   let scheduledDate = todo.scheduledDate else {
@@ -75,18 +75,18 @@ struct RequiredTodoPlanner {
     }
 
     func pendingWeeklyTodoToRollForward(
-        for direction: Direction,
+        for area: Area,
         in todos: [Todo],
         on date: Date = .now
     ) -> Todo? {
-        guard direction.type == .habit,
-              direction.goalSchedule == .weeklyCount,
-              shouldAppearToday(direction, on: date) else {
+        guard area.type == .habit,
+              area.goalSchedule == .weeklyCount,
+              shouldAppearToday(area, on: date) else {
             return nil
         }
 
         let targetDay = calendar.startOfDay(for: date)
-        return todosForCurrentWeek(direction: direction, in: todos, containing: date)
+        return todosForCurrentWeek(area: area, in: todos, containing: date)
             .filter { todo in
                 guard !todo.isCompleted,
                       let scheduledDate = todo.scheduledDate else { return false }
@@ -98,21 +98,21 @@ struct RequiredTodoPlanner {
     }
 
     func makeRequiredTodo(
-        for direction: Direction,
+        for area: Area,
         existingTodos: [Todo] = [],
         on date: Date = .now,
         sortIndex: Int = 0
     ) -> Todo? {
-        guard shouldCreateRequiredTodo(for: direction, in: existingTodos, on: date),
-              let goalUnit = direction.goalUnit else {
+        guard shouldCreateRequiredTodo(for: area, in: existingTodos, on: date),
+              let goalUnit = area.goalUnit else {
             return nil
         }
 
-        let target = max(1, direction.goalTarget ?? direction.weeklyTargetCount ?? 1)
+        let target = max(1, area.goalTarget ?? area.weeklyTargetCount ?? 1)
 
         return Todo(
             title: "",
-            direction: direction,
+            area: area,
             measurement: measurement(for: goalUnit),
             priority: .high,
             isRoomIfPossible: false,
@@ -122,17 +122,17 @@ struct RequiredTodoPlanner {
         )
     }
 
-    func matchesGeneratedTemplate(_ todo: Todo, for direction: Direction) -> Bool {
+    func matchesGeneratedTemplate(_ todo: Todo, for area: Area) -> Bool {
         let hasNoNotes = todo.notes?
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .isEmpty ?? true
 
         guard let scheduledDate = todo.scheduledDate,
-              direction.type == .habit,
-              !direction.isArchived,
-              direction.goalSchedule != .weeklyCount,
-              shouldAppearToday(direction, on: scheduledDate),
-              let goalUnit = direction.goalUnit,
+              area.type == .habit,
+              !area.isArchived,
+              area.goalSchedule != .weeklyCount,
+              shouldAppearToday(area, on: scheduledDate),
+              let goalUnit = area.goalUnit,
               todo.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
               hasNoNotes,
               todo.hashtags.isEmpty,
@@ -141,7 +141,7 @@ struct RequiredTodoPlanner {
             return false
         }
 
-        let target = max(1, direction.goalTarget ?? direction.weeklyTargetCount ?? 1)
+        let target = max(1, area.goalTarget ?? area.weeklyTargetCount ?? 1)
         return todo.measurement == measurement(for: goalUnit) &&
             todo.plannedAmount == plannedAmount(for: goalUnit, target: target)
     }
@@ -149,12 +149,12 @@ struct RequiredTodoPlanner {
     @discardableResult
     func applyGeneratedTemplate(
         to todo: Todo,
-        for direction: Direction,
+        for area: Area,
         now: Date = .now
     ) -> Bool {
-        guard let goalUnit = direction.goalUnit else { return false }
+        guard let goalUnit = area.goalUnit else { return false }
 
-        let target = max(1, direction.goalTarget ?? direction.weeklyTargetCount ?? 1)
+        let target = max(1, area.goalTarget ?? area.weeklyTargetCount ?? 1)
         let nextMeasurement = measurement(for: goalUnit)
         let nextPlannedAmount = plannedAmount(for: goalUnit, target: target)
         let changed = todo.measurement != nextMeasurement ||
@@ -176,25 +176,25 @@ struct RequiredTodoPlanner {
         in todos: [Todo],
         now: Date = .now
     ) -> [RescheduleOption] {
-        guard let direction = todo.direction,
-              direction.type == .habit,
-              direction.goalSchedule == .weeklyCount,
+        guard let area = todo.area,
+              area.type == .habit,
+              area.goalSchedule == .weeklyCount,
               let weekInterval = calendar.dateInterval(of: .weekOfYear, for: now) else {
             return []
         }
 
         let completedCount = todosForCurrentWeek(
-            direction: direction,
+            area: area,
             in: todos.filter { $0.id != todo.id },
             containing: now
         ).filter(\.isCompleted).count
-        let remainingCount = max(1, max(1, direction.weeklyTargetCount ?? 1) - completedCount)
+        let remainingCount = max(1, max(1, area.weeklyTargetCount ?? 1) - completedCount)
 
         return dates(from: now, before: weekInterval.end)
-            .filter { isEligibleWeeklyDate($0, for: direction) && !isPaused(direction, on: $0) }
+            .filter { isEligibleWeeklyDate($0, for: area) && !isPaused(area, on: $0) }
             .map { date in
                 let availableDates = dates(from: date, before: weekInterval.end)
-                    .filter { isEligibleWeeklyDate($0, for: direction) && !isPaused(direction, on: $0) }
+                    .filter { isEligibleWeeklyDate($0, for: area) && !isPaused(area, on: $0) }
 
                 return RescheduleOption(
                     date: date,
@@ -236,20 +236,20 @@ struct RequiredTodoPlanner {
         return mask & goalWeekday.rawValue != 0
     }
 
-    private func isEligibleWeeklyDate(_ date: Date, for direction: Direction) -> Bool {
-        guard let weekdayMask = direction.weekdayMask, weekdayMask > 0 else {
+    private func isEligibleWeeklyDate(_ date: Date, for area: Area) -> Bool {
+        guard let weekdayMask = area.weekdayMask, weekdayMask > 0 else {
             return true
         }
 
         return isSelectedWeekday(date, in: weekdayMask)
     }
 
-    private func isPaused(_ direction: Direction, on date: Date) -> Bool {
-        HabitPauseService(calendar: calendar).isPaused(direction, on: date)
+    private func isPaused(_ area: Area, on date: Date) -> Bool {
+        HabitPauseService(calendar: calendar).isPaused(area, on: date)
     }
 
     private func todosForCurrentWeek(
-        direction: Direction,
+        area: Area,
         in todos: [Todo],
         containing date: Date
     ) -> [Todo] {
@@ -258,7 +258,7 @@ struct RequiredTodoPlanner {
         }
 
         return todos.filter { todo in
-            guard todo.direction?.id == direction.id,
+            guard todo.area?.id == area.id,
                   !todo.isArchived,
                   !todo.isDeleted,
                   let scheduledDate = todo.scheduledDate else {

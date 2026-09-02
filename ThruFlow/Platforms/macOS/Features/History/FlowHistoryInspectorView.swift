@@ -12,7 +12,7 @@ struct FlowHistoryInspectorView: View {
     @Environment(\.locale) private var locale
     @Environment(\.modelContext) private var modelContext
 
-    @Query(sort: \Direction.sortIndex) private var directions: [Direction]
+    @Query(sort: \Area.sortIndex) private var areas: [Area]
     @Query(sort: \Todo.updatedAt, order: .reverse) private var todos: [Todo]
 
     let session: FlowSession
@@ -20,7 +20,7 @@ struct FlowHistoryInspectorView: View {
     let onClose: (() -> Void)?
 
     @State private var selectedTodoID: UUID?
-    @State private var selectedDirectionID: UUID?
+    @State private var selectedAreaID: UUID?
     @State private var taskTitleDraft: String
     @State private var timeDraft: FlowHistoryTimeDraft
     @State private var memo: String
@@ -41,9 +41,9 @@ struct FlowHistoryInspectorView: View {
         self.segment = segment
         self.onClose = onClose
         let selectedTodo = segment?.todo ?? session.todo
-        let selectedDirection = segment?.direction ?? selectedTodo?.direction ?? session.direction
+        let selectedArea = segment?.area ?? selectedTodo?.area ?? session.area
         _selectedTodoID = State(initialValue: selectedTodo?.id)
-        _selectedDirectionID = State(initialValue: selectedDirection?.id)
+        _selectedAreaID = State(initialValue: selectedArea?.id)
         _taskTitleDraft = State(initialValue: selectedTodo?.title ?? "")
         _timeDraft = State(initialValue: FlowHistoryTimeDraft(
             startedAt: segment?.startedAt ?? session.startedAt,
@@ -59,16 +59,16 @@ struct FlowHistoryInspectorView: View {
             ?? (createdTodo?.id == selectedTodoID ? createdTodo : nil)
     }
 
-    private var selectedDirection: Direction? {
-        if let direction = selectedTodo?.direction {
-            return direction
+    private var selectedArea: Area? {
+        if let area = selectedTodo?.area {
+            return area
         }
-        guard let selectedDirectionID else { return nil }
-        return directions.first { $0.id == selectedDirectionID }
+        guard let selectedAreaID else { return nil }
+        return areas.first { $0.id == selectedAreaID }
     }
 
-    private var availableDirections: [Direction] {
-        directions.filter { !$0.isArchived }
+    private var availableAreas: [Area] {
+        areas.filter { !$0.isArchived }
     }
 
     private var availableTodos: [Todo] {
@@ -198,7 +198,7 @@ struct FlowHistoryInspectorView: View {
                     save()
                 }
                 .buttonStyle(.borderedProminent)
-                .disabled(selectedDirection == nil)
+                .disabled(selectedArea == nil)
             }
             .padding(20)
         }
@@ -209,7 +209,7 @@ struct FlowHistoryInspectorView: View {
                 return
             }
 
-            selectedDirectionID = todo.direction?.id
+            selectedAreaID = todo.area?.id
             taskTitleDraft = todo.title
             if memo.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 memo = todo.notes ?? ""
@@ -242,20 +242,20 @@ struct FlowHistoryInspectorView: View {
         }
         .popover(isPresented: $showsTaskPicker, arrowEdge: .bottom) {
             FlowTaskPickerView(
-                directions: availableDirections,
+                areas: availableAreas,
                 todos: availableTodos,
-                selectedDirectionID: selectedDirectionID,
+                selectedAreaID: selectedAreaID,
                 selectedTodoID: selectedTodoID,
                 onCreateTask: presentTaskComposer
-            ) { direction, todo in
+            ) { area, todo in
                 selectedTodoID = todo?.id
-                selectedDirectionID = todo?.direction?.id ?? direction?.id
+                selectedAreaID = todo?.area?.id ?? area?.id
             }
             .frame(width: 520, height: 460)
         }
         .popover(isPresented: $showsTaskComposer, arrowEdge: .trailing) {
             QuickTodoCreationPopover(
-                directions: availableDirections,
+                areas: availableAreas,
                 scheduledDate: segment?.startedAt ?? session.startedAt,
                 showsQuickInputLegend: false
             ) { todo in
@@ -276,7 +276,7 @@ struct FlowHistoryInspectorView: View {
     private func attachCreatedTodo(_ todo: Todo) {
         createdTodo = todo
         selectedTodoID = todo.id
-        selectedDirectionID = todo.direction?.id
+        selectedAreaID = todo.area?.id
         taskTitleDraft = todo.title
 
         _ = performHistoryMutation {
@@ -334,7 +334,7 @@ struct FlowHistoryInspectorView: View {
             showsTaskPicker = true
         } label: {
             HStack(spacing: 12) {
-                Text(selectedDirection?.symbolName ?? DefaultDirections.taskInboxSymbol)
+                Text(selectedArea?.symbolName ?? DefaultAreas.taskInboxSymbol)
                     .font(.title2)
                     .frame(width: 44, height: 44)
                     .background(selectionTint.opacity(0.16))
@@ -376,21 +376,21 @@ struct FlowHistoryInspectorView: View {
         if let selectedTodo {
             return TodoDisplay.title(for: selectedTodo)
         }
-        return selectedDirection?.name ?? String(localized: "タスクなし")
+        return selectedArea?.name ?? String(localized: "タスクなし")
     }
 
     private var selectionSubtitle: String {
         if let selectedTodo {
-            return selectedTodo.direction?.name ?? String(localized: "その他")
+            return selectedTodo.area?.name ?? String(localized: "その他")
         }
         return String(localized: "タスクなし")
     }
 
     private var selectionTint: Color {
-        guard let selectedDirection, !DefaultDirections.isTaskInbox(selectedDirection) else {
+        guard let selectedArea, !DefaultAreas.isTaskInbox(selectedArea) else {
             return .secondary
         }
-        return Color(hex: selectedDirection.colorHex)
+        return Color(hex: selectedArea.colorHex)
     }
 
     @ViewBuilder
@@ -421,7 +421,7 @@ struct FlowHistoryInspectorView: View {
     }
 
     private func save() {
-        guard let selectedDirection else { return }
+        guard let selectedArea else { return }
         let now = Date.now
         selectedTodo?.rename(to: taskTitleDraft, now: now)
         guard performHistoryMutation({
@@ -430,7 +430,7 @@ struct FlowHistoryInspectorView: View {
                     segment: segment,
                     in: session,
                     todo: selectedTodo,
-                    direction: selectedDirection,
+                    area: selectedArea,
                     startedAt: timeDraft.startedAt,
                     focusSeconds: timeDraft.focusSeconds,
                     memo: memo,
@@ -441,7 +441,7 @@ struct FlowHistoryInspectorView: View {
                 try editor.update(
                     session: session,
                     todo: selectedTodo,
-                    direction: selectedDirection,
+                    area: selectedArea,
                     startedAt: timeDraft.startedAt,
                     focusSeconds: timeDraft.focusSeconds,
                     memo: memo,

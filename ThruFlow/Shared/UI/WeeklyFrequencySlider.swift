@@ -62,8 +62,8 @@ struct WeeklyFrequencySlider: View {
         .accessibilityElement()
         .accessibilityLabel(String(localized: "週回"))
         .accessibilityValue("\(clampedValue)")
-        .accessibilityAdjustableAction { direction in
-            switch direction {
+        .accessibilityAdjustableAction { area in
+            switch area {
             case .increment:
                 value = min(range.upperBound, clampedValue + 1)
             case .decrement:

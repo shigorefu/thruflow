@@ -7,11 +7,11 @@
 import Foundation
 
 struct FlowProgressCalculator {
-    func applyFocusDuration(seconds: Int, direction: Direction?, todo: Todo?, now: Date = .now) {
+    func applyFocusDuration(seconds: Int, area: Area?, todo: Todo?, now: Date = .now) {
         let focusedSeconds = max(0, seconds)
 
-        if let direction {
-            direction.addFocusDuration(seconds: focusedSeconds, now: now)
+        if let area {
+            area.addFocusDuration(seconds: focusedSeconds, now: now)
         }
 
         guard let todo else { return }
@@ -34,7 +34,7 @@ struct FlowProgressCalculator {
             for segment in session.resolvedSegments where segment.resolvedFocusSeconds > 0 {
                 applyFocusDuration(
                     seconds: segment.resolvedFocusSeconds,
-                    direction: segment.direction,
+                    area: segment.area,
                     todo: segment.todo,
                     now: now
                 )
@@ -44,7 +44,7 @@ struct FlowProgressCalculator {
 
         applyFocusDuration(
             seconds: fallbackSeconds,
-            direction: session.direction,
+            area: session.area,
             todo: session.todo,
             now: now
         )

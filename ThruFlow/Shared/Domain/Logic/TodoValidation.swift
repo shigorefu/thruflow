@@ -10,7 +10,7 @@ struct TodoDraft {
     var title: String
     var notes: String
     var hashtags: [String]
-    var direction: Direction?
+    var area: Area?
     var measurement: TodoMeasurement
     var priority: TodoPriority
     var isRoomIfPossible: Bool
@@ -23,7 +23,7 @@ struct TodoDraft {
         title: String = "",
         notes: String = "",
         hashtags: [String] = [],
-        direction: Direction? = nil,
+        area: Area? = nil,
         measurement: TodoMeasurement = .checkbox,
         priority: TodoPriority = .medium,
         isRoomIfPossible: Bool = false,
@@ -35,7 +35,7 @@ struct TodoDraft {
         self.title = title
         self.notes = notes
         self.hashtags = TodoHashtagNormalizer.normalize(hashtags)
-        self.direction = direction
+        self.area = area
         self.measurement = measurement
         self.priority = priority
         self.isRoomIfPossible = isRoomIfPossible
@@ -49,7 +49,7 @@ struct TodoDraft {
         self.title = todo.title
         self.notes = todo.notes ?? ""
         self.hashtags = todo.hashtags
-        self.direction = todo.direction
+        self.area = todo.area
         self.measurement = todo.measurement
         self.priority = todo.priority
         self.isRoomIfPossible = todo.isRoomIfPossible

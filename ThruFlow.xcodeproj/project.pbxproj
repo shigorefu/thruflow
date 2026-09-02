@@ -600,8 +600,8 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				EXCLUDED_SOURCE_FILE_NAMES = (
-					IOSDirectionEditorView.swift,
-					IOSDirectionsView.swift,
+					IOSAreaEditorView.swift,
+					IOSAreasView.swift,
 					IOSFlowContextPicker.swift,
 					IOSFlowMemoView.swift,
 					IOSFlowStreamView.swift,
@@ -626,7 +626,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.shigorefu.thruflow;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -656,8 +656,8 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				EXCLUDED_SOURCE_FILE_NAMES = (
-					IOSDirectionEditorView.swift,
-					IOSDirectionsView.swift,
+					IOSAreaEditorView.swift,
+					IOSAreasView.swift,
 					IOSFlowContextPicker.swift,
 					IOSFlowMemoView.swift,
 					IOSFlowStreamView.swift,
@@ -682,7 +682,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.shigorefu.thruflow;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -822,7 +822,7 @@
 				CURRENT_PROJECT_VERSION = 8;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.shigorefu.thruflow.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -845,7 +845,7 @@
 				CURRENT_PROJECT_VERSION = 8;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.shigorefu.thruflow.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -867,7 +867,7 @@
 				CURRENT_PROJECT_VERSION = 8;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.shigorefu.thruflow.uitests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -889,7 +889,7 @@
 				CURRENT_PROJECT_VERSION = 8;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.shigorefu.thruflow.uitests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -916,8 +916,8 @@
 				ENABLE_PREVIEWS = YES;
 				EXCLUDED_SOURCE_FILE_NAMES = (
 					DayHistoryView.swift,
-					DirectionFormView.swift,
-					DirectionListView.swift,
+					AreaFormView.swift,
+					AreaListView.swift,
 					EmojiPickerView.swift,
 					FlowDashboardView.swift,
 					FlowHistoryInspectorView.swift,
@@ -950,7 +950,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.shigorefu.thruflow;
 				PRODUCT_NAME = ThruFlow;
 				SDKROOT = iphoneos;
@@ -978,8 +978,8 @@
 				ENABLE_PREVIEWS = YES;
 				EXCLUDED_SOURCE_FILE_NAMES = (
 					DayHistoryView.swift,
-					DirectionFormView.swift,
-					DirectionListView.swift,
+					AreaFormView.swift,
+					AreaListView.swift,
 					EmojiPickerView.swift,
 					FlowDashboardView.swift,
 					FlowHistoryInspectorView.swift,
@@ -1012,7 +1012,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.shigorefu.thruflow;
 				PRODUCT_NAME = ThruFlow;
 				SDKROOT = iphoneos;
@@ -1046,7 +1046,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.shigorefu.thruflow.liveactivity;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -1084,7 +1084,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.shigorefu.thruflow.liveactivity;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -1118,8 +1118,8 @@
 					CalendarTaskIndicators.swift,
 					DayHistoryMode.swift,
 					DayHistoryView.swift,
-					DirectionFormView.swift,
-					DirectionListView.swift,
+					AreaFormView.swift,
+					AreaListView.swift,
 					EmojiPickerView.swift,
 					FlowDashboardView.swift,
 					FlowHistoryInspectorView.swift,
@@ -1131,8 +1131,8 @@
 					HistoryDayWorkspaceView.swift,
 					HistoryTaskRecordForm.swift,
 					InboxView.swift,
-					IOSDirectionEditorView.swift,
-					IOSDirectionsView.swift,
+					IOSAreaEditorView.swift,
+					IOSAreasView.swift,
 					IOSFlowContextPicker.swift,
 					IOSFlowLiveActivityService.swift,
 					IOSFlowMemoView.swift,
@@ -1176,7 +1176,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.shigorefu.thruflow.watchapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -1209,8 +1209,8 @@
 					CalendarTaskIndicators.swift,
 					DayHistoryMode.swift,
 					DayHistoryView.swift,
-					DirectionFormView.swift,
-					DirectionListView.swift,
+					AreaFormView.swift,
+					AreaListView.swift,
 					EmojiPickerView.swift,
 					FlowDashboardView.swift,
 					FlowHistoryInspectorView.swift,
@@ -1222,8 +1222,8 @@
 					HistoryDayWorkspaceView.swift,
 					HistoryTaskRecordForm.swift,
 					InboxView.swift,
-					IOSDirectionEditorView.swift,
-					IOSDirectionsView.swift,
+					IOSAreaEditorView.swift,
+					IOSAreasView.swift,
 					IOSFlowContextPicker.swift,
 					IOSFlowLiveActivityService.swift,
 					IOSFlowMemoView.swift,
@@ -1267,7 +1267,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.shigorefu.thruflow.watchapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;

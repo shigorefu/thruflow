@@ -6,15 +6,15 @@ struct TaskTitleSuggestionBuilderTests {
     private let builder = TaskTitleSuggestionBuilder()
 
     @Test func ranksPrefixMatchesBeforeSubstringMatches() {
-        let direction = Direction(name: "日本語", type: .neutral)
+        let area = Area(name: "日本語", type: .neutral)
         let recentSubstring = Todo(
             title: "毎日日本語",
-            direction: direction,
+            area: area,
             updatedAt: Date(timeIntervalSince1970: 300)
         )
         let olderPrefix = Todo(
             title: "日本へ行く",
-            direction: direction,
+            area: area,
             updatedAt: Date(timeIntervalSince1970: 100)
         )
 
@@ -27,20 +27,20 @@ struct TaskTitleSuggestionBuilderTests {
     }
 
     @Test func deduplicatesTitlesAndRanksFrequentUseFirst() {
-        let direction = Direction(name: "学習", type: .neutral)
+        let area = Area(name: "学習", type: .neutral)
         let japaneseOlder = Todo(
             title: "日本語",
-            direction: direction,
+            area: area,
             updatedAt: Date(timeIntervalSince1970: 100)
         )
         let japaneseNewer = Todo(
             title: "  日本語  ",
-            direction: direction,
+            area: area,
             updatedAt: Date(timeIntervalSince1970: 300)
         )
         let japanTrip = Todo(
             title: "日本へ",
-            direction: direction,
+            area: area,
             updatedAt: Date(timeIntervalSince1970: 400)
         )
 
@@ -54,12 +54,12 @@ struct TaskTitleSuggestionBuilderTests {
     }
 
     @Test func ignoresDeletedEmptyExactAndExcludedTasks() {
-        let direction = Direction(name: "学習", type: .neutral)
-        let current = Todo(title: "日本語会話", direction: direction)
-        let exact = Todo(title: "日", direction: direction)
-        let empty = Todo(title: "   ", direction: direction)
-        let deleted = Todo(title: "日本史", direction: direction, deletedAt: .now)
-        let match = Todo(title: "日本へ", direction: direction)
+        let area = Area(name: "学習", type: .neutral)
+        let current = Todo(title: "日本語会話", area: area)
+        let exact = Todo(title: "日", area: area)
+        let empty = Todo(title: "   ", area: area)
+        let deleted = Todo(title: "日本史", area: area, deletedAt: .now)
+        let match = Todo(title: "日本へ", area: area)
 
         let suggestions = builder.suggestions(
             query: "日",
@@ -71,11 +71,11 @@ struct TaskTitleSuggestionBuilderTests {
     }
 
     @Test func matchesCaseWidthAndDiacriticsAndHonorsLimit() {
-        let direction = Direction(name: "Language", type: .neutral)
+        let area = Area(name: "Language", type: .neutral)
         let todos = [
-            Todo(title: "Résumé practice", direction: direction),
-            Todo(title: "RESUME review", direction: direction),
-            Todo(title: "Resume notes", direction: direction),
+            Todo(title: "Résumé practice", area: area),
+            Todo(title: "RESUME review", area: area),
+            Todo(title: "Resume notes", area: area),
         ]
 
         let suggestions = builder.suggestions(query: "resume", todos: todos, limit: 2)

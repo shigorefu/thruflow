@@ -6,9 +6,9 @@ struct FlowActivityAttributes: ActivityAttributes {
     struct ContentState: Codable, Hashable {
         var taskEmoji: String
         var taskTitle: String
-        var directionEmoji: String
-        var directionName: String
-        var directionColorHex: String
+        var areaEmoji: String
+        var areaName: String
+        var areaColorHex: String
         var modeRawValue: String
         var modeName: String
         var status: FlowLiveActivityStatus
@@ -18,6 +18,23 @@ struct FlowActivityAttributes: ActivityAttributes {
         var remainingSeconds: Int
         var progress: Double
         var updatedAt: Date
+
+        enum CodingKeys: String, CodingKey {
+            case taskEmoji
+            case taskTitle
+            case areaEmoji = "directionEmoji"
+            case areaName = "directionName"
+            case areaColorHex = "directionColorHex"
+            case modeRawValue
+            case modeName
+            case status
+            case timerKind
+            case timerStartedAt
+            case plannedEndAt
+            case remainingSeconds
+            case progress
+            case updatedAt
+        }
 
         var timerRange: ClosedRange<Date> {
             timerStartedAt...max(timerStartedAt.addingTimeInterval(1), plannedEndAt)
@@ -49,9 +66,9 @@ struct FlowActivityAttributes: ActivityAttributes {
             )
         }
 
-        var presentationDirectionName: String {
-            FlowLiveActivityPresentation.directionName(
-                directionName,
+        var presentationAreaName: String {
+            FlowLiveActivityPresentation.areaName(
+                areaName,
                 timerKind: timerKind
             )
         }
@@ -76,9 +93,9 @@ extension FlowLiveActivityContent {
         FlowActivityAttributes.ContentState(
             taskEmoji: taskEmoji,
             taskTitle: taskTitle,
-            directionEmoji: directionEmoji,
-            directionName: directionName,
-            directionColorHex: directionColorHex,
+            areaEmoji: areaEmoji,
+            areaName: areaName,
+            areaColorHex: areaColorHex,
             modeRawValue: modeRawValue,
             modeName: modeName,
             status: status,

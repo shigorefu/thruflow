@@ -18,8 +18,8 @@ struct DayHistoryTests {
     }
 
     @Test func completingTodoStoresExactCompletionDateAndClearsItWhenReopened() {
-        let direction = Direction(name: "仕事", type: .neutral)
-        let todo = Todo(title: "レビュー", direction: direction)
+        let area = Area(name: "仕事", type: .neutral)
+        let todo = Todo(title: "レビュー", area: area)
         let completedAt = Date(timeIntervalSince1970: 10_000)
 
         todo.setCompleted(true, now: completedAt)
@@ -54,24 +54,24 @@ struct DayHistoryTests {
     }
 
     @Test func creatingManualFlowCreatesIndependentSeriesAndAppliesProgress() throws {
-        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
-        let direction = Direction(name: "仕事", type: .neutral)
+        let area = Area(name: "仕事", type: .neutral)
         let todo = Todo(
             title: "実装",
-            direction: direction,
+            area: area,
             measurement: .minutes,
             plannedAmount: 60
         )
         let start = Date(timeIntervalSince1970: 25_000)
-        context.insert(direction)
+        context.insert(area)
         context.insert(todo)
 
         let session = try FlowHistoryEditor().createManual(
             todo: todo,
-            direction: direction,
+            area: area,
             mode: .twentyFiveFive,
             startedAt: start,
             focusSeconds: 25 * 60,
@@ -85,7 +85,7 @@ struct DayHistoryTests {
         #expect(session.endedAt == start.addingTimeInterval(25 * 60))
         #expect(session.resolvedSegments.count == 1)
         #expect(session.resolvedSegments.first?.resolvedFocusSeconds == 25 * 60)
-        #expect(direction.recordedFocusSeconds == 25 * 60)
+        #expect(area.recordedFocusSeconds == 25 * 60)
         #expect(todo.recordedFocusSeconds == 25 * 60)
         #expect(todo.actualProgress == 25)
         #expect(todo.status == .active)
@@ -93,23 +93,23 @@ struct DayHistoryTests {
     }
 
     @Test func attachingCreatedTaskUpdatesOpenHistoryItemWithoutRebuild() throws {
-        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
-        let direction = Direction(
+        let area = Area(
             name: "筋トレ",
             type: .habit,
             symbolName: "💪",
             colorHex: "#FFCC00"
         )
         let start = Date(timeIntervalSince1970: 30_000)
-        context.insert(direction)
+        context.insert(area)
 
         let editor = FlowHistoryEditor()
         let session = try editor.createManual(
             todo: nil,
-            direction: direction,
+            area: area,
             mode: .twentyFiveFive,
             startedAt: start,
             focusSeconds: 25 * 60,
@@ -133,7 +133,7 @@ struct DayHistoryTests {
 
         let todo = Todo(
             title: "スクワット",
-            direction: direction,
+            area: area,
             measurement: .minutes,
             plannedAmount: 30
         )
@@ -157,25 +157,25 @@ struct DayHistoryTests {
     }
 
     @Test func movingFlowShiftsSessionAndSegmentsWithoutChangingProgress() throws {
-        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
-        let direction = Direction(name: "仕事", type: .neutral)
+        let area = Area(name: "仕事", type: .neutral)
         let todo = Todo(
             title: "実装",
-            direction: direction,
+            area: area,
             measurement: .minutes,
             plannedAmount: 60
         )
         let start = Date(timeIntervalSince1970: 20 * 60 * 60)
-        context.insert(direction)
+        context.insert(area)
         context.insert(todo)
 
         let editor = FlowHistoryEditor()
         let session = try editor.createManual(
             todo: todo,
-            direction: direction,
+            area: area,
             mode: .twentyFiveFive,
             startedAt: start,
             focusSeconds: 25 * 60,
@@ -203,27 +203,27 @@ struct DayHistoryTests {
         #expect(session.resolvedSegments.first?.createdAt == originalSegmentCreatedAt)
         #expect(todo.recordedFocusSeconds == 25 * 60)
         #expect(todo.actualProgress == 25)
-        #expect(direction.recordedFocusSeconds == 25 * 60)
+        #expect(area.recordedFocusSeconds == 25 * 60)
     }
 
     @Test func historyOrdersTimedEntriesAndSeparatesLegacyCompletions() {
         let day = Date(timeIntervalSince1970: 86_400)
-        let direction = Direction(name: "読書", type: .habit, symbolName: "📚", colorHex: "#34C759")
+        let area = Area(name: "読書", type: .habit, symbolName: "📚", colorHex: "#34C759")
         let timedTodo = Todo(
             title: "第3章",
-            direction: direction,
+            area: area,
             status: .completed,
             completedAt: day.addingTimeInterval(14 * 60 * 60),
             updatedAt: day.addingTimeInterval(14 * 60 * 60)
         )
         let legacyTodo = Todo(
             title: "旧タスク",
-            direction: direction,
+            area: area,
             status: .completed,
             updatedAt: day.addingTimeInterval(18 * 60 * 60)
         )
         let session = FlowSession(
-            direction: direction,
+            area: area,
             todo: timedTodo,
             mode: .twentyFiveFive,
             phase: .completed,
@@ -251,13 +251,13 @@ struct DayHistoryTests {
 
     @Test func historyKeepsExactTaskSwitchSegmentsForEditing() {
         let day = Date(timeIntervalSince1970: 86_400)
-        let study = Direction(name: "勉強", type: .neutral)
-        let work = Direction(name: "仕事", type: .neutral)
-        let reading = Todo(title: "読書", direction: study)
-        let report = Todo(title: "報告書", direction: work)
+        let study = Area(name: "勉強", type: .neutral)
+        let work = Area(name: "仕事", type: .neutral)
+        let reading = Todo(title: "読書", area: study)
+        let report = Todo(title: "報告書", area: work)
         let start = day.addingTimeInterval(10 * 60 * 60)
         let session = FlowSession(
-            direction: work,
+            area: work,
             todo: report,
             mode: .twentyFiveFive,
             phase: .completed,
@@ -271,7 +271,7 @@ struct DayHistoryTests {
         )
         let readingSegment = FlowSegment(
             session: session,
-            direction: study,
+            area: study,
             todo: reading,
             startedAt: start,
             startFocusSeconds: 0
@@ -282,7 +282,7 @@ struct DayHistoryTests {
         )
         let reportSegment = FlowSegment(
             session: session,
-            direction: work,
+            area: work,
             todo: report,
             startedAt: start.addingTimeInterval(10 * 60),
             startFocusSeconds: 10 * 60
@@ -306,12 +306,12 @@ struct DayHistoryTests {
 
     @Test func historyIntervalAggregatesFlowsAndScheduledTasksAcrossTheSelectedRange() {
         let day = Date(timeIntervalSince1970: 10 * 86_400)
-        let direction = Direction(name: "仕事", type: .neutral, symbolName: "💻", colorHex: "#0A84FF")
-        let firstTodo = Todo(title: "設計", direction: direction, scheduledDate: day)
-        let secondTodo = Todo(title: "実装", direction: direction, scheduledDate: day.addingTimeInterval(86_400))
-        let unworkedTodo = Todo(title: "未着手", direction: direction, scheduledDate: day.addingTimeInterval(12 * 3_600))
+        let area = Area(name: "仕事", type: .neutral, symbolName: "💻", colorHex: "#0A84FF")
+        let firstTodo = Todo(title: "設計", area: area, scheduledDate: day)
+        let secondTodo = Todo(title: "実装", area: area, scheduledDate: day.addingTimeInterval(86_400))
+        let unworkedTodo = Todo(title: "未着手", area: area, scheduledDate: day.addingTimeInterval(12 * 3_600))
         let firstSession = FlowSession(
-            direction: direction,
+            area: area,
             todo: firstTodo,
             mode: .twentyFiveFive,
             phase: .completed,
@@ -324,7 +324,7 @@ struct DayHistoryTests {
             plannedBreakDurationSeconds: 5 * 60
         )
         let secondSession = FlowSession(
-            direction: direction,
+            area: area,
             todo: secondTodo,
             mode: .twentyFiveFive,
             phase: .completed,
@@ -347,34 +347,34 @@ struct DayHistoryTests {
         #expect(snapshot.interval == interval)
         #expect(snapshot.totalFocusSeconds == 37 * 60)
         #expect(snapshot.taskSummaries.count == 2)
-        #expect(snapshot.directionSummaries.first?.taskCount == 2)
-        #expect(snapshot.directionSummaries.first?.flowCount == 2)
+        #expect(snapshot.areaSummaries.first?.taskCount == 2)
+        #expect(snapshot.areaSummaries.first?.flowCount == 2)
     }
 
     @Test func historyKeepsRecordedHabitOccurrencesAsSeparateTasks() {
         let day = Date(timeIntervalSince1970: 20 * 86_400)
-        let habit = Direction(name: "筋トレ", type: .habit, symbolName: "💪", colorHex: "#FFD60A")
-        let normal = Direction(name: "仕事", type: .neutral)
+        let habit = Area(name: "筋トレ", type: .habit, symbolName: "💪", colorHex: "#FFD60A")
+        let normal = Area(name: "仕事", type: .neutral)
         let firstHabit = Todo(
             title: "筋トレ B",
-            direction: habit,
+            area: habit,
             measurement: .checkbox,
             scheduledDate: day
         )
         let secondHabit = Todo(
             title: "筋トレ C",
-            direction: habit,
+            area: habit,
             measurement: .checkbox,
             scheduledDate: day.addingTimeInterval(86_400)
         )
-        let firstNormal = Todo(title: "レビュー", direction: normal, scheduledDate: day)
-        let secondNormal = Todo(title: "レビュー", direction: normal, scheduledDate: day.addingTimeInterval(86_400))
+        let firstNormal = Todo(title: "レビュー", area: normal, scheduledDate: day)
+        let secondNormal = Todo(title: "レビュー", area: normal, scheduledDate: day.addingTimeInterval(86_400))
         let interval = DateInterval(start: day, end: day.addingTimeInterval(2 * 86_400))
         let sessions = [
-            makeCompletedSession(todo: firstHabit, direction: habit, startedAt: day.addingTimeInterval(9 * 3_600)),
-            makeCompletedSession(todo: secondHabit, direction: habit, startedAt: day.addingTimeInterval(86_400 + 9 * 3_600)),
-            makeCompletedSession(todo: firstNormal, direction: normal, startedAt: day.addingTimeInterval(10 * 3_600)),
-            makeCompletedSession(todo: secondNormal, direction: normal, startedAt: day.addingTimeInterval(86_400 + 10 * 3_600))
+            makeCompletedSession(todo: firstHabit, area: habit, startedAt: day.addingTimeInterval(9 * 3_600)),
+            makeCompletedSession(todo: secondHabit, area: habit, startedAt: day.addingTimeInterval(86_400 + 9 * 3_600)),
+            makeCompletedSession(todo: firstNormal, area: normal, startedAt: day.addingTimeInterval(10 * 3_600)),
+            makeCompletedSession(todo: secondNormal, area: normal, startedAt: day.addingTimeInterval(86_400 + 10 * 3_600))
         ]
 
         let snapshot = DayHistoryBuilder(calendar: calendar).build(
@@ -383,13 +383,13 @@ struct DayHistoryTests {
             todos: [firstHabit, secondHabit, firstNormal, secondNormal]
         )
 
-        let habitSummaries = snapshot.taskSummaries.filter { $0.directionID == habit.id }
-        let normalSummaries = snapshot.taskSummaries.filter { $0.directionID == normal.id }
+        let habitSummaries = snapshot.taskSummaries.filter { $0.areaID == habit.id }
+        let normalSummaries = snapshot.taskSummaries.filter { $0.areaID == normal.id }
         #expect(habitSummaries.count == 2)
         #expect(Set(habitSummaries.map(\.title)) == ["筋トレ B", "筋トレ C"])
         #expect(habitSummaries.allSatisfy { $0.todos.count == 1 })
         #expect(normalSummaries.count == 2)
-        #expect(snapshot.directionSummaries.first(where: { $0.directionID == habit.id })?.taskCount == 2)
+        #expect(snapshot.areaSummaries.first(where: { $0.areaID == habit.id })?.taskCount == 2)
 
         secondHabit.setManuallyCompleted(true, now: day.addingTimeInterval(86_400 + 12 * 3_600))
 
@@ -401,8 +401,8 @@ struct DayHistoryTests {
 
     @Test func historyHidesScheduledTasksWithoutRecordedFlow() {
         let day = Date(timeIntervalSince1970: 25 * 86_400)
-        let direction = Direction(name: "仕事", type: .neutral)
-        let todo = Todo(title: "未着手", direction: direction, scheduledDate: day)
+        let area = Area(name: "仕事", type: .neutral)
+        let todo = Todo(title: "未着手", area: area, scheduledDate: day)
 
         let snapshot = DayHistoryBuilder(calendar: calendar).build(
             date: day,
@@ -416,23 +416,23 @@ struct DayHistoryTests {
     @Test func dailyHabitUsesTheTodoActuallyLinkedToFlow() {
         let calendar = Calendar(identifier: .gregorian)
         let day = calendar.startOfDay(for: Date(timeIntervalSince1970: 30 * 86_400))
-        let habit = Direction(name: "AWS", type: .habit, symbolName: "☁️", colorHex: "#FFD60A")
+        let habit = Area(name: "AWS", type: .habit, symbolName: "☁️", colorHex: "#FFD60A")
         let previousHabit = Todo(
             title: "",
-            direction: habit,
+            area: habit,
             measurement: .focusBlocks,
             plannedAmount: 2,
             scheduledDate: day.addingTimeInterval(-86_400)
         )
         let currentHabit = Todo(
             title: "",
-            direction: habit,
+            area: habit,
             measurement: .focusBlocks,
             plannedAmount: 2,
             scheduledDate: day
         )
         let session = FlowSession(
-            direction: habit,
+            area: habit,
             todo: previousHabit,
             mode: .twentyFiveFive,
             phase: .completed,
@@ -460,11 +460,11 @@ struct DayHistoryTests {
 
     private func makeCompletedSession(
         todo: Todo,
-        direction: Direction,
+        area: Area,
         startedAt: Date
     ) -> FlowSession {
         FlowSession(
-            direction: direction,
+            area: area,
             todo: todo,
             mode: .twentyFiveFive,
             phase: .completed,
@@ -478,16 +478,16 @@ struct DayHistoryTests {
         )
     }
 
-    @Test func editingFlowMovesOnlyItsProgressToTheNewTaskAndDirection() throws {
-        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+    @Test func editingFlowMovesOnlyItsProgressToTheNewTaskAndArea() throws {
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
-        let originalDirection = Direction(name: "仕事", type: .neutral, focusDurationSeconds: 50 * 60)
-        let newDirection = Direction(name: "学習", type: .neutral, focusDurationSeconds: 0)
+        let originalArea = Area(name: "仕事", type: .neutral, focusDurationSeconds: 50 * 60)
+        let newArea = Area(name: "学習", type: .neutral, focusDurationSeconds: 0)
         let originalTodo = Todo(
             title: "資料",
-            direction: originalDirection,
+            area: originalArea,
             measurement: .minutes,
             plannedAmount: 60,
             actualProgress: 50,
@@ -495,13 +495,13 @@ struct DayHistoryTests {
         )
         let newTodo = Todo(
             title: "Swift",
-            direction: newDirection,
+            area: newArea,
             measurement: .minutes,
             plannedAmount: 30
         )
         let start = Date(timeIntervalSince1970: 20_000)
         let priorSession = FlowSession(
-            direction: originalDirection,
+            area: originalArea,
             todo: originalTodo,
             mode: .twentyFiveFive,
             phase: .completed,
@@ -514,7 +514,7 @@ struct DayHistoryTests {
             plannedBreakDurationSeconds: 5 * 60
         )
         let session = FlowSession(
-            direction: originalDirection,
+            area: originalArea,
             todo: originalTodo,
             mode: .twentyFiveFive,
             phase: .completed,
@@ -526,8 +526,8 @@ struct DayHistoryTests {
             actualFocusDurationSeconds: 25 * 60,
             plannedBreakDurationSeconds: 5 * 60
         )
-        context.insert(originalDirection)
-        context.insert(newDirection)
+        context.insert(originalArea)
+        context.insert(newArea)
         context.insert(originalTodo)
         context.insert(newTodo)
         context.insert(priorSession)
@@ -537,38 +537,38 @@ struct DayHistoryTests {
         try FlowHistoryEditor().update(
             session: session,
             todo: newTodo,
-            direction: newDirection,
+            area: newArea,
             startedAt: adjustedStart,
             focusSeconds: 12 * 60,
             memo: "型を復習",
             modelContext: context
         )
 
-        #expect(originalDirection.recordedFocusSeconds == 25 * 60)
+        #expect(originalArea.recordedFocusSeconds == 25 * 60)
         #expect(originalTodo.recordedFocusSeconds == 25 * 60)
         #expect(originalTodo.actualProgress == 25)
-        #expect(newDirection.recordedFocusSeconds == 12 * 60)
+        #expect(newArea.recordedFocusSeconds == 12 * 60)
         #expect(newTodo.recordedFocusSeconds == 12 * 60)
         #expect(newTodo.actualProgress == 12)
         #expect(newTodo.notes == "型を復習")
         #expect(session.result == "型を復習")
         #expect(session.todo?.id == newTodo.id)
-        #expect(session.direction?.id == newDirection.id)
+        #expect(session.area?.id == newArea.id)
         #expect(session.startedAt == adjustedStart)
         #expect(session.endedAt == adjustedStart.addingTimeInterval(12 * 60))
         #expect(session.plannedEndAt == session.endedAt)
     }
 
-    @Test func editingDirectionOnlyFlowKeepsItIndependentAndStoresItsResult() throws {
-        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+    @Test func editingAreaOnlyFlowKeepsItIndependentAndStoresItsResult() throws {
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
-        let originalDirection = Direction(name: "読書", type: .neutral)
-        let updatedDirection = Direction(name: "学習", type: .neutral)
+        let originalArea = Area(name: "読書", type: .neutral)
+        let updatedArea = Area(name: "学習", type: .neutral)
         let start = Date(timeIntervalSince1970: 30_000)
         let session = FlowSession(
-            direction: originalDirection,
+            area: originalArea,
             mode: .twentyFiveFive,
             phase: .completed,
             status: .completed,
@@ -579,14 +579,14 @@ struct DayHistoryTests {
             actualFocusDurationSeconds: 25 * 60,
             plannedBreakDurationSeconds: 5 * 60
         )
-        context.insert(originalDirection)
-        context.insert(updatedDirection)
+        context.insert(originalArea)
+        context.insert(updatedArea)
         context.insert(session)
 
         try FlowHistoryEditor().update(
             session: session,
             todo: nil,
-            direction: updatedDirection,
+            area: updatedArea,
             startedAt: start.addingTimeInterval(60),
             focusSeconds: 20 * 60,
             memo: "第3章を読んだ",
@@ -594,22 +594,22 @@ struct DayHistoryTests {
         )
 
         #expect(session.todo == nil)
-        #expect(session.direction?.id == updatedDirection.id)
+        #expect(session.area?.id == updatedArea.id)
         #expect(session.result == "第3章を読んだ")
         #expect(session.actualFocusDurationSeconds == 20 * 60)
-        #expect(updatedDirection.recordedFocusSeconds == 20 * 60)
-        #expect(originalDirection.recordedFocusSeconds == 0)
+        #expect(updatedArea.recordedFocusSeconds == 20 * 60)
+        #expect(originalArea.recordedFocusSeconds == 0)
     }
 
     @Test func deletingFlowRebuildsStaleBlockProgressFromRemainingHistory() throws {
-        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
-        let direction = Direction(name: "学習", type: .habit, focusDurationSeconds: 55 * 60)
+        let area = Area(name: "学習", type: .habit, focusDurationSeconds: 55 * 60)
         let todo = Todo(
             title: "AWS",
-            direction: direction,
+            area: area,
             measurement: .focusBlocks,
             plannedAmount: 2,
             actualProgress: 2,
@@ -618,7 +618,7 @@ struct DayHistoryTests {
         )
         let start = Date(timeIntervalSince1970: 25_000)
         let deletedSession = FlowSession(
-            direction: direction,
+            area: area,
             todo: todo,
             mode: .twentyFiveFive,
             phase: .completed,
@@ -631,7 +631,7 @@ struct DayHistoryTests {
             plannedBreakDurationSeconds: 5 * 60
         )
         let remainingSession = FlowSession(
-            direction: direction,
+            area: area,
             todo: todo,
             mode: .twentyFiveFive,
             phase: .completed,
@@ -643,7 +643,7 @@ struct DayHistoryTests {
             actualFocusDurationSeconds: 30 * 60,
             plannedBreakDurationSeconds: 5 * 60
         )
-        context.insert(direction)
+        context.insert(area)
         context.insert(todo)
         context.insert(deletedSession)
         context.insert(remainingSession)
@@ -653,18 +653,18 @@ struct DayHistoryTests {
         #expect(todo.recordedFocusSeconds == 30 * 60)
         #expect(todo.actualProgress == 1)
         #expect(!todo.isCompleted)
-        #expect(direction.recordedFocusSeconds == 30 * 60)
+        #expect(area.recordedFocusSeconds == 30 * 60)
     }
 
     @Test func deletingOneFlowSegmentRemovesOnlyItsProgress() throws {
-        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
-        let direction = Direction(name: "仕事", type: .neutral, focusDurationSeconds: 25 * 60)
+        let area = Area(name: "仕事", type: .neutral, focusDurationSeconds: 25 * 60)
         let todo = Todo(
             title: "実装",
-            direction: direction,
+            area: area,
             measurement: .minutes,
             plannedAmount: 30,
             actualProgress: 25,
@@ -672,7 +672,7 @@ struct DayHistoryTests {
         )
         let start = Date(timeIntervalSince1970: 30_000)
         let session = FlowSession(
-            direction: direction,
+            area: area,
             todo: todo,
             mode: .twentyFiveFive,
             phase: .completed,
@@ -684,12 +684,12 @@ struct DayHistoryTests {
             actualFocusDurationSeconds: 25 * 60,
             plannedBreakDurationSeconds: 5 * 60
         )
-        let first = FlowSegment(session: session, direction: direction, todo: todo, startedAt: start, startFocusSeconds: 0)
+        let first = FlowSegment(session: session, area: area, todo: todo, startedAt: start, startFocusSeconds: 0)
         first.close(at: start.addingTimeInterval(10 * 60), totalFocusSeconds: 10 * 60)
-        let second = FlowSegment(session: session, direction: direction, todo: todo, startedAt: start.addingTimeInterval(10 * 60), startFocusSeconds: 10 * 60)
+        let second = FlowSegment(session: session, area: area, todo: todo, startedAt: start.addingTimeInterval(10 * 60), startFocusSeconds: 10 * 60)
         second.close(at: start.addingTimeInterval(25 * 60), totalFocusSeconds: 25 * 60)
         session.resolvedSegments = [first, second]
-        context.insert(direction)
+        context.insert(area)
         context.insert(todo)
         context.insert(session)
 
@@ -697,33 +697,33 @@ struct DayHistoryTests {
 
         #expect(session.resolvedSegments.map(\.id) == [second.id])
         #expect(session.actualFocusDurationSeconds == 15 * 60)
-        #expect(direction.recordedFocusSeconds == 15 * 60)
+        #expect(area.recordedFocusSeconds == 15 * 60)
         #expect(todo.recordedFocusSeconds == 15 * 60)
         #expect(todo.actualProgress == 15)
     }
 
     @Test func editingOneFlowSegmentPreservesSiblingContextAndReconcilesProgress() throws {
-        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
-        let ankiDirection = Direction(name: "Anki", type: .neutral)
-        let hiroconDirection = Direction(name: "広コン", type: .neutral)
+        let ankiArea = Area(name: "Anki", type: .neutral)
+        let hiroconArea = Area(name: "広コン", type: .neutral)
         let ankiTodo = Todo(
             title: "単語を復習",
-            direction: ankiDirection,
+            area: ankiArea,
             measurement: .minutes,
             plannedAmount: 30
         )
         let hiroconTodo = Todo(
             title: "ゲーム特別版のプレゼンを作成",
-            direction: hiroconDirection,
+            area: hiroconArea,
             measurement: .minutes,
             plannedAmount: 30
         )
         let start = Date(timeIntervalSince1970: 50_000)
         let session = FlowSession(
-            direction: hiroconDirection,
+            area: hiroconArea,
             todo: hiroconTodo,
             mode: .twentyFiveFive,
             phase: .completed,
@@ -737,7 +737,7 @@ struct DayHistoryTests {
         )
         let ankiSegment = FlowSegment(
             session: session,
-            direction: ankiDirection,
+            area: ankiArea,
             todo: ankiTodo,
             startedAt: start,
             startFocusSeconds: 0
@@ -748,7 +748,7 @@ struct DayHistoryTests {
         )
         let hiroconSegment = FlowSegment(
             session: session,
-            direction: hiroconDirection,
+            area: hiroconArea,
             todo: hiroconTodo,
             startedAt: start.addingTimeInterval(10 * 60),
             startFocusSeconds: 10 * 60
@@ -758,8 +758,8 @@ struct DayHistoryTests {
             totalFocusSeconds: 18 * 60
         )
         session.resolvedSegments = [ankiSegment, hiroconSegment]
-        context.insert(ankiDirection)
-        context.insert(hiroconDirection)
+        context.insert(ankiArea)
+        context.insert(hiroconArea)
         context.insert(ankiTodo)
         context.insert(hiroconTodo)
         context.insert(session)
@@ -769,7 +769,7 @@ struct DayHistoryTests {
             segment: ankiSegment,
             in: session,
             todo: hiroconTodo,
-            direction: hiroconDirection,
+            area: hiroconArea,
             focusSeconds: 8 * 60,
             memo: nil,
             modelContext: context,
@@ -779,28 +779,28 @@ struct DayHistoryTests {
         #expect(session.resolvedSegments.count == 2)
         #expect(session.resolvedSegments.contains { $0.id == hiroconSegment.id })
         #expect(ankiSegment.todo?.id == hiroconTodo.id)
-        #expect(ankiSegment.direction?.id == hiroconDirection.id)
+        #expect(ankiSegment.area?.id == hiroconArea.id)
         #expect(ankiSegment.resolvedFocusSeconds == 8 * 60)
         #expect(hiroconSegment.todo?.id == hiroconTodo.id)
         #expect(hiroconSegment.resolvedFocusSeconds == 8 * 60)
         #expect(session.todo?.id == hiroconTodo.id)
-        #expect(session.direction?.id == hiroconDirection.id)
+        #expect(session.area?.id == hiroconArea.id)
         #expect(session.actualFocusDurationSeconds == 16 * 60)
         #expect(ankiTodo.recordedFocusSeconds == 0)
         #expect(hiroconTodo.recordedFocusSeconds == 16 * 60)
-        #expect(ankiDirection.recordedFocusSeconds == 0)
-        #expect(hiroconDirection.recordedFocusSeconds == 16 * 60)
+        #expect(ankiArea.recordedFocusSeconds == 0)
+        #expect(hiroconArea.recordedFocusSeconds == 16 * 60)
     }
 
     @Test func deletingFlowSessionSoftDeletesRelatedBreaks() throws {
-        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
-        let direction = Direction(name: "仕事", type: .neutral)
+        let area = Area(name: "仕事", type: .neutral)
         let start = Date(timeIntervalSince1970: 40_000)
         let session = FlowSession(
-            direction: direction,
+            area: area,
             mode: .twentyFiveFive,
             phase: .completed,
             status: .completed,
@@ -817,7 +817,7 @@ struct DayHistoryTests {
             startedAt: session.endedAt!,
             plannedDurationSeconds: 5 * 60
         )
-        context.insert(direction)
+        context.insert(area)
         context.insert(session)
         context.insert(flowBreak)
 
@@ -831,17 +831,17 @@ struct DayHistoryTests {
     }
 
     @Test func editingBreakPushesOnlyOverlappingSessionsInTheSameSeries() throws {
-        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
-        let direction = Direction(name: "仕事", type: .neutral)
+        let area = Area(name: "仕事", type: .neutral)
         let seriesID = UUID()
         let start = Date(timeIntervalSince1970: 100_000)
 
         let first = FlowSession(
             seriesID: seriesID,
-            direction: direction,
+            area: area,
             mode: .twentyFiveFive,
             phase: .completed,
             status: .completed,
@@ -855,7 +855,7 @@ struct DayHistoryTests {
         let secondStart = start.addingTimeInterval(30 * 60)
         let second = FlowSession(
             seriesID: seriesID,
-            direction: direction,
+            area: area,
             mode: .twentyFiveFive,
             phase: .completed,
             status: .completed,
@@ -868,7 +868,7 @@ struct DayHistoryTests {
         )
         let secondSegment = FlowSegment(
             session: second,
-            direction: direction,
+            area: area,
             todo: nil,
             startedAt: secondStart,
             startFocusSeconds: 0
@@ -878,7 +878,7 @@ struct DayHistoryTests {
         let thirdStart = start.addingTimeInterval(60 * 60)
         let third = FlowSession(
             seriesID: seriesID,
-            direction: direction,
+            area: area,
             mode: .twentyFiveFive,
             phase: .completed,
             status: .completed,
@@ -890,7 +890,7 @@ struct DayHistoryTests {
             plannedBreakDurationSeconds: 5 * 60
         )
         let unrelated = FlowSession(
-            direction: direction,
+            area: area,
             mode: .twentyFiveFive,
             phase: .completed,
             status: .completed,
@@ -920,7 +920,7 @@ struct DayHistoryTests {
             plannedDurationSeconds: 5 * 60
         )
 
-        context.insert(direction)
+        context.insert(area)
         context.insert(first)
         context.insert(second)
         context.insert(third)
@@ -958,16 +958,16 @@ struct DayHistoryTests {
     }
 
     @Test func editingBreakStartUpdatesItsIntervalAndPushesOnlyAnOverlap() throws {
-        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
-        let direction = Direction(name: "仕事", type: .neutral)
+        let area = Area(name: "仕事", type: .neutral)
         let seriesID = UUID()
         let start = Date(timeIntervalSince1970: 200_000)
         let first = FlowSession(
             seriesID: seriesID,
-            direction: direction,
+            area: area,
             mode: .twentyFiveFive,
             phase: .completed,
             status: .completed,
@@ -980,7 +980,7 @@ struct DayHistoryTests {
         )
         let second = FlowSession(
             seriesID: seriesID,
-            direction: direction,
+            area: area,
             mode: .twentyFiveFive,
             phase: .completed,
             status: .completed,
@@ -1000,7 +1000,7 @@ struct DayHistoryTests {
             connectedUntil: start.addingTimeInterval(30 * 60),
             plannedDurationSeconds: 5 * 60
         )
-        context.insert(direction)
+        context.insert(area)
         context.insert(first)
         context.insert(second)
         context.insert(flowBreak)
@@ -1023,7 +1023,7 @@ struct DayHistoryTests {
     }
 
     @Test func deletingBreakSoftDeletesOnlyThatHistoryRecord() throws {
-        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext

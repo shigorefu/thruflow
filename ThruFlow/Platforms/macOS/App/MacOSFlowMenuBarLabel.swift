@@ -33,7 +33,7 @@ struct MacOSFlowMenuBarLabel: View {
         }
 
         let session = activeFlowStore.activeSession
-        let emoji = session?.direction?.symbolName ?? "▶"
+        let emoji = session?.area?.symbolName ?? "▶"
         return String(localized: "\(emoji): \(taskName(for: session)) - \(activeFlowStore.remainingText(now: now))")
     }
 
@@ -42,9 +42,9 @@ struct MacOSFlowMenuBarLabel: View {
             return TodoDisplay.title(for: todo)
         }
 
-        if let directionName = session?.direction?.name.trimmingCharacters(in: .whitespacesAndNewlines),
-           !directionName.isEmpty {
-            return directionName
+        if let areaName = session?.area?.name.trimmingCharacters(in: .whitespacesAndNewlines),
+           !areaName.isEmpty {
+            return areaName
         }
 
         return String(localized: "その他")

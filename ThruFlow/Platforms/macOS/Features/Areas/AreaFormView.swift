@@ -1,5 +1,5 @@
 //
-//  DirectionFormView.swift
+//  AreaFormView.swift
 //  ThruFlow
 //
 //
@@ -7,10 +7,10 @@
 import SwiftData
 import SwiftUI
 
-struct DirectionFormView: View {
+struct AreaFormView: View {
     enum Mode {
         case create
-        case edit(Direction)
+        case edit(Area)
 
         var title: String {
             switch self {
@@ -28,24 +28,24 @@ struct DirectionFormView: View {
     @Environment(\.modelContext) private var modelContext
 
     let mode: Mode
-    let onSaved: ((Direction) -> Void)?
+    let onSaved: ((Area) -> Void)?
 
-    @State private var draft: DirectionDraft
-    @State private var validationErrors: [DirectionValidationError] = []
+    @State private var draft: AreaDraft
+    @State private var validationErrors: [AreaValidationError] = []
     @State private var saveErrorMessage: String?
     @State private var isShowingEmojiPicker = false
     @State private var isShowingDeleteConfirmation = false
     @State private var isShowingHabitPauseDateSheet = false
     @State private var habitPauseEndDate = Date.now
 
-    private let validator = DirectionValidator()
-    private let typeOptions: [DirectionType] = [.neutral, .habit, .nice]
+    private let validator = AreaValidator()
+    private let typeOptions: [AreaType] = [.neutral, .habit, .nice]
 
     init(
         mode: Mode,
         initialName: String? = nil,
-        initialDraft: DirectionDraft? = nil,
-        onSaved: ((Direction) -> Void)? = nil
+        initialDraft: AreaDraft? = nil,
+        onSaved: ((Area) -> Void)? = nil
     ) {
         self.mode = mode
         self.onSaved = onSaved
@@ -55,12 +55,12 @@ struct DirectionFormView: View {
             if let initialDraft {
                 _draft = State(initialValue: initialDraft)
             } else {
-                var draft = DirectionDraft()
+                var draft = AreaDraft()
                 draft.name = initialName ?? ""
                 _draft = State(initialValue: draft)
             }
-        case .edit(let direction):
-            _draft = State(initialValue: DirectionDraft(direction: direction))
+        case .edit(let area):
+            _draft = State(initialValue: AreaDraft(area: area))
         }
         _saveErrorMessage = State(initialValue: nil)
     }
@@ -75,8 +75,8 @@ struct DirectionFormView: View {
                     if draft.type == .habit {
                         goalCard
 
-                        if case .edit(let direction) = mode {
-                            habitPauseCard(direction)
+                        if case .edit(let area) = mode {
+                            habitPauseCard(area)
                         }
                     }
 
@@ -102,7 +102,7 @@ struct DirectionFormView: View {
 
                 ToolbarItem(placement: .confirmationAction) {
                     Button(String(localized: "保存"), action: save)
-                        .accessibilityIdentifier("direction.editor.save")
+                        .accessibilityIdentifier("area.editor.save")
                 }
             }
         }
@@ -126,7 +126,7 @@ struct DirectionFormView: View {
         }
 #endif
         .confirmationDialog(String(localized: "この方向を削除しますか？"), isPresented: $isShowingDeleteConfirmation) {
-            Button(String(localized: "削除"), role: .destructive, action: deleteDirection)
+            Button(String(localized: "削除"), role: .destructive, action: deleteArea)
             Button(String(localized: "キャンセル"), role: .cancel) {}
         } message: {
             Text(String(localized: "履歴と関連タスクを保つため、方向はアーカイブされます。"))
@@ -134,7 +134,7 @@ struct DirectionFormView: View {
     }
 
     private var headerCard: some View {
-        DirectionSectionCard {
+        AreaSectionCard {
             HStack(alignment: .firstTextBaseline, spacing: 18) {
                 Button {
                     isShowingEmojiPicker = true
@@ -160,7 +160,7 @@ struct DirectionFormView: View {
     }
 
     private var typeCard: some View {
-        DirectionSectionCard(title: String(localized: "種類")) {
+        AreaSectionCard(title: String(localized: "種類")) {
             Picker(String(localized: "種類"), selection: $draft.type) {
                 ForEach(typeOptions) { type in
                     Text(type.displayName).tag(type)
@@ -176,7 +176,7 @@ struct DirectionFormView: View {
     }
 
     private var goalCard: some View {
-        DirectionSectionCard(title: String(localized: "目標")) {
+        AreaSectionCard(title: String(localized: "目標")) {
             HStack(spacing: 10) {
                 TextField("1", value: goalTargetBinding, format: .number)
                     .textFieldStyle(.roundedBorder)
@@ -208,7 +208,7 @@ struct DirectionFormView: View {
     }
 
     private var colorCard: some View {
-        DirectionSectionCard(title: String(localized: "カラー")) {
+        AreaSectionCard(title: String(localized: "カラー")) {
             LazyVGrid(columns: colorColumns, alignment: .leading, spacing: 10) {
                 ForEach(colorOptions, id: \.hex) { option in
                     Button {
@@ -234,10 +234,10 @@ struct DirectionFormView: View {
         }
     }
 
-    private func habitPauseCard(_ direction: Direction) -> some View {
-        let period = activePausePeriod(for: direction)
+    private func habitPauseCard(_ area: Area) -> some View {
+        let period = activePausePeriod(for: area)
 
-        return DirectionSectionCard(title: String(localized: "習慣の状態")) {
+        return AreaSectionCard(title: String(localized: "習慣の状態")) {
             HStack(spacing: 12) {
                 Image(systemName: period == nil ? "checkmark.circle.fill" : "pause.circle.fill")
                     .font(.title2)
@@ -259,7 +259,7 @@ struct DirectionFormView: View {
                 if period == nil {
                     Menu {
                         Button(String(localized: "今日は休む")) {
-                            pauseToday(direction)
+                            pauseToday(area)
                         }
 
                         Button(String(localized: "期間を指定…")) {
@@ -270,7 +270,7 @@ struct DirectionFormView: View {
                         Divider()
 
                         Button(String(localized: "再開するまで一時停止")) {
-                            pauseIndefinitely(direction)
+                            pauseIndefinitely(area)
                         }
                     } label: {
                         Label(String(localized: "一時停止"), systemImage: "pause.circle")
@@ -282,7 +282,7 @@ struct DirectionFormView: View {
                     }
                 } else {
                     Button(String(localized: "再開")) {
-                        resume(direction)
+                        resume(area)
                     }
                     .buttonStyle(.borderedProminent)
                 }
@@ -326,8 +326,8 @@ struct DirectionFormView: View {
                 }
 
                 Button(String(localized: "一時停止")) {
-                    guard case .edit(let direction) = mode else { return }
-                    pause(direction, through: habitPauseEndDate)
+                    guard case .edit(let area) = mode else { return }
+                    pause(area, through: habitPauseEndDate)
                     isShowingHabitPauseDateSheet = false
                 }
                 .buttonStyle(.borderedProminent)
@@ -340,7 +340,7 @@ struct DirectionFormView: View {
     @ViewBuilder
     private var validationCard: some View {
         if !validationErrors.isEmpty || saveErrorMessage != nil {
-            DirectionSectionCard {
+            AreaSectionCard {
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(validationErrors, id: \.self) { error in
                         Label(error.localizedDescription, systemImage: "exclamationmark.triangle")
@@ -359,7 +359,7 @@ struct DirectionFormView: View {
     @ViewBuilder
     private var deleteCard: some View {
         if case .edit = mode {
-            DirectionSectionCard {
+            AreaSectionCard {
                 Button(role: .destructive) {
                     isShowingDeleteConfirmation = true
                 } label: {
@@ -447,10 +447,10 @@ struct DirectionFormView: View {
         let weekdayMask = requiresGoal && goalSchedule != .everyDay ? draft.weekdayMask : nil
 
         do {
-            let savedDirection: Direction
+            let savedArea: Area
             switch mode {
             case .create:
-                let direction = Direction(
+                let area = Area(
                     name: draft.trimmedName,
                     type: draft.type,
                     symbolName: draft.normalizedSymbolName,
@@ -462,14 +462,14 @@ struct DirectionFormView: View {
                     weeklyTargetCount: weeklyTargetCount,
                     weekdayMask: weekdayMask
                 )
-                modelContext.insert(direction)
-                savedDirection = direction
-            case .edit(let direction):
-                let wasHabit = direction.type == .habit
+                modelContext.insert(area)
+                savedArea = area
+            case .edit(let area):
+                let wasHabit = area.type == .habit
                 let todos = wasHabit && draft.type == .habit
                     ? try modelContext.fetch(FetchDescriptor<Todo>())
                     : []
-                direction.update(
+                area.update(
                     name: draft.trimmedName,
                     type: draft.type,
                     symbolName: draft.normalizedSymbolName,
@@ -481,14 +481,14 @@ struct DirectionFormView: View {
                     weeklyTargetCount: weeklyTargetCount,
                     weekdayMask: weekdayMask
                 )
-                if wasHabit, direction.type == .habit {
-                    reconcileFutureHabitTodos(for: direction, todos: todos)
+                if wasHabit, area.type == .habit {
+                    reconcileFutureHabitTodos(for: area, todos: todos)
                 }
-                savedDirection = direction
+                savedArea = area
             }
 
             try modelContext.save()
-            onSaved?(savedDirection)
+            onSaved?(savedArea)
             dismiss()
         } catch {
             modelContext.rollback()
@@ -496,21 +496,21 @@ struct DirectionFormView: View {
         }
     }
 
-    private func reconcileFutureHabitTodos(for direction: Direction, todos: [Todo]) {
+    private func reconcileFutureHabitTodos(for area: Area, todos: [Todo]) {
         _ = HabitScheduleChangeReconciler(
             calendar: calendar,
             dayBoundary: dayBoundary
         ).reconcile(
-            direction: direction,
+            area: area,
             todos: todos,
             modelContext: modelContext
         )
     }
 
-    private func deleteDirection() {
-        guard case .edit(let direction) = mode else { return }
+    private func deleteArea() {
+        guard case .edit(let area) = mode else { return }
 
-        direction.archive()
+        area.archive()
         dismiss()
     }
 
@@ -518,9 +518,9 @@ struct DirectionFormView: View {
         dayBoundary.day(containing: .now, calendar: calendar)
     }
 
-    private func activePausePeriod(for direction: Direction) -> HabitPausePeriod? {
+    private func activePausePeriod(for area: Area) -> HabitPausePeriod? {
         HabitPauseService(calendar: calendar, dayBoundary: dayBoundary)
-            .activePeriod(for: direction, on: logicalToday)
+            .activePeriod(for: area, on: logicalToday)
     }
 
     private func pauseDescription(for period: HabitPausePeriod) -> String {
@@ -537,30 +537,30 @@ struct DirectionFormView: View {
         return String(localized: "\(date)まで休み")
     }
 
-    private func pauseToday(_ direction: Direction) {
+    private func pauseToday(_ area: Area) {
         withHabitTodos { todos in
             _ = HabitPauseService(calendar: calendar, dayBoundary: dayBoundary)
-                .pauseToday(direction, todos: todos)
+                .pauseToday(area, todos: todos)
         }
     }
 
-    private func pause(_ direction: Direction, through date: Date) {
+    private func pause(_ area: Area, through date: Date) {
         withHabitTodos { todos in
             _ = HabitPauseService(calendar: calendar, dayBoundary: dayBoundary)
-                .pause(direction, through: date, todos: todos)
+                .pause(area, through: date, todos: todos)
         }
     }
 
-    private func pauseIndefinitely(_ direction: Direction) {
+    private func pauseIndefinitely(_ area: Area) {
         withHabitTodos { todos in
             _ = HabitPauseService(calendar: calendar, dayBoundary: dayBoundary)
-                .pauseIndefinitely(direction, todos: todos)
+                .pauseIndefinitely(area, todos: todos)
         }
     }
 
-    private func resume(_ direction: Direction) {
+    private func resume(_ area: Area) {
         let service = HabitPauseService(calendar: calendar, dayBoundary: dayBoundary)
-        guard service.resume(direction) else { return }
+        guard service.resume(area) else { return }
 
         do {
             let todos = try modelContext.fetch(FetchDescriptor<Todo>())
@@ -568,7 +568,7 @@ struct DirectionFormView: View {
                 calendar: calendar,
                 dayBoundary: dayBoundary
             ).materialize(
-                directions: [direction],
+                areas: [area],
                 dates: [logicalToday],
                 modelContext: modelContext,
                 knownTodos: todos,
@@ -591,7 +591,7 @@ struct DirectionFormView: View {
         }
     }
 
-    private func normalizeGoalState(for type: DirectionType) {
+    private func normalizeGoalState(for type: AreaType) {
         guard type == .habit else {
             draft.goalEnabled = false
             draft.goalTarget = nil
@@ -615,7 +615,7 @@ struct DirectionFormView: View {
     }
 }
 
-private struct DirectionSectionCard<Content: View>: View {
+private struct AreaSectionCard<Content: View>: View {
     var title: String?
     @ViewBuilder let content: Content
 
@@ -705,6 +705,6 @@ private let goalUnitOptions: [GoalUnit] = [
 ]
 
 #Preview(String(localized: "方向を作成")) {
-    DirectionFormView(mode: .create)
-        .modelContainer(for: Direction.self, inMemory: true)
+    AreaFormView(mode: .create)
+        .modelContainer(for: Area.self, inMemory: true)
 }

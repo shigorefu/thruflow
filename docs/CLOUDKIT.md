@@ -19,6 +19,15 @@ opening the CloudKit-backed store. iOS device builds rely on the signed target
 entitlement; the simulator is rejected earlier by the platform check and stays
 local-only.
 
+## Persistence Naming Compatibility
+
+Version 1.2.0 renames application symbols and files to `Area`, but does not
+rename the stored model. The `@Model` runtime class remains `Direction`, and
+the Todo, FlowSession, and FlowSegment relationship fields remain `direction`.
+CloudKit therefore continues using the existing entity and fields; no schema
+migration, duplicate Area entity, or record copy is introduced. A schema
+contract test guards these exact names.
+
 ## Local And Test Modes
 
 - Unit/UI tests use an in-memory `ModelConfiguration` with CloudKit disabled.
@@ -45,15 +54,15 @@ read-only iCloud status in Settings. A failed CloudKit event is shown as a sync
 problem without blocking subsequent local work or changing the local-first data
 model.
 
-## System Direction Convergence
+## System Area Convergence
 
-The built-in `その他` Direction is identified by the stable optional
+The built-in `その他` Area is identified by the stable optional
 `systemRoleRawValue = taskInbox`, not by its localized name. The optional field
 keeps existing SwiftData stores lightweight-migration compatible.
 
-Two devices can create the built-in Direction while offline before either sees
+Two devices can create the built-in Area while offline before either sees
 the other's record. After CloudKit imports both records,
-`DefaultDirectionReconciler` deterministically keeps the oldest record (UUID is
+`DefaultAreaReconciler` deterministically keeps the oldest record (UUID is
 the tie-breaker), reconnects Todo and Flow relationships, and soft-archives the
 duplicates. The reconciliation uses the existing active persistence polling
 cycle; it does not add another timer or require CloudKit for local-only runs.
@@ -69,10 +78,10 @@ to Production with the rest of the SwiftData schema before release.
    and create the `com.shigorefu.thruflow` development profile.
 4. Run both signed apps. The development schema is materialized from the
    SwiftData model when the CloudKit-backed store starts.
-5. Create or edit a Direction/Task/Flow on one device and verify it arrives on
+5. Create or edit an Area/Task/Flow on one device and verify it arrives on
    the other after both apps have had network time to process CloudKit changes.
 6. Start Flow on one device while the other application is active. Verify that
-   Task, Direction, mode, phase, pause state, and remaining time are adopted
+   Task, Area, mode, phase, pause state, and remaining time are adopted
    without restarting the timer. Repeat the command in the opposite direction.
 
 Simulator builds cannot validate CloudKit synchronization because Xcode strips

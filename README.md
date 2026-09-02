@@ -3,18 +3,19 @@
 ThruFlow / スルフロ is an Apple-first productivity app that turns focused work into visible task progress.
 
 ```text
-Direction -> Task -> Flow -> focused time -> progress -> statistics
+Area -> Task -> Flow -> focused time -> progress -> statistics
 ```
 
-The project is preparing version `1.0.0 (6)` for the App Store. It is pre-release software: back up important data and report reproducible problems through the [GitHub issue templates](https://github.com/shigorefu/thruflow/issues/new/choose).
+The current development line is version `1.2.0 (8)`. Back up important data
+before testing development builds and report reproducible problems through the
+[GitHub issue templates](https://github.com/shigorefu/thruflow/issues/new/choose).
 
 ## What ThruFlow does
 
 - Records focused work with Sprint, Focus, and Deep timers.
-- Connects actual focused time to Tasks and long-lived Direction (`方向`)
-  activity areas.
+- Connects actual focused time to Tasks and long-lived Areas.
 - Preserves a detailed Flow/rest timeline and recalculates progress from history.
-- Shows daily, weekly, monthly, yearly, Task, and Direction statistics.
+- Shows daily, weekly, monthly, yearly, Task, and Area statistics.
 - Syncs through the user's private iCloud database while retaining a local-only development mode.
 - Provides iPhone and macOS widgets, Live Activity and Dynamic Island, plus an Apple Watch companion.
 - Uses Japanese by default and includes English and Russian localizations.

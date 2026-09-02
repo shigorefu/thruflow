@@ -43,7 +43,7 @@ struct StatisticsPeriodFilter: Hashable, Sendable {
     var anchorDate: Date = .now
     var customStartDate: Date?
     var customEndDate: Date?
-    var directionID: UUID?
+    var areaID: UUID?
     var query = ""
 
     nonisolated var usesCustomRange: Bool {
@@ -71,10 +71,10 @@ struct StatisticsPeriodFlowRecord: Equatable, Sendable {
     let sessionID: UUID
     let startedAt: Date
     let focusSeconds: Int
-    let directionID: UUID?
-    let directionName: String
-    let directionSymbol: String
-    let directionColorHex: String?
+    let areaID: UUID?
+    let areaName: String
+    let areaSymbol: String
+    let areaColorHex: String?
     let todoID: UUID?
     let todoTitle: String
     let todoHashtags: [String]
@@ -89,10 +89,10 @@ struct StatisticsPeriodAchievementRecord: Equatable, Sendable {
     let todoTitle: String
     let todoHashtags: [String]
     let todoNotes: String
-    let directionID: UUID?
-    let directionName: String
-    let directionSymbol: String
-    let directionColorHex: String?
+    let areaID: UUID?
+    let areaName: String
+    let areaSymbol: String
+    let areaColorHex: String?
 }
 
 struct StatisticsPeriodSummary: Equatable, Sendable {
@@ -129,7 +129,7 @@ struct StatisticsDistributionItem: Identifiable, Equatable, Sendable {
 struct StatisticsCSVRow: Equatable, Sendable {
     let date: Date
     let task: String
-    let direction: String
+    let area: String
     let hashtags: [String]
     let focusedSeconds: Int
     let flowCount: Int
@@ -151,7 +151,7 @@ struct StatisticsPeriodSnapshot: Equatable, Sendable {
     let previousSummary: StatisticsPeriodSummary
     let trend: [StatisticsTrendPoint]
     let taskDistribution: [StatisticsDistributionItem]
-    let directionDistribution: [StatisticsDistributionItem]
+    let areaDistribution: [StatisticsDistributionItem]
     let flowDays: [StatisticsDay]
     let achievementDays: [AchievementDay]
     let csvRows: [StatisticsCSVRow]
@@ -240,10 +240,10 @@ struct StatisticsPeriodBuilder: Sendable {
     ) -> StatisticsPeriodSnapshot {
         let periodBounds = bounds(for: filter)
         let filteredFlows = flowRecords.filter {
-            matchesDirection($0.directionID, filter: filter) && matchesQuery($0, query: filter.query)
+            matchesArea($0.areaID, filter: filter) && matchesQuery($0, query: filter.query)
         }
         let filteredAchievements = achievementRecords.filter {
-            matchesDirection($0.directionID, filter: filter) && matchesQuery($0, query: filter.query)
+            matchesArea($0.areaID, filter: filter) && matchesQuery($0, query: filter.query)
         }
 
         let currentFlows = filteredFlows.filter {
@@ -274,7 +274,7 @@ struct StatisticsPeriodBuilder: Sendable {
                 previousAchievements: previousAchievements
             ),
             taskDistribution: makeDistribution(flows: currentFlows, dimension: .task),
-            directionDistribution: makeDistribution(flows: currentFlows, dimension: .direction),
+            areaDistribution: makeDistribution(flows: currentFlows, dimension: .area),
             flowDays: makeFlowDays(days: days, flows: currentFlows),
             achievementDays: makeAchievementDays(days: days, achievements: currentAchievements),
             csvRows: makeCSVRows(flows: currentFlows, achievements: currentAchievements)
@@ -299,9 +299,9 @@ struct StatisticsPeriodBuilder: Sendable {
         return .year
     }
 
-    nonisolated private func matchesDirection(_ directionID: UUID?, filter: StatisticsPeriodFilter) -> Bool {
-        guard let selectedID = filter.directionID else { return true }
-        return directionID == selectedID
+    nonisolated private func matchesArea(_ areaID: UUID?, filter: StatisticsPeriodFilter) -> Bool {
+        guard let selectedID = filter.areaID else { return true }
+        return areaID == selectedID
     }
 
     nonisolated private func matchesQuery(_ record: StatisticsPeriodFlowRecord, query: String) -> Bool {
@@ -311,8 +311,8 @@ struct StatisticsPeriodBuilder: Sendable {
                 record.todoTitle,
                 record.todoNotes,
                 record.todoHashtags.joined(separator: " "),
-                record.directionName,
-                record.directionSymbol,
+                record.areaName,
+                record.areaSymbol,
                 record.intent,
                 record.result
             ]
@@ -326,8 +326,8 @@ struct StatisticsPeriodBuilder: Sendable {
                 record.todoTitle,
                 record.todoNotes,
                 record.todoHashtags.joined(separator: " "),
-                record.directionName,
-                record.directionSymbol
+                record.areaName,
+                record.areaSymbol
             ]
         )
     }
@@ -458,7 +458,7 @@ struct StatisticsPeriodBuilder: Sendable {
 
     private enum DistributionDimension {
         case task
-        case direction
+        case area
     }
 
     private struct DistributionAccumulator {
@@ -484,10 +484,10 @@ struct StatisticsPeriodBuilder: Sendable {
                 key = title.isEmpty ? "task:unassigned" : "task:\(title.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current))"
                 name = title.isEmpty ? String(localized: "タスクなし") : title
                 symbol = nil
-            case .direction:
-                key = record.directionID.map { "direction:\($0.uuidString)" } ?? "direction:other"
-                name = record.directionName.isEmpty ? String(localized: "その他") : record.directionName
-                symbol = record.directionSymbol.isEmpty ? nil : record.directionSymbol
+            case .area:
+                key = record.areaID.map { "area:\($0.uuidString)" } ?? "area:other"
+                name = record.areaName.isEmpty ? String(localized: "その他") : record.areaName
+                symbol = record.areaSymbol.isEmpty ? nil : record.areaSymbol
             }
 
             var accumulator = grouped[key] ?? DistributionAccumulator(
@@ -497,7 +497,7 @@ struct StatisticsPeriodBuilder: Sendable {
                 focusSeconds: 0
             )
             accumulator.focusSeconds += record.focusSeconds
-            if let color = record.directionColorHex {
+            if let color = record.areaColorHex {
                 accumulator.colors.append(WeightedHexColor(hex: color, weight: record.focusSeconds))
             }
             grouped[key] = accumulator
@@ -546,10 +546,10 @@ struct StatisticsPeriodBuilder: Sendable {
                 date: date,
                 totalFocusSeconds: records.reduce(0) { $0 + max(0, $1.focusSeconds) },
                 mixedColorHex: StatisticsHeatmapBuilder.mixedHexColor(records.compactMap {
-                    guard let color = $0.directionColorHex else { return nil }
+                    guard let color = $0.areaColorHex else { return nil }
                     return WeightedHexColor(hex: color, weight: $0.focusSeconds)
                 }),
-                directionCount: Set(records.compactMap(\.directionID)).count,
+                areaCount: Set(records.compactMap(\.areaID)).count,
                 sessionCount: Set(records.map(\.sessionID)).count
             )
         }
@@ -568,10 +568,10 @@ struct StatisticsPeriodBuilder: Sendable {
                 date: date,
                 completedCount: records.count,
                 mixedColorHex: StatisticsHeatmapBuilder.mixedHexColor(records.compactMap {
-                    guard let color = $0.directionColorHex else { return nil }
+                    guard let color = $0.areaColorHex else { return nil }
                     return WeightedHexColor(hex: color, weight: 1)
                 }),
-                directionCount: Set(records.compactMap(\.directionID)).count
+                areaCount: Set(records.compactMap(\.areaID)).count
             )
         }
     }
@@ -579,22 +579,22 @@ struct StatisticsPeriodBuilder: Sendable {
     nonisolated private struct CSVKey: Hashable {
         let day: Date
         let task: String
-        let direction: String
+        let area: String
 
         nonisolated static func == (lhs: CSVKey, rhs: CSVKey) -> Bool {
-            lhs.day == rhs.day && lhs.task == rhs.task && lhs.direction == rhs.direction
+            lhs.day == rhs.day && lhs.task == rhs.task && lhs.area == rhs.area
         }
 
         nonisolated func hash(into hasher: inout Hasher) {
             hasher.combine(day)
             hasher.combine(task)
-            hasher.combine(direction)
+            hasher.combine(area)
         }
     }
 
     private struct CSVAccumulator {
         var task: String
-        var direction: String
+        var area: String
         var hashtags: Set<String>
         var focusedSeconds: Int
         var sessionIDs: Set<UUID>
@@ -610,11 +610,11 @@ struct StatisticsPeriodBuilder: Sendable {
         for record in flows {
             let day = dayBoundary.day(containing: record.startedAt, calendar: calendar)
             let task = record.todoTitle.trimmingCharacters(in: .whitespacesAndNewlines)
-            let direction = record.directionName.trimmingCharacters(in: .whitespacesAndNewlines)
-            let key = CSVKey(day: day, task: normalized(task), direction: normalized(direction))
+            let area = record.areaName.trimmingCharacters(in: .whitespacesAndNewlines)
+            let key = CSVKey(day: day, task: normalized(task), area: normalized(area))
             var value = grouped[key] ?? CSVAccumulator(
                 task: task,
-                direction: direction,
+                area: area,
                 hashtags: [],
                 focusedSeconds: 0,
                 sessionIDs: [],
@@ -629,11 +629,11 @@ struct StatisticsPeriodBuilder: Sendable {
         for record in achievements {
             let day = dayBoundary.day(containing: record.completedAt, calendar: calendar)
             let task = record.todoTitle.trimmingCharacters(in: .whitespacesAndNewlines)
-            let direction = record.directionName.trimmingCharacters(in: .whitespacesAndNewlines)
-            let key = CSVKey(day: day, task: normalized(task), direction: normalized(direction))
+            let area = record.areaName.trimmingCharacters(in: .whitespacesAndNewlines)
+            let key = CSVKey(day: day, task: normalized(task), area: normalized(area))
             var value = grouped[key] ?? CSVAccumulator(
                 task: task,
-                direction: direction,
+                area: area,
                 hashtags: [],
                 focusedSeconds: 0,
                 sessionIDs: [],
@@ -648,7 +648,7 @@ struct StatisticsPeriodBuilder: Sendable {
             StatisticsCSVRow(
                 date: key.day,
                 task: value.task,
-                direction: value.direction,
+                area: value.area,
                 hashtags: value.hashtags.sorted { $0.localizedStandardCompare($1) == .orderedAscending },
                 focusedSeconds: value.focusedSeconds,
                 flowCount: value.sessionIDs.count,
@@ -657,7 +657,7 @@ struct StatisticsPeriodBuilder: Sendable {
         }.sorted {
             if $0.date != $1.date { return $0.date < $1.date }
             if $0.task != $1.task { return $0.task.localizedStandardCompare($1.task) == .orderedAscending }
-            return $0.direction.localizedStandardCompare($1.direction) == .orderedAscending
+            return $0.area.localizedStandardCompare($1.area) == .orderedAscending
         }
     }
 

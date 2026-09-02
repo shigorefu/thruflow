@@ -9,13 +9,13 @@ struct TaskQuickInputParserTests {
     @Test func parsesCombinedEnglishInput() {
         let result = parser.parse(
             "[] Prepare materials @AWS !high /today #E3",
-            directions: [.init(id: awsID, name: "AWS")],
+            areas: [.init(id: awsID, name: "AWS")],
             anchorDate: referenceDate
         )
 
         #expect(result.title == "Prepare materials")
         #expect(result.measurement == .checkbox)
-        #expect(result.directionID == awsID)
+        #expect(result.areaID == awsID)
         #expect(result.priority == .high)
         #expect(result.isRoomIfPossible == false)
         #expect(result.date == .scheduled(Calendar.current.startOfDay(for: referenceDate)))
@@ -53,11 +53,11 @@ struct TaskQuickInputParserTests {
     }
 
     @Test func keepsUnknownTokensInTitle() {
-        let result = parser.parse("[abc] Study @AWX", directions: [.init(id: awsID, name: "AWS")])
+        let result = parser.parse("[abc] Study @AWX", areas: [.init(id: awsID, name: "AWS")])
 
         #expect(result.title == "[abc] Study @AWX")
         #expect(result.measurement == nil)
-        #expect(result.unresolvedDirection == "AWX")
+        #expect(result.unresolvedArea == "AWX")
     }
 
     @Test func deduplicatesHashtagsCaseInsensitivelyAndPreservesFirstSpelling() {
@@ -107,12 +107,12 @@ struct TaskQuickInputParserTests {
     @Test func keepsASeparatorAfterCommittingAnInlineToken() {
         let result = parser.parse(
             "Prepare @AWS ",
-            directions: [.init(id: awsID, name: "AWS")],
+            areas: [.init(id: awsID, name: "AWS")],
             consumeTrailingToken: false
         )
 
         #expect(result.title == "Prepare ")
-        #expect(result.directionID == awsID)
+        #expect(result.areaID == awsID)
     }
 
     @Test func exposesOnlySupportedTrailingAutocompleteTokens() {

@@ -1,5 +1,5 @@
 //
-//  Direction.swift
+//  Area.swift
 //  ThruFlow
 //
 //
@@ -7,20 +7,20 @@
 import Foundation
 import SwiftData
 
-enum DirectionType: String, CaseIterable, Codable, Identifiable {
+enum AreaType: String, CaseIterable, Codable, Identifiable {
     case habit
     case neutral
     case nice
 
     var id: String { rawValue }
 
-    static func normalized(rawValue: String) -> DirectionType? {
+    static func normalized(rawValue: String) -> AreaType? {
         switch rawValue {
-        case DirectionType.habit.rawValue, "must":
+        case AreaType.habit.rawValue, "must":
             .habit
-        case DirectionType.neutral.rawValue:
+        case AreaType.neutral.rawValue:
             .neutral
-        case DirectionType.nice.rawValue, "bonus":
+        case AreaType.nice.rawValue, "bonus":
             .nice
         default:
             nil
@@ -50,7 +50,7 @@ enum DirectionType: String, CaseIterable, Codable, Identifiable {
     }
 }
 
-enum DirectionSystemRole: String, Codable {
+enum AreaSystemRole: String, Codable {
     case taskInbox
 }
 
@@ -151,12 +151,15 @@ enum GoalWeekday: Int, CaseIterable, Codable, Identifiable {
     }
 }
 
+/// The runtime type name intentionally remains `Direction` because SwiftData
+/// and the production CloudKit schema persist it as the entity identifier.
+/// Application code uses the `Area` alias declared below.
 @Model
 final class Direction {
     var id: UUID = UUID()
     var name: String = ""
     var systemRoleRawValue: String?
-    var typeRawValue: String = DirectionType.neutral.rawValue
+    var typeRawValue: String = AreaType.neutral.rawValue
     var symbolName: String = "🎯"
     var colorHex: String = "#007AFF"
     var goalTarget: Int?
@@ -181,8 +184,8 @@ final class Direction {
     init(
         id: UUID = UUID(),
         name: String,
-        systemRole: DirectionSystemRole? = nil,
-        type: DirectionType,
+        systemRole: AreaSystemRole? = nil,
+        type: AreaType,
         symbolName: String = "🎯",
         colorHex: String = "#007AFF",
         goalTarget: Int? = nil,
@@ -216,15 +219,15 @@ final class Direction {
         self.archivedAt = archivedAt
     }
 
-    var type: DirectionType {
-        get { DirectionType.normalized(rawValue: typeRawValue) ?? .neutral }
+    var type: AreaType {
+        get { AreaType.normalized(rawValue: typeRawValue) ?? .neutral }
         set { typeRawValue = newValue.rawValue }
     }
 
-    var systemRole: DirectionSystemRole? {
+    var systemRole: AreaSystemRole? {
         get {
             guard let systemRoleRawValue else { return nil }
-            return DirectionSystemRole(rawValue: systemRoleRawValue)
+            return AreaSystemRole(rawValue: systemRoleRawValue)
         }
         set { systemRoleRawValue = newValue?.rawValue }
     }
@@ -277,7 +280,7 @@ final class Direction {
 
     func update(
         name: String,
-        type: DirectionType,
+        type: AreaType,
         symbolName: String,
         colorHex: String,
         goalTarget: Int?,
@@ -317,9 +320,11 @@ final class Direction {
     }
 }
 
-extension Direction {
-    static var sample: Direction {
-        Direction(
+typealias Area = Direction
+
+extension Area {
+    static var sample: Area {
+        Area(
             name: String(localized: "読書"),
             type: .habit,
             symbolName: "📚",

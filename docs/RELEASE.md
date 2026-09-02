@@ -2,16 +2,19 @@
 
 This document is the operational checklist for ThruFlow releases. Product scope remains in [`ROADMAP.md`](ROADMAP.md), and CloudKit details remain in [`CLOUDKIT.md`](CLOUDKIT.md).
 
-## Version 1.0.0 build 6
+## Current development version 1.2.0 build 8
 
 All shipping targets must resolve to:
 
-- marketing version: `1.0.0`;
-- build number: `6`;
+- marketing version: `1.2.0`;
+- build number: `8`;
 - Release configuration;
 - matching app, widget/Live Activity extension, and Watch versions.
 
-Every later App Store Connect upload must use a build number greater than the last uploaded build, even when the marketing version remains `1.0.0`.
+Every later App Store Connect upload must use a build number greater than the
+last uploaded build, even when the marketing version changes. Raise build `8`
+before upload if that build number has already been processed for any earlier
+version on the same platform.
 
 ## Automated checks
 
@@ -82,5 +85,5 @@ Never publish by rebuilding after the smoke test. Promote the exact tested build
 ## After TestFlight validation
 
 - Update the release gate in [`ROADMAP.md`](ROADMAP.md).
-- Tag the exact commit as `v1.0.0` only after the build is accepted and smoke-tested.
+- Tag the exact commit as `v1.2.0` only after the build is accepted and smoke-tested.
 - Publish release notes that clearly identify known limitations and migration behavior.

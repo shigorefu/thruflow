@@ -70,7 +70,8 @@ final class Todo {
     var title: String = ""
     var notes: String?
     var hashtagsRawValue: String?
-    var direction: Direction?
+    /// Persisted as `direction` for SwiftData and CloudKit compatibility.
+    var direction: Area?
     var measurementRawValue: String = TodoMeasurement.checkbox.rawValue
     var priorityRawValue: String = TodoPriority.medium.rawValue
     var isRoomIfPossible: Bool = false
@@ -96,7 +97,7 @@ final class Todo {
         title: String,
         notes: String? = nil,
         hashtags: [String] = [],
-        direction: Direction,
+        area: Area,
         measurement: TodoMeasurement = .checkbox,
         priority: TodoPriority = .medium,
         isRoomIfPossible: Bool = false,
@@ -117,7 +118,7 @@ final class Todo {
         self.title = title
         self.notes = notes
         self.hashtagsRawValue = TodoHashtagCodec.encode(hashtags)
-        self.direction = direction
+        self.direction = area
         self.measurementRawValue = measurement.rawValue
         self.priorityRawValue = priority.rawValue
         self.isRoomIfPossible = isRoomIfPossible
@@ -135,6 +136,11 @@ final class Todo {
         self.deletedAt = deletedAt
     }
 
+
+    var area: Area? {
+        get { direction }
+        set { direction = newValue }
+    }
 
     var measurement: TodoMeasurement {
         get { TodoMeasurement(rawValue: measurementRawValue) ?? .checkbox }
@@ -191,7 +197,7 @@ final class Todo {
         title: String,
         notes: String?,
         hashtags: [String],
-        direction: Direction,
+        area: Area,
         measurement: TodoMeasurement,
         priority: TodoPriority,
         isRoomIfPossible: Bool,
@@ -204,7 +210,7 @@ final class Todo {
         self.title = title
         self.notes = notes
         self.hashtags = hashtags
-        self.direction = direction
+        self.direction = area
         self.measurement = measurement
         self.priority = priority
         self.isRoomIfPossible = priority == .low && isRoomIfPossible
@@ -301,11 +307,11 @@ final class Todo {
 }
 
 extension Todo {
-    static func sample(direction: Direction = .sample) -> Todo {
+    static func sample(area: Area = .sample) -> Todo {
         Todo(
             title: String(localized: "発表資料を作る"),
             notes: String(localized: "最初の構成を整理する"),
-            direction: direction,
+            area: area,
             measurement: .focusBlocks,
             plannedAmount: 3,
             scheduledDate: .now

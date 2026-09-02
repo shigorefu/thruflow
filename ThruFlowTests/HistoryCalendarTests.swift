@@ -32,10 +32,10 @@ struct HistoryCalendarTests {
 
     @Test func builderProjectsOnlyFlowAndBreakHistory() {
         let day = Date(timeIntervalSince1970: 1783987200)
-        let direction = Direction(name: "仕事", type: .neutral, symbolName: "💻", colorHex: "#34C759")
-        let flowTodo = Todo(title: "実装", direction: direction, scheduledDate: day)
+        let area = Area(name: "仕事", type: .neutral, symbolName: "💻", colorHex: "#34C759")
+        let flowTodo = Todo(title: "実装", area: area, scheduledDate: day)
         let session = FlowSession(
-            direction: direction,
+            area: area,
             todo: flowTodo,
             mode: .twentyFiveFive,
             phase: .completed,
@@ -55,7 +55,7 @@ struct HistoryCalendarTests {
             plannedDurationSeconds: 5 * 60
         )
         let separateSession = FlowSession(
-            direction: direction,
+            area: area,
             mode: .twentyFiveFive,
             phase: .completed,
             status: .completed,
@@ -79,12 +79,12 @@ struct HistoryCalendarTests {
         #expect(snapshot.items.count == 3)
         #expect(snapshot.items.allSatisfy { $0.kind == .flow || $0.kind == .rest })
         #expect(snapshot.items.first { $0.kind == .rest }?.durationSeconds == 5 * 60)
-        let directionOnlyItem = snapshot.items.first { $0.session?.id == separateSession.id }
-        #expect(directionOnlyItem?.todo == nil)
-        #expect(directionOnlyItem?.session?.direction?.id == direction.id)
+        let areaOnlyItem = snapshot.items.first { $0.session?.id == separateSession.id }
+        #expect(areaOnlyItem?.todo == nil)
+        #expect(areaOnlyItem?.session?.area?.id == area.id)
     }
 
-    @Test func indicatorFilterUsesVisibleDirectionTypesAndExcludesBreaks() {
+    @Test func indicatorFilterUsesVisibleAreaTypesAndExcludesBreaks() {
         let base = Date(timeIntervalSince1970: 10_000)
         let neutralFlow = HistoryCalendarItem(
             id: "neutral",
@@ -92,10 +92,10 @@ struct HistoryCalendarTests {
             startedAt: base,
             endedAt: base.addingTimeInterval(60),
             title: "Task",
-            subtitle: "Direction",
+            subtitle: "Area",
             symbol: "📝",
             colorHex: "#007AFF",
-            directionType: .neutral,
+            areaType: .neutral,
             session: nil,
             flowBreak: nil,
             todo: nil
@@ -106,10 +106,10 @@ struct HistoryCalendarTests {
             startedAt: base.addingTimeInterval(120),
             endedAt: base.addingTimeInterval(180),
             title: "Habit",
-            subtitle: "Direction",
+            subtitle: "Area",
             symbol: "🔁",
             colorHex: "#34C759",
-            directionType: .habit,
+            areaType: .habit,
             session: nil,
             flowBreak: nil,
             todo: nil
@@ -120,10 +120,10 @@ struct HistoryCalendarTests {
             startedAt: base.addingTimeInterval(180),
             endedAt: base.addingTimeInterval(240),
             title: "Break",
-            subtitle: "Direction",
+            subtitle: "Area",
             symbol: "☕️",
             colorHex: "#8E8E93",
-            directionType: .habit,
+            areaType: .habit,
             session: nil,
             flowBreak: nil,
             todo: nil
@@ -131,7 +131,7 @@ struct HistoryCalendarTests {
 
         let filtered = HistoryCalendarIndicatorFilter().items(
             from: [neutralFlow, habitFlow, habitBreak],
-            visibleDirectionTypes: [.habit]
+            visibleAreaTypes: [.habit]
         )
 
         #expect(filtered.map(\.id) == ["habit"])
@@ -180,9 +180,9 @@ struct HistoryCalendarTests {
 
     @Test func dayElasticWindowWrapsActivityAndKeepsFourHourMinimum() {
         let day = Date(timeIntervalSince1970: 1783987200)
-        let direction = Direction(name: "仕事", type: .neutral)
+        let area = Area(name: "仕事", type: .neutral)
         let session = FlowSession(
-            direction: direction,
+            area: area,
             mode: .twentyFiveFive,
             phase: .completed,
             status: .completed,
@@ -229,7 +229,7 @@ struct HistoryCalendarTests {
             subtitle: "仕事",
             symbol: "🌙",
             colorHex: "#007AFF",
-            directionType: .neutral,
+            areaType: .neutral,
             session: nil,
             flowBreak: nil,
             todo: nil
@@ -250,10 +250,10 @@ struct HistoryCalendarTests {
         let base = Date(timeIntervalSince1970: 10_000)
         let firstSeriesID = UUID()
         let secondSeriesID = UUID()
-        let direction = Direction(name: "仕事", type: .neutral)
+        let area = Area(name: "仕事", type: .neutral)
         let firstSession = FlowSession(
             seriesID: firstSeriesID,
-            direction: direction,
+            area: area,
             mode: .twentyFiveFive,
             phase: .completed,
             status: .completed,
@@ -273,7 +273,7 @@ struct HistoryCalendarTests {
         )
         let secondSession = FlowSession(
             seriesID: secondSeriesID,
-            direction: direction,
+            area: area,
             mode: .twentyFiveFive,
             phase: .completed,
             status: .completed,
@@ -303,10 +303,10 @@ struct HistoryCalendarTests {
         let base = Date(timeIntervalSince1970: 10_000)
         let firstSeriesID = UUID()
         let secondSeriesID = UUID()
-        let direction = Direction(name: "仕事", type: .neutral)
+        let area = Area(name: "仕事", type: .neutral)
         let firstSession = FlowSession(
             seriesID: firstSeriesID,
-            direction: direction,
+            area: area,
             mode: .twentyFiveFive,
             phase: .completed,
             status: .completed,
@@ -326,7 +326,7 @@ struct HistoryCalendarTests {
         )
         let sameSeriesAfterMissingRecord = FlowSession(
             seriesID: firstSeriesID,
-            direction: direction,
+            area: area,
             mode: .twentyFiveFive,
             phase: .completed,
             status: .completed,
@@ -339,7 +339,7 @@ struct HistoryCalendarTests {
         )
         let nextSeries = FlowSession(
             seriesID: secondSeriesID,
-            direction: direction,
+            area: area,
             mode: .twentyFiveFive,
             phase: .completed,
             status: .completed,
@@ -380,7 +380,7 @@ struct HistoryCalendarTests {
             subtitle: "",
             symbol: "1",
             colorHex: "#007AFF",
-            directionType: .neutral,
+            areaType: .neutral,
             session: nil,
             flowBreak: nil,
             todo: nil
@@ -394,7 +394,7 @@ struct HistoryCalendarTests {
             subtitle: "",
             symbol: "2",
             colorHex: "#007AFF",
-            directionType: .neutral,
+            areaType: .neutral,
             session: nil,
             flowBreak: nil,
             todo: nil
@@ -426,7 +426,7 @@ struct HistoryCalendarTests {
             subtitle: "",
             symbol: "1",
             colorHex: "#007AFF",
-            directionType: .neutral,
+            areaType: .neutral,
             session: nil,
             flowBreak: nil,
             todo: nil
@@ -440,7 +440,7 @@ struct HistoryCalendarTests {
             subtitle: "",
             symbol: "2",
             colorHex: "#007AFF",
-            directionType: .neutral,
+            areaType: .neutral,
             session: nil,
             flowBreak: nil,
             todo: nil

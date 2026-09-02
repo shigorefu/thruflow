@@ -10,7 +10,7 @@ import SwiftData
 enum HistoryTaskRecordError: Error, Equatable {
     case emptyTitle
     case invalidPlannedAmount
-    case missingDirection
+    case missingArea
 }
 
 struct HistoryTaskRecordResult {
@@ -27,7 +27,7 @@ struct HistoryTaskRecordEditor {
             .filter { todo in
                 guard !todo.isDeleted,
                       !todo.isArchived,
-                      todo.direction != nil,
+                      todo.area != nil,
                       let scheduledDate = todo.scheduledDate else {
                     return false
                 }
@@ -52,12 +52,12 @@ struct HistoryTaskRecordEditor {
             return HistoryTaskRecordResult(todo: todo, flowSession: nil)
         }
 
-        guard let direction = todo.direction else {
-            throw HistoryTaskRecordError.missingDirection
+        guard let area = todo.area else {
+            throw HistoryTaskRecordError.missingArea
         }
         let session = try FlowHistoryEditor().createManual(
             todo: todo,
-            direction: direction,
+            area: area,
             mode: mode,
             startedAt: recordedAt,
             focusSeconds: focusSeconds,
@@ -69,7 +69,7 @@ struct HistoryTaskRecordEditor {
 
     @discardableResult
     func record(
-        direction: Direction,
+        area: Area,
         recordedAt: Date,
         mode: FlowMode,
         focusSeconds: Int,
@@ -78,7 +78,7 @@ struct HistoryTaskRecordEditor {
     ) throws -> HistoryTaskRecordResult {
         let session = try FlowHistoryEditor().createManual(
             todo: nil,
-            direction: direction,
+            area: area,
             mode: mode,
             startedAt: recordedAt,
             focusSeconds: focusSeconds,
@@ -91,7 +91,7 @@ struct HistoryTaskRecordEditor {
     @discardableResult
     func recordFlow(
         todo: Todo?,
-        direction: Direction,
+        area: Area,
         recordedAt: Date,
         mode: FlowMode,
         focusSeconds: Int,
@@ -100,7 +100,7 @@ struct HistoryTaskRecordEditor {
     ) throws -> HistoryTaskRecordResult {
         let session = try FlowHistoryEditor().createManual(
             todo: todo,
-            direction: direction,
+            area: area,
             mode: mode,
             startedAt: recordedAt,
             focusSeconds: focusSeconds,
@@ -112,7 +112,7 @@ struct HistoryTaskRecordEditor {
 
     @discardableResult
     func createHabitOccurrenceAndRecord(
-        direction: Direction,
+        area: Area,
         scheduledDate: Date,
         recordedAt: Date,
         mode: FlowMode,
@@ -120,12 +120,12 @@ struct HistoryTaskRecordEditor {
         modelContext: ModelContext,
         now: Date = .now
     ) throws -> HistoryTaskRecordResult {
-        guard direction.type == .habit, let goalUnit = direction.goalUnit else {
-            throw HistoryTaskRecordError.missingDirection
+        guard area.type == .habit, let goalUnit = area.goalUnit else {
+            throw HistoryTaskRecordError.missingArea
         }
 
         let todo = makeHabitOccurrence(
-            direction: direction,
+            area: area,
             goalUnit: goalUnit,
             scheduledDate: scheduledDate,
             modelContext: modelContext,
@@ -144,7 +144,7 @@ struct HistoryTaskRecordEditor {
 
     @discardableResult
     func createHabitOccurrenceAndRecordFlow(
-        direction: Direction,
+        area: Area,
         scheduledDate: Date,
         recordedAt: Date,
         mode: FlowMode,
@@ -152,12 +152,12 @@ struct HistoryTaskRecordEditor {
         modelContext: ModelContext,
         now: Date = .now
     ) throws -> HistoryTaskRecordResult {
-        guard direction.type == .habit, let goalUnit = direction.goalUnit else {
-            throw HistoryTaskRecordError.missingDirection
+        guard area.type == .habit, let goalUnit = area.goalUnit else {
+            throw HistoryTaskRecordError.missingArea
         }
 
         let todo = makeHabitOccurrence(
-            direction: direction,
+            area: area,
             goalUnit: goalUnit,
             scheduledDate: scheduledDate,
             modelContext: modelContext,
@@ -165,7 +165,7 @@ struct HistoryTaskRecordEditor {
         )
         return try recordFlow(
             todo: todo,
-            direction: direction,
+            area: area,
             recordedAt: recordedAt,
             mode: mode,
             focusSeconds: focusSeconds,
@@ -177,7 +177,7 @@ struct HistoryTaskRecordEditor {
     @discardableResult
     func createAndRecord(
         title: String,
-        direction: Direction,
+        area: Area,
         measurement: TodoMeasurement,
         priority: TodoPriority,
         isRoomIfPossible: Bool,
@@ -199,7 +199,7 @@ struct HistoryTaskRecordEditor {
 
         let todo = Todo(
             title: normalizedTitle,
-            direction: direction,
+            area: area,
             measurement: measurement,
             priority: priority,
             isRoomIfPossible: priority == .low && isRoomIfPossible,
@@ -221,8 +221,8 @@ struct HistoryTaskRecordEditor {
     }
 
     private func taskSort(_ lhs: Todo, _ rhs: Todo) -> Bool {
-        let lhsHabit = lhs.direction?.type == .habit
-        let rhsHabit = rhs.direction?.type == .habit
+        let lhsHabit = lhs.area?.type == .habit
+        let rhsHabit = rhs.area?.type == .habit
         if lhsHabit != rhsHabit { return lhsHabit }
         if lhs.isCompleted != rhs.isCompleted { return !lhs.isCompleted }
         if lhs.priority != rhs.priority {
@@ -233,16 +233,16 @@ struct HistoryTaskRecordEditor {
     }
 
     private func makeHabitOccurrence(
-        direction: Direction,
+        area: Area,
         goalUnit: GoalUnit,
         scheduledDate: Date,
         modelContext: ModelContext,
         now: Date
     ) -> Todo {
-        let target = max(1, direction.goalTarget ?? 1)
+        let target = max(1, area.goalTarget ?? 1)
         let todo = Todo(
             title: "",
-            direction: direction,
+            area: area,
             measurement: measurement(for: goalUnit),
             priority: .high,
             isRoomIfPossible: false,

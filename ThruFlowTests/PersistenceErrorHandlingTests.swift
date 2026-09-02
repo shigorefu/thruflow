@@ -19,11 +19,11 @@ struct PersistenceErrorHandlingTests {
         let container = AppModelContainerFactory.make()
         let context = ModelContext(container)
         let center = PersistenceIssueCenter()
-        context.insert(Direction(name: "仕事", type: .neutral))
+        context.insert(Area(name: "仕事", type: .neutral))
 
         #expect(center.save(context, operation: .areaUpdate))
         #expect(center.currentIssue == nil)
-        #expect(try context.fetch(FetchDescriptor<Direction>()).count == 1)
+        #expect(try context.fetch(FetchDescriptor<Area>()).count == 1)
     }
 
     @Test func userDataPersistenceDoesNotSilentlyDiscardErrors() throws {

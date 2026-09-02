@@ -117,7 +117,7 @@ struct HistoryDayWorkspaceView: View {
 
 enum HistoryMiniCalendarIndicatorSource {
     case flowHistory
-    case filteredFlowHistory(Set<DirectionType>)
+    case filteredFlowHistory(Set<AreaType>)
     case statistics([StatisticsCalendarIndicator])
     case tasks(TaskCalendarFilter)
 }
@@ -287,7 +287,7 @@ struct HistoryMiniCalendar: View {
             HistoryCalendarFlowIndicators(
                 items: HistoryCalendarIndicatorFilter().items(
                     from: flowItems,
-                    visibleDirectionTypes: visibleTypes
+                    visibleAreaTypes: visibleTypes
                 ),
                 date: date,
                 maximumVisibleCount: 3

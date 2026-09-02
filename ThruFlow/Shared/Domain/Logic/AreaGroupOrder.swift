@@ -1,13 +1,13 @@
 import Foundation
 
-struct DirectionGroupOrder {
-    static let defaultValue: [DirectionType] = [.neutral, .habit, .nice]
+struct AreaGroupOrder {
+    static let defaultValue: [AreaType] = [.neutral, .habit, .nice]
 
-    static func decode(_ rawValue: String) -> [DirectionType] {
+    static func decode(_ rawValue: String) -> [AreaType] {
         let storedTypes = rawValue
             .split(separator: ",")
-            .compactMap { DirectionType(rawValue: String($0)) }
-        let uniqueStoredTypes = storedTypes.reduce(into: [DirectionType]()) { result, type in
+            .compactMap { AreaType(rawValue: String($0)) }
+        let uniqueStoredTypes = storedTypes.reduce(into: [AreaType]()) { result, type in
             if !result.contains(type) {
                 result.append(type)
             }
@@ -16,15 +16,15 @@ struct DirectionGroupOrder {
         return uniqueStoredTypes + defaultValue.filter { !uniqueStoredTypes.contains($0) }
     }
 
-    static func encode(_ order: [DirectionType]) -> String {
+    static func encode(_ order: [AreaType]) -> String {
         normalized(order).map(\.rawValue).joined(separator: ",")
     }
 
     static func moving(
-        _ source: DirectionType,
-        relativeTo target: DirectionType,
-        in order: [DirectionType]
-    ) -> [DirectionType] {
+        _ source: AreaType,
+        relativeTo target: AreaType,
+        in order: [AreaType]
+    ) -> [AreaType] {
         var result = normalized(order)
         guard source != target,
               let sourceIndex = result.firstIndex(of: source),
@@ -37,8 +37,8 @@ struct DirectionGroupOrder {
         return result
     }
 
-    private static func normalized(_ order: [DirectionType]) -> [DirectionType] {
-        let uniqueTypes = order.reduce(into: [DirectionType]()) { result, type in
+    private static func normalized(_ order: [AreaType]) -> [AreaType] {
+        let uniqueTypes = order.reduce(into: [AreaType]()) { result, type in
             if !result.contains(type) {
                 result.append(type)
             }

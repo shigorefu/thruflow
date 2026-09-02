@@ -3,27 +3,27 @@ import SwiftData
 import Testing
 @testable import ThruFlow
 
-struct DefaultDirectionReconcilerTests {
+struct DefaultAreaReconcilerTests {
     @Test func taskInboxUsesStableSystemRole() {
-        let inbox = DefaultDirections.makeTaskInbox(now: Date(timeIntervalSince1970: 0))
+        let inbox = DefaultAreas.makeTaskInbox(now: Date(timeIntervalSince1970: 0))
 
         #expect(inbox.systemRole == .taskInbox)
-        #expect(DefaultDirections.isTaskInbox(inbox))
+        #expect(DefaultAreas.isTaskInbox(inbox))
     }
 
-    @Test func legacyLocalizedInboxesAreRecognizedWithoutMatchingUserDirections() {
+    @Test func legacyLocalizedInboxesAreRecognizedWithoutMatchingUserAreas() {
         for name in ["その他", "Other", "Другое"] {
-            let legacy = Direction(
+            let legacy = Area(
                 name: name,
                 type: .neutral,
-                symbolName: DefaultDirections.taskInboxSymbol,
-                colorHex: DefaultDirections.taskInboxColorHex
+                symbolName: DefaultAreas.taskInboxSymbol,
+                colorHex: DefaultAreas.taskInboxColorHex
             )
-            #expect(DefaultDirections.isTaskInbox(legacy))
+            #expect(DefaultAreas.isTaskInbox(legacy))
         }
 
-        let userDirection = Direction(name: "Other", type: .neutral)
-        #expect(!DefaultDirections.isTaskInbox(userDirection))
+        let userArea = Area(name: "Other", type: .neutral)
+        #expect(!DefaultAreas.isTaskInbox(userArea))
     }
 
     @Test @MainActor func duplicateInboxesConvergeWithoutLosingRelationships() throws {
@@ -31,19 +31,19 @@ struct DefaultDirectionReconcilerTests {
         let context = container.mainContext
         let oldDate = Date(timeIntervalSince1970: 100)
         let newDate = Date(timeIntervalSince1970: 200)
-        let canonical = Direction(
+        let canonical = Area(
             name: "その他",
             type: .neutral,
-            symbolName: DefaultDirections.taskInboxSymbol,
-            colorHex: DefaultDirections.taskInboxColorHex,
+            symbolName: DefaultAreas.taskInboxSymbol,
+            colorHex: DefaultAreas.taskInboxColorHex,
             createdAt: oldDate,
             updatedAt: oldDate
         )
-        let duplicate = DefaultDirections.makeTaskInbox(now: newDate)
-        let ordinaryDirection = Direction(name: "Other", type: .neutral, createdAt: oldDate)
-        let todo = Todo(title: "記録", direction: duplicate, createdAt: newDate)
+        let duplicate = DefaultAreas.makeTaskInbox(now: newDate)
+        let ordinaryArea = Area(name: "Other", type: .neutral, createdAt: oldDate)
+        let todo = Todo(title: "記録", area: duplicate, createdAt: newDate)
         let session = FlowSession(
-            direction: duplicate,
+            area: duplicate,
             todo: todo,
             mode: .sprint,
             startedAt: newDate,
@@ -53,13 +53,13 @@ struct DefaultDirectionReconcilerTests {
         )
         let segment = FlowSegment(
             session: session,
-            direction: duplicate,
+            area: duplicate,
             todo: todo,
             startedAt: newDate,
             startFocusSeconds: 0
         )
 
-        for model in [canonical, duplicate, ordinaryDirection] {
+        for model in [canonical, duplicate, ordinaryArea] {
             context.insert(model)
         }
         context.insert(todo)
@@ -67,7 +67,7 @@ struct DefaultDirectionReconcilerTests {
         context.insert(segment)
         try context.save()
 
-        let result = try DefaultDirectionReconciler().reconcile(
+        let result = try DefaultAreaReconciler().reconcile(
             modelContext: context,
             now: Date(timeIntervalSince1970: 300)
         )
@@ -76,20 +76,20 @@ struct DefaultDirectionReconcilerTests {
         #expect(result.archivedDuplicateCount == 1)
         #expect(canonical.systemRole == .taskInbox)
         #expect(duplicate.isArchived)
-        #expect(todo.direction?.id == canonical.id)
-        #expect(session.direction?.id == canonical.id)
-        #expect(segment.direction?.id == canonical.id)
-        #expect(!ordinaryDirection.isArchived)
+        #expect(todo.area?.id == canonical.id)
+        #expect(session.area?.id == canonical.id)
+        #expect(segment.area?.id == canonical.id)
+        #expect(!ordinaryArea.isArchived)
 
-        let activeInboxes = try context.fetch(FetchDescriptor<Direction>())
-            .filter(DefaultDirections.isTaskInbox)
+        let activeInboxes = try context.fetch(FetchDescriptor<Area>())
+            .filter(DefaultAreas.isTaskInbox)
         #expect(activeInboxes.map(\.id) == [canonical.id])
     }
 
     @Test @MainActor func reconciliationCreatesOnlyOneInboxWhenMissing() throws {
         let container = try makeContainer()
         let context = container.mainContext
-        let reconciler = DefaultDirectionReconciler()
+        let reconciler = DefaultAreaReconciler()
 
         let first = try reconciler.reconcile(
             modelContext: context,
@@ -102,15 +102,15 @@ struct DefaultDirectionReconcilerTests {
 
         #expect(first.canonicalID == second.canonicalID)
         #expect(second.archivedDuplicateCount == 0)
-        let activeInboxes = try context.fetch(FetchDescriptor<Direction>())
-            .filter(DefaultDirections.isTaskInbox)
+        let activeInboxes = try context.fetch(FetchDescriptor<Area>())
+            .filter(DefaultAreas.isTaskInbox)
         #expect(activeInboxes.count == 1)
     }
 
     @MainActor
     private func makeContainer() throws -> ModelContainer {
         let schema = Schema([
-            Direction.self,
+            Area.self,
             Todo.self,
             FlowSession.self,
             FlowSegment.self,

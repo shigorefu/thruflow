@@ -7,10 +7,10 @@ struct WatchTaskCreationForm: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
 
-    @Query(sort: \Direction.sortIndex) private var directions: [Direction]
+    @Query(sort: \Area.sortIndex) private var areas: [Area]
     @Query private var todos: [Todo]
 
-    @State private var directionID: UUID?
+    @State private var areaID: UUID?
     @State private var measurement = TodoMeasurement.checkbox
     @State private var plannedAmount = 1
     @State private var priority = TodoPriority.medium
@@ -20,14 +20,14 @@ struct WatchTaskCreationForm: View {
         NavigationStack {
             Form {
                 Section {
-                    Picker(String(localized: "分野"), selection: $directionID) {
-                        ForEach(activeDirections) { direction in
+                    Picker(String(localized: "分野"), selection: $areaID) {
+                        ForEach(activeAreas) { area in
                             Label {
-                                Text(direction.name)
+                                Text(area.name)
                             } icon: {
-                                Text(direction.symbolName)
+                                Text(area.symbolName)
                             }
-                            .tag(Optional(direction.id))
+                            .tag(Optional(area.id))
                         }
                     }
 
@@ -73,25 +73,25 @@ struct WatchTaskCreationForm: View {
                 } label: {
                     Label(String(localized: "タスクを追加"), systemImage: "plus.circle.fill")
                 }
-                .disabled(selectedDirection == nil)
+                .disabled(selectedArea == nil)
             }
             .navigationTitle(String(localized: "タスクを追加"))
             .task {
-                guard directionID == nil else { return }
-                directionID = (
-                    DefaultDirections.existingTaskInbox(in: activeDirections)
-                        ?? activeDirections.first
+                guard areaID == nil else { return }
+                areaID = (
+                    DefaultAreas.existingTaskInbox(in: activeAreas)
+                        ?? activeAreas.first
                 )?.id
             }
         }
     }
 
-    private var activeDirections: [Direction] {
-        directions.filter { !$0.isArchived }
+    private var activeAreas: [Area] {
+        areas.filter { !$0.isArchived }
     }
 
-    private var selectedDirection: Direction? {
-        activeDirections.first { $0.id == directionID }
+    private var selectedArea: Area? {
+        activeAreas.first { $0.id == areaID }
     }
 
     private var amountRange: ClosedRange<Int> {
@@ -114,11 +114,11 @@ struct WatchTaskCreationForm: View {
     }
 
     private func save() {
-        guard let direction = selectedDirection else { return }
+        guard let area = selectedArea else { return }
 
         let todo = Todo(
             title: "",
-            direction: direction,
+            area: area,
             measurement: measurement,
             priority: priority,
             plannedAmount: measurement == .checkbox ? nil : plannedAmount,

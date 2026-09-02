@@ -4,36 +4,36 @@ struct IOSFlowContextPicker: View {
     @Environment(\.dismiss) private var dismiss
 
     let todos: [Todo]
-    let directions: [Direction]
+    let areas: [Area]
     let selectedTodoID: UUID?
-    let selectedDirectionID: UUID?
-    let select: (Direction, Todo?) -> Void
+    let selectedAreaID: UUID?
+    let select: (Area, Todo?) -> Void
 
     @State private var selectedTab: IOSFlowContextPickerTab
 
     init(
         todos: [Todo],
-        directions: [Direction],
+        areas: [Area],
         selectedTodoID: UUID?,
-        selectedDirectionID: UUID?,
-        select: @escaping (Direction, Todo?) -> Void
+        selectedAreaID: UUID?,
+        select: @escaping (Area, Todo?) -> Void
     ) {
         self.todos = todos
-        self.directions = directions
+        self.areas = areas
         self.selectedTodoID = selectedTodoID
-        self.selectedDirectionID = selectedDirectionID
+        self.selectedAreaID = selectedAreaID
         self.select = select
 
         let selectedTodo = todos.first { $0.id == selectedTodoID }
         _selectedTab = State(
             initialValue: selectedTodoID == nil
-                ? .directions
-                : selectedTodo?.direction?.type == .habit ? .habits : .tasks
+                ? .areas
+                : selectedTodo?.area?.type == .habit ? .habits : .tasks
         )
     }
 
     private var projection: FlowContextPickerProjection {
-        FlowContextPickerProjection(directions: directions, todos: todos)
+        FlowContextPickerProjection(areas: areas, todos: todos)
     }
 
     var body: some View {
@@ -54,8 +54,8 @@ struct IOSFlowContextPicker: View {
                     taskSections
                 case .habits:
                     habitSection
-                case .directions:
-                    directionSection
+                case .areas:
+                    areaSection
                 }
             }
             .listStyle(.insetGrouped)
@@ -100,19 +100,19 @@ struct IOSFlowContextPicker: View {
     }
 
     @ViewBuilder
-    private var directionSection: some View {
-        let hasDirections = projection.otherDirection != nil || !projection.userDirections.isEmpty
+    private var areaSection: some View {
+        let hasAreas = projection.otherArea != nil || !projection.userAreas.isEmpty
 
-        if !hasDirections {
+        if !hasAreas {
             emptyRow(String(localized: "方向はありません"), systemImage: ProductSymbol.area)
         } else {
             Section(String(localized: "方向")) {
-                if let otherDirection = projection.otherDirection {
-                    directionRow(otherDirection)
+                if let otherArea = projection.otherArea {
+                    areaRow(otherArea)
                 }
 
-                ForEach(projection.userDirections) { direction in
-                    directionRow(direction)
+                ForEach(projection.userAreas) { area in
+                    areaRow(area)
                 }
             }
         }
@@ -120,12 +120,12 @@ struct IOSFlowContextPicker: View {
 
     private func taskRow(_ todo: Todo) -> some View {
         Group {
-            if let direction = todo.direction {
+            if let area = todo.area {
                 Button {
-                    select(direction, todo)
+                    select(area, todo)
                 } label: {
                     row(
-                        emoji: direction.symbolName,
+                        emoji: area.symbolName,
                         title: TodoDisplay.title(for: todo),
                         subtitle: taskSubtitle(todo),
                         isSelected: selectedTodoID == todo.id,
@@ -137,15 +137,15 @@ struct IOSFlowContextPicker: View {
         }
     }
 
-    private func directionRow(_ direction: Direction) -> some View {
+    private func areaRow(_ area: Area) -> some View {
         Button {
-            select(direction, nil)
+            select(area, nil)
         } label: {
             row(
-                emoji: direction.symbolName,
-                title: direction.name,
-                subtitle: direction.type.displayName,
-                isSelected: selectedTodoID == nil && selectedDirectionID == direction.id
+                emoji: area.symbolName,
+                title: area.name,
+                subtitle: area.type.displayName,
+                isSelected: selectedTodoID == nil && selectedAreaID == area.id
             )
         }
         .buttonStyle(.plain)
@@ -202,18 +202,18 @@ struct IOSFlowContextPicker: View {
     }
 
     private func taskSubtitle(_ todo: Todo) -> String {
-        let directionName = todo.direction?.name ?? String(localized: "その他")
+        let areaName = todo.area?.name ?? String(localized: "その他")
         let priority = todo.priority == .low && todo.isRoomIfPossible
             ? String(localized: "余裕があれば")
             : todo.priority.displayName
-        return String(localized: "\(directionName) · \(priority)")
+        return String(localized: "\(areaName) · \(priority)")
     }
 }
 
 private enum IOSFlowContextPickerTab: String, CaseIterable, Identifiable {
     case tasks
     case habits
-    case directions
+    case areas
 
     var id: String { rawValue }
 
@@ -223,7 +223,7 @@ private enum IOSFlowContextPickerTab: String, CaseIterable, Identifiable {
             String(localized: "タスク")
         case .habits:
             String(localized: "習慣一覧")
-        case .directions:
+        case .areas:
             String(localized: "方向")
         }
     }

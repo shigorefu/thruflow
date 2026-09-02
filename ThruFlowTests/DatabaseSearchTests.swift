@@ -11,15 +11,15 @@ struct DatabaseSearchTests {
     }
 
     @Test func taskSearchReturnsMatchingTodosAcrossEveryDateAndUnscheduled() {
-        let direction = Direction(name: "仕事", type: .neutral)
+        let area = Area(name: "仕事", type: .neutral)
         let firstDate = date(2026, 7, 1)
         let secondDate = date(2026, 7, 25)
-        let first = Todo(title: "Global report", direction: direction, scheduledDate: firstDate)
-        let second = Todo(title: "Global review", direction: direction, scheduledDate: secondDate)
-        let unscheduled = Todo(title: "Global backlog", direction: direction)
-        let archived = Todo(title: "Global archived", direction: direction, scheduledDate: secondDate)
+        let first = Todo(title: "Global report", area: area, scheduledDate: firstDate)
+        let second = Todo(title: "Global review", area: area, scheduledDate: secondDate)
+        let unscheduled = Todo(title: "Global backlog", area: area)
+        let archived = Todo(title: "Global archived", area: area, scheduledDate: secondDate)
         archived.archive()
-        let deleted = Todo(title: "Global deleted", direction: direction, scheduledDate: firstDate)
+        let deleted = Todo(title: "Global deleted", area: area, scheduledDate: firstDate)
         deleted.softDelete()
 
         let sections = DatabaseSearchBuilder(calendar: calendar).taskSections(
@@ -33,10 +33,10 @@ struct DatabaseSearchTests {
     }
 
     @Test func taskSearchKeepsTheTaskHabitFilterAcrossTheDatabase() {
-        let taskDirection = Direction(name: "仕事", type: .neutral)
-        let habitDirection = Direction(name: "読書", type: .habit)
-        let task = Todo(title: "共通の検索語", direction: taskDirection, scheduledDate: date(2026, 7, 1))
-        let habit = Todo(title: "共通の検索語", direction: habitDirection, scheduledDate: date(2026, 7, 20))
+        let taskArea = Area(name: "仕事", type: .neutral)
+        let habitArea = Area(name: "読書", type: .habit)
+        let task = Todo(title: "共通の検索語", area: taskArea, scheduledDate: date(2026, 7, 1))
+        let habit = Todo(title: "共通の検索語", area: habitArea, scheduledDate: date(2026, 7, 20))
 
         let sections = DatabaseSearchBuilder(calendar: calendar).taskSections(
             query: "検索語",
@@ -48,16 +48,16 @@ struct DatabaseSearchTests {
     }
 
     @Test func historyCalendarSearchFindsARecordOutsideTheSelectedDay() {
-        let direction = Direction(name: "仕事", type: .neutral, symbolName: "💼")
-        let oldTodo = Todo(title: "Global history target", direction: direction)
-        let recentTodo = Todo(title: "Unrelated", direction: direction)
+        let area = Area(name: "仕事", type: .neutral, symbolName: "💼")
+        let oldTodo = Todo(title: "Global history target", area: area)
+        let recentTodo = Todo(title: "Unrelated", area: area)
         let oldSession = completedSession(
-            direction: direction,
+            area: area,
             todo: oldTodo,
             startedAt: date(2026, 5, 2)
         )
         let recentSession = completedSession(
-            direction: direction,
+            area: area,
             todo: recentTodo,
             startedAt: date(2026, 7, 27)
         )
@@ -74,10 +74,10 @@ struct DatabaseSearchTests {
     }
 
     @Test func historyAggregateSearchIncludesTheTodoLinkedToAMatchingIntent() {
-        let direction = Direction(name: "仕事", type: .neutral)
-        let todo = Todo(title: "設計", direction: direction, scheduledDate: date(2026, 4, 8))
+        let area = Area(name: "仕事", type: .neutral)
+        let todo = Todo(title: "設計", area: area, scheduledDate: date(2026, 4, 8))
         let session = completedSession(
-            direction: direction,
+            area: area,
             todo: todo,
             startedAt: date(2026, 4, 8),
             intent: "Quarterly architecture review"
@@ -94,14 +94,14 @@ struct DatabaseSearchTests {
         #expect(snapshot.taskSummaries.map(\.todoID) == [todo.id])
     }
 
-    @Test func historySearchMatchesOnlyTheSegmentThatOwnsTheDirection() {
-        let ankiDirection = Direction(name: "Anki", type: .neutral, symbolName: "📄")
-        let hiroconDirection = Direction(name: "広コン", type: .neutral, symbolName: "💻")
-        let ankiTodo = Todo(title: "単語を復習", direction: ankiDirection)
-        let hiroconTodo = Todo(title: "ゲーム特別版のプレゼンを作成", direction: hiroconDirection)
+    @Test func historySearchMatchesOnlyTheSegmentThatOwnsTheArea() {
+        let ankiArea = Area(name: "Anki", type: .neutral, symbolName: "📄")
+        let hiroconArea = Area(name: "広コン", type: .neutral, symbolName: "💻")
+        let ankiTodo = Todo(title: "単語を復習", area: ankiArea)
+        let hiroconTodo = Todo(title: "ゲーム特別版のプレゼンを作成", area: hiroconArea)
         let start = date(2026, 7, 28)
         let session = completedSession(
-            direction: hiroconDirection,
+            area: hiroconArea,
             todo: hiroconTodo,
             startedAt: start
         )
@@ -110,7 +110,7 @@ struct DatabaseSearchTests {
 
         let ankiSegment = FlowSegment(
             session: session,
-            direction: ankiDirection,
+            area: ankiArea,
             todo: ankiTodo,
             startedAt: start,
             startFocusSeconds: 0
@@ -121,7 +121,7 @@ struct DatabaseSearchTests {
         )
         let hiroconSegment = FlowSegment(
             session: session,
-            direction: hiroconDirection,
+            area: hiroconArea,
             todo: hiroconTodo,
             startedAt: start.addingTimeInterval(10 * 60),
             startFocusSeconds: 10 * 60
@@ -146,13 +146,13 @@ struct DatabaseSearchTests {
     }
 
     private func completedSession(
-        direction: Direction,
+        area: Area,
         todo: Todo,
         startedAt: Date,
         intent: String = ""
     ) -> FlowSession {
         FlowSession(
-            direction: direction,
+            area: area,
             todo: todo,
             intent: intent,
             mode: .twentyFiveFive,

@@ -5,13 +5,13 @@ default only: normal macOS window restoration continues to respect a size chosen
 by the user.
 
 User-facing English uses `Area` / `Areas`; user-facing Russian uses
-`Сфера` / `Сферы`. This document uses `Direction` only when it
-refers to the Swift model, a property, persisted data, or the stable
-machine-readable CSV column.
+`Сфера` / `Сферы`. This document and application code use `Area`; only the
+documented SwiftData/CloudKit compatibility boundary keeps the persisted names
+`Direction` and `direction`.
 
 ## 分野
 
-The Area screen (`分野`; internal model `Direction`) manages only user-editable
+The Area screen (`分野`) manages only user-editable
 Areas:
 
 - `いつでも` / Anytime / Обычное;
@@ -87,7 +87,7 @@ Task rows:
 
 - empty title displays `(分野)` in a translucent italic style;
 - completed tasks are visually muted, struck through, and sorted below active tasks;
-- Area color is used unless the internal `Direction` is `その他`;
+- Area color is used unless the selected Area is `その他`;
 - `チェック` shows a checkbox;
 - `集中ブロック` shows a filling ring;
 - `分` shows a filled timer circle, visually distinct from the Block ring.
@@ -118,7 +118,7 @@ Weekly-count habits create one pending task at a time. After completion, the nex
 
 Daily and selected-weekday Habit instances are generated for visible current/future dates. Weekly-count habits are not expanded across future calendar columns.
 
-A Todo whose Direction relationship has not resolved is not a normal
+A Todo whose Area relationship has not resolved is not a normal
 `その他` Task. It stays out of Today, calendar, widget, and backlog projections
 until the persistence reconciler can restore one unambiguous relationship.
 
@@ -176,7 +176,7 @@ in saved data.
 
 Flow can be started with a selected Task, with only an Area, or with neither.
 Area-only work does not create an implicit Todo. If no Area is chosen, the
-resolved internal `Direction` is `その他`. Version 1.0 never creates a Task
+resolved Area is `その他`. Version 1.0 never creates a Task
 implicitly from Flow.
 
 At the planned focus end, Flow does not auto-switch. The timer continues. The user chooses:
@@ -211,7 +211,7 @@ feedback.
 
 The trash action is phase-aware. During focus it deletes the current Flow and rolls back any credited Task/Area progress through the canonical History editor. During rest it deletes only the active FlowBreak and closes the player, preserving the completed focus session and its progress.
 
-Before the first Flow, the dashboard uses a familiar neutral six-ribbon S-stream. During the first canonical Block it continuously reveals a seventh ribbon, deterministic topology seeded by the date and the earliest stable internal `Direction` identifier, focus-weighted Area colors, and additional depth. This transition happens inside one shader and never replaces or resets the current frame. The completed daily stream therefore becomes personal while a new user's empty dashboard remains immediately understandable. The resulting seven broad, bright, softly glowing translucent ribbons follow one shared channel. The seed remains identical on devices sharing the same synchronized database and never changes with time of day. Back, middle, and foreground ribbons move at different speeds to create depth; later progress increases weave, glow, parallax, and detail while capped occupancy preserves readable gaps. Every completed half-Block sends a restrained light pulse through the channel. After the 25-percent motion increase, idle stays in a calm `0.075...0.35` phase-speed range at 30 FPS and carries a subtle moving inner current so it does not appear frozen, while active Flow uses `1.375...3.50` at 60 FPS. Frame cadence is unchanged. `短め` uses energetic waves, `標準` balanced waves, and `じっくり` broad slow bends. Dark mode uses luminous additive composition; light mode uses controlled ink-style blending. The current Flow appears live after its first creditable minute. Reduce Motion, an inactive iOS scene, or a non-key macOS window freezes the last frame and stops further GPU updates. Selecting a completed timeline segment opens the existing Flow history inspector.
+Before the first Flow, the dashboard uses a familiar neutral six-ribbon S-stream. During the first canonical Block it continuously reveals a seventh ribbon, deterministic topology seeded by the date and the earliest stable Area identifier, focus-weighted Area colors, and additional depth. This transition happens inside one shader and never replaces or resets the current frame. The completed daily stream therefore becomes personal while a new user's empty dashboard remains immediately understandable. The resulting seven broad, bright, softly glowing translucent ribbons follow one shared channel. The seed remains identical on devices sharing the same synchronized database and never changes with time of day. Back, middle, and foreground ribbons move at different speeds to create depth; later progress increases weave, glow, parallax, and detail while capped occupancy preserves readable gaps. Every completed half-Block sends a restrained light pulse through the channel. After the 25-percent motion increase, idle stays in a calm `0.075...0.35` phase-speed range at 30 FPS and carries a subtle moving inner current so it does not appear frozen, while active Flow uses `1.375...3.50` at 60 FPS. Frame cadence is unchanged. `短め` uses energetic waves, `標準` balanced waves, and `じっくり` broad slow bends. Dark mode uses luminous additive composition; light mode uses controlled ink-style blending. The current Flow appears live after its first creditable minute. Reduce Motion, an inactive iOS scene, or a non-key macOS window freezes the last frame and stops further GPU updates. Selecting a completed timeline segment opens the existing Flow history inspector.
 
 The dashboard timeline always uses `Elastic` and has no `24時間` control. When empty, it covers the current full hour and the following hour. Once activity exists, it expands from the first Flow's full hour through the full hour after the last Flow, never below two hours; this keeps short sessions visually meaningful. Hovering a dashboard timeline segment shows an immediate compact card with Task, clock interval, and focused duration. Clicking resolves one selected segment ID and opens one popover anchored to that exact timeline position, with Task, Area, interval, focused duration, and Flow size. A red trash button deletes only that completed segment after confirmation and subtracts its progress; deleting the only segment deletes the Flow. Completed segments can continue to the canonical Flow history inspector; the active segment is read-only and marked `実行中`.
 
@@ -450,7 +450,7 @@ opens a keyboard. Statistics presents completion, focused time, Blocks, and
 `集中回数`.
 
 Opening or foregrounding Watch reconciles the canonical persisted active
-session. CloudKit transports the same Task, Direction, mode, phase, and absolute
+session. CloudKit transports the same Task, Area, mode, phase, and absolute
 timer anchors; Watch never starts an independent timer state machine.
 
 ## System Notifications
@@ -592,7 +592,7 @@ visible background refresh is throttled so calendar navigation never waits for
 SwiftData or CSV serialization.
 
 CSV export is local and runs only when its popover is open. Combined export uses
-stable machine-readable columns for date, Task, Direction, hashtags, focused
+stable machine-readable columns for date, Task, Area, hashtags, focused
 seconds/minutes, Blocks, Flow count, and completed Tasks; Flow-only and Task-only
 exports omit the unrelated metric columns and empty rows.
 The toolbar Area filter reuses the same
@@ -696,7 +696,7 @@ creation is intentionally unavailable.
 
 On macOS and iOS, `+` sits in the top-right History toolbar beside Search and opens the shared record form using the platform presentation convention: a trailing inspector on macOS and a sheet on iOS. On macOS, pressing `+` again closes the inspector. `キャンセル` and `記録` remain inside the record form instead of being promoted into the window toolbar. Clicking or tapping an empty time in the weekly calendar opens the same form with that day and time preselected.
 
-The form follows the active History mode. `集中記録` opens a Flow-specific form with `タスクなし` selected by default; its picker may optionally link an existing Task, Habit, or Area, but saving always creates Flow and never completes a linked Check Task. `タスク` limits the picker to Task and Habit, offers new Task creation, and applies the selected unit's completion/progress semantics. `分野` limits the picker to Area and creates Area-only Flow. Habit lists every eligible Habit Area for the selected day; when no Todo occurrence exists, saving materializes the historical occurrence from its internal `Direction` template. A Task/Habit progress preview is shown only when the operation changes that progress.
+The form follows the active History mode. `集中記録` opens a Flow-specific form with `タスクなし` selected by default; its picker may optionally link an existing Task, Habit, or Area, but saving always creates Flow and never completes a linked Check Task. `タスク` limits the picker to Task and Habit, offers new Task creation, and applies the selected unit's completion/progress semantics. `分野` limits the picker to Area and creates Area-only Flow. Habit lists every eligible Habit Area for the selected day; when no Todo occurrence exists, saving materializes the historical occurrence from its Area template. A Task/Habit progress preview is shown only when the operation changes that progress.
 
 Check requires a date and accepts an optional exact time; it writes historical completion without inventing Flow. Block, Minute, and Area-only records require explicit start and end times, create a completed independent Flow, and rebuild measured progress from persisted history. Zero-Flow scheduled Tasks remain absent from the actual History summary. The row action with a fixed Task remains available as the faster manual-Flow path. Expanded `履歴 > 分野` ends with `タスクを追加`, which creates a Task with fixed Area but no Flow. The calendar does not provide direct resize and does not persist a second calendar entity.
 

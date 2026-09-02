@@ -29,7 +29,7 @@ other material whose license is incompatible with this arrangement.
 
 ## Before opening a pull request
 
-- Keep the Direction → Task → Flow → progress loop coherent.
+- Keep the Area → Task → Flow → progress loop coherent.
 - Use Japanese as the default user-facing language and update Japanese,
   English, and Russian localizations together.
 - Keep business rules outside SwiftUI views and add focused tests for domain or

@@ -14,7 +14,7 @@ struct DashboardStatisticsDay: Identifiable {
     var id: Date { date }
 }
 
-struct DashboardStatisticsDirectionGrowth {
+struct DashboardStatisticsAreaGrowth {
     let symbol: String
     let name: String
     let focusSecondsDelta: Int
@@ -24,7 +24,7 @@ struct DashboardStatisticsComparison {
     let focusSecondsDelta: Int
     let completedTaskDelta: Int
     let blocksDelta: Double
-    let growingDirection: DashboardStatisticsDirectionGrowth?
+    let growingArea: DashboardStatisticsAreaGrowth?
 }
 
 struct DashboardStatisticsBuilder {
@@ -66,7 +66,7 @@ struct DashboardStatisticsBuilder {
             return DashboardStatisticsDay(
                 date: day,
                 focusSeconds: snapshot.totalFocusSeconds,
-                colorHex: snapshot.directionSummaries.first?.colorHex ?? "#8E8E93"
+                colorHex: snapshot.areaSummaries.first?.colorHex ?? "#8E8E93"
             )
         }
     }
@@ -93,15 +93,15 @@ struct DashboardStatisticsBuilder {
             explicitDay: previousDay
         )
 
-        let previousByDirection = Dictionary(
-            uniqueKeysWithValues: previous.directionSummaries.map { ($0.id, $0.focusSeconds) }
+        let previousByArea = Dictionary(
+            uniqueKeysWithValues: previous.areaSummaries.map { ($0.id, $0.focusSeconds) }
         )
-        let growth = current.directionSummaries
+        let growth = current.areaSummaries
             .map { summary in
-                DashboardStatisticsDirectionGrowth(
+                DashboardStatisticsAreaGrowth(
                     symbol: summary.symbol,
                     name: summary.name,
-                    focusSecondsDelta: summary.focusSeconds - (previousByDirection[summary.id] ?? 0)
+                    focusSecondsDelta: summary.focusSeconds - (previousByArea[summary.id] ?? 0)
                 )
             }
             .filter { $0.focusSecondsDelta > 0 }
@@ -112,7 +112,7 @@ struct DashboardStatisticsBuilder {
             completedTaskDelta: completedTaskCount(on: day, todos: todos)
                 - completedTaskCount(on: previousDay, todos: todos),
             blocksDelta: current.blocks - previous.blocks,
-            growingDirection: growth
+            growingArea: growth
         )
     }
 

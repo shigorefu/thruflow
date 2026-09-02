@@ -44,15 +44,15 @@ enum TaskCalendarFilter: String, CaseIterable, Identifiable {
     }
 
     func includes(_ todo: Todo) -> Bool {
-        guard let direction = todo.direction else { return false }
+        guard let area = todo.area else { return false }
 
         switch self {
         case .all:
             return true
         case .tasks:
-            return direction.type != .habit
+            return area.type != .habit
         case .habits:
-            return direction.type == .habit
+            return area.type == .habit
         }
     }
 }
@@ -74,7 +74,7 @@ struct TaskCalendarIndicatorPalette {
         for todo in todos where filter.includes(todo) && !todo.isArchived && !todo.isDeleted {
             guard let scheduledDate = todo.scheduledDate,
                   interval.contains(scheduledDate),
-                  let colorHex = todo.direction?.colorHex else {
+                  let colorHex = todo.area?.colorHex else {
                 continue
             }
 
@@ -128,8 +128,8 @@ struct TaskCalendarBuilder {
         }
     }
 
-    func advancedDate(from date: Date, range: TaskCalendarRange, direction: Int) -> Date {
-        let value = direction < 0 ? -1 : 1
+    func advancedDate(from date: Date, range: TaskCalendarRange, area: Int) -> Date {
+        let value = area < 0 ? -1 : 1
 
         switch range {
         case .oneDay:
@@ -198,11 +198,11 @@ struct TaskRescheduleService {
             return .failure(.completedTask)
         }
 
-        guard todo.direction?.type == .habit else {
+        guard todo.area?.type == .habit else {
             return .success(())
         }
 
-        guard todo.direction?.goalSchedule == .weeklyCount else {
+        guard todo.area?.goalSchedule == .weeklyCount else {
             return .failure(.fixedHabit)
         }
 

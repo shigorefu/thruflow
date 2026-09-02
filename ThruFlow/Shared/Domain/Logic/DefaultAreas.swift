@@ -1,18 +1,18 @@
 //
-//  DefaultDirections.swift
+//  DefaultAreas.swift
 //  ThruFlow
 //
 //
 
 import Foundation
 
-enum DefaultDirections {
+enum DefaultAreas {
     static let taskInboxName = String(localized: "その他")
     static let taskInboxSymbol = "📝"
     static let taskInboxColorHex = "#007AFF"
 
-    static func makeTaskInbox(now: Date = .now) -> Direction {
-        Direction(
+    static func makeTaskInbox(now: Date = .now) -> Area {
+        Area(
             name: taskInboxName,
             systemRole: .taskInbox,
             type: .neutral,
@@ -23,28 +23,28 @@ enum DefaultDirections {
         )
     }
 
-    static func existingTaskInbox(in directions: [Direction]) -> Direction? {
-        directions
+    static func existingTaskInbox(in areas: [Area]) -> Area? {
+        areas
             .filter { isTaskInbox($0) }
             .min { canonicalOrder($0, $1) }
     }
 
-    static func isTaskInbox(_ direction: Direction) -> Bool {
-        !direction.isArchived && isTaskInboxRecord(direction)
+    static func isTaskInbox(_ area: Area) -> Bool {
+        !area.isArchived && isTaskInboxRecord(area)
     }
 
-    static func isTaskInboxRecord(_ direction: Direction) -> Bool {
-        if direction.systemRole == .taskInbox {
+    static func isTaskInboxRecord(_ area: Area) -> Bool {
+        if area.systemRole == .taskInbox {
             return true
         }
 
-        return direction.type == .neutral &&
-            direction.symbolName == taskInboxSymbol &&
-            direction.colorHex.caseInsensitiveCompare(taskInboxColorHex) == .orderedSame &&
-            legacyTaskInboxNames.contains(direction.name)
+        return area.type == .neutral &&
+            area.symbolName == taskInboxSymbol &&
+            area.colorHex.caseInsensitiveCompare(taskInboxColorHex) == .orderedSame &&
+            legacyTaskInboxNames.contains(area.name)
     }
 
-    static func canonicalOrder(_ lhs: Direction, _ rhs: Direction) -> Bool {
+    static func canonicalOrder(_ lhs: Area, _ rhs: Area) -> Bool {
         if lhs.createdAt != rhs.createdAt {
             return lhs.createdAt < rhs.createdAt
         }

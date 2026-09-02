@@ -112,7 +112,7 @@ struct TaskCalendarSnapshot {
             if let searchQuery, !searchQuery.matchesTask(todo) {
                 continue
             }
-            guard let colorHex = todo.direction?.colorHex else { continue }
+            guard let colorHex = todo.area?.colorHex else { continue }
             guard seen.insert(colorHex.lowercased()).inserted else { continue }
             colors.append(colorHex)
             if colors.count == limit { break }

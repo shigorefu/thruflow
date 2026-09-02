@@ -4,15 +4,15 @@ import SwiftData
 
 enum AppModelContainerFactory {
     static let cloudKitContainerIdentifier = "iCloud.com.shigorefu.thruflow"
+    static let schema = Schema([
+        Area.self,
+        Todo.self,
+        FlowSession.self,
+        FlowSegment.self,
+        FlowBreak.self,
+    ])
 
     static func make() -> ModelContainer {
-        let schema = Schema([
-            Direction.self,
-            Todo.self,
-            FlowSession.self,
-            FlowSegment.self,
-            FlowBreak.self,
-        ])
         let configuration: ModelConfiguration
         if isRunningTests {
             configuration = ModelConfiguration(

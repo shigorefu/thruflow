@@ -8,7 +8,7 @@ struct WatchFlowDashboardView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
 
-    @Query(sort: \Direction.sortIndex) private var directions: [Direction]
+    @Query(sort: \Area.sortIndex) private var areas: [Area]
     @Query private var todos: [Todo]
 
     private let todoSorter = FlowDashboardTodoSorter()
@@ -35,7 +35,7 @@ struct WatchFlowDashboardView: View {
             prepareToday()
             configureInitialContextIfNeeded()
         }
-        .onChange(of: directions.map(\.id)) {
+        .onChange(of: areas.map(\.id)) {
             prepareToday()
             configureInitialContextIfNeeded()
         }
@@ -44,8 +44,8 @@ struct WatchFlowDashboardView: View {
         }
     }
 
-    private var activeDirections: [Direction] {
-        directions.filter { $0.archivedAt == nil }
+    private var activeAreas: [Area] {
+        areas.filter { $0.archivedAt == nil }
     }
 
     private var todayTodos: [Todo] {
@@ -60,14 +60,14 @@ struct WatchFlowDashboardView: View {
     }
 
     private func prepareToday() {
-        guard !activeDirections.isEmpty else { return }
+        guard !activeAreas.isEmpty else { return }
         let today = dayBoundary.day(containing: .now, calendar: calendar)
         do {
             _ = try HabitTodoMaterializer(
                 calendar: calendar,
                 dayBoundary: dayBoundary
             ).materialize(
-                directions: activeDirections,
+                areas: activeAreas,
                 dates: [today],
                 modelContext: modelContext
             )
@@ -78,13 +78,13 @@ struct WatchFlowDashboardView: View {
     }
 
     private func configureInitialContextIfNeeded() {
-        guard activeFlowStore.selectedDirectionID == nil else { return }
+        guard activeFlowStore.selectedAreaID == nil else { return }
 
         if let todo = todayTodos.first(where: { !$0.isCompleted }),
-           let direction = todo.direction {
-            activeFlowStore.configure(direction: direction, todo: todo)
-        } else if let direction = activeDirections.first {
-            activeFlowStore.configure(direction: direction, todo: nil)
+           let area = todo.area {
+            activeFlowStore.configure(area: area, todo: todo)
+        } else if let area = activeAreas.first {
+            activeFlowStore.configure(area: area, todo: nil)
         }
     }
 
@@ -101,7 +101,7 @@ private struct WatchFlowStreamView: View {
     @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.calendar) private var calendar
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
-    @Query(sort: \Direction.sortIndex) private var directions: [Direction]
+    @Query(sort: \Area.sortIndex) private var areas: [Area]
     @Query private var sessions: [FlowSession]
     @Query private var flowBreaks: [FlowBreak]
 
@@ -119,7 +119,7 @@ private struct WatchFlowStreamView: View {
                 breaks: flowBreaks,
                 activeSessionID: activeFlowStore.activeSession?.id,
                 activeFocusSeconds: activeFlowStore.actualFocusSeconds(now: timeline.date),
-                visualIdentityID: DailyFlowIdentity.resolve(from: directions)
+                visualIdentityID: DailyFlowIdentity.resolve(from: areas)
             )
 
             FlowStreamSurface(
@@ -192,7 +192,7 @@ private struct WatchTimerView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
 
-    @Query(sort: \Direction.sortIndex) private var directions: [Direction]
+    @Query(sort: \Area.sortIndex) private var areas: [Area]
     @Query private var todos: [Todo]
 
     @State private var showsMemo = false
@@ -233,12 +233,12 @@ private struct WatchTimerView: View {
             WatchFlowContextPicker()
         } label: {
             HStack(spacing: 6) {
-                Text(selectedDirection?.symbolName ?? "🎯")
+                Text(selectedArea?.symbolName ?? "🎯")
                 VStack(alignment: .leading, spacing: 0) {
                     Text(selectedContextTitle)
                         .font(.caption.weight(.semibold))
                         .lineLimit(1)
-                    Text(selectedDirection?.name ?? String(localized: "分野"))
+                    Text(selectedArea?.name ?? String(localized: "分野"))
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
@@ -327,7 +327,7 @@ private struct WatchTimerView: View {
                         .background(tint, in: Circle())
                 }
                 .buttonStyle(.plain)
-                .disabled(selectedDirection == nil)
+                .disabled(selectedArea == nil)
                 .accessibilityLabel(primaryActionTitle)
 
                 timerButton("goforward.5", size: secondarySize) {
@@ -379,8 +379,8 @@ private struct WatchTimerView: View {
         }
     }
 
-    private var activeDirections: [Direction] {
-        directions.filter { $0.archivedAt == nil }
+    private var activeAreas: [Area] {
+        areas.filter { $0.archivedAt == nil }
     }
 
     private var todayTodos: [Todo] {
@@ -394,8 +394,8 @@ private struct WatchTimerView: View {
         )
     }
 
-    private var selectedDirection: Direction? {
-        activeDirections.first { $0.id == activeFlowStore.selectedDirectionID }
+    private var selectedArea: Area? {
+        activeAreas.first { $0.id == activeFlowStore.selectedAreaID }
     }
 
     private var selectedTodo: Todo? {
@@ -406,13 +406,13 @@ private struct WatchTimerView: View {
         if let selectedTodo {
             return TodoDisplay.title(for: selectedTodo)
         }
-        return selectedDirection?.name ?? String(localized: "タスクを選択")
+        return selectedArea?.name ?? String(localized: "タスクを選択")
     }
 
     private var tint: Color {
         activeFlowStore.isBreakPhase
             ? .secondary
-            : Color(hex: selectedDirection?.colorHex ?? "#0A84FF")
+            : Color(hex: selectedArea?.colorHex ?? "#0A84FF")
     }
 
     private var primarySymbol: String {
@@ -451,9 +451,9 @@ private struct WatchTimerView: View {
 
     private func primaryAction() {
         if activeFlowStore.isBreakPhase {
-            guard let direction = selectedDirection else { return }
+            guard let area = selectedArea else { return }
             activeFlowStore.startNextFlow(
-                direction: direction,
+                area: area,
                 todo: selectedTodo,
                 modelContext: modelContext
             )
@@ -467,9 +467,9 @@ private struct WatchTimerView: View {
             return
         }
 
-        guard let direction = selectedDirection else { return }
+        guard let area = selectedArea else { return }
         activeFlowStore.start(
-            direction: direction,
+            area: area,
             todo: selectedTodo,
             modelContext: modelContext
         )
@@ -502,7 +502,7 @@ private struct WatchFlowContextPicker: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
 
-    @Query(sort: \Direction.sortIndex) private var directions: [Direction]
+    @Query(sort: \Area.sortIndex) private var areas: [Area]
     @Query private var todos: [Todo]
 
     var body: some View {
@@ -511,13 +511,13 @@ private struct WatchFlowContextPicker: View {
                 Section(String(localized: "今日のタスク")) {
                     ForEach(todayTodos) { todo in
                         Button {
-                            select(direction: todo.direction, todo: todo)
+                            select(area: todo.area, todo: todo)
                         } label: {
                             Label {
                                 Text(TodoDisplay.title(for: todo))
                                     .lineLimit(1)
                             } icon: {
-                                Text(todo.direction?.symbolName ?? "📝")
+                                Text(todo.area?.symbolName ?? "📝")
                             }
                         }
                     }
@@ -525,15 +525,15 @@ private struct WatchFlowContextPicker: View {
             }
 
             Section(String(localized: "分野")) {
-                ForEach(activeDirections) { direction in
+                ForEach(activeAreas) { area in
                     Button {
-                        select(direction: direction, todo: nil)
+                        select(area: area, todo: nil)
                     } label: {
                         Label {
-                            Text(direction.name)
+                            Text(area.name)
                                 .lineLimit(1)
                         } icon: {
-                            Text(direction.symbolName)
+                            Text(area.symbolName)
                         }
                     }
                 }
@@ -542,8 +542,8 @@ private struct WatchFlowContextPicker: View {
         .navigationTitle(String(localized: "タスクを選択"))
     }
 
-    private var activeDirections: [Direction] {
-        directions.filter { $0.archivedAt == nil }
+    private var activeAreas: [Area] {
+        areas.filter { $0.archivedAt == nil }
     }
 
     private var todayTodos: [Todo] {
@@ -557,13 +557,13 @@ private struct WatchFlowContextPicker: View {
         )
     }
 
-    private func select(direction: Direction?, todo: Todo?) {
-        guard let direction else { return }
+    private func select(area: Area?, todo: Todo?) {
+        guard let area else { return }
         if activeFlowStore.timerState == nil {
-            activeFlowStore.configure(direction: direction, todo: todo)
+            activeFlowStore.configure(area: area, todo: todo)
         } else {
             activeFlowStore.selectContext(
-                direction: direction,
+                area: area,
                 todo: todo,
                 modelContext: modelContext
             )
@@ -676,7 +676,7 @@ private struct WatchTasksView: View {
                             todo.setCompleted(!todo.isCompleted)
                             _ = modelContext.saveReporting(.flowUpdate)
                         }
-                        Text(todo.direction?.symbolName ?? "📝")
+                        Text(todo.area?.symbolName ?? "📝")
                         VStack(alignment: .leading, spacing: 1) {
                             Text(TodoDisplay.title(for: todo))
                                 .lineLimit(2)

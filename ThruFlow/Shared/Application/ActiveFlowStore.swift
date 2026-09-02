@@ -14,7 +14,7 @@ final class ActiveFlowStore: ObservableObject {
     private static let forgottenTimerReminderSeconds = 60 * 60
     private static let persistenceReconciliationInterval: TimeInterval = 30
 
-    @Published var selectedDirectionID: UUID?
+    @Published var selectedAreaID: UUID?
     @Published var selectedTodoID: UUID?
     @Published var selectedMode: FlowMode
     @Published var intent: String
@@ -61,18 +61,18 @@ final class ActiveFlowStore: ObservableObject {
         self.notifications = notifications ?? LocalFlowNotificationService()
         self.liveActivities = liveActivities ?? NoopLiveActivityService()
         self.persistenceNotificationCenter = persistenceNotificationCenter
-        selectedDirectionID = defaults.uuid(forKey: "flow.selectedDirectionID")
+        selectedAreaID = defaults.uuid(forKey: "flow.selectedDirectionID")
         selectedTodoID = defaults.uuid(forKey: "flow.selectedTodoID")
         selectedMode = defaults.flowMode(forKey: "flow.selectedMode") ?? .twentyFiveFive
         intent = defaults.string(forKey: "flow.lastIntent") ?? ""
     }
 
     var phase: FlowPhase {
-        timerState?.phase ?? (selectedDirectionID == nil ? .idle : .configured)
+        timerState?.phase ?? (selectedAreaID == nil ? .idle : .configured)
     }
 
     var canStart: Bool {
-        selectedDirectionID != nil && timerState == nil
+        selectedAreaID != nil && timerState == nil
     }
 
     var canChangeMode: Bool {
@@ -96,8 +96,8 @@ final class ActiveFlowStore: ObservableObject {
         return timerState?.isLongBreak == true ? .long : .regular
     }
 
-    func configure(direction: Direction?, todo: Todo?, intent: String? = nil, mode: FlowMode? = nil) {
-        selectedDirectionID = direction?.id
+    func configure(area: Area?, todo: Todo?, intent: String? = nil, mode: FlowMode? = nil) {
+        selectedAreaID = area?.id
         selectedTodoID = todo?.id
 
         if let intent {
@@ -114,7 +114,7 @@ final class ActiveFlowStore: ObservableObject {
     @discardableResult
     func reconcileSelectedTodoForCurrentDay(
         todos: [Todo],
-        directions: [Direction],
+        areas: [Area],
         now: Date = .now,
         calendar: Calendar = .current,
         dayBoundary: AppDayBoundary = .midnight
@@ -130,16 +130,16 @@ final class ActiveFlowStore: ObservableObject {
         }
 
         let previousTodo = todos.first { $0.id == selectedTodoID }
-        let preferredDirectionID = previousTodo?.direction?.id ?? selectedDirectionID
+        let preferredAreaID = previousTodo?.area?.id ?? selectedAreaID
         let replacement = todayTodos.first {
-            !$0.isCompleted && $0.direction?.id == preferredDirectionID
+            !$0.isCompleted && $0.area?.id == preferredAreaID
         } ?? todayTodos.first(where: { !$0.isCompleted })
 
-        let activeDirections = directions.filter { !$0.isArchived }
-        let replacementDirection = replacement?.direction
-            ?? activeDirections.first(where: { $0.id == preferredDirectionID })
-            ?? activeDirections.first
-        configure(direction: replacementDirection, todo: replacement)
+        let activeAreas = areas.filter { !$0.isArchived }
+        let replacementArea = replacement?.area
+            ?? activeAreas.first(where: { $0.id == preferredAreaID })
+            ?? activeAreas.first
+        configure(area: replacementArea, todo: replacement)
         return true
     }
 
@@ -149,7 +149,7 @@ final class ActiveFlowStore: ObservableObject {
         notifications.cancelPendingFlowNotifications()
         notifications.clearBadge()
         liveActivities.end()
-        selectedDirectionID = nil
+        selectedAreaID = nil
         selectedTodoID = nil
         selectedMode = .twentyFiveFive
         intent = ""
@@ -162,7 +162,7 @@ final class ActiveFlowStore: ObservableObject {
         persistConfiguration()
     }
 
-    func start(direction: Direction, todo: Todo?, modelContext: ModelContext, now: Date = .now) {
+    func start(area: Area, todo: Todo?, modelContext: ModelContext, now: Date = .now) {
         stateBeforeResultPrompt = nil
         let state = engine.start(mode: selectedMode, now: now)
         let sessionID = UUID()
@@ -177,7 +177,7 @@ final class ActiveFlowStore: ObservableObject {
         let session = FlowSession(
             id: sessionID,
             seriesID: seriesID,
-            direction: direction,
+            area: area,
             todo: todo,
             intent: intent.trimmingCharacters(in: .whitespacesAndNewlines),
             mode: selectedMode,
@@ -192,7 +192,7 @@ final class ActiveFlowStore: ObservableObject {
         modelContext.insert(session)
         let segment = FlowSegment(
             session: session,
-            direction: direction,
+            area: area,
             todo: todo,
             startedAt: now,
             startFocusSeconds: 0
@@ -219,22 +219,22 @@ final class ActiveFlowStore: ObservableObject {
     }
 
     func selectContext(
-        direction: Direction?,
+        area: Area?,
         todo: Todo?,
         modelContext: ModelContext,
         now: Date = .now
     ) {
-        guard let direction else { return }
-        let previousDirectionID = selectedDirectionID
+        guard let area else { return }
+        let previousAreaID = selectedAreaID
         let previousTodoID = selectedTodoID
 
         if let state = timerState,
            state.phase == .focusing || state.phase == .paused || state.phase == .awaitingExtensionDecision,
            let session = activeSession {
             let currentTodoID = session.resolvedSegments.last(where: { $0.endedAt == nil })?.todo?.id
-            let currentDirectionID = session.resolvedSegments.last(where: { $0.endedAt == nil })?.direction?.id
+            let currentAreaID = session.resolvedSegments.last(where: { $0.endedAt == nil })?.area?.id
 
-            if currentTodoID != todo?.id || currentDirectionID != direction.id {
+            if currentTodoID != todo?.id || currentAreaID != area.id {
                 let focusedSeconds = engine.actualFocusDuration(for: state, now: now)
                 if let currentSegment = session.resolvedSegments.last(where: { $0.endedAt == nil }),
                    contextSwitchPolicy.shouldTransferCurrentSegment(
@@ -243,7 +243,7 @@ final class ActiveFlowStore: ObservableObject {
                    ) {
                     transferCurrentSegment(
                         currentSegment,
-                        to: direction,
+                        to: area,
                         todo: todo,
                         session: session,
                         modelContext: modelContext
@@ -251,7 +251,7 @@ final class ActiveFlowStore: ObservableObject {
                 } else {
                     closeCurrentSegment(at: now, totalFocusSeconds: focusedSeconds)
                     openSegment(
-                        direction: direction,
+                        area: area,
                         todo: todo,
                         session: session,
                         modelContext: modelContext,
@@ -259,15 +259,15 @@ final class ActiveFlowStore: ObservableObject {
                         startFocusSeconds: focusedSeconds
                     )
                 }
-                session.direction = direction
+                session.area = area
                 session.todo = todo
                 session.recordRuntimeMutation(now: now)
             }
         }
 
-        configure(direction: direction, todo: todo)
+        configure(area: area, todo: todo)
         guard modelContext.saveReporting(.flowUpdate) else {
-            selectedDirectionID = previousDirectionID
+            selectedAreaID = previousAreaID
             selectedTodoID = previousTodoID
             persistConfiguration()
             return
@@ -363,7 +363,7 @@ final class ActiveFlowStore: ObservableObject {
         }
 
         do {
-            try DefaultDirectionReconciler().reconcile(modelContext: modelContext, now: now)
+            try DefaultAreaReconciler().reconcile(modelContext: modelContext, now: now)
             try OrphanTodoReconciler().reconcile(modelContext: modelContext, now: now)
             lastPersistenceReconciliationAt = now
         } catch {
@@ -608,7 +608,7 @@ final class ActiveFlowStore: ObservableObject {
     }
 
     func startNextFlow(
-        direction: Direction,
+        area: Area,
         todo: Todo?,
         modelContext: ModelContext,
         now: Date = .now
@@ -616,8 +616,8 @@ final class ActiveFlowStore: ObservableObject {
         guard timerState?.phase == .breakTime else { return }
 
         guard completeBreak(modelContext: modelContext, now: now) else { return }
-        configure(direction: direction, todo: todo)
-        start(direction: direction, todo: todo, modelContext: modelContext, now: now)
+        configure(area: area, todo: todo)
+        start(area: area, todo: todo, modelContext: modelContext, now: now)
     }
 
     @discardableResult
@@ -820,7 +820,7 @@ final class ActiveFlowStore: ObservableObject {
         activeSession = session
         self.timerState = timerState
         flowBreakInteraction = nil
-        selectedDirectionID = session.direction?.id
+        selectedAreaID = session.area?.id
         selectedTodoID = session.todo?.id
         selectedMode = timerState.mode
         intent = session.intent
@@ -925,7 +925,7 @@ final class ActiveFlowStore: ObservableObject {
     }
 
     private func openSegment(
-        direction: Direction,
+        area: Area,
         todo: Todo?,
         session: FlowSession,
         modelContext: ModelContext,
@@ -934,7 +934,7 @@ final class ActiveFlowStore: ObservableObject {
     ) {
         let segment = FlowSegment(
             session: session,
-            direction: direction,
+            area: area,
             todo: todo,
             startedAt: now,
             startFocusSeconds: startFocusSeconds
@@ -947,7 +947,7 @@ final class ActiveFlowStore: ObservableObject {
 
     private func transferCurrentSegment(
         _ currentSegment: FlowSegment,
-        to direction: Direction,
+        to area: Area,
         todo: Todo?,
         session: FlowSession,
         modelContext: ModelContext
@@ -956,7 +956,7 @@ final class ActiveFlowStore: ObservableObject {
             .filter { $0.id != currentSegment.id && $0.endedAt != nil }
             .max { $0.startedAt < $1.startedAt }
 
-        if previousSegment?.direction?.id == direction.id,
+        if previousSegment?.area?.id == area.id,
            previousSegment?.todo?.id == todo?.id,
            let previousSegment {
             session.resolvedSegments.removeAll { $0.id == currentSegment.id }
@@ -965,7 +965,7 @@ final class ActiveFlowStore: ObservableObject {
             return
         }
 
-        currentSegment.direction = direction
+        currentSegment.area = area
         currentSegment.todo = todo
     }
 
@@ -1047,9 +1047,9 @@ final class ActiveFlowStore: ObservableObject {
         }
 
         let currentSegment = activeSession.resolvedSegments.last(where: { $0.endedAt == nil })
-        let direction = currentSegment?.direction ?? activeSession.direction
+        let area = currentSegment?.area ?? activeSession.area
         let todo = currentSegment?.todo ?? activeSession.todo
-        let directionName = direction?.name ?? String(localized: "その他")
+        let areaName = area?.name ?? String(localized: "その他")
         let trimmedTitle = todo?.title.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let duration = timerKind == .breakTime
             ? state.plannedBreakDurationSeconds
@@ -1060,11 +1060,11 @@ final class ActiveFlowStore: ObservableObject {
 
         return FlowLiveActivityContent(
             sessionID: activeSession.id,
-            taskEmoji: direction?.symbolName ?? "📝",
-            taskTitle: trimmedTitle.isEmpty ? directionName : trimmedTitle,
-            directionEmoji: direction?.symbolName ?? "📝",
-            directionName: directionName,
-            directionColorHex: direction?.colorHex ?? "#007AFF",
+            taskEmoji: area?.symbolName ?? "📝",
+            taskTitle: trimmedTitle.isEmpty ? areaName : trimmedTitle,
+            areaEmoji: area?.symbolName ?? "📝",
+            areaName: areaName,
+            areaColorHex: area?.colorHex ?? "#007AFF",
             modeRawValue: state.mode.rawValue,
             modeName: state.mode.displayName,
             status: status,
@@ -1078,7 +1078,7 @@ final class ActiveFlowStore: ObservableObject {
     }
 
     private func persistConfiguration() {
-        defaults.set(uuid: selectedDirectionID, forKey: "flow.selectedDirectionID")
+        defaults.set(uuid: selectedAreaID, forKey: "flow.selectedDirectionID")
         defaults.set(uuid: selectedTodoID, forKey: "flow.selectedTodoID")
         defaults.set(selectedMode.rawValue, forKey: "flow.selectedMode")
         defaults.set(intent, forKey: "flow.lastIntent")

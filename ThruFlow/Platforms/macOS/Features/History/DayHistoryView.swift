@@ -15,24 +15,24 @@ struct DayHistoryView: View {
     @Query(sort: \FlowSession.startedAt, order: .reverse) private var sessions: [FlowSession]
     @Query(sort: \FlowBreak.startedAt, order: .reverse) private var breaks: [FlowBreak]
     @Query(sort: \Todo.updatedAt, order: .reverse) private var todos: [Todo]
-    @Query(sort: \Direction.sortIndex) private var directions: [Direction]
+    @Query(sort: \Area.sortIndex) private var areas: [Area]
 
     @State private var selectedDate: Date
     @State private var selectedMode: DayHistoryMode = .calendar
     @State private var selectedRange: HistoryCalendarRange = .week
     @State private var visibleCalendarKinds = Set(HistoryCalendarItemKind.allCases)
-    @State private var visibleTaskTypes = Set(DirectionType.allCases)
-    @State private var visibleDirectionTypes = Set(DirectionType.allCases)
+    @State private var visibleTaskTypes = Set(AreaType.allCases)
+    @State private var visibleAreaTypes = Set(AreaType.allCases)
     @State private var searchText = ""
     @State private var isSearchPresented = false
     @State private var expandedTaskIDs: Set<String> = []
-    @State private var expandedDirectionIDs: Set<UUID> = []
+    @State private var expandedAreaIDs: Set<UUID> = []
     @State private var editingTodo: Todo?
     @State private var inspectedFlow: DayHistoryFlow?
     @State private var manualFlowRequest: HistoryManualFlowRequest?
     @State private var isAddingTaskRecord = false
     @State private var historyRecordStart = Date.now
-    @State private var taskDirection: Direction?
+    @State private var taskArea: Area?
 
     private let onClose: (() -> Void)?
     private var builder: DayHistoryBuilder {
@@ -147,10 +147,10 @@ struct DayHistoryView: View {
             )
             .frame(minWidth: 420, idealWidth: 480, minHeight: 430, idealHeight: 500)
         }
-        .sheet(item: $taskDirection) { direction in
+        .sheet(item: $taskArea) { area in
             TodoFormView(
                 mode: .create,
-                fixedDirection: direction,
+                fixedArea: area,
                 scheduledDate: selectedDate
             )
             .frame(minWidth: 480, idealWidth: 540, minHeight: 620, idealHeight: 700)
@@ -200,9 +200,9 @@ struct DayHistoryView: View {
                 visibleTypes: $visibleTaskTypes,
                 neutralLabel: String(localized: "タスク")
             )
-        case .directions:
+        case .areas:
             HistoryAggregateFilterMenu(
-                visibleTypes: $visibleDirectionTypes,
+                visibleTypes: $visibleAreaTypes,
                 neutralLabel: String(localized: "通常")
             )
         }
@@ -253,8 +253,8 @@ struct DayHistoryView: View {
                 )
             case .tasks:
                 aggregateWorkspace { tasksContent }
-            case .directions:
-                aggregateWorkspace { directionsContent }
+            case .areas:
+                aggregateWorkspace { areasContent }
             }
         }
     }
@@ -287,11 +287,11 @@ struct DayHistoryView: View {
                 .frame(maxWidth: 920, alignment: .leading)
                 .padding(16)
             }
-        case .directions:
+        case .areas:
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     summary
-                    directionsContent
+                    areasContent
                 }
                 .frame(maxWidth: 920, alignment: .leading)
                 .padding(16)
@@ -404,27 +404,27 @@ struct DayHistoryView: View {
         }
     }
 
-    private var directionsContent: some View {
+    private var areasContent: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(String(localized: "方向別"))
                 .font(.headline)
 
-            if filteredDirectionSummaries.isEmpty {
+            if filteredAreaSummaries.isEmpty {
                 emptyState
             } else {
-                ForEach(filteredDirectionSummaries) { direction in
-                    HistoryExpandableDirectionRow(
-                        direction: direction,
-                        tasks: tasks(for: direction),
-                        isExpanded: expandedDirectionIDs.contains(direction.id),
-                        onToggleExpansion: { toggleDirectionExpansion(direction.id) },
+                ForEach(filteredAreaSummaries) { area in
+                    HistoryExpandableAreaRow(
+                        area: area,
+                        tasks: tasks(for: area),
+                        isExpanded: expandedAreaIDs.contains(area.id),
+                        onToggleExpansion: { toggleAreaExpansion(area.id) },
                         onToggleCheckbox: toggleCheckbox,
                         onEditTask: { todo in editingTodo = todo },
-                        directionOnlyFlows: snapshot.flows.filter {
-                            $0.directionID == direction.directionID && $0.todoID == nil
+                        areaOnlyFlows: snapshot.flows.filter {
+                            $0.areaID == area.areaID && $0.todoID == nil
                         },
                         onEditFlow: { flow in inspectedFlow = flow },
-                        onAddTask: { taskDirection = self.direction(withID: direction.directionID) }
+                        onAddTask: { taskArea = self.area(withID: area.areaID) }
                     )
                 }
             }
@@ -484,7 +484,7 @@ struct DayHistoryView: View {
     @ViewBuilder
     private var aggregatePeriodPicker: some View {
         let indicatorSource = HistoryMiniCalendarIndicatorSource.filteredFlowHistory(
-            selectedMode == .tasks ? visibleTaskTypes : visibleDirectionTypes
+            selectedMode == .tasks ? visibleTaskTypes : visibleAreaTypes
         )
 
         switch selectedRange {
@@ -535,12 +535,12 @@ struct DayHistoryView: View {
         filteredTasks(in: snapshot)
     }
 
-    private var filteredDirectionSummaries: [DayHistoryDirectionSummary] {
-        snapshot.directionSummaries.filter { visibleDirectionTypes.contains($0.directionType) }
+    private var filteredAreaSummaries: [DayHistoryAreaSummary] {
+        snapshot.areaSummaries.filter { visibleAreaTypes.contains($0.areaType) }
     }
 
     private func filteredTasks(in snapshot: DayHistorySnapshot) -> [DayHistoryTaskSummary] {
-        snapshot.taskSummaries.filter { visibleTaskTypes.contains($0.directionType) }
+        snapshot.taskSummaries.filter { visibleTaskTypes.contains($0.areaType) }
     }
 
     private var searchFilteredTodos: [Todo] {
@@ -623,12 +623,12 @@ struct DayHistoryView: View {
             if let todoID = flow.todoID, !task.linkedTodoIDs.isEmpty {
                 return task.linkedTodoIDs.contains(todoID)
             }
-            return flow.todoID == nil && flow.directionID == task.directionID
+            return flow.todoID == nil && flow.areaID == task.areaID
         }
     }
 
-    private func tasks(for direction: DayHistoryDirectionSummary) -> [DayHistoryTaskSummary] {
-        snapshot.taskSummaries.filter { $0.directionID == direction.directionID && $0.todo != nil }
+    private func tasks(for area: DayHistoryAreaSummary) -> [DayHistoryTaskSummary] {
+        snapshot.taskSummaries.filter { $0.areaID == area.areaID && $0.todo != nil }
     }
 
     private func toggleTaskExpansion(_ id: String) {
@@ -637,9 +637,9 @@ struct DayHistoryView: View {
         }
     }
 
-    private func toggleDirectionExpansion(_ id: UUID) {
+    private func toggleAreaExpansion(_ id: UUID) {
         withAnimation(.snappy(duration: 0.2)) {
-            if expandedDirectionIDs.remove(id) == nil { expandedDirectionIDs.insert(id) }
+            if expandedAreaIDs.remove(id) == nil { expandedAreaIDs.insert(id) }
         }
     }
 
@@ -655,8 +655,8 @@ struct DayHistoryView: View {
         _ = modelContext.saveReporting(.historyUpdate)
     }
 
-    private func direction(withID id: UUID) -> Direction? {
-        directions.first { $0.id == id }
+    private func area(withID id: UUID) -> Area? {
+        areas.first { $0.id == id }
     }
 
     private func presentManualFlow(for todo: Todo) {
@@ -769,7 +769,7 @@ private struct HistorySummaryTile: View {
 }
 
 private struct HistoryAggregateFilterMenu: View {
-    @Binding var visibleTypes: Set<DirectionType>
+    @Binding var visibleTypes: Set<AreaType>
     let neutralLabel: String
 
     var body: some View {
@@ -786,7 +786,7 @@ private struct HistoryAggregateFilterMenu: View {
         .accessibilityLabel(String(localized: "表示内容"))
     }
 
-    private func filterToggle(_ title: String, type: DirectionType) -> some View {
+    private func filterToggle(_ title: String, type: AreaType) -> some View {
         Toggle(
             title,
             isOn: Binding(
@@ -824,7 +824,7 @@ private struct HistoryExpandableTaskRow: View {
 
                 HStack(spacing: 10) {
                     HStack(spacing: 10) {
-                        Text(task.directionSymbol)
+                        Text(task.areaSymbol)
                             .font(.title3)
 
                         VStack(alignment: .leading, spacing: 2) {
@@ -832,7 +832,7 @@ private struct HistoryExpandableTaskRow: View {
                                 .font(.body.weight(.medium))
                                 .strikethrough(task.todo?.isCompleted == true)
                                 .lineLimit(1)
-                            Text(String(localized: "\(task.directionName)・集中\(task.flowCount)回"))
+                            Text(String(localized: "\(task.areaName)・集中\(task.flowCount)回"))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -994,7 +994,7 @@ private struct HistoryTodoProgressIndicator: View {
     }
 
     private var tint: Color {
-        Color(hex: task.directionColorHex)
+        Color(hex: task.areaColorHex)
     }
 
     private var progressDescription: String {
@@ -1003,39 +1003,39 @@ private struct HistoryTodoProgressIndicator: View {
     }
 }
 
-private struct HistoryExpandableDirectionRow: View {
+private struct HistoryExpandableAreaRow: View {
     @Environment(\.locale) private var locale
 
-    let direction: DayHistoryDirectionSummary
+    let area: DayHistoryAreaSummary
     let tasks: [DayHistoryTaskSummary]
     let isExpanded: Bool
     let onToggleExpansion: () -> Void
     let onToggleCheckbox: (DayHistoryTaskSummary) -> Void
     let onEditTask: (Todo) -> Void
-    let directionOnlyFlows: [DayHistoryFlow]
+    let areaOnlyFlows: [DayHistoryFlow]
     let onEditFlow: (DayHistoryFlow) -> Void
     let onAddTask: () -> Void
 
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 12) {
-                Text(direction.symbol)
+                Text(area.symbol)
                     .font(.title2)
                     .frame(width: 34, height: 34)
-                    .background(Color(hex: direction.colorHex).opacity(0.14))
+                    .background(Color(hex: area.colorHex).opacity(0.14))
                     .clipShape(RoundedRectangle(cornerRadius: 7))
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(direction.name)
+                    Text(area.name)
                         .font(.body.weight(.medium))
-                    Text(String(localized: "タスク\(direction.taskCount)件・集中\(direction.flowCount)回"))
+                    Text(String(localized: "タスク\(area.taskCount)件・集中\(area.flowCount)回"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
 
                 Spacer()
 
-                Text(durationText(direction.focusSeconds))
+                Text(durationText(area.focusSeconds))
                     .font(.callout.weight(.semibold).monospacedDigit())
 
                 Image(systemName: "chevron.right")
@@ -1049,7 +1049,7 @@ private struct HistoryExpandableDirectionRow: View {
 
             if isExpanded {
                 Divider().padding(.leading, 54)
-                if tasks.isEmpty && directionOnlyFlows.isEmpty {
+                if tasks.isEmpty && areaOnlyFlows.isEmpty {
                     Text(String(localized: "この期間のタスクはありません"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -1065,7 +1065,7 @@ private struct HistoryExpandableDirectionRow: View {
                                     onToggleCheckbox: task.todos.count == 1 ? { onToggleCheckbox(task) } : nil
                                 )
                             }
-                            Text(task.directionSymbol)
+                            Text(task.areaSymbol)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(task.title)
                                     .strikethrough(task.todo?.isCompleted == true)
@@ -1088,7 +1088,7 @@ private struct HistoryExpandableDirectionRow: View {
                     }
                 }
 
-                ForEach(directionOnlyFlows) { flow in
+                ForEach(areaOnlyFlows) { flow in
                     HistoryFlowDisclosureRow(flow: flow) {
                         onEditFlow(flow)
                     }
@@ -1102,7 +1102,7 @@ private struct HistoryExpandableDirectionRow: View {
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(Color.accentColor)
-                .accessibilityLabel(String(localized: "\(direction.name)にタスクを追加"))
+                .accessibilityLabel(String(localized: "\(area.name)にタスクを追加"))
             }
         }
         .background(Color.secondary.opacity(0.055))
@@ -1134,7 +1134,7 @@ private struct HistoryFlowDisclosureRow: View {
         Button(action: onEdit) {
             HStack(spacing: 10) {
                 RoundedRectangle(cornerRadius: 2)
-                    .fill(Color(hex: flow.directionColorHex))
+                    .fill(Color(hex: flow.areaColorHex))
                     .frame(width: 4, height: 26)
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -1177,5 +1177,5 @@ private struct HistoryFlowDisclosureRow: View {
 #Preview {
     DayHistoryView()
         .environmentObject(ActiveFlowStore())
-        .modelContainer(for: [Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self], inMemory: true)
+        .modelContainer(for: [Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self], inMemory: true)
 }

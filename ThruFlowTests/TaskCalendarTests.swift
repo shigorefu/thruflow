@@ -26,9 +26,9 @@ struct TaskCalendarTests {
         let builder = TaskCalendarBuilder(calendar: calendar)
         let anchor = date(2026, 7, 10, calendar: calendar)
 
-        #expect(builder.advancedDate(from: anchor, range: .oneDay, direction: 1) == date(2026, 7, 11, calendar: calendar))
-        #expect(builder.advancedDate(from: anchor, range: .sevenDays, direction: -1) == date(2026, 7, 3, calendar: calendar))
-        #expect(builder.advancedDate(from: anchor, range: .month, direction: 1) == date(2026, 8, 10, calendar: calendar))
+        #expect(builder.advancedDate(from: anchor, range: .oneDay, area: 1) == date(2026, 7, 11, calendar: calendar))
+        #expect(builder.advancedDate(from: anchor, range: .sevenDays, area: -1) == date(2026, 7, 3, calendar: calendar))
+        #expect(builder.advancedDate(from: anchor, range: .month, area: 1) == date(2026, 8, 10, calendar: calendar))
     }
 
     @Test func monthGridContainsWholeWeeks() {
@@ -44,10 +44,10 @@ struct TaskCalendarTests {
     }
 
     @Test func taskCalendarFilterSeparatesHabits() {
-        let habitDirection = Direction(name: "読書", type: .habit)
-        let normalDirection = Direction(name: "仕事", type: .neutral)
-        let habit = Todo(title: "", direction: habitDirection)
-        let task = Todo(title: "資料", direction: normalDirection)
+        let habitArea = Area(name: "読書", type: .habit)
+        let normalArea = Area(name: "仕事", type: .neutral)
+        let habit = Todo(title: "", area: habitArea)
+        let task = Todo(title: "資料", area: normalArea)
 
         #expect(TaskCalendarFilter.all.includes(habit))
         #expect(TaskCalendarFilter.tasks.includes(task))
@@ -59,18 +59,18 @@ struct TaskCalendarTests {
     @Test func calendarIndicatorsFollowTaskFilter() {
         let calendar = testCalendar()
         let selectedDate = date(2026, 7, 29, calendar: calendar)
-        let taskDirection = Direction(
+        let taskArea = Area(
             name: "仕事",
             type: .neutral,
             colorHex: "#FF0000"
         )
-        let habitDirection = Direction(
+        let habitArea = Area(
             name: "運動",
             type: .habit,
             colorHex: "#00FF00"
         )
-        let task = Todo(title: "資料", direction: taskDirection, scheduledDate: selectedDate)
-        let habit = Todo(title: "", direction: habitDirection, scheduledDate: selectedDate)
+        let task = Todo(title: "資料", area: taskArea, scheduledDate: selectedDate)
+        let habit = Todo(title: "", area: habitArea, scheduledDate: selectedDate)
         let palette = TaskCalendarIndicatorPalette(calendar: calendar)
 
         #expect(
@@ -91,12 +91,12 @@ struct TaskCalendarTests {
     @Test func calendarSnapshotIndexesOnlyActiveScheduledTasks() {
         let calendar = testCalendar()
         let selectedDate = date(2026, 7, 29, calendar: calendar)
-        let direction = Direction(name: "仕事", type: .neutral)
-        let active = Todo(title: "資料", direction: direction, scheduledDate: selectedDate)
-        let undated = Todo(title: "受信箱", direction: direction)
-        let archived = Todo(title: "保管", direction: direction, scheduledDate: selectedDate)
+        let area = Area(name: "仕事", type: .neutral)
+        let active = Todo(title: "資料", area: area, scheduledDate: selectedDate)
+        let undated = Todo(title: "受信箱", area: area)
+        let archived = Todo(title: "保管", area: area, scheduledDate: selectedDate)
         archived.archive(now: selectedDate)
-        let deleted = Todo(title: "削除", direction: direction, scheduledDate: selectedDate)
+        let deleted = Todo(title: "削除", area: area, scheduledDate: selectedDate)
         deleted.softDelete(now: selectedDate)
 
         let snapshot = TaskCalendarSnapshot(
@@ -115,12 +115,12 @@ struct TaskCalendarTests {
     @Test func calendarSnapshotIndicatorsRespectFilterSearchAndLimit() {
         let calendar = testCalendar()
         let selectedDate = date(2026, 7, 29, calendar: calendar)
-        let work = Direction(name: "AWS", type: .neutral, colorHex: "#FF0000")
-        let duplicateColor = Direction(name: "資料", type: .neutral, colorHex: "#ff0000")
-        let habitDirection = Direction(name: "運動", type: .habit, colorHex: "#00FF00")
-        let aws = Todo(title: "VPC", direction: work, scheduledDate: selectedDate)
-        let document = Todo(title: "設計", direction: duplicateColor, scheduledDate: selectedDate)
-        let habit = Todo(title: "", direction: habitDirection, scheduledDate: selectedDate)
+        let work = Area(name: "AWS", type: .neutral, colorHex: "#FF0000")
+        let duplicateColor = Area(name: "資料", type: .neutral, colorHex: "#ff0000")
+        let habitArea = Area(name: "運動", type: .habit, colorHex: "#00FF00")
+        let aws = Todo(title: "VPC", area: work, scheduledDate: selectedDate)
+        let document = Todo(title: "設計", area: duplicateColor, scheduledDate: selectedDate)
+        let habit = Todo(title: "", area: habitArea, scheduledDate: selectedDate)
         let snapshot = TaskCalendarSnapshot(
             todos: [aws, document, habit],
             calendar: calendar,
@@ -148,19 +148,19 @@ struct TaskCalendarTests {
     @Test func backlogSeparatesOverdueAndUnscheduledTasks() {
         let calendar = testCalendar()
         let now = date(2026, 7, 17, calendar: calendar)
-        let direction = Direction(name: "仕事", type: .neutral)
+        let area = Area(name: "仕事", type: .neutral)
         let overdue = Todo(
             title: "期限切れ",
-            direction: direction,
+            area: area,
             scheduledDate: date(2026, 7, 16, calendar: calendar)
         )
-        let today = Todo(title: "今日", direction: direction, scheduledDate: now)
+        let today = Todo(title: "今日", area: area, scheduledDate: now)
         let future = Todo(
             title: "明日",
-            direction: direction,
+            area: area,
             scheduledDate: date(2026, 7, 18, calendar: calendar)
         )
-        let unscheduled = Todo(title: "日付なし", direction: direction)
+        let unscheduled = Todo(title: "日付なし", area: area)
 
         let snapshot = TaskBacklogBuilder(calendar: calendar).build(
             todos: [future, unscheduled, today, overdue],
@@ -173,9 +173,9 @@ struct TaskCalendarTests {
 
     @Test func backlogUsesConfiguredDayBoundary() {
         let calendar = testCalendar()
-        let direction = Direction(name: "仕事", type: .neutral)
+        let area = Area(name: "仕事", type: .neutral)
         let july16 = date(2026, 7, 16, calendar: calendar)
-        let task = Todo(title: "深夜作業", direction: direction, scheduledDate: july16)
+        let task = Todo(title: "深夜作業", area: area, scheduledDate: july16)
         let builder = TaskBacklogBuilder(
             calendar: calendar,
             dayBoundary: AppDayBoundary(hour: 2)
@@ -192,15 +192,15 @@ struct TaskCalendarTests {
         let calendar = testCalendar()
         let now = date(2026, 7, 17, calendar: calendar)
         let yesterday = date(2026, 7, 16, calendar: calendar)
-        let normal = Direction(name: "仕事", type: .neutral)
-        let habit = Direction(name: "運動", type: .habit)
-        let overdueHabit = Todo(title: "", direction: habit, scheduledDate: yesterday)
-        let unscheduledHabit = Todo(title: "", direction: habit)
-        let completed = Todo(title: "完了", direction: normal, scheduledDate: yesterday)
+        let normal = Area(name: "仕事", type: .neutral)
+        let habit = Area(name: "運動", type: .habit)
+        let overdueHabit = Todo(title: "", area: habit, scheduledDate: yesterday)
+        let unscheduledHabit = Todo(title: "", area: habit)
+        let completed = Todo(title: "完了", area: normal, scheduledDate: yesterday)
         completed.setCompleted(true, now: yesterday)
-        let archived = Todo(title: "保管", direction: normal)
+        let archived = Todo(title: "保管", area: normal)
         archived.archive(now: yesterday)
-        let deleted = Todo(title: "削除", direction: normal, scheduledDate: yesterday)
+        let deleted = Todo(title: "削除", area: normal, scheduledDate: yesterday)
         deleted.softDelete(now: yesterday)
 
         let snapshot = TaskBacklogBuilder(calendar: calendar).build(
@@ -217,11 +217,11 @@ struct TaskCalendarTests {
         let service = TaskRescheduleService(calendar: calendar)
         let target = date(2026, 7, 11, calendar: calendar)
 
-        let normalDirection = Direction(name: "仕事", type: .neutral)
-        let completed = Todo(title: "完了", direction: normalDirection)
+        let normalArea = Area(name: "仕事", type: .neutral)
+        let completed = Todo(title: "完了", area: normalArea)
         completed.setCompleted(true)
 
-        let habitDirection = Direction(
+        let habitArea = Area(
             name: "読書",
             type: .habit,
             goalTarget: 1,
@@ -229,7 +229,7 @@ struct TaskCalendarTests {
             goalUnit: .occurrences,
             goalSchedule: .everyDay
         )
-        let fixedHabit = Todo(title: "", direction: habitDirection)
+        let fixedHabit = Todo(title: "", area: habitArea)
 
         #expect(failure(service.validate(completed, movingTo: target, among: [completed])) == .completedTask)
         #expect(failure(service.validate(fixedHabit, movingTo: target, among: [fixedHabit])) == .fixedHabit)
@@ -238,8 +238,8 @@ struct TaskCalendarTests {
     @Test func activeNormalTaskCanMove() {
         let calendar = testCalendar()
         let service = TaskRescheduleService(calendar: calendar)
-        let direction = Direction(name: "仕事", type: .neutral)
-        let todo = Todo(title: "資料", direction: direction)
+        let area = Area(name: "仕事", type: .neutral)
+        let todo = Todo(title: "資料", area: area)
 
         switch service.validate(
             todo,
@@ -258,7 +258,7 @@ struct TaskCalendarTests {
         let service = TaskRescheduleService(calendar: calendar)
         let monday = date(2026, 7, 20, calendar: calendar)
         let tuesday = date(2026, 7, 21, calendar: calendar)
-        let direction = Direction(
+        let area = Area(
             name: "筋トレ",
             type: .habit,
             goalTarget: 1,
@@ -267,7 +267,7 @@ struct TaskCalendarTests {
             goalSchedule: .weeklyCount,
             weeklyTargetCount: 2
         )
-        let todo = Todo(title: "", direction: direction, scheduledDate: monday)
+        let todo = Todo(title: "", area: area, scheduledDate: monday)
 
         switch service.validate(todo, movingTo: tuesday, among: [todo], now: date(2026, 7, 10, calendar: calendar)) {
         case .success:

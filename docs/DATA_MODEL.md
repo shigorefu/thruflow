@@ -12,29 +12,36 @@ This document is the canonical inventory of persisted application data. ThruFlow
 - CloudKit container: `iCloud.com.shigorefu.thruflow`. There is no account or sharing model; records live in the signed-in user's private database.
 - CloudKit-compatible relationships are optional and have explicit inverses. Required scalar fields have declaration defaults so existing local stores and CloudKit imports can materialize records safely.
 
-## Direction
+Code and file names use `Area`, including `AreaType`, `DefaultAreas`, and the
+computed `area` relationships. The persisted `@Model` class intentionally
+retains the runtime name `Direction`, and `Todo`, `FlowSession`, and
+`FlowSegment` retain stored `direction` relationships with the same inverses.
+Those names match the existing local store and Production CloudKit schema;
+version 1.2.0 introduces no data migration or replacement entity.
 
-`Direction` groups work and supplies the emoji, color, behavior type, goal, schedule, and accumulated progress.
+## Area
+
+`Area` groups work and supplies the emoji, color, behavior type, goal, schedule, and accumulated progress.
 
 Persisted data includes:
 
 - identity, name, emoji, color, and sort order;
 - type (`neutral`, `habit`, or `nice`);
 - optional stable system role (`systemRoleRawValue`); `taskInbox` identifies the
-  built-in `その他` Direction independently of its localized display name;
+  built-in `その他` Area independently of its localized display name;
 - goal unit, target, period, and schedule configuration;
 - optional `habitPausePeriodsRawValue`, a JSON array of normalized pause
   intervals with inclusive start and exclusive optional end dates;
 - accumulated occurrences, focused seconds, and supporting progress state;
 - creation/update timestamps and archive state.
 
-System Direction `その他` is stored like other Directions but hidden from
-Direction management. Exactly one active `taskInbox` must exist. Legacy stores
+System Area `その他` is stored like other Areas but hidden from
+Area management. Exactly one active `taskInbox` must exist. Legacy stores
 without the role are recognized by the reserved system signature. If local or
-CloudKit races produce duplicates, `DefaultDirectionReconciler` keeps the oldest
+CloudKit races produce duplicates, `DefaultAreaReconciler` keeps the oldest
 record, reconnects Todo and Flow history to it, and soft-archives the others.
 
-Habit pause periods stay inside `Direction` rather than introducing another
+Habit pause periods stay inside `Area` rather than introducing another
 SwiftData entity. The optional scalar keeps existing stores and CloudKit
 lightweight migration compatible. Pausing changes future planning only:
 completed/progressed Todos and persisted Flow records are never removed.
@@ -45,7 +52,7 @@ completed/progressed Todos and persisted Flow records are never removed.
 
 Persisted data includes:
 
-- identity, title, notes (`メモ`), Direction, scheduled date, and optional `hashtagsRawValue`;
+- identity, title, notes (`メモ`), code-facing Area (`direction` in persistence), scheduled date, and optional `hashtagsRawValue`;
 - priority and optional `余裕があれば` state;
 - measurement type (`check`, `focusBlocks`, or `minutes`), planned amount, actual progress, and focused seconds;
 - active/completed status, completion timestamp, generation metadata, and sort order;
@@ -53,22 +60,22 @@ Persisted data includes:
 
 `Todo.notes` stores the Task-level memo. A Flow-specific result is stored on
 `FlowSession.result`; linked Flow currently mirrors that text to `Todo.notes`,
-while Direction-only Flow remains fully descriptive without a Todo.
+while Area-only Flow remains fully descriptive without a Todo.
 
-An automatically generated Habit Todo is uniquely identified at the domain level by its Direction UUID and local calendar day. SwiftData does not provide a compound uniqueness constraint for this relationship/date projection, so `HabitTodoMaterializer` enforces the invariant before generation on both platforms. A duplicate reconciliation retains one active Todo, reconnects its FlowSession and FlowSegment relationships, merges progress and user-authored fields, and soft-deletes the redundant rows. This repair is safe to repeat after CloudKit imports.
+An automatically generated Habit Todo is uniquely identified at the domain level by its Area UUID and local calendar day. SwiftData does not provide a compound uniqueness constraint for this relationship/date projection, so `HabitTodoMaterializer` enforces the invariant before generation on both platforms. A duplicate reconciliation retains one active Todo, reconnects its FlowSession and FlowSegment relationships, merges progress and user-authored fields, and soft-deletes the redundant rows. This repair is safe to repeat after CloudKit imports.
 
-When an existing Habit Direction changes, `HabitScheduleChangeReconciler`
+When an existing Habit Area changes, `HabitScheduleChangeReconciler`
 updates its unstarted current/future Todo projections in the same save
 transaction. Invalid occurrences are soft-deleted and missing eligible dates
 are inserted. Completed, progressed, focused, or Flow-linked Todos remain
 untouched so schedule edits cannot rewrite history.
 
 Because CloudKit-compatible relationships are optional at the persistence
-boundary, an imported Todo can temporarily or historically lose its Direction
-relationship. `OrphanTodoReconciler` restores an unambiguous Direction from
+boundary, an imported Todo can temporarily or historically lose its Area
+relationship. `OrphanTodoReconciler` restores an unambiguous Area from
 linked Flow history or from one matching fixed-schedule Habit template. An
 unresolved Todo is retained in storage but excluded from Task projections; it
-must never be presented as the explicit system `その他` Direction.
+must never be presented as the explicit system `その他` Area.
 
 `hashtagsRawValue` is an optional JSON array of display values without `#`.
 Normalization trims leading `#`, removes empty values, and deduplicates using a
@@ -82,7 +89,7 @@ optional field keeps existing local SwiftData stores migration-compatible.
 Persisted data includes:
 
 - `id` and optional migration-safe `seriesID`;
-- current Direction and optional Todo;
+- current Area and optional Todo;
 - intent and optional result/memo text for that exact Flow;
 - Flow mode, phase, and status raw values;
 - start, planned end, actual end, and create/update timestamps;
@@ -100,12 +107,12 @@ records, then normal writes use `sprint`.
 
 ## FlowSegment
 
-`FlowSegment` stores a Task/Direction interval inside one `FlowSession`. Switching Task during focus does not create another FlowSession or reset the timer. A segment with at least 60 focused seconds is closed before the next segment opens. A shorter current segment is treated as a mistaken context selection and reassigned wholesale to the new Task/Direction; returning to the immediately preceding context merges those adjacent segments back together.
+`FlowSegment` stores a Task/Area interval inside one `FlowSession`. Switching Task during focus does not create another FlowSession or reset the timer. A segment with at least 60 focused seconds is closed before the next segment opens. A shorter current segment is treated as a mistaken context selection and reassigned wholesale to the new Task/Area; returning to the immediately preceding context merges those adjacent segments back together.
 
 Persisted data includes:
 
 - identity and parent FlowSession;
-- Direction and optional Todo used in that interval;
+- Area and optional Todo used in that interval;
 - wall-clock start/end dates;
 - cumulative focused-second offsets at start/end.
 
@@ -142,10 +149,10 @@ A 20-minute `長休憩` is selected after each additional 4 accumulated Blocks i
 
 Retrospective entry reuses `Todo`, `FlowSession`, and `FlowSegment`; it does not
 persist a separate history-record entity. A missing eligible historical Habit
-occurrence becomes a normal Todo linked to its Habit Direction and scheduled on
+occurrence becomes a normal Todo linked to its Habit Area and scheduled on
 the selected day. Check completion stores `completedAt` and creates no Flow.
-Block, Minute, and Direction-only records store an explicit completed Flow from
-the selected start/end interval. Direction-only Flow keeps `todo` nil.
+Block, Minute, and Area-only records store an explicit completed Flow from
+the selected start/end interval. Area-only Flow keeps `todo` nil.
 
 ## Transient And Derived Data
 
@@ -162,16 +169,16 @@ The active timer is restored from absolute timestamps and persisted
 `FlowSession` runtime fields. Runtime revisions affect synchronization only and
 never change Flow credit. Decorative animation state is never persisted.
 
-`履歴` does not add a calendar table. `HistoryCalendarBuilder` projects `FlowSession`/`FlowSegment` as separate timed focus entries and `FlowBreak` as separate timed rest entries. Each projected focus item keeps a transient reference to its source `FlowSegment`; this reference is presentation state and is not persisted. Search matches the projected segment's own Task and Direction instead of every sibling segment in the parent session. Editing or deleting a projected segment changes only that interval, preserves sibling contexts, and then rebuilds the parent session's aggregate duration, bounds, current context, and measured Task progress. Legacy sessions without segments continue to use the whole-session editor. Dragging a completed Flow changes the session's actual time fields and applies the same offset to every segment; creation timestamps, duration, and measured progress remain unchanged. The dashboard independently derives its continuous series spans from `seriesID`; it does not merge or rewrite persisted records. Completed and pending Todos are excluded from calendar projection; completion timestamps remain available to Task statistics and summaries. Calendar range, selected inspector item, filtering, responsive breakpoints, scroll position, compact rendering, minimum visual duration, and overlap lanes are presentation state.
+`履歴` does not add a calendar table. `HistoryCalendarBuilder` projects `FlowSession`/`FlowSegment` as separate timed focus entries and `FlowBreak` as separate timed rest entries. Each projected focus item keeps a transient reference to its source `FlowSegment`; this reference is presentation state and is not persisted. Search matches the projected segment's own Task and Area instead of every sibling segment in the parent session. Editing or deleting a projected segment changes only that interval, preserves sibling contexts, and then rebuilds the parent session's aggregate duration, bounds, current context, and measured Task progress. Legacy sessions without segments continue to use the whole-session editor. Dragging a completed Flow changes the session's actual time fields and applies the same offset to every segment; creation timestamps, duration, and measured progress remain unchanged. The dashboard independently derives its continuous series spans from `seriesID`; it does not merge or rewrite persisted records. Completed and pending Todos are excluded from calendar projection; completion timestamps remain available to Task statistics and summaries. Calendar range, selected inspector item, filtering, responsive breakpoints, scroll position, compact rendering, minimum visual duration, and overlap lanes are presentation state.
 
-A manually added calendar Flow uses the existing FlowSession and FlowSegment schema. It is completed immediately, uses its own ID as `seriesID`, and stores exact start/end seconds. Block/Minute Todo progress and Direction focus totals are projections rebuilt from all credited persisted FlowSession/FlowSegment records after every history mutation and once at app launch; they are not trusted as independent incremental counters. This allows deletion or shortening of old Flow to reopen a Task when its remaining history no longer reaches the target. Check Todo state remains manual. Linking a Flow to a Task never completes it independently of the measured target. No manual FlowBreak is created. Dashboard carousel values and comparisons are derived projections and add no persistence fields.
+A manually added calendar Flow uses the existing FlowSession and FlowSegment schema. It is completed immediately, uses its own ID as `seriesID`, and stores exact start/end seconds. Block/Minute Todo progress and Area focus totals are projections rebuilt from all credited persisted FlowSession/FlowSegment records after every history mutation and once at app launch; they are not trusted as independent incremental counters. This allows deletion or shortening of old Flow to reopen a Task when its remaining history no longer reaches the target. Check Todo state remains manual. Linking a Flow to a Task never completes it independently of the measured target. No manual FlowBreak is created. Dashboard carousel values and comparisons are derived projections and add no persistence fields.
 
-Retrospective recording introduces no new persistence entity. `HistoryTaskRecordEditor` either updates an existing Todo occurrence from the selected calendar day, inserts a normal Todo whose `scheduledDate` is that day, or creates a completed FlowSession/FlowSegment pair. In Task context, a Check record stores `isManuallyCompleted`/`completedAt` and creates no FlowSession, while Block and Minute records create Flow and use normal reconciliation. In Flow context, an optional Todo is only a link: even a checkbox Todo remains incomplete and the command always creates Flow. Direction context creates Flow with no Todo. Scheduled zero-Flow Todos are selectable by this command but remain excluded from History aggregates and calendar projection until actual Flow exists.
+Retrospective recording introduces no new persistence entity. `HistoryTaskRecordEditor` either updates an existing Todo occurrence from the selected calendar day, inserts a normal Todo whose `scheduledDate` is that day, or creates a completed FlowSession/FlowSegment pair. In Task context, a Check record stores `isManuallyCompleted`/`completedAt` and creates no FlowSession, while Block and Minute records create Flow and use normal reconciliation. In Flow context, an optional Todo is only a link: even a checkbox Todo remains incomplete and the command always creates Flow. Area context creates Flow with no Todo. Scheduled zero-Flow Todos are selectable by this command but remain excluded from History aggregates and calendar projection until actual Flow exists.
 
-Starting Flow with only a Direction leaves `FlowSession.todo` and
-`FlowSegment.todo` nil; it does not create a Todo implicitly. The Direction,
+Starting Flow with only an Area leaves `FlowSession.todo` and
+`FlowSegment.todo` nil; it does not create a Todo implicitly. The Area,
 focus history, and optional Flow result remain persisted and editable. In
 History the user may explicitly link an existing Task or invoke
-`タスクを追加`, which opens normal Task creation with Direction and date
+`タスクを追加`, which opens normal Task creation with Area and date
 preselected. Creating a Task is never an automatic side effect of finishing or
-editing Direction-only Flow.
+editing Area-only Flow.

@@ -5,7 +5,7 @@ enum IOSAppRoute: Hashable, CaseIterable, Identifiable {
     case flow
     case tasks
     case history
-    case directions
+    case areas
     case statistics
     case settings
 
@@ -16,7 +16,7 @@ enum IOSAppRoute: Hashable, CaseIterable, Identifiable {
         case .flow: String(localized: "Flow")
         case .tasks: String(localized: "タスク")
         case .history: String(localized: "履歴")
-        case .directions: String(localized: "方向")
+        case .areas: String(localized: "方向")
         case .statistics: String(localized: "統計")
         case .settings: String(localized: "設定")
         }
@@ -27,14 +27,14 @@ enum IOSAppRoute: Hashable, CaseIterable, Identifiable {
         case .flow: "waveform.path"
         case .tasks: "checklist"
         case .history: "clock.arrow.circlepath"
-        case .directions: ProductSymbol.area
+        case .areas: ProductSymbol.area
         case .statistics: "chart.bar.xaxis"
         case .settings: "gearshape"
         }
     }
 
     static var tabs: [IOSAppRoute] {
-        [.flow, .tasks, .history, .directions, .statistics]
+        [.flow, .tasks, .history, .areas, .statistics]
     }
 }
 
@@ -45,7 +45,7 @@ struct IOSRootView: View {
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
     @EnvironmentObject private var onboarding: OnboardingStore
 
-    @Query(sort: \Direction.sortIndex) private var onboardingDirections: [Direction]
+    @Query(sort: \Area.sortIndex) private var onboardingAreas: [Area]
     @Query private var onboardingTodos: [Todo]
     @Query private var onboardingFlowSessions: [FlowSession]
     @Query private var onboardingFlowBreaks: [FlowBreak]
@@ -247,8 +247,8 @@ struct IOSRootView: View {
             IOSTasksView()
         case .history:
             IOSHistoryView(selectedDate: $selectedHistoryDate)
-        case .directions:
-            IOSDirectionsView()
+        case .areas:
+            IOSAreasView()
         case .statistics:
             DeferredFeatureMount(
                 isActive: selection == .statistics,
@@ -291,16 +291,16 @@ struct IOSRootView: View {
         switch presentation {
         case .areaEditor:
             NavigationStack {
-                IOSDirectionEditorView(
+                IOSAreaEditorView(
                     mode: .create(),
                     initialDraft: onboardingAreaDraft
-                ) { direction in
+                ) { area in
                     onboarding.resolveWorkspace(
                         hasUserContent: hasExternalOnboardingWorkspaceContent(
-                            excludingAreaID: direction.id
+                            excludingAreaID: area.id
                         )
                     )
-                    _ = onboarding.recordArea(id: direction.id)
+                    _ = onboarding.recordArea(id: area.id)
                 }
                 .toolbar {
                     ToolbarItem(placement: .bottomBar) {
@@ -319,7 +319,7 @@ struct IOSRootView: View {
 
                     if let area = onboardingCreatedArea {
                         IOSTaskComposer(
-                            directions: activeOnboardingDirections,
+                            areas: activeOnboardingAreas,
                             initialDraft: onboardingTaskDraft(area: area),
                             onClose: onboarding.dismissPresentation
                         ) { todo in
@@ -328,7 +328,7 @@ struct IOSRootView: View {
                                     excludingTaskID: todo.id
                                 )
                             )
-                            guard let area = todo.direction else { return }
+                            guard let area = todo.area else { return }
                             _ = onboarding.recordTask(
                                 id: todo.id,
                                 presentation: OnboardingTaskPresentation(
@@ -366,17 +366,17 @@ struct IOSRootView: View {
         }
     }
 
-    private var activeOnboardingDirections: [Direction] {
-        onboardingDirections.filter { !$0.isArchived && !DefaultDirections.isTaskInboxRecord($0) }
+    private var activeOnboardingAreas: [Area] {
+        onboardingAreas.filter { !$0.isArchived && !DefaultAreas.isTaskInboxRecord($0) }
     }
 
-    private var onboardingCreatedArea: Direction? {
+    private var onboardingCreatedArea: Area? {
         guard let id = onboarding.createdAreaID else { return nil }
-        return onboardingDirections.first { $0.id == id && !$0.isArchived }
+        return onboardingAreas.first { $0.id == id && !$0.isArchived }
     }
 
-    private var onboardingAreaDraft: DirectionDraft {
-        DirectionDraft(
+    private var onboardingAreaDraft: AreaDraft {
+        AreaDraft(
             name: String(localized: "仕事"),
             type: .neutral,
             symbolName: "💼",
@@ -384,10 +384,10 @@ struct IOSRootView: View {
         )
     }
 
-    private func onboardingTaskDraft(area: Direction) -> TodoDraft {
+    private func onboardingTaskDraft(area: Area) -> TodoDraft {
         TodoDraft(
             title: String(localized: "レポートを仕上げる"),
-            direction: area,
+            area: area,
             measurement: .checkbox,
             priority: .medium,
             scheduledDate: dayBoundary.day(containing: .now, calendar: calendar)
@@ -403,7 +403,7 @@ struct IOSRootView: View {
         excludingTaskID: UUID? = nil
     ) -> Bool {
         OnboardingWorkspaceInspector.inspect(
-            directions: onboardingDirections.filter {
+            areas: onboardingAreas.filter {
                 $0.id != onboarding.createdAreaID && $0.id != excludingAreaID
             },
             todos: onboardingTodos.filter {
@@ -436,7 +436,7 @@ struct IOSRootView: View {
         guard onboarding.isPresented else { return }
         let route: IOSAppRoute = switch onboarding.step.screen {
         case .flow: .flow
-        case .directions: .directions
+        case .areas: .areas
         case .tasks: .tasks
         case .history: .history
         case .statistics: .statistics

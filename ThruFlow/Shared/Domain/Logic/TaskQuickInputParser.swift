@@ -1,6 +1,6 @@
 import Foundation
 
-struct TaskQuickInputDirection: Equatable, Sendable {
+struct TaskQuickInputArea: Equatable, Sendable {
     let id: UUID
     let name: String
 }
@@ -12,8 +12,8 @@ enum TaskQuickInputDate: Equatable {
 
 enum TaskQuickInputTokenKind: Equatable {
     case measurement(TodoMeasurement, plannedAmount: Int?)
-    case direction(UUID)
-    case unresolvedDirection(String)
+    case area(UUID)
+    case unresolvedArea(String)
     case priority(TodoPriority, isRoomIfPossible: Bool)
     case date(TaskQuickInputDate)
     case hashtag(String)
@@ -31,8 +31,8 @@ struct TaskQuickInputParseResult: Equatable {
     let tokens: [TaskQuickInputToken]
     let measurement: TodoMeasurement?
     let plannedAmount: Int?
-    let directionID: UUID?
-    let unresolvedDirection: String?
+    let areaID: UUID?
+    let unresolvedArea: String?
     let priority: TodoPriority?
     let isRoomIfPossible: Bool?
     let date: TaskQuickInputDate?
@@ -41,7 +41,7 @@ struct TaskQuickInputParseResult: Equatable {
     var recognizedTokens: [TaskQuickInputToken] {
         tokens.filter {
             if case .unrecognized = $0.kind { return false }
-            if case .unresolvedDirection = $0.kind { return false }
+            if case .unresolvedArea = $0.kind { return false }
             return true
         }
     }
@@ -50,7 +50,7 @@ struct TaskQuickInputParseResult: Equatable {
 struct TaskQuickInputParser {
     func parse(
         _ input: String,
-        directions: [TaskQuickInputDirection] = [],
+        areas: [TaskQuickInputArea] = [],
         anchorDate: Date = .now,
         calendar: Calendar = .current,
         consumeTrailingToken: Bool = true
@@ -60,8 +60,8 @@ struct TaskQuickInputParser {
         var consumedRanges: [Range<String.Index>] = []
         var measurement: TodoMeasurement?
         var plannedAmount: Int?
-        var directionID: UUID?
-        var unresolvedDirection: String?
+        var areaID: UUID?
+        var unresolvedArea: String?
         var priority: TodoPriority?
         var isRoomIfPossible: Bool?
         var parsedDate: TaskQuickInputDate?
@@ -73,7 +73,7 @@ struct TaskQuickInputParser {
             let canConsume = consumeTrailingToken || !isTrailing
             let kind = classify(
                 rawValue,
-                directions: directions,
+                areas: areas,
                 anchorDate: anchorDate,
                 calendar: calendar
             )
@@ -85,12 +85,12 @@ struct TaskQuickInputParser {
                 measurement = value
                 plannedAmount = amount
                 consumedRanges.append(range)
-            case .direction(let id):
-                directionID = id
-                unresolvedDirection = nil
+            case .area(let id):
+                areaID = id
+                unresolvedArea = nil
                 consumedRanges.append(range)
-            case .unresolvedDirection(let query):
-                unresolvedDirection = query
+            case .unresolvedArea(let query):
+                unresolvedArea = query
             case .priority(let value, let later):
                 priority = value
                 isRoomIfPossible = later
@@ -115,8 +115,8 @@ struct TaskQuickInputParser {
             tokens: tokens,
             measurement: measurement,
             plannedAmount: plannedAmount,
-            directionID: directionID,
-            unresolvedDirection: unresolvedDirection,
+            areaID: areaID,
+            unresolvedArea: unresolvedArea,
             priority: priority,
             isRoomIfPossible: isRoomIfPossible,
             date: parsedDate,
@@ -124,7 +124,7 @@ struct TaskQuickInputParser {
         )
     }
 
-    func trailingDirectionQuery(in input: String) -> String? {
+    func trailingAreaQuery(in input: String) -> String? {
         guard let token = trailingAutocompleteToken(in: input) else { return nil }
         guard token.hasPrefix("@") else { return nil }
         return String(token.dropFirst())
@@ -146,7 +146,7 @@ struct TaskQuickInputParser {
 
     private func classify(
         _ rawValue: String,
-        directions: [TaskQuickInputDirection],
+        areas: [TaskQuickInputArea],
         anchorDate: Date,
         calendar: Calendar
     ) -> TaskQuickInputTokenKind {
@@ -155,11 +155,11 @@ struct TaskQuickInputParser {
         }
         if rawValue.hasPrefix("@") {
             let query = String(rawValue.dropFirst())
-            guard !query.isEmpty else { return .unresolvedDirection(query) }
-            let matches = directions.filter {
+            guard !query.isEmpty else { return .unresolvedArea(query) }
+            let matches = areas.filter {
                 $0.name.compare(query, options: [.caseInsensitive], locale: Locale(identifier: "en_US_POSIX")) == .orderedSame
             }
-            return matches.count == 1 ? .direction(matches[0].id) : .unresolvedDirection(query)
+            return matches.count == 1 ? .area(matches[0].id) : .unresolvedArea(query)
         }
         if let priority = priorityToken(rawValue) {
             return priority

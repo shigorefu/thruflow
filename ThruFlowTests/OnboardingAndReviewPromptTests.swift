@@ -85,7 +85,7 @@ struct OnboardingAndReviewPromptTests {
 
         store.advance()
         #expect(store.step == .areas)
-        #expect(store.step.screen == .directions)
+        #expect(store.step.screen == .areas)
 
         store.advance()
         #expect(store.step == .tasks)

@@ -180,8 +180,8 @@ struct FlowTests {
         #expect(extendedTo50.mode == .adaptive)
     }
 
-    @Test func focusProgressStaysAttachedToItsDirectionAndTodo() {
-        let reading = Direction(
+    @Test func focusProgressStaysAttachedToItsAreaAndTodo() {
+        let reading = Area(
             name: "読書",
             type: .habit,
             goalTarget: 1,
@@ -189,7 +189,7 @@ struct FlowTests {
             goalUnit: .focusBlocks,
             goalSchedule: .everyDay
         )
-        let anki = Direction(
+        let anki = Area(
             name: "Anki",
             type: .habit,
             goalTarget: 1,
@@ -197,12 +197,12 @@ struct FlowTests {
             goalUnit: .focusBlocks,
             goalSchedule: .everyDay
         )
-        let readingTodo = Todo(title: "第8章", direction: reading, measurement: .focusBlocks, plannedAmount: 1)
-        let ankiTodo = Todo(title: "復習", direction: anki, measurement: .focusBlocks, plannedAmount: 1)
+        let readingTodo = Todo(title: "第8章", area: reading, measurement: .focusBlocks, plannedAmount: 1)
+        let ankiTodo = Todo(title: "復習", area: anki, measurement: .focusBlocks, plannedAmount: 1)
         let calculator = FlowProgressCalculator()
 
-        calculator.applyFocusDuration(seconds: 12 * 60, direction: reading, todo: readingTodo)
-        calculator.applyFocusDuration(seconds: 13 * 60, direction: anki, todo: ankiTodo)
+        calculator.applyFocusDuration(seconds: 12 * 60, area: reading, todo: readingTodo)
+        calculator.applyFocusDuration(seconds: 13 * 60, area: anki, todo: ankiTodo)
 
         #expect(reading.recordedFocusSeconds == 12 * 60)
         #expect(anki.recordedFocusSeconds == 13 * 60)
@@ -213,7 +213,7 @@ struct FlowTests {
     }
 
     @Test func todoReceivesFullBlockAfterAccumulatedFocusMinutesReachTwentyFive() {
-        let direction = Direction(
+        let area = Area(
             name: "仕事",
             type: .neutral,
             goalTarget: 2,
@@ -221,24 +221,24 @@ struct FlowTests {
             goalUnit: .focusBlocks,
             goalSchedule: .everyDay
         )
-        let todo = Todo(title: "資料", direction: direction, measurement: .focusBlocks, plannedAmount: 2)
+        let todo = Todo(title: "資料", area: area, measurement: .focusBlocks, plannedAmount: 2)
         let calculator = FlowProgressCalculator()
 
-        calculator.applyFocusDuration(seconds: 12 * 60, direction: direction, todo: todo)
-        calculator.applyFocusDuration(seconds: 13 * 60, direction: direction, todo: todo)
+        calculator.applyFocusDuration(seconds: 12 * 60, area: area, todo: todo)
+        calculator.applyFocusDuration(seconds: 13 * 60, area: area, todo: todo)
 
         #expect(todo.recordedFocusSeconds == 25 * 60)
         #expect(todo.actualProgress == 1)
-        #expect(direction.recordedFocusSeconds == 25 * 60)
+        #expect(area.recordedFocusSeconds == 25 * 60)
     }
 
     @Test func twoHalfBlocksCompleteOneBlockTodo() {
-        let direction = Direction(name: "読書", type: .habit)
-        let todo = Todo(title: "タスク", direction: direction, measurement: .focusBlocks, plannedAmount: 2)
+        let area = Area(name: "読書", type: .habit)
+        let todo = Todo(title: "タスク", area: area, measurement: .focusBlocks, plannedAmount: 2)
         let calculator = FlowProgressCalculator()
 
-        calculator.applyFocusDuration(seconds: 12 * 60, direction: direction, todo: todo)
-        calculator.applyFocusDuration(seconds: 12 * 60, direction: direction, todo: todo)
+        calculator.applyFocusDuration(seconds: 12 * 60, area: area, todo: todo)
+        calculator.applyFocusDuration(seconds: 12 * 60, area: area, todo: todo)
 
         #expect(todo.recordedFocusSeconds == 24 * 60)
         #expect(todo.actualProgress == 1)
@@ -252,21 +252,21 @@ struct FlowTests {
         ) == expectedProgress)
     }
 
-    @Test func manualBlockTodoProgressUsesTodoMeasurementWithoutDirectionGoal() {
-        let direction = Direction(name: "仕事", type: .neutral)
-        let todo = Todo(title: "実装", direction: direction, measurement: .focusBlocks, plannedAmount: 2)
+    @Test func manualBlockTodoProgressUsesTodoMeasurementWithoutAreaGoal() {
+        let area = Area(name: "仕事", type: .neutral)
+        let todo = Todo(title: "実装", area: area, measurement: .focusBlocks, plannedAmount: 2)
         let calculator = FlowProgressCalculator()
 
-        calculator.applyFocusDuration(seconds: 25 * 60, direction: direction, todo: todo)
+        calculator.applyFocusDuration(seconds: 25 * 60, area: area, todo: todo)
 
-        #expect(direction.recordedFocusSeconds == 25 * 60)
+        #expect(area.recordedFocusSeconds == 25 * 60)
         #expect(todo.recordedFocusSeconds == 25 * 60)
         #expect(todo.actualProgress == 1)
         #expect(todo.status == .active)
     }
 
-    @Test func occurrenceDirectionDoesNotWriteFlowProgressToTodo() {
-        let direction = Direction(
+    @Test func occurrenceAreaDoesNotWriteFlowProgressToTodo() {
+        let area = Area(
             name: "筋トレ",
             type: .habit,
             goalTarget: 1,
@@ -274,18 +274,18 @@ struct FlowTests {
             goalUnit: .occurrences,
             goalSchedule: .everyDay
         )
-        let todo = Todo(title: "筋トレ", direction: direction, measurement: .checkbox)
+        let todo = Todo(title: "筋トレ", area: area, measurement: .checkbox)
         let calculator = FlowProgressCalculator()
 
-        calculator.applyFocusDuration(seconds: 25 * 60, direction: direction, todo: todo)
+        calculator.applyFocusDuration(seconds: 25 * 60, area: area, todo: todo)
 
-        #expect(direction.recordedFocusSeconds == 25 * 60)
+        #expect(area.recordedFocusSeconds == 25 * 60)
         #expect(todo.recordedFocusSeconds == 0)
         #expect(todo.actualProgress == 0)
     }
 
-    @Test func minuteDirectionWritesFocusedMinutesToTodo() {
-        let direction = Direction(
+    @Test func minuteAreaWritesFocusedMinutesToTodo() {
+        let area = Area(
             name: "日本語",
             type: .habit,
             goalTarget: 30,
@@ -293,10 +293,10 @@ struct FlowTests {
             goalUnit: .minutes,
             goalSchedule: .everyDay
         )
-        let todo = Todo(title: "日本語", direction: direction, measurement: .minutes, plannedAmount: 30)
+        let todo = Todo(title: "日本語", area: area, measurement: .minutes, plannedAmount: 30)
         let calculator = FlowProgressCalculator()
 
-        calculator.applyFocusDuration(seconds: 12 * 60, direction: direction, todo: todo)
+        calculator.applyFocusDuration(seconds: 12 * 60, area: area, todo: todo)
 
         #expect(todo.recordedFocusSeconds == 12 * 60)
         #expect(todo.actualProgress == 12)
@@ -443,12 +443,12 @@ struct FlowTests {
 
     @Test func segmentedFlowCreditsEachTaskOnlyForItsOwnFocusTime() {
         let start = Date(timeIntervalSince1970: 7_000)
-        let writing = Direction(name: "執筆", type: .neutral)
-        let review = Direction(name: "レビュー", type: .neutral)
-        let writingTodo = Todo(title: "本文", direction: writing, measurement: .minutes, plannedAmount: 30)
-        let reviewTodo = Todo(title: "確認", direction: review, measurement: .minutes, plannedAmount: 20)
+        let writing = Area(name: "執筆", type: .neutral)
+        let review = Area(name: "レビュー", type: .neutral)
+        let writingTodo = Todo(title: "本文", area: writing, measurement: .minutes, plannedAmount: 30)
+        let reviewTodo = Todo(title: "確認", area: review, measurement: .minutes, plannedAmount: 20)
         let session = FlowSession(
-            direction: review,
+            area: review,
             todo: reviewTodo,
             mode: .twentyFiveFive,
             startedAt: start,
@@ -460,7 +460,7 @@ struct FlowTests {
         )
         let first = FlowSegment(
             session: session,
-            direction: writing,
+            area: writing,
             todo: writingTodo,
             startedAt: start,
             startFocusSeconds: 0
@@ -468,7 +468,7 @@ struct FlowTests {
         first.close(at: start.addingTimeInterval(16 * 60), totalFocusSeconds: 16 * 60)
         let second = FlowSegment(
             session: session,
-            direction: review,
+            area: review,
             todo: reviewTodo,
             startedAt: start.addingTimeInterval(16 * 60),
             startFocusSeconds: 16 * 60
@@ -487,26 +487,26 @@ struct FlowTests {
     }
 
     @Test @MainActor func activeFlowSwitchesTaskWithoutResettingTimer() throws {
-        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 8_000)
-        let firstDirection = Direction(name: "執筆", type: .neutral)
-        let secondDirection = Direction(name: "確認", type: .neutral)
-        let firstTodo = Todo(title: "本文", direction: firstDirection, measurement: .minutes, plannedAmount: 30)
-        let secondTodo = Todo(title: "レビュー", direction: secondDirection, measurement: .minutes, plannedAmount: 20)
-        context.insert(firstDirection)
-        context.insert(secondDirection)
+        let firstArea = Area(name: "執筆", type: .neutral)
+        let secondArea = Area(name: "確認", type: .neutral)
+        let firstTodo = Todo(title: "本文", area: firstArea, measurement: .minutes, plannedAmount: 30)
+        let secondTodo = Todo(title: "レビュー", area: secondArea, measurement: .minutes, plannedAmount: 20)
+        context.insert(firstArea)
+        context.insert(secondArea)
         context.insert(firstTodo)
         context.insert(secondTodo)
 
         let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
         let store = ActiveFlowStore(defaults: defaults, notifications: TestFlowNotificationService())
-        store.configure(direction: firstDirection, todo: firstTodo, mode: .twentyFiveFive)
-        store.start(direction: firstDirection, todo: firstTodo, modelContext: context, now: start)
+        store.configure(area: firstArea, todo: firstTodo, mode: .twentyFiveFive)
+        store.start(area: firstArea, todo: firstTodo, modelContext: context, now: start)
         store.selectContext(
-            direction: secondDirection,
+            area: secondArea,
             todo: secondTodo,
             modelContext: context,
             now: start.addingTimeInterval(16 * 60)
@@ -525,28 +525,28 @@ struct FlowTests {
     }
 
     @Test @MainActor func subMinuteTaskSwitchTransfersElapsedTimeToNewTask() throws {
-        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 8_250)
-        let firstDirection = Direction(name: "AWS", type: .neutral)
-        let secondDirection = Direction(name: "読書", type: .neutral)
-        let firstTodo = Todo(title: "AWS", direction: firstDirection, measurement: .minutes, plannedAmount: 30)
-        let secondTodo = Todo(title: "本を読む", direction: secondDirection, measurement: .minutes, plannedAmount: 20)
-        context.insert(firstDirection)
-        context.insert(secondDirection)
+        let firstArea = Area(name: "AWS", type: .neutral)
+        let secondArea = Area(name: "読書", type: .neutral)
+        let firstTodo = Todo(title: "AWS", area: firstArea, measurement: .minutes, plannedAmount: 30)
+        let secondTodo = Todo(title: "本を読む", area: secondArea, measurement: .minutes, plannedAmount: 20)
+        context.insert(firstArea)
+        context.insert(secondArea)
         context.insert(firstTodo)
         context.insert(secondTodo)
 
         let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
         let store = ActiveFlowStore(defaults: defaults, notifications: TestFlowNotificationService())
-        store.configure(direction: firstDirection, todo: firstTodo, mode: .twentyFiveFive)
-        store.start(direction: firstDirection, todo: firstTodo, modelContext: context, now: start)
+        store.configure(area: firstArea, todo: firstTodo, mode: .twentyFiveFive)
+        store.start(area: firstArea, todo: firstTodo, modelContext: context, now: start)
         let sessionID = try #require(store.activeSession?.id)
 
         store.selectContext(
-            direction: secondDirection,
+            area: secondArea,
             todo: secondTodo,
             modelContext: context,
             now: start.addingTimeInterval(30)
@@ -558,7 +558,7 @@ struct FlowTests {
         #expect(activeSegment.startedAt == start)
         #expect(activeSegment.startFocusSeconds == 0)
         #expect(activeSegment.todo?.id == secondTodo.id)
-        #expect(activeSegment.direction?.id == secondDirection.id)
+        #expect(activeSegment.area?.id == secondArea.id)
 
         store.stop(modelContext: context, now: start.addingTimeInterval(2 * 60))
 
@@ -574,34 +574,34 @@ struct FlowTests {
     }
 
     @Test @MainActor func returningWithinOneMinuteMergesBackIntoPreviousTaskSegment() throws {
-        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 8_400)
-        let firstDirection = Direction(name: "AWS", type: .neutral)
-        let secondDirection = Direction(name: "読書", type: .neutral)
-        let firstTodo = Todo(title: "AWS", direction: firstDirection, measurement: .minutes, plannedAmount: 30)
-        let secondTodo = Todo(title: "本を読む", direction: secondDirection, measurement: .minutes, plannedAmount: 20)
-        context.insert(firstDirection)
-        context.insert(secondDirection)
+        let firstArea = Area(name: "AWS", type: .neutral)
+        let secondArea = Area(name: "読書", type: .neutral)
+        let firstTodo = Todo(title: "AWS", area: firstArea, measurement: .minutes, plannedAmount: 30)
+        let secondTodo = Todo(title: "本を読む", area: secondArea, measurement: .minutes, plannedAmount: 20)
+        context.insert(firstArea)
+        context.insert(secondArea)
         context.insert(firstTodo)
         context.insert(secondTodo)
 
         let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
         let store = ActiveFlowStore(defaults: defaults, notifications: TestFlowNotificationService())
-        store.configure(direction: firstDirection, todo: firstTodo, mode: .twentyFiveFive)
-        store.start(direction: firstDirection, todo: firstTodo, modelContext: context, now: start)
+        store.configure(area: firstArea, todo: firstTodo, mode: .twentyFiveFive)
+        store.start(area: firstArea, todo: firstTodo, modelContext: context, now: start)
         let sessionID = try #require(store.activeSession?.id)
 
         store.selectContext(
-            direction: secondDirection,
+            area: secondArea,
             todo: secondTodo,
             modelContext: context,
             now: start.addingTimeInterval(2 * 60)
         )
         store.selectContext(
-            direction: firstDirection,
+            area: firstArea,
             todo: firstTodo,
             modelContext: context,
             now: start.addingTimeInterval(2 * 60 + 30)
@@ -621,20 +621,20 @@ struct FlowTests {
     }
 
     @Test @MainActor func cancellingResultMemoRestoresFlowAndRemovesProvisionalProgress() throws {
-        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 8_500)
-        let direction = Direction(name: "執筆", type: .neutral)
-        let todo = Todo(title: "本文", direction: direction, measurement: .minutes, plannedAmount: 30)
-        context.insert(direction)
+        let area = Area(name: "執筆", type: .neutral)
+        let todo = Todo(title: "本文", area: area, measurement: .minutes, plannedAmount: 30)
+        context.insert(area)
         context.insert(todo)
 
         let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
         let store = ActiveFlowStore(defaults: defaults, notifications: TestFlowNotificationService())
-        store.configure(direction: direction, todo: todo, mode: .twentyFiveFive)
-        store.start(direction: direction, todo: todo, modelContext: context, now: start)
+        store.configure(area: area, todo: todo, mode: .twentyFiveFive)
+        store.start(area: area, todo: todo, modelContext: context, now: start)
         store.stop(modelContext: context, now: start.addingTimeInterval(10 * 60))
 
         #expect(store.phase == .awaitingResult)
@@ -647,30 +647,30 @@ struct FlowTests {
         #expect(store.activeSession?.status == .active)
         #expect(store.activeSession?.resolvedSegments.first?.endedAt == nil)
         #expect(todo.recordedFocusSeconds == 0)
-        #expect(direction.recordedFocusSeconds == 0)
+        #expect(area.recordedFocusSeconds == 0)
     }
 
     @Test @MainActor func completingWithoutMemoPreservesExistingTaskMemo() throws {
-        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 8_750)
-        let direction = Direction(name: "執筆", type: .neutral)
+        let area = Area(name: "執筆", type: .neutral)
         let todo = Todo(
             title: "本文",
             notes: "既存のメモ",
-            direction: direction,
+            area: area,
             measurement: .minutes,
             plannedAmount: 30
         )
-        context.insert(direction)
+        context.insert(area)
         context.insert(todo)
 
         let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
         let store = ActiveFlowStore(defaults: defaults, notifications: TestFlowNotificationService())
-        store.configure(direction: direction, todo: todo, mode: .twentyFiveFive)
-        store.start(direction: direction, todo: todo, modelContext: context, now: start)
+        store.configure(area: area, todo: todo, mode: .twentyFiveFive)
+        store.start(area: area, todo: todo, modelContext: context, now: start)
         store.stop(modelContext: context, now: start.addingTimeInterval(10 * 60))
         let session = try #require(store.activeSession)
 
@@ -682,26 +682,26 @@ struct FlowTests {
     }
 
     @Test @MainActor func startingBreakWithoutMemoPreservesExistingTaskMemo() throws {
-        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 8_900)
-        let direction = Direction(name: "執筆", type: .neutral)
+        let area = Area(name: "執筆", type: .neutral)
         let todo = Todo(
             title: "本文",
             notes: "既存のメモ",
-            direction: direction,
+            area: area,
             measurement: .minutes,
             plannedAmount: 30
         )
-        context.insert(direction)
+        context.insert(area)
         context.insert(todo)
 
         let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
         let store = ActiveFlowStore(defaults: defaults, notifications: TestFlowNotificationService())
-        store.configure(direction: direction, todo: todo, mode: .twentyFiveFive)
-        store.start(direction: direction, todo: todo, modelContext: context, now: start)
+        store.configure(area: area, todo: todo, mode: .twentyFiveFive)
+        store.start(area: area, todo: todo, modelContext: context, now: start)
         store.requestBreakMemo(modelContext: context, now: start.addingTimeInterval(25 * 60))
         let session = try #require(store.activeSession)
 
@@ -713,13 +713,13 @@ struct FlowTests {
     }
 
     @Test @MainActor func everyEligibleRestPressPublishesANewVisualInteraction() throws {
-        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 8_950)
-        let direction = Direction(name: "執筆", type: .neutral)
-        context.insert(direction)
+        let area = Area(name: "執筆", type: .neutral)
+        context.insert(area)
 
         let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
         let store = ActiveFlowStore(defaults: defaults, notifications: TestFlowNotificationService())
@@ -728,8 +728,8 @@ struct FlowTests {
         #expect(store.flowBreakInteraction == nil)
         #expect(!store.canRequestBreak)
 
-        store.configure(direction: direction, todo: nil, mode: .twentyFiveFive)
-        store.start(direction: direction, todo: nil, modelContext: context, now: start)
+        store.configure(area: area, todo: nil, mode: .twentyFiveFive)
+        store.start(area: area, todo: nil, modelContext: context, now: start)
         #expect(store.canRequestBreak)
 
         let firstRequestAt = start.addingTimeInterval(5 * 60)
@@ -767,28 +767,28 @@ struct FlowTests {
     }
 
     @Test @MainActor func startingWorkDuringBreakImmediatelyCreatesNextFlow() throws {
-        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 9_000)
         let breakStartedAt = start.addingTimeInterval(25 * 60)
         let restartedAt = breakStartedAt.addingTimeInterval(2 * 60)
-        let direction = Direction(name: "仕事", type: .neutral)
-        let todo = Todo(title: "実装", direction: direction)
-        context.insert(direction)
+        let area = Area(name: "仕事", type: .neutral)
+        let todo = Todo(title: "実装", area: area)
+        context.insert(area)
         context.insert(todo)
 
         let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
         let store = ActiveFlowStore(defaults: defaults, notifications: TestFlowNotificationService())
-        store.configure(direction: direction, todo: todo, mode: .twentyFiveFive)
-        store.start(direction: direction, todo: todo, modelContext: context, now: start)
+        store.configure(area: area, todo: todo, mode: .twentyFiveFive)
+        store.start(area: area, todo: todo, modelContext: context, now: start)
         let firstSession = try #require(store.activeSession)
         store.startBreak(modelContext: context, now: breakStartedAt)
         #expect(store.flowBreakInteraction?.kind == .started(isLong: false))
 
         store.startNextFlow(
-            direction: direction,
+            area: area,
             todo: todo,
             modelContext: context,
             now: restartedAt
@@ -810,21 +810,21 @@ struct FlowTests {
     }
 
     @Test @MainActor func destroyingDuringBreakDeletesOnlyBreak() throws {
-        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 10_000)
         let breakStartedAt = start.addingTimeInterval(25 * 60)
-        let direction = Direction(name: "仕事", type: .neutral)
-        let todo = Todo(title: "実装", direction: direction, measurement: .minutes, plannedAmount: 60)
-        context.insert(direction)
+        let area = Area(name: "仕事", type: .neutral)
+        let todo = Todo(title: "実装", area: area, measurement: .minutes, plannedAmount: 60)
+        context.insert(area)
         context.insert(todo)
 
         let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
         let store = ActiveFlowStore(defaults: defaults, notifications: TestFlowNotificationService())
-        store.configure(direction: direction, todo: todo, mode: .twentyFiveFive)
-        store.start(direction: direction, todo: todo, modelContext: context, now: start)
+        store.configure(area: area, todo: todo, mode: .twentyFiveFive)
+        store.start(area: area, todo: todo, modelContext: context, now: start)
         let sessionID = try #require(store.activeSession?.id)
         store.startBreak(modelContext: context, now: breakStartedAt)
         #expect(store.flowBreakInteraction?.kind == .started(isLong: false))
@@ -839,25 +839,25 @@ struct FlowTests {
         #expect(store.flowBreakInteraction == nil)
         #expect(todo.recordedFocusSeconds == 25 * 60)
         #expect(todo.actualProgress == 25)
-        #expect(direction.recordedFocusSeconds == 25 * 60)
+        #expect(area.recordedFocusSeconds == 25 * 60)
         #expect(store.timerState == nil)
     }
 
-    @Test @MainActor func destroyingCreditedFlowRollsBackTaskAndDirectionProgress() throws {
-        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+    @Test @MainActor func destroyingCreditedFlowRollsBackTaskAndAreaProgress() throws {
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 11_000)
-        let direction = Direction(name: "仕事", type: .neutral)
-        let todo = Todo(title: "実装", direction: direction, measurement: .minutes, plannedAmount: 25)
-        context.insert(direction)
+        let area = Area(name: "仕事", type: .neutral)
+        let todo = Todo(title: "実装", area: area, measurement: .minutes, plannedAmount: 25)
+        context.insert(area)
         context.insert(todo)
 
         let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
         let store = ActiveFlowStore(defaults: defaults, notifications: TestFlowNotificationService())
-        store.configure(direction: direction, todo: todo, mode: .twentyFiveFive)
-        store.start(direction: direction, todo: todo, modelContext: context, now: start)
+        store.configure(area: area, todo: todo, mode: .twentyFiveFive)
+        store.start(area: area, todo: todo, modelContext: context, now: start)
         store.stop(modelContext: context, now: start.addingTimeInterval(25 * 60))
         #expect(todo.isCompleted)
 
@@ -867,28 +867,28 @@ struct FlowTests {
         #expect(todo.recordedFocusSeconds == 0)
         #expect(todo.actualProgress == 0)
         #expect(!todo.isCompleted)
-        #expect(direction.recordedFocusSeconds == 0)
+        #expect(area.recordedFocusSeconds == 0)
         #expect(store.timerState == nil)
     }
 
     @Test @MainActor func startingAfterContinuationWindowCreatesNewSeries() throws {
-        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 12_000)
         let breakStartedAt = start.addingTimeInterval(25 * 60)
         let restartedAt = breakStartedAt.addingTimeInterval(7 * 60 + 31)
-        let direction = Direction(name: "仕事", type: .neutral)
-        context.insert(direction)
+        let area = Area(name: "仕事", type: .neutral)
+        context.insert(area)
 
         let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
         let store = ActiveFlowStore(defaults: defaults, notifications: TestFlowNotificationService())
-        store.configure(direction: direction, todo: nil, mode: .twentyFiveFive)
-        store.start(direction: direction, todo: nil, modelContext: context, now: start)
+        store.configure(area: area, todo: nil, mode: .twentyFiveFive)
+        store.start(area: area, todo: nil, modelContext: context, now: start)
         let firstSeriesID = try #require(store.activeSession?.seriesID)
         store.startBreak(modelContext: context, now: breakStartedAt)
-        store.startNextFlow(direction: direction, todo: nil, modelContext: context, now: restartedAt)
+        store.startNextFlow(area: area, todo: nil, modelContext: context, now: restartedAt)
 
         #expect(store.activeSession?.seriesID != firstSeriesID)
         let flowBreak = try #require(context.fetch(FetchDescriptor<FlowBreak>()).first)
@@ -896,22 +896,22 @@ struct FlowTests {
     }
 
     @Test @MainActor func fourthAccumulatedBlockStartsLongBreak() throws {
-        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 20_000)
-        let direction = Direction(name: "仕事", type: .neutral)
-        context.insert(direction)
+        let area = Area(name: "仕事", type: .neutral)
+        context.insert(area)
 
         let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
         let store = ActiveFlowStore(defaults: defaults, notifications: TestFlowNotificationService())
-        store.configure(direction: direction, todo: nil, mode: .twentyFiveFive)
-        store.start(direction: direction, todo: nil, modelContext: context, now: start)
+        store.configure(area: area, todo: nil, mode: .twentyFiveFive)
+        store.start(area: area, todo: nil, modelContext: context, now: start)
         let seriesID = try #require(store.activeSession?.seriesID)
         let prior = FlowSession(
             seriesID: seriesID,
-            direction: direction,
+            area: area,
             mode: .twentyFiveFive,
             phase: .completed,
             status: .completed,
@@ -936,19 +936,19 @@ struct FlowTests {
     }
 
     @Test @MainActor func flowNotificationsWarnAfterOneActiveHourAndAccountForPause() throws {
-        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 25_000)
-        let direction = Direction(name: "仕事", type: .neutral)
+        let area = Area(name: "仕事", type: .neutral)
         let notifications = TestFlowNotificationService()
-        context.insert(direction)
+        context.insert(area)
 
         let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
         let store = ActiveFlowStore(defaults: defaults, notifications: notifications)
-        store.configure(direction: direction, todo: nil, mode: .twentyFiveFive)
-        store.start(direction: direction, todo: nil, modelContext: context, now: start)
+        store.configure(area: area, todo: nil, mode: .twentyFiveFive)
+        store.start(area: area, todo: nil, modelContext: context, now: start)
 
         #expect(notifications.focusFinishedDates.last == start.addingTimeInterval(25 * 60))
         #expect(notifications.runningTooLong.last?.phase == .focus)
@@ -990,20 +990,20 @@ struct FlowTests {
     }
 
     @Test @MainActor func breakNotificationsWarnAfterOneActiveHourAndResumeAsBreak() throws {
-        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 28_000)
         let breakStart = start.addingTimeInterval(25 * 60)
-        let direction = Direction(name: "仕事", type: .neutral)
+        let area = Area(name: "仕事", type: .neutral)
         let notifications = TestFlowNotificationService()
-        context.insert(direction)
+        context.insert(area)
 
         let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
         let store = ActiveFlowStore(defaults: defaults, notifications: notifications)
-        store.configure(direction: direction, todo: nil, mode: .twentyFiveFive)
-        store.start(direction: direction, todo: nil, modelContext: context, now: start)
+        store.configure(area: area, todo: nil, mode: .twentyFiveFive)
+        store.start(area: area, todo: nil, modelContext: context, now: start)
         store.startBreak(modelContext: context, now: breakStart)
 
         #expect(notifications.breakFinishedDates.last == breakStart.addingTimeInterval(5 * 60))
@@ -1024,8 +1024,8 @@ struct FlowTests {
         let suiteName = "FlowTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
         defer { defaults.removePersistentDomain(forName: suiteName) }
-        let direction = Direction(name: "仕事", type: .neutral)
-        let todo = Todo(title: "実装", direction: direction)
+        let area = Area(name: "仕事", type: .neutral)
+        let todo = Todo(title: "実装", area: area)
         let notifications = TestFlowNotificationService()
         let liveActivities = TestLiveActivityService()
         let store = ActiveFlowStore(
@@ -1034,7 +1034,7 @@ struct FlowTests {
             liveActivities: liveActivities
         )
         store.configure(
-            direction: direction,
+            area: area,
             todo: todo,
             intent: "次の作業",
             mode: .fiftyTen
@@ -1042,7 +1042,7 @@ struct FlowTests {
 
         store.resetAfterApplicationDataReset()
 
-        #expect(store.selectedDirectionID == nil)
+        #expect(store.selectedAreaID == nil)
         #expect(store.selectedTodoID == nil)
         #expect(store.selectedMode == .twentyFiveFive)
         #expect(store.intent.isEmpty)
@@ -1055,7 +1055,7 @@ struct FlowTests {
             defaults: defaults,
             notifications: TestFlowNotificationService()
         )
-        #expect(restored.selectedDirectionID == nil)
+        #expect(restored.selectedAreaID == nil)
         #expect(restored.selectedTodoID == nil)
         #expect(restored.selectedMode == .twentyFiveFive)
         #expect(restored.intent.isEmpty)
@@ -1066,22 +1066,22 @@ struct FlowTests {
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         let yesterday = Date(timeIntervalSince1970: 1_800_000_000)
         let today = calendar.date(byAdding: .day, value: 1, to: yesterday)!
-        let direction = Direction(name: "筋トレ", type: .habit)
-        let oldTodo = Todo(title: "筋トレ B", direction: direction, scheduledDate: yesterday)
-        let currentTodo = Todo(title: "筋トレ C", direction: direction, scheduledDate: today)
+        let area = Area(name: "筋トレ", type: .habit)
+        let oldTodo = Todo(title: "筋トレ B", area: area, scheduledDate: yesterday)
+        let currentTodo = Todo(title: "筋トレ C", area: area, scheduledDate: today)
         let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
         let store = ActiveFlowStore(defaults: defaults, notifications: TestFlowNotificationService())
-        store.configure(direction: direction, todo: oldTodo)
+        store.configure(area: area, todo: oldTodo)
 
         let changed = store.reconcileSelectedTodoForCurrentDay(
             todos: [oldTodo, currentTodo],
-            directions: [direction],
+            areas: [area],
             now: today,
             calendar: calendar
         )
 
         #expect(changed)
-        #expect(store.selectedDirectionID == direction.id)
+        #expect(store.selectedAreaID == area.id)
         #expect(store.selectedTodoID == currentTodo.id)
     }
 
@@ -1090,47 +1090,47 @@ struct FlowTests {
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         let yesterday = Date(timeIntervalSince1970: 1_800_000_000)
         let today = calendar.date(byAdding: .day, value: 1, to: yesterday)!
-        let direction = Direction(name: "開発", type: .neutral)
-        let oldTodo = Todo(title: "昨日の作業", direction: direction, scheduledDate: yesterday)
+        let area = Area(name: "開発", type: .neutral)
+        let oldTodo = Todo(title: "昨日の作業", area: area, scheduledDate: yesterday)
         let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
         let store = ActiveFlowStore(defaults: defaults, notifications: TestFlowNotificationService())
-        store.configure(direction: direction, todo: oldTodo)
+        store.configure(area: area, todo: oldTodo)
 
         let changed = store.reconcileSelectedTodoForCurrentDay(
             todos: [oldTodo],
-            directions: [direction],
+            areas: [area],
             now: today,
             calendar: calendar
         )
 
         #expect(changed)
-        #expect(store.selectedDirectionID == direction.id)
+        #expect(store.selectedAreaID == area.id)
         #expect(store.selectedTodoID == nil)
     }
 
     @Test @MainActor func runningFlowKeepsItsTaskAcrossTheDayBoundary() throws {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
-        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let yesterday = Date(timeIntervalSince1970: 1_800_000_000)
         let today = calendar.date(byAdding: .day, value: 1, to: yesterday)!
-        let direction = Direction(name: "夜間作業", type: .neutral)
-        let oldTodo = Todo(title: "継続中", direction: direction, scheduledDate: yesterday)
-        let currentTodo = Todo(title: "今日の作業", direction: direction, scheduledDate: today)
-        context.insert(direction)
+        let area = Area(name: "夜間作業", type: .neutral)
+        let oldTodo = Todo(title: "継続中", area: area, scheduledDate: yesterday)
+        let currentTodo = Todo(title: "今日の作業", area: area, scheduledDate: today)
+        context.insert(area)
         context.insert(oldTodo)
         context.insert(currentTodo)
         let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
         let store = ActiveFlowStore(defaults: defaults, notifications: TestFlowNotificationService())
-        store.configure(direction: direction, todo: oldTodo)
-        store.start(direction: direction, todo: oldTodo, modelContext: context, now: yesterday)
+        store.configure(area: area, todo: oldTodo)
+        store.start(area: area, todo: oldTodo, modelContext: context, now: yesterday)
 
         let changed = store.reconcileSelectedTodoForCurrentDay(
             todos: [oldTodo, currentTodo],
-            directions: [direction],
+            areas: [area],
             now: today,
             calendar: calendar
         )
@@ -1141,20 +1141,20 @@ struct FlowTests {
     }
 
     @Test @MainActor func activeFlowPublishesLiveActivityContextAndPauseState() throws {
-        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 30_000)
-        let direction = Direction(
+        let area = Area(
             name: "開発",
             type: .neutral,
             symbolName: "💻",
             colorHex: "#34C759"
         )
-        let todo = Todo(title: "Live Activity", direction: direction)
+        let todo = Todo(title: "Live Activity", area: area)
         let liveActivities = TestLiveActivityService()
-        context.insert(direction)
+        context.insert(area)
         context.insert(todo)
 
         let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
@@ -1163,14 +1163,14 @@ struct FlowTests {
             notifications: TestFlowNotificationService(),
             liveActivities: liveActivities
         )
-        store.configure(direction: direction, todo: todo, mode: .twentyFiveFive)
-        store.start(direction: direction, todo: todo, modelContext: context, now: start)
+        store.configure(area: area, todo: todo, mode: .twentyFiveFive)
+        store.start(area: area, todo: todo, modelContext: context, now: start)
 
         let started = try #require(liveActivities.started.last)
         #expect(started.taskEmoji == "💻")
         #expect(started.taskTitle == "Live Activity")
-        #expect(started.directionName == "開発")
-        #expect(started.directionColorHex == "#34C759")
+        #expect(started.areaName == "開発")
+        #expect(started.areaColorHex == "#34C759")
         #expect(started.modeName == FlowMode.twentyFiveFive.displayName)
         #expect(started.status == .focus)
         #expect(started.remainingSeconds == 25 * 60)
@@ -1189,15 +1189,15 @@ struct FlowTests {
     }
 
     @Test @MainActor func breakPublishesCountdownLiveActivityState() throws {
-        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 40_000)
         let breakStartedAt = start.addingTimeInterval(25 * 60)
-        let direction = Direction(name: "読書", type: .habit, symbolName: "📚")
+        let area = Area(name: "読書", type: .habit, symbolName: "📚")
         let liveActivities = TestLiveActivityService()
-        context.insert(direction)
+        context.insert(area)
 
         let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
         let store = ActiveFlowStore(
@@ -1205,8 +1205,8 @@ struct FlowTests {
             notifications: TestFlowNotificationService(),
             liveActivities: liveActivities
         )
-        store.configure(direction: direction, todo: nil, mode: .twentyFiveFive)
-        store.start(direction: direction, todo: nil, modelContext: context, now: start)
+        store.configure(area: area, todo: nil, mode: .twentyFiveFive)
+        store.start(area: area, todo: nil, modelContext: context, now: start)
         store.startBreak(modelContext: context, now: breakStartedAt)
 
         let resting = try #require(liveActivities.updated.last)
@@ -1222,14 +1222,14 @@ struct FlowTests {
     }
 
     @Test @MainActor func activeFlowPublishesLiveActivityOvertimeBoundaryOnce() throws {
-        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 45_000)
-        let direction = Direction(name: "開発", type: .neutral, symbolName: "💻")
+        let area = Area(name: "開発", type: .neutral, symbolName: "💻")
         let liveActivities = TestLiveActivityService()
-        context.insert(direction)
+        context.insert(area)
 
         let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
         let store = ActiveFlowStore(
@@ -1237,8 +1237,8 @@ struct FlowTests {
             notifications: TestFlowNotificationService(),
             liveActivities: liveActivities
         )
-        store.configure(direction: direction, todo: nil, mode: .sprint)
-        store.start(direction: direction, todo: nil, modelContext: context, now: start)
+        store.configure(area: area, todo: nil, mode: .sprint)
+        store.start(area: area, todo: nil, modelContext: context, now: start)
 
         let plannedEndAt = start.addingTimeInterval(12 * 60)
         store.refreshLiveActivityTimeBoundary(now: plannedEndAt)
@@ -1255,9 +1255,9 @@ struct FlowTests {
     @Test func persistedPausedFlowReconstructsExactTimerState() throws {
         let start = Date(timeIntervalSince1970: 50_000)
         let pausedAt = start.addingTimeInterval(8 * 60)
-        let direction = Direction(name: "開発", type: .neutral)
+        let area = Area(name: "開発", type: .neutral)
         let session = FlowSession(
-            direction: direction,
+            area: area,
             mode: .twentyFiveFive,
             phase: .paused,
             status: .paused,
@@ -1284,15 +1284,15 @@ struct FlowTests {
     }
 
     @Test @MainActor func activeFlowStoreAdoptsPersistedRuntimeFromAnotherClient() throws {
-        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 60_000)
-        let direction = Direction(name: "開発", type: .neutral, symbolName: "💻")
-        let todo = Todo(title: "同期", direction: direction)
+        let area = Area(name: "開発", type: .neutral, symbolName: "💻")
+        let todo = Todo(title: "同期", area: area)
         let session = FlowSession(
-            direction: direction,
+            area: area,
             todo: todo,
             mode: .twentyFiveFive,
             startedAt: start,
@@ -1302,7 +1302,7 @@ struct FlowTests {
             createdAt: start,
             updatedAt: start
         )
-        context.insert(direction)
+        context.insert(area)
         context.insert(todo)
         context.insert(session)
         try context.save()
@@ -1322,22 +1322,22 @@ struct FlowTests {
 
         #expect(store.activeSession?.id == session.id)
         #expect(store.timerState?.startedAt == start)
-        #expect(store.selectedDirectionID == direction.id)
+        #expect(store.selectedAreaID == area.id)
         #expect(store.selectedTodoID == todo.id)
         #expect(store.selectedMode == .twentyFiveFive)
         #expect(liveActivities.updated.last?.taskTitle == "同期")
     }
 
     @Test @MainActor func activeFlowStoreAppliesNewerRemotePauseRevision() throws {
-        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 70_000)
         let pausedAt = start.addingTimeInterval(6 * 60)
-        let direction = Direction(name: "開発", type: .neutral)
+        let area = Area(name: "開発", type: .neutral)
         let session = FlowSession(
-            direction: direction,
+            area: area,
             mode: .twentyFiveFive,
             startedAt: start,
             plannedEndAt: start.addingTimeInterval(25 * 60),
@@ -1346,7 +1346,7 @@ struct FlowTests {
             createdAt: start,
             updatedAt: start
         )
-        context.insert(direction)
+        context.insert(area)
         context.insert(session)
         try context.save()
 
@@ -1372,15 +1372,15 @@ struct FlowTests {
     }
 
     @Test @MainActor func activeFlowStoreClearsRuntimeAfterRemoteCompletion() throws {
-        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 75_000)
         let completedAt = start.addingTimeInterval(12 * 60)
-        let direction = Direction(name: "開発", type: .neutral)
+        let area = Area(name: "開発", type: .neutral)
         let session = FlowSession(
-            direction: direction,
+            area: area,
             mode: .sprint,
             startedAt: start,
             plannedEndAt: completedAt,
@@ -1389,7 +1389,7 @@ struct FlowTests {
             createdAt: start,
             updatedAt: start
         )
-        context.insert(direction)
+        context.insert(area)
         context.insert(session)
         try context.save()
 
@@ -1413,15 +1413,15 @@ struct FlowTests {
     }
 
     @Test @MainActor func remotePersistenceChangeCancelsNotificationsWhilePollingIsStopped() async throws {
-        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 77_000)
         let completedAt = start.addingTimeInterval(6 * 60)
-        let direction = Direction(name: "開発", type: .neutral)
+        let area = Area(name: "開発", type: .neutral)
         let session = FlowSession(
-            direction: direction,
+            area: area,
             mode: .sprint,
             startedAt: start,
             plannedEndAt: start.addingTimeInterval(12 * 60),
@@ -1430,7 +1430,7 @@ struct FlowTests {
             createdAt: start,
             updatedAt: start
         )
-        context.insert(direction)
+        context.insert(area)
         context.insert(session)
         try context.save()
 
@@ -1460,15 +1460,15 @@ struct FlowTests {
     }
 
     @Test @MainActor func syncCoordinatorInterruptsOlderConcurrentActiveFlow() throws {
-        let schema = Schema([Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 80_000)
         let conflictTime = start.addingTimeInterval(60)
-        let direction = Direction(name: "開発", type: .neutral)
+        let area = Area(name: "開発", type: .neutral)
         let older = FlowSession(
-            direction: direction,
+            area: area,
             mode: .sprint,
             startedAt: start,
             plannedEndAt: start.addingTimeInterval(12 * 60),
@@ -1479,7 +1479,7 @@ struct FlowTests {
             updatedAt: start
         )
         let newer = FlowSession(
-            direction: direction,
+            area: area,
             mode: .fiftyTen,
             startedAt: conflictTime,
             plannedEndAt: conflictTime.addingTimeInterval(50 * 60),
@@ -1489,7 +1489,7 @@ struct FlowTests {
             createdAt: conflictTime,
             updatedAt: conflictTime
         )
-        context.insert(direction)
+        context.insert(area)
         context.insert(older)
         context.insert(newer)
         try context.save()

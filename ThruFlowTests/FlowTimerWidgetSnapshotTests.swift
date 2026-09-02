@@ -8,6 +8,7 @@ import Foundation
 import Testing
 @testable import ThruFlow
 
+@MainActor
 struct FlowTimerWidgetSnapshotTests {
     @Test func liveActivityBreakPresentationReplacesTaskContext() {
         #expect(
@@ -23,7 +24,7 @@ struct FlowTimerWidgetSnapshotTests {
             ) == "Swift"
         )
         #expect(
-            FlowLiveActivityPresentation.directionName(
+            FlowLiveActivityPresentation.areaName(
                 "学習",
                 timerKind: .focus
             ) == "学習"
@@ -42,7 +43,7 @@ struct FlowTimerWidgetSnapshotTests {
             ) == String(localized: "休憩")
         )
         #expect(
-            FlowLiveActivityPresentation.directionName(
+            FlowLiveActivityPresentation.areaName(
                 "学習",
                 timerKind: .breakTime
             ).isEmpty
@@ -58,9 +59,9 @@ struct FlowTimerWidgetSnapshotTests {
             sessionID: sessionID,
             taskEmoji: "📚",
             taskTitle: "Swift",
-            directionEmoji: "🎓",
-            directionName: "学習",
-            directionColorHex: "#34C759",
+            areaEmoji: "🎓",
+            areaName: "学習",
+            areaColorHex: "#34C759",
             modeRawValue: "focus",
             modeName: "Focus",
             status: .focus,
@@ -77,15 +78,15 @@ struct FlowTimerWidgetSnapshotTests {
         #expect(snapshot.sessionID == sessionID)
         #expect(snapshot.taskEmoji == "📚")
         #expect(snapshot.taskTitle == "Swift")
-        #expect(snapshot.directionName == "学習")
-        #expect(snapshot.directionColorHex == "#34C759")
+        #expect(snapshot.areaName == "学習")
+        #expect(snapshot.areaColorHex == "#34C759")
         #expect(snapshot.modeName == "Focus")
         #expect(snapshot.timerRange == startedAt...plannedEndAt)
         #expect(!snapshot.isPaused)
         #expect(!snapshot.progressCountsDown)
     }
 
-    @Test func timerWidgetSnapshotStoreRoundTripsAndClears() {
+    @Test func timerWidgetSnapshotStoreRoundTripsAndClears() throws {
         let suiteName = "FlowTimerWidgetSnapshotTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
         defer {
@@ -96,8 +97,8 @@ struct FlowTimerWidgetSnapshotTests {
             sessionID: UUID(),
             taskEmoji: "☕️",
             taskTitle: "休憩",
-            directionName: "",
-            directionColorHex: "#8E8E93",
+            areaName: "",
+            areaColorHex: "#8E8E93",
             modeName: "Sprint",
             status: .paused,
             timerKind: .breakTime,
@@ -109,6 +110,15 @@ struct FlowTimerWidgetSnapshotTests {
         )
 
         store.save(snapshot)
+
+        let encoded = try JSONEncoder().encode(snapshot)
+        let json = try #require(
+            JSONSerialization.jsonObject(with: encoded) as? [String: Any]
+        )
+        #expect(json["directionName"] as? String == "")
+        #expect(json["directionColorHex"] as? String == "#8E8E93")
+        #expect(json["areaName"] == nil)
+        #expect(json["areaColorHex"] == nil)
 
         #expect(store.load() == snapshot)
         #expect(store.load()?.isPaused == true)

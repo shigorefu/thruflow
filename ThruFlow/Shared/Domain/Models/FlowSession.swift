@@ -161,7 +161,8 @@ enum FlowSessionStatus: String, CaseIterable, Codable, Identifiable {
 final class FlowSession {
     var id: UUID = UUID()
     var seriesID: UUID?
-    var direction: Direction?
+    /// Persisted as `direction` for SwiftData and CloudKit compatibility.
+    var direction: Area?
     var todo: Todo?
     var intent: String = ""
     var result: String?
@@ -191,7 +192,7 @@ final class FlowSession {
     init(
         id: UUID = UUID(),
         seriesID: UUID? = nil,
-        direction: Direction,
+        area: Area,
         todo: Todo? = nil,
         intent: String = "",
         result: String? = nil,
@@ -218,7 +219,7 @@ final class FlowSession {
     ) {
         self.id = id
         self.seriesID = seriesID ?? id
-        self.direction = direction
+        self.direction = area
         self.todo = todo
         self.intent = intent
         self.result = result
@@ -242,6 +243,11 @@ final class FlowSession {
         self.runtimeMutationID = runtimeMutationID
         self.createdAt = createdAt
         self.updatedAt = updatedAt
+    }
+
+    var area: Area? {
+        get { direction }
+        set { direction = newValue }
     }
 
     var resolvedSegments: [FlowSegment] {

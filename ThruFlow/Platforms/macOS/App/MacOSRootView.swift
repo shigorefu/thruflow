@@ -15,7 +15,7 @@ struct MacOSRootView: View {
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
     @EnvironmentObject private var onboarding: OnboardingStore
 
-    @Query(sort: \Direction.updatedAt, order: .reverse) private var directions: [Direction]
+    @Query(sort: \Area.updatedAt, order: .reverse) private var areas: [Area]
     @Query private var onboardingTodos: [Todo]
     @Query private var onboardingFlowSessions: [FlowSession]
     @Query private var onboardingFlowBreaks: [FlowBreak]
@@ -66,7 +66,7 @@ struct MacOSRootView: View {
                         .tag(AppSection.history)
 
                     Label(String(localized: "方向"), systemImage: ProductSymbol.area)
-                        .tag(AppSection.directions)
+                        .tag(AppSection.areas)
 
                     Label(String(localized: "統計"), systemImage: "chart.bar.xaxis")
                         .tag(AppSection.statistics)
@@ -134,7 +134,7 @@ struct MacOSRootView: View {
             ) {
                 FlowDashboardView(
                     isVisible: !onboarding.isPresented,
-                    directions: directions,
+                    areas: areas,
                     cachedSnapshot: $flowSnapshotCache,
                     cachedTodoGroups: $flowTodoGroupsCache
                 )
@@ -144,8 +144,8 @@ struct MacOSRootView: View {
         case .history:
             DayHistoryView(initialDate: historyDate)
                 .id(historyDate)
-        case .directions:
-            DirectionListView()
+        case .areas:
+            AreaListView()
         case .statistics:
             DeferredFeatureMount(
                 isActive: selection == .statistics,
@@ -153,7 +153,7 @@ struct MacOSRootView: View {
             ) {
                 StatisticsView(
                     isVisible: true,
-                    directions: directions,
+                    areas: areas,
                     cachedSnapshot: $statisticsPeriodCache
                 ) { date in
                     historyDate = calendar.startOfDay(for: date)
@@ -167,7 +167,7 @@ struct MacOSRootView: View {
         guard onboarding.isPresented else { return }
         selection = switch onboarding.step.screen {
         case .flow: .flow
-        case .directions: .directions
+        case .areas: .areas
         case .tasks: .tasks
         case .history: .history
         case .statistics: .statistics
@@ -189,16 +189,16 @@ struct MacOSRootView: View {
     private func onboardingSheet(for presentation: OnboardingPresentation) -> some View {
         switch presentation {
         case .areaEditor:
-            DirectionFormView(
+            AreaFormView(
                 mode: .create,
                 initialDraft: onboardingAreaDraft
-            ) { direction in
+            ) { area in
                 onboarding.resolveWorkspace(
                     hasUserContent: hasExternalOnboardingWorkspaceContent(
-                        excludingAreaID: direction.id
+                        excludingAreaID: area.id
                     )
                 )
-                _ = onboarding.recordArea(id: direction.id)
+                _ = onboarding.recordArea(id: area.id)
             }
             .toolbar {
                 ToolbarItem(placement: .automatic) {
@@ -225,7 +225,7 @@ struct MacOSRootView: View {
                     }
 
                     QuickTodoCreationPopover(
-                        directions: activeOnboardingDirections,
+                        areas: activeOnboardingAreas,
                         scheduledDate: dayBoundary.day(containing: .now, calendar: calendar),
                         showsQuickInputLegend: true,
                         initialDraft: onboardingTaskDraft(area: area)
@@ -235,7 +235,7 @@ struct MacOSRootView: View {
                                 excludingTaskID: todo.id
                             )
                         )
-                        guard let area = todo.direction else { return }
+                        guard let area = todo.area else { return }
                         _ = onboarding.recordTask(
                             id: todo.id,
                             presentation: OnboardingTaskPresentation(
@@ -258,17 +258,17 @@ struct MacOSRootView: View {
         }
     }
 
-    private var activeOnboardingDirections: [Direction] {
-        directions.filter { !$0.isArchived && !DefaultDirections.isTaskInboxRecord($0) }
+    private var activeOnboardingAreas: [Area] {
+        areas.filter { !$0.isArchived && !DefaultAreas.isTaskInboxRecord($0) }
     }
 
-    private var onboardingCreatedArea: Direction? {
+    private var onboardingCreatedArea: Area? {
         guard let id = onboarding.createdAreaID else { return nil }
-        return directions.first { $0.id == id && !$0.isArchived }
+        return areas.first { $0.id == id && !$0.isArchived }
     }
 
-    private var onboardingAreaDraft: DirectionDraft {
-        DirectionDraft(
+    private var onboardingAreaDraft: AreaDraft {
+        AreaDraft(
             name: String(localized: "仕事"),
             type: .neutral,
             symbolName: "💼",
@@ -276,10 +276,10 @@ struct MacOSRootView: View {
         )
     }
 
-    private func onboardingTaskDraft(area: Direction) -> TodoDraft {
+    private func onboardingTaskDraft(area: Area) -> TodoDraft {
         TodoDraft(
             title: String(localized: "レポートを仕上げる"),
-            direction: area,
+            area: area,
             measurement: .checkbox,
             priority: .medium,
             scheduledDate: dayBoundary.day(containing: .now, calendar: calendar)
@@ -295,7 +295,7 @@ struct MacOSRootView: View {
         excludingTaskID: UUID? = nil
     ) -> Bool {
         OnboardingWorkspaceInspector.inspect(
-            directions: directions.filter {
+            areas: areas.filter {
                 $0.id != onboarding.createdAreaID && $0.id != excludingAreaID
             },
             todos: onboardingTodos.filter {
@@ -339,7 +339,7 @@ private enum AppSection: Hashable {
     case flow
     case tasks
     case history
-    case directions
+    case areas
     case statistics
 }
 
@@ -347,5 +347,5 @@ private enum AppSection: Hashable {
     MacOSRootView()
         .environmentObject(ActiveFlowStore())
         .environmentObject(OnboardingStore())
-        .modelContainer(for: [Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self], inMemory: true)
+        .modelContainer(for: [Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self], inMemory: true)
 }

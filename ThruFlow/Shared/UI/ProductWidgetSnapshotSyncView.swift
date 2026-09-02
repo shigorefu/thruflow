@@ -9,7 +9,7 @@ struct ProductWidgetSnapshotSyncView: View {
     @Environment(\.scenePhase) private var scenePhase
 
     @Query(sort: \Todo.updatedAt) private var todos: [Todo]
-    @Query(sort: \Direction.updatedAt) private var directions: [Direction]
+    @Query(sort: \Area.updatedAt) private var areas: [Area]
     @Query(sort: \FlowSession.updatedAt) private var sessions: [FlowSession]
 
     private let snapshots = ProductWidgetSnapshotStore()
@@ -20,9 +20,9 @@ struct ProductWidgetSnapshotSyncView: View {
         todos.forEach {
             hasher.combine($0.id)
             hasher.combine($0.updatedAt)
-            hasher.combine($0.direction?.id)
+            hasher.combine($0.area?.id)
         }
-        directions.forEach {
+        areas.forEach {
             hasher.combine($0.id)
             hasher.combine($0.updatedAt)
         }

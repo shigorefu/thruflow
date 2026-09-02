@@ -44,15 +44,15 @@ struct FlowDashboardSnapshot {
         return min(max(Double(focusSeconds) / Double(totalFocusSeconds), 0), 1)
     }
 
-    var directionSummaries: [FlowDashboardDirectionSummary] {
-        Dictionary(grouping: segments, by: \FlowDashboardSegment.directionID)
+    var areaSummaries: [FlowDashboardAreaSummary] {
+        Dictionary(grouping: segments, by: \FlowDashboardSegment.areaID)
             .values
             .map { values in
                 let first = values[0]
-                return FlowDashboardDirectionSummary(
-                    id: first.directionID,
+                return FlowDashboardAreaSummary(
+                    id: first.areaID,
                     symbol: first.symbol,
-                    name: first.directionName,
+                    name: first.areaName,
                     colorHex: first.colorHex,
                     focusSeconds: values.reduce(0) { $0 + $1.focusSeconds }
                 )
@@ -62,7 +62,7 @@ struct FlowDashboardSnapshot {
 
     var taskSummaries: [FlowDashboardTaskSummary] {
         Dictionary(grouping: segments) { segment in
-            segment.taskID?.uuidString ?? "direction-\(segment.directionID.uuidString)"
+            segment.taskID?.uuidString ?? "area-\(segment.areaID.uuidString)"
         }
         .map { id, values in
             let first = values[0]
@@ -103,7 +103,7 @@ struct FlowDashboardSnapshot {
     }
 }
 
-struct FlowDashboardDirectionSummary: Identifiable {
+struct FlowDashboardAreaSummary: Identifiable {
     let id: UUID
     let symbol: String
     let name: String
@@ -130,8 +130,8 @@ struct FlowDashboardSegment: Identifiable {
     let endFraction: Double
     let focusSeconds: Int
     let taskID: UUID?
-    let directionID: UUID
-    let directionName: String
+    let areaID: UUID
+    let areaName: String
     let colorHex: String
     let symbol: String
     let taskTitle: String
@@ -272,9 +272,9 @@ struct FlowDashboardTodoGroupBuilder {
 
         return FlowDashboardTodoGroups(
             all: sorted,
-            standard: sorted.filter { ($0.direction?.type ?? .neutral) == .neutral },
-            habits: sorted.filter { $0.direction?.type == .habit },
-            nice: sorted.filter { $0.direction?.type == .nice }
+            standard: sorted.filter { ($0.area?.type ?? .neutral) == .neutral },
+            habits: sorted.filter { $0.area?.type == .habit },
+            nice: sorted.filter { $0.area?.type == .nice }
         )
     }
 }
@@ -329,7 +329,7 @@ struct FlowDashboardBuilder {
                         id: segment.id,
                         session: session,
                         storedSegment: segment,
-                        direction: segment.direction,
+                        area: segment.area,
                         todo: segment.todo,
                         startedAt: segment.startedAt,
                         endedAt: segment.endedAt ?? (isActive ? date : nil),
@@ -350,7 +350,7 @@ struct FlowDashboardBuilder {
                 id: session.id,
                 session: session,
                 storedSegment: nil,
-                direction: session.direction,
+                area: session.area,
                 todo: session.todo,
                 startedAt: session.startedAt,
                 endedAt: isActive && session.endedAt == nil ? date : session.endedAt,
@@ -438,7 +438,7 @@ struct FlowDashboardBuilder {
         id: UUID,
         session: FlowSession,
         storedSegment: FlowSegment?,
-        direction: Direction?,
+        area: Area?,
         todo: Todo?,
         startedAt: Date,
         endedAt: Date?,
@@ -462,12 +462,12 @@ struct FlowDashboardBuilder {
             endFraction: min(1, max(end, start + (1 / dayDuration))),
             focusSeconds: focusSeconds,
             taskID: todo?.id,
-            directionID: direction?.id ?? id,
-            directionName: direction?.name ?? String(localized: "その他"),
-            colorHex: direction?.colorHex ?? "#8E8E93",
-            symbol: direction?.symbolName ?? "📥",
+            areaID: area?.id ?? id,
+            areaName: area?.name ?? String(localized: "その他"),
+            colorHex: area?.colorHex ?? "#8E8E93",
+            symbol: area?.symbolName ?? "📥",
             taskTitle: todo.map(TodoDisplay.title(for:))
-                ?? String(localized: "(\(direction?.name ?? String(localized: "その他")))"),
+                ?? String(localized: "(\(area?.name ?? String(localized: "その他")))"),
             isActive: isActive
         )
     }

@@ -9,7 +9,7 @@ struct FlowTimerWidget: Widget {
         ) { entry in
             FlowTimerWidgetView(entry: entry)
                 .containerBackground(for: .widget) {
-                    Color(flowHex: entry.snapshot?.directionColorHex ?? "#007AFF")
+                    Color(flowHex: entry.snapshot?.areaColorHex ?? "#007AFF")
                         .opacity(entry.snapshot == nil ? 0.04 : 0.10)
                 }
                 .widgetURL(URL(string: "thruflow://flow"))
@@ -105,8 +105,8 @@ private struct FlowTimerWidgetView: View {
                     .font(.headline)
                     .lineLimit(2)
 
-                if !snapshot.directionName.isEmpty {
-                    Text(snapshot.directionName)
+                if !snapshot.areaName.isEmpty {
+                    Text(snapshot.areaName)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
@@ -134,8 +134,8 @@ private struct FlowTimerWidgetView: View {
                     .font(.headline)
                     .lineLimit(1)
 
-                if !snapshot.directionName.isEmpty {
-                    Text(snapshot.directionName)
+                if !snapshot.areaName.isEmpty {
+                    Text(snapshot.areaName)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
@@ -194,8 +194,8 @@ private extension FlowTimerWidgetSnapshot {
         sessionID: UUID(),
         taskEmoji: "📚",
         taskTitle: String(localized: "読書"),
-        directionName: String(localized: "読書"),
-        directionColorHex: "#007AFF",
+        areaName: String(localized: "読書"),
+        areaColorHex: "#007AFF",
         modeName: "Focus",
         status: .focus,
         timerKind: .focus,
@@ -207,7 +207,7 @@ private extension FlowTimerWidgetSnapshot {
     )
 
     var tintColor: Color {
-        Color(flowHex: timerKind == .breakTime ? "#8E8E93" : directionColorHex)
+        Color(flowHex: timerKind == .breakTime ? "#8E8E93" : areaColorHex)
     }
 }
 

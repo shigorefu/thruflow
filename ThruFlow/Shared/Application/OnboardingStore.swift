@@ -480,7 +480,7 @@ enum OnboardingStep: Int, CaseIterable, Sendable {
         case .welcome, .flow, .timer, .demo, .workflow, .privacy:
             .flow
         case .areas:
-            .directions
+            .areas
         case .tasks:
             .tasks
         case .history:
@@ -497,7 +497,7 @@ enum OnboardingStep: Int, CaseIterable, Sendable {
 
 enum OnboardingScreen: Sendable {
     case flow
-    case directions
+    case areas
     case tasks
     case history
     case statistics

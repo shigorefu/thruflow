@@ -15,7 +15,7 @@ struct TodayTodoFilter {
     }
 
     func includes(_ todo: Todo, on date: Date) -> Bool {
-        guard !todo.isArchived, !todo.isDeleted, todo.direction != nil else { return false }
+        guard !todo.isArchived, !todo.isDeleted, todo.area != nil else { return false }
 
         guard let scheduledDate = todo.scheduledDate else { return false }
 
@@ -25,7 +25,7 @@ struct TodayTodoFilter {
 
 struct InboxTodoFilter {
     func includes(_ todo: Todo) -> Bool {
-        guard todo.direction != nil else { return false }
+        guard todo.area != nil else { return false }
         return !todo.isArchived &&
         !todo.isDeleted &&
         todo.status == .active &&

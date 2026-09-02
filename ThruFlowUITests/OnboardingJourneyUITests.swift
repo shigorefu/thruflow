@@ -57,7 +57,7 @@ final class OnboardingJourneyUITests: XCTestCase {
         XCTAssertTrue(createArea.waitForExistence(timeout: 2))
         createArea.tap()
 
-        let saveArea = app.buttons["direction.editor.save"]
+        let saveArea = app.buttons["area.editor.save"]
         XCTAssertTrue(saveArea.waitForExistence(timeout: 3))
         XCTAssertTrue(saveArea.isEnabled)
         saveArea.tap()

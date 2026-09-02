@@ -64,9 +64,9 @@ struct ProductWidgetSnapshotBuilder {
         TaskWidgetItemSnapshot(
             id: todo.id,
             title: TodoDisplay.title(for: todo),
-            directionSymbol: todo.direction?.symbolName ?? "📝",
-            directionName: todo.direction?.name ?? String(localized: "その他"),
-            directionColorHex: todo.direction?.colorHex ?? "#8E8E93",
+            areaSymbol: todo.area?.symbolName ?? "📝",
+            areaName: todo.area?.name ?? String(localized: "その他"),
+            areaColorHex: todo.area?.colorHex ?? "#8E8E93",
             measurement: TaskWidgetMeasurement(rawValue: todo.measurement.rawValue) ?? .checkbox,
             plannedAmount: max(0, todo.plannedAmount ?? 0),
             actualProgress: max(0, todo.actualProgress),

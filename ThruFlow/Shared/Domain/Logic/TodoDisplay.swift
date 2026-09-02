@@ -13,18 +13,18 @@ enum TodoDisplay {
             return title
         }
 
-        if let directionName = todo.direction?.name.trimmingCharacters(in: .whitespacesAndNewlines),
-           !directionName.isEmpty {
-            return "(\(directionName))"
+        if let areaName = todo.area?.name.trimmingCharacters(in: .whitespacesAndNewlines),
+           !areaName.isEmpty {
+            return "(\(areaName))"
         }
 
         return String(localized: "(その他)")
     }
 
     static func placeholder(for todo: Todo) -> String {
-        if let directionName = todo.direction?.name.trimmingCharacters(in: .whitespacesAndNewlines),
-           !directionName.isEmpty {
-            return "(\(directionName))"
+        if let areaName = todo.area?.name.trimmingCharacters(in: .whitespacesAndNewlines),
+           !areaName.isEmpty {
+            return "(\(areaName))"
         }
 
         return String(localized: "(その他)")

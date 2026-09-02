@@ -1,14 +1,14 @@
 //
-//  DirectionValidation.swift
+//  AreaValidation.swift
 //  ThruFlow
 //
 //
 
 import Foundation
 
-struct DirectionDraft {
+struct AreaDraft {
     var name: String
-    var type: DirectionType
+    var type: AreaType
     var symbolName: String
     var colorHex: String
     var goalEnabled: Bool
@@ -21,7 +21,7 @@ struct DirectionDraft {
 
     init(
         name: String = "",
-        type: DirectionType = .neutral,
+        type: AreaType = .neutral,
         symbolName: String = "🎯",
         colorHex: String = "#007AFF",
         goalEnabled: Bool = false,
@@ -45,18 +45,18 @@ struct DirectionDraft {
         self.weekdayMask = weekdayMask
     }
 
-    init(direction: Direction) {
-        self.name = direction.name
-        self.type = direction.type
-        self.symbolName = direction.symbolName
-        self.colorHex = direction.colorHex
-        self.goalEnabled = direction.hasGoal
-        self.goalTarget = direction.goalTarget
-        self.goalPeriod = direction.goalPeriod ?? .daily
-        self.goalUnit = direction.goalUnit ?? .occurrences
-        self.goalSchedule = direction.goalSchedule ?? .everyDay
-        self.weeklyTargetCount = direction.weeklyTargetCount ?? 1
-        self.weekdayMask = direction.weekdayMask
+    init(area: Area) {
+        self.name = area.name
+        self.type = area.type
+        self.symbolName = area.symbolName
+        self.colorHex = area.colorHex
+        self.goalEnabled = area.hasGoal
+        self.goalTarget = area.goalTarget
+        self.goalPeriod = area.goalPeriod ?? .daily
+        self.goalUnit = area.goalUnit ?? .occurrences
+        self.goalSchedule = area.goalSchedule ?? .everyDay
+        self.weeklyTargetCount = area.weeklyTargetCount ?? 1
+        self.weekdayMask = area.weekdayMask
     }
 
     var trimmedName: String {
@@ -68,7 +68,7 @@ struct DirectionDraft {
     }
 }
 
-enum DirectionValidationError: Error, Equatable, LocalizedError {
+enum AreaValidationError: Error, Equatable, LocalizedError {
     case emptyName
     case invalidGoalTarget
     case missingGoalUnit
@@ -94,9 +94,9 @@ enum DirectionValidationError: Error, Equatable, LocalizedError {
     }
 }
 
-struct DirectionValidator {
-    func validate(_ draft: DirectionDraft) -> [DirectionValidationError] {
-        var errors: [DirectionValidationError] = []
+struct AreaValidator {
+    func validate(_ draft: AreaDraft) -> [AreaValidationError] {
+        var errors: [AreaValidationError] = []
 
         if draft.trimmedName.isEmpty {
             errors.append(.emptyName)

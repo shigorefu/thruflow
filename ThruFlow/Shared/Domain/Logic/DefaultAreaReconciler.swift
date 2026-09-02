@@ -1,27 +1,27 @@
 import Foundation
 import SwiftData
 
-struct DefaultDirectionReconciliationResult: Equatable {
+struct DefaultAreaReconciliationResult: Equatable {
     var canonicalID: UUID
     var archivedDuplicateCount: Int
 }
 
-struct DefaultDirectionReconciler {
+struct DefaultAreaReconciler {
     @discardableResult
     func reconcile(
         modelContext: ModelContext,
         now: Date = .now
-    ) throws -> DefaultDirectionReconciliationResult {
-        let directions = try modelContext.fetch(FetchDescriptor<Direction>())
-        let candidates = directions
-            .filter { !$0.isArchived && DefaultDirections.isTaskInboxRecord($0) }
-            .sorted { DefaultDirections.canonicalOrder($0, $1) }
+    ) throws -> DefaultAreaReconciliationResult {
+        let areas = try modelContext.fetch(FetchDescriptor<Area>())
+        let candidates = areas
+            .filter { !$0.isArchived && DefaultAreas.isTaskInboxRecord($0) }
+            .sorted { DefaultAreas.canonicalOrder($0, $1) }
 
         guard let canonical = candidates.first else {
-            let inbox = DefaultDirections.makeTaskInbox(now: now)
+            let inbox = DefaultAreas.makeTaskInbox(now: now)
             modelContext.insert(inbox)
             try modelContext.save()
-            return DefaultDirectionReconciliationResult(
+            return DefaultAreaReconciliationResult(
                 canonicalID: inbox.id,
                 archivedDuplicateCount: 0
             )
@@ -53,7 +53,7 @@ struct DefaultDirectionReconciler {
             try modelContext.save()
         }
 
-        return DefaultDirectionReconciliationResult(
+        return DefaultAreaReconciliationResult(
             canonicalID: canonical.id,
             archivedDuplicateCount: duplicates.count
         )
@@ -61,22 +61,22 @@ struct DefaultDirectionReconciler {
 
     private func reconnectRelationships(
         from duplicateIDs: Set<UUID>,
-        to canonical: Direction,
+        to canonical: Area,
         modelContext: ModelContext
     ) throws {
         for todo in try modelContext.fetch(FetchDescriptor<Todo>())
-        where todo.direction.map({ duplicateIDs.contains($0.id) }) == true {
-            todo.direction = canonical
+        where todo.area.map({ duplicateIDs.contains($0.id) }) == true {
+            todo.area = canonical
         }
 
         for session in try modelContext.fetch(FetchDescriptor<FlowSession>())
-        where session.direction.map({ duplicateIDs.contains($0.id) }) == true {
-            session.direction = canonical
+        where session.area.map({ duplicateIDs.contains($0.id) }) == true {
+            session.area = canonical
         }
 
         for segment in try modelContext.fetch(FetchDescriptor<FlowSegment>())
-        where segment.direction.map({ duplicateIDs.contains($0.id) }) == true {
-            segment.direction = canonical
+        where segment.area.map({ duplicateIDs.contains($0.id) }) == true {
+            segment.area = canonical
         }
     }
 }

@@ -20,7 +20,7 @@ struct FlowMiniPlayerView: View {
     @Environment(\.locale) private var locale
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
 
-    @Query(sort: \Direction.name, order: .forward) private var directions: [Direction]
+    @Query(sort: \Area.name, order: .forward) private var areas: [Area]
     @Query(sort: \Todo.createdAt, order: .forward) private var todos: [Todo]
 
     @State private var showsTaskPicker = false
@@ -42,12 +42,12 @@ struct FlowMiniPlayerView: View {
         self.style = style
     }
 
-    private var activeDirections: [Direction] {
-        directions.filter { !$0.isArchived }
+    private var activeAreas: [Area] {
+        areas.filter { !$0.isArchived }
     }
 
-    private var visibleDirections: [Direction] {
-        activeDirections.filter { !DefaultDirections.isTaskInbox($0) }
+    private var visibleAreas: [Area] {
+        activeAreas.filter { !DefaultAreas.isTaskInbox($0) }
     }
 
     private var activeTodos: [Todo] {
@@ -58,9 +58,9 @@ struct FlowMiniPlayerView: View {
         activeTodos.filter { todayFilter.includes($0) }
     }
 
-    private var selectedDirection: Direction? {
-        guard let id = activeFlowStore.selectedDirectionID else { return nil }
-        return activeDirections.first { $0.id == id }
+    private var selectedArea: Area? {
+        guard let id = activeFlowStore.selectedAreaID else { return nil }
+        return activeAreas.first { $0.id == id }
     }
 
     private var selectedTodo: Todo? {
@@ -92,7 +92,7 @@ struct FlowMiniPlayerView: View {
     private func reconcileSelectedTodo(now: Date = .now) {
         activeFlowStore.reconcileSelectedTodoForCurrentDay(
             todos: activeTodos,
-            directions: activeDirections,
+            areas: activeAreas,
             now: now,
             calendar: calendar,
             dayBoundary: dayBoundary
@@ -204,8 +204,8 @@ struct FlowMiniPlayerView: View {
         FlowTimerContextButton(
             style: .dashboard,
             presentation: FlowTimerContextPresentation(
-                symbol: flowDirection?.symbolName ?? "▶",
-                areaTitle: flowDirectionName,
+                symbol: flowArea?.symbolName ?? "▶",
+                areaTitle: flowAreaName,
                 tint: artworkColor,
                 detail: selectedTodo.flatMap { todo in
                     todo.measurement == .checkbox
@@ -239,14 +239,14 @@ struct FlowMiniPlayerView: View {
         }
         .popover(isPresented: $showsTaskPicker, arrowEdge: .bottom) {
             FlowTaskPickerView(
-                directions: activeDirections,
+                areas: activeAreas,
                 todos: todayTodos,
-                selectedDirectionID: activeFlowStore.selectedDirectionID,
+                selectedAreaID: activeFlowStore.selectedAreaID,
                 selectedTodoID: activeFlowStore.selectedTodoID,
                 onCreateTask: presentTaskComposer
-            ) { direction, todo in
+            ) { area, todo in
                 activeFlowStore.selectContext(
-                    direction: direction,
+                    area: area,
                     todo: todo,
                     modelContext: modelContext
                 )
@@ -255,11 +255,11 @@ struct FlowMiniPlayerView: View {
         }
         .popover(isPresented: $showsTaskComposer, arrowEdge: .trailing) {
             QuickTodoCreationPopover(
-                directions: activeDirections,
+                areas: activeAreas,
                 showsQuickInputLegend: false
             ) { todo in
                 activeFlowStore.selectContext(
-                    direction: todo.direction,
+                    area: todo.area,
                     todo: todo,
                     modelContext: modelContext
                 )
@@ -350,7 +350,7 @@ struct FlowMiniPlayerView: View {
             RoundedRectangle(cornerRadius: 8)
                 .fill(artworkColor.opacity(0.18))
 
-            Text(flowDirection?.symbolName ?? "▶")
+            Text(flowArea?.symbolName ?? "▶")
                 .font(.system(size: 22))
         }
         .frame(width: 42, height: 42)
@@ -365,7 +365,7 @@ struct FlowMiniPlayerView: View {
         VStack(alignment: .leading, spacing: 2) {
             taskTitleEditor
 
-            Text(flowDirectionName)
+            Text(flowAreaName)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
@@ -531,12 +531,12 @@ struct FlowMiniPlayerView: View {
             (activeFlowStore.phase == .paused && activeFlowStore.timerState?.phaseBeforePause == .focusing)
     }
 
-    private var flowDirection: Direction? {
-        if let direction = selectedTodo?.direction {
-            return direction
+    private var flowArea: Area? {
+        if let area = selectedTodo?.area {
+            return area
         }
 
-        return selectedDirection
+        return selectedArea
     }
 
     private var flowTaskTitle: String {
@@ -544,8 +544,8 @@ struct FlowMiniPlayerView: View {
             return TodoDisplay.title(for: selectedTodo)
         }
 
-        if let selectedDirection {
-            return "(\(selectedDirection.name))"
+        if let selectedArea {
+            return "(\(selectedArea.name))"
         }
 
         return String(localized: "具体的なタスクなし")
@@ -556,7 +556,7 @@ struct FlowMiniPlayerView: View {
             return selectedTodo.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         }
 
-        return selectedDirection != nil
+        return selectedArea != nil
     }
 
     private var contextTitleFont: Font {
@@ -564,13 +564,13 @@ struct FlowMiniPlayerView: View {
         return flowTaskTitleIsPlaceholder ? font.italic() : font
     }
 
-    private var flowDirectionName: String {
-        flowDirection?.name ?? String(localized: "その他")
+    private var flowAreaName: String {
+        flowArea?.name ?? String(localized: "その他")
     }
 
     private var artworkColor: Color {
-        if let direction = flowDirection, !DefaultDirections.isTaskInbox(direction) {
-            return Color(hex: direction.colorHex)
+        if let area = flowArea, !DefaultAreas.isTaskInbox(area) {
+            return Color(hex: area.colorHex)
         }
 
         return .accentColor
@@ -979,12 +979,12 @@ struct FlowMiniPlayerView: View {
     private func handlePrimaryAction() {
         switch activeFlowStore.phase {
         case .idle, .configured, .completed:
-            let direction = resolvedStartDirection()
+            let area = resolvedStartArea()
             let todo = selectedTodo
 
-            activeFlowStore.configure(direction: direction, todo: todo)
+            activeFlowStore.configure(area: area, todo: todo)
             activeFlowStore.start(
-                direction: direction,
+                area: area,
                 todo: todo,
                 modelContext: modelContext
             )
@@ -998,7 +998,7 @@ struct FlowMiniPlayerView: View {
             activeFlowStore.resume(modelContext: modelContext)
         case .breakTime:
             activeFlowStore.startNextFlow(
-                direction: resolvedStartDirection(),
+                area: resolvedStartArea(),
                 todo: selectedTodo,
                 modelContext: modelContext
             )
@@ -1044,20 +1044,20 @@ struct FlowMiniPlayerView: View {
         }
     }
 
-    private func resolvedStartDirection() -> Direction {
-        if let selectedDirection {
-            return selectedDirection
+    private func resolvedStartArea() -> Area {
+        if let selectedArea {
+            return selectedArea
         }
 
-        if let direction = selectedTodo?.direction, !direction.isArchived {
-            return direction
+        if let area = selectedTodo?.area, !area.isArchived {
+            return area
         }
 
-        if let taskInbox = DefaultDirections.existingTaskInbox(in: activeDirections) {
+        if let taskInbox = DefaultAreas.existingTaskInbox(in: activeAreas) {
             return taskInbox
         }
 
-        let taskInbox = DefaultDirections.makeTaskInbox()
+        let taskInbox = DefaultAreas.makeTaskInbox()
         modelContext.insert(taskInbox)
         return taskInbox
     }
@@ -1070,15 +1070,15 @@ struct FlowMiniPlayerView: View {
 
         let taskText = TodoDisplay.title(for: todo)
 
-        guard let direction = todo.direction else {
+        guard let area = todo.area else {
             return taskText
         }
 
-        guard !DefaultDirections.isTaskInbox(direction) else {
+        guard !DefaultAreas.isTaskInbox(area) else {
             return taskText
         }
 
-        return "\(taskText)（\(direction.name)）"
+        return "\(taskText)（\(area.name)）"
     }
 }
 
@@ -1091,18 +1091,18 @@ private struct TaskTitleEditorBoundsPreferenceKey: PreferenceKey {
 }
 
 struct FlowTaskPickerView: View {
-    let directions: [Direction]
+    let areas: [Area]
     let todos: [Todo]
-    let selectedDirectionID: UUID?
+    let selectedAreaID: UUID?
     let selectedTodoID: UUID?
     let onCreateTask: () -> Void
-    let onSelect: (Direction?, Todo?) -> Void
+    let onSelect: (Area?, Todo?) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var selectedTab: FlowTaskPickerTab = .tasks
 
     private var projection: FlowContextPickerProjection {
-        FlowContextPickerProjection(directions: directions, todos: todos)
+        FlowContextPickerProjection(areas: areas, todos: todos)
     }
 
     private var taskGroups: [FlowContextPickerTaskGroup] {
@@ -1113,12 +1113,12 @@ struct FlowTaskPickerView: View {
         projection.habitTodos
     }
 
-    private var otherDirection: Direction? {
-        projection.otherDirection
+    private var otherArea: Area? {
+        projection.otherArea
     }
 
-    private var userDirections: [Direction] {
-        projection.userDirections
+    private var userAreas: [Area] {
+        projection.userAreas
     }
 
     var body: some View {
@@ -1154,8 +1154,8 @@ struct FlowTaskPickerView: View {
                     taskTab
                 case .habits:
                     habitTab
-                case .directions:
-                    directionTab
+                case .areas:
+                    areaTab
                 }
             }
             .scrollIndicators(.hidden)
@@ -1211,30 +1211,30 @@ struct FlowTaskPickerView: View {
         }
     }
 
-    private var directionTab: some View {
+    private var areaTab: some View {
         LazyVGrid(
             columns: [GridItem(.adaptive(minimum: 120, maximum: 170), spacing: 10)],
             alignment: .leading,
             spacing: 10
         ) {
-            directionGridItem(
-                iconText: otherDirection?.symbolName ?? DefaultDirections.taskInboxSymbol,
-                title: otherDirection?.name ?? String(localized: "その他"),
+            areaGridItem(
+                iconText: otherArea?.symbolName ?? DefaultAreas.taskInboxSymbol,
+                title: otherArea?.name ?? String(localized: "その他"),
                 color: .secondary,
-                isSelected: selectedTodoID == nil && (selectedDirectionID == otherDirection?.id || selectedDirectionID == nil)
+                isSelected: selectedTodoID == nil && (selectedAreaID == otherArea?.id || selectedAreaID == nil)
             ) {
-                onSelect(otherDirection, nil)
+                onSelect(otherArea, nil)
                 dismiss()
             }
 
-            ForEach(userDirections) { direction in
-                directionGridItem(
-                    iconText: direction.symbolName,
-                    title: direction.name,
-                    color: Color(hex: direction.colorHex),
-                    isSelected: selectedTodoID == nil && selectedDirectionID == direction.id
+            ForEach(userAreas) { area in
+                areaGridItem(
+                    iconText: area.symbolName,
+                    title: area.name,
+                    color: Color(hex: area.colorHex),
+                    isSelected: selectedTodoID == nil && selectedAreaID == area.id
                 ) {
-                    onSelect(direction, nil)
+                    onSelect(area, nil)
                     dismiss()
                 }
             }
@@ -1244,14 +1244,14 @@ struct FlowTaskPickerView: View {
 
     private func taskRow(_ todo: Todo) -> some View {
         Button {
-            onSelect(todo.direction, todo)
+            onSelect(todo.area, todo)
             dismiss()
         } label: {
             pickerRow(
-                iconText: todo.direction?.symbolName ?? DefaultDirections.taskInboxSymbol,
+                iconText: todo.area?.symbolName ?? DefaultAreas.taskInboxSymbol,
                 title: TodoDisplay.title(for: todo),
                 subtitle: taskSubtitle(todo),
-                color: directionColor(todo.direction),
+                color: areaColor(todo.area),
                 isSelected: selectedTodoID == todo.id,
                 isPlaceholder: todo.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             )
@@ -1259,7 +1259,7 @@ struct FlowTaskPickerView: View {
         .buttonStyle(.plain)
     }
 
-    private func directionGridItem(
+    private func areaGridItem(
         iconText: String,
         title: String,
         color: Color,
@@ -1343,18 +1343,18 @@ struct FlowTaskPickerView: View {
         .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 
-    private func directionColor(_ direction: Direction?) -> Color {
-        guard let direction, !DefaultDirections.isTaskInbox(direction) else {
+    private func areaColor(_ area: Area?) -> Color {
+        guard let area, !DefaultAreas.isTaskInbox(area) else {
             return .secondary
         }
 
-        return Color(hex: direction.colorHex)
+        return Color(hex: area.colorHex)
     }
 
     private func taskSubtitle(_ todo: Todo) -> String {
-        let directionName = todo.direction?.name ?? String(localized: "その他")
+        let areaName = todo.area?.name ?? String(localized: "その他")
         let priority = todo.priority == .low && todo.isRoomIfPossible ? String(localized: "余裕があれば") : todo.priority.displayName
-        return String(localized: "\(directionName) · \(priority)")
+        return String(localized: "\(areaName) · \(priority)")
     }
 
     private func sectionHeader(title: String, count: Int, tint: Color) -> some View {
@@ -1390,7 +1390,7 @@ struct FlowTaskPickerView: View {
 private enum FlowTaskPickerTab: String, CaseIterable, Identifiable {
     case tasks
     case habits
-    case directions
+    case areas
 
     var id: String { rawValue }
 
@@ -1400,7 +1400,7 @@ private enum FlowTaskPickerTab: String, CaseIterable, Identifiable {
             String(localized: "タスク")
         case .habits:
             String(localized: "習慣一覧")
-        case .directions:
+        case .areas:
             String(localized: "方向")
         }
     }
@@ -1426,5 +1426,5 @@ private extension FlowContextPickerTaskGroup {
 #Preview {
     FlowMiniPlayerView()
         .environmentObject(ActiveFlowStore())
-        .modelContainer(for: [Direction.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self], inMemory: true)
+        .modelContainer(for: [Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self], inMemory: true)
 }
