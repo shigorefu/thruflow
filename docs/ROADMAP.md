@@ -90,6 +90,10 @@ Every item below is required before publishing 1.0:
 
 ### Task capture and Flow
 
+- [x] Reset an idle Flow player's previous-day Task occurrence when the app day
+  changes on macOS or iOS. Prefer today's incomplete occurrence from the same
+  Area, then another incomplete Task for today; keep only the Area when today
+  has no Tasks, and never switch a running Flow automatically.
 - [x] Suggest previously used Task titles during Task creation on macOS,
   iPhone, and iPad. Rank prefix matches before substring matches, then use
   frequency and recency while deduplicating equivalent titles.
@@ -124,6 +128,10 @@ Every item below is required before publishing 1.0:
 
 ### Area editor polish
 
+- [x] Reconcile an existing Habit Area's Tasks from the current app day after
+  its schedule or goal changes on macOS or iPhone. Rebuild only unstarted
+  occurrences; preserve completed Tasks, measured progress, and every Task
+  already linked to Flow history.
 - [x] Use the fixed Area type order `いつでも | 習慣 | できたら` in the macOS and
   iPhone editors without changing persisted enum values or ordering elsewhere.
 - [x] Replace the `週に数回` stepper with a compact seven-position slider on

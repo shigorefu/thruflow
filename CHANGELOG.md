@@ -26,10 +26,17 @@ All notable user-facing changes to ThruFlow are documented in this file.
   only the selected date.
 - Area editors now show types in the fixed order
   `Anytime | Habit | Optional` on macOS and iPhone.
+- Editing an existing Habit Area now rebuilds its unstarted Tasks from the
+  current app day forward to match the new schedule, frequency, unit, and
+  target. Completed, progressed, and Flow-linked Tasks remain unchanged.
 - The macOS Area editor now uses a content-fitted window width.
 
 ### Fixed
 
+- Fixed the Flow player retaining a Task occurrence from the previous day.
+  When the app day changes while the timer is idle, selection moves to an
+  incomplete Task from the current day, preferring the same Area. If no current
+  Task exists, only the Area remains selected. A running Flow is not changed.
 - Fixed the compact iPhone Flow Task composer appearing transparent after
   pressing `+`.
 - Fixed editing one Habit Task occurrence in History also changing a different

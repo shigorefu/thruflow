@@ -14,6 +14,8 @@ struct FlowMiniPlayerView: View {
         case dashboard
     }
 
+    @Environment(\.appDayBoundary) private var dayBoundary
+    @Environment(\.calendar) private var calendar
     @Environment(\.modelContext) private var modelContext
     @Environment(\.locale) private var locale
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
@@ -32,7 +34,9 @@ struct FlowMiniPlayerView: View {
     @FocusState private var isMemoFocused: Bool
 
     private let style: Style
-    private let todayFilter = TodayTodoFilter()
+    private var todayFilter: TodayTodoFilter {
+        TodayTodoFilter(calendar: calendar, dayBoundary: dayBoundary)
+    }
 
     init(style: Style = .header) {
         self.style = style
@@ -66,11 +70,33 @@ struct FlowMiniPlayerView: View {
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
+            let activeDay = dayBoundary.day(containing: context.date, calendar: calendar)
+
             content(now: context.date)
                 .onChange(of: context.date) { _, date in
                     activeFlowStore.refresh(modelContext: modelContext, now: date)
                 }
+                .onChange(of: activeDay) { _, _ in
+                    reconcileSelectedTodo(now: context.date)
+                }
         }
+        .onAppear {
+            reconcileSelectedTodo()
+        }
+        .onChange(of: activeFlowStore.timerState == nil) { _, isIdle in
+            guard isIdle else { return }
+            reconcileSelectedTodo()
+        }
+    }
+
+    private func reconcileSelectedTodo(now: Date = .now) {
+        activeFlowStore.reconcileSelectedTodoForCurrentDay(
+            todos: activeTodos,
+            directions: activeDirections,
+            now: now,
+            calendar: calendar,
+            dayBoundary: dayBoundary
+        )
     }
 
     @ViewBuilder
