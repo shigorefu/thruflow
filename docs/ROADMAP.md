@@ -159,6 +159,9 @@ Every item below is required before publishing 1.0:
 - [x] Add a schema contract test that detects an accidental `Area` entity or
   persisted `area` relationship.
 - [x] Rename the Statistics CSV column from `direction` to `area`.
+- [x] Isolate Debug and Production SwiftData stores so Development CloudKit
+  export metadata cannot suppress the later Production export. Keep the
+  shipped Production filename `default.store` unchanged.
 
 ### Delivery
 
