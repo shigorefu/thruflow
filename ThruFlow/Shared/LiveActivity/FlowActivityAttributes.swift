@@ -49,7 +49,11 @@ struct FlowActivityAttributes: ActivityAttributes {
         }
 
         var progressCountsDown: Bool {
-            timerKind == .breakTime
+            FlowLiveActivityProgressSurface.standard.countsDown(timerKind: timerKind)
+        }
+
+        var minimalProgressCountsDown: Bool {
+            FlowLiveActivityProgressSurface.minimal.countsDown(timerKind: timerKind)
         }
 
         var presentationEmoji: String {

@@ -248,6 +248,10 @@ not provide an exact or guaranteed boundary update.
 The dynamic timer text must remain flexible inside ActivityKit's compact,
 expanded, and Lock Screen regions; `fixedSize()` is prohibited because it can
 collapse the archived timer label at runtime.
+The minimal Dynamic Island slot always uses a countdown-style circular timer so
+its number and ring drain together toward zero when multiple Live Activities
+share the Island. Expanded and Lock Screen focus progress keeps its filling
+direction.
 
 ## D-024: Home Screen Timer Widget Is A Read-Only Snapshot
 

@@ -165,6 +165,8 @@ Every item below is required before publishing 1.0:
 - [x] Use the rest color for both the Flow timer's resume control and progress
   ring while paused, while keeping focus overtime Area-colored on macOS,
   iPhone, and Apple Watch.
+- [x] Make the minimal Dynamic Island timer drain its ring and remaining-time
+  number toward zero when another Live Activity shares the Island.
 
 ### Delivery
 
