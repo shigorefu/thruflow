@@ -304,7 +304,7 @@ the app is suspended. Compact Dynamic Island shows only the Task emoji and
 remaining `MM:SS`; minimal presentation shows circular progress. Expanded
 Dynamic Island adds `-5 minutes`, pause/resume, and `+5 minutes` controls.
 Those App Intents call the same `ActiveFlowStore` operations as the in-app
-player. The Lock Screen presentation is read-only, and tapping any activity
+player for both focus and rest. The Lock Screen presentation is read-only, and tapping any activity
 deep-links to the Flow tab.
 
 On iPad and other regular-width iOS presentations, the same five destinations

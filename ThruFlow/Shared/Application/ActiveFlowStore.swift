@@ -338,9 +338,22 @@ final class ActiveFlowStore: ObservableObject {
         }
 
         guard let canonicalSession = resolution.canonicalSession,
-              let synchronizedState = canonicalSession.reconstructableTimerState else {
+              var synchronizedState = canonicalSession.reconstructableTimerState else {
             clearSynchronizedRuntimeIfNeeded()
             return
+        }
+
+        if synchronizedState.isBreakTimer {
+            do {
+                if let flowBreak = try openBreak(
+                    for: canonicalSession.id,
+                    modelContext: modelContext
+                ) {
+                    synchronizedState.plannedBreakIsLong = flowBreak.isLongBreak
+                }
+            } catch {
+                PersistenceIssueCenter.shared.log(error, operation: .flowSynchronization)
+            }
         }
 
         let version = canonicalSession.runtimeVersion

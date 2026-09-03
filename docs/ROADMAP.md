@@ -167,6 +167,9 @@ Every item below is required before publishing 1.0:
   iPhone, and Apple Watch.
 - [x] Make the minimal Dynamic Island timer drain its ring and remaining-time
   number toward zero when another Live Activity shares the Island.
+- [x] Allow `−5` and `+5` to adjust the active or paused rest timer on macOS,
+  iPhone, Apple Watch, and expanded Dynamic Island while preserving at least
+  one minute and keeping long rests classified as long rests.
 
 ### Delivery
 

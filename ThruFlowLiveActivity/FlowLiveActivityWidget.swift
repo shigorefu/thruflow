@@ -212,17 +212,11 @@ private struct FlowActivityCircularProgress: View {
 private struct FlowActivityTransportControls: View {
     let state: FlowActivityAttributes.ContentState
 
-    private var canSeek: Bool {
-        state.timerKind == .focus
-    }
-
     var body: some View {
         HStack(spacing: 20) {
             Button(intent: SeekFlowBackwardIntent()) {
                 actionIcon("gobackward.5")
             }
-            .disabled(!canSeek)
-            .opacity(canSeek ? 1 : 0.35)
             .accessibilityLabel(String(localized: "残り時間を5分短縮"))
 
             Button(intent: ToggleFlowPauseIntent()) {
@@ -237,8 +231,6 @@ private struct FlowActivityTransportControls: View {
             Button(intent: SeekFlowForwardIntent()) {
                 actionIcon("goforward.5")
             }
-            .disabled(!canSeek)
-            .opacity(canSeek ? 1 : 0.35)
             .accessibilityLabel(String(localized: "残り時間を5分延長"))
         }
         .buttonStyle(.plain)

@@ -115,9 +115,9 @@ Cover:
 - Calendar range, filtering, and rescheduling tests.
 - Habit task generation.
 - Block conversion and progress.
-- Flow timer transitions, five-minute remaining-time adjustments, one-minute
-  lower bound, mode changes without elapsed-time reset, and actual-time rest
-  thresholds.
+- Flow timer transitions, five-minute focus/rest remaining-time adjustments,
+  one-minute lower bound, paused-timer adjustment, preserved long-rest identity,
+  mode changes without elapsed-time reset, and actual-time rest thresholds.
 - Flow-stream phase speed, bounded rest-reaction timing, pure reaction-state
   consumption, unique cues for repeated rest requests, stale-cue cleanup, and
   distinct confirmed regular/long-break starts.

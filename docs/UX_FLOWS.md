@@ -139,7 +139,7 @@ In the narrow vertical dashboard layout, the player comes first, followed by the
 - Area icon color follows the selected Task Area;
 - compact `集中モード` selector opens a separate picker for `短め`, `標準`, and `じっくり`;
 - selecting another `集中モード` during focus or paused focus preserves elapsed time, applies that preset as the new total plan, and moves only the planned end. A shorter preset may immediately show overtime; crossing another preset threshold never renames the selected mode;
-- transport seek controls subtract or add exactly five minutes from remaining focus time across macOS, iOS, menu bar, and Live Activity. Subtract stops at one minute remaining, both actions preserve elapsed time and mode, and both are disabled during rest;
+- transport seek controls subtract or add exactly five minutes from the current focus or rest timer across macOS, iOS, Apple Watch, and Live Activity. Subtract stops at one minute remaining, while both actions preserve elapsed time, focus mode, and long-rest identity;
 - starting rest derives its duration from actual focused time rather than the selected mode: under 24 minutes gives 3 minutes, 24...48:59 gives 5 minutes, and 49 minutes or more gives 10 minutes. The 24- and 49-minute boundaries normalize Block credit to 25 and 50 minutes while longer actual time remains exact;
 - break time counts down past zero with a positive overtime sign; its neutral-gray progress ring drains while the Area-colored focus ring fills. Starting work during rest completes the previous Flow and immediately starts the next one, while the Japanese menu bar status becomes `☕️ 休憩 - time` or `☕️ 長休憩 - time`;
 - choosing another Task during focus or pause keeps the current Flow running and starts a new history segment; no memo prompt is shown for this switch;
@@ -491,7 +491,8 @@ the trailing side; during a break it uses the coffee emoji instead. Minimal
 Island uses a circular progress indicator. Expanded Island shows Task and
 Area context, progress, and three
 transport actions in the same order as the in-app player: subtract five minutes,
-pause/resume, and add five minutes. Seek is disabled during a break. Lock Screen
+pause/resume, and add five minutes. These controls adjust both focus and rest;
+subtracting keeps at least one minute on the current timer. Lock Screen
 content shows the same session identity, timer, and progress without
 action buttons. Opening any activity routes to the `流れ` tab. ActivityKit
 advances date-backed timer text and progress while the app is suspended; state
