@@ -13,6 +13,9 @@ All notable user-facing changes to ThruFlow are documented in this file.
   upward on macOS, iPhone, and Apple Watch.
 - The minimal Dynamic Island timer now counts remaining time down and drains
   its circular progress when another Live Activity shares the Island.
+- The `−5` and `+5` timer controls now adjust rest as well as focus on macOS,
+  iPhone, Apple Watch, and expanded Dynamic Island. Subtraction keeps one minute
+  remaining, and adjusted long rests retain their long-rest behavior.
 - Renamed the machine-readable Statistics CSV column from `direction` to
   `area`.
 - Markdown-only pull requests and pushes now skip Apple builds while retaining

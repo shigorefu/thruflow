@@ -373,19 +373,63 @@ struct FlowTests {
         #expect(twentySeven.plannedBreakDurationSeconds == 5 * 60)
     }
 
-    @Test func seekIsIgnoredOutsideFocusingOrPausedPhases() {
+    @Test func seekAdjustsRunningBreakAndKeepsOneMinuteRemaining() {
         let engine = FlowTimerEngine()
         let start = Date(timeIntervalSince1970: 6_000)
+        let breakStartedAt = start.addingTimeInterval(26 * 60)
+        let changedAt = breakStartedAt.addingTimeInterval(2 * 60)
 
         let initial = engine.start(mode: .twentyFiveFive, now: start)
-        let inBreak = engine.startBreak(initial, now: start.addingTimeInterval(26 * 60))
-        let pausedBreak = engine.pause(inBreak, now: start.addingTimeInterval(27 * 60))
+        let inBreak = engine.startBreak(initial, now: breakStartedAt)
+        let extended = engine.seekForward(inBreak, now: changedAt)
+        let restored = engine.seekBackward(extended, now: changedAt)
+        let shortenedToOneMinute = engine.seekBackward(restored, now: changedAt)
+        let unchanged = engine.seekBackward(shortenedToOneMinute, now: changedAt)
 
-        #expect(inBreak.phase == .breakTime)
-        #expect(engine.seekForward(inBreak, now: start.addingTimeInterval(26 * 60)) == inBreak)
-        #expect(engine.seekBackward(inBreak, now: start.addingTimeInterval(26 * 60)) == inBreak)
-        #expect(engine.seekForward(pausedBreak, now: start.addingTimeInterval(28 * 60)) == pausedBreak)
-        #expect(engine.seekBackward(pausedBreak, now: start.addingTimeInterval(28 * 60)) == pausedBreak)
+        #expect(extended.phase == .breakTime)
+        #expect(extended.plannedBreakDurationSeconds == 10 * 60)
+        #expect(extended.plannedEndAt == inBreak.plannedEndAt.addingTimeInterval(5 * 60))
+        #expect(engine.remainingSeconds(for: extended, now: changedAt) == 8 * 60)
+        #expect(restored.plannedBreakDurationSeconds == 5 * 60)
+        #expect(engine.remainingSeconds(for: restored, now: changedAt) == 3 * 60)
+        #expect(shortenedToOneMinute.plannedBreakDurationSeconds == 3 * 60)
+        #expect(engine.remainingSeconds(for: shortenedToOneMinute, now: changedAt) == 60)
+        #expect(unchanged == shortenedToOneMinute)
+    }
+
+    @Test func seekUsesPausedBreakTimeAndPreservesLongBreakIdentity() {
+        let engine = FlowTimerEngine()
+        let start = Date(timeIntervalSince1970: 6_200)
+        let breakStartedAt = start.addingTimeInterval(25 * 60)
+        let pausedAt = breakStartedAt.addingTimeInterval(5 * 60)
+
+        let focus = engine.start(mode: .twentyFiveFive, now: start)
+        let longBreak = engine.startBreak(
+            focus,
+            now: breakStartedAt,
+            plannedBreakDurationSeconds: FlowSeriesPolicy.longBreakDurationSeconds
+        )
+        let paused = engine.pause(longBreak, now: pausedAt)
+        let shortened = engine.seekBackward(
+            paused,
+            now: pausedAt.addingTimeInterval(30 * 60)
+        )
+
+        #expect(shortened.phase == .paused)
+        #expect(shortened.pausedAt == pausedAt)
+        #expect(shortened.plannedBreakDurationSeconds == 15 * 60)
+        #expect(engine.remainingSeconds(for: shortened, now: pausedAt.addingTimeInterval(30 * 60)) == 10 * 60)
+        #expect(shortened.isLongBreak)
+    }
+
+    @Test func seekIsIgnoredOutsideActiveOrPausedTimerPhases() {
+        let engine = FlowTimerEngine()
+        let start = Date(timeIntervalSince1970: 6_400)
+        let initial = engine.start(mode: .twentyFiveFive, now: start)
+        let completed = engine.skipBreak(initial, now: start)
+
+        #expect(engine.seekForward(completed, now: start) == completed)
+        #expect(engine.seekBackward(completed, now: start) == completed)
     }
 
     @Test func changingModeMovesThePlannedEndWithoutResettingElapsedFocus() {
@@ -940,6 +984,16 @@ struct FlowTests {
         let flowBreak = try #require(context.fetch(FetchDescriptor<FlowBreak>()).first)
         #expect(flowBreak.isLongBreak)
         #expect(flowBreak.continuationDeadline == start.addingTimeInterval(25 * 60 + 30 * 60))
+
+        let breakStartedAt = start.addingTimeInterval(25 * 60)
+        store.seekBackward(modelContext: context, now: breakStartedAt)
+
+        #expect(store.timerState?.plannedBreakDurationSeconds == 15 * 60)
+        #expect(store.timerState?.plannedEndAt == breakStartedAt.addingTimeInterval(15 * 60))
+        #expect(store.timerState?.isLongBreak == true)
+        #expect(store.flowStreamBreakStyle == .long)
+        #expect(flowBreak.plannedDurationSeconds == 20 * 60)
+        #expect(flowBreak.continuationDeadline == breakStartedAt.addingTimeInterval(30 * 60))
     }
 
     @Test @MainActor func flowNotificationsWarnAfterOneActiveHourAndAccountForPause() throws {

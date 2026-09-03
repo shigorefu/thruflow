@@ -95,7 +95,7 @@ in saved data.
 
 Focus does not auto-stop or auto-switch to break. Break starts only after the user confirms a note. The dashboard and menu bar use the same square note panel with two stable actions: cancel on the left and a checkmark submit action on the right. The submit label is `メモなしで送信` while the editor is empty and `送信` after text is entered. Each submitted note is stored in `FlowSession.result`; a linked Flow also mirrors the text to `Todo.notes`. Submitting without a note preserves an existing Task note, and rest completion never prompts again. The rest timer ring is neutral gray and drains while the focus ring fills with the selected Area color.
 
-Flow sessions may share a stable series ID when the next session starts within 1.5 times the planned rest. The next rest after each 4 accumulated Blocks is a 20-minute `長休憩` with a 30-minute continuation window. History preserves separate Flow and rest records; only the dashboard renders their series as one continuous rail.
+Flow sessions may share a stable series ID when the next session starts within 1.5 times the planned rest. The next rest after each 4 accumulated Blocks is a 20-minute `長休憩` with a 30-minute continuation window. During focus or rest, `−5` and `+5` adjust the current timer while preserving elapsed time; subtraction keeps at least one minute remaining. Adjusting a long-rest countdown does not change its long-rest identity or canonical continuation window. History preserves separate Flow and rest records; only the dashboard renders their series as one continuous rail.
 
 The active creditable Flow updates the dashboard live. Completed timeline
 segments open the existing platform History detail/editor.

@@ -527,8 +527,7 @@ struct FlowMiniPlayerView: View {
     }
 
     private var canSeek: Bool {
-        activeFlowStore.phase == .focusing ||
-            (activeFlowStore.phase == .paused && activeFlowStore.timerState?.phaseBeforePause == .focusing)
+        activeFlowStore.timerState?.canAdjustRemainingTime == true
     }
 
     private var flowArea: Area? {

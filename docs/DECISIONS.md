@@ -204,7 +204,9 @@ date picker. The iPhone selector presents Help as a system bottom sheet, while
 macOS keeps a popover. Both platforms render the animated stream through the
 same shared Metal surface and shader. The iPhone transport exposes destroy,
 stop, break, subtract five minutes, Play/Pause, and add five minutes without changing the
-established player-card dimensions.
+established player-card dimensions. The five-minute controls operate during
+focus and rest, including either paused phase, while subtraction preserves at
+least one minute remaining.
 
 Reason: the primary touch targets must remain stable and legible on iPhone,
 while mode meaning and task syntax should not drift between platforms.
@@ -252,6 +254,10 @@ The minimal Dynamic Island slot always uses a countdown-style circular timer so
 its number and ring drain together toward zero when multiple Live Activities
 share the Island. Expanded and Lock Screen focus progress keeps its filling
 direction.
+Expanded Dynamic Island five-minute controls adjust either focus or rest through
+the same `ActiveFlowStore` operations as the in-app player. Rest adjustments
+preserve long-rest identity and never rewrite the canonical series continuation
+window stored on the associated break record.
 
 ## D-024: Home Screen Timer Widget Is A Read-Only Snapshot
 

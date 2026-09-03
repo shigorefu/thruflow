@@ -9,7 +9,7 @@ import Foundation
 struct FlowTimerEngine {
     static let minimumCreditableFocusDurationSeconds = 60
     static let seekStepSeconds = 5 * 60
-    static let minimumRemainingFocusSeconds = 60
+    static let minimumRemainingTimerSeconds = 60
 
     func start(mode: FlowMode, now: Date) -> FlowTimerState {
         FlowTimerState(
@@ -106,6 +106,7 @@ struct FlowTimerEngine {
         next.phase = .breakTime
         next.breakStartedAt = now
         next.plannedEndAt = now.addingTimeInterval(TimeInterval(breakSeconds))
+        next.plannedBreakIsLong = breakSeconds == FlowSeriesPolicy.longBreakDurationSeconds
         return next
     }
 
@@ -133,28 +134,28 @@ struct FlowTimerEngine {
         return next
     }
 
-    /// Adds five minutes to the current focus plan without changing elapsed time.
+    /// Adds five minutes to the current focus or break without changing elapsed time.
     func seekForward(_ state: FlowTimerState, now: Date) -> FlowTimerState {
-        guard isActiveFocus(state) else { return state }
-        return applyPlannedFocusDuration(
-            state.plannedFocusDurationSeconds + Self.seekStepSeconds,
+        guard state.canAdjustRemainingTime else { return state }
+        return applyPlannedTimerDuration(
+            plannedDuration(for: state) + Self.seekStepSeconds,
             to: state
         )
     }
 
     /// Removes up to five minutes while keeping at least one minute remaining.
     func seekBackward(_ state: FlowTimerState, now: Date) -> FlowTimerState {
-        guard isActiveFocus(state) else { return state }
+        guard state.canAdjustRemainingTime else { return state }
 
         let remaining = remainingSeconds(for: state, now: now)
-        guard remaining > Self.minimumRemainingFocusSeconds else { return state }
+        guard remaining > Self.minimumRemainingTimerSeconds else { return state }
 
         let reduction = min(
             Self.seekStepSeconds,
-            remaining - Self.minimumRemainingFocusSeconds
+            remaining - Self.minimumRemainingTimerSeconds
         )
-        return applyPlannedFocusDuration(
-            state.plannedFocusDurationSeconds - reduction,
+        return applyPlannedTimerDuration(
+            plannedDuration(for: state) - reduction,
             to: state
         )
     }
@@ -180,6 +181,25 @@ struct FlowTimerEngine {
         next.plannedBreakDurationSeconds = FlowMode.adaptiveBreakDurationSeconds(forFocusSeconds: duration)
         next.plannedEndAt = state.plannedEndAt.addingTimeInterval(TimeInterval(delta))
         return next
+    }
+
+    private func applyPlannedTimerDuration(_ duration: Int, to state: FlowTimerState) -> FlowTimerState {
+        guard state.isBreakTimer else {
+            return applyPlannedFocusDuration(duration, to: state)
+        }
+        guard duration != state.plannedBreakDurationSeconds else { return state }
+
+        let delta = duration - state.plannedBreakDurationSeconds
+        var next = state
+        next.plannedBreakDurationSeconds = duration
+        next.plannedEndAt = state.plannedEndAt.addingTimeInterval(TimeInterval(delta))
+        return next
+    }
+
+    private func plannedDuration(for state: FlowTimerState) -> Int {
+        state.isBreakTimer
+            ? state.plannedBreakDurationSeconds
+            : state.plannedFocusDurationSeconds
     }
 
     func remainingSeconds(for state: FlowTimerState, now: Date) -> Int {
@@ -232,10 +252,6 @@ struct FlowTimerEngine {
         }
     }
 
-    private func isActiveFocus(_ state: FlowTimerState) -> Bool {
-        state.phase == .focusing ||
-            (state.phase == .paused && state.phaseBeforePause == .focusing)
-    }
 }
 
 struct FlowTimerState: Equatable {
@@ -254,10 +270,21 @@ struct FlowTimerState: Equatable {
     var breakStartedAt: Date?
     var wasPaused: Bool = false
     var interruptionCount: Int = 0
+    var plannedBreakIsLong: Bool?
+
+    var isBreakTimer: Bool {
+        phase == .breakTime || (phase == .paused && phaseBeforePause == .breakTime)
+    }
+
+    var canAdjustRemainingTime: Bool {
+        phase == .focusing || isBreakTimer ||
+            (phase == .paused && phaseBeforePause == .focusing)
+    }
 
     var isLongBreak: Bool {
-        plannedBreakDurationSeconds == FlowSeriesPolicy.longBreakDurationSeconds &&
-            (phase == .breakTime || (phase == .paused && phaseBeforePause == .breakTime))
+        isBreakTimer &&
+            (plannedBreakIsLong ??
+                (plannedBreakDurationSeconds == FlowSeriesPolicy.longBreakDurationSeconds))
     }
 
     var nextAdaptiveFocusDurationSeconds: Int? {

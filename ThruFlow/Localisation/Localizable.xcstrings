@@ -11328,34 +11328,34 @@
         }
       }
     },
-    "集中の残り時間を5分短くします。" : {
+    "現在のタイマーの残り時間を5分短くします。" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Subtracts 5 minutes from the remaining focus time."
+            "value" : "Subtracts 5 minutes from the current timer."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Уменьшает оставшееся время фокуса на 5 минут."
+            "value" : "Уменьшает оставшееся время текущего таймера на 5 минут."
           }
         }
       }
     },
-    "集中の残り時間を5分長くします。" : {
+    "現在のタイマーの残り時間を5分長くします。" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Adds 5 minutes to the remaining focus time."
+            "value" : "Adds 5 minutes to the current timer."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Добавляет 5 минут к оставшемуся времени фокуса."
+            "value" : "Добавляет 5 минут к оставшемуся времени текущего таймера."
           }
         }
       }
