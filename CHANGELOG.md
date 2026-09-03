@@ -8,6 +8,9 @@ All notable user-facing changes to ThruFlow are documented in this file.
 
 - Renamed source files, application/domain APIs, views, widgets, tests, and
   developer documentation from Direction to Area.
+- The Flow timer now uses the rest color for both its resume control and ring
+  while paused, and keeps the selected Area color while focus overtime counts
+  upward on macOS, iPhone, and Apple Watch.
 - Renamed the machine-readable Statistics CSV column from `direction` to
   `area`.
 - Markdown-only pull requests and pushes now skip Apple builds while retaining

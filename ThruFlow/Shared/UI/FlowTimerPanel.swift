@@ -287,6 +287,25 @@ enum FlowTimerPanelAction: Equatable, Sendable {
     case startBreak
 }
 
+enum FlowTimerPrimaryTintRole: Equatable, Sendable {
+    case area
+    case paused
+    case breakTime
+
+    init(phase: FlowPhase, isFocusOvertime: Bool) {
+        switch phase {
+        case .paused:
+            self = .paused
+        case .breakTime:
+            self = .breakTime
+        case .focusing where isFocusOvertime:
+            self = .area
+        default:
+            self = .area
+        }
+    }
+}
+
 struct FlowTimerTransportPresentation {
     let primarySymbol: String
     let primaryLabel: String

@@ -12,6 +12,13 @@ import UserNotifications
 @testable import ThruFlow
 
 struct FlowTests {
+    @Test @MainActor func timerPrimaryControlUsesSemanticPhaseColors() {
+        #expect(FlowTimerPrimaryTintRole(phase: .focusing, isFocusOvertime: false) == .area)
+        #expect(FlowTimerPrimaryTintRole(phase: .focusing, isFocusOvertime: true) == .area)
+        #expect(FlowTimerPrimaryTintRole(phase: .paused, isFocusOvertime: false) == .paused)
+        #expect(FlowTimerPrimaryTintRole(phase: .breakTime, isFocusOvertime: false) == .breakTime)
+    }
+
     @Test @MainActor func sprintUsesNewRawValueAndReadsLegacyPersistenceValue() throws {
         #expect(FlowMode.sprint.rawValue == "sprint")
         #expect(FlowMode.persistedMode(rawValue: "sprint") == .sprint)

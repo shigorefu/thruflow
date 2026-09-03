@@ -285,10 +285,10 @@ private struct WatchTimerView: View {
     private func timerRing(now: Date, size: CGFloat) -> some View {
         ZStack {
             Circle()
-                .stroke(tint.opacity(0.2), lineWidth: 8)
+                .stroke(timerTint.opacity(0.2), lineWidth: 8)
             Circle()
                 .trim(from: 0, to: activeFlowStore.phaseProgress(now: now))
-                .stroke(tint, style: StrokeStyle(lineWidth: 8, lineCap: .round))
+                .stroke(timerTint, style: StrokeStyle(lineWidth: 8, lineCap: .round))
                 .rotationEffect(.degrees(-90))
 
             VStack(spacing: 0) {
@@ -324,7 +324,7 @@ private struct WatchTimerView: View {
                         .font(.body.weight(.bold))
                         .foregroundStyle(.white)
                         .frame(width: primarySize, height: primarySize)
-                        .background(tint, in: Circle())
+                        .background(primaryTint, in: Circle())
                 }
                 .buttonStyle(.plain)
                 .disabled(selectedArea == nil)
@@ -413,6 +413,22 @@ private struct WatchTimerView: View {
         activeFlowStore.isBreakPhase
             ? .secondary
             : Color(hex: selectedArea?.colorHex ?? "#0A84FF")
+    }
+
+    private var primaryTint: Color {
+        switch FlowTimerPrimaryTintRole(
+            phase: activeFlowStore.phase,
+            isFocusOvertime: false
+        ) {
+        case .area:
+            Color(hex: selectedArea?.colorHex ?? "#0A84FF")
+        case .paused, .breakTime:
+            .secondary
+        }
+    }
+
+    private var timerTint: Color {
+        primaryTint
     }
 
     private var primarySymbol: String {

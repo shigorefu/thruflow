@@ -285,7 +285,7 @@ struct IOSFlowView: View {
             minHeight: minHeight,
             timer: FlowTimerPresentation(
                 progress: activeFlowStore.phaseProgress(now: now),
-                tint: tint,
+                tint: timerTint(at: now),
                 eyebrow: activeFlowStore.phase.displayName,
                 timeText: timerText(at: now),
                 footer: activeFlowStore.selectedMode.displayName
@@ -344,7 +344,7 @@ struct IOSFlowView: View {
             presentation: FlowTimerTransportPresentation(
                 primarySymbol: primarySymbol(at: now),
                 primaryLabel: primaryActionTitle(at: now),
-                primaryTint: tint,
+                primaryTint: primaryTint(at: now),
                 isPrimaryEnabled: selectedArea != nil,
                 canSeek: canSeek,
                 canDestroy: activeFlowStore.timerState != nil,
@@ -545,6 +545,22 @@ struct IOSFlowView: View {
     private var tint: Color {
         if activeFlowStore.isBreakPhase { return Color.secondary }
         return Color(hex: selectedArea?.colorHex ?? "#007AFF")
+    }
+
+    private func primaryTint(at date: Date) -> Color {
+        switch FlowTimerPrimaryTintRole(
+            phase: activeFlowStore.phase,
+            isFocusOvertime: activeFlowStore.isFocusOvertime(now: date)
+        ) {
+        case .area:
+            Color(hex: selectedArea?.colorHex ?? "#007AFF")
+        case .paused, .breakTime:
+            .secondary
+        }
+    }
+
+    private func timerTint(at date: Date) -> Color {
+        primaryTint(at: date)
     }
 
     private var backgroundColor: Color {

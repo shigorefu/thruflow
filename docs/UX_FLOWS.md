@@ -187,7 +187,10 @@ At the planned focus end, Flow does not auto-switch. The timer continues. The us
 
 While focus overtime is running, the primary pause control becomes `休憩` on
 macOS and iOS. Selecting it opens the normal break-memo flow; the break still
-does not start automatically.
+does not start automatically. Overtime keeps the selected Area color instead
+of adopting the rest color. Pausing a Flow applies the rest color to both the
+`再開` control and the progress ring, while actual rest keeps its existing
+platform presentation.
 
 Every valid `休憩` selection immediately sends one short reverse release wave
 through the visible Flow stream. This is acknowledgement of the control only:

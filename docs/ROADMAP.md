@@ -162,6 +162,9 @@ Every item below is required before publishing 1.0:
 - [x] Isolate Debug and Production SwiftData stores so Development CloudKit
   export metadata cannot suppress the later Production export. Keep the
   shipped Production filename `default.store` unchanged.
+- [x] Use the rest color for both the Flow timer's resume control and progress
+  ring while paused, while keeping focus overtime Area-colored on macOS,
+  iPhone, and Apple Watch.
 
 ### Delivery
 
