@@ -723,7 +723,7 @@ private struct OnboardingFlowDemo: View {
         }()
         let primaryTint: Color = {
             if projection.stage == .pressingBreak {
-                return demoPanelStyle == .dashboard ? .blue : taskTint
+                return taskTint
             }
             if isBreak {
                 return demoPanelStyle == .mobile ? .secondary : .blue

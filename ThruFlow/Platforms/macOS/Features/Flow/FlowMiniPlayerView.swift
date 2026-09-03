@@ -830,20 +830,21 @@ struct FlowMiniPlayerView: View {
     }
 
     private var primaryButtonColor: Color {
-        switch activeFlowStore.phase {
-        case .focusing:
-            activeFlowStore.isFocusOvertime(now: activeFlowStore.displayDate) ? .blue : artworkColor
-        case .paused:
-            .green
-        case .breakTime:
-            .blue
-        default:
+        switch FlowTimerPrimaryTintRole(
+            phase: activeFlowStore.phase,
+            isFocusOvertime: activeFlowStore.isFocusOvertime(now: activeFlowStore.displayDate)
+        ) {
+        case .area:
             artworkColor
+        case .paused, .breakTime:
+            .blue
         }
     }
 
     private var timerRingColor: Color {
-        activeFlowStore.isBreakPhase ? Color.secondary.opacity(0.72) : primaryButtonColor
+        if activeFlowStore.phase == .paused { return primaryButtonColor }
+        if activeFlowStore.isBreakPhase { return Color.secondary.opacity(0.72) }
+        return artworkColor
     }
 
     private var adaptiveDecisionBar: some View {
