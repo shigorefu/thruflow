@@ -200,7 +200,7 @@ private struct FlowActivityCircularProgress: View {
             } else {
                 ProgressView(
                     timerInterval: state.timerRange,
-                    countsDown: state.progressCountsDown
+                    countsDown: state.minimalProgressCountsDown
                 )
             }
         }

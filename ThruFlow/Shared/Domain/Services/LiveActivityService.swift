@@ -17,6 +17,20 @@ enum FlowLiveActivityTimerKind: String, Codable, Equatable, Hashable {
     case breakTime
 }
 
+enum FlowLiveActivityProgressSurface: Equatable, Sendable {
+    case standard
+    case minimal
+
+    nonisolated func countsDown(timerKind: FlowLiveActivityTimerKind) -> Bool {
+        switch self {
+        case .standard:
+            timerKind == .breakTime
+        case .minimal:
+            true
+        }
+    }
+}
+
 struct FlowLiveActivityContent: Equatable {
     var sessionID: UUID
     var taskEmoji: String

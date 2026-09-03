@@ -10,6 +10,21 @@ import Testing
 
 @MainActor
 struct FlowTimerWidgetSnapshotTests {
+    @Test func minimalLiveActivityAlwaysCountsRemainingTimeDown() {
+        #expect(
+            FlowLiveActivityProgressSurface.minimal.countsDown(timerKind: .focus)
+        )
+        #expect(
+            FlowLiveActivityProgressSurface.minimal.countsDown(timerKind: .breakTime)
+        )
+        #expect(
+            !FlowLiveActivityProgressSurface.standard.countsDown(timerKind: .focus)
+        )
+        #expect(
+            FlowLiveActivityProgressSurface.standard.countsDown(timerKind: .breakTime)
+        )
+    }
+
     @Test func liveActivityBreakPresentationReplacesTaskContext() {
         #expect(
             FlowLiveActivityPresentation.emoji(
