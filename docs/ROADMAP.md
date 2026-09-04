@@ -172,6 +172,8 @@ Every item below is required before publishing 1.0:
 - [x] Allow `−5` and `+5` to adjust the active or paused rest timer on macOS,
   iPhone, Apple Watch, and expanded Dynamic Island while preserving at least
   one minute and keeping long rests classified as long rests.
+- [x] Animate timer-ring progress and the active Elastic timeline plan when
+  `−5`, `+5`, or a focus-mode change adjusts the current duration.
 
 ### Delivery
 

@@ -211,6 +211,14 @@ struct FlowTimerEngine {
         return Int(state.plannedEndAt.timeIntervalSince(referenceDate).rounded(.up))
     }
 
+    func timelineEndAt(for state: FlowTimerState, now: Date) -> Date? {
+        guard state.canAdjustRemainingTime else { return nil }
+        let currentReference = state.phase == .paused
+            ? (state.pausedAt ?? now)
+            : now
+        return max(state.plannedEndAt, currentReference)
+    }
+
     func actualFocusDuration(for state: FlowTimerState, now: Date) -> Int {
         if let actualFocusDurationSeconds = state.actualFocusDurationSeconds {
             return actualFocusDurationSeconds

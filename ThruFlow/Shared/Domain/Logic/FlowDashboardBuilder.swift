@@ -175,10 +175,12 @@ struct FlowTimelineRange: Equatable {
         date: Date,
         segments: [FlowDashboardSegment],
         breaks: [FlowDashboardBreak] = [],
+        activeTimerEndAt: Date? = nil,
         calendar: Calendar = .current
     ) {
         let firstDate = (segments.map(\.startedAt) + breaks.map(\.startedAt)).min() ?? date
-        let lastDate = (segments.map(\.endedAt) + breaks.map(\.endedAt)).max() ?? date
+        let timerEndDates = activeTimerEndAt.map { [$0] } ?? []
+        let lastDate = (segments.map(\.endedAt) + breaks.map(\.endedAt) + timerEndDates).max() ?? date
         let firstHour = calendar.dateInterval(of: .hour, for: firstDate)
         let lastHour = calendar.dateInterval(of: .hour, for: lastDate)
         let resolvedStart = firstHour?.start ?? firstDate

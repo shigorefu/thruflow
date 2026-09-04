@@ -174,23 +174,31 @@ private struct FlowActivityTimeLabel: View {
 }
 
 private struct FlowActivityProgressView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let state: FlowActivityAttributes.ContentState
 
     var body: some View {
-        if state.isPaused {
-            ProgressView(value: state.progress)
+        Group {
+            if state.isPaused {
+                ProgressView(value: state.progress)
+                    .labelsHidden()
+            } else {
+                ProgressView(
+                    timerInterval: state.timerRange,
+                    countsDown: state.progressCountsDown
+                )
                 .labelsHidden()
-        } else {
-            ProgressView(
-                timerInterval: state.timerRange,
-                countsDown: state.progressCountsDown
-            )
-            .labelsHidden()
+            }
         }
+        .animation(
+            reduceMotion ? nil : .easeInOut(duration: 0.38),
+            value: state.plannedEndAt
+        )
     }
 }
 
 private struct FlowActivityCircularProgress: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let state: FlowActivityAttributes.ContentState
 
     var body: some View {
@@ -205,6 +213,10 @@ private struct FlowActivityCircularProgress: View {
             }
         }
         .progressViewStyle(.circular)
+        .animation(
+            reduceMotion ? nil : .easeInOut(duration: 0.38),
+            value: state.plannedEndAt
+        )
         .accessibilityLabel(state.statusTitle)
     }
 }

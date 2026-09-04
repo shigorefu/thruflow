@@ -46,8 +46,8 @@ struct FlowTimerDial: View {
 
         var progressAnimation: Animation? {
             switch self {
-            case .mobile: .linear(duration: 0.25)
-            case .dashboard: nil
+            case .mobile, .dashboard:
+                .easeInOut(duration: 0.38)
             }
         }
     }

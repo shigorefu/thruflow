@@ -31,16 +31,22 @@ struct IOSFlowTimelineView: View {
     let onOpenHistory: (IOSFlowTimelineSelection) -> Void
 
     @Environment(\.calendar) private var calendar
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @EnvironmentObject private var activeFlowStore: ActiveFlowStore
     @State private var selectedTimelineItem: IOSFlowTimelineSelection?
     @State private var selectedAnchorX: CGFloat = 0.5
 
     var body: some View {
+        let activeTimerEndAt = activeFlowStore.activeTimerTimelineEndAt(now: now)
         let range = FlowTimelineRange(
             date: now,
             segments: snapshot.segments,
             breaks: snapshot.breaks,
+            activeTimerEndAt: activeTimerEndAt,
             calendar: calendar
         )
+        let activeSeriesID = snapshot.breaks.first(where: \.isActive)?.seriesID
+            ?? snapshot.sessionGroups.first(where: \.isActive)?.segments.first?.seriesID
 
         VStack(alignment: .leading, spacing: 7) {
             Text(String(localized: "今日のタイムライン"))
@@ -56,7 +62,9 @@ struct IOSFlowTimelineView: View {
                     ForEach(snapshot.seriesSpans) { span in
                         timelineCapsule(
                             start: span.startedAt,
-                            end: span.endedAt,
+                            end: span.id == activeSeriesID
+                                ? (activeTimerEndAt ?? span.endedAt)
+                                : span.endedAt,
                             range: range,
                             width: proxy.size.width,
                             color: Color.secondary.opacity(0.42),
@@ -69,10 +77,18 @@ struct IOSFlowTimelineView: View {
                             group,
                             range: range,
                             width: proxy.size.width,
-                            height: 14
+                            height: 14,
+                            activeTimerEndAt: activeTimerEndAt
                         )
                     }
                 }
+                .animation(
+                    reduceMotion ? nil : .easeInOut(duration: 0.38),
+                    value: timelineAnimationDates(
+                        range: range,
+                        activeTimerEndAt: activeTimerEndAt
+                    )
+                )
                 .frame(
                     width: proxy.size.width,
                     height: proxy.size.height,
@@ -135,12 +151,16 @@ struct IOSFlowTimelineView: View {
         _ group: FlowDashboardSessionGroup,
         range: FlowTimelineRange,
         width: CGFloat,
-        height: CGFloat
+        height: CGFloat,
+        activeTimerEndAt: Date?
     ) -> some View {
         let startX = width * range.fraction(for: group.startedAt)
-        let endX = width * range.fraction(for: group.endedAt)
+        let displayedEndAt = group.isActive
+            ? (activeTimerEndAt ?? group.endedAt)
+            : group.endedAt
+        let endX = width * range.fraction(for: displayedEndAt)
         let groupWidth = max(endX - startX, 4)
-        let groupDuration = max(1, group.endedAt.timeIntervalSince(group.startedAt))
+        let groupDuration = max(1, displayedEndAt.timeIntervalSince(group.startedAt))
 
         return ZStack(alignment: .leading) {
             ForEach(group.segments) { segment in
@@ -157,6 +177,12 @@ struct IOSFlowTimelineView: View {
             }
         }
         .frame(width: groupWidth, height: height, alignment: .leading)
+        .background {
+            if group.isActive {
+                Color(hex: group.segments.first?.colorHex ?? "#8E8E93")
+                    .opacity(0.2)
+            }
+        }
         .clipShape(RoundedRectangle(cornerRadius: height / 2))
         .shadow(
             color: Color(hex: group.segments.first?.colorHex ?? "#8E8E93")
@@ -164,6 +190,13 @@ struct IOSFlowTimelineView: View {
             radius: group.isActive ? 5 : 4
         )
         .offset(x: startX)
+    }
+
+    private func timelineAnimationDates(
+        range: FlowTimelineRange,
+        activeTimerEndAt: Date?
+    ) -> [Date] {
+        [range.start, range.end] + (activeTimerEndAt.map { [$0] } ?? [])
     }
 
     private var timelinePopoverBinding: Binding<Bool> {

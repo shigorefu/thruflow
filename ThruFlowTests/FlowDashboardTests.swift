@@ -110,6 +110,20 @@ struct FlowDashboardTests {
         #expect(range.duration == 2 * 3_600)
     }
 
+    @Test func elasticTimelineIncludesTheActiveTimerPlan() {
+        let now = Date(timeIntervalSince1970: 14 * 3_600 + 37 * 60)
+        let plannedEndAt = Date(timeIntervalSince1970: 17 * 3_600 + 5 * 60)
+        let range = FlowTimelineRange(
+            date: now,
+            segments: [],
+            activeTimerEndAt: plannedEndAt,
+            calendar: calendar
+        )
+
+        #expect(range.start == Date(timeIntervalSince1970: 14 * 3_600))
+        #expect(range.end == Date(timeIntervalSince1970: 18 * 3_600))
+    }
+
     @Test func elasticTimelineGrowsFromFirstFlowHourThroughLastFlowHour() {
         let day = Date(timeIntervalSince1970: 86_400)
         let area = Area(name: "仕事", type: .neutral)

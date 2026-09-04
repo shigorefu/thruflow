@@ -187,6 +187,7 @@ private struct WatchFlowStreamView: View {
 }
 
 private struct WatchTimerView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.calendar) private var calendar
     @Environment(\.modelContext) private var modelContext
@@ -290,6 +291,10 @@ private struct WatchTimerView: View {
                 .trim(from: 0, to: activeFlowStore.phaseProgress(now: now))
                 .stroke(timerTint, style: StrokeStyle(lineWidth: 8, lineCap: .round))
                 .rotationEffect(.degrees(-90))
+                .animation(
+                    reduceMotion ? nil : .easeInOut(duration: 0.38),
+                    value: activeFlowStore.phaseProgress(now: now)
+                )
 
             VStack(spacing: 0) {
                 Text(activeFlowStore.phase.displayName)
