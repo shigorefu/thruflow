@@ -781,6 +781,11 @@ final class ActiveFlowStore: ObservableObject {
         return min(max(1 - (Double(remaining) / Double(duration)), 0), 1)
     }
 
+    func activeTimerTimelineEndAt(now: Date = .now) -> Date? {
+        guard let timerState else { return nil }
+        return engine.timelineEndAt(for: timerState, now: now)
+    }
+
     func isFocusOvertime(now: Date = .now) -> Bool {
         guard let timerState, timerState.phase == .focusing else { return false }
         return engine.remainingSeconds(for: timerState, now: now) <= 0

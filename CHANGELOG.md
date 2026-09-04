@@ -16,6 +16,9 @@ All notable user-facing changes to ThruFlow are documented in this file.
 - The `−5` and `+5` timer controls now adjust rest as well as focus on macOS,
   iPhone, Apple Watch, and expanded Dynamic Island. Subtraction keeps one minute
   remaining, and adjusted long rests retain their long-rest behavior.
+- Timer rings and the active Elastic timeline now animate when seeking or
+  changing focus mode; the timeline distinguishes recorded time from the
+  translucent remaining plan.
 - Month Dots now cross out non-interactive boundary cells from adjacent months
   instead of presenting them like empty days in the selected month.
 - Renamed the machine-readable Statistics CSV column from `direction` to

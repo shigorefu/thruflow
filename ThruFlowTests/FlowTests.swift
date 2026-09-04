@@ -422,6 +422,26 @@ struct FlowTests {
         #expect(shortened.isLongBreak)
     }
 
+    @Test func timelineEndTracksSeekAndModeChangesButStaysFixedWhilePaused() {
+        let engine = FlowTimerEngine()
+        let start = Date(timeIntervalSince1970: 6_300)
+        let changedAt = start.addingTimeInterval(5 * 60)
+        let initial = engine.start(mode: .twentyFiveFive, now: start)
+        let extended = engine.seekForward(initial, now: changedAt)
+        let deep = engine.changeMode(.fiftyTen, for: extended)
+        let paused = engine.pause(deep, now: changedAt)
+
+        #expect(engine.timelineEndAt(for: initial, now: changedAt) == start.addingTimeInterval(25 * 60))
+        #expect(engine.timelineEndAt(for: extended, now: changedAt) == start.addingTimeInterval(30 * 60))
+        #expect(engine.timelineEndAt(for: deep, now: changedAt) == start.addingTimeInterval(50 * 60))
+        #expect(
+            engine.timelineEndAt(
+                for: paused,
+                now: changedAt.addingTimeInterval(2 * 60 * 60)
+            ) == start.addingTimeInterval(50 * 60)
+        )
+    }
+
     @Test func seekIsIgnoredOutsideActiveOrPausedTimerPhases() {
         let engine = FlowTimerEngine()
         let start = Date(timeIntervalSince1970: 6_400)

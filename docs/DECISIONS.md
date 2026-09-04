@@ -206,7 +206,10 @@ same shared Metal surface and shader. The iPhone transport exposes destroy,
 stop, break, subtract five minutes, Play/Pause, and add five minutes without changing the
 established player-card dimensions. The five-minute controls operate during
 focus and rest, including either paused phase, while subtraction preserves at
-least one minute remaining.
+least one minute remaining. The shared timer ring animates between changed
+progress proportions after seeking or changing focus mode. The Elastic dashboard
+timeline keeps recorded time solid, shows the remaining plan translucently, and
+animates its active endpoint and scale when that plan changes.
 
 Reason: the primary touch targets must remain stable and legible on iPhone,
 while mode meaning and task syntax should not drift between platforms.

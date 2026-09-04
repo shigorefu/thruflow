@@ -17,6 +17,7 @@ struct FlowDashboardView: View {
         minimumFlowStageWidth + widePlayerWidth + panelSpacing
 
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.calendar) private var calendar
     @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.locale) private var locale
@@ -358,11 +359,15 @@ struct FlowDashboardView: View {
     }
 
     private func timelineSurface(snapshot: FlowDashboardSnapshot, now: Date) -> some View {
+        let activeTimerEndAt = activeFlowStore.activeTimerTimelineEndAt(now: now)
         let range = FlowTimelineRange(
             date: now,
             segments: snapshot.segments,
-            breaks: snapshot.breaks
+            breaks: snapshot.breaks,
+            activeTimerEndAt: activeTimerEndAt
         )
+        let activeSeriesID = snapshot.breaks.first(where: \.isActive)?.seriesID
+            ?? snapshot.sessionGroups.first(where: \.isActive)?.segments.first?.seriesID
 
         return VStack(alignment: .leading, spacing: 8) {
             Text(String(localized: "今日のタイムライン"))
@@ -389,9 +394,12 @@ struct FlowDashboardView: View {
                         }
 
                     ForEach(snapshot.seriesSpans) { span in
+                        let displayedEndAt = span.id == activeSeriesID
+                            ? (activeTimerEndAt ?? span.endedAt)
+                            : span.endedAt
                         let width = intervalWidth(
                             from: span.startedAt,
-                            to: span.endedAt,
+                            to: displayedEndAt,
                             range: range,
                             totalWidth: proxy.size.width,
                             minimumWidth: 12
@@ -403,7 +411,7 @@ struct FlowDashboardView: View {
                             .position(
                                 x: intervalCenter(
                                     from: span.startedAt,
-                                    to: span.endedAt,
+                                    to: displayedEndAt,
                                     range: range,
                                     totalWidth: proxy.size.width
                                 ),
@@ -413,9 +421,12 @@ struct FlowDashboardView: View {
                     }
 
                     ForEach(snapshot.sessionGroups) { group in
+                        let displayedEndAt = group.isActive
+                            ? (activeTimerEndAt ?? group.endedAt)
+                            : group.endedAt
                         let width = intervalWidth(
                             from: group.startedAt,
-                            to: group.endedAt,
+                            to: displayedEndAt,
                             range: range,
                             totalWidth: proxy.size.width,
                             minimumWidth: 5
@@ -426,7 +437,10 @@ struct FlowDashboardView: View {
                             ForEach(group.segments) { segment in
                                 let segmentStart = max(0, segment.startedAt.timeIntervalSince(group.startedAt))
                                 let segmentDuration = max(1, segment.endedAt.timeIntervalSince(segment.startedAt))
-                                let groupDuration = max(1, group.endedAt.timeIntervalSince(group.startedAt))
+                                let groupDuration = max(
+                                    1,
+                                    displayedEndAt.timeIntervalSince(group.startedAt)
+                                )
 
                                 Rectangle()
                                     .fill(Color(hex: segment.colorHex))
@@ -438,6 +452,12 @@ struct FlowDashboardView: View {
                             }
                         }
                         .frame(width: width, height: height, alignment: .leading)
+                        .background {
+                            if group.isActive {
+                                Color(hex: group.segments.first?.colorHex ?? "#8E8E93")
+                                    .opacity(0.2)
+                            }
+                        }
                         .clipShape(RoundedRectangle(cornerRadius: height / 2))
                         .shadow(
                             color: Color(hex: group.segments.first?.colorHex ?? "#8E8E93")
@@ -447,7 +467,7 @@ struct FlowDashboardView: View {
                         .position(
                             x: intervalCenter(
                                 from: group.startedAt,
-                                to: group.endedAt,
+                                to: displayedEndAt,
                                 range: range,
                                 totalWidth: proxy.size.width
                             ),
@@ -555,6 +575,13 @@ struct FlowDashboardView: View {
 
                 }
                 .frame(maxHeight: .infinity)
+                .animation(
+                    reduceMotion ? nil : .easeInOut(duration: 0.38),
+                    value: timelineAnimationDates(
+                        range: range,
+                        activeTimerEndAt: activeTimerEndAt
+                    )
+                )
                 .onContinuousHover { phase in
                     switch phase {
                     case .active(let location):
@@ -613,6 +640,13 @@ struct FlowDashboardView: View {
                 }
             }
         }
+    }
+
+    private func timelineAnimationDates(
+        range: FlowTimelineRange,
+        activeTimerEndAt: Date?
+    ) -> [Date] {
+        [range.start, range.end] + (activeTimerEndAt.map { [$0] } ?? [])
     }
 
     private var taskColumns: some View {
