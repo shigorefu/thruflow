@@ -408,8 +408,9 @@ real cell exposes a system hover bubble above the card layer with its daily
 metrics, except Year Dots, which remain display-only because their cells are too
 small for dependable targeting. Current ranges stop at today: future calendar
 dates, export/custom dates, Trend/Dots buckets, and forward navigation are
-disabled or clipped. The Year calendar lists the
-current year first and does not offer future years.
+disabled or clipped. Preset Month Dots completes its boundary weeks with
+crossed-out, non-interactive cells for dates outside the selected month. The
+Year calendar lists the current year first and does not offer future years.
 Flow switching is resolved per segment; the model does not add a Project
 entity. The compact iPhone and widget contribution ranges from D-009 remain
 unchanged until explicitly superseded.

@@ -154,6 +154,7 @@ struct IOSStatisticsView: View {
                     IOSStatisticsDotsCard(
                         mode: $dotsMode,
                         period: presentationPeriod,
+                        marksOutsideMonth: selectedPeriod == .month && !usesCustomRange,
                         flowDays: currentSnapshot.flowDays,
                         achievementDays: currentSnapshot.achievementDays,
                         maximumInteractiveDate: today,
@@ -1132,6 +1133,7 @@ private struct IOSStatisticsDotsCard: View {
 
     @Binding var mode: StatisticsMode
     let period: StatisticsPeriod
+    let marksOutsideMonth: Bool
     let flowDays: [StatisticsDay]
     let achievementDays: [AchievementDay]
     let maximumInteractiveDate: Date
@@ -1161,6 +1163,12 @@ private struct IOSStatisticsDotsCard: View {
 
     private var paddedDays: [IOSStatisticsContributionDay?] {
         guard let first = days.first else { return [] }
+        if marksOutsideMonth {
+            return StatisticsMonthGridPadding(
+                dates: days.map(\.date),
+                calendar: calendar
+            ).padding(days)
+        }
         let weekday = calendar.component(.weekday, from: first.date)
         let leading = (weekday - calendar.firstWeekday + 7) % 7
         return Array(repeating: nil, count: leading) + days.map(Optional.some)
@@ -1243,6 +1251,7 @@ private struct IOSStatisticsDotsCard: View {
                 IOSStatisticsContributionCell(
                     day: day,
                     maxValue: maxValue,
+                    marksOutsidePeriod: marksOutsideMonth && day == nil,
                     onSelectDay: onSelectDay
                 )
                 .aspectRatio(1, contentMode: .fit)
@@ -1254,6 +1263,7 @@ private struct IOSStatisticsDotsCard: View {
 private struct IOSStatisticsContributionCell: View {
     let day: IOSStatisticsContributionDay?
     let maxValue: Int
+    var marksOutsidePeriod = false
     let onSelectDay: (IOSStatisticsContributionDay) -> Void
 
     var body: some View {
@@ -1267,6 +1277,20 @@ private struct IOSStatisticsContributionCell: View {
                 .overlay {
                     RoundedRectangle(cornerRadius: 5, style: .continuous)
                         .strokeBorder(Color.primary.opacity(0.055))
+                }
+                .overlay {
+                    if marksOutsidePeriod {
+                        GeometryReader { geometry in
+                            Path { path in
+                                path.move(to: CGPoint(x: 4, y: geometry.size.height - 4))
+                                path.addLine(to: CGPoint(x: geometry.size.width - 4, y: 4))
+                            }
+                            .stroke(
+                                Color.secondary.opacity(0.42),
+                                style: StrokeStyle(lineWidth: 1, lineCap: .round)
+                            )
+                        }
+                    }
                 }
         }
         .buttonStyle(.plain)
