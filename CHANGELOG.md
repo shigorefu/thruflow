@@ -16,6 +16,8 @@ All notable user-facing changes to ThruFlow are documented in this file.
 - The `−5` and `+5` timer controls now adjust rest as well as focus on macOS,
   iPhone, Apple Watch, and expanded Dynamic Island. Subtraction keeps one minute
   remaining, and adjusted long rests retain their long-rest behavior.
+- Month Dots now cross out non-interactive boundary cells from adjacent months
+  instead of presenting them like empty days in the selected month.
 - Renamed the machine-readable Statistics CSV column from `direction` to
   `area`.
 - Markdown-only pull requests and pushes now skip Apple builds while retaining

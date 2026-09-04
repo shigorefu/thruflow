@@ -33,6 +33,20 @@ struct StatisticsPeriodTests {
         #expect(calendar.component(.month, from: selectedDate) == 8)
     }
 
+    @Test func monthGridPadsDaysOutsideTheSelectedMonthToCompleteWeeks() {
+        let augustDates = (1...31).map { date(2026, 8, $0) }
+        let padding = StatisticsMonthGridPadding(dates: augustDates, calendar: calendar)
+        let paddedDates = padding.padding(augustDates)
+
+        #expect(padding.leadingPlaceholderCount == 5)
+        #expect(padding.trailingPlaceholderCount == 6)
+        #expect(paddedDates.count == 42)
+        #expect(paddedDates.prefix(5).allSatisfy { $0 == nil })
+        #expect(paddedDates[5] == date(2026, 8, 1))
+        #expect(paddedDates[35] == date(2026, 8, 31))
+        #expect(paddedDates.suffix(6).allSatisfy { $0 == nil })
+    }
+
     @Test func weekBoundsIncludeTheEquivalentPreviousWeek() {
         let filter = StatisticsPeriodFilter(
             period: .week,

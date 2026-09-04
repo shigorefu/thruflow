@@ -213,6 +213,7 @@ struct StatisticsView: View {
                     mode: $dotsMode,
                     period: presentationPeriod,
                     usesCompactCustomGrid: usesCustomRange && displayedDayCount > 7,
+                    marksOutsideMonth: selectedPeriod == .month && !usesCustomRange,
                     flowDays: snapshot.flowDays,
                     achievementDays: snapshot.achievementDays,
                     maximumInteractiveDate: today,
@@ -239,6 +240,7 @@ struct StatisticsView: View {
                             mode: $dotsMode,
                             period: presentationPeriod,
                             usesCompactCustomGrid: usesCustomRange && displayedDayCount > 7,
+                            marksOutsideMonth: selectedPeriod == .month && !usesCustomRange,
                             flowDays: snapshot.flowDays,
                             achievementDays: snapshot.achievementDays,
                             maximumInteractiveDate: today,
@@ -264,6 +266,7 @@ struct StatisticsView: View {
                             mode: $dotsMode,
                             period: presentationPeriod,
                             usesCompactCustomGrid: usesCustomRange && displayedDayCount > 7,
+                            marksOutsideMonth: selectedPeriod == .month && !usesCustomRange,
                             flowDays: snapshot.flowDays,
                             achievementDays: snapshot.achievementDays,
                             maximumInteractiveDate: today,
@@ -282,6 +285,7 @@ struct StatisticsView: View {
                     mode: $dotsMode,
                     period: presentationPeriod,
                     usesCompactCustomGrid: usesCustomRange && displayedDayCount > 7,
+                    marksOutsideMonth: selectedPeriod == .month && !usesCustomRange,
                     flowDays: snapshot.flowDays,
                     achievementDays: snapshot.achievementDays,
                     maximumInteractiveDate: today,
@@ -1346,6 +1350,7 @@ private struct StatisticsDotsCard: View {
     @Binding var mode: StatisticsMode
     let period: StatisticsPeriod
     let usesCompactCustomGrid: Bool
+    let marksOutsideMonth: Bool
     let flowDays: [StatisticsDay]
     let achievementDays: [AchievementDay]
     let maximumInteractiveDate: Date
@@ -1380,6 +1385,7 @@ private struct StatisticsDotsCard: View {
                 days: contributionDays,
                 period: period,
                 usesCompactCustomGrid: usesCompactCustomGrid,
+                marksOutsideMonth: marksOutsideMonth,
                 onSelectDate: onSelectDate
             )
             .id(mode)
@@ -1424,6 +1430,7 @@ private struct StatisticsContributionGrid: View {
     let days: [StatisticsContributionDay]
     let period: StatisticsPeriod
     let usesCompactCustomGrid: Bool
+    let marksOutsideMonth: Bool
     let onSelectDate: (Date) -> Void
 
     private var maxValue: Int {
@@ -1432,6 +1439,12 @@ private struct StatisticsContributionGrid: View {
 
     private var paddedDays: [StatisticsContributionDay?] {
         guard let first = days.first else { return [] }
+        if marksOutsideMonth {
+            return StatisticsMonthGridPadding(
+                dates: days.map(\.date),
+                calendar: calendar
+            ).padding(days)
+        }
         let weekday = calendar.component(.weekday, from: first.date)
         let leading = (weekday - calendar.firstWeekday + 7) % 7
         return Array(repeating: nil, count: leading) + days.map(Optional.some)
@@ -1515,6 +1528,7 @@ private struct StatisticsContributionGrid: View {
                     day: day,
                     maxValue: maxValue,
                     isInteractive: day?.isSelectable == true,
+                    marksOutsidePeriod: marksOutsideMonth && day == nil,
                     onSelectDate: onSelectDate
                 )
                 .frame(
@@ -1569,6 +1583,7 @@ private struct StatisticsContributionCell: View {
     let day: StatisticsContributionDay?
     let maxValue: Int
     let isInteractive: Bool
+    let marksOutsidePeriod: Bool
     let onSelectDate: (Date) -> Void
 
     @State private var isHovered = false
@@ -1577,11 +1592,13 @@ private struct StatisticsContributionCell: View {
         day: StatisticsContributionDay?,
         maxValue: Int,
         isInteractive: Bool = true,
+        marksOutsidePeriod: Bool = false,
         onSelectDate: @escaping (Date) -> Void
     ) {
         self.day = day
         self.maxValue = maxValue
         self.isInteractive = isInteractive
+        self.marksOutsidePeriod = marksOutsidePeriod
         self.onSelectDate = onSelectDate
     }
 
@@ -1626,6 +1643,20 @@ private struct StatisticsContributionCell: View {
             .overlay {
                 RoundedRectangle(cornerRadius: 4, style: .continuous)
                     .strokeBorder(Color.primary.opacity(0.06))
+            }
+            .overlay {
+                if marksOutsidePeriod {
+                    GeometryReader { geometry in
+                        Path { path in
+                            path.move(to: CGPoint(x: 4, y: geometry.size.height - 4))
+                            path.addLine(to: CGPoint(x: geometry.size.width - 4, y: 4))
+                        }
+                        .stroke(
+                            Color.secondary.opacity(0.42),
+                            style: StrokeStyle(lineWidth: 1, lineCap: .round)
+                        )
+                    }
+                }
             }
     }
 

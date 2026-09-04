@@ -123,6 +123,8 @@ Every item below is required before publishing 1.0:
 - [x] Keep the complete selected Week, Month, or Year visible in Statistics
   Dots. Future cells remain empty and disabled; Elastic continues to represent
   only the selected date.
+- [x] Cross out the leading and trailing Statistics Dots cells that belong to
+  adjacent months so they are distinct from empty days in the selected month.
 - [x] Extend the iPhone History background through the bottom safe area so no
   separate black strip appears below the content.
 
