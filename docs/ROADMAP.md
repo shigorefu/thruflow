@@ -174,6 +174,8 @@ Every item below is required before publishing 1.0:
   one minute and keeping long rests classified as long rests.
 - [x] Animate timer-ring progress and the active Elastic timeline plan when
   `−5`, `+5`, or a focus-mode change adjusts the current duration.
+- [x] Show recognized quick-input values as removable semantic chips above the
+  Task title field on iPhone, matching the macOS composer.
 
 ### Delivery
 
