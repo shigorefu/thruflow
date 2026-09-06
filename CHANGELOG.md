@@ -21,6 +21,8 @@ All notable user-facing changes to ThruFlow are documented in this file.
   translucent remaining plan.
 - The iPhone Task composer now keeps recognized quick-input values as the same
   removable semantic chips used by the macOS composer.
+- The iPhone Task editor now shows title-history suggestions in a separate row
+  above the edit form; choosing one changes only the current Task title.
 - Month Dots now cross out non-interactive boundary cells from adjacent months
   instead of presenting them like empty days in the selected month.
 - Renamed the machine-readable Statistics CSV column from `direction` to

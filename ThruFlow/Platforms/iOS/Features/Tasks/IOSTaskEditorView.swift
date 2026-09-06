@@ -4,6 +4,8 @@ import SwiftUI
 struct IOSTaskEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Query(sort: \Todo.updatedAt, order: .reverse) private var suggestionTodos: [Todo]
 
     let mode: IOSTaskEditorMode
     let areas: [Area]
@@ -20,6 +22,7 @@ struct IOSTaskEditorView: View {
     @State private var plannedAmount: Int
     @State private var scheduledDate: Date?
     @State private var datePickerValue: Date
+    @FocusState private var isTitleFocused: Bool
 
     init(
         mode: IOSTaskEditorMode,
@@ -53,6 +56,7 @@ struct IOSTaskEditorView: View {
             Section {
                 TextField(String(localized: "タスク名"), text: $title, axis: .vertical)
                     .lineLimit(1...3)
+                    .focused($isTitleFocused)
                 TextField(String(localized: "メモ"), text: $notes, axis: .vertical)
                     .lineLimit(2...5)
                 TextField("#tag", text: $hashtags)
@@ -116,6 +120,16 @@ struct IOSTaskEditorView: View {
                 }
             }
         }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if !titleSuggestions.isEmpty {
+                titleSuggestionPanel
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .animation(
+            reduceMotion ? nil : .snappy(duration: 0.22),
+            value: titleSuggestions.map(\.id)
+        )
         .iosCenteredNavigationTitle(
             isEditing ? String(localized: "タスクを編集") : String(localized: "タスクを追加")
         )
@@ -127,6 +141,49 @@ struct IOSTaskEditorView: View {
                 Button(String(localized: "保存"), action: save)
                     .disabled(!canSave)
             }
+        }
+    }
+
+    private var titleSuggestions: [TaskTitleSuggestion] {
+        guard isTitleFocused else { return [] }
+        return TaskTitleSuggestionBuilder().suggestions(
+            query: title,
+            todos: suggestionTodos,
+            excludingTodoID: editedTodo?.id
+        )
+    }
+
+    private var titleSuggestionPanel: some View {
+        ScrollView(.horizontal) {
+            HStack(spacing: 8) {
+                ForEach(titleSuggestions) { suggestion in
+                    Button {
+                        title = suggestion.title
+                        isTitleFocused = true
+                    } label: {
+                        Label(suggestion.title, systemImage: "clock.arrow.circlepath")
+                            .font(.subheadline)
+                            .lineLimit(1)
+                            .foregroundStyle(.primary)
+                            .padding(.horizontal, 12)
+                            .frame(height: 34)
+                            .background(.regularMaterial, in: Capsule())
+                            .overlay {
+                                Capsule()
+                                    .strokeBorder(Color.primary.opacity(0.1), lineWidth: 1)
+                            }
+                            .contentShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+        }
+        .scrollIndicators(.hidden)
+        .background(.bar)
+        .overlay(alignment: .bottom) {
+            Divider()
         }
     }
 
