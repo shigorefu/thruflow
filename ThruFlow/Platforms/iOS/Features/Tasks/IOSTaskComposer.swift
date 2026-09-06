@@ -29,6 +29,9 @@ struct IOSTaskComposer: View {
     @State private var hasExplicitPriority = false
     @State private var hasExplicitDate = false
     @State private var saveErrorMessage: String?
+    @State private var inlineTokens: [IOSTaskComposerInlineToken] = []
+    @State private var hashtags: [String] = []
+    @State private var isApplyingParserResult = false
     @AppStorage("settings.showsTaskQuickInputLegend") private var showsQuickInputLegend = true
     @FocusState private var isFocused: Bool
 
@@ -84,6 +87,27 @@ struct IOSTaskComposer: View {
             }
 
             VStack(spacing: 10) {
+                if !inlineTokens.isEmpty {
+                    ScrollView(.horizontal) {
+                        HStack(spacing: 5) {
+                            ForEach(inlineTokens) { token in
+                                Button {
+                                    removeInlineToken(token)
+                                } label: {
+                                    inlineTokenView(token)
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel(
+                                    String(localized: "トークンを削除")
+                                )
+                            }
+                        }
+                    }
+                    .scrollIndicators(.hidden)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .transition(.move(edge: .leading).combined(with: .opacity))
+                }
+
                 HStack(alignment: .top, spacing: 8) {
                     TextField(String(localized: "タスクを入力してください"), text: $title, axis: .vertical)
                         .lineLimit(1...4)
@@ -151,6 +175,25 @@ struct IOSTaskComposer: View {
             isFocused = true
         }
         .animation(.snappy(duration: 0.22), value: autocompleteSuggestions.map(\.id))
+        .animation(.snappy(duration: 0.22), value: inlineTokens)
+        .onChange(of: measurement) { _, newValue in
+            updateExistingInlineToken(.measurement(newValue, plannedAmount))
+        }
+        .onChange(of: plannedAmount) { _, newValue in
+            updateExistingInlineToken(.measurement(measurement, newValue))
+        }
+        .onChange(of: areaID) { _, newValue in
+            updateExistingInlineToken(newValue.map(IOSTaskComposerInlineToken.area), id: "area")
+        }
+        .onChange(of: priority) { _, newValue in
+            updateExistingInlineToken(.priority(newValue, isRoomIfPossible))
+        }
+        .onChange(of: isRoomIfPossible) { _, newValue in
+            updateExistingInlineToken(.priority(priority, newValue))
+        }
+        .onChange(of: scheduledDate) { _, newValue in
+            updateExistingInlineToken(.date(newValue))
+        }
         .sheet(isPresented: $showsDatePicker) {
             NavigationStack {
                 DatePicker(
@@ -569,6 +612,7 @@ struct IOSTaskComposer: View {
     }
 
     private func applyRecognizedQuickInput() {
+        guard !isApplyingParserResult else { return }
         let result = parser.parse(
             title,
             areas: areas.map { TaskQuickInputArea(id: $0.id, name: $0.name) },
@@ -577,6 +621,13 @@ struct IOSTaskComposer: View {
             consumeTrailingToken: false
         )
 
+        isApplyingParserResult = true
+        defer { isApplyingParserResult = false }
+
+        recordInlineTokens(from: result)
+        if title != result.title {
+            title = result.title
+        }
         if let value = result.measurement {
             measurement = value
             plannedAmount = result.plannedAmount ?? 1
@@ -598,6 +649,157 @@ struct IOSTaskComposer: View {
             case .noDate: scheduledDate = nil
             }
         }
+        hashtags = TodoHashtagNormalizer.normalize(hashtags + result.hashtags)
+    }
+
+    private func recordInlineTokens(from result: TaskQuickInputParseResult) {
+        if let measurement = result.measurement {
+            replaceInlineToken(.measurement(measurement, result.plannedAmount))
+        }
+        if let areaID = result.areaID {
+            replaceInlineToken(.area(areaID))
+        }
+        if let priority = result.priority {
+            replaceInlineToken(.priority(priority, result.isRoomIfPossible ?? false))
+        }
+        if let date = result.date {
+            switch date {
+            case .scheduled(let value):
+                replaceInlineToken(.date(calendar.startOfDay(for: value)))
+            case .noDate:
+                replaceInlineToken(.date(nil))
+            }
+        }
+        for hashtag in result.hashtags {
+            replaceInlineToken(.hashtag(hashtag))
+        }
+    }
+
+    private func replaceInlineToken(_ token: IOSTaskComposerInlineToken) {
+        inlineTokens.removeAll { $0.id == token.id }
+        inlineTokens.append(token)
+    }
+
+    private func updateExistingInlineToken(
+        _ token: IOSTaskComposerInlineToken?,
+        id: String? = nil
+    ) {
+        let targetID = id ?? token?.id
+        guard let targetID,
+              inlineTokens.contains(where: { $0.id == targetID }) else {
+            return
+        }
+        inlineTokens.removeAll { $0.id == targetID }
+        if let token {
+            inlineTokens.append(token)
+        }
+    }
+
+    private func removeInlineToken(_ token: IOSTaskComposerInlineToken) {
+        inlineTokens.removeAll { $0.id == token.id }
+        switch token {
+        case .measurement:
+            measurement = .checkbox
+            plannedAmount = 1
+            hasExplicitMeasurement = false
+        case .area:
+            areaID = nil
+            hasExplicitArea = false
+        case .priority:
+            priority = .medium
+            isRoomIfPossible = false
+            hasExplicitPriority = false
+        case .date:
+            scheduledDate = currentAppDay
+            hasExplicitDate = false
+        case .hashtag(let hashtag):
+            hashtags.removeAll {
+                $0.caseInsensitiveCompare(hashtag) == .orderedSame
+            }
+        }
+        isFocused = true
+    }
+
+    private func inlineTokenView(_ token: IOSTaskComposerInlineToken) -> some View {
+        HStack(spacing: 5) {
+            inlineTokenIcon(token)
+            Text(inlineTokenLabel(token))
+            Image(systemName: "xmark")
+                .font(.system(size: 7, weight: .bold))
+                .opacity(0.7)
+        }
+        .font(.caption.weight(.medium))
+        .foregroundStyle(inlineTokenTint(token))
+        .padding(.horizontal, 9)
+        .frame(height: 26)
+        .background(inlineTokenTint(token).opacity(0.12), in: Capsule())
+        .overlay {
+            Capsule().strokeBorder(inlineTokenTint(token).opacity(0.2), lineWidth: 1)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    @ViewBuilder
+    private func inlineTokenIcon(_ token: IOSTaskComposerInlineToken) -> some View {
+        switch token {
+        case .measurement(let measurement, _):
+            Image(
+                systemName: measurement == .checkbox
+                    ? "square"
+                    : (measurement == .focusBlocks ? "circle" : "circle.lefthalf.filled")
+            )
+        case .area(let id):
+            Text(areas.first(where: { $0.id == id })?.symbolName ?? "@")
+        case .priority:
+            Image(systemName: "exclamationmark")
+        case .date:
+            Image(systemName: "calendar")
+        case .hashtag:
+            Image(systemName: "number")
+        }
+    }
+
+    private func inlineTokenLabel(_ token: IOSTaskComposerInlineToken) -> String {
+        switch token {
+        case .measurement(let measurement, let amount):
+            switch measurement {
+            case .checkbox:
+                return String(localized: "チェック")
+            case .focusBlocks:
+                return "\(max(1, amount ?? 1)) \(String(localized: "ブロック"))"
+            case .minutes:
+                return "\(max(1, amount ?? 1)) \(String(localized: "分"))"
+            }
+        case .area(let id):
+            return areas.first(where: { $0.id == id })?.name ?? String(localized: "分野")
+        case .priority(let priority, let later):
+            return later ? String(localized: "余裕があれば") : priority.displayName
+        case .date(let date):
+            return inlineTokenDateLabel(date)
+        case .hashtag(let hashtag):
+            return "#\(hashtag)"
+        }
+    }
+
+    private func inlineTokenDateLabel(_ date: Date?) -> String {
+        guard let date else { return String(localized: "日付なし") }
+        if calendar.isDate(date, inSameDayAs: currentAppDay) {
+            return String(localized: "今日")
+        }
+        if let tomorrow = calendar.date(byAdding: .day, value: 1, to: currentAppDay),
+           calendar.isDate(date, inSameDayAs: tomorrow) {
+            return String(localized: "明日")
+        }
+        return date.formatted(.dateTime.month(.abbreviated).day())
+    }
+
+    private func inlineTokenTint(_ token: IOSTaskComposerInlineToken) -> Color {
+        if case .area(let id) = token,
+           let area = areas.first(where: { $0.id == id }),
+           !DefaultAreas.isTaskInbox(area) {
+            return Color(hex: area.colorHex)
+        }
+        return .accentColor
     }
 
     private func submit() {
@@ -623,7 +825,7 @@ struct IOSTaskComposer: View {
         let resolvedPlannedAmount = result.measurement == nil ? plannedAmount : result.plannedAmount ?? 1
         let todo = Todo(
             title: normalizedTitle,
-            hashtags: result.hashtags,
+            hashtags: TodoHashtagNormalizer.normalize(hashtags + result.hashtags),
             area: area,
             measurement: resolvedMeasurement,
             priority: result.priority ?? priority,
@@ -654,6 +856,8 @@ struct IOSTaskComposer: View {
         hasExplicitArea = false
         hasExplicitPriority = false
         hasExplicitDate = false
+        inlineTokens = []
+        hashtags = []
         isFocused = true
     }
 
@@ -690,9 +894,10 @@ struct IOSTaskComposer: View {
             return
         }
 
-        title = title.replacingOccurrences(of: "@\(name)", with: "@\(area.name)")
+        title = removingAreaToken(name, from: title)
         areaID = area.id
         hasExplicitArea = true
+        replaceInlineToken(.area(area.id))
         unresolvedArea = nil
         pendingCreatedAreaName = nil
         isFocused = true
@@ -703,6 +908,29 @@ struct IOSTaskComposer: View {
             .replacingOccurrences(of: "@\(name)", with: "")
             .replacingOccurrences(of: "  ", with: " ")
             .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}
+
+private enum IOSTaskComposerInlineToken: Equatable, Identifiable {
+    case measurement(TodoMeasurement, Int?)
+    case area(UUID)
+    case priority(TodoPriority, Bool)
+    case date(Date?)
+    case hashtag(String)
+
+    var id: String {
+        switch self {
+        case .measurement:
+            "measurement"
+        case .area:
+            "area"
+        case .priority:
+            "priority"
+        case .date:
+            "date"
+        case .hashtag(let value):
+            "hashtag:\(value.lowercased(with: Locale(identifier: "en_US_POSIX")))"
+        }
     }
 }
 

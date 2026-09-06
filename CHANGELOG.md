@@ -19,6 +19,8 @@ All notable user-facing changes to ThruFlow are documented in this file.
 - Timer rings and the active Elastic timeline now animate when seeking or
   changing focus mode; the timeline distinguishes recorded time from the
   translucent remaining plan.
+- The iPhone Task composer now keeps recognized quick-input values as the same
+  removable semantic chips used by the macOS composer.
 - Month Dots now cross out non-interactive boundary cells from adjacent months
   instead of presenting them like empty days in the selected month.
 - Renamed the machine-readable Statistics CSV column from `direction` to
