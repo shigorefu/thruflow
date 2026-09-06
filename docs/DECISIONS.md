@@ -611,9 +611,10 @@ then recency, resolves ranking within each group. Suggestions are deduplicated
 by case-, width-, and diacritic-insensitive title and limited to five. Selecting
 one creates no relationship to the historical Todo and copies no status,
 progress, Area, measurement, or date. In the macOS Flow timer's existing inline
-rename field, the same history source supplies up to three suggestions, but a
-selection renames only the currently attached Todo rather than switching Flow
-context.
+rename field, the same history source supplies up to three suggestions. The
+iPhone Task editor presents its suggestions above the edit form rather than
+inside the form. In either editing surface, a selection renames only the current
+Todo rather than switching Flow context.
 
 Reason: recurring work should be quick to type without reviving a completed
 Todo or recreating the cross-day identity confusion fixed for Habit history.

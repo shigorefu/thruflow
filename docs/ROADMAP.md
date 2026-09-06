@@ -176,6 +176,8 @@ Every item below is required before publishing 1.0:
   `−5`, `+5`, or a focus-mode change adjusts the current duration.
 - [x] Show recognized quick-input values as removable semantic chips above the
   Task title field on iPhone, matching the macOS composer.
+- [x] Add title-history suggestions above the iPhone Task edit form without
+  changing the edited Task's status, progress, Area, or other metadata.
 
 ### Delivery
 
