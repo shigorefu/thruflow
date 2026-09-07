@@ -719,6 +719,9 @@ Open `コネクタ` directly above `設定`: in the macOS sidebar footer, the
 compact iPhone Flow More menu, or the regular-width iPad sidebar footer. A
 native sheet lists Apple Reminders and Todoist and opens their setup form.
 The macOS and iOS shells keep their own native presentation.
+Provider artwork is vertically centered alongside its name and description.
+On iOS, `完了` remains available in the list and each provider form and closes
+the entire connector sheet; Back returns to the provider list.
 
 1. Choose the service and press its Connect button. Reminders asks for system
    access; Todoist opens the provider login/consent screen. ThruFlow never asks

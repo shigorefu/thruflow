@@ -16,7 +16,7 @@ struct IOSConnectorsView: View {
                 Section {
                     ForEach([ConnectorProviderID.reminders, .todoist], id: \.self) { provider in
                         NavigationLink {
-                            IOSConnectorDetailView(provider: provider)
+                            IOSConnectorDetailView(provider: provider, onDone: { dismiss() })
                         } label: {
                             ConnectorProviderRow(
                                 provider: provider,
@@ -31,11 +31,11 @@ struct IOSConnectorsView: View {
             }
             .listStyle(.insetGrouped)
             .iosCenteredNavigationTitle(String(localized: "コネクタ"))
-        }
-        .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
-                Button(String(localized: "完了")) { dismiss() }
-                    .accessibilityIdentifier("connectors.done")
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(String(localized: "完了")) { dismiss() }
+                        .accessibilityIdentifier("connectors.done")
+                }
             }
         }
     }
@@ -43,6 +43,7 @@ struct IOSConnectorsView: View {
 
 private struct IOSConnectorDetailView: View {
     let provider: ConnectorProviderID
+    let onDone: () -> Void
     @Query(sort: \Area.sortIndex) private var areas: [Area]
 
     var body: some View {
@@ -50,6 +51,12 @@ private struct IOSConnectorDetailView: View {
             ConnectorSetupSections(provider: provider, areas: areas)
         }
         .iosCenteredNavigationTitle(provider.connectorTitle)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button(String(localized: "完了"), action: onDone)
+                    .accessibilityIdentifier("connectors.done")
+            }
+        }
     }
 }
 #endif
