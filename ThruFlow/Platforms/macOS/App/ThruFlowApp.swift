@@ -21,6 +21,7 @@ struct ThruFlowApp: App {
     )
     @StateObject private var settings = AppSettings()
     @StateObject private var onboarding = OnboardingStore()
+    @StateObject private var connectors = ConnectorStore()
     @NSApplicationDelegateAdaptor(MacOSAppDelegate.self) private var appDelegate
 
     private let sharedModelContainer = AppModelContainerFactory.make()
@@ -32,6 +33,7 @@ struct ThruFlowApp: App {
                 .persistenceIssuePresenter()
                 .environmentObject(activeFlowStore)
                 .environmentObject(onboarding)
+                .environmentObject(connectors)
                 .appSettingsEnvironment(settings)
                 .onAppear {
                     activeFlowStore.clearNotificationBadge()
@@ -45,12 +47,18 @@ struct ThruFlowApp: App {
                         containerIdentifier: AppModelContainerFactory.cloudKitContainerIdentifier
                     )
                 }
+                .task {
+                    await connectors.synchronizeConfigured(modelContext: sharedModelContainer.mainContext)
+                }
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active {
                         activeFlowStore.clearNotificationBadge()
                         activeFlowStore.beginSynchronization(
                             modelContext: sharedModelContainer.mainContext
                         )
+                        Task {
+                            await connectors.synchronizeConfigured(modelContext: sharedModelContainer.mainContext)
+                        }
                     } else {
                         activeFlowStore.endSynchronization()
                     }

@@ -24,6 +24,7 @@ struct HabitScheduleChangeReconciler {
         let planner = RequiredTodoPlanner(calendar: calendar)
         let futureTodos = todos.filter { todo in
             guard todo.area?.id == area.id,
+                  todo.externalTaskLinkRawValue == nil,
                   !todo.isArchived,
                   !todo.isDeleted,
                   let scheduledDate = todo.scheduledDate else {

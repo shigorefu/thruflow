@@ -82,6 +82,35 @@ Normalization trims leading `#`, removes empty values, and deduplicates using a
 locale-stable case-insensitive key while preserving the first spelling. The
 optional field keeps existing local SwiftData stores migration-compatible.
 
+`externalTaskLinkRawValue` is an optional JSON scalar on Todo containing the
+connector provider, account, external task and source identifiers, original URL,
+and last successful import date. Provider + account + external task identify one
+import; moving the external task between sources retains its Todo and Flow links.
+Credentials are never stored in this field. The migration is additive: the field
+is nullable with a `nil` default, so existing local records require no backfill;
+there are no field/entity renames or relationship changes, and the existing five
+SwiftData entities remain. Deploy the added Development CloudKit field to
+Production before distributing the connector release.
+
+Imports create active Check Todos in non-Habit Areas, initially copy notes, and
+map external due dates to `deadline`; local `scheduledDate` remains unset.
+Refresh owns only title, deadline and link metadata. Local completion, memo,
+measurement, planning, progress and Flow history remain under ThruFlow control;
+missing external tasks and disconnected accounts never remove local records.
+If the user later moves an imported Todo into a Habit Area, its external link
+excludes it from occurrence generation, deduplication, schedule rewriting and
+pause-driven removal.
+`ConnectorTaskImporter` converges concurrent imports on the oldest Todo (UUID
+breaks ties), reconnects FlowSession/FlowSegment references, preserves local
+memos/completion, and rebuilds measured progress with `FlowProgressReconciler`.
+Source-owned title, deadline, and link metadata come from the root record with
+the latest successful import date (UUID breaks ties); local identity, Area and
+priority remain with the deterministic oldest Todo.
+Redundant Todos are soft-deleted with an optional `supersededByTodoID` inside the
+same JSON scalar. This marker distinguishes merge tombstones from deliberate
+user deletion, which must never be resurrected by a later import. Corrupt link
+identity data fails visibly rather than being treated as an unlinked task.
+
 ## FlowSession
 
 `FlowSession` stores one focused-work recording.

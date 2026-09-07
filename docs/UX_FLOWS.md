@@ -333,12 +333,12 @@ destinations. A separate circular `+` command in the lower trailing corner
 opens the messenger composer and focuses its input. The composer includes an
 explicit `×` command that dismisses the keyboard and returns to the task list
 without creating a Task.
-`設定` is reached from the trailing More menu.
+`コネクタ` and `設定` are reached from the Flow More menu, in that order.
 
 At regular iPad widths the five primary destinations move from the bottom tab
 bar into a persistent leading sidebar, matching the macOS information
 architecture and leaving the wide detail area to the selected feature. The
-sidebar also exposes `設定`. Compact Split View and Stage Manager widths return
+sidebar footer exposes `コネクタ` immediately above `設定`. Compact Split View and Stage Manager widths return
 to the tab shell automatically, without resetting the active destination or
 feature state. iPad supports portrait and landscape orientations.
 
@@ -506,8 +506,8 @@ content state. If iOS suspends the application before the zero boundary, the
 system countdown may remain visually at `00:00` until the next launch,
 foreground transition, or other ActivityKit content update. The canonical Flow
 continues from absolute timestamps. Version 1.x accepts this limitation;
-guaranteed suspended-state overtime updates require the optional APNs transport
-planned for 2.0.
+guaranteed suspended-state overtime updates require the still-deferred optional
+APNs transport. The upcoming local connectors do not remove this limitation.
 
 When another Live Activity forces Flow into the minimal Dynamic Island slot,
 the system circular timer displays remaining time and drains toward zero for
@@ -712,6 +712,42 @@ On macOS and iOS, `+` sits in the top-right History toolbar beside Search and op
 The form follows the active History mode. `集中記録` opens a Flow-specific form with `タスクなし` selected by default; its picker may optionally link an existing Task, Habit, or Area, but saving always creates Flow and never completes a linked Check Task. `タスク` limits the picker to Task and Habit, offers new Task creation, and applies the selected unit's completion/progress semantics. `分野` limits the picker to Area and creates Area-only Flow. Habit lists every eligible Habit Area for the selected day; when no Todo occurrence exists, saving materializes the historical occurrence from its Area template. A Task/Habit progress preview is shown only when the operation changes that progress.
 
 Check requires a date and accepts an optional exact time; it writes historical completion without inventing Flow. Block, Minute, and Area-only records require explicit start and end times, create a completed independent Flow, and rebuild measured progress from persisted history. Zero-Flow scheduled Tasks remain absent from the actual History summary. The row action with a fixed Task remains available as the faster manual-Flow path. Expanded `履歴 > 分野` ends with `タスクを追加`, which creates a Task with fixed Area but no Flow. The calendar does not provide direct resize and does not persist a second calendar entity.
+
+## Connectors — Upcoming 2.0
+
+Open `コネクタ` directly above `設定`: in the macOS sidebar footer, the
+compact iPhone Flow More menu, or the regular-width iPad sidebar footer. A
+native sheet lists Apple Reminders and Todoist and opens their setup form.
+The macOS and iOS shells keep their own native presentation.
+
+1. Choose the service and press its Connect button. Reminders asks for system
+   access; Todoist opens the provider login/consent screen. ThruFlow never asks
+   for the provider password or a ThruFlow account registration.
+2. Choose one or more available lists/projects and an active `いつでも` or
+   `できたら` Area. `その他` is the initial destination when available.
+3. Press `タスクを取り込む`. Only unfinished external tasks without an existing
+   local identity become new Check Tasks. Initial notes are copied, due dates
+   become deadlines, and Tasks start in `日付なし` for local planning.
+4. After success, the form shows `前回の更新` and the number newly imported.
+   `タスクを更新` applies subsequent title/deadline updates. Configured
+   connections also refresh when the app opens; this is not background delivery.
+5. Open an imported Task normally to plan work and record Flow. Its source label
+   explains which fields refresh. Todoist supplies `Todoistで開く`; Reminders
+   shows its source name without inventing a private deep link.
+
+Changes to the destination Area affect new imports only. Updating does not
+reset local completion, priority, memo, planned date, measurement, progress, or
+Flow history. A remote task disappearing or recurring under the same ID does
+not delete the local Task, reopen it, or create another occurrence. Import
+failure keeps the previous success timestamp and displays a recoverable error
+inside the connector form; cancellation leaves an existing connection intact.
+
+`接続を解除` confirms removal of this device's connection and credentials.
+Imported Tasks, their source identity, and Flow history remain. Another device
+can still have its own connection; those settings and credentials do not sync.
+Switching Todoist accounts requires new source/Area selections and keeps the
+old account's imported Tasks independent. See [Connectors](CONNECTORS.md) for
+Reminders identity constraints and the complete release checklist.
 
 ## Settings
 

@@ -106,10 +106,48 @@ targets watchOS 10.0 to match the iOS 17 generation.
   CloudKit export work. Month views advance one calendar month per horizontal
   swipe without retaining a separate long-running month strip.
 
+## Local Connectors — Upcoming 2.0
+
+`ConnectorStore` orchestrates direct EventKit/URLSession reads on macOS and iOS,
+with per-device source/Area preferences and Keychain credentials. Native
+AuthenticationServices delegates Todoist login to the provider. Public client
+metadata plus PKCE avoid an embedded client secret; the existing static website
+hosts only the client document, callback, and associated-domain declaration.
+`ConnectorTaskImporter` receives shared DTOs, saves on a separate ModelContext,
+and keeps every imported Task in the existing schema. The optional
+`externalTaskLinkRawValue` field requires an additive migration and CloudKit
+Production deployment before release.
+
+Imports and refreshes are read-only toward providers. Source/account identity,
+local completion/memo/planning/history preservation, rollback, duplicate Flow
+relationship repair, and generated-Habit exclusion belong to domain tests.
+Provider network and authorization tests use injected transports; store tests
+use fake credentials, client, and browser. Production Keychain, EventKit
+permission dialogs, real accounts, private CloudKit, and Associated Domains are
+separate device checks, not a substitute for deterministic tests.
+
+See [Connectors](CONNECTORS.md) for exact OAuth endpoints, identity limitations,
+sequential verification commands, and release gates. APNs, webhooks, reverse
+completion synchronization, and new recurring occurrence generation remain
+outside this implementation.
+
 ## Test Expectations
 
 Cover:
 
+- Connector provider authorization errors, selected-source validation,
+  pagination, empty responses, rate limits, and sanitized transport failures.
+- PKCE challenge, unpredictable state/verifier generation, callback origin/state
+  validation, read-only scope, token refresh, and cancellation.
+- Connector imports: account/provider identity, repeated imports and source
+  moves, local memo/completion/planning/history preservation, missing remote
+  tasks, save rollback, additive schema, and concurrent/late CloudKit duplicates.
+- Device-local credential/configuration separation, failed reconnect preserving
+  an existing account, account-switch mapping reset, unchanged success timestamp
+  after failure, editor-draft isolation, and disconnect preserving history.
+- Native connector entry placement, provider navigation, setup validation,
+  source labels, cancellation and permission-denied presentation. Real consent
+  and signed callbacks remain release checks.
 - Area validation and legacy raw value normalization.
 - Todo validation and daily Task filtering.
 - Calendar range, filtering, and rescheduling tests.

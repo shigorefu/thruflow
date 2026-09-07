@@ -64,6 +64,7 @@ struct RequiredTodoPlanner {
     func existingRequiredTodo(for area: Area, in todos: [Todo], on date: Date = .now) -> Todo? {
         todos.first { todo in
             guard todo.area?.id == area.id,
+                  todo.externalTaskLinkRawValue == nil,
                   !todo.isArchived,
                   !todo.isDeleted,
                   let scheduledDate = todo.scheduledDate else {
@@ -127,7 +128,8 @@ struct RequiredTodoPlanner {
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .isEmpty ?? true
 
-        guard let scheduledDate = todo.scheduledDate,
+        guard todo.externalTaskLinkRawValue == nil,
+              let scheduledDate = todo.scheduledDate,
               area.type == .habit,
               !area.isArchived,
               area.goalSchedule != .weeklyCount,
@@ -152,7 +154,8 @@ struct RequiredTodoPlanner {
         for area: Area,
         now: Date = .now
     ) -> Bool {
-        guard let goalUnit = area.goalUnit else { return false }
+        guard todo.externalTaskLinkRawValue == nil,
+              let goalUnit = area.goalUnit else { return false }
 
         let target = max(1, area.goalTarget ?? area.weeklyTargetCount ?? 1)
         let nextMeasurement = measurement(for: goalUnit)
@@ -176,7 +179,8 @@ struct RequiredTodoPlanner {
         in todos: [Todo],
         now: Date = .now
     ) -> [RescheduleOption] {
-        guard let area = todo.area,
+        guard todo.externalTaskLinkRawValue == nil,
+              let area = todo.area,
               area.type == .habit,
               area.goalSchedule == .weeklyCount,
               let weekInterval = calendar.dateInterval(of: .weekOfYear, for: now) else {
@@ -259,6 +263,7 @@ struct RequiredTodoPlanner {
 
         return todos.filter { todo in
             guard todo.area?.id == area.id,
+                  todo.externalTaskLinkRawValue == nil,
                   !todo.isArchived,
                   !todo.isDeleted,
                   let scheduledDate = todo.scheduledDate else {

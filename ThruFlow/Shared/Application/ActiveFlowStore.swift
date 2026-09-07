@@ -378,6 +378,7 @@ final class ActiveFlowStore: ObservableObject {
         do {
             try DefaultAreaReconciler().reconcile(modelContext: modelContext, now: now)
             try OrphanTodoReconciler().reconcile(modelContext: modelContext, now: now)
+            try ConnectorTaskImporter().reconcileDuplicates(modelContext: modelContext, now: now)
             lastPersistenceReconciliationAt = now
         } catch {
             PersistenceIssueCenter.shared.log(error, operation: .flowSynchronization)

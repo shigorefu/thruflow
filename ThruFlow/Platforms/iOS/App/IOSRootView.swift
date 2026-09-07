@@ -7,6 +7,7 @@ enum IOSAppRoute: Hashable, CaseIterable, Identifiable {
     case history
     case areas
     case statistics
+    case connectors
     case settings
 
     var id: String { String(describing: self) }
@@ -18,6 +19,7 @@ enum IOSAppRoute: Hashable, CaseIterable, Identifiable {
         case .history: String(localized: "履歴")
         case .areas: String(localized: "方向")
         case .statistics: String(localized: "統計")
+        case .connectors: String(localized: "コネクタ")
         case .settings: String(localized: "設定")
         }
     }
@@ -29,6 +31,7 @@ enum IOSAppRoute: Hashable, CaseIterable, Identifiable {
         case .history: "clock.arrow.circlepath"
         case .areas: ProductSymbol.area
         case .statistics: "chart.bar.xaxis"
+        case .connectors: "puzzlepiece.extension"
         case .settings: "gearshape"
         }
     }
@@ -52,6 +55,7 @@ struct IOSRootView: View {
 
     @State private var selection = IOSAppRoute.flow
     @State private var showsSettings = false
+    @State private var showsConnectors = false
     @State private var selectedHistoryDate = Date.now
     @State private var flowSnapshotCache: FlowDashboardSnapshot?
     @State private var flowTodoGroupsCache: FlowDashboardTodoGroups?
@@ -112,6 +116,9 @@ struct IOSRootView: View {
                 IOSSettingsView()
             }
         }
+        .sheet(isPresented: $showsConnectors) {
+            IOSConnectorsView()
+        }
         .sheet(item: onboardingPresentationBinding) { presentation in
             onboardingSheet(for: presentation)
         }
@@ -167,18 +174,33 @@ struct IOSRootView: View {
             .navigationTitle(String(localized: "スルフロ"))
             .navigationSplitViewColumnWidth(min: 220, ideal: 250, max: 300)
             .safeAreaInset(edge: .bottom, spacing: 0) {
-                Button {
-                    showsSettings = true
-                } label: {
-                    Label(IOSAppRoute.settings.title, systemImage: IOSAppRoute.settings.systemImage)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .contentShape(Rectangle())
+                VStack(spacing: 0) {
+                    Button {
+                        showsConnectors = true
+                    } label: {
+                        Label(IOSAppRoute.connectors.title, systemImage: IOSAppRoute.connectors.systemImage)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 14)
+                    .accessibilityIdentifier("connectors.open")
+
+                    Button {
+                        showsSettings = true
+                    } label: {
+                        Label(IOSAppRoute.settings.title, systemImage: IOSAppRoute.settings.systemImage)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 14)
+                    .accessibilityLabel(IOSAppRoute.settings.title)
+                    .accessibilityIdentifier("settings.open")
                 }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 14)
                 .background(.bar)
-                .accessibilityLabel(IOSAppRoute.settings.title)
             }
         } detail: {
             NavigationStack {
@@ -262,6 +284,8 @@ struct IOSRootView: View {
                     selectionBinding.wrappedValue = .history
                 }
             }
+        case .connectors:
+            IOSConnectorsView()
         case .settings:
             IOSSettingsView()
         }
@@ -270,6 +294,8 @@ struct IOSRootView: View {
     private func open(_ route: IOSAppRoute) {
         if route == .settings {
             showsSettings = true
+        } else if route == .connectors {
+            showsConnectors = true
         } else {
             selectionBinding.wrappedValue = route
         }

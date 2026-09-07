@@ -8,6 +8,7 @@ struct ThruFlowiOSApp: App {
     @StateObject private var activeFlowStore: ActiveFlowStore
     @StateObject private var settings = AppSettings()
     @StateObject private var onboarding = OnboardingStore()
+    @StateObject private var connectors = ConnectorStore()
 
     private let modelContainer: ModelContainer
     private let liveActivityControl: FlowLiveActivityControl
@@ -64,6 +65,7 @@ struct ThruFlowiOSApp: App {
                 .environmentObject(activeFlowStore)
                 .environmentObject(settings)
                 .environmentObject(onboarding)
+                .environmentObject(connectors)
                 .environment(\.calendar, settings.effectiveCalendar)
                 .environment(\.appDayBoundary, settings.dayBoundary)
                 .environment(\.locale, settings.effectiveLocale)
@@ -80,12 +82,18 @@ struct ThruFlowiOSApp: App {
                         containerIdentifier: AppModelContainerFactory.cloudKitContainerIdentifier
                     )
                 }
+                .task {
+                    await connectors.synchronizeConfigured(modelContext: modelContainer.mainContext)
+                }
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active {
                         activeFlowStore.clearNotificationBadge()
                         activeFlowStore.beginSynchronization(
                             modelContext: modelContainer.mainContext
                         )
+                        Task {
+                            await connectors.synchronizeConfigured(modelContext: modelContainer.mainContext)
+                        }
                     } else {
                         activeFlowStore.endSynchronization()
                     }

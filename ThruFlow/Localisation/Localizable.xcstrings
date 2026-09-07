@@ -1,9 +1,6 @@
 {
   "sourceLanguage" : "ja",
   "strings" : {
-    "" : {
-
-    },
     "–" : {
       "localizations" : {
         "en" : {
@@ -11715,6 +11712,1225 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Высокий"
+          }
+        }
+      }
+    },
+    "Appleリマインダー" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Reminders"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appleリマインダー"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Напоминания Apple"
+          }
+        }
+      }
+    },
+    "Todoistで開く" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open in Todoist"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todoistで開く"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть в Todoist"
+          }
+        }
+      }
+    },
+    "Todoistに再接続" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reconnect to Todoist"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todoistに再接続"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Переподключить Todoist"
+          }
+        }
+      }
+    },
+    "Todoistに再接続してください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reconnect to Todoist."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todoistに再接続してください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Переподключите Todoist."
+          }
+        }
+      }
+    },
+    "Todoistに接続" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connect to Todoist"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todoistに接続"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подключить Todoist"
+          }
+        }
+      }
+    },
+    "Todoistに接続できませんでした。時間をおいて再試行してください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not connect to Todoist. Try again later."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todoistに接続できませんでした。時間をおいて再試行してください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось подключиться к Todoist. Повторите попытку позже."
+          }
+        }
+      }
+    },
+    "Todoistの画面でログインし、アクセスを許可します。ThruFlowのアカウント登録は不要です。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign in on Todoist and grant access. You do not need to create a ThruFlow account."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todoistの画面でログインし、アクセスを許可します。ThruFlowのアカウント登録は不要です。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Войдите в Todoist и разрешите доступ. Регистрировать аккаунт ThruFlow не нужно."
+          }
+        }
+      }
+    },
+    "Todoistへの接続がキャンセルされました。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connecting to Todoist was cancelled."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todoistへの接続がキャンセルされました。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подключение к Todoist отменено."
+          }
+        }
+      }
+    },
+    "アクセスが許可されていません。システム設定でアクセスを確認してください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Access is not allowed. Check permissions in system settings."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アクセスが許可されていません。システム設定でアクセスを確認してください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Доступ не разрешён. Проверьте разрешения в системных настройках."
+          }
+        }
+      }
+    },
+    "アクセスキーを保存または読み込めませんでした。端末のロックを解除して再試行してください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not store or read the access key. Unlock your device and try again."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アクセスキーを保存または読み込めませんでした。端末のロックを解除して再試行してください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось сохранить или прочитать ключ доступа. Разблокируйте устройство и повторите попытку."
+          }
+        }
+      }
+    },
+    "コネクタ" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connectors"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "コネクタ"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Коннекторы"
+          }
+        }
+      }
+    },
+    "この端末の接続を解除します。取り込んだタスクと集中履歴は残ります。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disconnect on this device. Imported tasks and Flow history will be kept."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この端末の接続を解除します。取り込んだタスクと集中履歴は残ります。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подключение будет удалено с этого устройства. Импортированные задачи и история Flow сохранятся."
+          }
+        }
+      }
+    },
+    "サービスに接続してください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connect to the service first."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サービスに接続してください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сначала подключите сервис."
+          }
+        }
+      }
+    },
+    "タイトルと期限は接続先から更新されます。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The title and due date are updated from the source."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タイトルと期限は接続先から更新されます。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Название и срок обновляются из исходного сервиса."
+          }
+        }
+      }
+    },
+    "タスクを取り込む" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import tasks"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タスクを取り込む"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импортировать задачи"
+          }
+        }
+      }
+    },
+    "タスクを更新" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Refresh tasks"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タスクを更新"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обновить задачи"
+          }
+        }
+      }
+    },
+    "リマインダーに接続" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connect to Reminders"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "リマインダーに接続"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подключить Напоминания"
+          }
+        }
+      }
+    },
+    "リマインダーへのアクセスを許可した後、取り込むリストを選べます。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow access to Reminders, then choose which lists to import."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "リマインダーへのアクセスを許可した後、取り込むリストを選べます。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешите доступ к Напоминаниям, затем выберите списки для импорта."
+          }
+        }
+      }
+    },
+    "分野を選択" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分野を選択"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose an Area"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите Сферу"
+          }
+        }
+      }
+    },
+    "前回の新規取り込み：%lld件" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New tasks last imported: %lld"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "前回の新規取り込み：%lld件"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новых задач при последнем импорте: %lld"
+          }
+        }
+      }
+    },
+    "前回の更新" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last updated"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "前回の更新"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Последнее обновление"
+          }
+        }
+      }
+    },
+    "取り込み元がありません。リストやプロジェクトを確認して、再読み込みしてください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No sources found. Check your lists or projects and reload."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取り込み元がありません。リストやプロジェクトを確認して、再読み込みしてください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Источники не найдены. Проверьте списки или проекты и загрузите их снова."
+          }
+        }
+      }
+    },
+    "取り込み元を再読み込み" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reload sources"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取り込み元を再読み込み"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обновить источники"
+          }
+        }
+      }
+    },
+    "取り込み先の分野" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Destination Area"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取り込み先の分野"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сфера для импорта"
+          }
+        }
+      }
+    },
+    "取り込むプロジェクト" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Projects to import"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取り込むプロジェクト"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проекты для импорта"
+          }
+        }
+      }
+    },
+    "取り込むリスト" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lists to import"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取り込むリスト"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Списки для импорта"
+          }
+        }
+      }
+    },
+    "同じ識別子のタスクが複数あります。接続先で重複した項目を確認してください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Multiple tasks have the same identifier. Check duplicate items in the source service."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同じ識別子のタスクが複数あります。接続先で重複した項目を確認してください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Несколько задач имеют одинаковый идентификатор. Проверьте дубликаты в исходном сервисе."
+          }
+        }
+      }
+    },
+    "外部サービスのタスクを取り込み、ThruFlowで集中できます。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import tasks from other services and focus on them in ThruFlow."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "外部サービスのタスクを取り込み、ThruFlowで集中できます。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импортируйте задачи из других сервисов и работайте над ними в ThruFlow."
+          }
+        }
+      }
+    },
+    "接続するサービスと取り込み元を選んでください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a service and the sources to import."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続するサービスと取り込み元を選んでください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите сервис и источники для импорта."
+          }
+        }
+      }
+    },
+    "接続とアクセスキーはこの端末で管理します。取り込んだタスクはiCloudの設定に従って同期されます。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connections and access keys are managed on this device. Imported tasks sync according to your iCloud settings."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続とアクセスキーはこの端末で管理します。取り込んだタスクはiCloudの設定に従って同期されます。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подключения и ключи доступа хранятся на этом устройстве. Импортированные задачи синхронизируются в соответствии с настройками iCloud."
+          }
+        }
+      }
+    },
+    "接続の認証に失敗しました。もう一度接続してください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Authentication failed. Connect again."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続の認証に失敗しました。もう一度接続してください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ошибка авторизации. Повторите подключение."
+          }
+        }
+      }
+    },
+    "接続を更新しています…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Updating connection…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続を更新しています…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обновление подключения…"
+          }
+        }
+      }
+    },
+    "接続を更新できませんでした。通信状態と接続設定を確認してください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not refresh the connection. Check your network and connection settings."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続を更新できませんでした。通信状態と接続設定を確認してください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось обновить подключение. Проверьте интернет и настройки подключения."
+          }
+        }
+      }
+    },
+    "接続を解除" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disconnect"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続を解除"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отключить"
+          }
+        }
+      }
+    },
+    "接続を解除しますか？" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disconnect this account?"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続を解除しますか？"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отключить аккаунт?"
+          }
+        }
+      }
+    },
+    "接続先には通常またはナイスの活動領域を選んでください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose an Anytime or Optional Area for imported tasks."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取り込み先には「いつでも」または「できたら」の分野を選んでください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите обычную Сферу или Сферу «Если получится» для импорта."
+          }
+        }
+      }
+    },
+    "接続先に通信できません。インターネット接続を確認してください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not reach the service. Check your internet connection."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続先に通信できません。インターネット接続を確認してください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось связаться с сервисом. Проверьте подключение к интернету."
+          }
+        }
+      }
+    },
+    "接続先のタスクを識別できませんでした。もう一度更新してください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not identify a source task. Refresh again."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続先のタスクを識別できませんでした。もう一度更新してください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось определить исходную задачу. Повторите обновление."
+          }
+        }
+      }
+    },
+    "接続先のデータを読み取れませんでした。時間をおいて再試行してください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not read data from the service. Try again later."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続先のデータを読み取れませんでした。時間をおいて再試行してください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось прочитать данные сервиса. Повторите попытку позже."
+          }
+        }
+      }
+    },
+    "接続先の利用制限に達しました。時間をおいて再試行してください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The service rate limit was reached. Try again later."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続先の利用制限に達しました。時間をおいて再試行してください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Достигнут лимит запросов сервиса. Повторите попытку позже."
+          }
+        }
+      }
+    },
+    "接続先を利用できません。時間をおいて再試行してください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The service is unavailable. Try again later."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続先を利用できません。時間をおいて再試行してください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сервис недоступен. Повторите попытку позже."
+          }
+        }
+      }
+    },
+    "接続処理が終わるまでお待ちください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wait for the connection to finish."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続処理が終わるまでお待ちください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дождитесь завершения подключения."
+          }
+        }
+      }
+    },
+    "接続済み" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connected"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続済み"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подключено"
+          }
+        }
+      }
+    },
+    "接続用ページを読み込めませんでした。通信状態を確認して再試行してください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not load the connection page. Check your internet connection and try again."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続用ページを読み込めませんでした。通信状態を確認して再試行してください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось загрузить страницу подключения. Проверьте интернет и повторите попытку."
+          }
+        }
+      }
+    },
+    "接続設定を読み込めませんでした。接続を設定し直してください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not read connection settings. Set up the connection again."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続設定を読み込めませんでした。接続を設定し直してください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось прочитать настройки подключения. Настройте его заново."
+          }
+        }
+      }
+    },
+    "新しいタスクをこの分野に追加します。取り込み済みのタスクの分野や集中履歴は変更しません。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New tasks will be added to this Area. Existing imported tasks keep their Area and Flow history."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新しいタスクをこの分野に追加します。取り込み済みのタスクの分野や集中履歴は変更しません。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новые задачи появятся в этой Сфере. Сферы и история Flow уже импортированных задач сохранятся."
+          }
+        }
+      }
+    },
+    "未完了のタスクを取り込み、タイトルと期限を更新します。ThruFlowでの変更は接続先に送信しません。設定した接続はアプリを開いたときにも更新します。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import incomplete tasks and update their titles and due dates. Changes in ThruFlow are not sent back. Configured connections also refresh when you open the app."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未完了のタスクを取り込み、タイトルと期限を更新します。ThruFlowでの変更は接続先に送信しません。設定した接続はアプリを開いたときにも更新します。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импортируются незавершённые задачи, обновляются названия и сроки. Изменения в ThruFlow не отправляются обратно. Настроенные подключения также обновляются при открытии приложения."
+          }
+        }
+      }
+    },
+    "認証を確認できませんでした。もう一度接続してください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not verify the sign-in response. Connect again."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "認証を確認できませんでした。もう一度接続してください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось проверить ответ авторизации. Повторите подключение."
+          }
+        }
+      }
+    },
+    "読み込み先の分野を選択してください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a destination Area."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "読み込み先の分野を選択してください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите Сферу для импорта."
+          }
+        }
+      }
+    },
+    "読み込むリストを選択してください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose the lists to import."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "読み込むリストを選択してください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите списки для импорта."
+          }
+        }
+      }
+    },
+    "選んだプロジェクトの未完了タスクを取り込みます。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import incomplete tasks from selected projects."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選んだプロジェクトの未完了タスクを取り込みます。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импортируйте незавершённые задачи из выбранных проектов."
+          }
+        }
+      }
+    },
+    "選んだリストの未完了リマインダーをタスクに取り込みます。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import incomplete reminders from selected lists as tasks."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選んだリストの未完了リマインダーをタスクに取り込みます。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импортируйте незавершённые напоминания из выбранных списков в задачи."
+          }
+        }
+      }
+    },
+    "選択したリストが見つかりません。リストを選び直してください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A selected list could not be found. Choose your lists again."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選択したリストが見つかりません。リストを選び直してください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбранный список не найден. Выберите списки заново."
           }
         }
       }

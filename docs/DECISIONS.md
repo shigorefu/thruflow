@@ -368,6 +368,10 @@ failures without rewriting historical records.
 
 ## D-029: Version 1.x Does Not Require An APNs Backend
 
+Status: the coupled connector/APNs deferral below is historical and partially
+superseded by D-042. Local connectors now enter upcoming 2.0 independently;
+the optional APNs backend remains deferred and the timer limitation still applies.
+
 ThruFlow 1.x remains fully usable without an author-operated server. The
 canonical active Flow continues to use absolute timestamps in SwiftData and
 CloudKit even while an application is suspended. However, if iOS suspends the
@@ -376,9 +380,10 @@ at `00:00` until the application next launches, enters the foreground, or
 otherwise publishes new ActivityKit content. This is an accepted presentation
 limitation of 1.x, not a loss or pause of canonical timer state.
 
-An ActivityKit APNs provider and all external Connectors are deferred together
-to 2.0. The future provider must remain optional: local Flow recording and
-CloudKit synchronization stay the source of truth and must continue working
+The original decision deferred ActivityKit APNs and external connectors together
+to 2.0; D-042 supersedes that coupling. The future APNs provider must remain
+optional: local Flow recording and CloudKit synchronization stay the source of
+truth and must continue working
 without the provider, its credentials, AWS, or network access.
 
 Reason: an open-source core release should not depend on the maintainer running
@@ -637,3 +642,47 @@ Reason: Production CloudKit entity and field names are forward-only. Keeping
 their existing identities avoids data migration, duplicate records, and sync
 risk while making current product terminology consistent for users and
 developers.
+
+## D-042: Upcoming 2.0 Connectors Read Directly From The Device
+
+Apple Reminders and Todoist are the first optional connectors on macOS,
+iPhone, and iPad. This starts upcoming 2.0 development without an APNs backend.
+Reminders uses system EventKit permission. Todoist uses native browser OAuth,
+read-only `data:read`, PKCE, and a public HTTPS client metadata document; only
+static OAuth/associated-domain files are added to the existing website.
+There is no ThruFlow signup, embedded client secret, or required server process.
+This supersedes only D-029's coupled connector/APNs deferral.
+
+Access and refresh tokens stay in the current device's Keychain. Connection
+account metadata, selected source IDs, Area mapping, and last-success details
+stay in local UserDefaults. Imported Task data and non-secret external identity
+follow the existing local SwiftData/private CloudKit path. Local Flow recording
+continues to work without a connector, credentials, network, or iCloud service.
+
+The first import creates unfinished Check Tasks in a non-Habit Area, copies
+initial notes, maps source due dates to `deadline`, and leaves local planning
+unscheduled. Refresh owns title, deadline, and link metadata only. It preserves
+local completion, memo, measurement, progress, Area, scheduled date, and exact
+Flow relationships. No source completion/deletion is inferred or sent upstream,
+and recurring source items with one external ID do not create new occurrences.
+Missing remote items and disconnection retain the local Task and history.
+
+One optional JSON scalar on Todo identifies provider + account + external task;
+source/list ID is movable metadata. Concurrent imports converge on one existing
+Todo, reconnect history, and soft-delete redundant records. A separate marker
+distinguishes those merge tombstones from user deletion. Existing external links
+exclude a Task from generated-Habit deduplication, planning and pause removal,
+even after the user changes its Area. No new SwiftData entity is introduced.
+
+`コネクタ` is immediately above Settings in the macOS sidebar footer, iPhone
+Flow More menu, and iPad sidebar footer. The platform shells present native
+forms for connection, source selection, destination, refresh, and disconnect.
+Todoist Tasks offer an original-task link; Reminders has no supported public
+link to one reminder. Watch consumes synchronized Tasks without connection UI.
+
+Reason: selected external Tasks can participate in the established local focus
+loop without adding a service dependency or transferring authority over the
+user's recorded work. Provider identity limitations, native consent/signing,
+static-site delivery, migration, and real-device verification remain explicit
+release gates in `docs/CONNECTORS.md`. This decision introduces no pricing and
+preserves the free, ad-free core commitment in D-034.

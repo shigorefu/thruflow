@@ -46,6 +46,29 @@
           }
         }
       }
+    },
+    "NSRemindersFullAccessUsageDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選択したリストのリマインダーをThruFlowのタスクに取り込むために使用します。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import reminders from the lists you select as tasks in ThruFlow."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импорт напоминаний из выбранных списков в задачи ThruFlow."
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

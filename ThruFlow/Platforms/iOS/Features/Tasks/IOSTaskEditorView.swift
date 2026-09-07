@@ -63,6 +63,10 @@ struct IOSTaskEditorView: View {
                     .textInputAutocapitalization(.never)
             }
 
+            if case .edit(let todo) = mode, todo.externalTaskLinkRawValue != nil {
+                Section { ExternalTaskSourceLink(todo: todo) }
+            }
+
             if isHabitTodoEdit {
                 habitStructureSection
             } else {

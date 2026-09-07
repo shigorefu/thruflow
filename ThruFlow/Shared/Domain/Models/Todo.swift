@@ -70,6 +70,8 @@ final class Todo {
     var title: String = ""
     var notes: String?
     var hashtagsRawValue: String?
+    /// Optional scalar for additive local-store and CloudKit migration.
+    var externalTaskLinkRawValue: String? = nil
     /// Persisted as `direction` for SwiftData and CloudKit compatibility.
     var direction: Area?
     var measurementRawValue: String = TodoMeasurement.checkbox.rawValue
@@ -150,6 +152,11 @@ final class Todo {
     var hashtags: [String] {
         get { TodoHashtagCodec.decode(hashtagsRawValue) }
         set { hashtagsRawValue = TodoHashtagCodec.encode(newValue) }
+    }
+
+    var externalTaskLink: ExternalTaskLink? {
+        guard let externalTaskLinkRawValue else { return nil }
+        return try? ExternalTaskLink.decode(externalTaskLinkRawValue)
     }
 
     var priority: TodoPriority {

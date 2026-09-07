@@ -70,6 +70,13 @@ struct IOSFlowView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
                     Button {
+                        open(.connectors)
+                    } label: {
+                        Label(String(localized: "コネクタ"), systemImage: "puzzlepiece.extension")
+                    }
+                    .accessibilityIdentifier("connectors.open")
+
+                    Button {
                         open(.settings)
                     } label: {
                         Label(String(localized: "設定"), systemImage: "gearshape")
@@ -78,6 +85,7 @@ struct IOSFlowView: View {
                     IOSMoreMenuLabel()
                 }
                 .accessibilityLabel(String(localized: "その他"))
+                .accessibilityIdentifier("flow.more")
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {

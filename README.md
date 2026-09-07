@@ -22,6 +22,24 @@ before testing development builds and report reproducible problems through the
 
 `1 Block` is always 25 focused minutes. Breaks are not counted.
 
+## Upcoming 2.0: connectors
+
+The next development stage adds Apple Reminders and Todoist task imports on
+macOS, iPhone, and iPad. Open Connectors above Settings in the Mac sidebar,
+in the iPhone Flow More menu, or in the iPad sidebar footer. Choose lists or
+projects and a destination Area, then import their unfinished tasks.
+
+Reminders uses the system permission prompt; Todoist opens its own sign-in and
+consent screen. No ThruFlow account or custom backend is required. Access tokens
+stay in the device Keychain, and imported tasks use the existing local and
+private-iCloud storage. Refresh updates external titles and deadlines while
+preserving ThruFlow completion, notes, planning, and Flow history.
+
+This is upcoming 2.0 development work and has not been declared an App Store
+release. Public OAuth website files, signing, physical-device permissions,
+CloudKit migration, and release verification must be checked before delivery.
+See [Connectors](docs/CONNECTORS.md) for behavior, limitations, and setup.
+
 ## Platforms and requirements
 
 | Target | Minimum OS |
@@ -71,6 +89,7 @@ CloudKit synchronization cannot be validated in the simulator. Use signed builds
 - [Data model](docs/DATA_MODEL.md)
 - [UX flows](docs/UX_FLOWS.md)
 - [CloudKit setup](docs/CLOUDKIT.md)
+- [Connectors and native OAuth setup](docs/CONNECTORS.md)
 - [Localization](docs/LOCALISATION.md)
 - [Release process](docs/RELEASE.md)
 - [Roadmap](docs/ROADMAP.md)

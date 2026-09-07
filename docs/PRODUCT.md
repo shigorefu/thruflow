@@ -172,6 +172,37 @@ instead of the selected period. Matching uses record title, Area, emoji,
 hashtag, intent, or memo in `集中記録`, `タスク`, and `分野` modes. macOS provides
 the same database-wide filtering through its native toolbar search field.
 
+## Connectors — Upcoming 2.0
+
+macOS, iPhone, and iPad can import unfinished tasks from selected Apple
+Reminders lists or Todoist projects into an active non-Habit Area. The default
+destination is `その他`. `コネクタ` is a separate management surface above
+`設定` in the macOS sidebar footer, the iPhone Flow More menu, and the regular
+width iPad sidebar footer. It is not another primary tab.
+
+Reminders requests system access. Todoist opens the provider's sign-in and
+consent screen, using a public OAuth client with PKCE and read-only access.
+There is no ThruFlow signup or required application server. Each device owns
+its connection credentials and list-to-Area settings; imported Tasks and their
+non-secret external identities follow normal private CloudKit synchronization.
+Watch can use those synchronized Tasks but does not manage connections.
+
+The first import creates ordinary Check Tasks, copies their initial memo, and
+puts an external due date in `deadline`, leaving the local scheduled date empty.
+Users can plan them from `日付なし` and record Flow normally. Refresh runs by
+request and when the app opens, and owns only title, external deadline, and
+source metadata. ThruFlow keeps local completion, memo, Area, planned date,
+measurement, progress, and history. Completing, deleting, or disconnecting a
+source never implicitly completes or deletes the local Task; no ThruFlow edit
+is sent upstream. Repeated external occurrences with the same identifier do
+not generate new local occurrences. Todoist Tasks expose `Todoistで開く` in
+the editor; Reminders has no supported individual-reminder link.
+
+This is upcoming 2.0 scope, independent of the still-deferred APNs backend.
+[Connectors](CONNECTORS.md) owns the identity limitations and release gates.
+The existing free, ad-free core commitment remains; this change defines no
+new pricing policy.
+
 ## Settings
 
 The native Settings surfaces group appearance, language, calendar, clock, and
