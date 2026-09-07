@@ -4,7 +4,7 @@ This document is the operational checklist for ThruFlow releases. Product scope 
 
 ## Published releases
 
-| Version | GitHub publication | Status |
+| Version | GitHub publication (JST) | Status |
 | --- | --- | --- |
 | [1.2.0](https://github.com/shigorefu/thruflow/releases/tag/v1.2.0) | 2026-09-08 | Released; latest stable |
 | [1.1.0](https://github.com/shigorefu/thruflow/releases/tag/v1.1.0) | 2026-09-03 | Released |
