@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "ja",
   "strings" : {
+    "" : {
+
+    },
     "–" : {
       "localizations" : {
         "en" : {
@@ -9576,6 +9579,38 @@
         }
       }
     },
+    "現在のタイマーの残り時間を5分短くします。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subtracts 5 minutes from the current timer."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Уменьшает оставшееся время текущего таймера на 5 минут."
+          }
+        }
+      }
+    },
+    "現在のタイマーの残り時間を5分長くします。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adds 5 minutes to the current timer."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавляет 5 минут к оставшемуся времени текущего таймера."
+          }
+        }
+      }
+    },
     "発表資料を作る" : {
       "localizations" : {
         "en" : {
@@ -11324,38 +11359,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Только фокус"
-          }
-        }
-      }
-    },
-    "現在のタイマーの残り時間を5分短くします。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Subtracts 5 minutes from the current timer."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Уменьшает оставшееся время текущего таймера на 5 минут."
-          }
-        }
-      }
-    },
-    "現在のタイマーの残り時間を5分長くします。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Adds 5 minutes to the current timer."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Добавляет 5 минут к оставшемуся времени текущего таймера."
           }
         }
       }
