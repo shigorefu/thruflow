@@ -1,8 +1,9 @@
 # Changelog
 
 All notable user-facing changes to ThruFlow are documented in this file.
+Release dates below record GitHub publication.
 
-## [1.2.0] - Unreleased
+## [1.2.0] - 2026-09-08
 
 ### Changed
 
@@ -44,7 +45,7 @@ All notable user-facing changes to ThruFlow are documented in this file.
   export. Production continues using the existing `default.store`; no shipped
   data is moved.
 
-## [1.1.0] - Unreleased
+## [1.1.0] - 2026-09-03
 
 ### Added
 
@@ -89,3 +90,20 @@ All notable user-facing changes to ThruFlow are documented in this file.
 - Fixed Statistics opening the previous month after selecting a numbered month
   on macOS or iOS.
 - Fixed a separate black strip appearing below iPhone History content.
+
+## [1.0.0] - 2026-08-26
+
+### Added
+
+- First stable release for macOS, iPhone, and iPad, with an Apple Watch companion.
+- Task and Area management, focus timers, Flow/rest history, and statistics.
+- Private iCloud synchronization, widgets, Live Activity, and Dynamic Island.
+- Japanese, English, and Russian localizations.
+
+### Fixed
+
+- Improved History timeline editing and natural localized copy before release.
+
+[1.2.0]: https://github.com/shigorefu/thruflow/compare/v1.1.0...v1.2.0
+[1.1.0]: https://github.com/shigorefu/thruflow/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/shigorefu/thruflow/releases/tag/v1.0.0
