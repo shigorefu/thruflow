@@ -2,19 +2,32 @@
 
 This document is the operational checklist for ThruFlow releases. Product scope remains in [`ROADMAP.md`](ROADMAP.md), and CloudKit details remain in [`CLOUDKIT.md`](CLOUDKIT.md).
 
-## Current development version 1.2.0 build 8
+## Published releases
 
-All shipping targets must resolve to:
+| Version | GitHub publication (JST) | Status |
+| --- | --- | --- |
+| [1.2.0](https://github.com/shigorefu/thruflow/releases/tag/v1.2.0) | 2026-09-08 | Released; latest stable |
+| [1.1.0](https://github.com/shigorefu/thruflow/releases/tag/v1.1.0) | 2026-09-03 | Released |
+| [1.0.0](https://github.com/shigorefu/thruflow/releases/tag/v1.0.0) | 2026-08-26 | Released |
 
-- marketing version: `1.2.0`;
-- build number: `8`;
-- Release configuration;
-- matching app, widget/Live Activity extension, and Watch versions.
+## Released version 1.2.0 build 10
 
-Every later App Store Connect upload must use a build number greater than the
-last uploaded build, even when the marketing version changes. Raise build `8`
-before upload if that build number has already been processed for any earlier
-version on the same platform.
+The maintainer confirmed that 1.2.0 has shipped. The local macOS and iOS
+release archives both report marketing version `1.2.0` and build `10`.
+The release source is based on `000f972e11b29fa98cdc5fbedc44941ac632ba5a`,
+before the connector development commits. Release preparation updates the
+documentation and removes one unused empty localization entry; runtime Swift
+source and shipping metadata remain unchanged. See [release notes](releases/1.2.0.md).
+
+Shipping app, widget/Live Activity extension, and Watch targets use matching
+marketing version `1.2.0` and build `10`. Test bundle build numbers are not
+shipping metadata. Upcoming connector work is not part of this release.
+
+The following sections remain the procedure for future releases. Their presence
+is not a claim that this documentation update reran physical-device or upload
+checks. Every later App Store Connect upload must use a build number greater
+than the last uploaded build; build `10` has already shipped and must not be
+reused for a new upload.
 
 ## Automated checks
 
@@ -85,5 +98,6 @@ Never publish by rebuilding after the smoke test. Promote the exact tested build
 ## After TestFlight validation
 
 - Update the release gate in [`ROADMAP.md`](ROADMAP.md).
-- Tag the exact commit as `v1.2.0` only after the build is accepted and smoke-tested.
+- Tag the tested release source as `v<marketing-version>` only after the build
+  is accepted and smoke-tested. Existing published tags must not be moved.
 - Publish release notes that clearly identify known limitations and migration behavior.

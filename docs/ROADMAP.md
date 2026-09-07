@@ -1,8 +1,8 @@
 # Roadmap
 
-## 1.0 — First stable release
+## 1.0.0 — First stable release (released)
 
-The goal for 1.0 is to ship a reliable core loop, not expand the product:
+Released on GitHub on 2026-08-26. Version 1.0 delivered the core loop:
 
 ```text
 Area -> Task -> Flow -> focused time -> progress -> statistics
@@ -45,9 +45,11 @@ Area -> Task -> Flow -> focused time -> progress -> statistics
   and Areas, resetting derived progress, and syncing through private
   CloudKit.
 
-### Release gates
+### Archived release preparation checklist
 
-Every item below is required before publishing 1.0:
+Version 1.0.0 is released. The entries below preserve the preparation record;
+unchecked manual items mean their verification was not recorded here. They do
+not mean that 1.0.0 remains unreleased.
 
 - [ ] Complete at least one week of daily-use burn-in without lost or duplicate
   Tasks, Habits, Flow segments, breaks, or completion progress.
@@ -86,7 +88,9 @@ Every item below is required before publishing 1.0:
 - A continuous non-Flow timeline.
 - New rewards, AI, or external connectors.
 
-## 1.1.0 — History correctness and workflow polish
+## 1.1.0 — History correctness and workflow polish (released)
+
+Released on GitHub on 2026-09-03.
 
 ### Task capture and Flow
 
@@ -123,8 +127,6 @@ Every item below is required before publishing 1.0:
 - [x] Keep the complete selected Week, Month, or Year visible in Statistics
   Dots. Future cells remain empty and disabled; Elastic continues to represent
   only the selected date.
-- [x] Cross out the leading and trailing Statistics Dots cells that belong to
-  adjacent months so they are distinct from empty days in the selected month.
 - [x] Extend the iPhone History background through the bottom safe area so no
   separate black strip appears below the content.
 
@@ -147,7 +149,9 @@ Every item below is required before publishing 1.0:
 - [x] Align the app and extension marketing versions to `1.1.0` while retaining
   build number `8`.
 
-## 1.2.0 — Area naming and compatibility
+## 1.2.0 — Area naming and compatibility (released)
+
+Released on GitHub on 2026-09-08; shipping build `10`.
 
 ### Code and persistence
 
@@ -179,10 +183,13 @@ Every item below is required before publishing 1.0:
 - [x] Add title-history suggestions above the iPhone Task edit form without
   changing the edited Task's status, progress, Area, or other metadata.
 
+- [x] Cross out the leading and trailing Statistics Dots cells that belong to
+  adjacent months so they are distinct from empty days in the selected month.
+
 ### Delivery
 
-- [x] Align the app, extension, and Watch marketing versions to `1.2.0` while
-  retaining build number `8`.
+- [x] Ship the app, extension, and Watch with marketing version `1.2.0` and
+  build number `10`.
 - [x] Skip Apple build/test jobs for Markdown-only changes while keeping the
   required GitHub CI status resolvable. Run the complete Apple gate whenever
   any non-Markdown file changes.
