@@ -15,8 +15,9 @@ This document is the operational checklist for ThruFlow releases. Product scope 
 The maintainer confirmed that 1.2.0 has shipped. The local macOS and iOS
 release archives both report marketing version `1.2.0` and build `10`.
 The release source is based on `000f972e11b29fa98cdc5fbedc44941ac632ba5a`,
-before the connector development commits; release documentation is updated
-without changing that application source. See [release notes](releases/1.2.0.md).
+before the connector development commits. Release preparation updates the
+documentation and removes one unused empty localization entry; runtime Swift
+source and shipping metadata remain unchanged. See [release notes](releases/1.2.0.md).
 
 Shipping app, widget/Live Activity extension, and Watch targets use matching
 marketing version `1.2.0` and build `10`. Test bundle build numbers are not
