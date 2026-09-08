@@ -3,6 +3,14 @@
 All notable user-facing changes to ThruFlow are documented in this file.
 Release dates below record GitHub publication in Asia/Tokyo (JST).
 
+## [1.3.0] - Unreleased
+
+### Fixed
+
+- The Flow timeline refreshes immediately when starting, pausing, or resuming
+  playback on macOS and iOS. Time labels animate with the rail instead of
+  jumping ahead of delayed dashboard updates.
+
 ## [1.2.0] - 2026-09-08
 
 ### Changed

@@ -147,6 +147,9 @@ struct IOSFlowView: View {
             presentMemoIfNeeded()
         }
         .onChange(of: activeFlowStore.phase) { _, _ in
+            if isVisible {
+                cachedSnapshot = makeSnapshot(at: .now)
+            }
             presentMemoIfNeeded()
         }
         .onChange(of: activeFlowStore.timerState == nil) { _, isIdle in
@@ -645,7 +648,11 @@ struct IOSFlowView: View {
     private func refreshDashboardCache() async {
         guard isVisible else { return }
 
-        try? await Task.sleep(for: .milliseconds(cachedSnapshot == nil ? 220 : 350))
+        // Defer only the initial load. Playback changes must not wait behind
+        // the navigation delay while the timeline already shows the new end.
+        if cachedSnapshot == nil {
+            try? await Task.sleep(for: .milliseconds(220))
+        }
         guard !Task.isCancelled, isVisible else { return }
 
         cachedSnapshot = makeSnapshot(at: .now)

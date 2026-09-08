@@ -110,6 +110,10 @@ struct FlowDashboardView: View {
         .task(id: habitPreparationID) {
             await prepareTodayHabitsAfterPresentation()
         }
+        .onChange(of: activeFlowStore.phase) { _, _ in
+            guard isVisible else { return }
+            cachedSnapshot = makeSnapshot(now: .now)
+        }
         .task(id: snapshotRefreshID) {
             await refreshDashboardCache()
         }
@@ -201,9 +205,11 @@ struct FlowDashboardView: View {
     private func refreshDashboardCache() async {
         guard isVisible else { return }
 
-        // Let navigation and the cached first frame finish before touching
-        // SwiftData-backed models for a fresh dashboard projection.
-        try? await Task.sleep(for: .milliseconds(cachedSnapshot == nil ? 300 : 450))
+        // Defer only the initial load. Playback changes must not wait behind
+        // the navigation delay while the timeline already shows the new end.
+        if cachedSnapshot == nil {
+            try? await Task.sleep(for: .milliseconds(300))
+        }
         guard !Task.isCancelled, isVisible else { return }
 
         cachedSnapshot = makeSnapshot(now: .now)
@@ -575,13 +581,6 @@ struct FlowDashboardView: View {
 
                 }
                 .frame(maxHeight: .infinity)
-                .animation(
-                    reduceMotion ? nil : .easeInOut(duration: 0.38),
-                    value: timelineAnimationDates(
-                        range: range,
-                        activeTimerEndAt: activeTimerEndAt
-                    )
-                )
                 .onContinuousHover { phase in
                     switch phase {
                     case .active(let location):
@@ -640,6 +639,10 @@ struct FlowDashboardView: View {
                 }
             }
         }
+        .animation(
+            reduceMotion ? nil : .easeInOut(duration: 0.38),
+            value: timelineAnimationDates(range: range, activeTimerEndAt: activeTimerEndAt)
+        )
     }
 
     private func timelineAnimationDates(

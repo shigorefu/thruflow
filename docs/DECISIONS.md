@@ -637,3 +637,11 @@ Reason: Production CloudKit entity and field names are forward-only. Keeping
 their existing identities avoids data migration, duplicate records, and sync
 risk while making current product terminology consistent for users and
 developers.
+
+## D-043: Playback Refreshes The Dashboard Without A Navigation Delay
+
+The initial uncached dashboard load may yield for navigation. Once visible,
+playback phase changes refresh its projection immediately, and subsequent
+cache refreshes do not add a presentation delay. Elastic time labels and the
+rail use one animation scope, respecting Reduce Motion. This prevents the
+planned end from moving ahead of the displayed records after Play or resume.

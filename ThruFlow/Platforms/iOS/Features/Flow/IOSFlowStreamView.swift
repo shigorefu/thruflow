@@ -82,13 +82,6 @@ struct IOSFlowTimelineView: View {
                         )
                     }
                 }
-                .animation(
-                    reduceMotion ? nil : .easeInOut(duration: 0.38),
-                    value: timelineAnimationDates(
-                        range: range,
-                        activeTimerEndAt: activeTimerEndAt
-                    )
-                )
                 .frame(
                     width: proxy.size.width,
                     height: proxy.size.height,
@@ -129,6 +122,10 @@ struct IOSFlowTimelineView: View {
                 }
             }
         }
+        .animation(
+            reduceMotion ? nil : .easeInOut(duration: 0.38),
+            value: timelineAnimationDates(range: range, activeTimerEndAt: activeTimerEndAt)
+        )
     }
 
     private func timelineCapsule(
