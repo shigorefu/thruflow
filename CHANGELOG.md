@@ -13,6 +13,12 @@ Release dates below record GitHub publication in Asia/Tokyo (JST).
 
 ### Fixed
 
+- Weekly habits measured in minutes or Blocks reconcile recorded progress
+  before automatic rescheduling, so a completed occurrence with stale progress
+  is not moved into today. The next occurrence starts with zero progress.
+- macOS task move menus now enforce the same completion and weekly schedule
+  checks as drag and drop.
+
 - The Flow timeline refreshes immediately when starting, pausing, or resuming
   playback on macOS and iOS. Time labels animate with the rail instead of
   jumping ahead of delayed dashboard updates.

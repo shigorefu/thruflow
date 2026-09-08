@@ -60,15 +60,20 @@ struct FlowProgressReconciler {
                     excludingSegmentIDs: excludingSegmentIDs
                 )
             }
-            todo.recordedFocusSeconds = seconds
-
-            switch todo.measurement {
-            case .checkbox:
-                break
-            case .focusBlocks:
-                todo.setProgress(BlockUnit.wholeBlocks(forFocusedSeconds: seconds), now: now)
-            case .minutes:
-                todo.setProgress(seconds / 60, now: now)
+            let progress = todo.measurement == .focusBlocks
+                ? BlockUnit.wholeBlocks(forFocusedSeconds: seconds)
+                : seconds / 60
+            let status = TodoProgressCalculator().status(
+                measurement: todo.measurement,
+                plannedAmount: todo.plannedAmount,
+                actualProgress: progress
+            )
+            // Planning can reconcile repeatedly; unchanged derived values must
+            // not produce new writes or trigger another materialization pass.
+            if todo.recordedFocusSeconds != seconds ||
+                todo.actualProgress != progress || todo.status != status {
+                todo.recordedFocusSeconds = seconds
+                todo.setProgress(progress, now: now)
             }
         }
 

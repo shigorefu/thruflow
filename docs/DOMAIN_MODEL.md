@@ -65,6 +65,11 @@ Completion:
 - focus blocks: completed when accumulated block progress reaches planned amount;
 - minutes: completed when accumulated focused minutes reaches planned amount.
 
+Weekly measured Habit occurrences reconcile their progress from available Flow
+history before automatic rollover. Planning therefore cannot move a completed
+occurrence merely because its cached progress/status is stale. Repeated
+reconciliation of unchanged measured Todo progress does not update its timestamp.
+
 ## FlowSession
 
 `FlowSession` stores timing/history:

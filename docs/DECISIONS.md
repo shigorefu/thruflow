@@ -653,3 +653,13 @@ Settings on macOS and iOS/iPadOS offers a local, persisted
 the translucent future interval and its contribution to the Elastic range
 for focus and rest, restoring elapsed-time-only rendering. It does not change
 the timer, stored history, or CloudKit data.
+
+## D-045: Reconcile Weekly Measured Progress Before Rollover
+
+Habit materialization resolves weekly Minute/Block Todo progress from available
+Flow history before testing pending status. History and derived status may
+arrive in a different order; a completed occurrence must retain its date and
+the next occurrence must have a new identity and zero progress. Reconciliation
+is idempotent for unchanged Todo values. macOS move menus use the same
+validation as drag and drop and do not offer moving completed Tasks. Existing
+user-edited dates are not retrospectively inferred or rewritten.

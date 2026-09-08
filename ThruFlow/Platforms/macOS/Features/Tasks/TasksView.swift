@@ -715,12 +715,14 @@ struct TasksView: View {
                 editingTodo = todo
             }
 
-            if todo.area?.type == .habit {
-                if todo.area?.goalSchedule == .weeklyCount {
-                    weeklyHabitMoveMenu(for: todo)
+            if !todo.isCompleted {
+                if todo.area?.type == .habit {
+                    if todo.area?.goalSchedule == .weeklyCount {
+                        weeklyHabitMoveMenu(for: todo)
+                    }
+                } else {
+                    standardMoveMenu(for: todo)
                 }
-            } else {
-                standardMoveMenu(for: todo)
             }
 
             Divider()
@@ -773,8 +775,13 @@ struct TasksView: View {
     }
 
     private func reschedule(_ todo: Todo, to date: Date?) {
-        todo.reschedule(to: date)
-        _ = modelContext.saveReporting(.taskUpdate)
+        if let date {
+            _ = moveTodo(todo, to: date)
+        } else {
+            guard !todo.isCompleted, todo.area?.type != .habit else { return }
+            todo.reschedule(to: nil)
+            _ = modelContext.saveReporting(.taskUpdate)
+        }
     }
 
     private func rescheduleLabel(for date: Date) -> String {
