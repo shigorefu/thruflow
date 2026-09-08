@@ -5,6 +5,12 @@ Release dates below record GitHub publication in Asia/Tokyo (JST).
 
 ## [1.3.0] - Unreleased
 
+### Added
+
+- Settings now lets you hide the planned end on the Flow timeline and show
+  only elapsed time on macOS and iOS/iPadOS. The existing planned-end view
+  remains enabled by default; the preference is saved on each device.
+
 ### Fixed
 
 - The Flow timeline refreshes immediately when starting, pausing, or resuming

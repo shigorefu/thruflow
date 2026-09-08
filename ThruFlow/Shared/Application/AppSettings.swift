@@ -90,6 +90,10 @@ final class AppSettings: ObservableObject {
         didSet { defaults.set(showsTaskQuickInputLegend, forKey: Keys.showsTaskQuickInputLegend) }
     }
 
+    @Published var showsTimelinePlannedEnd: Bool {
+        didSet { defaults.set(showsTimelinePlannedEnd, forKey: Keys.showsTimelinePlannedEnd) }
+    }
+
     let launchLanguageCode: String
 
     private let defaults: UserDefaults
@@ -112,6 +116,7 @@ final class AppSettings: ObservableObject {
             defaults.object(forKey: Keys.dayStartHour) as? Int ?? 0
         )
         showsTaskQuickInputLegend = defaults.object(forKey: Keys.showsTaskQuickInputLegend) as? Bool ?? true
+        showsTimelinePlannedEnd = defaults.object(forKey: Keys.showsTimelinePlannedEnd) as? Bool ?? true
         launchLanguageCode = storedLanguageCode
         applyLanguagePreference()
     }
@@ -176,6 +181,7 @@ final class AppSettings: ObservableObject {
     }
 
     private enum Keys {
+        static let showsTimelinePlannedEnd = "settings.showsTimelinePlannedEnd"
         static let appearance = "settings.appearance"
         static let languageCode = "settings.languageCode"
         static let weekStart = "settings.weekStart"

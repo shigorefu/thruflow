@@ -645,3 +645,11 @@ playback phase changes refresh its projection immediately, and subsequent
 cache refreshes do not add a presentation delay. Elastic time labels and the
 rail use one animation scope, respecting Reduce Motion. This prevents the
 planned end from moving ahead of the displayed records after Play or resume.
+
+## D-044: Optional Planned End On The Dashboard Timeline
+
+Settings on macOS and iOS/iPadOS offers a local, persisted
+`showsTimelinePlannedEnd` preference, enabled by default. Disabling it removes
+the translucent future interval and its contribution to the Elastic range
+for focus and rest, restoring elapsed-time-only rendering. It does not change
+the timer, stored history, or CloudKit data.

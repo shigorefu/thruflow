@@ -23,6 +23,7 @@ struct FlowDashboardView: View {
     @Environment(\.locale) private var locale
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
+    @EnvironmentObject private var settings: AppSettings
 
     let areas: [Area]
     @Query private var todos: [Todo]
@@ -365,7 +366,9 @@ struct FlowDashboardView: View {
     }
 
     private func timelineSurface(snapshot: FlowDashboardSnapshot, now: Date) -> some View {
-        let activeTimerEndAt = activeFlowStore.activeTimerTimelineEndAt(now: now)
+        let activeTimerEndAt = settings.showsTimelinePlannedEnd
+            ? activeFlowStore.activeTimerTimelineEndAt(now: now)
+            : nil
         let range = FlowTimelineRange(
             date: now,
             segments: snapshot.segments,
@@ -459,7 +462,7 @@ struct FlowDashboardView: View {
                         }
                         .frame(width: width, height: height, alignment: .leading)
                         .background {
-                            if group.isActive {
+                            if group.isActive && activeTimerEndAt != nil {
                                 Color(hex: group.segments.first?.colorHex ?? "#8E8E93")
                                     .opacity(0.2)
                             }
@@ -1747,6 +1750,7 @@ private struct FlowDashboardPreviewHost: View {
             cachedTodoGroups: $todoGroups
         )
         .environmentObject(ActiveFlowStore())
+        .environmentObject(AppSettings())
         .modelContainer(for: [Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self], inMemory: true)
     }
 }

@@ -1,6 +1,72 @@
 {
   "sourceLanguage" : "ja",
   "strings" : {
+    "オンにすると終了予定までを薄く表示します。オフにすると経過した時間だけを表示します。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "オンにすると終了予定までを薄く表示します。オフにすると経過した時間だけを表示します。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When enabled, a translucent bar shows the time until the planned end. When disabled, only elapsed time is shown."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Если включено, полупрозрачная полоса показывает время до планируемого окончания. Если выключено — только прошедшее время."
+          }
+        }
+      }
+    },
+    "終了予定まで表示" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "終了予定まで表示"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show planned end time"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показывать планируемое окончание"
+          }
+        }
+      }
+    },
+    "タイムライン" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タイムライン"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Timeline"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Таймлайн"
+          }
+        }
+      }
+    },
     "" : {
 
     },

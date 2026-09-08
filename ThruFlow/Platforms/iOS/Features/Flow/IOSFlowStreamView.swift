@@ -33,11 +33,14 @@ struct IOSFlowTimelineView: View {
     @Environment(\.calendar) private var calendar
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
+    @EnvironmentObject private var settings: AppSettings
     @State private var selectedTimelineItem: IOSFlowTimelineSelection?
     @State private var selectedAnchorX: CGFloat = 0.5
 
     var body: some View {
-        let activeTimerEndAt = activeFlowStore.activeTimerTimelineEndAt(now: now)
+        let activeTimerEndAt = settings.showsTimelinePlannedEnd
+            ? activeFlowStore.activeTimerTimelineEndAt(now: now)
+            : nil
         let range = FlowTimelineRange(
             date: now,
             segments: snapshot.segments,
@@ -175,7 +178,7 @@ struct IOSFlowTimelineView: View {
         }
         .frame(width: groupWidth, height: height, alignment: .leading)
         .background {
-            if group.isActive {
+            if group.isActive && activeTimerEndAt != nil {
                 Color(hex: group.segments.first?.colorHex ?? "#8E8E93")
                     .opacity(0.2)
             }
