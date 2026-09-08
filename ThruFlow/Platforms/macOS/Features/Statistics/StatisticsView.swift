@@ -1529,6 +1529,7 @@ private struct StatisticsContributionGrid: View {
                     maxValue: maxValue,
                     isInteractive: day?.isSelectable == true,
                     marksOutsidePeriod: marksOutsideMonth && day == nil,
+                    hidesPlaceholder: usesCompactCustomGrid,
                     onSelectDate: onSelectDate
                 )
                 .frame(
@@ -1557,6 +1558,7 @@ private struct StatisticsContributionGrid: View {
                             day: contributionDay(week: weekIndex, weekday: weekdayIndex),
                             maxValue: maxValue,
                             isInteractive: false,
+                            hidesPlaceholder: usesCompactCustomGrid,
                             onSelectDate: onSelectDate
                         )
                         .aspectRatio(1, contentMode: .fit)
@@ -1584,6 +1586,7 @@ private struct StatisticsContributionCell: View {
     let maxValue: Int
     let isInteractive: Bool
     let marksOutsidePeriod: Bool
+    let hidesPlaceholder: Bool
     let onSelectDate: (Date) -> Void
 
     @State private var isHovered = false
@@ -1593,17 +1596,26 @@ private struct StatisticsContributionCell: View {
         maxValue: Int,
         isInteractive: Bool = true,
         marksOutsidePeriod: Bool = false,
+        hidesPlaceholder: Bool = false,
         onSelectDate: @escaping (Date) -> Void
     ) {
         self.day = day
         self.maxValue = maxValue
         self.isInteractive = isInteractive
         self.marksOutsidePeriod = marksOutsidePeriod
+        self.hidesPlaceholder = hidesPlaceholder
         self.onSelectDate = onSelectDate
     }
 
     @ViewBuilder
     var body: some View {
+        renderedCell
+            .opacity(hidesPlaceholder && day == nil ? 0 : 1)
+            .accessibilityHidden(hidesPlaceholder && day == nil)
+    }
+
+    @ViewBuilder
+    private var renderedCell: some View {
         if isInteractive {
             Button {
                 guard let day else { return }

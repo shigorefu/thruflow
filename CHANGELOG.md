@@ -13,6 +13,9 @@ Release dates below record GitHub publication in Asia/Tokyo (JST).
 
 ### Fixed
 
+- Custom Statistics ranges no longer draw empty Dots cells outside the selected
+  dates on macOS and iOS/iPadOS. Preset calendar grids remain complete.
+
 - Weekly habits measured in minutes or Blocks reconcile recorded progress
   before automatic rescheduling, so a completed occurrence with stale progress
   is not moved into today. The next occurrence starts with zero progress.

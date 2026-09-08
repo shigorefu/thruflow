@@ -155,6 +155,7 @@ struct IOSStatisticsView: View {
                         mode: $dotsMode,
                         period: presentationPeriod,
                         marksOutsideMonth: selectedPeriod == .month && !usesCustomRange,
+                        usesCustomRange: usesCustomRange,
                         flowDays: currentSnapshot.flowDays,
                         achievementDays: currentSnapshot.achievementDays,
                         maximumInteractiveDate: today,
@@ -1134,6 +1135,7 @@ private struct IOSStatisticsDotsCard: View {
     @Binding var mode: StatisticsMode
     let period: StatisticsPeriod
     let marksOutsideMonth: Bool
+    let usesCustomRange: Bool
     let flowDays: [StatisticsDay]
     let achievementDays: [AchievementDay]
     let maximumInteractiveDate: Date
@@ -1195,6 +1197,7 @@ private struct IOSStatisticsDotsCard: View {
                     case .year:
                         IOSStatisticsYearGrid(
                             paddedDays: paddedDays,
+                            hidesPlaceholders: usesCustomRange,
                             maxValue: maxValue
                         )
                     }
@@ -1252,6 +1255,7 @@ private struct IOSStatisticsDotsCard: View {
                     day: day,
                     maxValue: maxValue,
                     marksOutsidePeriod: marksOutsideMonth && day == nil,
+                    hidesPlaceholder: usesCustomRange,
                     onSelectDay: onSelectDay
                 )
                 .aspectRatio(1, contentMode: .fit)
@@ -1264,6 +1268,7 @@ private struct IOSStatisticsContributionCell: View {
     let day: IOSStatisticsContributionDay?
     let maxValue: Int
     var marksOutsidePeriod = false
+    var hidesPlaceholder = false
     let onSelectDay: (IOSStatisticsContributionDay) -> Void
 
     var body: some View {
@@ -1295,6 +1300,8 @@ private struct IOSStatisticsContributionCell: View {
         }
         .buttonStyle(.plain)
         .disabled(day?.isSelectable != true)
+        .opacity(hidesPlaceholder && day == nil ? 0 : 1)
+        .accessibilityHidden(hidesPlaceholder && day == nil)
         .accessibilityLabel(day?.accessibilityLabel ?? "")
         .accessibilityHint(String(localized: "選択"))
     }
@@ -1302,6 +1309,7 @@ private struct IOSStatisticsContributionCell: View {
 
 private struct IOSStatisticsYearGrid: View {
     let paddedDays: [IOSStatisticsContributionDay?]
+    let hidesPlaceholders: Bool
     let maxValue: Int
 
     var body: some View {
@@ -1309,6 +1317,7 @@ private struct IOSStatisticsYearGrid: View {
             let layout = layout(for: geometry.size)
             Canvas { context, _ in
                 for (index, day) in paddedDays.enumerated() {
+                    if hidesPlaceholders && day == nil { continue }
                     let rect = layout.rect(for: index)
                     let path = Path(
                         roundedRect: rect,

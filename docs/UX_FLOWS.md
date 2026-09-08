@@ -580,6 +580,12 @@ emoji, hashtags, and available Flow text. A Flow that changed context is
 searched and credited per persisted segment; matching one segment never
 includes its siblings.
 
+Custom Statistics Dots ranges render only dates inside the inclusive selection.
+Outside-range alignment slots are transparent and hidden from accessibility;
+weekday alignment is preserved. Dates without activity inside the range remain
+visible. This applies to both medium calendar grids and long week-column grids
+on macOS and iOS/iPadOS; preset Week/Month/Year grids remain complete.
+
 A persistent calendar column on the right mirrors Tasks and History. Its header
 contains the centered preset control, trailing custom-range action,
 selected-period title, previous, Today, and next navigation. Previous/next move

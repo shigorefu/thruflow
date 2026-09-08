@@ -418,6 +418,12 @@ Flow switching is resolved per segment; the model does not add a Project
 entity. The compact iPhone and widget contribution ranges from D-009 remain
 unchanged until explicitly superseded.
 
+Custom Statistics Dots ranges render only dates inside the inclusive selection.
+Outside-range alignment slots are transparent and hidden from accessibility;
+weekday alignment is preserved. Dates without activity inside the range remain
+visible. This applies to both medium calendar grids and long week-column grids
+on macOS and iOS/iPadOS; preset Week/Month/Year grids remain complete.
+
 Reason: desktop space supports comparison and investigation while one shared,
 segment-aware projection keeps cards, search, and export numerically
 consistent. Task titles already provide the lightweight grouping needed for
