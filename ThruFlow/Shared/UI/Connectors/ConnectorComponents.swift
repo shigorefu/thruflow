@@ -282,7 +282,7 @@ struct ConnectorSetupSections: View {
                     .foregroundStyle(.secondary)
             }
         } footer: {
-            Text(String(localized: "未完了のタスクを取り込み、タイトルと期限を更新します。ThruFlowでの変更は接続先に送信しません。設定した接続はアプリを開いたときにも更新します。"))
+            Text(String(localized: "チェック形式のタスクは完了・未完了を相互に同期します。タイトルと期限は接続先から更新します。通信できない変更は次回の更新で再送します。"))
         }
     }
 

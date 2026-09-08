@@ -648,7 +648,7 @@ developers.
 Apple Reminders and Todoist are the first optional connectors on macOS,
 iPhone, and iPad. This starts upcoming 2.0 development without an APNs backend.
 Reminders uses system EventKit permission. Todoist uses native browser OAuth,
-read-only `data:read`, PKCE, and a public HTTPS client metadata document; only
+`data:read_write`, PKCE, and a public HTTPS client metadata document; only
 static OAuth/associated-domain files are added to the existing website.
 There is no ThruFlow signup, embedded client secret, or required server process.
 This supersedes only D-029's coupled connector/APNs deferral.
@@ -661,10 +661,17 @@ continues to work without a connector, credentials, network, or iCloud service.
 
 The first import creates unfinished Check Tasks in a non-Habit Area, copies
 initial notes, maps source due dates to `deadline`, and leaves local planning
-unscheduled. Refresh owns title, deadline, and link metadata only. It preserves
-local completion, memo, measurement, progress, Area, scheduled date, and exact
-Flow relationships. No source completion/deletion is inferred or sent upstream,
-and recurring source items with one external ID do not create new occurrences.
+unscheduled. Title and deadline remain source-owned. Check completion and
+reopening synchronize both ways, with pending local actions taking priority.
+Memo, measurement, measured progress, Area, scheduled date, and exact Flow
+relationships remain local. Remote deletion is never inferred or sent upstream.
+Recurring source items with one external ID do not create new local occurrences.
+
+Completion writeback was added after the initial read-only implementation.
+Stable command UUIDs, a durable non-secret JSON outbox, acknowledgement-aware
+deduplication, and scene-scoped retry protect queued user actions. Minute/Block
+completion stays timer-owned. See CONNECTORS.md for conflict, recurrence,
+credential-upgrade and device-verification limits.
 Missing remote items and disconnection retain the local Task and history.
 
 One optional JSON scalar on Todo identifies provider + account + external task;

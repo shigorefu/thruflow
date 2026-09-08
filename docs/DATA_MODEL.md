@@ -211,3 +211,9 @@ History the user may explicitly link an existing Task or invoke
 `タスクを追加`, which opens normal Task creation with Area and date
 preselected. Creating a Task is never an automatic side effect of finishing or
 editing Area-only Flow.
+
+Connector completion adds only optional fields inside the existing external-link
+JSON (`remoteCompletion`, `completionChanges`, `acknowledgedCompletionIDs`).
+Pending commands contain UUID, target boolean and timestamp; no tokens or new
+SwiftData fields/entities are introduced. Checkbox and command persist together.
+Local Flow counters and relationships are untouched by incoming completion.

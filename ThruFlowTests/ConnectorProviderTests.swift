@@ -5,6 +5,39 @@ import Testing
 @Suite(.serialized)
 @MainActor
 struct ConnectorProviderTests {
+    @Test func todoistCompletionUsesIdempotentCommandsAndChecksPerCommandStatus() async throws {
+        let change = ConnectorCompletionChange(isCompleted: true, createdAt: .now)
+        let transport = ConnectorStubTransport([
+            .init(json: "{\"sync_status\":{\"\(change.id.uuidString)\":\"ok\"}}"),
+            .init(json: "{\"sync_status\":{\"\(change.id.uuidString)\":{\"error_code\":15}}}")
+        ])
+        let client = TodoistConnectorClient(accessToken: "test-token", transport: transport)
+        try await client.setCompletion(taskID: "task-a", sourceIDs: ["project-a"], change: change)
+        await #expect(throws: ConnectorProviderError.serviceUnavailable) {
+            try await client.setCompletion(taskID: "task-a", sourceIDs: ["project-a"], change: change)
+        }
+        let requests = await transport.recordedRequests()
+        #expect(requests.count == 2)
+        #expect(requests[0].httpBody == requests[1].httpBody)
+        let body = String(decoding: requests[0].httpBody ?? Data(), as: UTF8.self).removingPercentEncoding ?? ""
+        #expect(body.contains("item_close"))
+        #expect(body.contains(change.id.uuidString))
+        #expect(requests[0].httpMethod == "POST")
+    }
+
+    @Test func todoistCompletedTaskPagesAreReadExplicitly() async throws {
+        let transport = ConnectorStubTransport([
+            .init(json: #"{"items":[{"id":"task-a","project_id":"project-a","content":"Done","completed_at":"2026-09-08T10:00:00Z"}],"next_cursor":"next"}"#),
+            .init(json: #"{"items":[],"next_cursor":null}"#)
+        ])
+        let client = TodoistConnectorClient(accessToken: "test-token", transport: transport)
+        let now = Date.now
+        let tasks = try await client.completedTasks(sourceIDs: ["project-a"], since: now.addingTimeInterval(-86400), until: now)
+        #expect(tasks.count == 1)
+        #expect(tasks.first?.isCompleted == true)
+        #expect(await transport.recordedRequests().count == 2)
+    }
+
     @Test func todoistAccountUsesAuthenticatedReadOnlySyncRequest() async throws {
         let transport = ConnectorStubTransport([
             .init(json: #"{"user":{"id":"account-1","full_name":"Test User","token":"ignored-server-token"}}"#)

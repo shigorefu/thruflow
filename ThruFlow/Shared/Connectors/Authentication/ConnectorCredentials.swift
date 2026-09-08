@@ -5,6 +5,7 @@ nonisolated struct ConnectorCredentials: Codable, Equatable, Sendable {
     var accessToken: String
     var refreshToken: String?
     var expiresAt: Date?
+    var completionWriteAccess: Bool? = nil
 
     func needsRefresh(at date: Date) -> Bool {
         expiresAt.map { $0.timeIntervalSince(date) < 60 } ?? false

@@ -739,9 +739,12 @@ the entire connector sheet; Back returns to the provider list.
    shows its source name without inventing a private deep link.
 
 Changes to the destination Area affect new imports only. Updating does not
-reset local completion, priority, memo, planned date, measurement, progress, or
-Flow history. A remote task disappearing or recurring under the same ID does
-not delete the local Task, reopen it, or create another occurrence. Import
+reset local priority, memo, planned date, measurement, measured progress, or
+Flow history. Check completion/reopening syncs both ways; its editor shows an
+unsent-change label while delivery is pending. Minute/Block completion remains
+owned by local Flow. Missing items do not delete or complete a Task. Recurring
+provider items may become active again under the same local identity; no new
+local occurrence is created. Import
 failure keeps the previous success timestamp and displays a recoverable error
 inside the connector form; cancellation leaves an existing connection intact.
 

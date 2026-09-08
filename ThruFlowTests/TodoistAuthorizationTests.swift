@@ -24,7 +24,7 @@ struct TodoistAuthorizationTests {
         #expect(first.authorizationURL.host == "app.todoist.com")
         #expect(query.first { $0.name == "client_id" }?.value == TodoistAuthorizationRequest.clientID)
         #expect(query.first { $0.name == "redirect_uri" }?.value == TodoistAuthorizationRequest.redirectURI)
-        #expect(query.first { $0.name == "scope" }?.value == "data:read")
+        #expect(query.first { $0.name == "scope" }?.value == "data:read_write")
         #expect(query.first { $0.name == "code_challenge_method" }?.value == "S256")
         #expect(query.first { $0.name == "code_challenge" }?.value == TodoistAuthorizationRequest.challenge(for: first.verifier))
         #expect(!query.contains { $0.name == "client_secret" || $0.name == "code_verifier" })

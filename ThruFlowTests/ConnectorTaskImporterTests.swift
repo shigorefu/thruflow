@@ -7,6 +7,95 @@ import Testing
 struct ConnectorTaskImporterTests {
     private let now = Date(timeIntervalSince1970: 1_800_000_000)
 
+    @Test func sourceCompletionAndReopeningUpdateCheckboxWithoutAnEcho() throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+        let area = try makeArea(context)
+        _ = try run([task()], area: area, context: context)
+        let todo = try #require(context.fetch(FetchDescriptor<Todo>()).first)
+        todo.notes = "Local note"
+        todo.recordedFocusSeconds = 1500
+        let scheduledDate = now.addingTimeInterval(86_400)
+        todo.scheduledDate = scheduledDate
+        _ = try run([task(isCompleted: true)], area: area, context: context)
+        #expect(todo.isCompleted)
+        #expect(todo.externalTaskLink?.completionChanges?.isEmpty != false)
+        _ = try run([task()], area: area, context: context)
+        #expect(!todo.isCompleted)
+        #expect(todo.completedAt == nil)
+        #expect(todo.notes == "Local note")
+        #expect(todo.recordedFocusSeconds == 1500)
+        #expect(todo.scheduledDate == scheduledDate)
+        #expect(todo.externalTaskLink?.completionChanges?.isEmpty != false)
+    }
+
+    @Test func pendingLocalReopeningWinsOverACompletedRemoteSnapshot() throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+        let area = try makeArea(context)
+        _ = try run([task()], area: area, context: context)
+        let todo = try #require(context.fetch(FetchDescriptor<Todo>()).first)
+        todo.setCompleted(true, now: now)
+        todo.setCompleted(false, now: now.addingTimeInterval(1))
+        let pending = todo.externalTaskLink?.completionChanges
+        try context.save()
+        _ = try run([task(isCompleted: true)], area: area, context: context)
+        #expect(!todo.isCompleted)
+        #expect(todo.externalTaskLink?.completionChanges == pending)
+        #expect(pending?.map(\.isCompleted) == [true, false])
+    }
+
+    @Test func duplicateMergePreservesNewestPendingStateAndDropsAcknowledgedCommands() throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+        let area = try makeArea(context)
+        _ = try run([task()], area: area, context: context)
+        let original = try #require(context.fetch(FetchDescriptor<Todo>()).first)
+        original.setCompleted(true, now: now)
+        let oldLink = try #require(original.externalTaskLink)
+        let sent = try #require(oldLink.completionChanges?.first)
+        var acknowledged = oldLink
+        acknowledged.completionChanges = []
+        acknowledged.acknowledgedCompletionIDs = [sent.id]
+        original.externalTaskLinkRawValue = try acknowledged.encoded()
+        let duplicate = Todo(title: "Copy", area: area, createdAt: now.addingTimeInterval(1))
+        duplicate.status = .completed
+        duplicate.actualProgress = 1
+        duplicate.externalTaskLinkRawValue = try oldLink.encoded()
+        duplicate.setCompleted(false, now: now.addingTimeInterval(2))
+        context.insert(duplicate)
+        try context.save()
+        try ConnectorTaskImporter().reconcileDuplicates(modelContext: context, now: now.addingTimeInterval(3))
+        #expect(duplicate.isDeleted)
+        #expect(!original.isCompleted)
+        #expect(original.externalTaskLink?.completionChanges?.map(\.isCompleted) == [false])
+        #expect(original.externalTaskLink?.acknowledgedCompletionIDs?.contains(sent.id) == true)
+    }
+
+    @Test func oldCompletedDuplicateDoesNotUndoAConfirmedReopening() throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+        let area = try makeArea(context)
+        _ = try run([task()], area: area, context: context)
+        let original = try #require(context.fetch(FetchDescriptor<Todo>()).first)
+        var oldLink = try #require(original.externalTaskLink)
+        oldLink.remoteCompletion = true
+        let duplicate = Todo(title: "Old copy", area: area, createdAt: now.addingTimeInterval(1))
+        duplicate.status = .completed
+        duplicate.actualProgress = 1
+        duplicate.externalTaskLinkRawValue = try oldLink.encoded()
+        var reopened = oldLink
+        reopened.remoteCompletion = false
+        reopened.lastSyncedAt = now.addingTimeInterval(10)
+        original.externalTaskLinkRawValue = try reopened.encoded()
+        context.insert(duplicate)
+        try context.save()
+        try ConnectorTaskImporter().reconcileDuplicates(modelContext: context)
+        #expect(!original.isCompleted)
+        #expect(original.actualProgress == 0)
+        #expect(duplicate.isDeleted)
+    }
+
     @Test func firstImportCreatesOnlyActiveCheckboxTasksWithExternalDeadline() throws {
         let container = try makeContainer()
         let context = container.mainContext

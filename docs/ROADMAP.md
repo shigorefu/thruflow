@@ -203,7 +203,7 @@ until the release process explicitly advances it. APNs remains deferred.
 ### Implemented in the development branch
 
 - [x] Apple Reminders list selection through native EventKit permission.
-- [x] Todoist read-only OAuth with PKCE and public HTTPS client metadata.
+- [x] Todoist read/write OAuth with PKCE and public HTTPS client metadata.
 - [x] Per-device Keychain credentials and local source/Area configuration.
 - [x] Connectors above Settings in the Mac sidebar, iPhone Flow More menu,
   and regular-width iPad sidebar footer.
@@ -241,3 +241,7 @@ until the release process explicitly advances it. APNs remains deferred.
 - Writing completion or task edits back to external providers.
 - New local occurrences generated from recurring external tasks.
 - Additional providers, connector management on Watch, and any new pricing.
+
+Connector Check completion/reopening now includes a durable retry outbox and
+explicit remote completion reads. Signed two-device conflict and recurrence
+checks remain required before the 2.0 release.

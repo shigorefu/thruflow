@@ -13,7 +13,7 @@ private nonisolated struct URLSessionConnectorTransport: ConnectorHTTPTransport 
     }
 }
 
-/// Todoist API v1, read-only. Credentials are supplied by the application Keychain boundary.
+/// Todoist API v1. Credentials are supplied by the application Keychain boundary.
 /// https://developer.todoist.com/api/v1/
 @MainActor
 final class TodoistConnectorClient: ConnectorClient {
@@ -87,13 +87,66 @@ final class TodoistConnectorClient: ConnectorClient {
         return results
     }
 
+    func completedTasks(sourceIDs: Set<String>, since: Date, until: Date) async throws -> [ConnectorTask] {
+        var result: [ConnectorTask] = []
+        var start = since
+        let formatter = ISO8601DateFormatter()
+        // Todoist caps a completion-date query at three months. Cover every
+        // missed interval, including devices that have been offline longer.
+        while start < until {
+            let end = min(until, start.addingTimeInterval(89 * 86_400))
+            for sourceID in sourceIDs.sorted() {
+                let items: [TodoistTask] = try await pages(path: "tasks/completed/by_completion_date", query: [
+                    URLQueryItem(name: "project_id", value: sourceID),
+                    URLQueryItem(name: "since", value: formatter.string(from: start)),
+                    URLQueryItem(name: "until", value: formatter.string(from: end))
+                ])
+                for item in items where item.isDeleted != true {
+                    guard item.projectID == sourceID, !item.id.isEmpty else {
+                        throw ConnectorProviderError.invalidResponse
+                    }
+                    result.append(ConnectorTask(
+                        id: item.id, sourceID: item.projectID, title: item.content,
+                        notes: item.description,
+                        dueDate: try TodoistDateParser.parse(item.due?.date ?? item.deadline?.date, calendar: calendar),
+                        isCompleted: true,
+                        completedAt: try TodoistDateParser.parse(item.completedAt, calendar: calendar),
+                        url: URL(string: "https://app.todoist.com/app/task/")?.appendingPathComponent(item.id)
+                    ))
+                }
+            }
+            start = end
+        }
+        return result.sorted { ($0.completedAt ?? .distantPast) > ($1.completedAt ?? .distantPast) }
+    }
+
+    func setCompletion(taskID: String, sourceIDs: Set<String>, change: ConnectorCompletionChange) async throws {
+        guard !taskID.isEmpty else { throw ConnectorProviderError.invalidResponse }
+        var request = try makeRequest(path: "sync")
+        request.httpMethod = "POST"
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        let command: [String: Any] = [
+            "type": change.isCompleted ? "item_close" : "item_uncomplete",
+            "uuid": change.id.uuidString,
+            "args": ["id": taskID]
+        ]
+        let data = try JSONSerialization.data(withJSONObject: [command])
+        let commands = String(decoding: data, as: UTF8.self)
+        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-._~"))
+        request.httpBody = Data("commands=\(commands.addingPercentEncoding(withAllowedCharacters: allowed)!)".utf8)
+        let response: TodoistCommandResponse = try await decode(request)
+        guard case .success? = response.syncStatus[change.id.uuidString] else {
+            throw ConnectorProviderError.serviceUnavailable
+        }
+    }
+
     private func pages<Item: Decodable>(path: String, query: [URLQueryItem]) async throws -> [Item] {
         var result: [Item] = []
         var cursor: String?
         var seenCursors = Set<String>()
         repeat {
             try Task.checkCancellation()
-            var pageQuery = query + [URLQueryItem(name: "limit", value: "200")]
+            var pageQuery = query + [URLQueryItem(name: "limit", value: path.contains("completed/") ? "50" : "200")]
             if let cursor {
                 pageQuery.append(URLQueryItem(name: "cursor", value: cursor))
             }
@@ -184,6 +237,29 @@ private nonisolated struct TodoistPage<Item: Decodable>: Decodable {
     enum CodingKeys: String, CodingKey {
         case results
         case nextCursor = "next_cursor"
+        case items
+    }
+
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        if values.contains(.results) {
+            results = try values.decode([Item].self, forKey: .results)
+        } else {
+            results = try values.decode([Item].self, forKey: .items)
+        }
+        nextCursor = try values.decodeIfPresent(String.self, forKey: .nextCursor)
+    }
+}
+
+private nonisolated struct TodoistCommandResponse: Decodable {
+    let syncStatus: [String: Status]
+    enum CodingKeys: String, CodingKey { case syncStatus = "sync_status" }
+    enum Status: Decodable {
+        case success, failure
+        init(from decoder: Decoder) throws {
+            let value = try decoder.singleValueContainer()
+            self = (try? value.decode(String.self)) == "ok" ? .success : .failure
+        }
     }
 }
 

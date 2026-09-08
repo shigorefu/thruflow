@@ -3,6 +3,15 @@
 All notable user-facing changes to ThruFlow are documented in this file.
 Release dates below record GitHub publication in Asia/Tokyo (JST).
 
+## [2.0.0] - Unreleased
+
+### Added
+
+- Apple Reminders and Todoist Check tasks synchronize completion and reopening
+  both ways, with a persistent offline outbox and pending-state indication.
+- Todoist requests read/write authorization; existing read-only connections
+  need to reconnect before sending completion changes.
+
 ## [1.2.0] - 2026-09-08
 
 ### Changed

@@ -2,7 +2,7 @@
 import EventKit
 import Foundation
 
-/// EventKit is an optional read-only input. Never modifies the user's reminders.
+/// EventKit reads selected lists and applies explicit completion changes.
 @MainActor
 final class RemindersConnectorClient: ConnectorClient {
     private let eventStore: EKEventStore
@@ -102,6 +102,36 @@ final class RemindersConnectorClient: ConnectorClient {
                 // There is no documented public deep link to one reminder.
                 url: nil
             )
+        }
+    }
+
+    func setCompletion(taskID: String, sourceIDs: Set<String>, change: ConnectorCompletionChange) async throws {
+        try checkAccess()
+        let matches: [EKReminder]
+        if taskID.hasPrefix("external:") {
+            matches = eventStore.calendarItems(withExternalIdentifier: String(taskID.dropFirst("external:".count)))
+                .compactMap { $0 as? EKReminder }
+        } else {
+            let prefix = "local:\(installationID):"
+            guard taskID.hasPrefix(prefix),
+                  let reminder = eventStore.calendarItem(withIdentifier: String(taskID.dropFirst(prefix.count))) as? EKReminder else {
+                throw ConnectorProviderError.sourceUnavailable
+            }
+            matches = [reminder]
+        }
+        guard matches.count <= 1 else { throw ConnectorProviderError.ambiguousTaskIdentity }
+        guard let reminder = matches.first,
+              sourceIDs.contains(reminder.calendar.calendarIdentifier),
+              reminder.calendar.allowsContentModifications else { throw ConnectorProviderError.sourceUnavailable }
+        // Replaying a target state must not complete a second recurrence.
+        guard reminder.isCompleted != change.isCompleted else { return }
+        try Task.checkCancellation()
+        reminder.isCompleted = change.isCompleted
+        reminder.completionDate = change.isCompleted ? change.createdAt : nil
+        do { try eventStore.save(reminder, commit: true) }
+        catch {
+            eventStore.reset()
+            throw ConnectorProviderError.serviceUnavailable
         }
     }
 

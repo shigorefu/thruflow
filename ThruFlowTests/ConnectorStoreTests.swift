@@ -6,6 +6,111 @@ import Testing
 @Suite(.serialized)
 @MainActor
 struct ConnectorStoreTests {
+    @Test func completionOutboxSurvivesFailureAndRetriesTheSameCommand() async throws {
+        let fixture = try makeFixture()
+        defer { fixture.cleanUp() }
+        let container = try makeContainer()
+        let context = container.mainContext
+        let area = Area(name: "Work", type: .neutral)
+        context.insert(area)
+        try context.save()
+        await fixture.store.connectTodoist(apiToken: "token")
+        try fixture.store.configure(provider: .todoist, sourceIDs: ["list-a"], areaID: area.id)
+        fixture.client.currentTasks = [ConnectorTask(id: "task-a", sourceID: "list-a", title: "Imported")]
+        await fixture.store.synchronize(provider: .todoist, modelContext: context)
+        let todo = try #require(context.fetch(FetchDescriptor<Todo>()).first)
+        todo.setCompleted(true)
+        try context.save()
+        let change = try #require(todo.externalTaskLink?.completionChanges?.first)
+        fixture.client.completionError = .networkUnavailable
+        await fixture.store.synchronize(provider: .todoist, modelContext: context)
+        let afterFailure = try #require(ModelContext(container).fetch(FetchDescriptor<Todo>()).first)
+        #expect(afterFailure.externalTaskLink?.completionChanges == [change])
+        #expect(fixture.store.errorMessage != nil)
+        fixture.client.completionError = nil
+        await fixture.store.synchronize(provider: .todoist, modelContext: context)
+        let afterSuccess = try #require(ModelContext(container).fetch(FetchDescriptor<Todo>()).first)
+        #expect(afterSuccess.isCompleted)
+        #expect(afterSuccess.externalTaskLink?.completionChanges?.isEmpty == true)
+        #expect(fixture.client.sentChanges.map(\.id) == [change.id, change.id])
+        #expect(fixture.store.errorMessage == nil)
+    }
+
+    @Test func anInFlightCompletionDoesNotEraseANewerReopening() async throws {
+        let fixture = try makeFixture()
+        defer { fixture.cleanUp() }
+        let container = try makeContainer()
+        let context = container.mainContext
+        let area = Area(name: "Work", type: .neutral)
+        context.insert(area)
+        try context.save()
+        await fixture.store.connectTodoist(apiToken: "token")
+        try fixture.store.configure(provider: .todoist, sourceIDs: ["list-a"], areaID: area.id)
+        fixture.client.currentTasks = [ConnectorTask(id: "task-a", sourceID: "list-a", title: "Imported")]
+        await fixture.store.synchronize(provider: .todoist, modelContext: context)
+        let todo = try #require(context.fetch(FetchDescriptor<Todo>()).first)
+        todo.setCompleted(true)
+        try context.save()
+        fixture.client.onCompletion = {
+            todo.setCompleted(false)
+            try context.save()
+        }
+        await fixture.store.synchronize(provider: .todoist, modelContext: context)
+        let pending = try #require(ModelContext(container).fetch(FetchDescriptor<Todo>()).first)
+        #expect(!pending.isCompleted)
+        #expect(pending.externalTaskLink?.completionChanges?.map(\.isCompleted) == [false])
+        fixture.client.onCompletion = nil
+        await fixture.store.synchronize(provider: .todoist, modelContext: context)
+        let finished = try #require(ModelContext(container).fetch(FetchDescriptor<Todo>()).first)
+        #expect(!finished.isCompleted)
+        #expect(finished.externalTaskLink?.completionChanges?.isEmpty == true)
+        #expect(fixture.client.sentChanges.map(\.isCompleted) == [true, false])
+    }
+
+    @Test func anOldReadOnlyCredentialCannotSendQueuedCompletion() async throws {
+        let fixture = try makeFixture()
+        defer { fixture.cleanUp() }
+        let container = try makeContainer()
+        let context = container.mainContext
+        let area = Area(name: "Work", type: .neutral)
+        context.insert(area)
+        try context.save()
+        await fixture.store.connectTodoist(apiToken: "token")
+        try fixture.store.configure(provider: .todoist, sourceIDs: ["list-a"], areaID: area.id)
+        fixture.client.currentTasks = [ConnectorTask(id: "task-a", sourceID: "list-a", title: "Imported")]
+        await fixture.store.synchronize(provider: .todoist, modelContext: context)
+        let todo = try #require(context.fetch(FetchDescriptor<Todo>()).first)
+        todo.setCompleted(true)
+        try context.save()
+        fixture.vault.values[.todoist]?.completionWriteAccess = nil
+        await fixture.store.synchronize(provider: .todoist, modelContext: context)
+        #expect(fixture.client.sentChanges.isEmpty)
+        #expect(fixture.store.errorMessage == TodoistAuthorizationError.reconnect.localizedDescription)
+    }
+
+    @Test func changedProviderAccountCannotReceiveAnotherAccountsOutbox() async throws {
+        let fixture = try makeFixture()
+        defer { fixture.cleanUp() }
+        let container = try makeContainer()
+        let context = container.mainContext
+        let area = Area(name: "Work", type: .neutral)
+        context.insert(area)
+        try context.save()
+        await fixture.store.connectTodoist(apiToken: "token")
+        try fixture.store.configure(provider: .todoist, sourceIDs: ["list-a"], areaID: area.id)
+        fixture.client.currentTasks = [ConnectorTask(id: "task-a", sourceID: "list-a", title: "Imported")]
+        await fixture.store.synchronize(provider: .todoist, modelContext: context)
+        let todo = try #require(context.fetch(FetchDescriptor<Todo>()).first)
+        todo.setCompleted(true)
+        try context.save()
+        fixture.client.currentAccount = ConnectorAccount(id: "different-account", name: "Other")
+        await fixture.store.synchronize(provider: .todoist, modelContext: context)
+        #expect(fixture.client.sentChanges.isEmpty)
+        #expect(fixture.store.errorMessage == ConnectorProviderError.invalidCredential.localizedDescription)
+        let persisted = try #require(ModelContext(container).fetch(FetchDescriptor<Todo>()).first)
+        #expect(persisted.externalTaskLink?.completionChanges?.count == 1)
+    }
+
     @Test func connectionPersistsOnlyMetadataWhileCredentialsStayInInjectedVault() async throws {
         let fixture = try makeFixture()
         defer { fixture.cleanUp() }
@@ -482,6 +587,18 @@ struct ConnectorStoreTests {
             onSourceRead?()
             if let sourcesError { throw sourcesError }
             return currentSources
+        }
+        var sentChanges: [ConnectorCompletionChange] = []
+        var completionError: ConnectorProviderError?
+        var onCompletion: (() throws -> Void)?
+        func setCompletion(taskID: String, sourceIDs: Set<String>, change: ConnectorCompletionChange) async throws {
+            sentChanges.append(change)
+            try onCompletion?()
+            if let completionError { throw completionError }
+            if let index = currentTasks.firstIndex(where: { $0.id == taskID }) {
+                currentTasks[index].isCompleted = change.isCompleted
+                currentTasks[index].completedAt = change.isCompleted ? change.createdAt : nil
+            }
         }
         func tasks(sourceIDs: Set<String>) async throws -> [ConnectorTask] {
             if let tasksError { throw tasksError }

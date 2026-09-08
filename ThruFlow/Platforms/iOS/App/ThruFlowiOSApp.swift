@@ -82,8 +82,9 @@ struct ThruFlowiOSApp: App {
                         containerIdentifier: AppModelContainerFactory.cloudKitContainerIdentifier
                     )
                 }
-                .task {
-                    await connectors.synchronizeConfigured(modelContext: modelContainer.mainContext)
+                .task(id: scenePhase) {
+                    guard scenePhase == .active else { return }
+                    await connectors.runForegroundSync(modelContext: modelContainer.mainContext)
                 }
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active {
@@ -91,9 +92,6 @@ struct ThruFlowiOSApp: App {
                         activeFlowStore.beginSynchronization(
                             modelContext: modelContainer.mainContext
                         )
-                        Task {
-                            await connectors.synchronizeConfigured(modelContext: modelContainer.mainContext)
-                        }
                     } else {
                         activeFlowStore.endSynchronization()
                     }

@@ -29,12 +29,18 @@ nonisolated struct ConnectorTask: Codable, Equatable, Identifiable, Sendable {
     var url: URL? = nil
 }
 
-/// Reading never completes or deletes a task in the source application.
+/// Reads and explicitly requested completion changes; never deletes source tasks.
 @MainActor
 protocol ConnectorClient {
     func account() async throws -> ConnectorAccount
     func sources() async throws -> [ConnectorSource]
     func tasks(sourceIDs: Set<String>) async throws -> [ConnectorTask]
+    func completedTasks(sourceIDs: Set<String>, since: Date, until: Date) async throws -> [ConnectorTask]
+    func setCompletion(taskID: String, sourceIDs: Set<String>, change: ConnectorCompletionChange) async throws
+}
+
+extension ConnectorClient {
+    func completedTasks(sourceIDs: Set<String>, since: Date, until: Date) async throws -> [ConnectorTask] { [] }
 }
 
 nonisolated enum ConnectorProviderError: Error, LocalizedError, Equatable, Sendable {

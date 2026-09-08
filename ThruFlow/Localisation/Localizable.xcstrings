@@ -1,6 +1,94 @@
 {
   "sourceLanguage" : "ja",
   "strings" : {
+    "分・ブロック形式の進捗はThruFlow内で管理します。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分・ブロック形式の進捗はThruFlow内で管理します。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Minute and Block progress is managed in ThruFlow."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Прогресс в минутах и блоках учитывается внутри ThruFlow."
+          }
+        }
+      }
+    },
+    "完了状態の送信待ち" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完了状態の送信待ち"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Completion change pending"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Изменение статуса ожидает отправки"
+          }
+        }
+      }
+    },
+    "完了・未完了は接続先と同期します。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完了・未完了は接続先と同期します。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Completion and reopening sync with the connected service."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выполнение и повторное открытие синхронизируются с сервисом."
+          }
+        }
+      }
+    },
+    "チェック形式のタスクは完了・未完了を相互に同期します。タイトルと期限は接続先から更新します。通信できない変更は次回の更新で再送します。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "チェック形式のタスクは完了・未完了を相互に同期します。タイトルと期限は接続先から更新します。通信できない変更は次回の更新で再送します。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check tasks sync completion and reopening both ways. Titles and due dates refresh from the source. Offline changes retry on the next update."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В задачах типа Check выполнение и повторное открытие синхронизируются в обе стороны. Названия и сроки обновляются из сервиса. Изменения без связи отправятся при следующем обновлении."
+          }
+        }
+      }
+    },
     "–" : {
       "localizations" : {
         "en" : {
@@ -12774,29 +12862,7 @@
         }
       }
     },
-    "未完了のタスクを取り込み、タイトルと期限を更新します。ThruFlowでの変更は接続先に送信しません。設定した接続はアプリを開いたときにも更新します。" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Import incomplete tasks and update their titles and due dates. Changes in ThruFlow are not sent back. Configured connections also refresh when you open the app."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未完了のタスクを取り込み、タイトルと期限を更新します。ThruFlowでの変更は接続先に送信しません。設定した接続はアプリを開いたときにも更新します。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Импортируются незавершённые задачи, обновляются названия и сроки. Изменения в ThruFlow не отправляются обратно. Настроенные подключения также обновляются при открытии приложения."
-          }
-        }
-      }
-    },
+
     "認証を確認できませんでした。もう一度接続してください。" : {
       "extractionState" : "manual",
       "localizations" : {

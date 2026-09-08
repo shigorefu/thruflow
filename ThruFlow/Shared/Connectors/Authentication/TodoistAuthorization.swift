@@ -23,7 +23,7 @@ nonisolated struct TodoistAuthorizationRequest: Sendable {
             URLQueryItem(name: "client_id", value: Self.clientID),
             URLQueryItem(name: "redirect_uri", value: Self.redirectURI),
             URLQueryItem(name: "response_type", value: "code"),
-            URLQueryItem(name: "scope", value: "data:read"),
+            URLQueryItem(name: "scope", value: "data:read_write"),
             URLQueryItem(name: "state", value: state),
             URLQueryItem(name: "code_challenge", value: Self.challenge(for: verifier)),
             URLQueryItem(name: "code_challenge_method", value: "S256"),
@@ -134,7 +134,9 @@ final class TodoistAuthorization {
         }
         return ConnectorCredentials(
             accessToken: token.access_token, refreshToken: token.refresh_token,
-            expiresAt: token.expires_in.map { Date.now.addingTimeInterval($0) }
+            expiresAt: token.expires_in.map { Date.now.addingTimeInterval($0) },
+            completionWriteAccess: token.scope.map { $0.contains("data:read_write") }
+                ?? (fields["grant_type"] == "authorization_code")
         )
     }
 
@@ -143,5 +145,6 @@ final class TodoistAuthorization {
         let refresh_token: String?
         let expires_in: TimeInterval?
         let token_type: String
+        let scope: String?
     }
 }

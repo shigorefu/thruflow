@@ -16,7 +16,7 @@ Press Import to save the selection and import Tasks. Changing the destination
 later applies only to newly imported Tasks.
 
 Apple Reminders presents the system permission dialog. Todoist presents its own
-login and read-only consent flow; no ThruFlow registration or provider password
+login and read/write consent flow; no ThruFlow registration or provider password
 entry in the app is required. Canceling leaves a previous working connection
 intact. Account changes reset source/Area selections while preserving Tasks
 already imported from the previous account.
@@ -46,16 +46,58 @@ The Watch can use Tasks received through CloudKit; it has no connector setup UI.
 | External due date | Store in `deadline` | Refresh or clear from source |
 | Local scheduled date | Leave unset | Preserve local planning |
 | Memo | Copy initial source notes | Preserve local memo |
-| Completion | Create unfinished Check Tasks only | Preserve local status and completion date |
+| Completion | Create unfinished Check Tasks only | Sync Check completion and reopening both ways; pending local changes win |
 | Area, priority, measurement, target | Normal local Task defaults and selected Area | Preserve local choices |
 | Focus, progress, Flow relationships | No invented work | Preserve recorded work |
 | Remote task missing or deleted | Nothing to import | Retain the local Task |
-| Repeating remote task with the same ID | One local Task | No new local occurrence or implicit reopening |
+| Repeating remote task with the same ID | One local Task | Follow provider current state; no new local occurrence |
 
-The connectors never complete, edit, or delete source tasks. Remote completion
-does not complete an existing ThruFlow Task. An external Task that is already
-completed before its first import is skipped. There is no inference of deletion
-from an empty or partial provider response.
+Check completion is synchronized in both directions. Title/deadline remain
+source-owned; no remote deletion, memo, planning, or Flow-history write occurs.
+Measured Minute/Block Tasks retain local timer-owned completion semantics.
+Missing items never imply completion or deletion. Newly discovered completed
+items are not imported. Legacy links establish a remote baseline without
+retroactively exporting old local completion.
+
+### Completion delivery and conflicts
+
+Local checkbox actions append stable UUID commands to optional link JSON fields
+`completionChanges`; this outbox saves in the same transaction as the checkbox.
+Acknowledgements remove only the dispatched UUID after re-reading a fresh
+context, preserving newer toggles. `acknowledgedCompletionIDs` prevents stale
+duplicate copies from reintroducing delivered operations. Pending local actions
+win over incoming status; after acknowledgement, explicit remote status wins.
+Duplicate queues merge by timestamp and UUID. Simultaneous independent device
+edits still depend on CloudKit convergence; signed multi-device verification is
+a release gate, not an atomic global ordering guarantee.
+
+While the scene is active, a five-second wake checks for newly saved commands;
+ordinary reads and repeated failures are throttled to 60 seconds. No background
+execution or push delivery is promised. Unsaved editor changes defer sync.
+Disconnect stops this device's delivery and retains pending Task commands;
+reconnecting the same account resumes them. Other authorized devices can send
+CloudKit-synchronized commands. A different Todoist account cannot receive them.
+Deleted/archived local Tasks and unselected lists are not written.
+
+Todoist uses Sync API `item_close` / `item_uncomplete` with the persisted command
+UUID and checks `sync_status`, including errors inside HTTP 200. Retry keeps the
+same UUID. Completed tasks are read explicitly from the paginated completion-date
+endpoint in windows below three months; active/reopened tasks take precedence
+over older completion records. Old read-only credentials require reconnecting;
+refreshing them does not grant write permission. `data:read_write` is requested,
+without either deletion scope. Parent/subtask effects follow Todoist's own
+completion rules. Recurring tasks advance as in Todoist; their next active
+occurrence can reopen the same local Task. Reopening does not promise to undo
+a previous recurrence's date advancement.
+
+Reminders resolves the exact stable identity, rejects ambiguity, checks selected
+list and write access, then saves only `isCompleted`/`completionDate`. A retry
+that already has the desired state does not save again. Existing Flow history
+and local notes remain intact when adopting either remote state.
+
+References: [Todoist API](https://developer.todoist.com/api/v1/) (command UUIDs,
+completion-date queries, item close/uncomplete),
+[EventKit save](https://developer.apple.com/documentation/eventkit/creating-events-and-reminders).
 
 `Todo.externalTaskLinkRawValue` contains non-secret JSON identity and source
 metadata. Provider + account + task ID form the deduplication key; source ID is
@@ -99,7 +141,7 @@ credentials, provider clients, browser behavior, and local model containers.
 ## Apple Reminders identity and permission
 
 EventKit full reminder access is required on the supported OS versions. The
-application performs read operations only after permission; list selection
+application reads and writes completion only after permission; list selection
 limits what is imported. Permission denial or later revocation is an actionable
 connection error. Selecting a missing list fails rather than being treated as
 an authoritative empty source.
@@ -125,7 +167,7 @@ No private Reminders URL scheme is assumed.
 
 ## Todoist authorization and static website
 
-The app is a public OAuth client with `data:read` scope, a fresh random state,
+The app is a public OAuth client with `data:read_write` scope, a fresh random state,
 and an S256 PKCE verifier/challenge. Native AuthenticationServices opens the
 provider consent screen. The callback must match the expected origin/path,
 contain one matching state and one authorization code, and carry no OAuth error.
@@ -222,7 +264,7 @@ Before release:
   with HTTPS, correct content types, no unwanted redirects, and the signed app's
   actual team/bundle identity. Check macOS/iOS Associated Domains entitlements
   and provisioning profiles, then allow Apple association caching to refresh.
-- Verify Todoist login, deny/cancel, account switch, read-only consent, expired
+- Verify Todoist login, deny/cancel, account switch, read/write consent, expired
   tokens, token rotation, offline errors, and disconnect/reconnect on signed
   Mac and physical iPhone/iPad builds. Exercise both native HTTPS and supported
   older-OS callback behavior. An unsigned build is not this verification.

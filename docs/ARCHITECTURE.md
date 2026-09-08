@@ -178,7 +178,7 @@ Area mapping, success timestamps, and sanitized failures. It uses injectable
 `ConnectorClient`, credential-storage, browser, and URLSession boundaries for
 local tests. `RemindersConnectorClient` reads EventKit after permission;
 `TodoistConnectorClient` reads selected projects through the provider API.
-Neither writes remote tasks or infers remote completion from an absent row.
+Both can apply explicit Check completion/reopening commands. Missing rows never imply completion. The durable outbox lives in the existing external-link JSON, and each acknowledged write re-reads the current Task to preserve newer local actions.
 
 `TodoistAuthorization` creates PKCE/state values, validates the callback, and
 exchanges/refreshes user tokens directly with Todoist. Only public client
@@ -192,9 +192,9 @@ connection preferences enter UserDefaults.
 `ConnectorTaskImporter` receives value DTOs and saves through a separate
 ModelContext so a failed import cannot roll back an open editor's draft. Its
 optional JSON field on Todo links provider/account/task identity to the normal
-local record. The importer adds unfinished Check tasks, then refreshes only
-title, deadline, and external metadata. Local planning, completion, memo,
-progress, and Flow remain authoritative. Duplicate reconciliation runs with the
+local record. The importer adds unfinished Check tasks, then refreshes title,
+deadline, external metadata and Check completion when no local command is
+pending. Local planning, memo, measured progress and Flow remain authoritative. Duplicate reconciliation runs with the
 existing persistence-repair cycle, reconnects exact Flow relationships, and
 rebuilds measured progress through `FlowProgressReconciler`. A linked Task
 cannot become a generated Habit occurrence simply because its Area changes.

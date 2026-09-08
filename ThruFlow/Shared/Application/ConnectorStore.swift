@@ -50,6 +50,7 @@ final class ConnectorStore: ObservableObject {
     private let clientFactory: ((ConnectorProviderID, String?) -> any ConnectorClient)?
     private let disablesAutomaticSync: Bool
     private var lastAutomaticSync: Date?
+    private var lastAutomaticOutbox: [UUID] = []
     private static let settingsKey = "connectors.connections.v1"
 
     init(
@@ -91,7 +92,7 @@ final class ConnectorStore: ObservableObject {
     func connectTodoist(apiToken: String) async {
         let token = apiToken.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !token.isEmpty else { errorMessage = ConnectorProviderError.invalidCredential.localizedDescription; return }
-        await connect(provider: .todoist, newCredentials: ConnectorCredentials(accessToken: token))
+        await connect(provider: .todoist, newCredentials: ConnectorCredentials(accessToken: token, completionWriteAccess: true))
     }
 
     func authorizeTodoist() async {
@@ -144,9 +145,37 @@ final class ConnectorStore: ObservableObject {
             guard var connection = connection(for: provider) else { throw ConnectorStoreError.missingConnection }
             guard !connection.selectedSourceIDs.isEmpty else { throw ConnectorStoreError.chooseSources }
             guard let areaID = connection.areaID else { throw ConnectorStoreError.missingArea }
+            guard !modelContext.hasChanges else { throw ConnectorStoreError.busy }
             let client = try await client(for: provider)
-            let tasks = try await client.tasks(sourceIDs: connection.selectedSourceIDs)
+            guard try await client.account().id == connection.account.id else {
+                throw ConnectorProviderError.invalidCredential
+            }
+            let lookup = ModelContext(modelContext.container)
+            let linked = try lookup.fetch(FetchDescriptor<Todo>()).filter {
+                !$0.isDeleted && !$0.isArchived &&
+                    $0.externalTaskLink?.provider == provider &&
+                    $0.externalTaskLink?.accountID == connection.account.id &&
+                    $0.externalTaskLink?.supersededByTodoID == nil
+            }
+            try await sendPendingCompletions(
+                client: client, connection: connection, todos: linked,
+                modelContext: modelContext
+            )
+            let refreshStartedAt = Date.now
+            let activeTasks = try await client.tasks(sourceIDs: connection.selectedSourceIDs)
+            let completedSince = connection.lastSyncedAt
+                ?? linked.compactMap { $0.externalTaskLink?.lastSyncedAt }.min()
+            let completedTasks: [ConnectorTask]
+            if let completedSince {
+                completedTasks = try await client.completedTasks(
+                    sourceIDs: connection.selectedSourceIDs,
+                    since: completedSince.addingTimeInterval(-60), until: refreshStartedAt
+                )
+            } else { completedTasks = [] }
+            // A reopened/recurring active item wins over its older completion record.
+            let tasks = activeTasks + completedTasks
             try Task.checkCancellation()
+            guard !modelContext.hasChanges else { throw ConnectorStoreError.busy }
             // Keep importer rollback isolated from an open Task/Flow editor.
             let context = ModelContext(modelContext.container)
             let descriptor = FetchDescriptor<Area>(predicate: #Predicate { $0.id == areaID })
@@ -156,7 +185,7 @@ final class ConnectorStore: ObservableObject {
                 tasks, provider: provider, accountID: connection.account.id,
                 area: area, modelContext: context, now: now
             )
-            connection.lastSyncedAt = now
+            connection.lastSyncedAt = refreshStartedAt
             connection.lastImportedCount = result.inserted
             try replace(connection)
         } catch is CancellationError { }
@@ -164,9 +193,16 @@ final class ConnectorStore: ObservableObject {
     }
 
     func synchronizeConfigured(modelContext: ModelContext) async {
-        guard !disablesAutomaticSync, busyProvider == nil,
-              lastAutomaticSync.map({ Date.now.timeIntervalSince($0) >= 60 }) ?? true else { return }
+        guard !disablesAutomaticSync, busyProvider == nil, !modelContext.hasChanges else { return }
+        let readContext = ModelContext(modelContext.container)
+        let outbox = (try? readContext.fetch(FetchDescriptor<Todo>()))?.filter {
+            !$0.isDeleted && !$0.isArchived && $0.measurement == .checkbox
+        }.flatMap { $0.externalTaskLink?.completionChanges ?? [] }
+            .map(\.id).sorted { $0.uuidString < $1.uuidString } ?? []
+        guard outbox != lastAutomaticOutbox ||
+                (lastAutomaticSync.map({ Date.now.timeIntervalSince($0) >= 60 }) ?? true) else { return }
         lastAutomaticSync = .now
+        lastAutomaticOutbox = outbox
         let configured = connections.filter { $0.areaID != nil && !$0.selectedSourceIDs.isEmpty }
         // Foreground refresh keeps failures on the connection screen rather than interrupting Flow.
         var firstError: String?
@@ -176,6 +212,65 @@ final class ConnectorStore: ObservableObject {
             if firstError == nil { firstError = errorMessage }
         }
         if let firstError { errorMessage = firstError }
+    }
+
+    /// Scene-scoped polling drains newly saved checkbox changes promptly and
+    /// stops on background/cancellation. Read-only refresh remains throttled.
+    func runForegroundSync(modelContext: ModelContext) async {
+        guard !disablesAutomaticSync else { return }
+        while !Task.isCancelled {
+            await synchronizeConfigured(modelContext: modelContext)
+            do { try await Task.sleep(for: .seconds(5)) }
+            catch { return }
+        }
+    }
+
+    private func sendPendingCompletions(
+        client: any ConnectorClient, connection: ConnectorConnection,
+        todos: [Todo], modelContext: ModelContext
+    ) async throws {
+        for todo in todos where todo.measurement == .checkbox {
+            guard let link = todo.externalTaskLink,
+                  connection.selectedSourceIDs.contains(link.sourceID) else { continue }
+            for change in link.completionChanges ?? [] {
+                try Task.checkCancellation()
+                guard !modelContext.hasChanges else { throw ConnectorStoreError.busy }
+                let pendingContext = ModelContext(modelContext.container)
+                let pendingID = todo.id
+                let pendingDescriptor = FetchDescriptor<Todo>(predicate: #Predicate { $0.id == pendingID })
+                guard let pending = try pendingContext.fetch(pendingDescriptor).first,
+                      !pending.isDeleted, !pending.isArchived, pending.measurement == .checkbox,
+                      let pendingLink = pending.externalTaskLink,
+                      pendingLink.identity == link.identity,
+                      pendingLink.supersededByTodoID == nil,
+                      pendingLink.completionChanges?.contains(where: { $0.id == change.id }) == true,
+                      pendingLink.acknowledgedCompletionIDs?.contains(change.id) != true else { continue }
+                if connection.provider == .todoist,
+                   try credentials.read(for: .todoist)?.completionWriteAccess != true {
+                    throw TodoistAuthorizationError.reconnect
+                }
+                try await client.setCompletion(
+                    taskID: link.taskID, sourceIDs: connection.selectedSourceIDs, change: change
+                )
+                try Task.checkCancellation()
+                guard !modelContext.hasChanges else { throw ConnectorStoreError.busy }
+                // Re-read after await: a user may have queued a newer toggle.
+                let acknowledgement = ModelContext(modelContext.container)
+                let id = todo.id
+                let descriptor = FetchDescriptor<Todo>(predicate: #Predicate { $0.id == id })
+                guard let current = try acknowledgement.fetch(descriptor).first,
+                      var currentLink = current.externalTaskLink,
+                      currentLink.identity == link.identity else { continue }
+                currentLink.completionChanges = (currentLink.completionChanges ?? []).filter { $0.id != change.id }
+                var acknowledged = currentLink.acknowledgedCompletionIDs ?? []
+                if !acknowledged.contains(change.id) { acknowledged.append(change.id) }
+                currentLink.acknowledgedCompletionIDs = acknowledged
+                currentLink.remoteCompletion = change.isCompleted
+                current.externalTaskLinkRawValue = try currentLink.encoded()
+                current.updatedAt = .now
+                try acknowledgement.save()
+            }
+        }
     }
 
     private func connect(provider: ConnectorProviderID, newCredentials: ConnectorCredentials?) async {
@@ -212,7 +307,9 @@ final class ConnectorStore: ObservableObject {
             var pending = token
             pending.refreshToken = nil
             try credentials.save(pending, for: provider)
+            let previousWriteAccess = token.completionWriteAccess
             token = try await authorization.refresh(token)
+            token.completionWriteAccess = previousWriteAccess
             // Persist the replacement before any provider API read.
             try credentials.save(token, for: provider)
         }

@@ -12,6 +12,9 @@ nonisolated struct ExternalTaskLink: Codable, Equatable, Sendable {
     var lastSyncedAt: Date
     /// Distinguishes reconciliation tombstones from intentional user deletion.
     var supersededByTodoID: UUID? = nil
+    var remoteCompletion: Bool? = nil
+    var completionChanges: [ConnectorCompletionChange]? = nil
+    var acknowledgedCompletionIDs: [UUID]? = nil
 
     var identity: Identity {
         Identity(provider: provider, accountID: accountID, taskID: taskID)
@@ -32,6 +35,13 @@ nonisolated struct ExternalTaskLink: Codable, Equatable, Sendable {
         encoder.outputFormatting = .sortedKeys
         return String(decoding: try encoder.encode(self), as: UTF8.self)
     }
+}
+
+/// Non-secret durable outbox, saved atomically with the local checkbox state.
+nonisolated struct ConnectorCompletionChange: Codable, Equatable, Sendable, Identifiable {
+    var id: UUID = UUID()
+    var isCompleted: Bool
+    var createdAt: Date
 }
 
 nonisolated struct ConnectorImportResult: Equatable {
@@ -62,8 +72,7 @@ struct ConnectorTaskImporter {
         self.save = save
     }
 
-    /// Imports active external tasks; subsequent refreshes own only title,
-    /// external deadline, and link metadata. No completion is sent or adopted.
+    /// Imports tasks and adopts source completion only when no local change is pending.
     func importTasks(
         _ tasks: [ConnectorTask],
         provider: ConnectorProviderID,
@@ -95,7 +104,7 @@ struct ConnectorTaskImporter {
                     result.skipped += 1
                     continue
                 }
-                let link = ExternalTaskLink(
+                var link = ExternalTaskLink(
                     provider: provider,
                     accountID: accountID,
                     taskID: task.id,
@@ -117,6 +126,19 @@ struct ConnectorTaskImporter {
                     journal.capture(canonical)
                     canonical.title = task.title.trimmingCharacters(in: .whitespacesAndNewlines)
                     canonical.deadline = task.dueDate
+                    let previous = canonical.externalTaskLink
+                    link.completionChanges = previous?.completionChanges
+                    link.acknowledgedCompletionIDs = previous?.acknowledgedCompletionIDs
+                    // Legacy imports establish a baseline without exporting old local checks.
+                    if canonical.measurement == .checkbox,
+                       previous?.remoteCompletion != nil,
+                       link.completionChanges?.isEmpty != false {
+                        canonical.actualProgress = task.isCompleted ? 1 : 0
+                        canonical.status = task.isCompleted ? .completed : .active
+                        canonical.completedAt = task.isCompleted
+                            ? (task.completedAt ?? canonical.completedAt ?? now) : nil
+                    }
+                    link.remoteCompletion = task.isCompleted
                     canonical.externalTaskLinkRawValue = try link.encoded()
                     canonical.updatedAt = now
                     result.updated += 1
@@ -132,6 +154,7 @@ struct ConnectorTaskImporter {
                         createdAt: now,
                         updatedAt: now
                     )
+                    link.remoteCompletion = task.isCompleted
                     todo.externalTaskLinkRawValue = try link.encoded()
                     modelContext.insert(todo)
                     journal.inserted.append(todo)
@@ -220,6 +243,31 @@ struct ConnectorTaskImporter {
                     link.supersededByTodoID = nil
                     canonical.externalTaskLinkRawValue = try link.encoded()
                 }
+                var mergedLink = canonical.externalTaskLink ?? roots[0].link
+                let acknowledgements = Set(roots.flatMap { $0.link.acknowledgedCompletionIDs ?? [] })
+                var seenChanges = Set<UUID>()
+                let allChanges: [ConnectorCompletionChange] = roots.flatMap { $0.link.completionChanges ?? [] }
+                let pendingChanges = allChanges.filter {
+                    !acknowledgements.contains($0.id) && seenChanges.insert($0.id).inserted
+                }
+                let changes = pendingChanges.sorted { left, right in
+                    if left.createdAt == right.createdAt { return left.id.uuidString < right.id.uuidString }
+                    return left.createdAt < right.createdAt
+                }
+                mergedLink.acknowledgedCompletionIDs = acknowledgements.sorted { $0.uuidString < $1.uuidString }
+                mergedLink.completionChanges = changes
+                canonical.externalTaskLinkRawValue = try mergedLink.encoded()
+                if canonical.measurement == .checkbox, let latest = changes.last {
+                    canonical.actualProgress = latest.isCompleted ? 1 : 0
+                    canonical.status = latest.isCompleted ? .completed : .active
+                    canonical.completedAt = latest.isCompleted ? latest.createdAt : nil
+                } else if canonical.measurement == .checkbox,
+                          let latest = roots.sorted(by: latestExternalSnapshotFirst).first,
+                          let completed = latest.link.remoteCompletion {
+                    canonical.actualProgress = completed ? 1 : 0
+                    canonical.status = completed ? .completed : .active
+                    canonical.completedAt = completed ? (latest.todo.completedAt ?? now) : nil
+                }
                 groupChanged = true
             }
             for session in sessions where session.todo.map({ duplicateIDs.contains($0.id) }) == true {
@@ -294,7 +342,9 @@ struct ConnectorTaskImporter {
             canonical.plannedAmount = measured.plannedAmount
         }
         if canonical.measurement == .checkbox, all.contains(where: \.isCompleted) {
-            canonical.setCompleted(true, now: all.compactMap(\.completedAt).min() ?? now)
+            canonical.actualProgress = 1
+            canonical.status = .completed
+            canonical.completedAt = all.compactMap(\.completedAt).min() ?? now
         }
         // A user deletion/archive on either device wins over an offline import.
         if let deletedAt = all.compactMap(\.deletedAt).min() { canonical.deletedAt = deletedAt }
