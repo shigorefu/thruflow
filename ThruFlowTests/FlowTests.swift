@@ -468,6 +468,24 @@ struct FlowTests {
         #expect(engine.remainingSeconds(for: deep, now: changedAt) == 40 * 60)
     }
 
+    @Test func restNeverProjectsAPlannedTimelineEnd() {
+        let engine = FlowTimerEngine()
+        let start = Date(timeIntervalSince1970: 6_600)
+        let focus = engine.start(mode: .twentyFiveFive, now: start)
+        let resting = engine.startBreak(focus, now: start.addingTimeInterval(25 * 60))
+        let now = start.addingTimeInterval(26 * 60)
+        let extended = engine.seekForward(resting, now: now)
+        let paused = engine.pause(extended, now: now)
+        let resumed = engine.resume(paused, now: now.addingTimeInterval(60))
+
+        for state in [resting, extended, paused, resumed] {
+            #expect(engine.timelineEndAt(for: state, now: now) == nil)
+            #expect(engine.timelineEndAt(for: state, now: now.addingTimeInterval(3_600)) == nil)
+        }
+        #expect(engine.remainingSeconds(for: resting, now: now) == 4 * 60)
+        #expect(engine.remainingSeconds(for: extended, now: now) == 9 * 60)
+    }
+
     @Test func changingModeIsIgnoredDuringBreakIncludingPausedBreak() {
         let engine = FlowTimerEngine()
         let start = Date(timeIntervalSince1970: 6_600)

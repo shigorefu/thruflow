@@ -657,7 +657,8 @@ planned end from moving ahead of the displayed records after Play or resume.
 Settings on macOS and iOS/iPadOS offers a local, persisted
 `showsTimelinePlannedEnd` preference, enabled by default. Disabling it removes
 the translucent future interval and its contribution to the Elastic range
-for focus and rest, restoring elapsed-time-only rendering. It does not change
+for focus, restoring elapsed-time-only rendering. Rest always shows only elapsed
+time, irrespective of this preference, without a projected end. It does not change
 the timer, stored history, or CloudKit data.
 
 ## D-045: Reconcile Weekly Measured Progress Before Rollover

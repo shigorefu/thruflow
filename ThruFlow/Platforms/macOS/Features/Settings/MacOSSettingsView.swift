@@ -76,7 +76,7 @@ struct MacOSSettingsView: View {
                     String(localized: "終了予定まで表示"),
                     isOn: $settings.showsTimelinePlannedEnd
                 )
-                Text(String(localized: "オンにすると終了予定までを薄く表示します。オフにすると経過した時間だけを表示します。"))
+                Text(String(localized: "集中の終了予定までを薄く表示します。オフの場合と休憩中は、経過した時間だけを表示します。"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

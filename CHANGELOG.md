@@ -13,6 +13,9 @@ Release dates below record GitHub publication in Asia/Tokyo (JST).
 
 ### Fixed
 
+- Rest on the Flow timeline now shows only elapsed time. The planned-end
+  setting applies only to focus blocks on macOS and iOS/iPadOS.
+
 - Custom Statistics ranges no longer draw empty Dots cells outside the selected
   dates on macOS and iOS/iPadOS. Preset calendar grids remain complete.
 

@@ -1,24 +1,24 @@
 {
   "sourceLanguage" : "ja",
   "strings" : {
-    "オンにすると終了予定までを薄く表示します。オフにすると経過した時間だけを表示します。" : {
+    "集中の終了予定までを薄く表示します。オフの場合と休憩中は、経過した時間だけを表示します。" : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "オンにすると終了予定までを薄く表示します。オフにすると経過した時間だけを表示します。"
+            "value" : "集中の終了予定までを薄く表示します。オフの場合と休憩中は、経過した時間だけを表示します。"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "When enabled, a translucent bar shows the time until the planned end. When disabled, only elapsed time is shown."
+            "value" : "Shows a translucent bar until the planned focus end. When disabled, and during rest, only elapsed time is shown."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Если включено, полупрозрачная полоса показывает время до планируемого окончания. Если выключено — только прошедшее время."
+            "value" : "Показывает полупрозрачную полосу до планируемого окончания фокус-блока. При выключенной настройке и во время отдыха отображается только прошедшее время."
           }
         }
       }
