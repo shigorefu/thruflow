@@ -13,6 +13,9 @@ Release dates below record GitHub publication in Asia/Tokyo (JST).
 
 ### Fixed
 
+- The minimal Dynamic Island focus ring now fills like the in-app timer, while
+  its numeric label keeps counting down. Rest still drains.
+
 - Rest on the Flow timeline now shows only elapsed time. The planned-end
   setting applies only to focus blocks on macOS and iOS/iPadOS.
 

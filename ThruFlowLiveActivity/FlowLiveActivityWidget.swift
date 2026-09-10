@@ -209,7 +209,12 @@ private struct FlowActivityCircularProgress: View {
                 ProgressView(
                     timerInterval: state.timerRange,
                     countsDown: state.minimalProgressCountsDown
-                )
+                ) {
+                    EmptyView()
+                } currentValueLabel: {
+                    Text(timerInterval: state.timerRange, countsDown: true, showsHours: false)
+                        .monospacedDigit()
+                }
             }
         }
         .progressViewStyle(.circular)

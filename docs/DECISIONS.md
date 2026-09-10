@@ -253,10 +253,9 @@ not provide an exact or guaranteed boundary update.
 The dynamic timer text must remain flexible inside ActivityKit's compact,
 expanded, and Lock Screen regions; `fixedSize()` is prohibited because it can
 collapse the archived timer label at runtime.
-The minimal Dynamic Island slot always uses a countdown-style circular timer so
-its number and ring drain together toward zero when multiple Live Activities
-share the Island. Expanded and Lock Screen focus progress keeps its filling
-direction.
+The minimal Dynamic Island ring follows the in-app timer: focus fills toward
+completion and rest drains toward zero. Its numeric label independently shows
+remaining time. Expanded and Lock Screen progress uses the same direction.
 Expanded Dynamic Island five-minute controls adjust either focus or rest through
 the same `ActiveFlowStore` operations as the in-app player. Rest adjustments
 preserve long-rest identity and never rewrite the canonical series continuation

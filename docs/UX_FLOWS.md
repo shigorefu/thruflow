@@ -510,9 +510,9 @@ guaranteed suspended-state overtime updates require the optional APNs transport
 planned for 2.0.
 
 When another Live Activity forces Flow into the minimal Dynamic Island slot,
-the system circular timer displays remaining time and drains toward zero for
-both focus and rest. This minimal countdown does not change the filling focus
-progress used by expanded and Lock Screen presentations.
+the system circular timer fills during focus and drains during rest, matching
+the in-app timer and expanded/Lock Screen progress. Its numeric label continues
+to count remaining time down independently of the ring direction.
 
 ## Home Screen Widgets
 
