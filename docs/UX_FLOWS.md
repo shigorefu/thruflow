@@ -18,6 +18,10 @@ Areas:
 - `習慣` / Habit / Привычка;
 - `できたら` / Optional / Если получится.
 
+On iOS/iPadOS, each Area list row shows its icon and name without a subtitle.
+The type explanation appears once in the section header; goal details remain
+in the Area editor.
+
 The system Area `その他` / Other / Другое is not shown here and cannot be edited
 from this screen.
 

@@ -13,6 +13,9 @@ Release dates below record GitHub publication in Asia/Tokyo (JST).
 
 ### Fixed
 
+- iOS/iPadOS Area rows now show only the icon and name, removing repeated
+  type explanations and goal subtitles from the list.
+
 - The minimal Dynamic Island focus ring now fills like the in-app timer, while
   its numeric label keeps counting down. Rest still drains.
 

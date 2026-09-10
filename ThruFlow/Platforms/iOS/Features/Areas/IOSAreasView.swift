@@ -132,15 +132,9 @@ struct IOSAreasView: View {
                 .frame(width: 44, height: 44)
                 .background(Color(hex: area.colorHex).opacity(0.16), in: RoundedRectangle(cornerRadius: 10))
 
-            VStack(alignment: .leading, spacing: 3) {
-                Text(area.name)
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(.primary)
-                Text(area.hasGoal ? goalText(area) : area.type.description)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-            }
+            Text(area.name)
+                .font(.body.weight(.semibold))
+                .foregroundStyle(.primary)
 
             Spacer(minLength: 0)
             Image(systemName: isEditingOrder ? "line.3.horizontal" : "chevron.right")
@@ -169,24 +163,6 @@ struct IOSAreasView: View {
     private func areaSort(_ lhs: Area, _ rhs: Area) -> Bool {
         if lhs.sortIndex != rhs.sortIndex { return lhs.sortIndex < rhs.sortIndex }
         return lhs.name.localizedStandardCompare(rhs.name) == .orderedAscending
-    }
-
-    private func goalText(_ area: Area) -> String {
-        let target = area.goalTarget ?? 1
-        let schedule = area.goalSchedule?.displayName ?? ""
-
-        switch area.goalUnit {
-        case .occurrences:
-            return String(localized: "目標回数：\(target)回・\(schedule)")
-        case .focusBlocks:
-            return String(localized: "集中ブロック数：\(target)・\(schedule)")
-        case .minutes:
-            return String(localized: "目標時間：\(target)分・\(schedule)")
-        case .hours:
-            return String(localized: "目標時間：\(target)時間・\(schedule)")
-        case nil:
-            return schedule
-        }
     }
 }
 
