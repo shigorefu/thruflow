@@ -332,6 +332,10 @@ destination across five items: `流れ`, `タスク`, `履歴`, `分野`, and `�
 On iOS 26 it uses the native Liquid Glass selection indicator, minimizes while
 content scrolls down, and returns on upward scrolling; iOS 17–25 retain the
 system tab-bar behavior.
+The iOS/iPadOS top control rows in Tasks, History, and Areas use the screen
+background without a separate bar-material backing. Native navigation controls
+retain their system appearance.
+
 The system tab bar remains visible in `タスク`, matching the other primary
 destinations. A separate circular `+` command in the lower trailing corner
 opens the messenger composer and focuses its input. The composer includes an

@@ -40,7 +40,6 @@ struct IOSAreasView: View {
             .pickerStyle(.segmented)
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
-            .background(.bar)
 
             List {
                 Section {

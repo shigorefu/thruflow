@@ -370,7 +370,6 @@ struct IOSHistoryView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
-        .background(.bar)
     }
 
     @ViewBuilder

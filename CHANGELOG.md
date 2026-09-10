@@ -13,6 +13,9 @@ Release dates below record GitHub publication in Asia/Tokyo (JST).
 
 ### Fixed
 
+- Removed the separate bar-material background behind the iOS/iPadOS Tasks,
+  History, and Areas top controls.
+
 - iOS/iPadOS Area rows now show only the icon and name, removing repeated
   type explanations and goal subtitles from the list.
 
