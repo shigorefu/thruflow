@@ -212,6 +212,7 @@ struct StatisticsView: View {
                     mode: $dotsMode,
                     period: presentationPeriod,
                     usesCompactCustomGrid: usesCustomRange && displayedDayCount > 7,
+                    usesCustomRange: usesCustomRange,
                     marksOutsideMonth: selectedPeriod == .month && !usesCustomRange,
                     flowDays: snapshot.flowDays,
                     achievementDays: snapshot.achievementDays,
@@ -239,6 +240,7 @@ struct StatisticsView: View {
                             mode: $dotsMode,
                             period: presentationPeriod,
                             usesCompactCustomGrid: usesCustomRange && displayedDayCount > 7,
+                            usesCustomRange: usesCustomRange,
                             marksOutsideMonth: selectedPeriod == .month && !usesCustomRange,
                             flowDays: snapshot.flowDays,
                             achievementDays: snapshot.achievementDays,
@@ -265,6 +267,7 @@ struct StatisticsView: View {
                             mode: $dotsMode,
                             period: presentationPeriod,
                             usesCompactCustomGrid: usesCustomRange && displayedDayCount > 7,
+                            usesCustomRange: usesCustomRange,
                             marksOutsideMonth: selectedPeriod == .month && !usesCustomRange,
                             flowDays: snapshot.flowDays,
                             achievementDays: snapshot.achievementDays,
@@ -284,6 +287,7 @@ struct StatisticsView: View {
                     mode: $dotsMode,
                     period: presentationPeriod,
                     usesCompactCustomGrid: usesCustomRange && displayedDayCount > 7,
+                    usesCustomRange: usesCustomRange,
                     marksOutsideMonth: selectedPeriod == .month && !usesCustomRange,
                     flowDays: snapshot.flowDays,
                     achievementDays: snapshot.achievementDays,
@@ -1287,6 +1291,7 @@ private struct StatisticsDotsCard: View {
     @Binding var mode: StatisticsMode
     let period: StatisticsPeriod
     let usesCompactCustomGrid: Bool
+    let usesCustomRange: Bool
     let marksOutsideMonth: Bool
     let flowDays: [StatisticsDay]
     let achievementDays: [AchievementDay]
@@ -1313,7 +1318,7 @@ private struct StatisticsDotsCard: View {
         StatisticsCard(
             title: String(localized: "Dots"),
             subtitle: mode == .flow ? String(localized: "集中時間") : String(localized: "完了タスク"),
-            minimumHeight: period == .month ? 288 : nil,
+            minimumHeight: period == .month && !usesCustomRange ? 288 : nil,
             headerAccessory: {
                 StatisticsModePicker(selection: $mode)
             }
@@ -1322,6 +1327,7 @@ private struct StatisticsDotsCard: View {
                 days: contributionDays,
                 period: period,
                 usesCompactCustomGrid: usesCompactCustomGrid,
+                usesCustomRange: usesCustomRange,
                 marksOutsideMonth: marksOutsideMonth,
                 onSelectDate: onSelectDate
             )
@@ -1367,6 +1373,7 @@ private struct StatisticsContributionGrid: View {
     let days: [StatisticsContributionDay]
     let period: StatisticsPeriod
     let usesCompactCustomGrid: Bool
+    let usesCustomRange: Bool
     let marksOutsideMonth: Bool
     let onSelectDate: (Date) -> Void
 
@@ -1393,28 +1400,42 @@ private struct StatisticsContributionGrid: View {
                 .frame(maxWidth: .infinity, minHeight: 120)
         } else {
             VStack(alignment: .leading, spacing: 10) {
-                switch period {
-                case .week:
-                    weekGrid
-                case .month:
-                    monthGrid
-                case .year:
-                    yearGrid
-                }
-
-                HStack(spacing: 6) {
-                    Text(String(localized: "少ない"))
-                    ForEach(0..<5, id: \.self) { level in
-                        RoundedRectangle(cornerRadius: 3)
-                            .fill(level == 0
-                                ? Color.secondary.opacity(0.12)
-                                : Color.accentColor.opacity(0.24 + Double(level) * 0.17))
-                            .frame(width: 12, height: 12)
+                if usesCustomRange {
+                    customGrid
+                } else {
+                    switch period {
+                    case .week:
+                        weekGrid
+                    case .month:
+                        monthGrid
+                    case .year:
+                        yearGrid
                     }
-                    Text(String(localized: "多い"))
+
+                    HStack(spacing: 6) {
+                        Text(String(localized: "少ない"))
+                        ForEach(0..<5, id: \.self) { level in
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(level == 0
+                                    ? Color.secondary.opacity(0.12)
+                                    : Color.accentColor.opacity(0.24 + Double(level) * 0.17))
+                                .frame(width: 12, height: 12)
+                        }
+                        Text(String(localized: "多い"))
+                    }
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
                 }
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var customGrid: some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 18, maximum: 18), spacing: 5)], alignment: .leading, spacing: 5) {
+            ForEach(days) { day in
+                StatisticsContributionCell(day: day, maxValue: maxValue,
+                    isInteractive: day.isSelectable, onSelectDate: onSelectDate)
+                    .frame(width: 18, height: 18)
             }
         }
     }

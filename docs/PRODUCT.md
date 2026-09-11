@@ -133,10 +133,8 @@ and Year trends use months; current and previous values are separate direct
 linear series. Week and
 Year use full-width focus calendars, while Month may share a row with Pie. Responsive focus calendars
 fit inside the card without horizontal scrolling. The preset Month stretches
-its seven columns across the available card width. A custom range of up to seven days uses the
-stretched Week row; every longer custom range uses small cells, adding
-calendar cells through the selected end date before switching to compact week
-columns. Hovering a real day cell shows a system bubble above all card content
+its seven columns across the available card width. Custom ranges of any length show compact cells in chronological order,
+wrapping to the card width without weekday labels, calendar padding, or a legend. Hovering a real day cell shows a system bubble above all card content
 with its date, focus time, `集中回数`, and completed Task count. The summary always
 presents both recorded focus and completed Tasks. Search is segment-aware, so
 matching one Task within a switched Flow credits only that Task's persisted

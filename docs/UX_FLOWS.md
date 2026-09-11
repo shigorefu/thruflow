@@ -586,11 +586,9 @@ The main column is a vertical set of cards:
 Trend and the focus calendar switch independently without a projection reload.
 `集中` shows focused time; `タスク` shows completed Task counts. Week uses a full-width `集中カレンダー` card
 with seven stretched cells, Month may share an adaptive row with Pie, and Year
-uses a full-width 53-week grid. A custom range of seven days or fewer stretches
-only its actual days across the full row. The preset Month stretches its seven
-columns across the full focus-calendar card; every custom range longer than seven days uses small cells.
-Medium custom ranges keep adding calendar cells through the
-inclusive end date; longer ranges switch to compact week columns. Every real
+uses a full-width 53-week grid. Custom ranges use compact cells in chronological order, wrapping to the card
+width without weekday labels, calendar padding, or a legend. The preset Month
+retains its seven calendar columns. Every real
 Week, Month, or custom-range cell opens a non-interactive system hover bubble
 above the card layer with date, focused time, `集中回数`, and completed Task
 count. The Year focus calendar is display-only because its dense cells are not reliable
@@ -601,9 +599,8 @@ searched and credited per persisted segment; matching one segment never
 includes its siblings.
 
 Custom Statistics Dots ranges render only dates inside the inclusive selection.
-Outside-range alignment slots are transparent and hidden from accessibility;
-weekday alignment is preserved. Dates without activity inside the range remain
-visible. This applies to both medium calendar grids and long week-column grids
+There are no outside-range alignment slots or weekday headers. Dates without activity inside the range remain
+visible. This applies to custom ranges of every length
 on macOS and iOS/iPadOS; preset Week/Month/Year grids remain complete.
 
 A persistent calendar column on the right mirrors Tasks and History. Its header

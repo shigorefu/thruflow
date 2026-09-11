@@ -14,6 +14,12 @@ Release dates below record GitHub publication in Asia/Tokyo (JST).
   only elapsed time on macOS and iOS/iPadOS. The existing planned-end view
   remains enabled by default; the preference is saved on each device.
 
+### Changed
+
+- Custom Statistics Dots ranges use a compact chronological grid of actual
+  selected days, without weekday labels, calendar padding, or a legend.
+  Preset Week, Month, and Year calendars keep their existing layouts.
+
 ### Fixed
 
 - Custom Statistics ranges and CSV exports preserve selected calendar dates

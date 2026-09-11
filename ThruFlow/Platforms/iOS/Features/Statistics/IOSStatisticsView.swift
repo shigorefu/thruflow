@@ -1144,38 +1144,51 @@ private struct IOSStatisticsDotsCard: View {
                     .frame(maxWidth: .infinity, minHeight: 120)
             } else {
                 VStack(alignment: .leading, spacing: 12) {
-                    switch period {
-                    case .week:
-                        weekGrid
-                    case .month:
-                        monthGrid
-                    case .year:
-                        IOSStatisticsYearGrid(
-                            paddedDays: paddedDays,
-                            hidesPlaceholders: usesCustomRange,
-                            maxValue: maxValue
-                        )
-                    }
-
-                    HStack(spacing: 5) {
-                        Text(String(localized: "少ない"))
-                        ForEach(0..<5, id: \.self) { level in
-                            RoundedRectangle(cornerRadius: 3)
-                                .fill(level == 0
-                                    ? Color.secondary.opacity(0.12)
-                                    : Color.accentColor.opacity(0.24 + Double(level) * 0.17))
-                                .frame(width: 12, height: 12)
+                    if usesCustomRange {
+                        customGrid
+                    } else {
+                        switch period {
+                        case .week:
+                            weekGrid
+                        case .month:
+                            monthGrid
+                        case .year:
+                            IOSStatisticsYearGrid(
+                                paddedDays: paddedDays,
+                                hidesPlaceholders: usesCustomRange,
+                                maxValue: maxValue
+                            )
                         }
-                        Text(String(localized: "多い"))
+
+                        HStack(spacing: 5) {
+                            Text(String(localized: "少ない"))
+                            ForEach(0..<5, id: \.self) { level in
+                                RoundedRectangle(cornerRadius: 3)
+                                    .fill(level == 0
+                                        ? Color.secondary.opacity(0.12)
+                                        : Color.accentColor.opacity(0.24 + Double(level) * 0.17))
+                                    .frame(width: 12, height: 12)
+                            }
+                            Text(String(localized: "多い"))
+                        }
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
                     }
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
                 }
             }
         }
         .id(mode)
         .transition(.opacity.combined(with: .scale(scale: 0.99)))
         .animation(.easeInOut(duration: 0.2), value: mode)
+    }
+
+    private var customGrid: some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 18, maximum: 18), spacing: 5)], alignment: .leading, spacing: 5) {
+            ForEach(days) { day in
+                IOSStatisticsContributionCell(day: day, maxValue: maxValue, onSelectDay: onSelectDay)
+                    .frame(width: 18, height: 18)
+            }
+        }
     }
 
     private var weekGrid: some View {

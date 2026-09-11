@@ -412,9 +412,8 @@ The toolbar Area filter shares the navigation Area symbol. Month trends
 use seven-day totals rather than one noisy point per day and render current and
 previous values as separate line series. Month can place Pie and Dots in one row;
 its Dots columns fill their card, while Week and Year keep full-width Dots.
-Custom Dots stretch up to seven actual days, then use small cells for every
-longer range, adding calendar cells for medium ranges and compact week columns
-for long ranges; preset Month retains the regular calendar-cell size, and every
+Custom Dots use a compact chronological grid with no weekday labels, calendar
+padding, or legend for every range length; preset Month retains the regular calendar-cell size, and every
 real cell exposes a system hover bubble above the card layer with its daily
 metrics, except Year Dots, which remain display-only because their cells are too
 small for dependable targeting. Current ranges stop at today: future calendar
@@ -431,9 +430,8 @@ entity. The compact iPhone and widget contribution ranges from D-009 remain
 unchanged until explicitly superseded.
 
 Custom Statistics Dots ranges render only dates inside the inclusive selection.
-Outside-range alignment slots are transparent and hidden from accessibility;
-weekday alignment is preserved. Dates without activity inside the range remain
-visible. This applies to both medium calendar grids and long week-column grids
+There are no outside-range alignment slots or weekday headers. Dates without activity inside the range remain
+visible. This applies to custom ranges of every length
 on macOS and iOS/iPadOS; preset Week/Month/Year grids remain complete.
 
 Reason: desktop space supports comparison and investigation while one shared,
