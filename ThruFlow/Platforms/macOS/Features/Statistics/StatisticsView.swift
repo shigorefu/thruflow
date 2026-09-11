@@ -1137,10 +1137,6 @@ private struct StatisticsDistributionCard: View {
         return items.first { $0.id == selectedItemID }
     }
 
-    private var displayedItems: [StatisticsDistributionItem] {
-        selectedItem.map { [$0] } ?? items
-    }
-
     var body: some View {
         let chartSize: CGFloat = isCompact ? 150 : 190
         let contentSpacing: CGFloat = isCompact ? 16 : 28
@@ -1156,8 +1152,8 @@ private struct StatisticsDistributionCard: View {
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
-                .frame(width: 210)
                 .controlSize(.small)
+                .fixedSize()
             }
         ) {
             VStack(alignment: .leading, spacing: 14) {
@@ -1220,23 +1216,33 @@ private struct StatisticsDistributionCard: View {
                             }
                             .frame(maxWidth: chartSize * 0.52)
                         }
-                        VStack(alignment: .leading, spacing: 10) {
-                            ForEach(displayedItems) { item in
-                                HStack(spacing: 8) {
-                                    Circle()
-                                        .fill(Color(hex: item.colorHex ?? "#8E8E93"))
-                                        .frame(width: 9, height: 9)
-                                    Text([item.symbol, item.name].compactMap { $0 }.joined(separator: " "))
-                                        .lineLimit(1)
-                                    Spacer(minLength: 8)
-                                    Text(StatisticsFormatting.duration(item.focusSeconds))
-                                        .monospacedDigit()
-                                        .foregroundStyle(.secondary)
+                        if let selectedItem {
+                            StatisticsDistributionDetailView(item: selectedItem)
+                        } else {
+                            VStack(alignment: .leading, spacing: 10) {
+                                ForEach(items) { item in
+                                    Button {
+                                        selectedItemID = item.id
+                                    } label: {
+                                        HStack(spacing: 8) {
+                                            Circle()
+                                                .fill(Color(hex: item.colorHex ?? "#8E8E93"))
+                                                .frame(width: 9, height: 9)
+                                            Text([item.symbol, item.name].compactMap { $0 }.joined(separator: " "))
+                                                .lineLimit(1)
+                                            Spacer(minLength: 8)
+                                            Text(StatisticsFormatting.duration(item.focusSeconds))
+                                                .monospacedDigit()
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        .font(isCompact ? .caption : .callout)
+                                        .contentShape(Rectangle())
+                                    }
+                                    .buttonStyle(.plain)
                                 }
-                                .font(isCompact ? .caption : .callout)
                             }
+                            .frame(maxWidth: .infinity)
                         }
-                        .frame(maxWidth: .infinity)
                     }
                     .animation(.easeInOut(duration: 0.18), value: selectedItemID)
                 }
@@ -1348,8 +1354,8 @@ private struct StatisticsModePicker: View {
         }
         .pickerStyle(.segmented)
         .labelsHidden()
-        .frame(width: 126)
         .controlSize(.small)
+        .fixedSize()
         .accessibilityLabel(String(localized: "統計表示"))
     }
 }

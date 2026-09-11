@@ -127,7 +127,9 @@ the whole custom range.
 
 The report contains combined summary cards, a period trend with comparison to
 the previous equivalent period, a focused-time distribution by Task or Area,
-and a `集中カレンダー` / Focus Calendar view. Trend and the focus calendar
+and a `集中カレンダー` / Focus Calendar view. Selecting a distribution sector or
+legend row shows a named detail panel with daily minute bars for a Task or
+Task/time bars for an Area, within the active filters. Trend and the focus calendar
 each provide an independent `集中 | タスク` switch. Week trends use days, Month trends use seven-day totals,
 and Year trends use months; current and previous values are separate direct
 linear series. Week and

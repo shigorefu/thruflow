@@ -407,7 +407,10 @@ text search apply before every aggregation, and CSV exports the combined visible
 projection by default. A direct Share action opens export controls for combined,
 Flow-only, or Task-only data, exact inclusive start/end dates, Area, and
 text filter. Pie selection is presentation-only: the chosen sector remains
-bright while other sectors are dimmed and the legend isolates that category.
+bright while other sectors are dimmed. Selecting a sector or legend row replaces
+the legend with a named detail panel: logical-day minute bars for Tasks, Task
+minute bars for Areas. Details use the same period, search, and Area filters;
+grouped remainder details include every hidden category. Clearing restores the legend.
 The toolbar Area filter shares the navigation Area symbol. Month trends
 use seven-day totals rather than one noisy point per day and render current and
 previous values as separate line series. Month can place Pie and Dots in one row;

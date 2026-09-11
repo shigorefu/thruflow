@@ -7,6 +7,9 @@ Release dates below record GitHub publication in Asia/Tokyo (JST).
 
 ### Added
 
+- Statistics distribution selections show daily minute bars for Tasks and
+  Task/time bars for Areas on macOS and iOS. Select a sector or legend row.
+
 - Flow palette changes sweep softly from right to left over 2.4 seconds; rapid
   changes queue the latest palette. Reduced Motion uses an immediate update.
 
@@ -30,6 +33,9 @@ Release dates below record GitHub publication in Asia/Tokyo (JST).
   Preset Week, Month, and Year calendars keep their existing layouts.
 
 ### Fixed
+
+- macOS Statistics card switches now align to the same trailing inset instead
+  of centering inside differently sized invisible frames.
 
 - Resuming the Flow stream explicitly resets its animation time baseline,
   preventing a catch-up jump when no paused frame was rendered.

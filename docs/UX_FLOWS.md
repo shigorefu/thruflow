@@ -591,8 +591,11 @@ The main column is a vertical set of cards:
   previous equivalent period available as a separate comparison series and
   direct linear segments between points;
 - focused-time distribution with `タスク別 | 分野別`, showing the largest
-  slices and grouping the remainder as `その他`; clicking a sector keeps it
-  bright, dims the others, and isolates that category in the center and legend;
+  slices and grouping the remainder as `その他`; clicking a sector or legend row keeps it bright and dims the others. The detail
+  panel shows the selected name, then dated focused-minute bars for a Task or
+  Task/time bars for an Area. Dates follow the configured Flow day boundary.
+  Details include all matching records in the current period, including grouped
+  `その他` records; the center clear button restores the full legend;
 - a `集中カレンダー` / Focus Calendar with its own `集中 | タスク` switch for the selected week,
   month, or year.
 

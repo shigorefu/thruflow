@@ -952,10 +952,6 @@ private struct IOSStatisticsDistributionCard: View {
         return items.first { $0.id == selectedItemID }
     }
 
-    private var displayedItems: [StatisticsDistributionItem] {
-        selectedItem.map { [$0] } ?? items
-    }
-
     var body: some View {
         IOSStatisticsCard(
             title: String(localized: "集中時間の内訳"),
@@ -1027,23 +1023,33 @@ private struct IOSStatisticsDistributionCard: View {
                         .frame(maxWidth: 98)
                     }
 
-                    VStack(alignment: .leading, spacing: 10) {
-                        ForEach(displayedItems) { item in
-                            HStack(spacing: 8) {
-                                Circle()
-                                    .fill(Color(hex: item.colorHex ?? "#8E8E93"))
-                                    .frame(width: 9, height: 9)
-                                Text([item.symbol, item.name].compactMap { $0 }.joined(separator: " "))
-                                    .lineLimit(1)
-                                Spacer(minLength: 8)
-                                Text(IOSStatisticsFormatting.duration(item.focusSeconds))
-                                    .monospacedDigit()
-                                    .foregroundStyle(.secondary)
+                    if let selectedItem {
+                        StatisticsDistributionDetailView(item: selectedItem)
+                    } else {
+                        VStack(alignment: .leading, spacing: 10) {
+                            ForEach(items) { item in
+                                Button {
+                                    selectedItemID = item.id
+                                } label: {
+                                    HStack(spacing: 8) {
+                                        Circle()
+                                            .fill(Color(hex: item.colorHex ?? "#8E8E93"))
+                                            .frame(width: 9, height: 9)
+                                        Text([item.symbol, item.name].compactMap { $0 }.joined(separator: " "))
+                                            .lineLimit(1)
+                                        Spacer(minLength: 8)
+                                        Text(IOSStatisticsFormatting.duration(item.focusSeconds))
+                                            .monospacedDigit()
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    .font(.callout)
+                                    .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
                             }
-                            .font(.callout)
                         }
+                        .frame(maxWidth: .infinity)
                     }
-                    .frame(maxWidth: .infinity)
                 }
                 .animation(.easeInOut(duration: 0.18), value: selectedItemID)
             }

@@ -478,6 +478,50 @@ struct StatisticsPeriodTests {
         #expect(snapshot.taskDistribution.first?.name == "Dune")
     }
 
+    @Test func distributionDetailsGroupLogicalDaysAndAreaTasksWithinFilters() throws {
+        let area = UUID()
+        let records = [
+            flowRecord(sessionID: UUID(), date: date(2026, 9, 7, 10), seconds: 600, areaID: area, area: "Study", task: "Read"),
+            flowRecord(sessionID: UUID(), date: date(2026, 9, 8, 1), seconds: 300, areaID: area, area: "Study", task: "read"),
+            flowRecord(sessionID: UUID(), date: date(2026, 9, 8, 10), seconds: 1200, areaID: area, area: "Study", task: "Read"),
+            flowRecord(sessionID: UUID(), date: date(2026, 9, 8, 11), seconds: 60, areaID: area, area: "Study", task: "Write"),
+            flowRecord(sessionID: UUID(), date: date(2026, 9, 8, 11), seconds: 90, areaID: UUID(), area: "Other", task: "Read"),
+            flowRecord(sessionID: UUID(), date: date(2026, 8, 8, 11), seconds: 900, areaID: area, area: "Study", task: "Read")
+        ]
+        let builder = StatisticsPeriodBuilder(calendar: calendar, dayBoundary: AppDayBoundary(hour: 2))
+        var filter = StatisticsPeriodFilter(period: .month, anchorDate: date(2026, 9, 11), areaIDs: [area])
+        let snapshot = builder.build(flowRecords: records, achievementRecords: [], filter: filter)
+        let task = try #require(snapshot.taskDistribution.first)
+        #expect(task.details.map(\.date) == [date(2026, 9, 7), date(2026, 9, 8)])
+        #expect(task.details.map(\.focusSeconds) == [900, 1200])
+        let details = try #require(snapshot.areaDistribution.first).details
+        #expect(details.map(\.focusSeconds) == [2100, 60])
+        #expect(details.allSatisfy { $0.date == nil })
+        filter.query = "Read"
+        let searched = builder.build(flowRecords: records, achievementRecords: [], filter: filter)
+        #expect(searched.areaDistribution.first?.details.count == 1)
+        #expect(searched.areaDistribution.first?.details.first?.focusSeconds == 2100)
+    }
+
+    @Test func remainderDistributionDetailsIncludeAndMergeEveryHiddenCategory() throws {
+        let records = (0..<8).map { index in
+            flowRecord(sessionID: UUID(), date: date(2026, 9, 7, 10), seconds: (index + 1) * 60,
+                       areaID: UUID(), area: "Area \(index)", task: "Task \(index)")
+        }
+        let snapshot = StatisticsPeriodBuilder(calendar: calendar, dayBoundary: .midnight).build(
+            flowRecords: records, achievementRecords: [],
+            filter: StatisticsPeriodFilter(period: .month, anchorDate: date(2026, 9, 11))
+        )
+        let taskRemainder = try #require(snapshot.taskDistribution.last)
+        #expect(taskRemainder.id == "distribution:other")
+        #expect(taskRemainder.details.count == 1)
+        #expect(taskRemainder.details.first?.focusSeconds == 360)
+        #expect(snapshot.areaDistribution.last?.details.count == 3)
+        for item in snapshot.taskDistribution + snapshot.areaDistribution {
+            #expect(item.details.reduce(0) { $0 + $1.focusSeconds } == item.focusSeconds)
+        }
+    }
+
     private func flowRecord(
         sessionID: UUID,
         date: Date,
