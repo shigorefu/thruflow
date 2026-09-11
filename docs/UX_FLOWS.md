@@ -600,7 +600,9 @@ selected-period title, previous, Today, and next navigation. Previous/next move
 a custom range by its complete day count, while Today preserves that count and
 ends the range today. Week uses direct week selection in the mini-calendar, Month uses
 the year/month picker; selecting a numbered month preserves that exact calendar
-month regardless of the configured Flow-day boundary. Year uses a compact year picker whose first entry is
+month regardless of the configured Flow-day boundary. Preset projection bounds
+interpret the picker anchor as a calendar date; the Flow-day boundary applies
+to recorded activity timestamps and fetch windows, without shifting the selection. Year uses a compact year picker whose first entry is
 the current year and which omits future years. Switching Week/Month/Year uses a
 short opacity-and-scale layout transition. Clicking a focus-calendar day switches to the
 single canonical `履歴` destination for that date; Statistics does not embed

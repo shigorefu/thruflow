@@ -13,6 +13,9 @@ Release dates below record GitHub publication in Asia/Tokyo (JST).
 
 ### Fixed
 
+- Selecting a Statistics month now keeps Dots in that month when the Flow day
+  starts after midnight. Week and year selections also retain their boundaries.
+
 - Removed the separate bar-material background behind the iOS/iPadOS Tasks,
   History, and Areas top controls.
 

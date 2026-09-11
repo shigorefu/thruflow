@@ -205,7 +205,8 @@ struct StatisticsPeriodBuilder: Sendable {
     }
 
     nonisolated func bounds(for filter: StatisticsPeriodFilter) -> StatisticsPeriodBounds {
-        let anchorDay = dayBoundary.day(containing: filter.anchorDate, calendar: calendar)
+        // A picker anchor is a calendar date, not a recorded activity timestamp.
+        let anchorDay = calendar.startOfDay(for: filter.anchorDate)
         let current: DateInterval
         if let rawStart = filter.customStartDate,
            let rawEnd = filter.customEndDate {

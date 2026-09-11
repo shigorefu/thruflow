@@ -33,6 +33,48 @@ struct StatisticsPeriodTests {
         #expect(calendar.component(.month, from: selectedDate) == 8)
     }
 
+    @Test(arguments: [0, 2, 23])
+    func selectedSeptemberReachesDotsWithoutShiftingToAugust(boundaryHour: Int) {
+        let builder = StatisticsPeriodBuilder(calendar: calendar, dayBoundary: AppDayBoundary(hour: boundaryHour))
+        let selected = builder.anchorDate(
+            forCalendarSelection: date(2026, 9, 1), maximumDate: date(2026, 9, 11)
+        )
+        let snapshot = builder.build(
+            flowRecords: [], achievementRecords: [],
+            filter: StatisticsPeriodFilter(period: .month, anchorDate: selected)
+        )
+        #expect(snapshot.bounds.currentStart == date(2026, 9, 1))
+        #expect(snapshot.bounds.currentEnd == date(2026, 10, 1))
+        #expect(snapshot.flowDays.count == 30)
+        #expect(snapshot.flowDays.first?.date == date(2026, 9, 1))
+        #expect(snapshot.flowDays.last?.date == date(2026, 9, 30))
+        #expect(snapshot.achievementDays.map(\.date) == snapshot.flowDays.map(\.date))
+    }
+
+    @Test func weekAndYearSelectionsDoNotMoveToThePreviousPeriod() {
+        let builder = StatisticsPeriodBuilder(calendar: calendar, dayBoundary: AppDayBoundary(hour: 2))
+        let week = builder.bounds(for: StatisticsPeriodFilter(period: .week, anchorDate: date(2026, 9, 7)))
+        let year = builder.bounds(for: StatisticsPeriodFilter(period: .year, anchorDate: date(2026, 1, 1)))
+        #expect(week.currentStart == date(2026, 9, 7))
+        #expect(year.currentStart == date(2026, 1, 1))
+        #expect(year.currentEnd == date(2027, 1, 1))
+    }
+
+    @Test func selectedCalendarPeriodPreservesLogicalRecordGrouping() {
+        let builder = StatisticsPeriodBuilder(calendar: calendar, dayBoundary: AppDayBoundary(hour: 2))
+        let records = [
+            flowRecord(sessionID: UUID(), date: date(2026, 9, 1, 1), seconds: 60, areaID: nil, area: "", task: "Before boundary"),
+            flowRecord(sessionID: UUID(), date: date(2026, 9, 1, 3), seconds: 120, areaID: nil, area: "", task: "After boundary")
+        ]
+        let snapshot = builder.build(
+            flowRecords: records, achievementRecords: [],
+            filter: StatisticsPeriodFilter(period: .month, anchorDate: date(2026, 9, 1))
+        )
+        #expect(snapshot.summary.totalFocusSeconds == 120)
+        #expect(snapshot.previousSummary.totalFocusSeconds == 60)
+        #expect(snapshot.flowDays.first?.totalFocusSeconds == 120)
+    }
+
     @Test func monthGridPadsDaysOutsideTheSelectedMonthToCompleteWeeks() {
         let augustDates = (1...31).map { date(2026, 8, $0) }
         let padding = StatisticsMonthGridPadding(dates: augustDates, calendar: calendar)
