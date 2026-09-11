@@ -43,7 +43,7 @@ struct StatisticsPeriodFilter: Hashable, Sendable {
     var anchorDate: Date = .now
     var customStartDate: Date?
     var customEndDate: Date?
-    var areaID: UUID?
+    var areaIDs: Set<UUID> = []
     var query = ""
 
     nonisolated var usesCustomRange: Bool {
@@ -326,8 +326,9 @@ struct StatisticsPeriodBuilder: Sendable {
     }
 
     nonisolated private func matchesArea(_ areaID: UUID?, filter: StatisticsPeriodFilter) -> Bool {
-        guard let selectedID = filter.areaID else { return true }
-        return areaID == selectedID
+        guard !filter.areaIDs.isEmpty else { return true }
+        guard let areaID else { return false }
+        return filter.areaIDs.contains(areaID)
     }
 
     nonisolated private func matchesQuery(_ record: StatisticsPeriodFlowRecord, query: String) -> Bool {

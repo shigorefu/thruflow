@@ -20,7 +20,7 @@ struct StatisticsView: View {
     let onSelectHistoryDate: (Date) -> Void
 
     @State private var selectedPeriod: StatisticsPeriod = .week
-    @State private var selectedAreaID: UUID?
+    @State private var selectedAreaIDs: Set<UUID> = []
     @State private var anchorDate = Date.now
     @State private var customStartDate: Date?
     @State private var customEndDate: Date?
@@ -39,7 +39,7 @@ struct StatisticsView: View {
     @State private var exportContent: StatisticsCSVContent = .all
     @State private var exportStartDate = Date.now
     @State private var exportEndDate = Date.now
-    @State private var exportAreaID: UUID?
+    @State private var exportAreaIDs: Set<UUID> = []
     @State private var exportQuery = ""
     @State private var exportShareURL: URL?
     @State private var preparedExportConfiguration: StatisticsExportConfiguration?
@@ -63,18 +63,13 @@ struct StatisticsView: View {
             .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 
-    private var selectedArea: Area? {
-        guard let selectedAreaID else { return nil }
-        return areas.first { $0.id == selectedAreaID }
-    }
-
     private var filter: StatisticsPeriodFilter {
         StatisticsPeriodFilter(
             period: selectedPeriod,
             anchorDate: anchorDate,
             customStartDate: customStartDate,
             customEndDate: customEndDate,
-            areaID: selectedAreaID,
+            areaIDs: selectedAreaIDs,
             query: searchText
         )
     }
@@ -85,7 +80,7 @@ struct StatisticsView: View {
             anchorDate: exportStartDate,
             customStartDate: exportStartDate,
             customEndDate: exportEndDate,
-            areaID: exportAreaID,
+            areaIDs: exportAreaIDs,
             query: exportQuery
         )
     }
@@ -323,10 +318,9 @@ struct StatisticsView: View {
         }
 
         ToolbarItem(placement: .primaryAction) {
-            StatisticsAreaFilterMenu(
-                selectedAreaID: $selectedAreaID,
-                areas: activeAreas,
-                selectedArea: selectedArea
+            StatisticsAreaSelectionMenu(
+                selectedAreaIDs: $selectedAreaIDs,
+                areas: activeAreas
             )
         }
 
@@ -365,14 +359,11 @@ struct StatisticsView: View {
             )
             .datePickerStyle(.field)
 
-            Picker(String(localized: "方向フィルター"), selection: $exportAreaID) {
-                Text(String(localized: "すべて")).tag(nil as UUID?)
-                ForEach(activeAreas) { area in
-                    Text("\(area.symbolName) \(area.name)")
-                        .tag(Optional(area.id))
-                }
-            }
-            .pickerStyle(.menu)
+            StatisticsAreaSelectionMenu(
+                selectedAreaIDs: $exportAreaIDs,
+                areas: activeAreas,
+                showsSelection: true
+            )
 
             TextField(String(localized: "検索"), text: $exportQuery)
                 .textFieldStyle(.roundedBorder)
@@ -623,7 +614,7 @@ struct StatisticsView: View {
             anchorDate: anchorDate,
             customStartDate: customStartDate,
             customEndDate: customEndDate,
-            areaID: selectedAreaID,
+            areaIDs: selectedAreaIDs,
             query: searchText,
             areaCount: areas.count,
             latestAreaUpdate: areas.map(\.updatedAt).max(),
@@ -789,7 +780,7 @@ struct StatisticsView: View {
             value: -1,
             to: periodBounds.currentEnd
         ) ?? periodBounds.currentStart, today)
-        exportAreaID = selectedAreaID
+        exportAreaIDs = selectedAreaIDs
         exportQuery = searchText
         exportShareURL = nil
         preparedExportConfiguration = nil
@@ -928,57 +919,6 @@ private enum StatisticsDistributionDimension: String, CaseIterable, Identifiable
             String(localized: "タスク別")
         case .area:
             String(localized: "方向別")
-        }
-    }
-}
-
-private struct StatisticsAreaFilterMenu: View {
-    @Binding var selectedAreaID: UUID?
-    let areas: [Area]
-    let selectedArea: Area?
-
-    var body: some View {
-        Menu {
-            Button {
-                selectedAreaID = nil
-            } label: {
-                menuRow(text: String(localized: "すべて"), isSelected: selectedAreaID == nil)
-            }
-
-            if !areas.isEmpty {
-                Divider()
-                ForEach(areas) { area in
-                    Button {
-                        selectedAreaID = area.id
-                    } label: {
-                        menuRow(
-                            text: "\(area.symbolName) \(area.name)",
-                            isSelected: selectedAreaID == area.id
-                        )
-                    }
-                }
-            }
-        } label: {
-            Image(systemName: ProductSymbol.area)
-                .foregroundStyle(selectedAreaID == nil ? Color.primary : Color.accentColor)
-        }
-        .menuStyle(.borderlessButton)
-        .help(filterHelp)
-        .accessibilityLabel(String(localized: "方向フィルター"))
-        .accessibilityValue(selectedArea?.name ?? String(localized: "すべて"))
-    }
-
-    private var filterHelp: String {
-        selectedArea.map { "\(String(localized: "方向フィルター")): \($0.name)" }
-            ?? String(localized: "方向フィルター")
-    }
-
-    @ViewBuilder
-    private func menuRow(text: String, isSelected: Bool) -> some View {
-        if isSelected {
-            Label(text, systemImage: "checkmark")
-        } else {
-            Text(text)
         }
     }
 }
@@ -1974,7 +1914,7 @@ private struct StatisticsPeriodRefreshID: Hashable {
     let anchorDate: Date
     let customStartDate: Date?
     let customEndDate: Date?
-    let areaID: UUID?
+    let areaIDs: Set<UUID>
     let query: String
     let areaCount: Int
     let latestAreaUpdate: Date?

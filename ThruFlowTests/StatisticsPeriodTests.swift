@@ -163,6 +163,47 @@ struct StatisticsPeriodTests {
         #expect(snapshot.trend.count == 3)
     }
 
+    @Test func multipleAreasFilterEveryProjectionAndKeepSessionCountsUnique() {
+        let first = UUID(), second = UUID(), excluded = UUID(), session = UUID()
+        let current = date(2026, 9, 7, 12)
+        let previous = date(2026, 8, 7, 12)
+        let records = [
+            flowRecord(sessionID: session, date: current, seconds: 60, areaID: first, area: "First", task: "Work"),
+            flowRecord(sessionID: session, date: current, seconds: 120, areaID: second, area: "Second", task: "Work"),
+            flowRecord(sessionID: UUID(), date: current, seconds: 240, areaID: excluded, area: "Excluded", task: "Work"),
+            flowRecord(sessionID: UUID(), date: current, seconds: 480, areaID: nil, area: "", task: "Work"),
+            flowRecord(sessionID: UUID(), date: previous, seconds: 30, areaID: first, area: "First", task: "Work"),
+            flowRecord(sessionID: UUID(), date: previous, seconds: 900, areaID: excluded, area: "Excluded", task: "Work")
+        ]
+        let achievements = [first, second, excluded].map { areaID in
+            StatisticsPeriodAchievementRecord(completedAt: current, todoID: UUID(), todoTitle: "Work", todoHashtags: [], todoNotes: "", areaID: areaID, areaName: areaID == excluded ? "Excluded" : "Selected", areaSymbol: "", areaColorHex: nil)
+        }
+        let builder = StatisticsPeriodBuilder(calendar: calendar)
+        var filter = StatisticsPeriodFilter(period: .month, anchorDate: current, areaIDs: [first, second], query: "work")
+        let snapshot = builder.build(flowRecords: records, achievementRecords: achievements, filter: filter)
+        #expect(snapshot.summary.totalFocusSeconds == 180)
+        #expect(snapshot.summary.flowCount == 1)
+        #expect(snapshot.summary.completedTaskCount == 2)
+        #expect(snapshot.previousSummary.totalFocusSeconds == 30)
+        #expect(snapshot.flowDays.reduce(0) { $0 + $1.totalFocusSeconds } == 180)
+        #expect(snapshot.achievementDays.reduce(0) { $0 + $1.completedCount } == 2)
+        #expect(snapshot.trend.reduce(0) { $0 + $1.focusSeconds } == 180)
+        #expect(snapshot.areaDistribution.count == 2)
+        #expect(snapshot.taskDistribution.first?.focusSeconds == 180)
+        #expect(snapshot.csvRows.reduce(0) { $0 + $1.focusedSeconds } == 180)
+        #expect(snapshot.csvRows.reduce(0) { $0 + $1.completedTaskCount } == 2)
+        #expect(!snapshot.csvRows.contains { $0.area == "Excluded" })
+        var sameSelection = filter
+        sameSelection.areaIDs = [second, first]
+        #expect(Set([filter, sameSelection]).count == 1)
+        filter.areaIDs.removeAll()
+        let all = builder.build(flowRecords: records, achievementRecords: achievements, filter: filter)
+        #expect(all.summary.totalFocusSeconds == 900)
+        #expect(all.summary.completedTaskCount == 3)
+        filter.areaIDs = [second]
+        #expect(builder.build(flowRecords: records, achievementRecords: achievements, filter: filter).summary.totalFocusSeconds == 120)
+    }
+
     @Test func taskTitleSearchAggregatesRepeatedWorkAndExcludesSiblingSegments() {
         let readingID = UUID()
         let firstSessionID = UUID()

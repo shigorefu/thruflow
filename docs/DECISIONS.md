@@ -387,6 +387,15 @@ that belong to a separate product stage.
 
 ## D-030: macOS Statistics Is A Filtered Period Report
 
+Statistics Area filters on macOS and iOS/iPadOS allow multiple selections.
+Selected Areas are combined (OR); an empty selection means All, including
+unassigned records. Search still intersects with the Area selection. The same
+selection filters totals, comparisons, Trend, Dots, distributions, and calendar
+indicators. CSV export starts with this selection and can change it independently.
+The native menu marks selected Areas; on iOS it stays open while toggling.
+All clears the set.
+
+
 The standalone macOS Statistics workspace uses anchored Week, Month, and Year
 periods plus an exact inclusive custom date range with summary, trend,
 focused-time distribution, and Dots cards. A persistent calendar centers the

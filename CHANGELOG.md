@@ -7,6 +7,9 @@ Release dates below record GitHub publication in Asia/Tokyo (JST).
 
 ### Added
 
+- Statistics and CSV export support selecting multiple Areas on macOS and
+  iOS/iPadOS. Clear the selection with All to include every Area.
+
 - Settings now lets you hide the planned end on the Flow timeline and show
   only elapsed time on macOS and iOS/iPadOS. The existing planned-end view
   remains enabled by default; the preference is saved on each device.

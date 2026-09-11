@@ -108,6 +108,15 @@ implicitly from Flow.
 
 ## Statistics
 
+Statistics Area filters on macOS and iOS/iPadOS allow multiple selections.
+Selected Areas are combined (OR); an empty selection means All, including
+unassigned records. Search still intersects with the Area selection. The same
+selection filters totals, comparisons, Trend, Dots, distributions, and calendar
+indicators. CSV export starts with this selection and can change it independently.
+The native menu marks selected Areas; on iOS it stays open while toggling.
+All clears the set.
+
+
 The standalone macOS Statistics workspace is a card-based period report. Its
 toolbar provides an Area filter, Task/Area search, and a direct Share
 action for configurable CSV export.

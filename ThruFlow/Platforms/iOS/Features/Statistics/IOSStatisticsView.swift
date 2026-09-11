@@ -15,7 +15,7 @@ struct IOSStatisticsView: View {
     let onOpenHistoryDate: (Date) -> Void
 
     @State private var selectedPeriod: StatisticsPeriod = .week
-    @State private var selectedAreaID: UUID?
+    @State private var selectedAreaIDs: Set<UUID> = []
     @State private var anchorDate = Date.now
     @State private var anchorDateDraft = Date.now
     @State private var customStartDate: Date?
@@ -37,7 +37,7 @@ struct IOSStatisticsView: View {
     @State private var exportContent: StatisticsCSVContent = .all
     @State private var exportStartDate = Date.now
     @State private var exportEndDate = Date.now
-    @State private var exportAreaID: UUID?
+    @State private var exportAreaIDs: Set<UUID> = []
     @State private var exportQuery = ""
     @State private var exportShareURL: URL?
     @State private var preparedExportConfiguration: IOSStatisticsExportConfiguration?
@@ -70,7 +70,7 @@ struct IOSStatisticsView: View {
             anchorDate: anchorDate,
             customStartDate: customStartDate,
             customEndDate: customEndDate,
-            areaID: selectedAreaID,
+            areaIDs: selectedAreaIDs,
             query: searchText
         )
     }
@@ -125,7 +125,7 @@ struct IOSStatisticsView: View {
             anchorDate: exportStartDate,
             customStartDate: exportStartDate,
             customEndDate: exportEndDate,
-            areaID: exportAreaID,
+            areaIDs: exportAreaIDs,
             query: exportQuery
         )
     }
@@ -302,46 +302,12 @@ struct IOSStatisticsView: View {
                 }
                 .accessibilityLabel(String(localized: "CSVを書き出す"))
 
-                Menu {
-                    Button {
-                        selectedAreaID = nil
-                    } label: {
-                        areaMenuLabel(
-                            String(localized: "すべて"),
-                            isSelected: selectedAreaID == nil
-                        )
-                    }
-                    if !activeAreas.isEmpty {
-                        Divider()
-                        ForEach(activeAreas) { area in
-                            Button {
-                                selectedAreaID = area.id
-                            } label: {
-                                areaMenuLabel(
-                                    "\(area.symbolName) \(area.name)",
-                                    isSelected: selectedAreaID == area.id
-                                )
-                            }
-                        }
-                    }
-                } label: {
-                    Image(systemName: ProductSymbol.area)
-                        .foregroundStyle(
-                            selectedAreaID == nil ? Color.primary : Color.accentColor
-                        )
-                }
-                .accessibilityLabel(String(localized: "方向フィルター"))
+                StatisticsAreaSelectionMenu(
+                    selectedAreaIDs: $selectedAreaIDs,
+                    areas: activeAreas
+                )
             }
             .fixedSize()
-        }
-    }
-
-    @ViewBuilder
-    private func areaMenuLabel(_ title: String, isSelected: Bool) -> some View {
-        if isSelected {
-            Label(title, systemImage: "checkmark")
-        } else {
-            Text(title)
         }
     }
 
@@ -373,13 +339,11 @@ struct IOSStatisticsView: View {
                 }
 
                 Section {
-                    Picker(String(localized: "方向フィルター"), selection: $exportAreaID) {
-                        Text(String(localized: "すべて")).tag(nil as UUID?)
-                        ForEach(activeAreas) { area in
-                            Text("\(area.symbolName) \(area.name)")
-                                .tag(Optional(area.id))
-                        }
-                    }
+                    StatisticsAreaSelectionMenu(
+                        selectedAreaIDs: $exportAreaIDs,
+                        areas: activeAreas,
+                        showsSelection: true
+                    )
 
                     TextField(String(localized: "検索"), text: $exportQuery)
                 }
@@ -496,7 +460,7 @@ struct IOSStatisticsView: View {
             anchorDate: anchorDate,
             customStartDate: customStartDate,
             customEndDate: customEndDate,
-            areaID: selectedAreaID,
+            areaIDs: selectedAreaIDs,
             query: searchText,
             areaCount: areas.count,
             latestAreaUpdate: areas.map(\.updatedAt).max(),
@@ -700,7 +664,7 @@ struct IOSStatisticsView: View {
             value: -1,
             to: periodBounds.currentEnd
         ) ?? periodBounds.currentStart, today)
-        exportAreaID = selectedAreaID
+        exportAreaIDs = selectedAreaIDs
         exportQuery = searchText
         exportShareURL = nil
         preparedExportConfiguration = nil
@@ -1705,7 +1669,7 @@ private struct IOSStatisticsPeriodRefreshID: Hashable {
     let anchorDate: Date
     let customStartDate: Date?
     let customEndDate: Date?
-    let areaID: UUID?
+    let areaIDs: Set<UUID>
     let query: String
     let areaCount: Int
     let latestAreaUpdate: Date?

@@ -546,6 +546,15 @@ snapshots.
 
 ## Statistics
 
+Statistics Area filters on macOS and iOS/iPadOS allow multiple selections.
+Selected Areas are combined (OR); an empty selection means All, including
+unassigned records. Search still intersects with the Area selection. The same
+selection filters totals, comparisons, Trend, Dots, distributions, and calendar
+indicators. CSV export starts with this selection and can change it independently.
+The native menu marks selected Areas; on iOS it stays open while toggling.
+All clears the set.
+
+
 On macOS, the toolbar contains a direct icon-only `CSVを書き出す` Share action,
 an Area filter, and the shared expanding Search control. The Share action
 opens a dedicated popover for content (`すべて | 集中記録 | タスク`),
