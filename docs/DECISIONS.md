@@ -285,6 +285,10 @@ of `FlowLiveActivityContent`. The iOS and macOS applications build Tasks with th
 canonical Today filter and dashboard ordering, and builds Dots with the
 canonical 180-day statistics heatmap. It serializes these immutable Codable
 snapshots into the shared App Group and requests targeted WidgetKit reloads.
+Tasks and Dots use separate observation scopes. Task completion does not rebuild
+the Flow heatmap; a cancellable 350 ms debounce coalesces rapid changes before
+publishing. Calendar/day-start changes, foreground entry, and a new day refresh
+both projections.
 
 The extension is presentation-only: it does not open SwiftData or CloudKit and
 does not reproduce filtering, sorting, progress, color-mixing, or timer rules.

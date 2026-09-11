@@ -34,6 +34,10 @@ Release dates below record GitHub publication in Asia/Tokyo (JST).
 
 ### Fixed
 
+- Completing Tasks no longer rebuilds the unrelated Flow Dots widget. Widget
+  updates coalesce rapid edits after the immediate UI response. On macOS task
+  boards, double-click editing is restricted to the text, outside the checkbox.
+
 - macOS Statistics card switches now align to the same trailing inset instead
   of centering inside differently sized invisible frames.
 

@@ -340,6 +340,8 @@ private struct TaskBoardCard: View {
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
             }
+            .contentShape(Rectangle())
+            .onTapGesture(count: 2, perform: onEdit)
         }
         .padding(9)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -347,7 +349,6 @@ private struct TaskBoardCard: View {
         .clipShape(RoundedRectangle(cornerRadius: 7))
         .opacity(todo.isCompleted ? 0.55 : 1)
         .contentShape(Rectangle())
-        .onTapGesture(count: 2, perform: onEdit)
         .contextMenu {
             Button(String(localized: "編集"), systemImage: "pencil", action: onEdit)
             Button(String(localized: "Flowを開始"), systemImage: "play.fill", action: onStartFlow)
