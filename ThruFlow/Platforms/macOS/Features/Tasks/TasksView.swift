@@ -1119,6 +1119,7 @@ struct MessengerTodoComposer: View {
     let validationMessage: String?
     var allowsDateSelection = true
     var showsOuterBackground = true
+    var suggestionsBelow = false
     var allowsQuickInputLegend = true
     var onCancel: (() -> Void)?
     let onSubmit: () -> Void
@@ -1141,19 +1142,7 @@ struct MessengerTodoComposer: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            if allowsQuickInputLegend && showsQuickInputLegend && isFocused && hasComposerContent && activeAutocompleteSuggestions.isEmpty {
-                quickInputLegend
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-
-            if !activeAutocompleteSuggestions.isEmpty {
-                autocompleteSuggestions(activeAutocompleteSuggestions)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-
-            composerSurface
-        }
+        composerSurface
         .animation(.snappy(duration: 0.22), value: hasComposerContent)
         .animation(.snappy(duration: 0.18), value: activeAutocompleteSuggestions.map(\.id))
         .padding(.horizontal, showsOuterBackground ? 12 : 0)
@@ -1163,17 +1152,14 @@ struct MessengerTodoComposer: View {
                 Rectangle().fill(.bar)
             }
         }
-        .sheet(isPresented: pendingAreaSheetBinding) {
-            AreaFormView(
-                mode: .create,
-                initialName: pendingAreaName
-            ) { area in
-                selectedAreaID = area.id
-                hasExplicitArea = true
-                replaceInlineToken(.area(area.id))
-                removeAreaToken(named: area.name)
-                pendingAreaName = nil
-                parserMessage = nil
+        .background {
+            TaskComposerSuggestionPanel(isPresented: !activeAutocompleteSuggestions.isEmpty ||
+                (allowsQuickInputLegend && showsQuickInputLegend && isFocused && hasComposerContent), showsBelow: suggestionsBelow) {
+                if !activeAutocompleteSuggestions.isEmpty {
+                    autocompleteSuggestions(activeAutocompleteSuggestions)
+                } else {
+                    quickInputLegend.frame(width: 360)
+                }
             }
         }
         .onChange(of: volume) { _, newValue in
@@ -1347,7 +1333,6 @@ struct MessengerTodoComposer: View {
         if let unresolved = result.unresolvedArea, !unresolved.isEmpty {
             pendingAreaName = unresolved
             parserMessage = String(localized: "方向「\(unresolved)」が見つかりません")
-            isCreatingArea = true
             isFocused = true
             return
         }
@@ -1361,17 +1346,6 @@ struct MessengerTodoComposer: View {
     private var parserAreas: [TaskQuickInputArea] {
         areas.map { TaskQuickInputArea(id: $0.id, name: $0.name) }
     }
-
-    private var pendingAreaSheetBinding: Binding<Bool> {
-        Binding(
-            get: { pendingAreaName != nil && isCreatingArea },
-            set: { newValue in
-                if !newValue { isCreatingArea = false }
-            }
-        )
-    }
-
-    @State private var isCreatingArea = false
 
     private var hasComposerContent: Bool {
         !trimmedTitle.isEmpty || !inlineTokens.isEmpty
@@ -1495,30 +1469,24 @@ struct MessengerTodoComposer: View {
         let query = String(token.dropFirst())
         switch token.first {
         case "@": return areaAutocompleteSuggestions(query: query)
-        case "!": return priorityAutocompleteSuggestions(query: query)
-        case "/": return dateAutocompleteSuggestions(query: query)
-        case "[": return measurementAutocompleteSuggestions(query: query)
+        case "#": return TaskComposerSuggestionBuilder().tags(query: query, todos: suggestionTodos).map {
+            TaskComposerAutocompleteSuggestion(id: "tag:\($0)", icon: "number", title: $0, action: .token("#\($0)"))
+        }
+        case "!", "/", "[":
+            return TaskQuickInputOption.suggestions(for: token).map {
+                TaskComposerAutocompleteSuggestion(
+                    id: $0.id, icon: $0.systemImage, title: $0.title,
+                    detail: $0.token, action: .token($0.token)
+                )
+            }
         default: return []
         }
     }
 
     private func areaAutocompleteSuggestions(query: String) -> [TaskComposerAutocompleteSuggestion] {
-        let matches = Array(
-            areas
-                .filter { query.isEmpty || $0.name.localizedCaseInsensitiveContains(query) }
-                .prefix(6)
+        let matches = TaskComposerSuggestionBuilder().areas(
+            query: query, areas: areas, todos: suggestionTodos
         )
-        guard !matches.isEmpty else {
-            return [
-                TaskComposerAutocompleteSuggestion(
-                    id: "create-area:\(query)",
-                    icon: "plus.circle",
-                    title: String(localized: "新しい方向を作成"),
-                    detail: query.isEmpty ? nil : query,
-                    action: .createArea(query)
-                )
-            ]
-        }
         return matches.map { area in
             TaskComposerAutocompleteSuggestion(
                 id: "area:\(area.id.uuidString)",
@@ -1527,64 +1495,6 @@ struct MessengerTodoComposer: View {
                 action: .area(area.id)
             )
         }
-    }
-
-    private func priorityAutocompleteSuggestions(query: String) -> [TaskComposerAutocompleteSuggestion] {
-        let options: [(String, String, TodoPriority, Bool)] = [
-            ("high", String(localized: "高"), .high, false),
-            ("medium", String(localized: "中"), .medium, false),
-            ("low", String(localized: "低"), .low, false),
-            ("later", String(localized: "余裕があれば"), .low, true),
-        ]
-        return options
-            .filter { query.isEmpty || $0.0.hasPrefix(query.lowercased()) }
-            .map { option in
-                TaskComposerAutocompleteSuggestion(
-                    id: "priority:\(option.0)",
-                    icon: "exclamationmark",
-                    title: option.1,
-                    detail: "!\(option.0)",
-                    action: .token("!\(option.0)")
-                )
-            }
-    }
-
-    private func dateAutocompleteSuggestions(query: String) -> [TaskComposerAutocompleteSuggestion] {
-        let options: [(String, String)] = [
-            ("today", String(localized: "今日")),
-            ("tomorrow", String(localized: "明日")),
-            ("nodate", String(localized: "日付なし")),
-        ]
-        return options
-            .filter { query.isEmpty || $0.0.hasPrefix(query.lowercased()) }
-            .map { option in
-                TaskComposerAutocompleteSuggestion(
-                    id: "date:\(option.0)",
-                    icon: "calendar",
-                    title: option.1,
-                    detail: "/\(option.0)",
-                    action: .token("/\(option.0)")
-                )
-            }
-    }
-
-    private func measurementAutocompleteSuggestions(query: String) -> [TaskComposerAutocompleteSuggestion] {
-        let options: [(String, String, String)] = [
-            ("[]", "square", String(localized: "チェック")),
-            ("[1b]", "circle", String(localized: "1ブロック")),
-            ("[25m]", "circle.lefthalf.filled", String(localized: "25分")),
-        ]
-        return options
-            .filter { query.isEmpty || $0.0.dropFirst().hasPrefix(query) }
-            .map { option in
-                TaskComposerAutocompleteSuggestion(
-                    id: "measurement:\(option.0)",
-                    icon: option.1,
-                    title: option.2,
-                    detail: option.0,
-                    action: .token(option.0)
-                )
-            }
     }
 
     private func suggestionRow(
@@ -1662,9 +1572,6 @@ struct MessengerTodoComposer: View {
         case .area(let id):
             guard let area = areas.first(where: { $0.id == id }) else { return }
             choose(area)
-        case .createArea(let name):
-            pendingAreaName = name
-            isCreatingArea = true
         case .token(let token):
             completeAutocompleteToken(token)
         case .title(let value):
@@ -1676,11 +1583,6 @@ struct MessengerTodoComposer: View {
 
     private func unresolvedAreaActions(name: String) -> some View {
         HStack(spacing: 8) {
-            Button(String(localized: "新規作成")) {
-                isCreatingArea = true
-            }
-            .buttonStyle(.borderedProminent)
-
             Button(String(localized: "その他として追加")) {
                 selectedAreaID = nil
                 hasExplicitArea = true
@@ -1909,7 +1811,6 @@ struct MessengerTodoComposer: View {
 private struct TaskComposerAutocompleteSuggestion: Identifiable {
     enum Action {
         case area(UUID)
-        case createArea(String)
         case token(String)
         case title(String)
     }
@@ -1947,12 +1848,14 @@ private enum TaskComposerInlineToken: Equatable, Identifiable {
 
 struct QuickTodoCreationPopover: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.calendar) private var calendar
+    @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Todo.sortIndex, order: .forward) private var allTodos: [Todo]
 
     let areas: [Area]
-    let scheduledDate: Date?
     let showsQuickInputLegend: Bool
+    let suggestionsBelow: Bool
     let initialDraft: TodoDraft?
     let onCreated: ((Todo) -> Void)?
 
@@ -1972,11 +1875,13 @@ struct QuickTodoCreationPopover: View {
         areas: [Area],
         scheduledDate: Date? = .now,
         showsQuickInputLegend: Bool = true,
+        suggestionsBelow: Bool = false,
         initialDraft: TodoDraft? = nil,
         onCreated: ((Todo) -> Void)? = nil
     ) {
         self.areas = areas
         self.showsQuickInputLegend = showsQuickInputLegend
+        self.suggestionsBelow = suggestionsBelow
         self.initialDraft = initialDraft
         self.onCreated = onCreated
 
@@ -1996,7 +1901,6 @@ struct QuickTodoCreationPopover: View {
             resolvedScheduledDate = scheduledDate
             initialVolume = .unspecified
         }
-        self.scheduledDate = resolvedScheduledDate
 
         _title = State(initialValue: initialDraft?.title ?? "")
         _selectedAreaID = State(initialValue: initialDraft?.area?.id)
@@ -2031,8 +1935,9 @@ struct QuickTodoCreationPopover: View {
             hashtags: $hashtags,
             areas: selectableAreas,
             validationMessage: validationMessage,
-            allowsDateSelection: false,
+            allowsDateSelection: true,
             showsOuterBackground: false,
+            suggestionsBelow: suggestionsBelow,
             allowsQuickInputLegend: showsQuickInputLegend,
             onCancel: { dismiss() },
             onSubmit: createTodo
@@ -2055,7 +1960,7 @@ struct QuickTodoCreationPopover: View {
             isRoomIfPossible: priority == .low && isRoomIfPossible,
             plannedAmount: volume.plannedAmount,
             actualProgress: initialDraft?.actualProgress ?? 0,
-            scheduledDate: scheduledDate,
+            scheduledDate: dateOption.resolvedDate(calendar: calendar, dayBoundary: dayBoundary),
             deadline: initialDraft?.deadline
         )
         let errors = validator.validate(draft)
@@ -2081,7 +1986,7 @@ struct QuickTodoCreationPopover: View {
                 plannedAmount: volume.plannedAmount,
                 actualProgress: draft.actualProgress
             ),
-            scheduledDate: scheduledDate,
+            scheduledDate: draft.scheduledDate,
             deadline: draft.deadline,
             sortIndex: (allTodos.map(\.sortIndex).min() ?? 0) - 1
         )

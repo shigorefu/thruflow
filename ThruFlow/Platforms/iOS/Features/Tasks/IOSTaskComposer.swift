@@ -5,6 +5,7 @@ struct IOSTaskComposer: View {
     @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.calendar) private var calendar
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Query(sort: \Todo.updatedAt, order: .reverse) private var suggestionTodos: [Todo]
 
     let areas: [Area]
@@ -22,8 +23,6 @@ struct IOSTaskComposer: View {
     @State private var datePickerValue = Date.now
     @State private var showsDatePicker = false
     @State private var unresolvedArea: String?
-    @State private var areaDraft: IOSAreaDraft?
-    @State private var pendingCreatedAreaName: String?
     @State private var hasExplicitMeasurement = false
     @State private var hasExplicitArea = false
     @State private var hasExplicitPriority = false
@@ -70,12 +69,8 @@ struct IOSTaskComposer: View {
 
     var body: some View {
         VStack(spacing: 8) {
-            if !autocompleteSuggestions.isEmpty {
-                autocompletePanel
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            } else if showsQuickInputLegend && isFocused && !title.isEmpty {
-                quickInputLegend
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            if horizontalSizeClass == .regular {
+                suggestionContent
             }
 
             if let saveErrorMessage {
@@ -166,6 +161,17 @@ struct IOSTaskComposer: View {
         .padding(.horizontal, 12)
         .padding(.top, 8)
         .padding(.bottom, 8)
+        .overlay(alignment: .top) {
+            if horizontalSizeClass != .regular {
+                VStack(spacing: 0) {
+                    suggestionContent
+                }
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 12)
+                .frame(height: 0, alignment: .bottom)
+                .offset(y: -8)
+            }
+        }
         .task {
             if initialDraft == nil {
                 areaID = nil
@@ -219,11 +225,6 @@ struct IOSTaskComposer: View {
             }
             .presentationDetents([.medium, .large])
         }
-        .sheet(item: $areaDraft, onDismiss: selectCreatedAreaIfAvailable) { draft in
-            NavigationStack {
-                IOSAreaEditorView(mode: .create(initialName: draft.name))
-            }
-        }
         .alert(
             String(localized: "分野"),
             isPresented: Binding(
@@ -231,11 +232,6 @@ struct IOSTaskComposer: View {
                 set: { if !$0 { unresolvedArea = nil } }
             )
         ) {
-            Button(String(localized: "新規作成")) {
-                guard let unresolvedArea else { return }
-                pendingCreatedAreaName = unresolvedArea
-                areaDraft = IOSAreaDraft(name: unresolvedArea)
-            }
             Button(String(localized: "その他として追加")) {
                 useInboxForUnresolvedArea()
             }
@@ -428,6 +424,11 @@ struct IOSTaskComposer: View {
                     case .token(let replacement):
                         title = parser.replacingTrailingAutocompleteToken(in: title, with: replacement) + " "
                         applyRecognizedQuickInput()
+                    case .area(let id):
+                        title = parser.replacingTrailingAutocompleteToken(in: title, with: "")
+                        areaID = id
+                        hasExplicitArea = true
+                        replaceInlineToken(.area(id))
                     case .title(let value):
                         title = value
                     }
@@ -552,6 +553,15 @@ struct IOSTaskComposer: View {
         return scheduledDate.formatted(.dateTime.month(.abbreviated).day())
     }
 
+    @ViewBuilder
+    private var suggestionContent: some View {
+        if !autocompleteSuggestions.isEmpty {
+            autocompletePanel
+        } else if showsQuickInputLegend && isFocused && !title.isEmpty {
+            quickInputLegend
+        }
+    }
+
     private var autocompleteSuggestions: [IOSQuickInputSuggestion] {
         guard isFocused else { return [] }
         guard let token = parser.trailingAutocompleteToken(in: title) else {
@@ -571,41 +581,27 @@ struct IOSTaskComposer: View {
 
         switch token.first {
         case "@":
-            return areas
-                .filter { !$0.isArchived && (query.isEmpty || $0.name.lowercased().contains(query)) }
-                .prefix(6)
+            return TaskComposerSuggestionBuilder().areas(query: query, areas: areas, todos: suggestionTodos)
                 .map {
                     IOSQuickInputSuggestion(
                         id: $0.id.uuidString,
                         title: "\($0.symbolName) \($0.name)",
                         detail: "@\($0.name)",
                         systemImage: ProductSymbol.area,
-                        action: .token("@\($0.name)")
+                        action: .area($0.id)
                     )
                 }
-        case "!":
-            return [
-                ("high", String(localized: "高")),
-                ("medium", String(localized: "中")),
-                ("low", String(localized: "低")),
-                ("later", String(localized: "余裕があれば")),
-            ]
-            .filter { query.isEmpty || $0.0.hasPrefix(query) }
-            .map { IOSQuickInputSuggestion(id: "!\($0.0)", title: $0.1, detail: "!\($0.0)", systemImage: "flag", action: .token("!\($0.0)")) }
-        case "/":
-            return [
-                ("today", String(localized: "今日")),
-                ("tomorrow", String(localized: "明日")),
-                ("nodate", String(localized: "日付なし")),
-            ]
-            .filter { query.isEmpty || $0.0.hasPrefix(query) }
-            .map { IOSQuickInputSuggestion(id: "/\($0.0)", title: $0.1, detail: "/\($0.0)", systemImage: "calendar", action: .token("/\($0.0)")) }
-        case "[":
-            return [
-                IOSQuickInputSuggestion(id: "check", title: TodoMeasurement.checkbox.displayName, detail: "[]", systemImage: "checkmark.square", action: .token("[]")),
-                IOSQuickInputSuggestion(id: "block", title: "1 \(String(localized: "ブロック"))", detail: "[1b]", systemImage: "circle", action: .token("[1b]")),
-                IOSQuickInputSuggestion(id: "minutes", title: "25 \(String(localized: "分"))", detail: "[25m]", systemImage: "timer", action: .token("[25m]")),
-            ]
+        case "#":
+            return TaskComposerSuggestionBuilder().tags(query: query, todos: suggestionTodos).map {
+                IOSQuickInputSuggestion(id: "tag:\($0)", title: $0, detail: "#\($0)", systemImage: "number", action: .token("#\($0)"))
+            }
+        case "!", "/", "[":
+            return TaskQuickInputOption.suggestions(for: token).map {
+                IOSQuickInputSuggestion(
+                    id: $0.id, title: $0.title, detail: $0.token,
+                    systemImage: $0.systemImage, action: .token($0.token)
+                )
+            }
         default:
             return []
         }
@@ -885,24 +881,6 @@ struct IOSTaskComposer: View {
         isFocused = true
     }
 
-    private func selectCreatedAreaIfAvailable() {
-        guard let name = pendingCreatedAreaName,
-              let area = areas.first(where: {
-                  $0.name.compare(name, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame
-              }) else {
-            pendingCreatedAreaName = nil
-            return
-        }
-
-        title = removingAreaToken(name, from: title)
-        areaID = area.id
-        hasExplicitArea = true
-        replaceInlineToken(.area(area.id))
-        unresolvedArea = nil
-        pendingCreatedAreaName = nil
-        isFocused = true
-    }
-
     private func removingAreaToken(_ name: String, from source: String) -> String {
         source
             .replacingOccurrences(of: "@\(name)", with: "")
@@ -936,6 +914,7 @@ private enum IOSTaskComposerInlineToken: Equatable, Identifiable {
 
 private struct IOSQuickInputSuggestion: Identifiable {
     enum Action {
+        case area(UUID)
         case token(String)
         case title(String)
     }

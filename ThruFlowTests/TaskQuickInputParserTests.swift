@@ -120,7 +120,7 @@ struct TaskQuickInputParserTests {
         #expect(parser.trailingAutocompleteToken(in: "Prepare !h") == "!h")
         #expect(parser.trailingAutocompleteToken(in: "Prepare /to") == "/to")
         #expect(parser.trailingAutocompleteToken(in: "Prepare [2") == "[2")
-        #expect(parser.trailingAutocompleteToken(in: "Prepare #tag") == nil)
+        #expect(parser.trailingAutocompleteToken(in: "Prepare #tag") == "#tag")
         #expect(parser.trailingAutocompleteToken(in: "Prepare text") == nil)
         #expect(parser.trailingAutocompleteToken(in: "Prepare @AW ") == nil)
     }

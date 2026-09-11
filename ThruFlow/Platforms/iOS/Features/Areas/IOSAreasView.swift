@@ -41,6 +41,22 @@ struct IOSAreasView: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
 
+            VStack(alignment: .leading, spacing: 6) {
+                Label(selectedType.displayName, systemImage: selectedType.systemImage)
+                    .font(.headline)
+                Text(selectedType.description)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 20)
+            .padding(.top, 4)
+            .padding(.bottom, 16)
+            .background(.background)
+
+            Divider()
+
             List {
                 Section {
                     ForEach(visibleAreas) { area in
@@ -62,13 +78,6 @@ struct IOSAreasView: View {
                         }
                     }
                     .onMove(perform: moveAreas)
-                } header: {
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(selectedType.displayName)
-                        Text(selectedType.description)
-                            .font(.caption)
-                            .textCase(nil)
-                    }
                 }
             }
             .listStyle(.insetGrouped)

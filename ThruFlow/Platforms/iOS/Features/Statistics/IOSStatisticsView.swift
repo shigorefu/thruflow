@@ -1162,7 +1162,8 @@ private struct IOSStatisticsDotsCard: View {
                             IOSStatisticsYearGrid(
                                 paddedDays: paddedDays,
                                 hidesPlaceholders: usesCustomRange,
-                                maxValue: maxValue
+                                maxValue: maxValue,
+                                onSelectDay: onSelectDay
                             )
                         }
 
@@ -1285,6 +1286,7 @@ private struct IOSStatisticsYearGrid: View {
     let paddedDays: [IOSStatisticsContributionDay?]
     let hidesPlaceholders: Bool
     let maxValue: Int
+    let onSelectDay: (IOSStatisticsContributionDay) -> Void
 
     var body: some View {
         GeometryReader { geometry in
@@ -1303,10 +1305,20 @@ private struct IOSStatisticsYearGrid: View {
                     )
                 }
             }
+            .contentShape(Rectangle())
+            .onTapGesture { location in
+                guard let index = paddedDays.indices.first(where: { layout.rect(for: $0).contains(location) }),
+                      let day = paddedDays[index], day.isSelectable else { return }
+                onSelectDay(day)
+            }
         }
         .frame(height: 58)
-        .accessibilityElement(children: .ignore)
         .accessibilityLabel(String(localized: "Dots"))
+        .accessibilityChildren {
+            ForEach(paddedDays.compactMap { $0 }.filter(\.isSelectable)) { day in
+                Button(day.accessibilityLabel) { onSelectDay(day) }
+            }
+        }
     }
 
     private func layout(for size: CGSize) -> IOSStatisticsYearGridLayout {

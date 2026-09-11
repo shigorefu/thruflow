@@ -150,7 +150,9 @@ struct StatisticsView: View {
         GeometryReader { geometry in
             HStack(spacing: 0) {
                 ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 16) {
+                    // Four report cards stay mounted during scrolling. Native
+                    // segmented controls should not churn with lazy row reuse.
+                    VStack(alignment: .leading, spacing: 16) {
                         if let currentSnapshot {
                             statisticsCards(snapshot: currentSnapshot)
                         } else {
@@ -1153,7 +1155,7 @@ private struct StatisticsDistributionCard: View {
                 .pickerStyle(.segmented)
                 .labelsHidden()
                 .controlSize(.small)
-                .fixedSize()
+                .frame(width: 180)
             }
         ) {
             VStack(alignment: .leading, spacing: 14) {
@@ -1355,7 +1357,7 @@ private struct StatisticsModePicker: View {
         .pickerStyle(.segmented)
         .labelsHidden()
         .controlSize(.small)
-        .fixedSize()
+        .frame(width: 180)
         .accessibilityLabel(String(localized: "統計表示"))
     }
 }
@@ -1521,7 +1523,7 @@ private struct StatisticsContributionGrid: View {
                         StatisticsContributionCell(
                             day: contributionDay(week: weekIndex, weekday: weekdayIndex),
                             maxValue: maxValue,
-                            isInteractive: false,
+                            isInteractive: contributionDay(week: weekIndex, weekday: weekdayIndex)?.isSelectable == true,
                             hidesPlaceholder: usesCompactCustomGrid,
                             onSelectDate: onSelectDate
                         )
@@ -1554,6 +1556,7 @@ private struct StatisticsContributionCell: View {
     let onSelectDate: (Date) -> Void
 
     @State private var isHovered = false
+    @State private var isDetailPresented = false
 
     init(
         day: StatisticsContributionDay?,
@@ -1582,8 +1585,8 @@ private struct StatisticsContributionCell: View {
     private var renderedCell: some View {
         if isInteractive {
             Button {
-                guard let day else { return }
-                onSelectDate(day.date)
+                guard day?.isSelectable == true else { return }
+                isDetailPresented = true
             } label: {
                 cellShape
                     .scaleEffect(isHovered && day != nil ? 1.08 : 1)
@@ -1592,20 +1595,22 @@ private struct StatisticsContributionCell: View {
             .disabled(day == nil)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .popover(
-                isPresented: $isHovered,
+                isPresented: $isDetailPresented,
                 attachmentAnchor: .rect(.bounds),
                 arrowEdge: .bottom
             ) {
                 if let day {
-                    StatisticsContributionPopover(day: day)
-                        .allowsHitTesting(false)
+                    StatisticsContributionPopover(day: day) {
+                        isDetailPresented = false
+                        onSelectDate(day.date)
+                    }
                 }
             }
             .onHover { hovering in
                 isHovered = hovering && day != nil
             }
             .accessibilityLabel(helpText)
-            .accessibilityHint(String(localized: "この日の履歴を開く"))
+            .accessibilityHint(String(localized: "この日の記録"))
         } else {
             cellShape
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -1657,6 +1662,7 @@ private struct StatisticsContributionPopover: View {
     @Environment(\.locale) private var locale
 
     let day: StatisticsContributionDay
+    let onOpenHistory: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -1671,6 +1677,11 @@ private struct StatisticsContributionPopover: View {
                 metricRow(String(localized: "集中回数"), value: "\(day.flowCount)")
                 metricRow(String(localized: "完了タスク"), value: "\(day.completedTaskCount)")
             }
+            Button(action: onOpenHistory) {
+                Label(String(localized: "履歴"), systemImage: "clock.arrow.circlepath")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
         }
         .padding(12)
         .frame(minWidth: 210)

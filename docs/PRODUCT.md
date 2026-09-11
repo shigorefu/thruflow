@@ -69,11 +69,11 @@ Task completion:
 - `集中ブロック`: accumulated focused time reaches planned Blocks.
 - `分`: accumulated focused minutes reaches planned minutes.
 
-## 流れ
+## フロー
 
 Flow is a media-player-like recorder.
 
-`流れ` is the first/default navigation section and today's primary dashboard. In wide layout, one grid aligns the stream/timeline above Tasks on the left and the square player above Statistics on the right. The left column occupies roughly three quarters of the content. Area colors compose the stream palette, while focus duration and session count control its visual volume.
+`フロー` is the first/default navigation section and today's primary dashboard. In wide layout, one grid aligns the stream/timeline above Tasks on the left and the square player above Statistics on the right. The left column occupies roughly three quarters of the content. Area colors compose the stream palette, while focus duration and session count control its visual volume.
 
 The stream is a field of broad, bright, softly glowing translucent ribbons rendered on the GPU around one shared S-shaped channel with three levels of depth. Its phase motion is tuned 25 percent faster than the original profile while keeping the same 30/60 FPS render budget. A subtle internal current makes that phase motion legible while idle, and the stream immediately accelerates when Flow starts. Its occupied area stops growing at 4 Blocks so depth, transparency, and motion preserve the silhouette without black carved stripes; progress through 6 Blocks instead adds internal detail, parallax, saturation, and motion. A restrained light pulse crosses the stream at each completed half-Block. Every valid `休憩` press sends a short reverse release wave without implying that rest has started. After note confirmation, a regular rest exhales softly; a confirmed `長休憩` opens all seven ribbons into a brighter fan and then keeps a calm breathing form for the rest of the break. These effects are transient presentation state and never change or persist timer data. `短め`, `標準`, and `じっくり` change the wave character, while a subtle mode-specific tint is applied to the dashboard. Below it, today's Anytime Tasks and Habits remain actionable with the same Check, Block, and Minute indicators as Tasks; the Optional `できたら` group appears only when present. On iPhone and iPad, one dashboard Task card switches between `タスク / 習慣 / できたら`; its header offers quick Task capture next to the Tasks deep link. Compact width uses the bottom composer and regular width anchors it as a popover to `+`. The fixed-height compact Statistics panel forms the same three-page carousel on macOS and iPhone for Task/Area time distribution, a seven-day Flow trend with day-over-day deltas, and today's completion status.
 
@@ -136,25 +136,25 @@ linear series. Week and
 Year use full-width focus calendars, while Month may share a row with Pie. Responsive focus calendars
 fit inside the card without horizontal scrolling. The preset Month stretches
 its seven columns across the available card width. Custom ranges of any length show compact cells in chronological order,
-wrapping to the card width without weekday labels, calendar padding, or a legend. Hovering a real day cell shows a system bubble above all card content
-with its date, focus time, `集中回数`, and completed Task count. The summary always
+wrapping to the card width without weekday labels, calendar padding, or a legend. Selecting a real day cell opens a daily summary with its date, focus time,
+`集中回数`, completed Task count, and an explicit History action. macOS uses
+a popover and iOS a sheet; this applies to Week, Month, Year, and custom ranges. The summary always
 presents both recorded focus and completed Tasks. Search is segment-aware, so
 matching one Task within a switched Flow credits only that Task's persisted
 interval. The export popover independently chooses `すべて | 集中記録 | タスク`,
 exact inclusive start/end dates, Area, and text filter. A
-Pie sector can be selected to dim the other sectors and isolate its value and
-legend row. The Statistics Area filter uses the same symbol as
+Pie sector or legend row can be selected to dim the other sectors and show
+the category’s daily or per-Task detail bars. Clearing selection restores the legend. The Statistics Area filter uses the same symbol as
 the main navigation. The current Week, Month, Year, and custom ranges stop at
-today; future calendar dates and forward navigation are unavailable. The Year focus calendar
-is display-only because its cells are too small for reliable inspection.
+today; future calendar dates and forward navigation are unavailable. Year cells also open the daily summary; future days and padding remain unavailable.
 
 The iPhone Statistics workspace uses the same period report as macOS: anchored
 Week, Month, Year, or an exact custom date range; Summary, Trend, focused-time
 Pie, and `集中カレンダー` / Focus Calendar cards; Area and text filters; and
 `すべて | 集中記録 | タスク` CSV export. Its presentation is touch-native: cards form one vertical
 scroll, period/calendar controls and export use system sheets, and tapping a
-Week or Month focus-calendar day opens a compact detail sheet before navigating to
-History. The Year focus calendar remains a non-interactive full-width overview. Search starts
+real focus-calendar day in any period opens a compact detail sheet with an
+explicit History action. The Year focus calendar remains a full-width overview with selectable days. Search starts
 as a magnifying-glass toolbar action, and every iPhone navigation title uses the
 same centered inline presentation. The `集中カレンダー` widgets keep their
 separate compact 30/60/90-day snapshots.
@@ -198,8 +198,8 @@ available languages are discovered from the bundle so contributors can add a
 locale without changing Settings code.
 
 Version 1.0.0 introduces a ten-step onboarding journey: `ようこそ`, `分野`,
-`タスク`, `流れ`, `集中タイマー`, `流れを体験`, `履歴`, `統計`,
-`使い方の流れ`, and `データ`.
+`タスク`, `フロー`, `集中タイマー`, `フローを体験`, `履歴`, `統計`,
+`使い方のフロー`, and `データ`.
 An empty first installation uses guided mode. It opens the real Area editor and
 Task composer with localized starter values, but saves only an Area or Task that
 the user explicitly confirms. The Flow preview presents the complete production
@@ -211,7 +211,7 @@ confirms that note. All demo state is presentation-only: it creates no
 `FlowSession`, segment, break, Task progress, History, Statistics, notification,
 Live Activity, or CloudKit record. The Flow overview and timer guidance stay on
 separate cards so neither screen becomes overloaded. The workflow card
-summarizes `分野 → タスク → 流れ → 履歴・統計 → 次の一歩`; a final dedicated
+summarizes `分野 → タスク → フロー → 履歴・統計 → 次の一歩`; a final dedicated
 card explains private data storage and the free, ad-free core features.
 
 If first launch already contains user data, onboarding becomes a read-only tour
@@ -254,7 +254,7 @@ The watchOS companion provides a compact four-page vertical Flow dashboard:
 - `タイマー` is the first page and contains the complete Watch Flow player,
   with the mode selector above, timer ring on the left, and transport controls
   on the right;
-- `流れ` presents the animated stream fullscreen without a timeline; one tap
+- `フロー` presents the animated stream fullscreen without a timeline; one tap
   hides or restores all informational overlays;
 - `タスク` presents today's Tasks and Habits and can create a Task through a
   compact picker-based form that never opens a keyboard;

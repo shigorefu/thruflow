@@ -421,9 +421,9 @@ previous values as separate line series. Month can place Pie and Dots in one row
 its Dots columns fill their card, while Week and Year keep full-width Dots.
 Custom Dots use a compact chronological grid with no weekday labels, calendar
 padding, or legend for every range length; preset Month retains the regular calendar-cell size, and every
-real cell exposes a system hover bubble above the card layer with its daily
-metrics, except Year Dots, which remain display-only because their cells are too
-small for dependable targeting. Current ranges stop at today: future calendar
+selectable real cell opens a daily summary on click/tap, including Year Dots.
+The summary provides an explicit History action; macOS uses a popover and iOS
+a sheet. Hover on macOS only highlights the cell. Current ranges stop at today: future calendar
 dates, export/custom dates, Trend/Dots buckets, and forward navigation are
 disabled or clipped. Preset Month Dots completes its boundary weeks with
 crossed-out, non-interactive cells for dates outside the selected month. Preset calendar anchors retain their selected week, month, or
@@ -460,8 +460,7 @@ four-projection cache remain the numeric source of truth.
 iPhone owns a touch-native renderer rather than compiling the macOS view: one
 vertical card scroll, graphical period and two-date custom-range sheets, a
 native export sheet and ShareLink, a compact full-width Canvas for Year Dots,
-and a daily detail sheet that can open History. Year Dots are intentionally
-non-interactive. Search begins as a toolbar magnifier and expands on demand;
+and a daily detail sheet that can open History. Year Dots also support selecting a real day and exposing it through accessibility. Search begins as a toolbar magnifier and expands on demand;
 Search stays trailing while context actions occupy the leading side: Tasks and
 Areas use `その他`, History uses its report mode, and Statistics groups
 Share with the Area filter. Creation actions remain trailing. The shared
@@ -687,3 +686,10 @@ the next occurrence must have a new identity and zero progress. Reconciliation
 is idempotent for unchanged Todo values. macOS move menus use the same
 validation as drag and drop and do not offer moving completed Tasks. Existing
 user-edited dates are not retrospectively inferred or rewritten.
+
+## UI Parity: Statistics Details and Quick Creation (1.3.0)
+
+Selecting a Dots day opens its summary before History on both platforms,
+including Year. Shared quick-input options own priority/date/measurement labels,
+icons, and prefix filtering. Flow quick creation offers a date control on both
+platforms and persists its selected value, including dates entered as tokens.

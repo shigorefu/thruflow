@@ -193,3 +193,22 @@ Released on GitHub on 2026-09-08; shipping build `10`.
 - [x] Skip Apple build/test jobs for Markdown-only changes while keeping the
   required GitHub CI status resolvable. Run the complete Apple gate whenever
   any non-Markdown file changes.
+
+## 1.3.0 — Current development (unreleased)
+
+Implemented on the development branch; these changes are not a published release.
+The Xcode marketing version remains `1.2.0` until release preparation.
+
+- [x] Optional focus planned-end timeline; rest always shows elapsed time only.
+- [x] Repair weekly measured-Habit rollover and minimal focus Activity ring direction.
+- [x] Multi-Area Statistics filters, exact custom Dots grids, and calendar-boundary fixes.
+- [x] Distribution detail bars by date for Tasks and by Task for Areas.
+- [x] Isolated demo-data schemes for macOS and iOS.
+- [x] Inactive macOS Flow blur, resume clock reset, and right-to-left palette transitions.
+- [x] Remove duplicate iOS Area subtitles and legacy top-control backgrounds.
+- [x] Separate Tasks/Dots widget updates and isolate macOS board editing gestures.
+- [x] Align macOS Statistics controls and use Flow symbols for Area group headings.
+- [x] Use `フロー` consistently in Japanese workspace, stream, and onboarding copy.
+
+See `CHANGELOG.md` for detailed changes. Release metadata, signing, and the
+physical-device release checks remain part of release preparation.

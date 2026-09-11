@@ -354,7 +354,7 @@ struct FlowDashboardView: View {
             )
 
             if snapshot.totalFocusSeconds == 0 {
-                Text(String(localized: "Flowを始めると、今日の流れがここから育ちます"))
+                Text(String(localized: "Flowを始めると、今日のフローがここから育ちます"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .padding(12)

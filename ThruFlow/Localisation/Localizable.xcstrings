@@ -1812,7 +1812,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "流れ"
+            "value" : "フロー"
           }
         },
         "ru" : {
@@ -2087,7 +2087,7 @@
         }
       }
     },
-    "Flowを始めると、今日の流れがここから育ちます" : {
+    "Flowを始めると、今日のフローがここから育ちます" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2098,7 +2098,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "集中を始めると、今日の流れがここに表示されます。"
+            "value" : "集中を始めると、今日のフローがここに表示されます。"
           }
         },
         "ru" : {
@@ -2720,7 +2720,7 @@
         }
       }
     },
-    "ThruFlowは、タスク管理、柔軟な集中タイマー、時間の振り返りをひとつにまとめたアプリです。まずは分野とタスクをひとつずつ作り、基本の流れを試してみましょう。" : {
+    "ThruFlowは、タスク管理、柔軟な集中タイマー、時間の振り返りをひとつにまとめたアプリです。まずは分野とタスクをひとつずつ作り、基本のフローを試してみましょう。" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2731,7 +2731,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ThruFlowは、タスク管理、柔軟な集中タイマー、時間の振り返りをひとつにまとめたアプリです。まずは分野とタスクをひとつずつ作り、基本の流れを試してみましょう。"
+            "value" : "ThruFlowは、タスク管理、柔軟な集中タイマー、時間の振り返りをひとつにまとめたアプリです。まずは分野とタスクをひとつずつ作り、基本のフローを試してみましょう。"
           }
         },
         "ru" : {
@@ -3597,6 +3597,7 @@
       }
     },
     "この日の履歴を開く" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3946,7 +3947,7 @@
         }
       }
     },
-    "すべてが、ひとつの流れに" : {
+    "すべてが、ひとつのフローに" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3957,7 +3958,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "すべてが、ひとつの流れに"
+            "value" : "すべてが、ひとつのフローに"
           }
         },
         "ru" : {
@@ -5160,6 +5161,50 @@
         }
       }
     },
+    "フロー" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flow"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フロー"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flow"
+          }
+        }
+      }
+    },
+    "フローの画面では、今日の作業、タスク、集中の記録、統計をまとめて確認できます。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Flow screen brings together today's work, Tasks, focus history, and a daily summary."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フローの画面では、今日の作業、タスク、集中の記録、統計をまとめて確認できます。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "На экране Flow собраны задачи на сегодня, таймер, ход дня и краткая статистика."
+          }
+        }
+      }
+    },
     "フローブロック" : {
       "localizations" : {
         "en" : {
@@ -5178,6 +5223,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Блоки фокуса"
+          }
+        }
+      }
+    },
+    "フローを体験" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flow Demo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フローを体験"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Демонстрация Flow"
           }
         }
       }
@@ -5837,7 +5904,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "今日の流れ"
+            "value" : "今日のフロー"
           }
         },
         "ru" : {
@@ -5912,6 +5979,28 @@
         }
       }
     },
+    "今日のフローをひと目で" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See Your Day at a Glance"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今日のフローをひと目で"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Весь день перед глазами"
+          }
+        }
+      }
+    },
     "今日のみ休み" : {
       "localizations" : {
         "en" : {
@@ -5924,28 +6013,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Отдых сегодня"
-          }
-        }
-      }
-    },
-    "今日の流れをひと目で" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "See Your Day at a Glance"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "今日の流れをひと目で"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Весь день перед глазами"
           }
         }
       }
@@ -6476,7 +6543,7 @@
         }
       }
     },
-    "使い方の流れ" : {
+    "使い方のフロー" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6898,7 +6965,7 @@
         }
       }
     },
-    "分野、タスク、流れ、履歴と統計、次の一歩" : {
+    "分野、タスク、フロー、履歴と統計、次の一歩" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6909,7 +6976,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "分野、タスク、流れ、履歴と統計、次の一歩"
+            "value" : "分野、タスク、フロー、履歴と統計、次の一歩"
           }
         },
         "ru" : {
@@ -6942,7 +7009,7 @@
         }
       }
     },
-    "分野で取り組むことを整理し、タスクで次の一歩を決める。流れで実際の集中時間を記録し、履歴と統計で振り返る。ThruFlowは、このサイクルをひとつにつなげます。" : {
+    "分野で取り組むことを整理し、タスクで次の一歩を決める。フローで実際の集中時間を記録し、履歴と統計で振り返る。ThruFlowは、このサイクルをひとつにつなげます。" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6953,7 +7020,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "分野で取り組むことを整理し、タスクで次の一歩を決める。流れで実際の集中時間を記録し、履歴と統計で振り返る。ThruFlowは、このサイクルをひとつにつなげます。"
+            "value" : "分野で取り組むことを整理し、タスクで次の一歩を決める。フローで実際の集中時間を記録し、履歴と統計で振り返る。ThruFlowは、このサイクルをひとつにつなげます。"
           }
         },
         "ru" : {
@@ -7122,7 +7189,7 @@
         }
       }
     },
-    "取り組むタスクと集中時間を選び、準備ができたら再生ボタンを押します。途中で変更しても、途切れない作業はひとつの流れとして残ります。" : {
+    "取り組むタスクと集中時間を選び、準備ができたら再生ボタンを押します。途中で変更しても、途切れない作業はひとつのフローとして残ります。" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7133,7 +7200,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "取り組むタスクと集中時間を選び、準備ができたら再生ボタンを押します。途中で変更しても、途切れない作業はひとつの流れとして残ります。"
+            "value" : "取り組むタスクと集中時間を選び、準備ができたら再生ボタンを押します。途中で変更しても、途切れない作業はひとつのフローとして残ります。"
           }
         },
         "ru" : {
@@ -7660,7 +7727,7 @@
         }
       }
     },
-    "小さな流れ" : {
+    "小さなフロー" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7979,28 +8046,6 @@
         }
       }
     },
-    "新しい方向を作成" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Create Area"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "新しい分野を作成"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Создать сферу"
-          }
-        }
-      }
-    },
     "新しい日の開始" : {
       "localizations" : {
         "en" : {
@@ -8051,22 +8096,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Новый Flow, с %1$@ до %2$@"
-          }
-        }
-      }
-    },
-    "新規作成" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Create New"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Создать"
           }
         }
       }
@@ -9462,73 +9491,7 @@
         }
       }
     },
-    "流れ" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Flow"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "流れ"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Flow"
-          }
-        }
-      }
-    },
-    "流れの画面では、今日の作業、タスク、集中の記録、統計をまとめて確認できます。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The Flow screen brings together today's work, Tasks, focus history, and a daily summary."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "流れの画面では、今日の作業、タスク、集中の記録、統計をまとめて確認できます。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "На экране Flow собраны задачи на сегодня, таймер, ход дня и краткая статистика."
-          }
-        }
-      }
-    },
-    "流れを体験" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Flow Demo"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "流れを体験"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Демонстрация Flow"
-          }
-        }
-      }
-    },
-    "満ちている流れ" : {
+    "満ちているフロー" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9712,75 +9675,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Значение цели должно быть не меньше 1."
-          }
-        }
-      }
-    },
-    "目標回数：%lld回・%@" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Target count: %1$lld · %2$@"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "目標回数：%1$lld回・%2$@"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Целевое количество: %1$lld · %2$@"
-          }
-        }
-      }
-    },
-    "目標時間：%lld分・%@" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Time target: %1$lld min · %2$@"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "目標時間：%1$lld分・%2$@"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Цель по времени: %1$lld мин · %2$@"
-          }
-        }
-      }
-    },
-    "目標時間：%lld時間・%@" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Time target: %1$lld hr · %2$@"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "目標時間：%1$lld時間・%2$@"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Цель по времени: %1$lld ч · %2$@"
           }
         }
       }
@@ -10298,7 +10192,7 @@
         }
       }
     },
-    "育っている流れ" : {
+    "育っているフロー" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -11441,29 +11335,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Блоки фокуса"
-          }
-        }
-      }
-    },
-    "集中ブロック数：%lld・%@" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Focus Blocks: %1$lld · %2$@"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "集中ブロック数：%1$lld・%2$@"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Блоки фокуса: %1$lld · %2$@"
           }
         }
       }

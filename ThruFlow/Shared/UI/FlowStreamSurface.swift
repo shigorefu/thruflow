@@ -465,9 +465,9 @@ struct FlowStreamSurface: View, Equatable {
 
         return switch state.progress {
         case ..<0.01: String(localized: "まだFlowはありません")
-        case ..<0.34: String(localized: "小さな流れ")
-        case ..<0.84: String(localized: "育っている流れ")
-        default: String(localized: "満ちている流れ")
+        case ..<0.34: String(localized: "小さなフロー")
+        case ..<0.84: String(localized: "育っているフロー")
+        default: String(localized: "満ちているフロー")
         }
     }
 }

@@ -143,8 +143,8 @@ Cover:
   Area color.
 - First-run onboarding persistence, workspace-content detection, guided versus
   read-only experience selection, real-screen navigation, and the exact
-  ten-step `ようこそ → 分野 → タスク → 流れ → 集中タイマー → 流れを体験 → 履歴 → 統計 →
-  使い方の流れ → データ` order on macOS and universal iOS. Coverage must prove that Area
+  ten-step `ようこそ → 分野 → タスク → フロー → 集中タイマー → フローを体験 → 履歴 → 統計 →
+  使い方のフロー → データ` order on macOS and universal iOS. Coverage must prove that Area
   and Task records appear only after normal user confirmation, the Flow preview
   renders the production player shell and deterministically projects Task-card
   press and selection, Play press, accelerated Short focus from `12:00` to
@@ -180,3 +180,11 @@ in-memory database with three Japanese test Areas, 21 historical Flows across
 seven dates, and 24 Tasks. `--demo-data` is Debug-only and disables CloudKit.
 Each launch recreates the sample data relative to today; edits are disposable.
 Normal Debug/Release stores and standard unit-test databases are not seeded.
+
+History segment edits, attachments, and deletions must preserve reconstructable
+live Flow runtime fields and current context. Only completed-session summaries
+are rebuilt from segment bounds; a recorded segment end is not a timer deadline.
+
+macOS Statistics keeps its small, fixed set of report cards in a non-lazy stack.
+Its native segmented pickers use explicit matching widths so scrolling does not
+repeatedly rebuild the controls or negotiate their intrinsic dimensions.
