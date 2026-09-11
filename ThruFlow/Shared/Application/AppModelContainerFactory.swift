@@ -36,7 +36,13 @@ enum AppModelContainerFactory {
         }
 
         do {
-            return try ModelContainer(for: schema, configurations: [configuration])
+            let container = try ModelContainer(for: schema, configurations: [configuration])
+#if DEBUG
+            if usesDemoData {
+                try StatisticsDemoData.seed(modelContext: container.mainContext)
+            }
+#endif
+            return container
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
         }
@@ -51,9 +57,17 @@ enum AppModelContainerFactory {
         )
     }
 
+    static var usesDemoData: Bool {
+#if DEBUG
+        ProcessInfo.processInfo.arguments.contains("--demo-data")
+#else
+        false
+#endif
+    }
+
     private static var isRunningTests: Bool {
         let processInfo = ProcessInfo.processInfo
-        return processInfo.environment["XCTestConfigurationFilePath"] != nil ||
+        return usesDemoData || processInfo.environment["XCTestConfigurationFilePath"] != nil ||
             processInfo.arguments.contains("--uitesting")
     }
 

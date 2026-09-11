@@ -58,12 +58,30 @@ static half4 ribbonColor(
     half4 color4,
     half4 color5,
     half4 color6,
+    half4 previousColor0,
+    half4 previousColor1,
+    half4 previousColor2,
+    half4 previousColor3,
+    half4 previousColor4,
+    half4 previousColor5,
+    half4 previousColor6,
+    float paletteProgress,
     half4 backgroundColor,
     float darkMode
 ) {
     constexpr int ribbonCount = 7;
     float2 safeSize = max(size, float2(1.0));
     float2 uv = position / safeSize;
+    // New colors enter from the right, with a soft moving boundary.
+    float paletteEdge = 1.15 - clamp(paletteProgress, 0.0, 1.0) * 1.3;
+    half paletteMix = half(smoothstep(paletteEdge - 0.15, paletteEdge + 0.15, uv.x));
+    color0 = mix(previousColor0, color0, paletteMix);
+    color1 = mix(previousColor1, color1, paletteMix);
+    color2 = mix(previousColor2, color2, paletteMix);
+    color3 = mix(previousColor3, color3, paletteMix);
+    color4 = mix(previousColor4, color4, paletteMix);
+    color5 = mix(previousColor5, color5, paletteMix);
+    color6 = mix(previousColor6, color6, paletteMix);
     float3 accumulated = float3(0.0);
     float3 haloAccumulated = float3(0.0);
     float accumulatedWeight = 0.0;

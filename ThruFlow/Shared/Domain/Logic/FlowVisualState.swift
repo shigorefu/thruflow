@@ -240,6 +240,12 @@ final class FlowAnimationClock {
     private var lastTimestamp: TimeInterval?
     private var wasPaused = true
 
+    /// Lifecycle changes can stop TimelineView before it delivers a paused frame.
+    func suspend() {
+        lastTimestamp = nil
+        wasPaused = true
+    }
+
     func phase(
         at timestamp: TimeInterval,
         visualState: FlowVisualState,

@@ -7,6 +7,15 @@ Release dates below record GitHub publication in Asia/Tokyo (JST).
 
 ### Added
 
+- Flow palette changes sweep softly from right to left over 2.4 seconds; rapid
+  changes queue the latest palette. Reduced Motion uses an immediate update.
+
+- The macOS Flow stream blurs while its window is inactive and smoothly clears
+  when the window becomes active and rendering resumes.
+
+- Debug-only Demo schemes for macOS and iOS provide an isolated sample workspace
+  with three Areas, 21 historical Flows, and 24 Tasks for manual testing.
+
 - Statistics and CSV export support selecting multiple Areas on macOS and
   iOS/iPadOS. Clear the selection with All to include every Area.
 
@@ -21,6 +30,9 @@ Release dates below record GitHub publication in Asia/Tokyo (JST).
   Preset Week, Month, and Year calendars keep their existing layouts.
 
 ### Fixed
+
+- Resuming the Flow stream explicitly resets its animation time baseline,
+  preventing a catch-up jump when no paused frame was rendered.
 
 - Custom Statistics ranges and CSV exports preserve selected calendar dates
   with a non-midnight day start, including repeated period navigation.

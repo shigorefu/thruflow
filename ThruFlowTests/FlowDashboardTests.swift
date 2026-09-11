@@ -16,6 +16,20 @@ struct FlowDashboardTests {
         return calendar
     }
 
+    @Test func streamResumesWithoutCountingTimeWhenNoPausedFrameWasRendered() {
+        let clock = FlowAnimationClock()
+        _ = clock.phase(at: 100, speed: 0.5, isPaused: false)
+        let before = clock.phase(at: 101, speed: 0.5, isPaused: false)
+        clock.suspend()
+        // No rendering callback occurs while the window is inactive.
+        #expect(clock.phase(at: 1000, speed: 0.5, isPaused: false) == before)
+        #expect(abs(clock.phase(at: 1000.02, speed: 0.5, isPaused: false) - before - 0.01) < 0.0001)
+        clock.suspend()
+        clock.suspend()
+        #expect(clock.phase(at: 2000, speed: 0.5, isPaused: false) > 0)
+        #expect(abs(clock.phase - before - 0.01) < 0.0001)
+    }
+
     @Test func streamPaletteKeepsEveryActiveColorVisible() {
         let ribbons = FlowStreamPaletteLayout.ribbonColorHexes(
             palette: ["#FF9500", "#FFD60A", "#0A84FF", "#30D158"],

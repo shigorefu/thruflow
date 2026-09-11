@@ -172,3 +172,11 @@ Flow preview, and Finish.
 ## Migration Caution
 
 Avoid removing SwiftData fields such as `FlowSession.result` without a deliberate migration step. It is the per-Flow memo source; linked writes also mirror the value to `Todo.notes` for Task-level continuity.
+
+## Demo database
+
+Run the `ThruFlow Demo` or `ThruFlow iOS Demo` Xcode scheme for an isolated
+in-memory database with three Japanese test Areas, 21 historical Flows across
+seven dates, and 24 Tasks. `--demo-data` is Debug-only and disables CloudKit.
+Each launch recreates the sample data relative to today; edits are disposable.
+Normal Debug/Release stores and standard unit-test databases are not seeded.

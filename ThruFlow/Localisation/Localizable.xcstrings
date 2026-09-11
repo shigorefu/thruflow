@@ -1,72 +1,6 @@
 {
   "sourceLanguage" : "ja",
   "strings" : {
-    "集中の終了予定までを薄く表示します。オフの場合と休憩中は、経過した時間だけを表示します。" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "集中の終了予定までを薄く表示します。オフの場合と休憩中は、経過した時間だけを表示します。"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Shows a translucent bar until the planned focus end. When disabled, and during rest, only elapsed time is shown."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Показывает полупрозрачную полосу до планируемого окончания фокус-блока. При выключенной настройке и во время отдыха отображается только прошедшее время."
-          }
-        }
-      }
-    },
-    "終了予定まで表示" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "終了予定まで表示"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Show planned end time"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Показывать планируемое окончание"
-          }
-        }
-      }
-    },
-    "タイムライン" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "タイムライン"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Timeline"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Таймлайн"
-          }
-        }
-      }
-    },
     "–" : {
       "localizations" : {
         "en" : {
@@ -4177,6 +4111,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Тёмная"
+          }
+        }
+      }
+    },
+    "タイムライン" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Timeline"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タイムライン"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Таймлайн"
           }
         }
       }
@@ -9761,6 +9717,7 @@
       }
     },
     "目標回数：%lld回・%@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9783,6 +9740,7 @@
       }
     },
     "目標時間：%lld分・%@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9805,6 +9763,7 @@
       }
     },
     "目標時間：%lld時間・%@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9969,6 +9928,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Окончание"
+          }
+        }
+      }
+    },
+    "終了予定まで表示" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show planned end time"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "終了予定まで表示"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показывать планируемое окончание"
           }
         }
       }
@@ -11426,6 +11407,28 @@
         }
       }
     },
+    "集中の終了予定までを薄く表示します。オフの場合と休憩中は、経過した時間だけを表示します。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shows a translucent bar until the planned focus end. When disabled, and during rest, only elapsed time is shown."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中の終了予定までを薄く表示します。オフの場合と休憩中は、経過した時間だけを表示します。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показывает полупрозрачную полосу до планируемого окончания фокус-блока. При выключенной настройке и во время отдыха отображается только прошедшее время."
+          }
+        }
+      }
+    },
     "集中ブロック" : {
       "localizations" : {
         "en" : {
@@ -11443,6 +11446,7 @@
       }
     },
     "集中ブロック数：%lld・%@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

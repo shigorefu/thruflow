@@ -134,6 +134,19 @@ until the persistence reconciler can restore one unambiguous relationship.
 
 The player layout is:
 
+Flow palette changes travel from right to left with a soft edge over 2.4 seconds
+on macOS, iOS, and watchOS. A rapid new selection queues only the latest palette
+until the current sweep completes. Reduced Motion or suspended rendering applies
+the latest palette directly. This changes presentation only; recorded Area colors
+and the duration-weighted palette remain unchanged.
+
+On macOS, the stream surface blurs while its window is not key or its scene is
+inactive. The same state pauses stream rendering. Activating the window resumes
+rendering and removes the blur over 0.3 seconds; Reduce Motion makes the blur
+change immediate. Timer state and the rest of the dashboard remain independent. Stream lifecycle
+changes reset its timestamp baseline even when no paused frame is delivered,
+so returning to the window never advances the visual phase by hidden time.
+
 In the narrow vertical dashboard layout, the player comes first, followed by the Flow stream/timeline, Tasks/Habits, and Statistics. The narrow player and Flow stage use stable heights so resizing does not reorder controls or cause layout jumps.
 
 - left Task card with Area icon, Task title, and smaller Area name;
