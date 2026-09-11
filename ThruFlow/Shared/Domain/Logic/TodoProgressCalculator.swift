@@ -7,7 +7,9 @@
 import Foundation
 
 struct TodoProgressCalculator {
-    func progress(
+    nonisolated init() {}
+
+    nonisolated func progress(
         measurement: TodoMeasurement,
         plannedAmount: Int?,
         actualProgress: Int
@@ -21,7 +23,7 @@ struct TodoProgressCalculator {
         }
     }
 
-    func status(
+    nonisolated func status(
         measurement: TodoMeasurement,
         plannedAmount: Int?,
         actualProgress: Int

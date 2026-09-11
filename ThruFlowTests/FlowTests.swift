@@ -11,6 +11,7 @@ import Testing
 import UserNotifications
 @testable import ThruFlow
 
+@MainActor
 struct FlowTests {
     @Test @MainActor func timerPrimaryControlUsesSemanticPhaseColors() {
         #expect(FlowTimerPrimaryTintRole(phase: .focusing, isFocusOvertime: false) == .area)

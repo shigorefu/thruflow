@@ -188,3 +188,12 @@ are rebuilt from segment bounds; a recorded segment end is not a timer deadline.
 macOS Statistics keeps its small, fixed set of report cards in a non-lazy stack.
 Its native segmented pickers use explicit matching widths so scrolling does not
 repeatedly rebuild the controls or negotiate their intrinsic dimensions.
+
+### Build diagnostics
+
+`TodoProgressCalculator` initialization and numeric progress/status calculations
+are nonisolated so synchronous reconciliation can use this stateless calculator.
+The Watch target skips App Intents metadata extraction in Debug and Release
+(`LM_SKIP_METADATA_EXTRACTION`) because it defines no App Intents. Extraction
+remains enabled for the macOS/iOS app and widget/Live Activity targets. Enable
+Watch extraction when introducing Watch App Intents.

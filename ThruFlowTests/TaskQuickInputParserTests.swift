@@ -2,6 +2,7 @@ import Foundation
 import Testing
 @testable import ThruFlow
 
+@MainActor
 struct TaskQuickInputParserTests {
     private let parser = TaskQuickInputParser()
     private let awsID = UUID(uuidString: "00000000-0000-0000-0000-000000000001")!
