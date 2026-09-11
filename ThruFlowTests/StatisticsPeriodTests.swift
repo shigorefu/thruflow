@@ -130,6 +130,39 @@ struct StatisticsPeriodTests {
         ])
     }
 
+    @Test(arguments: [0, 2, 23])
+    func customSelectionAndExportKeepTheirCalendarDates(boundaryHour: Int) {
+        let builder = StatisticsPeriodBuilder(calendar: calendar, dayBoundary: AppDayBoundary(hour: boundaryHour))
+        // Reversed picker endpoints must normalize without shifting either date.
+        let filter = StatisticsPeriodFilter(
+            period: .month, anchorDate: date(2026, 9, 5),
+            customStartDate: date(2026, 9, 7), customEndDate: date(2026, 9, 5)
+        )
+        let snapshot = builder.build(
+            flowRecords: [flowRecord(sessionID: UUID(), date: date(2026, 9, 7, 23), seconds: 120, areaID: nil, area: "", task: "Selected last day")],
+            achievementRecords: [], filter: filter
+        )
+        #expect(snapshot.flowDays.map(\.date) == [date(2026, 9, 5), date(2026, 9, 6), date(2026, 9, 7)])
+        #expect(snapshot.bounds.previousStart == date(2026, 9, 2))
+        #expect(snapshot.summary.totalFocusSeconds == 120)
+        #expect(snapshot.csvRows.first?.date == date(2026, 9, 7))
+        #expect(StatisticsCSVExporter().export(rows: snapshot.csvRows, calendar: calendar).contains("2026-09-07,Selected last day"))
+    }
+
+    @Test func customPeriodAcrossDaylightSavingKeepsEverySelectedDate() {
+        var localCalendar = calendar
+        localCalendar.timeZone = TimeZone(identifier: "America/Los_Angeles")!
+        let start = localCalendar.date(from: DateComponents(year: 2026, month: 3, day: 7))!
+        let end = localCalendar.date(from: DateComponents(year: 2026, month: 3, day: 9))!
+        let builder = StatisticsPeriodBuilder(calendar: localCalendar, dayBoundary: AppDayBoundary(hour: 2))
+        let snapshot = builder.build(flowRecords: [], achievementRecords: [], filter: StatisticsPeriodFilter(
+            anchorDate: start, customStartDate: start, customEndDate: end
+        ))
+        #expect(snapshot.flowDays.map { localCalendar.component(.day, from: $0.date) } == [7, 8, 9])
+        #expect(snapshot.bounds.currentEnd.timeIntervalSince(snapshot.bounds.currentStart) == 71 * 3_600)
+        #expect(snapshot.trend.count == 3)
+    }
+
     @Test func taskTitleSearchAggregatesRepeatedWorkAndExcludesSiblingSegments() {
         let readingID = UUID()
         let firstSessionID = UUID()

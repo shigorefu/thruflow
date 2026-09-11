@@ -413,7 +413,9 @@ dates, export/custom dates, Trend/Dots buckets, and forward navigation are
 disabled or clipped. Preset Month Dots completes its boundary weeks with
 crossed-out, non-interactive cells for dates outside the selected month. Preset calendar anchors retain their selected week, month, or
 year even with a non-midnight Flow-day boundary; recorded activity retains
-logical-day grouping. The
+logical-day grouping. Custom endpoints and export endpoints likewise remain
+calendar dates; only recorded timestamps are assigned to logical days. Cached
+projections are scoped to the calendar and day-start setting. The
 Year calendar lists the current year first and does not offer future years.
 Flow switching is resolved per segment; the model does not add a Project
 entity. The compact iPhone and widget contribution ranges from D-009 remain

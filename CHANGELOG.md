@@ -13,6 +13,11 @@ Release dates below record GitHub publication in Asia/Tokyo (JST).
 
 ### Fixed
 
+- Custom Statistics ranges and CSV exports preserve selected calendar dates
+  with a non-midnight day start, including repeated period navigation.
+- Statistics reloads when calendar or day-start settings change and no longer
+  reuses projections grouped with the previous settings.
+
 - Selecting a Statistics month now keeps Dots in that month when the Flow day
   starts after midnight. Week and year selections also retain their boundaries.
 

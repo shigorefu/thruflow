@@ -554,7 +554,10 @@ calendar centers the visible `週 | 月 | 年` segmented control and places an
 icon-only `期間を指定` action at the trailing edge. This button opens a compact
 system popover with inclusive start and end dates. Applying it deselects the presets and makes
 the exact custom range the source for every card, calendar indicator,
-comparison, and exported row; selecting a preset or a calendar period exits the
+comparison, and exported row. Custom picker dates, navigation, and export bounds
+are calendar dates and are never shifted by the Flow-day boundary. Switching
+calendar or day-start settings invalidates cached projections immediately;
+selecting a preset or a calendar period exits the
 custom range. Filter and Search continue to affect the complete projection.
 
 The main column is a vertical set of cards:

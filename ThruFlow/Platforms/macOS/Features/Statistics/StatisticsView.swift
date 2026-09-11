@@ -94,7 +94,11 @@ struct StatisticsView: View {
         StatisticsExportConfiguration(content: exportContent, filter: exportFilter)
     }
 
+    @State private var cachedCalendar: Calendar?
+    @State private var cachedBoundaryHour: Int?
+
     private var currentSnapshot: StatisticsPeriodSnapshot? {
+        guard cachedCalendar == calendar, cachedBoundaryHour == dayBoundary.hour else { return nil }
         if let cachedSnapshot, cachedSnapshot.filter == filter {
             return cachedSnapshot
         }
@@ -622,7 +626,9 @@ struct StatisticsView: View {
             areaID: selectedAreaID,
             query: searchText,
             areaCount: areas.count,
-            latestAreaUpdate: areas.map(\.updatedAt).max()
+            latestAreaUpdate: areas.map(\.updatedAt).max(),
+            calendar: calendar,
+            dayBoundaryHour: dayBoundary.hour
         )
     }
 
@@ -642,6 +648,8 @@ struct StatisticsView: View {
     private func refreshStatisticsCache() async {
         guard isVisible else { return }
         let requestedFilter = filter
+        let requestedCalendar = calendar
+        let requestedBoundary = dayBoundary
         let needsPlaceholder = currentSnapshot == nil
         if needsPlaceholder {
             loadingFilter = requestedFilter
@@ -665,10 +673,11 @@ struct StatisticsView: View {
         do {
             let projection = try await loader.load(
                 filter: requestedFilter,
-                calendar: calendar,
-                dayBoundary: dayBoundary
+                calendar: requestedCalendar,
+                dayBoundary: requestedBoundary
             )
-            guard !Task.isCancelled, requestedFilter == filter, isVisible else {
+            guard !Task.isCancelled, requestedFilter == filter, requestedCalendar == calendar,
+                  requestedBoundary == dayBoundary, isVisible else {
                 return
             }
             cache(projection)
@@ -683,8 +692,8 @@ struct StatisticsView: View {
     private func movePeriod(by value: Int) {
         guard value <= 0 || canMoveToNextPeriod else { return }
         if let customStartDate, let customEndDate {
-            let start = dayBoundary.day(containing: min(customStartDate, customEndDate), calendar: calendar)
-            let end = dayBoundary.day(containing: max(customStartDate, customEndDate), calendar: calendar)
+            let start = calendar.startOfDay(for: min(customStartDate, customEndDate))
+            let end = calendar.startOfDay(for: max(customStartDate, customEndDate))
             let dayCount = max(
                 1,
                 (calendar.dateComponents([.day], from: start, to: end).day ?? 0) + 1
@@ -702,14 +711,8 @@ struct StatisticsView: View {
         withAnimation(.snappy(duration: 0.34, extraBounce: 0)) {
             let today = dayBoundary.day(containing: .now, calendar: calendar)
             if let customStartDate, let customEndDate {
-                let start = dayBoundary.day(
-                    containing: min(customStartDate, customEndDate),
-                    calendar: calendar
-                )
-                let end = dayBoundary.day(
-                    containing: max(customStartDate, customEndDate),
-                    calendar: calendar
-                )
+                let start = calendar.startOfDay(for: min(customStartDate, customEndDate))
+                let end = calendar.startOfDay(for: max(customStartDate, customEndDate))
                 let distance = calendar.dateComponents([.day], from: start, to: end).day ?? 0
                 self.customEndDate = today
                 self.customStartDate = calendar.date(byAdding: .day, value: -distance, to: today) ?? today
@@ -732,14 +735,8 @@ struct StatisticsView: View {
 
     private var canMoveToNextPeriod: Bool {
         if let customStartDate, let customEndDate {
-            let start = dayBoundary.day(
-                containing: min(customStartDate, customEndDate),
-                calendar: calendar
-            )
-            let end = dayBoundary.day(
-                containing: max(customStartDate, customEndDate),
-                calendar: calendar
-            )
+            let start = calendar.startOfDay(for: min(customStartDate, customEndDate))
+            let end = calendar.startOfDay(for: max(customStartDate, customEndDate))
             let dayCount = max(
                 1,
                 (calendar.dateComponents([.day], from: start, to: end).day ?? 0) + 1
@@ -770,16 +767,10 @@ struct StatisticsView: View {
     }
 
     private func applyCustomRange() {
-        let requestedEnd = dayBoundary.day(
-            containing: max(customStartDraft, customEndDraft),
-            calendar: calendar
-        )
+        let requestedEnd = calendar.startOfDay(for: max(customStartDraft, customEndDraft))
         let end = min(requestedEnd, today)
         let start = min(
-            dayBoundary.day(
-                containing: min(customStartDraft, customEndDraft),
-                calendar: calendar
-            ),
+            calendar.startOfDay(for: min(customStartDraft, customEndDraft)),
             end
         )
         withAnimation(.snappy(duration: 0.34, extraBounce: 0)) {
@@ -806,6 +797,12 @@ struct StatisticsView: View {
     }
 
     private func cache(_ projection: StatisticsPeriodSnapshot) {
+        if cachedCalendar != calendar || cachedBoundaryHour != dayBoundary.hour {
+            snapshotCache.removeAll()
+            snapshotCacheOrder.removeAll()
+        }
+        cachedCalendar = calendar
+        cachedBoundaryHour = dayBoundary.hour
         cachedSnapshot = projection
         snapshotCache[projection.filter] = projection
         snapshotCacheOrder.removeAll { $0 == projection.filter }
@@ -1981,6 +1978,8 @@ private struct StatisticsPeriodRefreshID: Hashable {
     let query: String
     let areaCount: Int
     let latestAreaUpdate: Date?
+    let calendar: Calendar
+    let dayBoundaryHour: Int
 }
 
 #Preview {

@@ -210,8 +210,8 @@ struct StatisticsPeriodBuilder: Sendable {
         let current: DateInterval
         if let rawStart = filter.customStartDate,
            let rawEnd = filter.customEndDate {
-            let firstDay = dayBoundary.day(containing: min(rawStart, rawEnd), calendar: calendar)
-            let finalDay = dayBoundary.day(containing: max(rawStart, rawEnd), calendar: calendar)
+            let firstDay = calendar.startOfDay(for: min(rawStart, rawEnd))
+            let finalDay = calendar.startOfDay(for: max(rawStart, rawEnd))
             let exclusiveEnd = calendar.date(byAdding: .day, value: 1, to: finalDay)
                 ?? finalDay.addingTimeInterval(86_400)
             current = DateInterval(start: firstDay, end: exclusiveEnd)
