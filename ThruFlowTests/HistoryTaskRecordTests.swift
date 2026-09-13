@@ -11,6 +11,67 @@ struct HistoryTaskRecordTests {
         return calendar
     }
 
+    @Test(arguments: [TodoMeasurement.minutes, .focusBlocks])
+    func weeklyMeasuredHistoryIsReconciledBeforeRollingIntoToday(measurement: TodoMeasurement) throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+        let monday = calendar.date(from: DateComponents(year: 2026, month: 9, day: 7))!
+        let tuesday = monday.addingTimeInterval(86_400)
+        let target = measurement == .minutes ? 30 : 1
+        let area = Area(
+            name: "Workout", type: .habit, goalTarget: target,
+            goalPeriod: .weekly, goalUnit: measurement == .minutes ? .minutes : .focusBlocks,
+            goalSchedule: .weeklyCount, weeklyTargetCount: 3
+        )
+        let yesterday = Todo(
+            title: "Workout", area: area, measurement: measurement,
+            plannedAmount: target, scheduledDate: monday
+        )
+        context.insert(area)
+        context.insert(yesterday)
+        _ = try FlowHistoryEditor().createManual(
+            todo: yesterday, area: area, mode: .twentyFiveFive,
+            startedAt: monday.addingTimeInterval(18 * 3_600), focusSeconds: 30 * 60,
+            modelContext: context, now: monday.addingTimeInterval(19 * 3_600)
+        )
+        // History has arrived, but the task's derived progress is still stale.
+        yesterday.setProgress(0, now: monday)
+        yesterday.recordedFocusSeconds = 0
+        try context.save()
+
+        let materializer = HabitTodoMaterializer(calendar: calendar)
+        try materializer.materialize(
+            areas: [area], dates: [tuesday], modelContext: context, now: tuesday,
+            reconcilesDuplicates: false
+        )
+        let todos = try context.fetch(FetchDescriptor<Todo>()).filter { !$0.isDeleted }
+        #expect(yesterday.scheduledDate == monday)
+        #expect(yesterday.isCompleted)
+        #expect(yesterday.actualProgress == target)
+        let today = try #require(todos.first { $0.scheduledDate == tuesday })
+        #expect(today.id != yesterday.id)
+        #expect(!today.isCompleted)
+        #expect(today.actualProgress == 0)
+
+        let wednesday = tuesday.addingTimeInterval(86_400)
+        today.reschedule(to: wednesday, now: tuesday)
+        try context.save()
+        try materializer.materialize(
+            areas: [area], dates: [tuesday], modelContext: context, now: tuesday
+        )
+        let refreshed = try context.fetch(FetchDescriptor<Todo>()).filter { !$0.isDeleted }
+        #expect(!refreshed.contains { $0.scheduledDate == tuesday })
+        #expect(today.scheduledDate == wednesday)
+        #expect(yesterday.scheduledDate == monday)
+        let previousUpdate = yesterday.updatedAt
+        let changed = try materializer.materialize(
+            areas: [area], dates: [tuesday], modelContext: context,
+            now: tuesday.addingTimeInterval(60)
+        )
+        #expect(!changed)
+        #expect(yesterday.updatedAt == previousUpdate)
+    }
+
     @Test func availableTodosIncludesZeroFlowTasksOnlyOnTheSelectedDate() {
         let day = calendar.startOfDay(for: Date(timeIntervalSince1970: 1_800_000_000))
         let area = Area(name: "運動", type: .habit)

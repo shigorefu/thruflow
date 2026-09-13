@@ -43,7 +43,7 @@ struct StatisticsPeriodFilter: Hashable, Sendable {
     var anchorDate: Date = .now
     var customStartDate: Date?
     var customEndDate: Date?
-    var areaID: UUID?
+    var areaIDs: Set<UUID> = []
     var query = ""
 
     nonisolated var usesCustomRange: Bool {
@@ -118,12 +118,20 @@ struct StatisticsTrendPoint: Identifiable, Equatable, Sendable {
     var id: Int { index }
 }
 
+struct StatisticsDistributionDetail: Identifiable, Equatable, Sendable {
+    let id: String
+    let date: Date?
+    let name: String
+    let focusSeconds: Int
+}
+
 struct StatisticsDistributionItem: Identifiable, Equatable, Sendable {
     let id: String
     let name: String
     let symbol: String?
     let colorHex: String?
     let focusSeconds: Int
+    var details: [StatisticsDistributionDetail] = []
 }
 
 struct StatisticsCSVRow: Equatable, Sendable {
@@ -205,12 +213,13 @@ struct StatisticsPeriodBuilder: Sendable {
     }
 
     nonisolated func bounds(for filter: StatisticsPeriodFilter) -> StatisticsPeriodBounds {
-        let anchorDay = dayBoundary.day(containing: filter.anchorDate, calendar: calendar)
+        // A picker anchor is a calendar date, not a recorded activity timestamp.
+        let anchorDay = calendar.startOfDay(for: filter.anchorDate)
         let current: DateInterval
         if let rawStart = filter.customStartDate,
            let rawEnd = filter.customEndDate {
-            let firstDay = dayBoundary.day(containing: min(rawStart, rawEnd), calendar: calendar)
-            let finalDay = dayBoundary.day(containing: max(rawStart, rawEnd), calendar: calendar)
+            let firstDay = calendar.startOfDay(for: min(rawStart, rawEnd))
+            let finalDay = calendar.startOfDay(for: max(rawStart, rawEnd))
             let exclusiveEnd = calendar.date(byAdding: .day, value: 1, to: finalDay)
                 ?? finalDay.addingTimeInterval(86_400)
             current = DateInterval(start: firstDay, end: exclusiveEnd)
@@ -325,8 +334,9 @@ struct StatisticsPeriodBuilder: Sendable {
     }
 
     nonisolated private func matchesArea(_ areaID: UUID?, filter: StatisticsPeriodFilter) -> Bool {
-        guard let selectedID = filter.areaID else { return true }
-        return areaID == selectedID
+        guard !filter.areaIDs.isEmpty else { return true }
+        guard let areaID else { return false }
+        return filter.areaIDs.contains(areaID)
     }
 
     nonisolated private func matchesQuery(_ record: StatisticsPeriodFlowRecord, query: String) -> Bool {
@@ -491,6 +501,7 @@ struct StatisticsPeriodBuilder: Sendable {
         var symbol: String?
         var colors: [WeightedHexColor]
         var focusSeconds: Int
+        var records: [StatisticsPeriodFlowRecord] = []
     }
 
     nonisolated private func makeDistribution(
@@ -521,6 +532,7 @@ struct StatisticsPeriodBuilder: Sendable {
                 colors: [],
                 focusSeconds: 0
             )
+            accumulator.records.append(record)
             accumulator.focusSeconds += record.focusSeconds
             if let color = record.areaColorHex {
                 accumulator.colors.append(WeightedHexColor(hex: color, weight: record.focusSeconds))
@@ -534,7 +546,8 @@ struct StatisticsPeriodBuilder: Sendable {
                 name: value.name,
                 symbol: value.symbol,
                 colorHex: StatisticsHeatmapBuilder.mixedHexColor(value.colors),
-                focusSeconds: value.focusSeconds
+                focusSeconds: value.focusSeconds,
+                details: makeDistributionDetails(flows: value.records, dimension: dimension)
             )
         }.sorted {
             if $0.focusSeconds != $1.focusSeconds { return $0.focusSeconds > $1.focusSeconds }
@@ -554,8 +567,46 @@ struct StatisticsPeriodBuilder: Sendable {
             name: String(localized: "その他"),
             symbol: nil,
             colorHex: StatisticsHeatmapBuilder.mixedHexColor(colors),
-            focusSeconds: remainderSeconds
+            focusSeconds: remainderSeconds,
+            details: makeDistributionDetails(
+                flows: remainder.flatMap { grouped[$0.id]?.records ?? [] },
+                dimension: dimension
+            )
         )]
+    }
+
+    nonisolated private func makeDistributionDetails(
+        flows: [StatisticsPeriodFlowRecord],
+        dimension: DistributionDimension
+    ) -> [StatisticsDistributionDetail] {
+        switch dimension {
+        case .task:
+            let days = Dictionary(grouping: flows) {
+                dayBoundary.day(containing: $0.startedAt, calendar: calendar)
+            }
+            return days.keys.sorted().map { day in
+                StatisticsDistributionDetail(
+                    id: "day:\(day.timeIntervalSinceReferenceDate)", date: day, name: "",
+                    focusSeconds: days[day, default: []].reduce(0) { $0 + $1.focusSeconds }
+                )
+            }
+        case .area:
+            let tasks = Dictionary(grouping: flows) {
+                $0.todoTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+                    .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
+            }
+            return tasks.map { key, records in
+                let title = records[0].todoTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+                return StatisticsDistributionDetail(
+                    id: "task:\(key)", date: nil,
+                    name: title.isEmpty ? String(localized: "タスクなし") : title,
+                    focusSeconds: records.reduce(0) { $0 + $1.focusSeconds }
+                )
+            }.sorted {
+                if $0.focusSeconds != $1.focusSeconds { return $0.focusSeconds > $1.focusSeconds }
+                return $0.name.localizedStandardCompare($1.name) == .orderedAscending
+            }
+        }
     }
 
     nonisolated private func makeFlowDays(

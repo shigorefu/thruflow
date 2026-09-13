@@ -212,7 +212,9 @@ struct FlowTimerEngine {
     }
 
     func timelineEndAt(for state: FlowTimerState, now: Date) -> Date? {
-        guard state.canAdjustRemainingTime else { return nil }
+        guard state.phase == .focusing ||
+            (state.phase == .paused && state.phaseBeforePause == .focusing)
+        else { return nil }
         let currentReference = state.phase == .paused
             ? (state.pausedAt ?? now)
             : now

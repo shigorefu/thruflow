@@ -253,10 +253,9 @@ not provide an exact or guaranteed boundary update.
 The dynamic timer text must remain flexible inside ActivityKit's compact,
 expanded, and Lock Screen regions; `fixedSize()` is prohibited because it can
 collapse the archived timer label at runtime.
-The minimal Dynamic Island slot always uses a countdown-style circular timer so
-its number and ring drain together toward zero when multiple Live Activities
-share the Island. Expanded and Lock Screen focus progress keeps its filling
-direction.
+The minimal Dynamic Island ring follows the in-app timer: focus fills toward
+completion and rest drains toward zero. Its numeric label independently shows
+remaining time. Expanded and Lock Screen progress uses the same direction.
 Expanded Dynamic Island five-minute controls adjust either focus or rest through
 the same `ActiveFlowStore` operations as the in-app player. Rest adjustments
 preserve long-rest identity and never rewrite the canonical series continuation
@@ -286,6 +285,10 @@ of `FlowLiveActivityContent`. The iOS and macOS applications build Tasks with th
 canonical Today filter and dashboard ordering, and builds Dots with the
 canonical 180-day statistics heatmap. It serializes these immutable Codable
 snapshots into the shared App Group and requests targeted WidgetKit reloads.
+Tasks and Dots use separate observation scopes. Task completion does not rebuild
+the Flow heatmap; a cancellable 350 ms debounce coalesces rapid changes before
+publishing. Calendar/day-start changes, foreground entry, and a new day refresh
+both projections.
 
 The extension is presentation-only: it does not open SwiftData or CloudKit and
 does not reproduce filtering, sorting, progress, color-mixing, or timer rules.
@@ -393,6 +396,15 @@ that belong to a separate product stage.
 
 ## D-030: macOS Statistics Is A Filtered Period Report
 
+Statistics Area filters on macOS and iOS/iPadOS allow multiple selections.
+Selected Areas are combined (OR); an empty selection means All, including
+unassigned records. Search still intersects with the Area selection. The same
+selection filters totals, comparisons, Trend, Dots, distributions, and calendar
+indicators. CSV export starts with this selection and can change it independently.
+The native menu marks selected Areas; on iOS it stays open while toggling.
+All clears the set.
+
+
 The standalone macOS Statistics workspace uses anchored Week, Month, and Year
 periods plus an exact inclusive custom date range with summary, trend,
 focused-time distribution, and Dots cards. A persistent calendar centers the
@@ -404,24 +416,35 @@ text search apply before every aggregation, and CSV exports the combined visible
 projection by default. A direct Share action opens export controls for combined,
 Flow-only, or Task-only data, exact inclusive start/end dates, Area, and
 text filter. Pie selection is presentation-only: the chosen sector remains
-bright while other sectors are dimmed and the legend isolates that category.
+bright while other sectors are dimmed. Selecting a sector or legend row replaces
+the legend with a named detail panel: logical-day minute bars for Tasks, Task
+minute bars for Areas. Details use the same period, search, and Area filters;
+grouped remainder details include every hidden category. Clearing restores the legend.
 The toolbar Area filter shares the navigation Area symbol. Month trends
 use seven-day totals rather than one noisy point per day and render current and
 previous values as separate line series. Month can place Pie and Dots in one row;
 its Dots columns fill their card, while Week and Year keep full-width Dots.
-Custom Dots stretch up to seven actual days, then use small cells for every
-longer range, adding calendar cells for medium ranges and compact week columns
-for long ranges; preset Month retains the regular calendar-cell size, and every
-real cell exposes a system hover bubble above the card layer with its daily
-metrics, except Year Dots, which remain display-only because their cells are too
-small for dependable targeting. Current ranges stop at today: future calendar
+Custom Dots use a compact chronological grid with no weekday labels, calendar
+padding, or legend for every range length; preset Month retains the regular calendar-cell size, and every
+selectable real cell opens a daily summary on click/tap, including Year Dots.
+The summary provides an explicit History action; macOS uses a popover and iOS
+a sheet. Hover on macOS only highlights the cell. Current ranges stop at today: future calendar
 dates, export/custom dates, Trend/Dots buckets, and forward navigation are
 disabled or clipped. Preset Month Dots completes its boundary weeks with
-crossed-out, non-interactive cells for dates outside the selected month. The
+crossed-out, non-interactive cells for dates outside the selected month. Preset calendar anchors retain their selected week, month, or
+year even with a non-midnight Flow-day boundary; recorded activity retains
+logical-day grouping. Custom endpoints and export endpoints likewise remain
+calendar dates; only recorded timestamps are assigned to logical days. Cached
+projections are scoped to the calendar and day-start setting. The
 Year calendar lists the current year first and does not offer future years.
 Flow switching is resolved per segment; the model does not add a Project
 entity. The compact iPhone and widget contribution ranges from D-009 remain
 unchanged until explicitly superseded.
+
+Custom Statistics Dots ranges render only dates inside the inclusive selection.
+There are no outside-range alignment slots or weekday headers. Dates without activity inside the range remain
+visible. This applies to custom ranges of every length
+on macOS and iOS/iPadOS; preset Week/Month/Year grids remain complete.
 
 Reason: desktop space supports comparison and investigation while one shared,
 segment-aware projection keeps cards, search, and export numerically
@@ -442,8 +465,7 @@ four-projection cache remain the numeric source of truth.
 iPhone owns a touch-native renderer rather than compiling the macOS view: one
 vertical card scroll, graphical period and two-date custom-range sheets, a
 native export sheet and ShareLink, a compact full-width Canvas for Year Dots,
-and a daily detail sheet that can open History. Year Dots are intentionally
-non-interactive. Search begins as a toolbar magnifier and expands on demand;
+and a daily detail sheet that can open History. Year Dots also support selecting a real day and exposing it through accessibility. Search begins as a toolbar magnifier and expands on demand;
 Search stays trailing while context actions occupy the leading side: Tasks and
 Areas use `その他`, History uses its report mode, and Statistics groups
 Share with the Area filter. Creation actions remain trailing. The shared
@@ -693,3 +715,37 @@ user's recorded work. Provider identity limitations, native consent/signing,
 static-site delivery, migration, and real-device verification remain explicit
 release gates in `docs/CONNECTORS.md`. This decision introduces no pricing and
 preserves the free, ad-free core commitment in D-034.
+
+## D-043: Playback Refreshes The Dashboard Without A Navigation Delay
+
+The initial uncached dashboard load may yield for navigation. Once visible,
+playback phase changes refresh its projection immediately, and subsequent
+cache refreshes do not add a presentation delay. Elastic time labels and the
+rail use one animation scope, respecting Reduce Motion. This prevents the
+planned end from moving ahead of the displayed records after Play or resume.
+
+## D-044: Optional Planned End On The Dashboard Timeline
+
+Settings on macOS and iOS/iPadOS offers a local, persisted
+`showsTimelinePlannedEnd` preference, enabled by default. Disabling it removes
+the translucent future interval and its contribution to the Elastic range
+for focus, restoring elapsed-time-only rendering. Rest always shows only elapsed
+time, irrespective of this preference, without a projected end. It does not change
+the timer, stored history, or CloudKit data.
+
+## D-045: Reconcile Weekly Measured Progress Before Rollover
+
+Habit materialization resolves weekly Minute/Block Todo progress from available
+Flow history before testing pending status. History and derived status may
+arrive in a different order; a completed occurrence must retain its date and
+the next occurrence must have a new identity and zero progress. Reconciliation
+is idempotent for unchanged Todo values. macOS move menus use the same
+validation as drag and drop and do not offer moving completed Tasks. Existing
+user-edited dates are not retrospectively inferred or rewritten.
+
+## UI Parity: Statistics Details and Quick Creation (1.3.0)
+
+Selecting a Dots day opens its summary before History on both platforms,
+including Year. Shared quick-input options own priority/date/measurement labels,
+icons, and prefix filtering. Flow quick creation offers a date control on both
+platforms and persists its selected value, including dates entered as tokens.

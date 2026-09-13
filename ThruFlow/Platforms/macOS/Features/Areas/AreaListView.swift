@@ -338,18 +338,14 @@ private struct AreaRow: View {
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 8) {
-                    Text(area.name)
-                        .font(.headline)
+                Text(area.name)
+                    .font(.headline)
 
-                    Text(area.type.displayName)
-                        .font(.caption)
+                if let summary {
+                    Text(summary)
+                        .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
-
-                Text(summary)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
             }
 
             Spacer()
@@ -363,13 +359,13 @@ private struct AreaRow: View {
         .background(rowBackground)
     }
 
-    private var summary: String {
+    private var summary: String? {
         guard
             let target = area.goalTarget,
             let period = area.goalPeriod,
             let unit = area.goalUnit
         else {
-            return area.type.description
+            return nil
         }
 
         return "\(target) \(unit.displayName.lowercased()) \(period.displayName.lowercased())"
@@ -400,14 +396,11 @@ private struct AreaGroup: Identifiable {
         }
     }
 
-    var tint: Color {
+    var systemImage: String {
         switch type {
-        case .habit:
-            .red
-        case .neutral:
-            .blue
-        case .nice:
-            .green
+        case .neutral: "checklist"
+        case .habit: "repeat"
+        case .nice: "sparkles"
         }
     }
 
@@ -425,27 +418,35 @@ private struct AreaSectionHeader: View {
     let group: AreaGroup
 
     var body: some View {
-        HStack(spacing: 8) {
-            Circle()
-                .fill(group.tint)
-                .frame(width: 7, height: 7)
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 8) {
+                Image(systemName: group.systemImage)
+                    .font(.caption.weight(.semibold))
+                    .frame(width: 14)
+                    .accessibilityHidden(true)
 
-            Text(group.title)
-                .font(.caption.weight(.semibold))
+                Text(group.title)
+                    .font(.caption.weight(.semibold))
 
-            Text("\(group.areas.count)")
-                .font(.caption2.weight(.medium))
+                Text("\(group.areas.count)")
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.secondary.opacity(0.12))
+                    .clipShape(Capsule())
+
+                Spacer(minLength: 0)
+
+                Image(systemName: "line.3.horizontal")
+                    .foregroundStyle(.secondary)
+                    .accessibilityLabel(String(localized: "グループを並び替え"))
+            }
+
+            Text(group.type.description)
+                .font(.caption)
                 .foregroundStyle(.secondary)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
-                .background(Color.secondary.opacity(0.12))
-                .clipShape(Capsule())
-
-            Spacer(minLength: 0)
-
-            Image(systemName: "line.3.horizontal")
-                .foregroundStyle(.secondary)
-                .accessibilityLabel(String(localized: "グループを並び替え"))
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.vertical, 4)
         .textCase(nil)

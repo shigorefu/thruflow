@@ -23,6 +23,7 @@ struct FlowDashboardView: View {
     @Environment(\.locale) private var locale
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
+    @EnvironmentObject private var settings: AppSettings
 
     let areas: [Area]
     @Query private var todos: [Todo]
@@ -109,6 +110,10 @@ struct FlowDashboardView: View {
         }
         .task(id: habitPreparationID) {
             await prepareTodayHabitsAfterPresentation()
+        }
+        .onChange(of: activeFlowStore.phase) { _, _ in
+            guard isVisible else { return }
+            cachedSnapshot = makeSnapshot(now: .now)
         }
         .task(id: snapshotRefreshID) {
             await refreshDashboardCache()
@@ -201,9 +206,11 @@ struct FlowDashboardView: View {
     private func refreshDashboardCache() async {
         guard isVisible else { return }
 
-        // Let navigation and the cached first frame finish before touching
-        // SwiftData-backed models for a fresh dashboard projection.
-        try? await Task.sleep(for: .milliseconds(cachedSnapshot == nil ? 300 : 450))
+        // Defer only the initial load. Playback changes must not wait behind
+        // the navigation delay while the timeline already shows the new end.
+        if cachedSnapshot == nil {
+            try? await Task.sleep(for: .milliseconds(300))
+        }
         guard !Task.isCancelled, isVisible else { return }
 
         cachedSnapshot = makeSnapshot(now: .now)
@@ -347,7 +354,7 @@ struct FlowDashboardView: View {
             )
 
             if snapshot.totalFocusSeconds == 0 {
-                Text(String(localized: "Flowを始めると、今日の流れがここから育ちます"))
+                Text(String(localized: "Flowを始めると、今日のフローがここから育ちます"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .padding(12)
@@ -359,7 +366,9 @@ struct FlowDashboardView: View {
     }
 
     private func timelineSurface(snapshot: FlowDashboardSnapshot, now: Date) -> some View {
-        let activeTimerEndAt = activeFlowStore.activeTimerTimelineEndAt(now: now)
+        let activeTimerEndAt = settings.showsTimelinePlannedEnd
+            ? activeFlowStore.activeTimerTimelineEndAt(now: now)
+            : nil
         let range = FlowTimelineRange(
             date: now,
             segments: snapshot.segments,
@@ -453,7 +462,7 @@ struct FlowDashboardView: View {
                         }
                         .frame(width: width, height: height, alignment: .leading)
                         .background {
-                            if group.isActive {
+                            if group.isActive && activeTimerEndAt != nil {
                                 Color(hex: group.segments.first?.colorHex ?? "#8E8E93")
                                     .opacity(0.2)
                             }
@@ -575,13 +584,6 @@ struct FlowDashboardView: View {
 
                 }
                 .frame(maxHeight: .infinity)
-                .animation(
-                    reduceMotion ? nil : .easeInOut(duration: 0.38),
-                    value: timelineAnimationDates(
-                        range: range,
-                        activeTimerEndAt: activeTimerEndAt
-                    )
-                )
                 .onContinuousHover { phase in
                     switch phase {
                     case .active(let location):
@@ -640,6 +642,10 @@ struct FlowDashboardView: View {
                 }
             }
         }
+        .animation(
+            reduceMotion ? nil : .easeInOut(duration: 0.38),
+            value: timelineAnimationDates(range: range, activeTimerEndAt: activeTimerEndAt)
+        )
     }
 
     private func timelineAnimationDates(
@@ -1744,6 +1750,7 @@ private struct FlowDashboardPreviewHost: View {
             cachedTodoGroups: $todoGroups
         )
         .environmentObject(ActiveFlowStore())
+        .environmentObject(AppSettings())
         .modelContainer(for: [Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self], inMemory: true)
     }
 }

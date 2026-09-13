@@ -40,7 +40,22 @@ struct IOSAreasView: View {
             .pickerStyle(.segmented)
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
-            .background(.bar)
+
+            VStack(alignment: .leading, spacing: 6) {
+                Label(selectedType.displayName, systemImage: selectedType.systemImage)
+                    .font(.headline)
+                Text(selectedType.description)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 20)
+            .padding(.top, 4)
+            .padding(.bottom, 16)
+            .background(.background)
+
+            Divider()
 
             List {
                 Section {
@@ -63,13 +78,6 @@ struct IOSAreasView: View {
                         }
                     }
                     .onMove(perform: moveAreas)
-                } header: {
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(selectedType.displayName)
-                        Text(selectedType.description)
-                            .font(.caption)
-                            .textCase(nil)
-                    }
                 }
             }
             .listStyle(.insetGrouped)
@@ -132,15 +140,9 @@ struct IOSAreasView: View {
                 .frame(width: 44, height: 44)
                 .background(Color(hex: area.colorHex).opacity(0.16), in: RoundedRectangle(cornerRadius: 10))
 
-            VStack(alignment: .leading, spacing: 3) {
-                Text(area.name)
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(.primary)
-                Text(area.hasGoal ? goalText(area) : area.type.description)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-            }
+            Text(area.name)
+                .font(.body.weight(.semibold))
+                .foregroundStyle(.primary)
 
             Spacer(minLength: 0)
             Image(systemName: isEditingOrder ? "line.3.horizontal" : "chevron.right")
@@ -169,24 +171,6 @@ struct IOSAreasView: View {
     private func areaSort(_ lhs: Area, _ rhs: Area) -> Bool {
         if lhs.sortIndex != rhs.sortIndex { return lhs.sortIndex < rhs.sortIndex }
         return lhs.name.localizedStandardCompare(rhs.name) == .orderedAscending
-    }
-
-    private func goalText(_ area: Area) -> String {
-        let target = area.goalTarget ?? 1
-        let schedule = area.goalSchedule?.displayName ?? ""
-
-        switch area.goalUnit {
-        case .occurrences:
-            return String(localized: "目標回数：\(target)回・\(schedule)")
-        case .focusBlocks:
-            return String(localized: "集中ブロック数：\(target)・\(schedule)")
-        case .minutes:
-            return String(localized: "目標時間：\(target)分・\(schedule)")
-        case .hours:
-            return String(localized: "目標時間：\(target)時間・\(schedule)")
-        case nil:
-            return schedule
-        }
     }
 }
 

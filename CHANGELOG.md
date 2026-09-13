@@ -12,6 +12,108 @@ Release dates below record GitHub publication in Asia/Tokyo (JST).
 - Todoist requests read/write authorization; existing read-only connections
   need to reconnect before sending completion changes.
 
+## [1.3.0] - Unreleased
+
+### Added
+
+- Task creation suggestions float above the composer on macOS and iPhone,
+  including quick-input options and existing tags. Empty @ suggests five Areas
+  ordered by recent Task creation, with alphabetical fallback.
+
+- Statistics distribution selections show daily minute bars for Tasks and
+  Task/time bars for Areas on macOS and iOS. Select a sector or legend row.
+
+- Flow palette changes sweep softly from right to left over 2.4 seconds; rapid
+  changes queue the latest palette. Reduced Motion uses an immediate update.
+
+- The macOS Flow stream blurs while its window is inactive and smoothly clears
+  when the window becomes active and rendering resumes.
+
+- Debug-only Demo schemes for macOS and iOS provide an isolated sample workspace
+  with three Areas, 21 historical Flows, and 24 Tasks for manual testing.
+
+- Statistics and CSV export support selecting multiple Areas on macOS and
+  iOS/iPadOS. Clear the selection with All to include every Area.
+
+- Settings now lets you hide the planned end on the Flow timeline and show
+  only elapsed time on macOS and iOS/iPadOS. The existing planned-end view
+  remains enabled by default; the preference is saved on each device.
+
+### Changed
+
+- Dots opens a daily summary before History on both platforms, including Year.
+- Quick-input priority, date, and measurement suggestions use shared icons and
+  filtering. Flow quick creation now offers a date control on macOS and saves
+  the selected date, including changes made through quick input.
+
+- Menu Bar task suggestions open below the composer. Quick input no longer
+  offers or opens Area creation on macOS or iOS.
+
+- Area type explanations appear once beneath group headings on macOS and iOS;
+  macOS cards no longer repeat the type name or generic description.
+
+- macOS Area group headings use the same checklist, repeat, and sparkles icons
+  as Flow. Japanese copy consistently uses フロー in place of the former term.
+
+- Custom Statistics Dots ranges use a compact chronological grid of actual
+  selected days, without weekday labels, calendar padding, or a legend.
+  Preset Week, Month, and Year calendars keep their existing layouts.
+
+### Fixed
+
+- iPhone task suggestions sit entirely above the input instead of overlapping
+  it. Area type headings and descriptions occupy a separate header above the list.
+
+- macOS Statistics keeps its four report cards mounted during scrolling and
+  gives native segmented controls explicit widths to avoid repeated recreation
+  and intrinsic-size negotiation.
+
+- Editing a recorded segment’s Area during an active or paused Flow no longer
+  replaces the timer deadline with that segment’s end or produces false overtime.
+
+- Completing Tasks no longer rebuilds the unrelated Flow Dots widget. Widget
+  updates coalesce rapid edits after the immediate UI response. On macOS task
+  boards, double-click editing is restricted to the text, outside the checkbox.
+
+- macOS Statistics card switches now align to the same trailing inset instead
+  of centering inside differently sized invisible frames.
+
+- Resuming the Flow stream explicitly resets its animation time baseline,
+  preventing a catch-up jump when no paused frame was rendered.
+
+- Custom Statistics ranges and CSV exports preserve selected calendar dates
+  with a non-midnight day start, including repeated period navigation.
+- Statistics reloads when calendar or day-start settings change and no longer
+  reuses projections grouped with the previous settings.
+
+- Selecting a Statistics month now keeps Dots in that month when the Flow day
+  starts after midnight. Week and year selections also retain their boundaries.
+
+- Removed the separate bar-material background behind the iOS/iPadOS Tasks,
+  History, and Areas top controls.
+
+- iOS/iPadOS Area rows now show only the icon and name, removing repeated
+  type explanations and goal subtitles from the list.
+
+- The minimal Dynamic Island focus ring now fills like the in-app timer, while
+  its numeric label keeps counting down. Rest still drains.
+
+- Rest on the Flow timeline now shows only elapsed time. The planned-end
+  setting applies only to focus blocks on macOS and iOS/iPadOS.
+
+- Custom Statistics ranges no longer draw empty Dots cells outside the selected
+  dates on macOS and iOS/iPadOS. Preset calendar grids remain complete.
+
+- Weekly habits measured in minutes or Blocks reconcile recorded progress
+  before automatic rescheduling, so a completed occurrence with stale progress
+  is not moved into today. The next occurrence starts with zero progress.
+- macOS task move menus now enforce the same completion and weekly schedule
+  checks as drag and drop.
+
+- The Flow timeline refreshes immediately when starting, pausing, or resuming
+  playback on macOS and iOS. Time labels animate with the rail instead of
+  jumping ahead of delayed dashboard updates.
+
 ## [1.2.0] - 2026-09-08
 
 ### Changed

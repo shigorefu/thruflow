@@ -1115,6 +1115,7 @@
 				DEVELOPMENT_TEAM = BR727PS795;
 				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_PREVIEWS = NO;
+				LM_SKIP_METADATA_EXTRACTION = YES;
 				EXCLUDED_SOURCE_FILE_NAMES = (
 					CalendarTaskIndicators.swift,
 					DayHistoryMode.swift,
@@ -1206,6 +1207,7 @@
 				DEVELOPMENT_TEAM = BR727PS795;
 				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_PREVIEWS = NO;
+				LM_SKIP_METADATA_EXTRACTION = YES;
 				EXCLUDED_SOURCE_FILE_NAMES = (
 					CalendarTaskIndicators.swift,
 					DayHistoryMode.swift,

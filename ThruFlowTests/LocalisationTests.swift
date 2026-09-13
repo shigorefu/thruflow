@@ -122,7 +122,7 @@ struct LocalisationTests {
         let root = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
         let strings = try #require(root["strings"] as? [String: Any])
         let expectedTerms = [
-            "Flow": "流れ",
+            "Flow": "フロー",
             "方向": "分野",
             "通常": "いつでも",
             "ナイス": "できたら",

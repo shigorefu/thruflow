@@ -196,7 +196,7 @@ private struct OnboardingJourneyCard: View {
         case .flow:
             VStack(spacing: 8) {
                 OnboardingHintRow(
-                    title: String(localized: "流れ"),
+                    title: String(localized: "フロー"),
                     body: String(localized: "集中と休憩の積み重なりを映します。下のタイムラインでは、いつ・何に取り組んだかを確認できます。"),
                     icon: .flow
                 )
@@ -805,7 +805,7 @@ private struct OnboardingWorkflowSummary: View {
     private let stages: [OnboardingWorkflowStage] = [
         OnboardingWorkflowStage(title: String(localized: "分野"), icon: .system(ProductSymbol.area)),
         OnboardingWorkflowStage(title: String(localized: "タスク"), icon: .system("checklist")),
-        OnboardingWorkflowStage(title: String(localized: "流れ"), icon: .flow),
+        OnboardingWorkflowStage(title: String(localized: "フロー"), icon: .flow),
         OnboardingWorkflowStage(title: String(localized: "履歴・統計"), icon: .system("chart.bar.xaxis")),
         OnboardingWorkflowStage(title: String(localized: "次の一歩"), icon: .system("arrow.forward.circle"))
     ]
@@ -819,7 +819,7 @@ private struct OnboardingWorkflowSummary: View {
         .frame(maxWidth: .infinity)
         .background(Color.accentColor.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(String(localized: "分野、タスク、流れ、履歴と統計、次の一歩"))
+        .accessibilityLabel(String(localized: "分野、タスク、フロー、履歴と統計、次の一歩"))
     }
 
     private var horizontalFlow: some View {
@@ -897,12 +897,12 @@ extension OnboardingStep {
         case .welcome: String(localized: "ようこそ")
         case .areas: String(localized: "分野")
         case .tasks: String(localized: "タスク")
-        case .flow: String(localized: "流れ")
+        case .flow: String(localized: "フロー")
         case .timer: String(localized: "集中タイマー")
-        case .demo: String(localized: "流れを体験")
+        case .demo: String(localized: "フローを体験")
         case .history: String(localized: "履歴")
         case .statistics: String(localized: "統計")
-        case .workflow: String(localized: "使い方の流れ")
+        case .workflow: String(localized: "使い方のフロー")
         case .privacy: String(localized: "データ")
         }
     }
@@ -927,12 +927,12 @@ extension OnboardingStep {
         case .welcome: String(localized: "大切なことに集中しよう")
         case .areas: String(localized: "取り組むことを、分野で整理")
         case .tasks: String(localized: "やることを、具体的なタスクに")
-        case .flow: String(localized: "今日の流れをひと目で")
+        case .flow: String(localized: "今日のフローをひと目で")
         case .timer: String(localized: "タスクを選んで、集中を始める")
         case .demo: String(localized: "集中から休憩までを見てみよう")
         case .history: String(localized: "一日の記録を、あとから振り返る")
         case .statistics: String(localized: "時間の使い方に気づく")
-        case .workflow: String(localized: "すべてが、ひとつの流れに")
+        case .workflow: String(localized: "すべてが、ひとつのフローに")
         case .privacy: String(localized: "データと基本機能について")
         }
     }
@@ -940,15 +940,15 @@ extension OnboardingStep {
     var body: String {
         switch self {
         case .welcome:
-            String(localized: "ThruFlowは、タスク管理、柔軟な集中タイマー、時間の振り返りをひとつにまとめたアプリです。まずは分野とタスクをひとつずつ作り、基本の流れを試してみましょう。")
+            String(localized: "ThruFlowは、タスク管理、柔軟な集中タイマー、時間の振り返りをひとつにまとめたアプリです。まずは分野とタスクをひとつずつ作り、基本のフローを試してみましょう。")
         case .areas:
             String(localized: "分野は、仕事・勉強・健康・家事など、日々取り組むことをまとめる枠です。タスクと集中時間が分野ごとにつながるので、何に時間を使ったか振り返りやすくなります。")
         case .tasks:
             String(localized: "タスクには、分野、優先度、日付、進捗の測り方を設定できます。ボタンから選ぶことも、入力中にショートカットを使うこともできます。")
         case .flow:
-            String(localized: "流れの画面では、今日の作業、タスク、集中の記録、統計をまとめて確認できます。")
+            String(localized: "フローの画面では、今日の作業、タスク、集中の記録、統計をまとめて確認できます。")
         case .timer:
-            String(localized: "取り組むタスクと集中時間を選び、準備ができたら再生ボタンを押します。途中で変更しても、途切れない作業はひとつの流れとして残ります。")
+            String(localized: "取り組むタスクと集中時間を選び、準備ができたら再生ボタンを押します。途中で変更しても、途切れない作業はひとつのフローとして残ります。")
         case .demo:
             String(localized: "タスクを選んで集中を始め、12分の集中が終わって3分の休憩に切り替わるまでを早送りで再現します。デモのため、履歴や統計には記録されません。実際には、集中後にメモを確認してから休憩を始めます。")
         case .history:
@@ -956,7 +956,7 @@ extension OnboardingStep {
         case .statistics:
             String(localized: "統計では、集中時間、完了したタスク、タスクや分野ごとの時間配分を週・月・年で確認できます。")
         case .workflow:
-            String(localized: "分野で取り組むことを整理し、タスクで次の一歩を決める。流れで実際の集中時間を記録し、履歴と統計で振り返る。ThruFlowは、このサイクルをひとつにつなげます。")
+            String(localized: "分野で取り組むことを整理し、タスクで次の一歩を決める。フローで実際の集中時間を記録し、履歴と統計で振り返る。ThruFlowは、このサイクルをひとつにつなげます。")
         case .privacy:
             String(localized: "最後に、データの保存先と無料で使える基本機能についてお伝えします。")
         }

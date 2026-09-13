@@ -11,6 +11,7 @@ import Testing
 import UserNotifications
 @testable import ThruFlow
 
+@MainActor
 struct FlowTests {
     @Test @MainActor func timerPrimaryControlUsesSemanticPhaseColors() {
         #expect(FlowTimerPrimaryTintRole(phase: .focusing, isFocusOvertime: false) == .area)
@@ -468,6 +469,24 @@ struct FlowTests {
         #expect(engine.remainingSeconds(for: deep, now: changedAt) == 40 * 60)
     }
 
+    @Test func restNeverProjectsAPlannedTimelineEnd() {
+        let engine = FlowTimerEngine()
+        let start = Date(timeIntervalSince1970: 6_600)
+        let focus = engine.start(mode: .twentyFiveFive, now: start)
+        let resting = engine.startBreak(focus, now: start.addingTimeInterval(25 * 60))
+        let now = start.addingTimeInterval(26 * 60)
+        let extended = engine.seekForward(resting, now: now)
+        let paused = engine.pause(extended, now: now)
+        let resumed = engine.resume(paused, now: now.addingTimeInterval(60))
+
+        for state in [resting, extended, paused, resumed] {
+            #expect(engine.timelineEndAt(for: state, now: now) == nil)
+            #expect(engine.timelineEndAt(for: state, now: now.addingTimeInterval(3_600)) == nil)
+        }
+        #expect(engine.remainingSeconds(for: resting, now: now) == 4 * 60)
+        #expect(engine.remainingSeconds(for: extended, now: now) == 9 * 60)
+    }
+
     @Test func changingModeIsIgnoredDuringBreakIncludingPausedBreak() {
         let engine = FlowTimerEngine()
         let start = Date(timeIntervalSince1970: 6_600)
@@ -555,6 +574,47 @@ struct FlowTests {
         #expect(reviewTodo.actualProgress == 9)
         #expect(writing.recordedFocusSeconds == 16 * 60)
         #expect(review.recordedFocusSeconds == 9 * 60)
+    }
+
+    @Test(arguments: [false, true]) @MainActor
+    func editingClosedSegmentAreaPreservesRunningOrPausedTimer(paused: Bool) throws {
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let start = Date(timeIntervalSince1970: 8_000)
+        let original = Area(name: "Original", type: .neutral)
+        let current = Area(name: "Current", type: .neutral)
+        let corrected = Area(name: "Corrected", type: .neutral)
+        [original, current, corrected].forEach { context.insert($0) }
+        let store = ActiveFlowStore(
+            defaults: UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!,
+            notifications: TestFlowNotificationService()
+        )
+        store.configure(area: original, todo: nil, mode: .twentyFiveFive)
+        store.start(area: original, todo: nil, modelContext: context, now: start)
+        store.selectContext(area: current, todo: nil, modelContext: context, now: start.addingTimeInterval(300))
+        let now = start.addingTimeInterval(420)
+        if paused { store.pause(modelContext: context, now: now) }
+        let session = try #require(store.activeSession)
+        let segment = try #require(session.resolvedSegments.first { $0.endedAt != nil })
+        let before = try #require(session.reconstructableTimerState)
+        let remaining = FlowTimerEngine().remainingSeconds(for: before, now: now)
+        try FlowHistoryEditor().update(
+            segment: segment, in: session, todo: nil, area: corrected,
+            focusSeconds: segment.resolvedFocusSeconds, memo: nil,
+            modelContext: context, now: now
+        )
+        try context.save()
+        store.synchronizeFromPersistence(modelContext: context, now: now)
+        let after = try #require(store.timerState)
+        #expect(segment.area?.id == corrected.id)
+        #expect(session.area?.id == current.id)
+        #expect(session.reconstructableTimerState == before)
+        #expect(after == before)
+        #expect(FlowTimerEngine().remainingSeconds(for: after, now: now) == remaining)
+        #expect(remaining == 18 * 60)
+        #expect(session.resolvedSegments.contains { $0.endedAt == nil })
     }
 
     @Test @MainActor func activeFlowSwitchesTaskWithoutResettingTimer() throws {

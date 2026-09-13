@@ -311,6 +311,11 @@ struct FlowHistoryEditor {
     }
 
     private func synchronizeSessionFromSegments(_ session: FlowSession) {
+        // Closed history may be edited while another segment or the break timer
+        // is still running. Its bounds must never replace the live timer plan.
+        // ActiveFlowStore owns the runtime and current context until completion.
+        guard session.reconstructableTimerState == nil else { return }
+
         let segments = session.resolvedSegments.sorted {
             if $0.startedAt == $1.startedAt { return $0.id.uuidString < $1.id.uuidString }
             return $0.startedAt < $1.startedAt

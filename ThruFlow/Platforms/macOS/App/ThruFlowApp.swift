@@ -72,7 +72,7 @@ struct ThruFlowApp: App {
         .defaultSize(width: 1_280, height: 800)
 
         MenuBarExtra {
-            FlowMiniPlayerView(style: .dashboard)
+            FlowMiniPlayerView(style: .dashboard, taskSuggestionsBelow: true)
                 .environmentObject(activeFlowStore)
                 .appSettingsEnvironment(settings)
                 .frame(width: 310, height: 410)

@@ -410,12 +410,11 @@ private struct HistoryTimelineItemRow: View {
     let onSelect: (HistoryCalendarItem) -> Void
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .center, spacing: 12) {
             Text(item.startedAt.formatted(.dateTime.locale(locale).hour().minute()))
                 .font(.caption.monospacedDigit())
                 .foregroundStyle(.secondary)
                 .frame(width: 54, alignment: .trailing)
-                .padding(.top, 14)
 
             timelineRail
 
@@ -464,27 +463,31 @@ private struct HistoryTimelineItemRow: View {
             .buttonStyle(.plain)
             .padding(.vertical, 5)
         }
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     private var timelineRail: some View {
-        VStack(spacing: 0) {
-            Rectangle()
-                .fill(isFirst ? Color.clear : Color.secondary.opacity(0.25))
-                .frame(width: 2, height: 15)
+        // The rail follows the card's height without contributing its own height.
+        Color.clear
+            .frame(width: 12)
+            .overlay {
+                VStack(spacing: 0) {
+                    Rectangle()
+                        .fill(isFirst ? Color.clear : Color.secondary.opacity(0.25))
+                        .frame(width: 2)
 
-            Circle()
-                .fill(itemColor)
-                .frame(width: 10, height: 10)
-                .overlay {
-                    Circle().stroke(Color.primary.opacity(0.12), lineWidth: 1)
+                    Circle()
+                        .fill(itemColor)
+                        .frame(width: 10, height: 10)
+                        .overlay {
+                            Circle().stroke(Color.primary.opacity(0.12), lineWidth: 1)
+                        }
+
+                    Rectangle()
+                        .fill(isLast ? Color.clear : Color.secondary.opacity(0.25))
+                        .frame(width: 2)
                 }
-
-            Rectangle()
-                .fill(isLast ? Color.clear : Color.secondary.opacity(0.25))
-                .frame(width: 2)
-        }
-        .frame(width: 12)
-        .frame(minHeight: 78)
+            }
     }
 
     private var itemColor: Color {

@@ -19,6 +19,12 @@ struct FlowStreamView: View {
     let isRenderingEnabled: Bool
 
     @Environment(\.controlActiveState) private var controlActiveState
+    @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var windowIsActive: Bool {
+        controlActiveState == .key && scenePhase == .active
+    }
 
     var body: some View {
         FlowStreamSurface(
@@ -31,8 +37,11 @@ struct FlowStreamView: View {
             mode: mode,
             breakStyle: breakStyle,
             breakInteraction: breakInteraction,
-            isRenderingEnabled: isRenderingEnabled && controlActiveState == .key
+            isRenderingEnabled: isRenderingEnabled && windowIsActive
         )
         .equatable()
+        .blur(radius: windowIsActive ? 0 : 8)
+        .clipped()
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: windowIsActive)
     }
 }
