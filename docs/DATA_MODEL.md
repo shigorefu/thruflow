@@ -82,6 +82,35 @@ Normalization trims leading `#`, removes empty values, and deduplicates using a
 locale-stable case-insensitive key while preserving the first spelling. The
 optional field keeps existing local SwiftData stores migration-compatible.
 
+`externalTaskLinkRawValue` is an optional JSON scalar on Todo containing the
+connector provider, account, external task and source identifiers, original URL,
+and last successful import date. Provider + account + external task identify one
+import; moving the external task between sources retains its Todo and Flow links.
+Credentials are never stored in this field. The migration is additive: the field
+is nullable with a `nil` default, so existing local records require no backfill;
+there are no field/entity renames or relationship changes, and the existing five
+SwiftData entities remain. Deploy the added Development CloudKit field to
+Production before distributing the connector release.
+
+Imports create active Check Todos in non-Habit Areas, initially copy notes, and
+map external due dates to `deadline`; local `scheduledDate` remains unset.
+Refresh owns only title, deadline and link metadata. Local completion, memo,
+measurement, planning, progress and Flow history remain under ThruFlow control;
+missing external tasks and disconnected accounts never remove local records.
+If the user later moves an imported Todo into a Habit Area, its external link
+excludes it from occurrence generation, deduplication, schedule rewriting and
+pause-driven removal.
+`ConnectorTaskImporter` converges concurrent imports on the oldest Todo (UUID
+breaks ties), reconnects FlowSession/FlowSegment references, preserves local
+memos/completion, and rebuilds measured progress with `FlowProgressReconciler`.
+Source-owned title, deadline, and link metadata come from the root record with
+the latest successful import date (UUID breaks ties); local identity, Area and
+priority remain with the deterministic oldest Todo.
+Redundant Todos are soft-deleted with an optional `supersededByTodoID` inside the
+same JSON scalar. This marker distinguishes merge tombstones from deliberate
+user deletion, which must never be resurrected by a later import. Corrupt link
+identity data fails visibly rather than being treated as an unlinked task.
+
 ## FlowSession
 
 `FlowSession` stores one focused-work recording.
@@ -182,3 +211,31 @@ History the user may explicitly link an existing Task or invoke
 `タスクを追加`, which opens normal Task creation with Area and date
 preselected. Creating a Task is never an automatic side effect of finishing or
 editing Area-only Flow.
+
+Connector completion adds only optional fields inside the existing external-link
+JSON (`remoteCompletion`, `completionChanges`, `acknowledgedCompletionIDs`).
+Pending commands contain UUID, target boolean and timestamp; no tokens or new
+SwiftData fields/entities are introduced. Checkbox and command persist together.
+Local Flow counters and relationships are untouched by incoming completion.
+
+### Additive Toggl recording ownership (upcoming connector branch)
+
+`FlowSession.recordingDeviceID: String?` is an optional, non-secret device identity.
+Its persisted and initializer defaults are nil; only `ActiveFlowStore.start`
+assigns the current device identity. Manual history and imports remain ineligible.
+Existing records keep nil and are never automatically exported. New runtime
+sessions must have their complete segments before export.
+The entity, all existing fields, IDs, history, and relationships remain unchanged.
+This is an additive lightweight SwiftData migration and requires adding the
+optional String field to the Development/Production CloudKit schema before the
+feature ships. Old clients can ignore it; no backfill or destructive migration
+is performed. Local operation does not require CloudKit.
+
+The identifier itself is a random per-install/device Keychain value with
+AfterFirstUnlockThisDeviceOnly accessibility and synchronization disabled. If it
+cannot be read/created, recording still works with nil ownership and auto-export
+fails closed. Toggl tokens use the connector Keychain namespace. The local atomic
+`Application Support/ThruFlow/Toggl/export-v1.json` contains account configuration,
+Area/project mapping, immutable queued payloads, uncertainty flags, cancellation
+flags, and remote receipts. It contains no credentials and is not shared through
+CloudKit. A restored outbox cannot be dispatched by a different recording device.

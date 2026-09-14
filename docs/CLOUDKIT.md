@@ -36,6 +36,28 @@ CloudKit therefore continues using the existing entity and fields; no schema
 migration, duplicate Area entity, or record copy is introduced. A schema
 contract test guards these exact names.
 
+## Connector Link Migration — Upcoming 1.3.0
+
+Connectors add only `Todo.externalTaskLinkRawValue`, a nullable String scalar
+with a `nil` default. Existing Todos stay unlinked and require no backfill.
+The five entity names and all relationship names remain unchanged. The JSON
+contains provider/account/task/source identity, original URL, last import time,
+and an optional duplicate-repair marker; never access or refresh tokens.
+
+Credential storage and list-to-Area configuration are device-local. Only
+imported Tasks and their non-secret link metadata follow private CloudKit.
+Concurrent imports converge through `ConnectorTaskImporter` during normal
+persistence repair, reconnecting FlowSession/FlowSegment history to the
+canonical Task. Genuine local deletions cannot be resurrected by later imports.
+
+Before distributing a connector build, run a migration against a backed-up copy
+of an existing store, initialize and inspect the new field in Development, then
+deploy that additive field to Production. Verify real signed Mac/iPhone imports,
+source moves, concurrent imports, and late-arriving Flow records. In-memory
+schema and reconciliation tests do not validate production deployment or actual
+CloudKit delivery. Native OAuth signing has additional Associated Domains gates
+in [Connectors](CONNECTORS.md).
+
 ## Local And Test Modes
 
 - Unit/UI tests use an in-memory `ModelConfiguration` with CloudKit disabled.
@@ -114,9 +136,10 @@ session is adopted the next time iOS receives and processes the CloudKit change,
 typically when the app becomes active. Guaranteed background creation or
 updating of Dynamic Island requires ActivityKit push tokens and an APNs
 provider. That server-assisted transport is not part of the current private
-CloudKit implementation and is deferred to 2.0 together with external
-Connectors. In 1.x, a suspended iPhone Live Activity may remain at `00:00`
-until the application next launches or becomes active; the canonical Flow still
+CloudKit implementation and remains deferred. D-042 allows upcoming local
+connectors independently of APNs; they do not change timer delivery. In 1.x,
+a suspended iPhone Live Activity may remain at `00:00` until the application
+next launches or becomes active; the canonical Flow still
 advances from its absolute timestamps. The same delivery limitation applies to
 notification cancellation when a device is offline or the user has force-quit
 the app; the next received import or foreground reconciliation removes the
@@ -138,3 +161,9 @@ additionally require an Apple Distribution certificate and current App Store
 provisioning profiles for the app and each embedded extension. These signing
 assets stay outside the repository and must be checked in Xcode and App Store
 Connect as part of every release gate.
+
+Toggl Track export adds the optional String `FlowSession.recordingDeviceID`.
+Before releasing it, deploy that additive field through the normal Development
+and Production schema gates. Legacy nil values are retained; do not backfill
+ownership. Tokens and the export outbox are device-local. Two-device verification
+must confirm that only the Flow's originating device exports its completed record.

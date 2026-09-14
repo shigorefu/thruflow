@@ -70,6 +70,8 @@ final class Todo {
     var title: String = ""
     var notes: String?
     var hashtagsRawValue: String?
+    /// Optional scalar for additive local-store and CloudKit migration.
+    var externalTaskLinkRawValue: String? = nil
     /// Persisted as `direction` for SwiftData and CloudKit compatibility.
     var direction: Area?
     var measurementRawValue: String = TodoMeasurement.checkbox.rawValue
@@ -152,6 +154,11 @@ final class Todo {
         set { hashtagsRawValue = TodoHashtagCodec.encode(newValue) }
     }
 
+    var externalTaskLink: ExternalTaskLink? {
+        guard let externalTaskLinkRawValue else { return nil }
+        return try? ExternalTaskLink.decode(externalTaskLinkRawValue)
+    }
+
     var priority: TodoPriority {
         get { TodoPriority(rawValue: priorityRawValue) ?? .medium }
         set {
@@ -207,6 +214,8 @@ final class Todo {
         deadline: Date?,
         now: Date = .now
     ) {
+        let wasCompleted = isCompleted
+        defer { enqueueExternalCompletion(ifChangedFrom: wasCompleted, now: now) }
         self.title = title
         self.notes = notes
         self.hashtags = hashtags
@@ -229,6 +238,8 @@ final class Todo {
     }
 
     func setCompleted(_ completed: Bool, now: Date = .now) {
+        let wasCompleted = isCompleted
+        defer { enqueueExternalCompletion(ifChangedFrom: wasCompleted, now: now) }
         switch measurement {
         case .checkbox:
             actualProgress = completed ? 1 : 0
@@ -254,6 +265,8 @@ final class Todo {
     }
 
     func setProgress(_ value: Int, now: Date = .now) {
+        let wasCompleted = isCompleted
+        defer { enqueueExternalCompletion(ifChangedFrom: wasCompleted, now: now) }
         actualProgress = max(0, value)
         let nextStatus = TodoProgressCalculator().status(
             measurement: measurement,
@@ -295,6 +308,17 @@ final class Todo {
         let trimmed = memo?.trimmingCharacters(in: .whitespacesAndNewlines)
         notes = trimmed?.isEmpty == true ? nil : trimmed
         updatedAt = now
+    }
+
+    private func enqueueExternalCompletion(ifChangedFrom previous: Bool, now: Date) {
+        guard measurement == .checkbox, previous != isCompleted,
+              !isDeleted, !isArchived, var link = externalTaskLink,
+              link.supersededByTodoID == nil else { return }
+        var changes = link.completionChanges ?? []
+        changes.append(ConnectorCompletionChange(isCompleted: isCompleted, createdAt: now))
+        link.completionChanges = changes
+        // Encoding these primitive fields cannot expose credentials.
+        if let encoded = try? link.encoded() { externalTaskLinkRawValue = encoded }
     }
 
     private func updateCompletionDate(for nextStatus: TodoStatus, now: Date) {

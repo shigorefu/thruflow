@@ -15,6 +15,7 @@ struct FlowStreamSurface: View, Equatable {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.scenePhase) private var scenePhase
+    @State private var paletteTransition = FlowPaletteTransition()
     @State private var animationClock = FlowAnimationClock()
     @State private var impulseStartedAt: Date?
     @State private var reactionState = FlowStreamReactionState()
@@ -63,7 +64,8 @@ struct FlowStreamSurface: View, Equatable {
             isActive: isActive,
             mode: mode
         )
-        let colors = resolvedRibbonColors
+        let colors = (paletteTransition.target.isEmpty ? resolvedRibbonHexes : paletteTransition.target).map { Color(hex: $0) }
+        let previousColors = (paletteTransition.previous.isEmpty ? resolvedRibbonHexes : paletteTransition.previous).map { Color(hex: $0) }
         let appearance = DailyFlowAppearance(seed: dailySeed)
         let background = resolvedBackground(identityReveal: state.identityReveal)
 
@@ -115,6 +117,11 @@ struct FlowStreamSurface: View, Equatable {
                             .color(colors[4]),
                             .color(colors[5]),
                             .color(colors[6]),
+                            .color(previousColors[0]), .color(previousColors[1]),
+                            .color(previousColors[2]), .color(previousColors[3]),
+                            .color(previousColors[4]), .color(previousColors[5]),
+                            .color(previousColors[6]),
+                            .float(Float(paletteTransition.progress(at: timeline.date))),
                             .color(background),
                             .float(colorScheme == .dark ? 1 : 0)
                         )
@@ -123,6 +130,7 @@ struct FlowStreamSurface: View, Equatable {
                     .compositingGroup()
             }
         }
+        .task(id: paletteRequest) { await updatePalette() }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(String(localized: "今日のFlow"))
         .accessibilityValue(accessibilityValue(state, breakStyle: breakStyle))
@@ -130,7 +138,16 @@ struct FlowStreamSurface: View, Equatable {
             guard newValue > oldValue else { return }
             impulseStartedAt = .now
         }
-        .onAppear(perform: synchronizeBreakInteraction)
+        .onAppear {
+            animationClock.suspend()
+            synchronizeBreakInteraction()
+        }
+        .onChange(of: animationIsPaused) { _, _ in
+            animationClock.suspend()
+        }
+        .onDisappear {
+            animationClock.suspend()
+        }
         .onChange(of: breakInteraction?.sequence) { _, _ in
             synchronizeBreakInteraction()
         }
@@ -176,6 +193,7 @@ struct FlowStreamSurface: View, Equatable {
                 )
             }
         }
+        .task(id: paletteRequest) { await updatePalette() }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(String(localized: "今日のFlow"))
         .accessibilityValue(accessibilityValue(state, breakStyle: breakStyle))
@@ -217,6 +235,17 @@ struct FlowStreamSurface: View, Equatable {
         for ribbon in 0..<ribbonCount {
             let progress = Double(ribbon) / Double(max(ribbonCount - 1, 1))
             let color = colors[ribbon]
+            let previousHex = paletteTransition.previous.indices.contains(ribbon)
+                ? paletteTransition.previous[ribbon] : resolvedRibbonHexes[ribbon]
+            let oldColor = Color(hex: previousHex)
+            let sweep = paletteTransition.progress(at: .now)
+            let edge = 1.15 - sweep * 1.3
+            let gradient = Gradient(stops: [
+                .init(color: oldColor, location: max(0, min(1, edge - 0.15))),
+                .init(color: color, location: max(0, min(1, edge + 0.15)))
+            ])
+            let shading = GraphicsContext.Shading.linearGradient(gradient,
+                startPoint: .zero, endPoint: CGPoint(x: size.width, y: 0))
             let path = watchRibbonPath(
                 ribbon: ribbon,
                 ribbonCount: ribbonCount,
@@ -242,15 +271,18 @@ struct FlowStreamSurface: View, Equatable {
 
             context.drawLayer { glowLayer in
                 glowLayer.addFilter(.blur(radius: max(1.5, width * 0.52)))
+                glowLayer.opacity = opacity * 0.52
                 glowLayer.stroke(
                     path,
-                    with: .color(color.opacity(opacity * 0.52)),
+                    with: shading,
                     style: StrokeStyle(lineWidth: width * 1.8, lineCap: .round)
                 )
             }
-            context.stroke(
+            var ribbonLayer = context
+            ribbonLayer.opacity = min(opacity, 0.92)
+            ribbonLayer.stroke(
                 path,
-                with: .color(color.opacity(min(opacity, 0.92))),
+                with: shading,
                 style: StrokeStyle(lineWidth: width, lineCap: .round)
             )
         }
@@ -328,13 +360,33 @@ struct FlowStreamSurface: View, Equatable {
 
 #endif
 
-    private var resolvedRibbonColors: [Color] {
+    private var resolvedRibbonHexes: [String] {
         FlowStreamPaletteLayout.ribbonColorHexes(
             palette: palette,
             weights: paletteWeights,
             ribbonCount: FlowVisualState.ribbonCount
         )
-        .map { Color(hex: $0) }
+    }
+
+    private struct PaletteRequest: Equatable {
+        let colors: [String]
+        let animated: Bool
+    }
+
+    private var paletteRequest: PaletteRequest {
+        PaletteRequest(colors: resolvedRibbonHexes, animated: !animationIsPaused)
+    }
+
+    @MainActor private func updatePalette() async {
+        let request = paletteRequest
+        paletteTransition.receive(request.colors, at: .now, animated: request.animated)
+        while let startedAt = paletteTransition.startedAt {
+            let remaining = max(0.01, FlowPaletteTransition.duration - Date.now.timeIntervalSince(startedAt))
+            do { try await Task.sleep(for: .seconds(remaining)) }
+            catch { return }
+            guard !Task.isCancelled else { return }
+            paletteTransition.advance(at: .now)
+        }
     }
 
     private func resolvedBackground(identityReveal: Double) -> Color {
@@ -413,9 +465,9 @@ struct FlowStreamSurface: View, Equatable {
 
         return switch state.progress {
         case ..<0.01: String(localized: "まだFlowはありません")
-        case ..<0.34: String(localized: "小さな流れ")
-        case ..<0.84: String(localized: "育っている流れ")
-        default: String(localized: "満ちている流れ")
+        case ..<0.34: String(localized: "小さなフロー")
+        case ..<0.84: String(localized: "育っているフロー")
+        default: String(localized: "満ちているフロー")
         }
     }
 }

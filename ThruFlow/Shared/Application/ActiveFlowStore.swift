@@ -177,6 +177,7 @@ final class ActiveFlowStore: ObservableObject {
         let session = FlowSession(
             id: sessionID,
             seriesID: seriesID,
+            recordingDeviceID: FlowRecordingDevice.id,
             area: area,
             todo: todo,
             intent: intent.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -378,6 +379,7 @@ final class ActiveFlowStore: ObservableObject {
         do {
             try DefaultAreaReconciler().reconcile(modelContext: modelContext, now: now)
             try OrphanTodoReconciler().reconcile(modelContext: modelContext, now: now)
+            try ConnectorTaskImporter().reconcileDuplicates(modelContext: modelContext, now: now)
             lastPersistenceReconciliationAt = now
         } catch {
             PersistenceIssueCenter.shared.log(error, operation: .flowSynchronization)

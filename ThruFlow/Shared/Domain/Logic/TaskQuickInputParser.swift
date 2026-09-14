@@ -133,7 +133,7 @@ struct TaskQuickInputParser {
     func trailingAutocompleteToken(in input: String) -> String? {
         guard let range = trailingTokenRange(in: input) else { return nil }
         let token = String(input[range])
-        guard token.first.map({ "@!/[".contains($0) }) == true else { return nil }
+        guard token.first.map({ "@!/[#".contains($0) }) == true else { return nil }
         return token
     }
 

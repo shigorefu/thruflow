@@ -21,6 +21,7 @@ struct ThruFlowApp: App {
     )
     @StateObject private var settings = AppSettings()
     @StateObject private var onboarding = OnboardingStore()
+    @StateObject private var connectors = ConnectorStore()
     @NSApplicationDelegateAdaptor(MacOSAppDelegate.self) private var appDelegate
 
     private let sharedModelContainer = AppModelContainerFactory.make()
@@ -32,6 +33,7 @@ struct ThruFlowApp: App {
                 .persistenceIssuePresenter()
                 .environmentObject(activeFlowStore)
                 .environmentObject(onboarding)
+                .environmentObject(connectors)
                 .appSettingsEnvironment(settings)
                 .onAppear {
                     activeFlowStore.clearNotificationBadge()
@@ -44,6 +46,10 @@ struct ThruFlowApp: App {
                         isEnabled: AppModelContainerFactory.usesCloudKitForCurrentProcess,
                         containerIdentifier: AppModelContainerFactory.cloudKitContainerIdentifier
                     )
+                }
+                .task(id: scenePhase) {
+                    guard scenePhase == .active else { return }
+                    await connectors.runForegroundSync(modelContext: sharedModelContainer.mainContext)
                 }
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active {
@@ -66,7 +72,7 @@ struct ThruFlowApp: App {
         .defaultSize(width: 1_280, height: 800)
 
         MenuBarExtra {
-            FlowMiniPlayerView(style: .dashboard)
+            FlowMiniPlayerView(style: .dashboard, taskSuggestionsBelow: true)
                 .environmentObject(activeFlowStore)
                 .appSettingsEnvironment(settings)
                 .frame(width: 310, height: 410)

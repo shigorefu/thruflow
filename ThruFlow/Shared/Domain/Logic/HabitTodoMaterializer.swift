@@ -50,6 +50,28 @@ struct HabitTodoMaterializer {
             }
         }
 
+        // Flow history and its derived Todo status may arrive separately.
+        // Resolve measured weekly occurrences before deciding which one is
+        // unfinished and can roll forward to today.
+        let measuredWeeklyTodos = todos.filter {
+            !$0.isDeleted && !$0.isArchived && $0.measurement != .checkbox &&
+                $0.area?.type == .habit && $0.area?.goalSchedule == .weeklyCount
+        }
+        if !measuredWeeklyTodos.isEmpty {
+            let previous = measuredWeeklyTodos.map {
+                (todo: $0, seconds: $0.recordedFocusSeconds,
+                 progress: $0.actualProgress, status: $0.status)
+            }
+            try FlowProgressReconciler().reconcile(
+                todos: measuredWeeklyTodos.map(Optional.some), areas: [],
+                modelContext: modelContext, now: now
+            )
+            changed = changed || previous.contains {
+                $0.todo.recordedFocusSeconds != $0.seconds ||
+                    $0.todo.actualProgress != $0.progress || $0.todo.status != $0.status
+            }
+        }
+
         var knownTodos = todos.filter { !$0.isDeleted && !$0.isArchived }
         var nextSortIndex = (knownTodos.map(\.sortIndex).min() ?? 0) - 1
         let today = dayBoundary.day(containing: now, calendar: calendar)

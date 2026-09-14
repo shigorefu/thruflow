@@ -66,6 +66,7 @@ current.
 - `docs/ARCHITECTURE.md`: layers, dependencies, and platform boundaries.
 - `docs/LOCALISATION.md`: String Catalog rules and language workflow.
 - `docs/CLOUDKIT.md`: container, signing, local mode, and schema deployment.
+- `docs/CONNECTORS.md`: local connector behavior, credentials, OAuth setup, and release gates.
 - `docs/TECHNICAL_PLAN.md`: services, technical rules, and expected tests.
 - `docs/DECISIONS.md`: accepted product and architecture decisions.
 - `docs/MVP.md`: version 1.0 scope.

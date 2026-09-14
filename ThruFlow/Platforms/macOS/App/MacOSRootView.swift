@@ -20,6 +20,7 @@ struct MacOSRootView: View {
     @Query private var onboardingFlowSessions: [FlowSession]
     @Query private var onboardingFlowBreaks: [FlowBreak]
     @State private var selection: AppSection? = .flow
+    @State private var showsConnectors = false
     @State private var historyDate = Calendar.current.startOfDay(for: .now)
     @State private var didReconcileFlowProgress = false
     @State private var flowSnapshotCache: FlowDashboardSnapshot?
@@ -74,6 +75,18 @@ struct MacOSRootView: View {
 
                 Divider()
 
+                Button {
+                    showsConnectors = true
+                } label: {
+                    Label(String(localized: "コネクタ"), systemImage: "puzzlepiece.extension")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+                .accessibilityIdentifier("connectors.open")
+
                 SettingsLink {
                     Label(String(localized: "設定"), systemImage: "gearshape")
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -82,6 +95,7 @@ struct MacOSRootView: View {
                 .buttonStyle(.plain)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 12)
+                .accessibilityIdentifier("settings.open")
             }
             .navigationTitle(String(localized: "スルフロ"))
             .navigationSplitViewColumnWidth(min: 175, ideal: 190, max: 240)
@@ -119,6 +133,9 @@ struct MacOSRootView: View {
             }
         }
         .onOpenURL(perform: openWidgetURL)
+        .sheet(isPresented: $showsConnectors) {
+            MacOSConnectorsView()
+        }
         .sheet(item: onboardingPresentationBinding) { presentation in
             onboardingSheet(for: presentation)
         }
@@ -347,5 +364,6 @@ private enum AppSection: Hashable {
     MacOSRootView()
         .environmentObject(ActiveFlowStore())
         .environmentObject(OnboardingStore())
+        .environmentObject(ConnectorStore())
         .modelContainer(for: [Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self], inMemory: true)
 }

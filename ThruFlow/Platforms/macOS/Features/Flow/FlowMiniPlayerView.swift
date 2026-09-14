@@ -34,12 +34,14 @@ struct FlowMiniPlayerView: View {
     @FocusState private var isMemoFocused: Bool
 
     private let style: Style
+    private let taskSuggestionsBelow: Bool
     private var todayFilter: TodayTodoFilter {
         TodayTodoFilter(calendar: calendar, dayBoundary: dayBoundary)
     }
 
-    init(style: Style = .header) {
+    init(style: Style = .header, taskSuggestionsBelow: Bool = false) {
         self.style = style
+        self.taskSuggestionsBelow = taskSuggestionsBelow
     }
 
     private var activeAreas: [Area] {
@@ -256,7 +258,8 @@ struct FlowMiniPlayerView: View {
         .popover(isPresented: $showsTaskComposer, arrowEdge: .trailing) {
             QuickTodoCreationPopover(
                 areas: activeAreas,
-                showsQuickInputLegend: false
+                showsQuickInputLegend: false,
+                suggestionsBelow: taskSuggestionsBelow
             ) { todo in
                 activeFlowStore.selectContext(
                     area: todo.area,

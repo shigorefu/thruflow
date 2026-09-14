@@ -39,11 +39,12 @@ reviewed like an API rename.
 Product terminology is translated by UI meaning, not by replacing an English
 domain word everywhere. The Japanese source key may also differ from the text
 shown in Japanese when a catalog override exists. In particular, `Flow` has no
-single canonical rendering:
+single canonical rendering across all contexts. The workspace and stream use
+`フロー`, including onboarding and accessibility copy:
 
 | UI context | Source key | Japanese UI | English UI | Russian UI |
 | --- | --- | --- | --- | --- |
-| Main Flow navigation and workspace | `Flow` | `流れ` | Flow | Flow |
+| Main Flow navigation and workspace | `Flow` | `フロー` | Flow | Flow |
 | Persisted Flow session or History record | `集中記録` | `集中記録` | Flow | Flow |
 | Start, continue, or switch focused work | `集中` | `集中` | Focus | Фокус |
 | Number of recorded Flow sessions | `集中回数` | `集中回数` | Flows | Сессии Flow |
@@ -54,8 +55,8 @@ single canonical rendering:
 | Focus Calendar visualization | `Dots` | `集中カレンダー` | Focus Calendar | Календарь фокуса |
 
 For example, an action should read `集中を始める`, not a mechanical
-`流れを開始`. A History row should use `集中記録`, while the main workspace may
-use `流れ`. Translators must inspect the originating screen and choose the
+`フローを開始`. A History row should use `集中記録`, while the main workspace may
+use `フロー`. Translators must inspect the originating screen and choose the
 contextual term recorded in `Localisation/TERMS.csv`.
 
 The persistent activity-area entity is `分野` in Japanese UI, `Area` in English,

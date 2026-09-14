@@ -169,7 +169,7 @@ struct DayHistoryView: View {
     }
 
     private var modePicker: some View {
-        Picker("", selection: $selectedMode) {
+        Picker(String(localized: "履歴表示"), selection: $selectedMode) {
             ForEach(DayHistoryMode.allCases) { mode in
                 Text(mode.displayName).tag(mode)
             }

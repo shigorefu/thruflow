@@ -18,6 +18,7 @@ ThruFlow/
       Logic/        Pure calculations and product rules
       Services/     Platform-neutral protocols and shared implementations
     Application/    Shared observable state and use-case orchestration
+    Connectors/     External provider clients, credential storage, and OAuth
     LiveActivity/   Shared ActivityKit attributes, content state, and intents
     Widget/         Cross-process WidgetKit snapshots and App Group storage
     UI/             Small reusable SwiftUI components
@@ -61,6 +62,11 @@ Platforms/watchOS ─┘              │
   platform, such as UserNotifications.
 - `Shared/Application` coordinates domain operations and persistence. It may
   import Foundation, Combine, and SwiftData, but not AppKit or UIKit.
+- `Shared/Connectors` owns optional EventKit and URLSession clients plus
+  Keychain and OAuth adapters. Its value DTOs are available on every platform;
+  active provider and browser operations are macOS/iOS only. The Todo import
+  rules remain in `Shared/Domain/Logic`, independent of provider APIs and UI.
+  `Shared/Application/ConnectorStore` orchestrates those boundaries.
 - `Shared/LiveActivity` owns the iOS ActivityKit attributes, immutable content
   state, formatting, and App Intents shared by the application and extension.
 - `Shared/UI` contains only components whose behavior and layout are intended
@@ -165,6 +171,42 @@ Each platform owns its composition root:
   The Watch does not compile onboarding, review-presentation, or support-store
   UI; those surfaces are owned by the companion iPhone/iPad/macOS application.
 
+## Connector Boundaries — Upcoming 1.3.0
+
+`ConnectorStore` owns per-device connection metadata, selected list/project IDs,
+Area mapping, success timestamps, and sanitized failures. It uses injectable
+`ConnectorClient`, credential-storage, browser, and URLSession boundaries for
+local tests. `RemindersConnectorClient` reads EventKit after permission;
+`TodoistConnectorClient` reads selected projects through the provider API.
+Both can apply explicit Check completion/reopening commands. Missing rows never imply completion. The durable outbox lives in the existing external-link JSON, and each acknowledged write re-reads the current Task to preserve newer local actions.
+
+`TodoistAuthorization` creates PKCE/state values, validates the callback, and
+exchanges/refreshes user tokens directly with Todoist. Only public client
+metadata and the callback page are hosted on the existing static website;
+there is no app-owned OAuth secret, signup service, webhook receiver, or APNs
+backend. Platform support factories supply the native authentication window
+anchor to shared AuthenticationServices presentation. `ConnectorKeychain`
+keeps access and refresh tokens on the current device; only non-secret
+connection preferences enter UserDefaults.
+
+`ConnectorTaskImporter` receives value DTOs and saves through a separate
+ModelContext so a failed import cannot roll back an open editor's draft. Its
+optional JSON field on Todo links provider/account/task identity to the normal
+local record. The importer adds unfinished Check tasks, then refreshes title,
+deadline, external metadata and Check completion when no local command is
+pending. Local planning, memo, measured progress and Flow remain authoritative. Duplicate reconciliation runs with the
+existing persistence-repair cycle, reconnects exact Flow relationships, and
+rebuilds measured progress through `FlowProgressReconciler`. A linked Task
+cannot become a generated Habit occurrence simply because its Area changes.
+
+macOS and iOS own the connectors' navigation/Form shell; shared components
+provide the same setup fields and Todo source label/link. Manual refresh and
+foreground refresh share one store operation, with a bounded automatic-sync
+cadence and no guaranteed background delivery. watchOS compiles link metadata
+and reconciliation over synchronized Tasks, but no connection UI or provider
+access. See [Connectors](CONNECTORS.md) for provider identity constraints and
+native OAuth release checks.
+
 ## Feature Boundaries
 
 - Views transform user interaction into calls to application/domain operations.
@@ -258,7 +300,9 @@ Activity extension declares only its App Group snapshot access. No target
 declares tracking or developer-accessible collected data. Private CloudKit
 records remain owned by the user and are not visible in the developer portal;
 the App Store privacy answers and public privacy policy must still explain the
-private iCloud synchronization accurately.
+private iCloud synchronization accurately. Upcoming connector builds must also
+describe the user's explicit access to selected external services and local
+credential storage; external provider traffic is not an analytics feature.
 
 Active timer synchronization follows the same local-first rule. Every timer
 transition is written to the active `FlowSession` with absolute anchors and a
@@ -361,9 +405,9 @@ transition while the app is suspended requires an ActivityKit push update
 through APNs; `staleDate`, widget timelines, background tasks, and local
 notifications are not reliable substitutes. Version 1.x explicitly accepts
 this presentation limitation and does not require an APNs provider. Remote
-ActivityKit transport and external Connectors are deferred to 2.0; the future
-transport must remain optional and must not replace SwiftData/CloudKit as the
-source of truth.
+ActivityKit transport remains deferred and optional. Upcoming 1.3.0 local
+connectors are independent of that transport under D-042, and neither may
+replace SwiftData/CloudKit as the source of truth.
 Do not apply `fixedSize()` to the dynamic interval text: ActivityKit supplies a
 bounded region for each presentation, and forcing the archived text's intrinsic
 width can collapse it instead of rendering the clock.
@@ -498,3 +542,15 @@ the same palette, daily seed, growth, speed, and mode parameters. The Watch
 Tasks page creates new records through a platform form composed of system
 pickers and steppers; it inserts the same shared `Todo` model without adding a
 second task-creation service or watch-only business rules.
+
+### Toggl Track time export
+
+`TogglExportBuilder` projects completed, device-owned Flow segments into immutable
+focused-time payloads. `TogglTrackClient` owns HTTP and DTOs separately from task
+connector clients. `TogglExportStore` owns mapping, activation boundary, the durable
+outbox, receipt recovery, and foreground scheduling; it never holds SwiftData
+models across network awaits or saves an editor's context. `TogglFileStorage`
+atomically persists the local queue. The existing connector Keychain handles the
+Track token; `FlowRecordingDevice` provides device-only export ownership. Shared
+`TogglSetupSections` supplies form content while native macOS/iOS views retain
+navigation ownership. See `docs/CONNECTORS.md` for delivery and retry rules.

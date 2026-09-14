@@ -20,7 +20,7 @@ struct StatisticsView: View {
     let onSelectHistoryDate: (Date) -> Void
 
     @State private var selectedPeriod: StatisticsPeriod = .week
-    @State private var selectedAreaID: UUID?
+    @State private var selectedAreaIDs: Set<UUID> = []
     @State private var anchorDate = Date.now
     @State private var customStartDate: Date?
     @State private var customEndDate: Date?
@@ -39,7 +39,7 @@ struct StatisticsView: View {
     @State private var exportContent: StatisticsCSVContent = .all
     @State private var exportStartDate = Date.now
     @State private var exportEndDate = Date.now
-    @State private var exportAreaID: UUID?
+    @State private var exportAreaIDs: Set<UUID> = []
     @State private var exportQuery = ""
     @State private var exportShareURL: URL?
     @State private var preparedExportConfiguration: StatisticsExportConfiguration?
@@ -63,18 +63,13 @@ struct StatisticsView: View {
             .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 
-    private var selectedArea: Area? {
-        guard let selectedAreaID else { return nil }
-        return areas.first { $0.id == selectedAreaID }
-    }
-
     private var filter: StatisticsPeriodFilter {
         StatisticsPeriodFilter(
             period: selectedPeriod,
             anchorDate: anchorDate,
             customStartDate: customStartDate,
             customEndDate: customEndDate,
-            areaID: selectedAreaID,
+            areaIDs: selectedAreaIDs,
             query: searchText
         )
     }
@@ -85,7 +80,7 @@ struct StatisticsView: View {
             anchorDate: exportStartDate,
             customStartDate: exportStartDate,
             customEndDate: exportEndDate,
-            areaID: exportAreaID,
+            areaIDs: exportAreaIDs,
             query: exportQuery
         )
     }
@@ -94,7 +89,11 @@ struct StatisticsView: View {
         StatisticsExportConfiguration(content: exportContent, filter: exportFilter)
     }
 
+    @State private var cachedCalendar: Calendar?
+    @State private var cachedBoundaryHour: Int?
+
     private var currentSnapshot: StatisticsPeriodSnapshot? {
+        guard cachedCalendar == calendar, cachedBoundaryHour == dayBoundary.hour else { return nil }
         if let cachedSnapshot, cachedSnapshot.filter == filter {
             return cachedSnapshot
         }
@@ -151,7 +150,9 @@ struct StatisticsView: View {
         GeometryReader { geometry in
             HStack(spacing: 0) {
                 ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 16) {
+                    // Four report cards stay mounted during scrolling. Native
+                    // segmented controls should not churn with lazy row reuse.
+                    VStack(alignment: .leading, spacing: 16) {
                         if let currentSnapshot {
                             statisticsCards(snapshot: currentSnapshot)
                         } else {
@@ -196,8 +197,9 @@ struct StatisticsView: View {
 
         StatisticsTrendCard(
             mode: $trendMode,
-            period: presentationPeriod,
-            points: snapshot.trend.filter { $0.date <= today }
+            period: snapshot.trendPeriod,
+            points: snapshot.trend,
+            today: today
         )
 
         Group {
@@ -213,6 +215,7 @@ struct StatisticsView: View {
                     mode: $dotsMode,
                     period: presentationPeriod,
                     usesCompactCustomGrid: usesCustomRange && displayedDayCount > 7,
+                    usesCustomRange: usesCustomRange,
                     marksOutsideMonth: selectedPeriod == .month && !usesCustomRange,
                     flowDays: snapshot.flowDays,
                     achievementDays: snapshot.achievementDays,
@@ -240,6 +243,7 @@ struct StatisticsView: View {
                             mode: $dotsMode,
                             period: presentationPeriod,
                             usesCompactCustomGrid: usesCustomRange && displayedDayCount > 7,
+                            usesCustomRange: usesCustomRange,
                             marksOutsideMonth: selectedPeriod == .month && !usesCustomRange,
                             flowDays: snapshot.flowDays,
                             achievementDays: snapshot.achievementDays,
@@ -266,6 +270,7 @@ struct StatisticsView: View {
                             mode: $dotsMode,
                             period: presentationPeriod,
                             usesCompactCustomGrid: usesCustomRange && displayedDayCount > 7,
+                            usesCustomRange: usesCustomRange,
                             marksOutsideMonth: selectedPeriod == .month && !usesCustomRange,
                             flowDays: snapshot.flowDays,
                             achievementDays: snapshot.achievementDays,
@@ -285,6 +290,7 @@ struct StatisticsView: View {
                     mode: $dotsMode,
                     period: presentationPeriod,
                     usesCompactCustomGrid: usesCustomRange && displayedDayCount > 7,
+                    usesCustomRange: usesCustomRange,
                     marksOutsideMonth: selectedPeriod == .month && !usesCustomRange,
                     flowDays: snapshot.flowDays,
                     achievementDays: snapshot.achievementDays,
@@ -319,10 +325,9 @@ struct StatisticsView: View {
         }
 
         ToolbarItem(placement: .primaryAction) {
-            StatisticsAreaFilterMenu(
-                selectedAreaID: $selectedAreaID,
-                areas: activeAreas,
-                selectedArea: selectedArea
+            StatisticsAreaSelectionMenu(
+                selectedAreaIDs: $selectedAreaIDs,
+                areas: activeAreas
             )
         }
 
@@ -361,14 +366,11 @@ struct StatisticsView: View {
             )
             .datePickerStyle(.field)
 
-            Picker(String(localized: "方向フィルター"), selection: $exportAreaID) {
-                Text(String(localized: "すべて")).tag(nil as UUID?)
-                ForEach(activeAreas) { area in
-                    Text("\(area.symbolName) \(area.name)")
-                        .tag(Optional(area.id))
-                }
-            }
-            .pickerStyle(.menu)
+            StatisticsAreaSelectionMenu(
+                selectedAreaIDs: $exportAreaIDs,
+                areas: activeAreas,
+                showsSelection: true
+            )
 
             TextField(String(localized: "検索"), text: $exportQuery)
                 .textFieldStyle(.roundedBorder)
@@ -619,10 +621,12 @@ struct StatisticsView: View {
             anchorDate: anchorDate,
             customStartDate: customStartDate,
             customEndDate: customEndDate,
-            areaID: selectedAreaID,
+            areaIDs: selectedAreaIDs,
             query: searchText,
             areaCount: areas.count,
-            latestAreaUpdate: areas.map(\.updatedAt).max()
+            latestAreaUpdate: areas.map(\.updatedAt).max(),
+            calendar: calendar,
+            dayBoundaryHour: dayBoundary.hour
         )
     }
 
@@ -642,6 +646,8 @@ struct StatisticsView: View {
     private func refreshStatisticsCache() async {
         guard isVisible else { return }
         let requestedFilter = filter
+        let requestedCalendar = calendar
+        let requestedBoundary = dayBoundary
         let needsPlaceholder = currentSnapshot == nil
         if needsPlaceholder {
             loadingFilter = requestedFilter
@@ -665,10 +671,11 @@ struct StatisticsView: View {
         do {
             let projection = try await loader.load(
                 filter: requestedFilter,
-                calendar: calendar,
-                dayBoundary: dayBoundary
+                calendar: requestedCalendar,
+                dayBoundary: requestedBoundary
             )
-            guard !Task.isCancelled, requestedFilter == filter, isVisible else {
+            guard !Task.isCancelled, requestedFilter == filter, requestedCalendar == calendar,
+                  requestedBoundary == dayBoundary, isVisible else {
                 return
             }
             cache(projection)
@@ -683,8 +690,8 @@ struct StatisticsView: View {
     private func movePeriod(by value: Int) {
         guard value <= 0 || canMoveToNextPeriod else { return }
         if let customStartDate, let customEndDate {
-            let start = dayBoundary.day(containing: min(customStartDate, customEndDate), calendar: calendar)
-            let end = dayBoundary.day(containing: max(customStartDate, customEndDate), calendar: calendar)
+            let start = calendar.startOfDay(for: min(customStartDate, customEndDate))
+            let end = calendar.startOfDay(for: max(customStartDate, customEndDate))
             let dayCount = max(
                 1,
                 (calendar.dateComponents([.day], from: start, to: end).day ?? 0) + 1
@@ -702,14 +709,8 @@ struct StatisticsView: View {
         withAnimation(.snappy(duration: 0.34, extraBounce: 0)) {
             let today = dayBoundary.day(containing: .now, calendar: calendar)
             if let customStartDate, let customEndDate {
-                let start = dayBoundary.day(
-                    containing: min(customStartDate, customEndDate),
-                    calendar: calendar
-                )
-                let end = dayBoundary.day(
-                    containing: max(customStartDate, customEndDate),
-                    calendar: calendar
-                )
+                let start = calendar.startOfDay(for: min(customStartDate, customEndDate))
+                let end = calendar.startOfDay(for: max(customStartDate, customEndDate))
                 let distance = calendar.dateComponents([.day], from: start, to: end).day ?? 0
                 self.customEndDate = today
                 self.customStartDate = calendar.date(byAdding: .day, value: -distance, to: today) ?? today
@@ -732,14 +733,8 @@ struct StatisticsView: View {
 
     private var canMoveToNextPeriod: Bool {
         if let customStartDate, let customEndDate {
-            let start = dayBoundary.day(
-                containing: min(customStartDate, customEndDate),
-                calendar: calendar
-            )
-            let end = dayBoundary.day(
-                containing: max(customStartDate, customEndDate),
-                calendar: calendar
-            )
+            let start = calendar.startOfDay(for: min(customStartDate, customEndDate))
+            let end = calendar.startOfDay(for: max(customStartDate, customEndDate))
             let dayCount = max(
                 1,
                 (calendar.dateComponents([.day], from: start, to: end).day ?? 0) + 1
@@ -770,16 +765,10 @@ struct StatisticsView: View {
     }
 
     private func applyCustomRange() {
-        let requestedEnd = dayBoundary.day(
-            containing: max(customStartDraft, customEndDraft),
-            calendar: calendar
-        )
+        let requestedEnd = calendar.startOfDay(for: max(customStartDraft, customEndDraft))
         let end = min(requestedEnd, today)
         let start = min(
-            dayBoundary.day(
-                containing: min(customStartDraft, customEndDraft),
-                calendar: calendar
-            ),
+            calendar.startOfDay(for: min(customStartDraft, customEndDraft)),
             end
         )
         withAnimation(.snappy(duration: 0.34, extraBounce: 0)) {
@@ -798,7 +787,7 @@ struct StatisticsView: View {
             value: -1,
             to: periodBounds.currentEnd
         ) ?? periodBounds.currentStart, today)
-        exportAreaID = selectedAreaID
+        exportAreaIDs = selectedAreaIDs
         exportQuery = searchText
         exportShareURL = nil
         preparedExportConfiguration = nil
@@ -806,6 +795,12 @@ struct StatisticsView: View {
     }
 
     private func cache(_ projection: StatisticsPeriodSnapshot) {
+        if cachedCalendar != calendar || cachedBoundaryHour != dayBoundary.hour {
+            snapshotCache.removeAll()
+            snapshotCacheOrder.removeAll()
+        }
+        cachedCalendar = calendar
+        cachedBoundaryHour = dayBoundary.hour
         cachedSnapshot = projection
         snapshotCache[projection.filter] = projection
         snapshotCacheOrder.removeAll { $0 == projection.filter }
@@ -935,57 +930,6 @@ private enum StatisticsDistributionDimension: String, CaseIterable, Identifiable
     }
 }
 
-private struct StatisticsAreaFilterMenu: View {
-    @Binding var selectedAreaID: UUID?
-    let areas: [Area]
-    let selectedArea: Area?
-
-    var body: some View {
-        Menu {
-            Button {
-                selectedAreaID = nil
-            } label: {
-                menuRow(text: String(localized: "すべて"), isSelected: selectedAreaID == nil)
-            }
-
-            if !areas.isEmpty {
-                Divider()
-                ForEach(areas) { area in
-                    Button {
-                        selectedAreaID = area.id
-                    } label: {
-                        menuRow(
-                            text: "\(area.symbolName) \(area.name)",
-                            isSelected: selectedAreaID == area.id
-                        )
-                    }
-                }
-            }
-        } label: {
-            Image(systemName: ProductSymbol.area)
-                .foregroundStyle(selectedAreaID == nil ? Color.primary : Color.accentColor)
-        }
-        .menuStyle(.borderlessButton)
-        .help(filterHelp)
-        .accessibilityLabel(String(localized: "方向フィルター"))
-        .accessibilityValue(selectedArea?.name ?? String(localized: "すべて"))
-    }
-
-    private var filterHelp: String {
-        selectedArea.map { "\(String(localized: "方向フィルター")): \($0.name)" }
-            ?? String(localized: "方向フィルター")
-    }
-
-    @ViewBuilder
-    private func menuRow(text: String, isSelected: Bool) -> some View {
-        if isSelected {
-            Label(text, systemImage: "checkmark")
-        } else {
-            Text(text)
-        }
-    }
-}
-
 private struct StatisticsSummaryCard: View {
     let title: String
     let summary: StatisticsPeriodSummary
@@ -1062,123 +1006,18 @@ private struct StatisticsSummaryMetric: View {
 }
 
 private struct StatisticsTrendCard: View {
-    @Environment(\.locale) private var locale
-
     @Binding var mode: StatisticsMode
     let period: StatisticsPeriod
     let points: [StatisticsTrendPoint]
+    let today: Date
 
     var body: some View {
         StatisticsCard(
             title: String(localized: "傾向"),
             subtitle: mode == .flow ? String(localized: "集中時間") : String(localized: "完了タスク"),
-            headerAccessory: {
-                StatisticsModePicker(selection: $mode)
-            }
+            headerAccessory: { StatisticsModePicker(selection: $mode) }
         ) {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 16) {
-                    Label(String(localized: "選択した期間"), systemImage: "minus")
-                        .foregroundStyle(Color.accentColor)
-                    Label(String(localized: "前の期間"), systemImage: "ellipsis")
-                        .foregroundStyle(.secondary)
-                }
-                .font(.caption)
-
-                Group {
-                    Chart {
-                        ForEach(points) { point in
-                            LineMark(
-                                x: .value(String(localized: "日"), point.index),
-                                y: .value(String(localized: "前の期間"), previousValue(point)),
-                                series: .value(String(localized: "期間"), String(localized: "前の期間"))
-                            )
-                            .foregroundStyle(Color.secondary.opacity(0.55))
-                            .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
-                            .interpolationMethod(.linear)
-
-                            LineMark(
-                                x: .value(String(localized: "日"), point.index),
-                                y: .value(String(localized: "選択した期間"), currentValue(point)),
-                                series: .value(String(localized: "期間"), String(localized: "選択した期間"))
-                            )
-                            .foregroundStyle(Color.accentColor)
-                            .lineStyle(StrokeStyle(lineWidth: 2.2))
-                            .interpolationMethod(.linear)
-
-                            PointMark(
-                                x: .value(String(localized: "日"), point.index),
-                                y: .value(String(localized: "選択した期間"), currentValue(point))
-                            )
-                            .foregroundStyle(Color.accentColor)
-                            .symbolSize(24)
-                        }
-                    }
-                    .chartXAxis {
-                        AxisMarks(values: axisIndexes) { value in
-                            AxisGridLine()
-                            AxisTick()
-                            AxisValueLabel {
-                                if let index = value.as(Int.self), points.indices.contains(index) {
-                                    Text(axisLabel(for: points[index].date))
-                                }
-                            }
-                        }
-                    }
-                    .chartYAxis {
-                        AxisMarks(position: .leading) { value in
-                            AxisGridLine()
-                            AxisValueLabel {
-                                if let raw = value.as(Int.self) {
-                                    Text(axisValueLabel(raw))
-                                }
-                            }
-                        }
-                    }
-                    .frame(height: 220)
-                    .overlay {
-                        if points.allSatisfy({ currentValue($0) == 0 && previousValue($0) == 0 }) {
-                            StatisticsEmptyState(label: String(localized: "この期間のデータはありません"))
-                        }
-                    }
-                }
-                .id(mode)
-                .transition(.opacity.combined(with: .scale(scale: 0.99)))
-                .animation(.easeInOut(duration: 0.2), value: mode)
-            }
-        }
-    }
-
-    private var axisIndexes: [Int] {
-        guard !points.isEmpty else { return [] }
-        let stride = max(1, points.count / 6)
-        var indexes = Array(Swift.stride(from: 0, to: points.count, by: stride))
-        if let last = points.indices.last, indexes.last != last {
-            indexes.append(last)
-        }
-        return indexes
-    }
-
-    private func currentValue(_ point: StatisticsTrendPoint) -> Int {
-        mode == .flow ? point.focusSeconds / 60 : point.completedTaskCount
-    }
-
-    private func previousValue(_ point: StatisticsTrendPoint) -> Int {
-        mode == .flow ? point.previousFocusSeconds / 60 : point.previousCompletedTaskCount
-    }
-
-    private func axisValueLabel(_ value: Int) -> String {
-        mode == .flow ? String(localized: "\(value)分") : "\(value)"
-    }
-
-    private func axisLabel(for date: Date) -> String {
-        switch period {
-        case .week:
-            date.formatted(.dateTime.locale(locale).weekday(.narrow))
-        case .month:
-            date.formatted(.dateTime.locale(locale).day())
-        case .year:
-            date.formatted(.dateTime.locale(locale).month(.abbreviated))
+            StatisticsTrendPlot(mode: mode, period: period, points: points, today: today, height: 220)
         }
     }
 }
@@ -1196,10 +1035,6 @@ private struct StatisticsDistributionCard: View {
         return items.first { $0.id == selectedItemID }
     }
 
-    private var displayedItems: [StatisticsDistributionItem] {
-        selectedItem.map { [$0] } ?? items
-    }
-
     var body: some View {
         let chartSize: CGFloat = isCompact ? 150 : 190
         let contentSpacing: CGFloat = isCompact ? 16 : 28
@@ -1215,8 +1050,8 @@ private struct StatisticsDistributionCard: View {
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
-                .frame(width: 210)
                 .controlSize(.small)
+                .frame(width: 180)
             }
         ) {
             VStack(alignment: .leading, spacing: 14) {
@@ -1279,23 +1114,33 @@ private struct StatisticsDistributionCard: View {
                             }
                             .frame(maxWidth: chartSize * 0.52)
                         }
-                        VStack(alignment: .leading, spacing: 10) {
-                            ForEach(displayedItems) { item in
-                                HStack(spacing: 8) {
-                                    Circle()
-                                        .fill(Color(hex: item.colorHex ?? "#8E8E93"))
-                                        .frame(width: 9, height: 9)
-                                    Text([item.symbol, item.name].compactMap { $0 }.joined(separator: " "))
-                                        .lineLimit(1)
-                                    Spacer(minLength: 8)
-                                    Text(StatisticsFormatting.duration(item.focusSeconds))
-                                        .monospacedDigit()
-                                        .foregroundStyle(.secondary)
+                        if let selectedItem {
+                            StatisticsDistributionDetailView(item: selectedItem)
+                        } else {
+                            VStack(alignment: .leading, spacing: 10) {
+                                ForEach(items) { item in
+                                    Button {
+                                        selectedItemID = item.id
+                                    } label: {
+                                        HStack(spacing: 8) {
+                                            Circle()
+                                                .fill(Color(hex: item.colorHex ?? "#8E8E93"))
+                                                .frame(width: 9, height: 9)
+                                            Text([item.symbol, item.name].compactMap { $0 }.joined(separator: " "))
+                                                .lineLimit(1)
+                                            Spacer(minLength: 8)
+                                            Text(StatisticsFormatting.duration(item.focusSeconds))
+                                                .monospacedDigit()
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        .font(isCompact ? .caption : .callout)
+                                        .contentShape(Rectangle())
+                                    }
+                                    .buttonStyle(.plain)
                                 }
-                                .font(isCompact ? .caption : .callout)
                             }
+                            .frame(maxWidth: .infinity)
                         }
-                        .frame(maxWidth: .infinity)
                     }
                     .animation(.easeInOut(duration: 0.18), value: selectedItemID)
                 }
@@ -1350,6 +1195,7 @@ private struct StatisticsDotsCard: View {
     @Binding var mode: StatisticsMode
     let period: StatisticsPeriod
     let usesCompactCustomGrid: Bool
+    let usesCustomRange: Bool
     let marksOutsideMonth: Bool
     let flowDays: [StatisticsDay]
     let achievementDays: [AchievementDay]
@@ -1376,7 +1222,7 @@ private struct StatisticsDotsCard: View {
         StatisticsCard(
             title: String(localized: "Dots"),
             subtitle: mode == .flow ? String(localized: "集中時間") : String(localized: "完了タスク"),
-            minimumHeight: period == .month ? 288 : nil,
+            minimumHeight: period == .month && !usesCustomRange ? 288 : nil,
             headerAccessory: {
                 StatisticsModePicker(selection: $mode)
             }
@@ -1385,6 +1231,7 @@ private struct StatisticsDotsCard: View {
                 days: contributionDays,
                 period: period,
                 usesCompactCustomGrid: usesCompactCustomGrid,
+                usesCustomRange: usesCustomRange,
                 marksOutsideMonth: marksOutsideMonth,
                 onSelectDate: onSelectDate
             )
@@ -1405,8 +1252,8 @@ private struct StatisticsModePicker: View {
         }
         .pickerStyle(.segmented)
         .labelsHidden()
-        .frame(width: 126)
         .controlSize(.small)
+        .frame(width: 180)
         .accessibilityLabel(String(localized: "統計表示"))
     }
 }
@@ -1430,6 +1277,7 @@ private struct StatisticsContributionGrid: View {
     let days: [StatisticsContributionDay]
     let period: StatisticsPeriod
     let usesCompactCustomGrid: Bool
+    let usesCustomRange: Bool
     let marksOutsideMonth: Bool
     let onSelectDate: (Date) -> Void
 
@@ -1456,28 +1304,42 @@ private struct StatisticsContributionGrid: View {
                 .frame(maxWidth: .infinity, minHeight: 120)
         } else {
             VStack(alignment: .leading, spacing: 10) {
-                switch period {
-                case .week:
-                    weekGrid
-                case .month:
-                    monthGrid
-                case .year:
-                    yearGrid
-                }
-
-                HStack(spacing: 6) {
-                    Text(String(localized: "少ない"))
-                    ForEach(0..<5, id: \.self) { level in
-                        RoundedRectangle(cornerRadius: 3)
-                            .fill(level == 0
-                                ? Color.secondary.opacity(0.12)
-                                : Color.accentColor.opacity(0.24 + Double(level) * 0.17))
-                            .frame(width: 12, height: 12)
+                if usesCustomRange {
+                    customGrid
+                } else {
+                    switch period {
+                    case .week:
+                        weekGrid
+                    case .month:
+                        monthGrid
+                    case .year:
+                        yearGrid
                     }
-                    Text(String(localized: "多い"))
+
+                    HStack(spacing: 6) {
+                        Text(String(localized: "少ない"))
+                        ForEach(0..<5, id: \.self) { level in
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(level == 0
+                                    ? Color.secondary.opacity(0.12)
+                                    : Color.accentColor.opacity(0.24 + Double(level) * 0.17))
+                                .frame(width: 12, height: 12)
+                        }
+                        Text(String(localized: "多い"))
+                    }
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
                 }
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var customGrid: some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 18, maximum: 18), spacing: 5)], alignment: .leading, spacing: 5) {
+            ForEach(days) { day in
+                StatisticsContributionCell(day: day, maxValue: maxValue,
+                    isInteractive: day.isSelectable, onSelectDate: onSelectDate)
+                    .frame(width: 18, height: 18)
             }
         }
     }
@@ -1529,6 +1391,7 @@ private struct StatisticsContributionGrid: View {
                     maxValue: maxValue,
                     isInteractive: day?.isSelectable == true,
                     marksOutsidePeriod: marksOutsideMonth && day == nil,
+                    hidesPlaceholder: usesCompactCustomGrid,
                     onSelectDate: onSelectDate
                 )
                 .frame(
@@ -1556,7 +1419,8 @@ private struct StatisticsContributionGrid: View {
                         StatisticsContributionCell(
                             day: contributionDay(week: weekIndex, weekday: weekdayIndex),
                             maxValue: maxValue,
-                            isInteractive: false,
+                            isInteractive: contributionDay(week: weekIndex, weekday: weekdayIndex)?.isSelectable == true,
+                            hidesPlaceholder: usesCompactCustomGrid,
                             onSelectDate: onSelectDate
                         )
                         .aspectRatio(1, contentMode: .fit)
@@ -1584,30 +1448,41 @@ private struct StatisticsContributionCell: View {
     let maxValue: Int
     let isInteractive: Bool
     let marksOutsidePeriod: Bool
+    let hidesPlaceholder: Bool
     let onSelectDate: (Date) -> Void
 
     @State private var isHovered = false
+    @State private var isDetailPresented = false
 
     init(
         day: StatisticsContributionDay?,
         maxValue: Int,
         isInteractive: Bool = true,
         marksOutsidePeriod: Bool = false,
+        hidesPlaceholder: Bool = false,
         onSelectDate: @escaping (Date) -> Void
     ) {
         self.day = day
         self.maxValue = maxValue
         self.isInteractive = isInteractive
         self.marksOutsidePeriod = marksOutsidePeriod
+        self.hidesPlaceholder = hidesPlaceholder
         self.onSelectDate = onSelectDate
     }
 
     @ViewBuilder
     var body: some View {
+        renderedCell
+            .opacity(hidesPlaceholder && day == nil ? 0 : 1)
+            .accessibilityHidden(hidesPlaceholder && day == nil)
+    }
+
+    @ViewBuilder
+    private var renderedCell: some View {
         if isInteractive {
             Button {
-                guard let day else { return }
-                onSelectDate(day.date)
+                guard day?.isSelectable == true else { return }
+                isDetailPresented = true
             } label: {
                 cellShape
                     .scaleEffect(isHovered && day != nil ? 1.08 : 1)
@@ -1616,20 +1491,22 @@ private struct StatisticsContributionCell: View {
             .disabled(day == nil)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .popover(
-                isPresented: $isHovered,
+                isPresented: $isDetailPresented,
                 attachmentAnchor: .rect(.bounds),
                 arrowEdge: .bottom
             ) {
                 if let day {
-                    StatisticsContributionPopover(day: day)
-                        .allowsHitTesting(false)
+                    StatisticsContributionPopover(day: day) {
+                        isDetailPresented = false
+                        onSelectDate(day.date)
+                    }
                 }
             }
             .onHover { hovering in
                 isHovered = hovering && day != nil
             }
             .accessibilityLabel(helpText)
-            .accessibilityHint(String(localized: "この日の履歴を開く"))
+            .accessibilityHint(String(localized: "この日の記録"))
         } else {
             cellShape
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -1681,6 +1558,7 @@ private struct StatisticsContributionPopover: View {
     @Environment(\.locale) private var locale
 
     let day: StatisticsContributionDay
+    let onOpenHistory: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -1695,6 +1573,11 @@ private struct StatisticsContributionPopover: View {
                 metricRow(String(localized: "集中回数"), value: "\(day.flowCount)")
                 metricRow(String(localized: "完了タスク"), value: "\(day.completedTaskCount)")
             }
+            Button(action: onOpenHistory) {
+                Label(String(localized: "履歴"), systemImage: "clock.arrow.circlepath")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
         }
         .padding(12)
         .frame(minWidth: 210)
@@ -1965,10 +1848,12 @@ private struct StatisticsPeriodRefreshID: Hashable {
     let anchorDate: Date
     let customStartDate: Date?
     let customEndDate: Date?
-    let areaID: UUID?
+    let areaIDs: Set<UUID>
     let query: String
     let areaCount: Int
     let latestAreaUpdate: Date?
+    let calendar: Calendar
+    let dayBoundaryHour: Int
 }
 
 #Preview {

@@ -1,6 +1,930 @@
 {
   "sourceLanguage" : "ja",
   "strings" : {
+    "7日平均" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "7日平均"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "7-day average"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Среднее за 7 дней"
+          }
+        }
+      }
+    },
+    "3か月平均" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3か月平均"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3-month average"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Среднее за 3 месяца"
+          }
+        }
+      }
+    },
+    "グラフにポインタを合わせると、記録の詳細を確認できます。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "グラフにポインタを合わせると、記録の詳細を確認できます。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hover over the chart to see record details."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Наведите указатель на график, чтобы посмотреть записи."
+          }
+        }
+      }
+    },
+    "グラフをタップすると、記録の詳細を確認できます。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "グラフをタップすると、記録の詳細を確認できます。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap the chart to see record details."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Коснитесь графика, чтобы посмотреть записи."
+          }
+        }
+      }
+    },
+    "完了した集中時間をToggl Trackに送信します。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完了した集中時間をToggl Trackに送信します。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send completed focus time to Toggl Track."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отправляйте завершённое время фокуса в Toggl Track."
+          }
+        }
+      }
+    },
+    "Toggl TrackのAPIトークンを確認してください。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toggl TrackのAPIトークンを確認してください。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check your Toggl Track API token."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проверьте API-токен Toggl Track."
+          }
+        }
+      }
+    },
+    "ワークスペースと分野ごとのプロジェクトを選択してください。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ワークスペースと分野ごとのプロジェクトを選択してください。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a workspace and projects for your Areas."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите рабочее пространство и проекты для областей."
+          }
+        }
+      }
+    },
+    "送信待ちの記録を保存または読み込めませんでした。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "送信待ちの記録を保存または読み込めませんでした。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not save or read pending entries."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось сохранить или прочитать очередь отправки."
+          }
+        }
+      }
+    },
+    "送信結果を確認できません。Togglの記録を確認してください。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "送信結果を確認できません。Togglの記録を確認してください。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The delivery result is unconfirmed. Check your Toggl entries."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Результат отправки не подтверждён. Проверьте записи в Toggl."
+          }
+        }
+      }
+    },
+    "Togglに一致する記録が複数あります。自動再送を停止しました。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Togglに一致する記録が複数あります。自動再送を停止しました。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Multiple matching Toggl entries were found. Automatic retry has stopped."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В Toggl найдено несколько совпадающих записей. Автоматическая повторная отправка остановлена."
+          }
+        }
+      }
+    },
+    "Togglがリクエストを受け付けませんでした。アクセス権とプロジェクトを確認してください。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Togglがリクエストを受け付けませんでした。アクセス権とプロジェクトを確認してください。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toggl rejected the request. Check your access and project."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toggl отклонил запрос. Проверьте права доступа и проект."
+          }
+        }
+      }
+    },
+    "Togglの利用制限に達しました。時間をおいて再試行してください。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Togglの利用制限に達しました。時間をおいて再試行してください。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toggl’s request limit was reached. Try again later."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Достигнут лимит запросов Toggl. Повторите позже."
+          }
+        }
+      }
+    },
+    "Toggl TrackのAPIトークンは、この端末のKeychainに保存されます。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toggl TrackのAPIトークンは、この端末のKeychainに保存されます。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your Toggl Track API token is stored in this device’s Keychain."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API-токен Toggl Track хранится в Keychain этого устройства."
+          }
+        }
+      }
+    },
+    "APIトークン" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "APIトークン"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API token"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API-токен"
+          }
+        }
+      }
+    },
+    "APIトークンを取得" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "APIトークンを取得"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Get an API token"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Получить API-токен"
+          }
+        }
+      }
+    },
+    "接続" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connect"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подключить"
+          }
+        }
+      }
+    },
+    "再接続" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "再接続"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reconnect"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Переподключить"
+          }
+        }
+      }
+    },
+    "ワークスペース" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ワークスペース"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Workspace"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Рабочее пространство"
+          }
+        }
+      }
+    },
+    "送信しない" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "送信しない"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Do not export"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не отправлять"
+          }
+        }
+      }
+    },
+    "集中時間を自動送信" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中時間を自動送信"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatically export focus time"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Автоматически отправлять время фокуса"
+          }
+        }
+      }
+    },
+    "設定を保存" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定を保存"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save settings"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сохранить настройки"
+          }
+        }
+      }
+    },
+    "分野とプロジェクト" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分野とプロジェクト"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Areas and projects"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Области и проекты"
+          }
+        }
+      }
+    },
+    "有効化後にこの端末で開始したフローを送信します。休憩・過去の記録・他の端末で開始したフローは含みません。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "有効化後にこの端末で開始したフローを送信します。休憩・過去の記録・他の端末で開始したフローは含みません。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exports Flows started on this device after enabling. Breaks, past entries, and Flows started on other devices are excluded."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отправляются Flow, начатые на этом устройстве после включения. Отдых, прошлые записи и Flow с других устройств не включаются."
+          }
+        }
+      }
+    },
+    "自動送信は有効です" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動送信は有効です"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatic export is enabled"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Автоматическая отправка включена"
+          }
+        }
+      }
+    },
+    "自動送信は停止中です" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動送信は停止中です"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatic export is paused"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Автоматическая отправка приостановлена"
+          }
+        }
+      }
+    },
+    "送信待ち：%lld件" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "送信待ち：%lld件"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld entries pending"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ожидают отправки: %lld"
+          }
+        }
+      }
+    },
+    "最終送信" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最終送信"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last export"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Последняя отправка"
+          }
+        }
+      }
+    },
+    "今すぐ送信" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今すぐ送信"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export now"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отправить сейчас"
+          }
+        }
+      }
+    },
+    "送信結果の確認待ち" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "送信結果の確認待ち"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Awaiting delivery confirmation"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Результат отправки не подтверждён"
+          }
+        }
+      }
+    },
+    "記録がない場合に再送…" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "記録がない場合に再送…"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retry if the entry is missing…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Повторить, если записи нет…"
+          }
+        }
+      }
+    },
+    "Toggl Trackで確認" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toggl Trackで確認"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check Toggl Track"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проверить в Toggl Track"
+          }
+        }
+      }
+    },
+    "送信済みの記録は再送しません。ThruFlowでの後からの編集・削除はTogglに反映されません。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "送信済みの記録は再送しません。ThruFlowでの後からの編集・削除はTogglに反映されません。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exported entries are not sent again. Later edits or deletions in ThruFlow do not change Toggl."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отправленные записи не отправляются повторно. Последующие изменения и удаления в ThruFlow не отражаются в Toggl."
+          }
+        }
+      }
+    },
+    "ThruFlowとTogglの記録は残ります。自動送信を停止します。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ThruFlowとTogglの記録は残ります。自動送信を停止します。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entries in ThruFlow and Toggl are retained. Automatic export will stop."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Записи в ThruFlow и Toggl сохранятся. Автоматическая отправка остановится."
+          }
+        }
+      }
+    },
+    "同じ記録がTogglにないことを確認しましたか？" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同じ記録がTogglにないことを確認しましたか？"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Have you checked that this entry is missing from Toggl?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вы проверили, что этой записи нет в Toggl?"
+          }
+        }
+      }
+    },
+    "再送を許可" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "再送を許可"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow retry"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешить повторную отправку"
+          }
+        }
+      }
+    },
+    "すでに送信されている場合は重複します。まずTogglの記録を確認してください。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "すでに送信されている場合は重複します。まずTogglの記録を確認してください。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retrying an already delivered entry creates a duplicate. Check Toggl first."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Повторная отправка уже принятой записи создаст дубликат. Сначала проверьте Toggl."
+          }
+        }
+      }
+    },
+    "タスクの取り込みや集中時間の共有に使うサービスを選べます。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タスクの取り込みや集中時間の共有に使うサービスを選べます。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose services for importing tasks or sharing focus time."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите сервисы для импорта задач или передачи времени фокуса."
+          }
+        }
+      }
+    },
+    "サービスごとに接続を設定できます。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サービスごとに接続を設定できます。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configure each service separately."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Настройте подключение каждого сервиса."
+          }
+        }
+      }
+    },
+    "分・ブロック形式の進捗はThruFlow内で管理します。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分・ブロック形式の進捗はThruFlow内で管理します。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Minute and Block progress is managed in ThruFlow."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Прогресс в минутах и блоках учитывается внутри ThruFlow."
+          }
+        }
+      }
+    },
+    "完了状態の送信待ち" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完了状態の送信待ち"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Completion change pending"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Изменение статуса ожидает отправки"
+          }
+        }
+      }
+    },
+    "完了・未完了は接続先と同期します。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完了・未完了は接続先と同期します。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Completion and reopening sync with the connected service."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выполнение и повторное открытие синхронизируются с сервисом."
+          }
+        }
+      }
+    },
+    "チェック形式のタスクは完了・未完了を相互に同期します。タイトルと期限は接続先から更新します。通信できない変更は次回の更新で再送します。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "チェック形式のタスクは完了・未完了を相互に同期します。タイトルと期限は接続先から更新します。通信できない変更は次回の更新で再送します。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check tasks sync completion and reopening both ways. Titles and due dates refresh from the source. Offline changes retry on the next update."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В задачах типа Check выполнение и повторное открытие синхронизируются в обе стороны. Названия и сроки обновляются из сервиса. Изменения без связи отправятся при следующем обновлении."
+          }
+        }
+      }
+    },
     "–" : {
       "localizations" : {
         "en" : {
@@ -1812,7 +2736,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "流れ"
+            "value" : "フロー"
           }
         },
         "ru" : {
@@ -2087,7 +3011,7 @@
         }
       }
     },
-    "Flowを始めると、今日の流れがここから育ちます" : {
+    "Flowを始めると、今日のフローがここから育ちます" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2098,7 +3022,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "集中を始めると、今日の流れがここに表示されます。"
+            "value" : "集中を始めると、今日のフローがここに表示されます。"
           }
         },
         "ru" : {
@@ -2720,7 +3644,7 @@
         }
       }
     },
-    "ThruFlowは、タスク管理、柔軟な集中タイマー、時間の振り返りをひとつにまとめたアプリです。まずは分野とタスクをひとつずつ作り、基本の流れを試してみましょう。" : {
+    "ThruFlowは、タスク管理、柔軟な集中タイマー、時間の振り返りをひとつにまとめたアプリです。まずは分野とタスクをひとつずつ作り、基本のフローを試してみましょう。" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2731,7 +3655,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ThruFlowは、タスク管理、柔軟な集中タイマー、時間の振り返りをひとつにまとめたアプリです。まずは分野とタスクをひとつずつ作り、基本の流れを試してみましょう。"
+            "value" : "ThruFlowは、タスク管理、柔軟な集中タイマー、時間の振り返りをひとつにまとめたアプリです。まずは分野とタスクをひとつずつ作り、基本のフローを試してみましょう。"
           }
         },
         "ru" : {
@@ -3596,22 +4520,6 @@
         }
       }
     },
-    "この日の履歴を開く" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open This Day's History"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Открыть историю этого дня"
-          }
-        }
-      }
-    },
     "この日の習慣はありません" : {
       "localizations" : {
         "en" : {
@@ -3946,7 +4854,7 @@
         }
       }
     },
-    "すべてが、ひとつの流れに" : {
+    "すべてが、ひとつのフローに" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3957,7 +4865,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "すべてが、ひとつの流れに"
+            "value" : "すべてが、ひとつのフローに"
           }
         },
         "ru" : {
@@ -4111,6 +5019,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Тёмная"
+          }
+        }
+      }
+    },
+    "タイムライン" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Timeline"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タイムライン"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Таймлайн"
           }
         }
       }
@@ -5138,6 +6068,50 @@
         }
       }
     },
+    "フロー" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flow"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フロー"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flow"
+          }
+        }
+      }
+    },
+    "フローの画面では、今日の作業、タスク、集中の記録、統計をまとめて確認できます。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Flow screen brings together today's work, Tasks, focus history, and a daily summary."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フローの画面では、今日の作業、タスク、集中の記録、統計をまとめて確認できます。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "На экране Flow собраны задачи на сегодня, таймер, ход дня и краткая статистика."
+          }
+        }
+      }
+    },
     "フローブロック" : {
       "localizations" : {
         "en" : {
@@ -5156,6 +6130,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Блоки фокуса"
+          }
+        }
+      }
+    },
+    "フローを体験" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flow Demo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フローを体験"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Демонстрация Flow"
           }
         }
       }
@@ -5815,7 +6811,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "今日の流れ"
+            "value" : "今日のフロー"
           }
         },
         "ru" : {
@@ -5890,6 +6886,28 @@
         }
       }
     },
+    "今日のフローをひと目で" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See Your Day at a Glance"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今日のフローをひと目で"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Весь день перед глазами"
+          }
+        }
+      }
+    },
     "今日のみ休み" : {
       "localizations" : {
         "en" : {
@@ -5902,28 +6920,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Отдых сегодня"
-          }
-        }
-      }
-    },
-    "今日の流れをひと目で" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "See Your Day at a Glance"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "今日の流れをひと目で"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Весь день перед глазами"
           }
         }
       }
@@ -6454,7 +7450,7 @@
         }
       }
     },
-    "使い方の流れ" : {
+    "使い方のフロー" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6876,7 +7872,7 @@
         }
       }
     },
-    "分野、タスク、流れ、履歴と統計、次の一歩" : {
+    "分野、タスク、フロー、履歴と統計、次の一歩" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6887,7 +7883,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "分野、タスク、流れ、履歴と統計、次の一歩"
+            "value" : "分野、タスク、フロー、履歴と統計、次の一歩"
           }
         },
         "ru" : {
@@ -6920,7 +7916,7 @@
         }
       }
     },
-    "分野で取り組むことを整理し、タスクで次の一歩を決める。流れで実際の集中時間を記録し、履歴と統計で振り返る。ThruFlowは、このサイクルをひとつにつなげます。" : {
+    "分野で取り組むことを整理し、タスクで次の一歩を決める。フローで実際の集中時間を記録し、履歴と統計で振り返る。ThruFlowは、このサイクルをひとつにつなげます。" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6931,7 +7927,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "分野で取り組むことを整理し、タスクで次の一歩を決める。流れで実際の集中時間を記録し、履歴と統計で振り返る。ThruFlowは、このサイクルをひとつにつなげます。"
+            "value" : "分野で取り組むことを整理し、タスクで次の一歩を決める。フローで実際の集中時間を記録し、履歴と統計で振り返る。ThruFlowは、このサイクルをひとつにつなげます。"
           }
         },
         "ru" : {
@@ -7100,7 +8096,7 @@
         }
       }
     },
-    "取り組むタスクと集中時間を選び、準備ができたら再生ボタンを押します。途中で変更しても、途切れない作業はひとつの流れとして残ります。" : {
+    "取り組むタスクと集中時間を選び、準備ができたら再生ボタンを押します。途中で変更しても、途切れない作業はひとつのフローとして残ります。" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7111,7 +8107,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "取り組むタスクと集中時間を選び、準備ができたら再生ボタンを押します。途中で変更しても、途切れない作業はひとつの流れとして残ります。"
+            "value" : "取り組むタスクと集中時間を選び、準備ができたら再生ボタンを押します。途中で変更しても、途切れない作業はひとつのフローとして残ります。"
           }
         },
         "ru" : {
@@ -7638,7 +8634,7 @@
         }
       }
     },
-    "小さな流れ" : {
+    "小さなフロー" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7957,28 +8953,6 @@
         }
       }
     },
-    "新しい方向を作成" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Create Area"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "新しい分野を作成"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Создать сферу"
-          }
-        }
-      }
-    },
     "新しい日の開始" : {
       "localizations" : {
         "en" : {
@@ -8029,22 +9003,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Новый Flow, с %1$@ до %2$@"
-          }
-        }
-      }
-    },
-    "新規作成" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Create New"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Создать"
           }
         }
       }
@@ -9440,73 +10398,7 @@
         }
       }
     },
-    "流れ" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Flow"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "流れ"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Flow"
-          }
-        }
-      }
-    },
-    "流れの画面では、今日の作業、タスク、集中の記録、統計をまとめて確認できます。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The Flow screen brings together today's work, Tasks, focus history, and a daily summary."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "流れの画面では、今日の作業、タスク、集中の記録、統計をまとめて確認できます。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "На экране Flow собраны задачи на сегодня, таймер, ход дня и краткая статистика."
-          }
-        }
-      }
-    },
-    "流れを体験" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Flow Demo"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "流れを体験"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Демонстрация Flow"
-          }
-        }
-      }
-    },
-    "満ちている流れ" : {
+    "満ちているフロー" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9694,72 +10586,6 @@
         }
       }
     },
-    "目標回数：%lld回・%@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Target count: %1$lld · %2$@"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "目標回数：%1$lld回・%2$@"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Целевое количество: %1$lld · %2$@"
-          }
-        }
-      }
-    },
-    "目標時間：%lld分・%@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Time target: %1$lld min · %2$@"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "目標時間：%1$lld分・%2$@"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Цель по времени: %1$lld мин · %2$@"
-          }
-        }
-      }
-    },
-    "目標時間：%lld時間・%@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Time target: %1$lld hr · %2$@"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "目標時間：%1$lld時間・%2$@"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Цель по времени: %1$lld ч · %2$@"
-          }
-        }
-      }
-    },
     "短い作業や、まず始めたいときに" : {
       "localizations" : {
         "en" : {
@@ -9903,6 +10729,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Окончание"
+          }
+        }
+      }
+    },
+    "終了予定まで表示" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show planned end time"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "終了予定まで表示"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показывать планируемое окончание"
           }
         }
       }
@@ -10251,7 +11099,7 @@
         }
       }
     },
-    "育っている流れ" : {
+    "育っているフロー" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -11360,6 +12208,28 @@
         }
       }
     },
+    "集中の終了予定までを薄く表示します。オフの場合と休憩中は、経過した時間だけを表示します。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shows a translucent bar until the planned focus end. When disabled, and during rest, only elapsed time is shown."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中の終了予定までを薄く表示します。オフの場合と休憩中は、経過した時間だけを表示します。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показывает полупрозрачную полосу до планируемого окончания фокус-блока. При выключенной настройке и во время отдыха отображается только прошедшее время."
+          }
+        }
+      }
+    },
     "集中ブロック" : {
       "localizations" : {
         "en" : {
@@ -11372,28 +12242,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Блоки фокуса"
-          }
-        }
-      }
-    },
-    "集中ブロック数：%lld・%@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Focus Blocks: %1$lld · %2$@"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "集中ブロック数：%1$lld・%2$@"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Блоки фокуса: %1$lld · %2$@"
           }
         }
       }
@@ -11712,6 +12560,1203 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Высокий"
+          }
+        }
+      }
+    },
+    "Appleリマインダー" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Reminders"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appleリマインダー"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Напоминания Apple"
+          }
+        }
+      }
+    },
+    "Todoistで開く" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open in Todoist"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todoistで開く"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть в Todoist"
+          }
+        }
+      }
+    },
+    "Todoistに再接続" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reconnect to Todoist"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todoistに再接続"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Переподключить Todoist"
+          }
+        }
+      }
+    },
+    "Todoistに再接続してください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reconnect to Todoist."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todoistに再接続してください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Переподключите Todoist."
+          }
+        }
+      }
+    },
+    "Todoistに接続" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connect to Todoist"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todoistに接続"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подключить Todoist"
+          }
+        }
+      }
+    },
+    "Todoistに接続できませんでした。時間をおいて再試行してください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not connect to Todoist. Try again later."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todoistに接続できませんでした。時間をおいて再試行してください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось подключиться к Todoist. Повторите попытку позже."
+          }
+        }
+      }
+    },
+    "Todoistの画面でログインし、アクセスを許可します。ThruFlowのアカウント登録は不要です。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign in on Todoist and grant access. You do not need to create a ThruFlow account."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todoistの画面でログインし、アクセスを許可します。ThruFlowのアカウント登録は不要です。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Войдите в Todoist и разрешите доступ. Регистрировать аккаунт ThruFlow не нужно."
+          }
+        }
+      }
+    },
+    "Todoistへの接続がキャンセルされました。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connecting to Todoist was cancelled."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todoistへの接続がキャンセルされました。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подключение к Todoist отменено."
+          }
+        }
+      }
+    },
+    "アクセスが許可されていません。システム設定でアクセスを確認してください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Access is not allowed. Check permissions in system settings."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アクセスが許可されていません。システム設定でアクセスを確認してください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Доступ не разрешён. Проверьте разрешения в системных настройках."
+          }
+        }
+      }
+    },
+    "アクセスキーを保存または読み込めませんでした。端末のロックを解除して再試行してください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not store or read the access key. Unlock your device and try again."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アクセスキーを保存または読み込めませんでした。端末のロックを解除して再試行してください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось сохранить или прочитать ключ доступа. Разблокируйте устройство и повторите попытку."
+          }
+        }
+      }
+    },
+    "コネクタ" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connectors"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "コネクタ"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Коннекторы"
+          }
+        }
+      }
+    },
+    "この端末の接続を解除します。取り込んだタスクと集中履歴は残ります。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disconnect on this device. Imported tasks and Flow history will be kept."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この端末の接続を解除します。取り込んだタスクと集中履歴は残ります。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подключение будет удалено с этого устройства. Импортированные задачи и история Flow сохранятся."
+          }
+        }
+      }
+    },
+    "サービスに接続してください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connect to the service first."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サービスに接続してください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сначала подключите сервис."
+          }
+        }
+      }
+    },
+    "タイトルと期限は接続先から更新されます。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The title and due date are updated from the source."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タイトルと期限は接続先から更新されます。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Название и срок обновляются из исходного сервиса."
+          }
+        }
+      }
+    },
+    "タスクを取り込む" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import tasks"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タスクを取り込む"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импортировать задачи"
+          }
+        }
+      }
+    },
+    "タスクを更新" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Refresh tasks"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タスクを更新"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обновить задачи"
+          }
+        }
+      }
+    },
+    "リマインダーに接続" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connect to Reminders"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "リマインダーに接続"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подключить Напоминания"
+          }
+        }
+      }
+    },
+    "リマインダーへのアクセスを許可した後、取り込むリストを選べます。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow access to Reminders, then choose which lists to import."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "リマインダーへのアクセスを許可した後、取り込むリストを選べます。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешите доступ к Напоминаниям, затем выберите списки для импорта."
+          }
+        }
+      }
+    },
+    "分野を選択" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分野を選択"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose an Area"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите Сферу"
+          }
+        }
+      }
+    },
+    "前回の新規取り込み：%lld件" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New tasks last imported: %lld"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "前回の新規取り込み：%lld件"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новых задач при последнем импорте: %lld"
+          }
+        }
+      }
+    },
+    "前回の更新" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last updated"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "前回の更新"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Последнее обновление"
+          }
+        }
+      }
+    },
+    "取り込み元がありません。リストやプロジェクトを確認して、再読み込みしてください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No sources found. Check your lists or projects and reload."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取り込み元がありません。リストやプロジェクトを確認して、再読み込みしてください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Источники не найдены. Проверьте списки или проекты и загрузите их снова."
+          }
+        }
+      }
+    },
+    "取り込み元を再読み込み" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reload sources"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取り込み元を再読み込み"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обновить источники"
+          }
+        }
+      }
+    },
+    "取り込み先の分野" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Destination Area"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取り込み先の分野"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сфера для импорта"
+          }
+        }
+      }
+    },
+    "取り込むプロジェクト" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Projects to import"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取り込むプロジェクト"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проекты для импорта"
+          }
+        }
+      }
+    },
+    "取り込むリスト" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lists to import"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取り込むリスト"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Списки для импорта"
+          }
+        }
+      }
+    },
+    "同じ識別子のタスクが複数あります。接続先で重複した項目を確認してください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Multiple tasks have the same identifier. Check duplicate items in the source service."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同じ識別子のタスクが複数あります。接続先で重複した項目を確認してください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Несколько задач имеют одинаковый идентификатор. Проверьте дубликаты в исходном сервисе."
+          }
+        }
+      }
+    },
+    "外部サービスのタスクを取り込み、ThruFlowで集中できます。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import tasks from other services and focus on them in ThruFlow."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "外部サービスのタスクを取り込み、ThruFlowで集中できます。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импортируйте задачи из других сервисов и работайте над ними в ThruFlow."
+          }
+        }
+      }
+    },
+    "接続するサービスと取り込み元を選んでください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a service and the sources to import."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続するサービスと取り込み元を選んでください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите сервис и источники для импорта."
+          }
+        }
+      }
+    },
+    "接続とアクセスキーはこの端末で管理します。取り込んだタスクはiCloudの設定に従って同期されます。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connections and access keys are managed on this device. Imported tasks sync according to your iCloud settings."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続とアクセスキーはこの端末で管理します。取り込んだタスクはiCloudの設定に従って同期されます。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подключения и ключи доступа хранятся на этом устройстве. Импортированные задачи синхронизируются в соответствии с настройками iCloud."
+          }
+        }
+      }
+    },
+    "接続の認証に失敗しました。もう一度接続してください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Authentication failed. Connect again."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続の認証に失敗しました。もう一度接続してください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ошибка авторизации. Повторите подключение."
+          }
+        }
+      }
+    },
+    "接続を更新しています…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Updating connection…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続を更新しています…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обновление подключения…"
+          }
+        }
+      }
+    },
+    "接続を更新できませんでした。通信状態と接続設定を確認してください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not refresh the connection. Check your network and connection settings."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続を更新できませんでした。通信状態と接続設定を確認してください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось обновить подключение. Проверьте интернет и настройки подключения."
+          }
+        }
+      }
+    },
+    "接続を解除" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disconnect"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続を解除"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отключить"
+          }
+        }
+      }
+    },
+    "接続を解除しますか？" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disconnect this account?"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続を解除しますか？"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отключить аккаунт?"
+          }
+        }
+      }
+    },
+    "接続先には通常またはナイスの活動領域を選んでください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose an Anytime or Optional Area for imported tasks."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取り込み先には「いつでも」または「できたら」の分野を選んでください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите обычную Сферу или Сферу «Если получится» для импорта."
+          }
+        }
+      }
+    },
+    "接続先に通信できません。インターネット接続を確認してください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not reach the service. Check your internet connection."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続先に通信できません。インターネット接続を確認してください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось связаться с сервисом. Проверьте подключение к интернету."
+          }
+        }
+      }
+    },
+    "接続先のタスクを識別できませんでした。もう一度更新してください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not identify a source task. Refresh again."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続先のタスクを識別できませんでした。もう一度更新してください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось определить исходную задачу. Повторите обновление."
+          }
+        }
+      }
+    },
+    "接続先のデータを読み取れませんでした。時間をおいて再試行してください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not read data from the service. Try again later."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続先のデータを読み取れませんでした。時間をおいて再試行してください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось прочитать данные сервиса. Повторите попытку позже."
+          }
+        }
+      }
+    },
+    "接続先の利用制限に達しました。時間をおいて再試行してください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The service rate limit was reached. Try again later."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続先の利用制限に達しました。時間をおいて再試行してください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Достигнут лимит запросов сервиса. Повторите попытку позже."
+          }
+        }
+      }
+    },
+    "接続先を利用できません。時間をおいて再試行してください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The service is unavailable. Try again later."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続先を利用できません。時間をおいて再試行してください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сервис недоступен. Повторите попытку позже."
+          }
+        }
+      }
+    },
+    "接続処理が終わるまでお待ちください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wait for the connection to finish."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続処理が終わるまでお待ちください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дождитесь завершения подключения."
+          }
+        }
+      }
+    },
+    "接続済み" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connected"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続済み"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подключено"
+          }
+        }
+      }
+    },
+    "接続用ページを読み込めませんでした。通信状態を確認して再試行してください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not load the connection page. Check your internet connection and try again."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続用ページを読み込めませんでした。通信状態を確認して再試行してください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось загрузить страницу подключения. Проверьте интернет и повторите попытку."
+          }
+        }
+      }
+    },
+    "接続設定を読み込めませんでした。接続を設定し直してください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not read connection settings. Set up the connection again."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続設定を読み込めませんでした。接続を設定し直してください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось прочитать настройки подключения. Настройте его заново."
+          }
+        }
+      }
+    },
+    "新しいタスクをこの分野に追加します。取り込み済みのタスクの分野や集中履歴は変更しません。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New tasks will be added to this Area. Existing imported tasks keep their Area and Flow history."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新しいタスクをこの分野に追加します。取り込み済みのタスクの分野や集中履歴は変更しません。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новые задачи появятся в этой Сфере. Сферы и история Flow уже импортированных задач сохранятся."
+          }
+        }
+      }
+    },
+
+    "認証を確認できませんでした。もう一度接続してください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not verify the sign-in response. Connect again."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "認証を確認できませんでした。もう一度接続してください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось проверить ответ авторизации. Повторите подключение."
+          }
+        }
+      }
+    },
+    "読み込み先の分野を選択してください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a destination Area."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "読み込み先の分野を選択してください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите Сферу для импорта."
+          }
+        }
+      }
+    },
+    "読み込むリストを選択してください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose the lists to import."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "読み込むリストを選択してください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите списки для импорта."
+          }
+        }
+      }
+    },
+    "選んだプロジェクトの未完了タスクを取り込みます。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import incomplete tasks from selected projects."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選んだプロジェクトの未完了タスクを取り込みます。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импортируйте незавершённые задачи из выбранных проектов."
+          }
+        }
+      }
+    },
+    "選んだリストの未完了リマインダーをタスクに取り込みます。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import incomplete reminders from selected lists as tasks."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選んだリストの未完了リマインダーをタスクに取り込みます。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импортируйте незавершённые напоминания из выбранных списков в задачи."
+          }
+        }
+      }
+    },
+    "選択したリストが見つかりません。リストを選び直してください。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A selected list could not be found. Choose your lists again."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選択したリストが見つかりません。リストを選び直してください。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбранный список не найден. Выберите списки заново."
           }
         }
       }

@@ -23,6 +23,7 @@ struct HabitTodoReconciler {
         let candidates = todos.filter { todo in
             guard let area = todo.area else { return false }
             return area.type == .habit &&
+                todo.externalTaskLinkRawValue == nil &&
                 !todo.isArchived &&
                 !todo.isDeleted &&
                 todo.scheduledDate != nil

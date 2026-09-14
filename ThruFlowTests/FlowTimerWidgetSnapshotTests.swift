@@ -10,9 +10,9 @@ import Testing
 
 @MainActor
 struct FlowTimerWidgetSnapshotTests {
-    @Test func minimalLiveActivityAlwaysCountsRemainingTimeDown() {
+    @Test func minimalLiveActivityFillsFocusAndDrainsRest() {
         #expect(
-            FlowLiveActivityProgressSurface.minimal.countsDown(timerKind: .focus)
+            !FlowLiveActivityProgressSurface.minimal.countsDown(timerKind: .focus)
         )
         #expect(
             FlowLiveActivityProgressSurface.minimal.countsDown(timerKind: .breakTime)

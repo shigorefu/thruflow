@@ -30,7 +30,7 @@ first so GitHub contributors have one shared terminology table.
 | Medium priority | Средний | 中 | `中` |
 | Low priority | Низкий | 低 | `低` |
 | If there is room | Если останется время | 余裕があれば | `余裕があれば` |
-| Main Flow section | Flow | 流れ | `Flow` |
+| Main Flow section | Flow | フロー | `Flow` |
 | Saved Flow session | Flow | 集中記録 | `集中記録` |
 | Flow action | Фокус | 集中 | `集中` |
 | Flow count | Сессии Flow | 集中回数 | `集中回数` |
@@ -58,7 +58,7 @@ first so GitHub contributors have one shared terminology table.
 | Statistics Task mode | Задачи | タスク | `タスク` |
 | Statistics focus mode | Фокус | 集中 | `集中` |
 
-`Flow` does not have one global Japanese replacement. Use `流れ` for the main
+`Flow` does not have one global Japanese replacement. Use `フロー` for the main
 workspace and its visual stream, `集中記録` for a persisted session or history
 record, `集中` for an action, and `集中回数` for a count. Translate the intended
 meaning in each UI context instead of performing a project-wide text

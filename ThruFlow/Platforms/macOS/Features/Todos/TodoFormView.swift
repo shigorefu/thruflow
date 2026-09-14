@@ -93,6 +93,9 @@ struct TodoFormView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     taskContentCard
+                    if let todo = editedTodo, todo.externalTaskLinkRawValue != nil {
+                        ExternalTaskSourceLink(todo: todo)
+                    }
                     classificationCard
 
                     if !isHabitTodoEdit {

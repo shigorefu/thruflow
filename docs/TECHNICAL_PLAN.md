@@ -106,10 +106,48 @@ targets watchOS 10.0 to match the iOS 17 generation.
   CloudKit export work. Month views advance one calendar month per horizontal
   swipe without retaining a separate long-running month strip.
 
+## Local Connectors — Upcoming 1.3.0
+
+`ConnectorStore` orchestrates direct EventKit/URLSession reads on macOS and iOS,
+with per-device source/Area preferences and Keychain credentials. Native
+AuthenticationServices delegates Todoist login to the provider. Public client
+metadata plus PKCE avoid an embedded client secret; the existing static website
+hosts only the client document, callback, and associated-domain declaration.
+`ConnectorTaskImporter` receives shared DTOs, saves on a separate ModelContext,
+and keeps every imported Task in the existing schema. The optional
+`externalTaskLinkRawValue` field requires an additive migration and CloudKit
+Production deployment before release.
+
+Imports and refreshes are read-only toward providers. Source/account identity,
+local completion/memo/planning/history preservation, rollback, duplicate Flow
+relationship repair, and generated-Habit exclusion belong to domain tests.
+Provider network and authorization tests use injected transports; store tests
+use fake credentials, client, and browser. Production Keychain, EventKit
+permission dialogs, real accounts, private CloudKit, and Associated Domains are
+separate device checks, not a substitute for deterministic tests.
+
+See [Connectors](CONNECTORS.md) for exact OAuth endpoints, identity limitations,
+sequential verification commands, and release gates. APNs, webhooks, reverse
+completion synchronization, and new recurring occurrence generation remain
+outside this implementation.
+
 ## Test Expectations
 
 Cover:
 
+- Connector provider authorization errors, selected-source validation,
+  pagination, empty responses, rate limits, and sanitized transport failures.
+- PKCE challenge, unpredictable state/verifier generation, callback origin/state
+  validation, read-only scope, token refresh, and cancellation.
+- Connector imports: account/provider identity, repeated imports and source
+  moves, local memo/completion/planning/history preservation, missing remote
+  tasks, save rollback, additive schema, and concurrent/late CloudKit duplicates.
+- Device-local credential/configuration separation, failed reconnect preserving
+  an existing account, account-switch mapping reset, unchanged success timestamp
+  after failure, editor-draft isolation, and disconnect preserving history.
+- Native connector entry placement, provider navigation, setup validation,
+  source labels, cancellation and permission-denied presentation. Real consent
+  and signed callbacks remain release checks.
 - Area validation and legacy raw value normalization.
 - Todo validation and daily Task filtering.
 - Calendar range, filtering, and rescheduling tests.
@@ -123,7 +161,7 @@ Cover:
   distinct confirmed regular/long-break starts.
 - Statistics range construction and filters.
 - Anchored and inclusive custom macOS Statistics period boundaries, segment-aware search,
-  current/previous Flow and Task comparisons, seven-day Month trend buckets,
+  current/previous Flow and Task comparisons, daily Month trend buckets,
   distribution grouping, and deterministic CSV.
 - Day-history grouping, legacy untimed completions, deterministic Flow progress reconciliation after create/edit/delete, and duration-preserving Flow moves.
 - Manual Flow creation, linked Task progress without implicit completion, and fixed-Area Task creation.
@@ -143,8 +181,8 @@ Cover:
   Area color.
 - First-run onboarding persistence, workspace-content detection, guided versus
   read-only experience selection, real-screen navigation, and the exact
-  ten-step `ようこそ → 分野 → タスク → 流れ → 集中タイマー → 流れを体験 → 履歴 → 統計 →
-  使い方の流れ → データ` order on macOS and universal iOS. Coverage must prove that Area
+  ten-step `ようこそ → 分野 → タスク → フロー → 集中タイマー → フローを体験 → 履歴 → 統計 →
+  使い方のフロー → データ` order on macOS and universal iOS. Coverage must prove that Area
   and Task records appear only after normal user confirmation, the Flow preview
   renders the production player shell and deterministically projects Task-card
   press and selection, Play press, accelerated Short focus from `12:00` to
@@ -172,3 +210,33 @@ Flow preview, and Finish.
 ## Migration Caution
 
 Avoid removing SwiftData fields such as `FlowSession.result` without a deliberate migration step. It is the per-Flow memo source; linked writes also mirror the value to `Todo.notes` for Task-level continuity.
+
+## Demo database
+
+Run the `ThruFlow Demo` or `ThruFlow iOS Demo` Xcode scheme for an isolated
+in-memory database with three Japanese test Areas, 21 historical Flows across
+seven dates, and 24 Tasks. `--demo-data` is Debug-only and disables CloudKit.
+Each launch recreates the sample data relative to today; edits are disposable.
+Normal Debug/Release stores and standard unit-test databases are not seeded.
+
+History segment edits, attachments, and deletions must preserve reconstructable
+live Flow runtime fields and current context. Only completed-session summaries
+are rebuilt from segment bounds; a recorded segment end is not a timer deadline.
+
+macOS Statistics keeps its small, fixed set of report cards in a non-lazy stack.
+Its native segmented pickers use explicit matching widths so scrolling does not
+repeatedly rebuild the controls or negotiate their intrinsic dimensions.
+
+### Build diagnostics
+
+`TodoProgressCalculator` initialization and numeric progress/status calculations
+are nonisolated so synchronous reconciliation can use this stateless calculator.
+The Watch target skips App Intents metadata extraction in Debug and Release
+(`LM_SKIP_METADATA_EXTRACTION`) because it defines no App Intents. Extraction
+remains enabled for the macOS/iOS app and widget/Live Activity targets. Enable
+Watch extraction when introducing Watch App Intents.
+
+The macOS suggestion panel keeps its AppKit anchor class outside the generic
+SwiftUI representable. Content is already erased to AnyView; a generic nested
+NSView subclass triggered a Swift 6.3 Release deinitializer optimization crash.
+This structure retains normal Release optimization and the existing panel lifecycle.

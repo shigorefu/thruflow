@@ -193,3 +193,76 @@ Released on GitHub on 2026-09-08; shipping build `10`.
 - [x] Skip Apple build/test jobs for Markdown-only changes while keeping the
   required GitHub CI status resolvable. Run the complete Apple gate whenever
   any non-Markdown file changes.
+
+## 1.3.0 — Current development (unreleased)
+
+Implemented on the development branch; these changes are not a published release.
+All Xcode targets now use marketing version `1.3.0` and build `11`.
+
+- [x] Optional focus planned-end timeline; rest always shows elapsed time only.
+- [x] Repair weekly measured-Habit rollover and minimal focus Activity ring direction.
+- [x] Multi-Area Statistics filters, exact custom Dots grids, and calendar-boundary fixes.
+- [x] Distribution detail bars by date for Tasks and by Task for Areas.
+- [x] Isolated demo-data schemes for macOS and iOS.
+- [x] Inactive macOS Flow blur, resume clock reset, and right-to-left palette transitions.
+- [x] Remove duplicate iOS Area subtitles and legacy top-control backgrounds.
+- [x] Separate Tasks/Dots widget updates and isolate macOS board editing gestures.
+- [x] Align macOS Statistics controls and use Flow symbols for Area group headings.
+- [x] Use `フロー` consistently in Japanese workspace, stream, and onboarding copy.
+
+See `CHANGELOG.md` for detailed changes. Release metadata, signing, and the
+physical-device release checks remain part of release preparation.
+
+### Local connectors — included in 1.3.0
+
+Local connectors are included in the 1.3.0 (11) preparation scope. This is not
+an App Store release announcement. APNs remains deferred.
+
+### Implemented in the development branch
+
+- [x] Toggl Track outgoing focus time, API-token connection, Area/project mapping,
+  and a device-owned durable export queue; live-account verification remains a release gate.
+
+- [x] Apple Reminders list selection through native EventKit permission.
+- [x] Todoist read/write OAuth with PKCE and public HTTPS client metadata.
+- [x] Per-device Keychain credentials and local source/Area configuration.
+- [x] Connectors above Settings in the Mac sidebar, iPhone Flow More menu,
+  and regular-width iPad sidebar footer.
+- [x] First import of unfinished Check Tasks; title/deadline refresh preserves
+  local completion, planning, memo, progress, Area, and Flow history.
+- [x] Manual and foreground refresh, clear error state, safe reconnect and
+  disconnect, and Todoist links in imported Task editors.
+- [x] Additive optional Todo link metadata; concurrent import reconciliation
+  preserves exact Flow relationships and prevents deleted-task resurrection.
+- [x] Imported-task protection against generated-Habit merging, schedule edits,
+  and pause-driven deletion after a user changes its Area.
+- [x] Isolated provider, authorization, import, store, and navigation tests.
+
+### Release gates
+
+- [ ] Pass the complete sequential macOS suite and builds for all supported
+  targets; finish Japanese, English, and Russian visual/accessibility review.
+- [ ] Verify native Reminders allow/deny/revoke paths and account/list behavior
+  on signed macOS and physical iPhone/iPad builds.
+- [ ] Deploy and validate the static Todoist client metadata, callback, and
+  Associated Domains document on the app website, then test signed OAuth,
+  cancellation, token renewal, disconnect, and reconnect on supported OSes.
+- [ ] Verify a copy of an existing SwiftData store migrates with all Task and
+  Flow relationships intact; deploy the optional link field from CloudKit
+  Development to Production before distributing the connector build.
+- [ ] Verify repeated and simultaneous imports, source moves, offline recovery,
+  late CloudKit history, and local/deleted/completed Task preservation across
+  Mac and iPhone using real supported accounts.
+- [ ] Complete privacy-policy/App Store metadata, archive, signing, TestFlight,
+  and physical-device checks under `docs/RELEASE.md` and `docs/CONNECTORS.md`.
+
+### Deferred
+
+- APNs provider, synchronized remote Live Activity delivery, and webhooks.
+- Writing completion or task edits back to external providers.
+- New local occurrences generated from recurring external tasks.
+- Additional providers, connector management on Watch, and any new pricing.
+
+Connector Check completion/reopening now includes a durable retry outbox and
+explicit remote completion reads. Signed two-device conflict and recurrence
+checks remain required before the 1.3.0 release.

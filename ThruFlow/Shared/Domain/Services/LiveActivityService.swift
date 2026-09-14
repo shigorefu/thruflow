@@ -22,12 +22,7 @@ enum FlowLiveActivityProgressSurface: Equatable, Sendable {
     case minimal
 
     nonisolated func countsDown(timerKind: FlowLiveActivityTimerKind) -> Bool {
-        switch self {
-        case .standard:
-            timerKind == .breakTime
-        case .minimal:
-            true
-        }
+        timerKind == .breakTime
     }
 }
 
