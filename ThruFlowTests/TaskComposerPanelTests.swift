@@ -7,7 +7,9 @@ import Testing
 @MainActor struct TaskComposerPanelTests {
     @Test(arguments: [false, true])
     func panelRespectsPreferredSideWithoutTakingKeyboardFocusAndIsRemoved(showsBelow: Bool) throws {
-        let window = NSWindow(contentRect: NSRect(x: 100, y: 100, width: 400, height: 90),
+        let screen = try #require(NSScreen.main).visibleFrame
+        // Both preferred placements must fit; Dock/menu-bar geometry differs on CI.
+        let window = NSWindow(contentRect: NSRect(x: screen.midX - 200, y: screen.midY - 45, width: 400, height: 90),
                               styleMask: [.borderless], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         defer { window.close() }
