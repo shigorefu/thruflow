@@ -1,6 +1,6 @@
 # Connectors
 
-This document describes the upcoming 2.0 implementation. It does not declare
+This document describes the upcoming 1.3.0 implementation. It does not declare
 an App Store release or completion of the device and deployment checks below.
 Apple Reminders and Todoist run directly from macOS, iPhone, and iPad. The
 existing local SwiftData/CloudKit core remains usable without any connection.
@@ -282,3 +282,79 @@ Before release:
   access and device-local tokens, then finish normal archive, TestFlight, and
   release checks. No new pricing is introduced by this implementation, and the
   existing free, ad-free core commitment remains unchanged.
+
+## Toggl Track: outgoing focus time
+
+Toggl Track is a separate time-export connector, not a task importer and not
+Toggl Focus / Toggl 2.0. macOS and iOS offer it in the same connector list.
+The user enters a Track API token from <https://track.toggl.com/profile>, selects
+one workspace, maps any active Areas (including Habits) to existing active
+projects, and explicitly saves with automatic export enabled. Unmapped Areas
+are excluded. Tokens remain in the existing per-device Keychain; no backend,
+client secret, OAuth callback, or website change is needed for this connector.
+
+Only completed FlowSessions created and started after activation on the current
+recording device are eligible. A pause/resume of automatic export establishes a
+new start boundary; it does not backfill disabled periods. Existing queued jobs
+remain pending. Legacy records without a recording-device identifier, imported
+history, active/provisional/interrupted sessions, and records started on another
+device (including Watch) are not automatically exported. If a Flow is continued
+on another device, its originating Mac/iPhone exports it after receiving the
+completed record. That device must run the app with its connector enabled.
+
+Each completed context segment creates one completed time entry: Task title
+(or Area name), mapped project, segment start, and exact focused seconds. Empty segment relationships wait for delivery; they do not fall back to a whole-session entry. Partial segment delivery is
+not exported until segment focus totals match the session total. Breaks and
+paused seconds are excluded. Toggl accepts start plus duration; when a segment
+contains pauses, its derived stop is start plus focused duration rather than the
+wall-clock end. No remote timer is started/stopped. Entries receive a single
+`ThruFlow` tag and `created_with: ThruFlow`. Workspace rules must permit this tag.
+
+### Delivery semantics
+
+The application writes an atomic local JSON outbox before POST, then stores
+remote IDs as durable receipts. Job identity includes account, session, and
+segment UUIDs; every job is also restricted to its recording device. Jobs and
+receipts are local, not CloudKit records, and never contain API tokens. The
+optional `FlowSession.recordingDeviceID` travels through CloudKit, while its
+matching random device identity remains in a ThisDeviceOnly Keychain item.
+This prevents two devices independently exporting the same CloudKit session
+without relying on distributed locks or synchronization timing.
+
+Definite pre-connection failures and rejected requests remain retryable. Before
+POST, a job is marked uncertain on disk. A timeout, cancellation, malformed
+success response, process exit, or failed receipt save leaves it uncertain.
+The next attempt reads the narrow original start-time range and adopts only a
+unique match of workspace, project, start, focused duration, description, and
+the ThruFlow tag. Multiple or absent matches never trigger another automatic
+POST. The UI lets the user inspect Toggl and explicitly authorize retry if the
+entry is absent; this confirmation explains duplicate risk. The Track API does
+not supply an assumed idempotency contract. An explicit retry after a lost
+response can duplicate a remote entry; automatic sending does not silently
+make that decision.
+
+Export runs on the existing scene-scoped foreground loop, at most every 30
+seconds when enabled, plus manual Send now. No pending jobs means no provider
+requests. The API client spaces requests and honors quota Retry-After cooldowns
+for automatic sync. There is no guaranteed background delivery. Account identity
+is verified before draining an outbox. Reconnect to another account cannot send
+the previous account's jobs; disconnect stops export and removes the token,
+while retaining local/remote history and receipts. Same-account pending jobs
+can resume after reconnect and re-enabling. Deleting a Flow before its first
+successful dispatch cancels its unsent job. Already exported or uncertain jobs
+are never deleted remotely. Captured sessions and their payloads are immutable; later local edits
+and deletions are not synchronized in this first outgoing-only version.
+
+### Verification and release gates
+
+Tests use stubbed HTTP and isolated SwiftData/queue stores, covering authorization,
+request payloads, projects, quota handling, segment projection, device ownership,
+relaunch, lost responses, storage failures, account changes, and disconnect.
+Real-account consent, quota/tags/project permissions, signed two-device handoff,
+and receipt recovery remain integration checks before release. No real customer
+token or Toggl account is used by automated tests.
+
+API references:
+- <https://engineering.toggl.com/docs/authentication/>
+- <https://engineering.toggl.com/docs/track/api/me/>
+- <https://engineering.toggl.com/docs/track/api/time_entries/>

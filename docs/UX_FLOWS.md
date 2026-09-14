@@ -594,7 +594,7 @@ The main column is a vertical set of cards:
 - combined totals for focused time, Blocks, `集中回数`, completed Tasks, and active
   Flow days;
 - a Trend line chart with an independent `集中 | タスク` switch; its points are
-  days for Week, seven-day totals for Month, and months for Year, with the
+  days for Week and Month, and months for Year, with the
   previous equivalent period available as a separate comparison series and
   direct linear segments between points;
 - focused-time distribution with `タスク別 | 分野別`, showing the largest
@@ -761,7 +761,7 @@ The form follows the active History mode. `集中記録` opens a Flow-specific f
 
 Check requires a date and accepts an optional exact time; it writes historical completion without inventing Flow. Block, Minute, and Area-only records require explicit start and end times, create a completed independent Flow, and rebuild measured progress from persisted history. Zero-Flow scheduled Tasks remain absent from the actual History summary. The row action with a fixed Task remains available as the faster manual-Flow path. Expanded `履歴 > 分野` ends with `タスクを追加`, which creates a Task with fixed Area but no Flow. The calendar does not provide direct resize and does not persist a second calendar entity.
 
-## Connectors — Upcoming 2.0
+## Connectors — Upcoming 1.3.0
 
 Open `コネクタ` directly above `設定`: in the macOS sidebar footer, the
 compact iPhone Flow More menu, or the regular-width iPad sidebar footer. A
@@ -830,3 +830,34 @@ onboarding journey again.
 There is no separate `フィードバック` screen. The support section remains
 immediately before destructive data controls and contains the website contact
 form, App Store rating, and secondary source-code actions.
+
+## Toggl Track setup (1.3.0 development)
+
+Open Connectors → Toggl Track, enter a Track API token, and connect. Select a
+workspace and map Areas to its existing projects; unmapped Areas are excluded.
+Enable automatic sending and save. Only new completed Flows started on this
+Mac/iPhone are exported, with exact focused seconds and no breaks. The status
+section shows pending entries and lets the user send now or inspect Toggl.
+Uncertain delivery requires checking Toggl before explicitly permitting retry.
+Disconnect stops export without deleting either history. See `CONNECTORS.md`
+for ownership, delivery, and release checks.
+
+Connector cards on macOS and iOS show the official logo, provider name, and
+connection status. Account-name/description subtitles are omitted to avoid
+repeating provider names such as Apple Reminders.
+
+## Statistics trend detail and smoothing
+
+Week includes seven daily positions, Month every date in the selected calendar
+month (28–31), and Year twelve monthly positions. Future positions remain on
+the axis without current-value or trend marks. Previous-period values use the
+same ordinal date/month and omit positions absent from that previous period.
+The `7日平均` / `3か月平均` legend accompanies an orange trailing mean: seven daily buckets or
+three monthly buckets. Leading averages use only available buckets in the
+selected period, including zero-activity days and the current partial bucket;
+future buckets never lower the mean. It is descriptive, not a forecast.
+Hovering on Mac or tapping a date on iPhone shows its date, focused minutes, and
+completed Task count below the chart without covering the plotted lines.
+Custom ranges use daily trend buckets through 120 days and monthly buckets
+above that; trend axis labels follow the actual aggregation independently of
+Dots layout. Dots and distribution totals retain their existing behavior.

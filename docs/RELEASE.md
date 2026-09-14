@@ -2,6 +2,15 @@
 
 This document is the operational checklist for ThruFlow releases. Product scope remains in [`ROADMAP.md`](ROADMAP.md), and CloudKit details remain in [`CLOUDKIT.md`](CLOUDKIT.md).
 
+## Current preparation: 1.3.0 build 11
+
+All Debug and Release configurations of the app, extensions, Watch, and test
+bundles use marketing version `1.3.0` and build `11`. This preparation combines
+the UI/statistics/Flow changes and local Reminders, Todoist, and Toggl connectors.
+It does not declare an App Store or GitHub Release publication. Signed-device,
+OAuth, real Toggl-account, and CloudKit Production migration gates still apply;
+see `CONNECTORS.md` and `CLOUDKIT.md`. Previous release history below is preserved.
+
 ## Published releases
 
 | Version | GitHub publication (JST) | Status |

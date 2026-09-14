@@ -114,6 +114,7 @@ struct StatisticsTrendPoint: Identifiable, Equatable, Sendable {
     let previousFocusSeconds: Int
     let completedTaskCount: Int
     let previousCompletedTaskCount: Int
+    var hasComparison: Bool = true
 
     var id: Int { index }
 }
@@ -158,6 +159,7 @@ struct StatisticsPeriodSnapshot: Equatable, Sendable {
     let summary: StatisticsPeriodSummary
     let previousSummary: StatisticsPeriodSummary
     let trend: [StatisticsTrendPoint]
+    let trendPeriod: StatisticsPeriod
     let taskDistribution: [StatisticsDistributionItem]
     let areaDistribution: [StatisticsDistributionItem]
     let flowDays: [StatisticsDay]
@@ -307,6 +309,7 @@ struct StatisticsPeriodBuilder: Sendable {
                 currentAchievements: currentAchievements,
                 previousAchievements: previousAchievements
             ),
+            trendPeriod: trendPeriod(for: filter, bounds: periodBounds),
             taskDistribution: makeDistribution(flows: currentFlows, dimension: .task),
             areaDistribution: makeDistribution(flows: currentFlows, dimension: .area),
             flowDays: makeFlowDays(days: days, flows: currentFlows),
@@ -420,7 +423,8 @@ struct StatisticsPeriodBuilder: Sendable {
                 previousCompletedTaskCount: completionCount(
                     in: comparisonBucket,
                     records: previousAchievements
-                )
+                ),
+                hasComparison: previousBuckets.indices.contains(index)
             )
         }
     }
@@ -469,7 +473,7 @@ struct StatisticsPeriodBuilder: Sendable {
             step = 1
         case .month:
             component = .day
-            step = 7
+            step = 1
         case .year:
             component = .month
             step = 1

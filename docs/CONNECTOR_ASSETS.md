@@ -37,3 +37,13 @@ ThruFlow is not created by, affiliated with, or supported by Todoist.
 - `ThruFlow/Assets.xcassets/ConnectorRemindersLogo.imageset/Reminders.png`: `6477699ac3a244f047553084c1359ddad51e48683e2dc8290e9c6d8ee6baf45f`
 - `ThruFlow/Assets.xcassets/ConnectorTodoistLogo.imageset/Todoist.png`: `625d678beb4d166608af81ba07549100079b49b4fea0481fc3530ada09298bee`
 - `ThruFlow/Assets.xcassets/ConnectorTodoistLogo.imageset/Todoist-Dark.png`: `efdc476a2908165a8804b2ea01f74635d29b47304d43a4634bf7221ed48cd1ff`
+
+## Toggl Track
+
+- Owner: Toggl.
+- Retrieved 2026-09-14 from the official Track web application at
+  <https://track.toggl.com/> (`rel="shortcut icon"`).
+- Original: <https://web-assets.track.toggl.com/app/assets/images/83e0cd2aef290298.ico>.
+- Bundled `ConnectorTogglLogo.imageset/Toggl.png` is the original 96 × 96 icon
+  decoded to PNG using macOS `sips`. No recoloring, redrawing, masking, or effects.
+- It identifies the optional Toggl Track connector; no affiliation is implied.

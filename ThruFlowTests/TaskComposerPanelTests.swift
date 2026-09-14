@@ -11,7 +11,7 @@ import Testing
                               styleMask: [.borderless], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         defer { window.close() }
-        let anchor = TaskComposerSuggestionPanel<Text>.AnchorView(frame: NSRect(x: 0, y: 0, width: 400, height: 90))
+        let anchor = TaskComposerSuggestionAnchorView(frame: NSRect(x: 0, y: 0, width: 400, height: 90))
         window.contentView = anchor
         let originalFrame = window.frame
         anchor.update(content: AnyView(Text("Suggestion").padding().frame(width: 320)), isPresented: true, showsBelow: showsBelow)

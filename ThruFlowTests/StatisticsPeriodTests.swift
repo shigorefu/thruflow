@@ -306,7 +306,7 @@ struct StatisticsPeriodTests {
         #expect(snapshot.flowDays.count == 365)
     }
 
-    @Test func monthTrendUsesSevenDayTotalsInsteadOfDailySpikes() {
+    @Test func monthTrendShowsEveryCalendarDay() {
         let records = [
             flowRecord(
                 sessionID: UUID(),
@@ -354,15 +354,17 @@ struct StatisticsPeriodTests {
             filter: StatisticsPeriodFilter(period: .month, anchorDate: date(2026, 8, 5))
         )
 
-        #expect(snapshot.trend.count == 5)
+        #expect(snapshot.trend.count == 31)
         #expect(snapshot.flowDays.count == 31)
         #expect(snapshot.flowDays.last?.date == date(2026, 8, 31))
-        #expect(snapshot.trend[0].focusSeconds == 75 * 60)
+        #expect(snapshot.trend[0].focusSeconds == 25 * 60)
         #expect(snapshot.trend[0].previousFocusSeconds == 20 * 60)
-        #expect(snapshot.trend[1].focusSeconds == 75 * 60)
-        #expect(snapshot.trend[0].completedTaskCount == 2)
+        #expect(snapshot.trend[6].focusSeconds == 50 * 60)
+        #expect(snapshot.trend[7].focusSeconds == 75 * 60)
+        #expect(snapshot.trend[1].focusSeconds == 0)
+        #expect(snapshot.trend[0].completedTaskCount == 1)
         #expect(snapshot.trend[0].previousCompletedTaskCount == 1)
-        #expect(snapshot.trend[1].completedTaskCount == 1)
+        #expect(snapshot.trend[7].completedTaskCount == 1)
     }
 
     @Test func csvEscapesTextAndUsesStableMachineColumns() {

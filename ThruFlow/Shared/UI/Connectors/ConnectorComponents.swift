@@ -7,6 +7,7 @@ extension ConnectorProviderID {
         switch self {
         case .reminders: String(localized: "Appleリマインダー")
         case .todoist: "Todoist"
+        case .toggl: "Toggl Track"
         }
     }
 
@@ -14,6 +15,7 @@ extension ConnectorProviderID {
         switch self {
         case .reminders: "ConnectorRemindersLogo"
         case .todoist: "ConnectorTodoistLogo"
+        case .toggl: "ConnectorTogglLogo"
         }
     }
 
@@ -23,6 +25,8 @@ extension ConnectorProviderID {
             String(localized: "選んだリストの未完了リマインダーをタスクに取り込みます。")
         case .todoist:
             String(localized: "選んだプロジェクトの未完了タスクを取り込みます。")
+        case .toggl:
+            String(localized: "完了した集中時間をToggl Trackに送信します。")
         }
     }
 }
@@ -57,10 +61,6 @@ struct ConnectorProviderRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(provider.connectorTitle)
                     .font(.headline)
-                Text(connection?.account.name ?? provider.connectorDescription)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
                 if connection != nil {
                     Label(String(localized: "接続済み"), systemImage: "checkmark.circle.fill")
                         .font(.caption)

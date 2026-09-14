@@ -217,3 +217,25 @@ JSON (`remoteCompletion`, `completionChanges`, `acknowledgedCompletionIDs`).
 Pending commands contain UUID, target boolean and timestamp; no tokens or new
 SwiftData fields/entities are introduced. Checkbox and command persist together.
 Local Flow counters and relationships are untouched by incoming completion.
+
+### Additive Toggl recording ownership (upcoming connector branch)
+
+`FlowSession.recordingDeviceID: String?` is an optional, non-secret device identity.
+Its persisted and initializer defaults are nil; only `ActiveFlowStore.start`
+assigns the current device identity. Manual history and imports remain ineligible.
+Existing records keep nil and are never automatically exported. New runtime
+sessions must have their complete segments before export.
+The entity, all existing fields, IDs, history, and relationships remain unchanged.
+This is an additive lightweight SwiftData migration and requires adding the
+optional String field to the Development/Production CloudKit schema before the
+feature ships. Old clients can ignore it; no backfill or destructive migration
+is performed. Local operation does not require CloudKit.
+
+The identifier itself is a random per-install/device Keychain value with
+AfterFirstUnlockThisDeviceOnly accessibility and synchronization disabled. If it
+cannot be read/created, recording still works with nil ownership and auto-export
+fails closed. Toggl tokens use the connector Keychain namespace. The local atomic
+`Application Support/ThruFlow/Toggl/export-v1.json` contains account configuration,
+Area/project mapping, immutable queued payloads, uncertainty flags, cancellation
+flags, and remote receipts. It contains no credentials and is not shared through
+CloudKit. A restored outbox cannot be dispatched by a different recording device.

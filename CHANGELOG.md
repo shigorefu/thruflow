@@ -3,18 +3,23 @@
 All notable user-facing changes to ThruFlow are documented in this file.
 Release dates below record GitHub publication in Asia/Tokyo (JST).
 
-## [2.0.0] - Unreleased
+## [1.3.0] - Unreleased
+
+App, extensions, Watch, and test targets use version **1.3.0**, build **11**.
 
 ### Added
+
+- Statistics Month trends show every day, with an explicit moving-average line,
+  date details on hover/tap, and future dates kept on the axis without plotted zeros.
+
+- Toggl Track exports new completed focus segments from their recording device,
+  with Keychain token storage, Area/project mapping, an offline outbox, and
+  explicit recovery for uncertain deliveries on macOS and iOS.
 
 - Apple Reminders and Todoist Check tasks synchronize completion and reopening
   both ways, with a persistent offline outbox and pending-state indication.
 - Todoist requests read/write authorization; existing read-only connections
   need to reconnect before sending completion changes.
-
-## [1.3.0] - Unreleased
-
-### Added
 
 - Task creation suggestions float above the composer on macOS and iPhone,
   including quick-input options and existing tags. Empty @ suggests five Areas

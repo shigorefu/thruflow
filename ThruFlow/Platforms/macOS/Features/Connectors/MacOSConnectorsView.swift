@@ -10,23 +10,27 @@ struct MacOSConnectorsView: View {
         NavigationStack {
             Form {
                 Section {
-                    Text(String(localized: "外部サービスのタスクを取り込み、ThruFlowで集中できます。"))
+                    Text(String(localized: "タスクの取り込みや集中時間の共有に使うサービスを選べます。"))
                         .foregroundStyle(.secondary)
                 }
                 Section {
-                    ForEach([ConnectorProviderID.reminders, .todoist], id: \.self) { provider in
+                    ForEach([ConnectorProviderID.reminders, .todoist, .toggl], id: \.self) { provider in
                         NavigationLink {
                             MacOSConnectorDetailView(provider: provider)
                         } label: {
-                            ConnectorProviderRow(
-                                provider: provider,
-                                connection: connectors.connection(for: provider)
-                            )
+                            if provider == .toggl {
+                                TogglConnectorRow(store: connectors.toggl)
+                            } else {
+                                ConnectorProviderRow(
+                                    provider: provider,
+                                    connection: connectors.connection(for: provider)
+                                )
+                            }
                         }
                         .accessibilityIdentifier("connectors.provider.\(provider.rawValue)")
                     }
                 } footer: {
-                    Text(String(localized: "接続するサービスと取り込み元を選んでください。"))
+                    Text(String(localized: "サービスごとに接続を設定できます。"))
                 }
             }
             .formStyle(.grouped)
@@ -45,11 +49,16 @@ struct MacOSConnectorsView: View {
 
 private struct MacOSConnectorDetailView: View {
     let provider: ConnectorProviderID
+    @EnvironmentObject private var connectors: ConnectorStore
     @Query(sort: \Area.sortIndex) private var areas: [Area]
 
     var body: some View {
         Form {
-            ConnectorSetupSections(provider: provider, areas: areas)
+            if provider == .toggl {
+                TogglSetupSections(store: connectors.toggl, areas: areas)
+            } else {
+                ConnectorSetupSections(provider: provider, areas: areas)
+            }
         }
         .formStyle(.grouped)
         .navigationTitle(provider.connectorTitle)

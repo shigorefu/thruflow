@@ -161,6 +161,8 @@ enum FlowSessionStatus: String, CaseIterable, Codable, Identifiable {
 final class FlowSession {
     var id: UUID = UUID()
     var seriesID: UUID?
+    /// Optional additive field; nil legacy records are never auto-exported.
+    var recordingDeviceID: String?
     /// Persisted as `direction` for SwiftData and CloudKit compatibility.
     var direction: Area?
     var todo: Todo?
@@ -192,6 +194,7 @@ final class FlowSession {
     init(
         id: UUID = UUID(),
         seriesID: UUID? = nil,
+        recordingDeviceID: String? = nil,
         area: Area,
         todo: Todo? = nil,
         intent: String = "",
@@ -219,6 +222,7 @@ final class FlowSession {
     ) {
         self.id = id
         self.seriesID = seriesID ?? id
+        self.recordingDeviceID = recordingDeviceID
         self.direction = area
         self.todo = todo
         self.intent = intent

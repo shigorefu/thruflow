@@ -177,6 +177,7 @@ final class ActiveFlowStore: ObservableObject {
         let session = FlowSession(
             id: sessionID,
             seriesID: seriesID,
+            recordingDeviceID: FlowRecordingDevice.id,
             area: area,
             todo: todo,
             intent: intent.trimmingCharacters(in: .whitespacesAndNewlines),

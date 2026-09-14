@@ -372,7 +372,7 @@ failures without rewriting historical records.
 ## D-029: Version 1.x Does Not Require An APNs Backend
 
 Status: the coupled connector/APNs deferral below is historical and partially
-superseded by D-042. Local connectors now enter upcoming 2.0 independently;
+superseded by D-042. Local connectors now enter upcoming 1.3.0 independently;
 the optional APNs backend remains deferred and the timer limitation still applies.
 
 ThruFlow 1.x remains fully usable without an author-operated server. The
@@ -665,10 +665,10 @@ their existing identities avoids data migration, duplicate records, and sync
 risk while making current product terminology consistent for users and
 developers.
 
-## D-042: Upcoming 2.0 Connectors Read Directly From The Device
+## D-042: Upcoming 1.3.0 Connectors Read Directly From The Device
 
 Apple Reminders and Todoist are the first optional connectors on macOS,
-iPhone, and iPad. This starts upcoming 2.0 development without an APNs backend.
+iPhone, and iPad. This starts upcoming 1.3.0 development without an APNs backend.
 Reminders uses system EventKit permission. Todoist uses native browser OAuth,
 `data:read_write`, PKCE, and a public HTTPS client metadata document; only
 static OAuth/associated-domain files are added to the existing website.
@@ -749,3 +749,35 @@ Selecting a Dots day opens its summary before History on both platforms,
 including Year. Shared quick-input options own priority/date/measurement labels,
 icons, and prefix filtering. Flow quick creation offers a date control on both
 platforms and persists its selected value, including dates entered as tokens.
+
+## D-046: Toggl Track Exports Completed Focus From Its Recording Device
+
+Toggl Track is outgoing-only time export, configured by API token and Area/project
+mapping. Each completed focus segment exports actual focused seconds without
+rest or paused time. Export starts with new device-owned Flows after activation;
+there is no automatic history backfill or remote timer control. Optional persisted
+recording ownership and a device-only identity prevent concurrent device exporters.
+A durable local outbox records dispatch uncertainty before POST and remote IDs
+after success. Uncertain requests are reconciled by a unique remote match; absence
+never implies permission to blindly retry. The user can explicitly allow retry
+only after checking Toggl. Local edits after capture and remote deletion remain
+out of scope. This adds no backend or changes to existing task connector ownership.
+
+## D-047: Daily Month Trends and Explicit Smoothing
+
+Month statistics use one point per calendar day, replacing seven-day totals.
+Week stays daily and Year monthly. Keep the complete selected axis, omit future
+current observations, and label a separate trailing mean `7日平均` / `3か月平均`
+(using available selected-period buckets at the leading edge). Missing
+previous-period dates are absent, not fabricated zeros. Native hover/tap reveals
+the date, focused minutes, and completed Tasks. This supersedes the earlier
+seven-day Month chart aggregation; Dots and distribution are unchanged.
+
+## D-048: Consolidate Current Work Into 1.3.0 (11)
+
+The maintainer moved the connector work previously planned for 2.0 into 1.3.0,
+alongside Flow, task-entry, and Statistics improvements. Every Xcode target and
+configuration uses version 1.3.0 and build 11. Merge the consolidated work into
+main and delete the merged 1.3.0 and codex/connectors branches. This changes
+release scope and source metadata, not the historical publication status of
+1.2.0 or the outstanding physical-device/CloudKit release gates.

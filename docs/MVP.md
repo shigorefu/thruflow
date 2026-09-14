@@ -101,7 +101,8 @@ Area -> Task -> Flow -> actual focused time -> progress -> statistics
 - AI.
 - Author-operated APNs backend; reliable suspended-state Live Activity updates
   are planned for 2.0.
-- External Connectors such as Toggl, Strava, and Jira; they are planned for 2.0.
+- External connectors were outside the 1.0 MVP. Reminders, Todoist, and Toggl
+  are included in 1.3.0 preparation; Strava and Jira remain future work.
 - Non-Flow continuous timeline.
 - Food/sleep/game classification.
 - Complex rewards.

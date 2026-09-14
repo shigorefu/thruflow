@@ -197,8 +197,9 @@ struct StatisticsView: View {
 
         StatisticsTrendCard(
             mode: $trendMode,
-            period: presentationPeriod,
-            points: snapshot.trend.filter { $0.date <= today }
+            period: snapshot.trendPeriod,
+            points: snapshot.trend,
+            today: today
         )
 
         Group {
@@ -1005,123 +1006,18 @@ private struct StatisticsSummaryMetric: View {
 }
 
 private struct StatisticsTrendCard: View {
-    @Environment(\.locale) private var locale
-
     @Binding var mode: StatisticsMode
     let period: StatisticsPeriod
     let points: [StatisticsTrendPoint]
+    let today: Date
 
     var body: some View {
         StatisticsCard(
             title: String(localized: "傾向"),
             subtitle: mode == .flow ? String(localized: "集中時間") : String(localized: "完了タスク"),
-            headerAccessory: {
-                StatisticsModePicker(selection: $mode)
-            }
+            headerAccessory: { StatisticsModePicker(selection: $mode) }
         ) {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 16) {
-                    Label(String(localized: "選択した期間"), systemImage: "minus")
-                        .foregroundStyle(Color.accentColor)
-                    Label(String(localized: "前の期間"), systemImage: "ellipsis")
-                        .foregroundStyle(.secondary)
-                }
-                .font(.caption)
-
-                Group {
-                    Chart {
-                        ForEach(points) { point in
-                            LineMark(
-                                x: .value(String(localized: "日"), point.index),
-                                y: .value(String(localized: "前の期間"), previousValue(point)),
-                                series: .value(String(localized: "期間"), String(localized: "前の期間"))
-                            )
-                            .foregroundStyle(Color.secondary.opacity(0.55))
-                            .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
-                            .interpolationMethod(.linear)
-
-                            LineMark(
-                                x: .value(String(localized: "日"), point.index),
-                                y: .value(String(localized: "選択した期間"), currentValue(point)),
-                                series: .value(String(localized: "期間"), String(localized: "選択した期間"))
-                            )
-                            .foregroundStyle(Color.accentColor)
-                            .lineStyle(StrokeStyle(lineWidth: 2.2))
-                            .interpolationMethod(.linear)
-
-                            PointMark(
-                                x: .value(String(localized: "日"), point.index),
-                                y: .value(String(localized: "選択した期間"), currentValue(point))
-                            )
-                            .foregroundStyle(Color.accentColor)
-                            .symbolSize(24)
-                        }
-                    }
-                    .chartXAxis {
-                        AxisMarks(values: axisIndexes) { value in
-                            AxisGridLine()
-                            AxisTick()
-                            AxisValueLabel {
-                                if let index = value.as(Int.self), points.indices.contains(index) {
-                                    Text(axisLabel(for: points[index].date))
-                                }
-                            }
-                        }
-                    }
-                    .chartYAxis {
-                        AxisMarks(position: .leading) { value in
-                            AxisGridLine()
-                            AxisValueLabel {
-                                if let raw = value.as(Int.self) {
-                                    Text(axisValueLabel(raw))
-                                }
-                            }
-                        }
-                    }
-                    .frame(height: 220)
-                    .overlay {
-                        if points.allSatisfy({ currentValue($0) == 0 && previousValue($0) == 0 }) {
-                            StatisticsEmptyState(label: String(localized: "この期間のデータはありません"))
-                        }
-                    }
-                }
-                .id(mode)
-                .transition(.opacity.combined(with: .scale(scale: 0.99)))
-                .animation(.easeInOut(duration: 0.2), value: mode)
-            }
-        }
-    }
-
-    private var axisIndexes: [Int] {
-        guard !points.isEmpty else { return [] }
-        let stride = max(1, points.count / 6)
-        var indexes = Array(Swift.stride(from: 0, to: points.count, by: stride))
-        if let last = points.indices.last, indexes.last != last {
-            indexes.append(last)
-        }
-        return indexes
-    }
-
-    private func currentValue(_ point: StatisticsTrendPoint) -> Int {
-        mode == .flow ? point.focusSeconds / 60 : point.completedTaskCount
-    }
-
-    private func previousValue(_ point: StatisticsTrendPoint) -> Int {
-        mode == .flow ? point.previousFocusSeconds / 60 : point.previousCompletedTaskCount
-    }
-
-    private func axisValueLabel(_ value: Int) -> String {
-        mode == .flow ? String(localized: "\(value)分") : "\(value)"
-    }
-
-    private func axisLabel(for date: Date) -> String {
-        switch period {
-        case .week:
-            date.formatted(.dateTime.locale(locale).weekday(.narrow))
-        case .month:
-            date.formatted(.dateTime.locale(locale).day())
-        case .year:
-            date.formatted(.dateTime.locale(locale).month(.abbreviated))
+            StatisticsTrendPlot(mode: mode, period: period, points: points, today: today, height: 220)
         }
     }
 }

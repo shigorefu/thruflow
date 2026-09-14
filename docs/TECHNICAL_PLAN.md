@@ -106,7 +106,7 @@ targets watchOS 10.0 to match the iOS 17 generation.
   CloudKit export work. Month views advance one calendar month per horizontal
   swipe without retaining a separate long-running month strip.
 
-## Local Connectors — Upcoming 2.0
+## Local Connectors — Upcoming 1.3.0
 
 `ConnectorStore` orchestrates direct EventKit/URLSession reads on macOS and iOS,
 with per-device source/Area preferences and Keychain credentials. Native
@@ -161,7 +161,7 @@ Cover:
   distinct confirmed regular/long-break starts.
 - Statistics range construction and filters.
 - Anchored and inclusive custom macOS Statistics period boundaries, segment-aware search,
-  current/previous Flow and Task comparisons, seven-day Month trend buckets,
+  current/previous Flow and Task comparisons, daily Month trend buckets,
   distribution grouping, and deterministic CSV.
 - Day-history grouping, legacy untimed completions, deterministic Flow progress reconciliation after create/edit/delete, and duration-preserving Flow moves.
 - Manual Flow creation, linked Task progress without implicit completion, and fixed-Area Task creation.
@@ -235,3 +235,8 @@ The Watch target skips App Intents metadata extraction in Debug and Release
 (`LM_SKIP_METADATA_EXTRACTION`) because it defines no App Intents. Extraction
 remains enabled for the macOS/iOS app and widget/Live Activity targets. Enable
 Watch extraction when introducing Watch App Intents.
+
+The macOS suggestion panel keeps its AppKit anchor class outside the generic
+SwiftUI representable. Content is already erased to AnyView; a generic nested
+NSView subclass triggered a Swift 6.3 Release deinitializer optimization crash.
+This structure retains normal Release optimization and the existing panel lifecycle.

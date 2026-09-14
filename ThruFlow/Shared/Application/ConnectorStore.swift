@@ -38,6 +38,7 @@ extension TodoistAuthorization: ConnectorAuthorizing {}
 
 @MainActor
 final class ConnectorStore: ObservableObject {
+    let toggl = TogglExportStore()
     @Published private(set) var connections: [ConnectorConnection] = []
     @Published private(set) var sources: [ConnectorProviderID: [ConnectorSource]] = [:]
     @Published private(set) var busyProvider: ConnectorProviderID?
@@ -220,6 +221,7 @@ final class ConnectorStore: ObservableObject {
         guard !disablesAutomaticSync else { return }
         while !Task.isCancelled {
             await synchronizeConfigured(modelContext: modelContext)
+            await toggl.automaticSync(modelContext: modelContext)
             do { try await Task.sleep(for: .seconds(5)) }
             catch { return }
         }
@@ -282,7 +284,7 @@ final class ConnectorStore: ObservableObject {
     }
 
     private func finishConnection(provider: ConnectorProviderID, newCredentials: ConnectorCredentials?) async throws {
-        let client = makeClient(provider: provider, accessToken: newCredentials?.accessToken)
+        let client = try makeClient(provider: provider, accessToken: newCredentials?.accessToken)
         let account = try await client.account()
         let available = try await client.sources()
         try Task.checkCancellation()
@@ -296,7 +298,7 @@ final class ConnectorStore: ObservableObject {
 
     private func client(for provider: ConnectorProviderID) async throws -> any ConnectorClient {
         guard connection(for: provider) != nil else { throw ConnectorStoreError.missingConnection }
-        if provider == .reminders { return makeClient(provider: provider, accessToken: nil) }
+        if provider == .reminders { return try makeClient(provider: provider, accessToken: nil) }
         guard var token = try credentials.read(for: provider) else { throw TodoistAuthorizationError.reconnect }
         if token.needsRefresh(at: .now) {
             guard token.refreshToken?.isEmpty == false else { throw TodoistAuthorizationError.reconnect }
@@ -313,14 +315,15 @@ final class ConnectorStore: ObservableObject {
             // Persist the replacement before any provider API read.
             try credentials.save(token, for: provider)
         }
-        return makeClient(provider: provider, accessToken: token.accessToken)
+        return try makeClient(provider: provider, accessToken: token.accessToken)
     }
 
-    private func makeClient(provider: ConnectorProviderID, accessToken: String?) -> any ConnectorClient {
+    private func makeClient(provider: ConnectorProviderID, accessToken: String?) throws -> any ConnectorClient {
         if let clientFactory { return clientFactory(provider, accessToken) }
         switch provider {
         case .reminders: return RemindersConnectorClient()
         case .todoist: return TodoistConnectorClient(accessToken: accessToken ?? "")
+        case .toggl: throw ConnectorStoreError.configuration // Time export uses TogglExportStore.
         }
     }
 

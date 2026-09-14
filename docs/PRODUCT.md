@@ -130,7 +130,7 @@ the previous equivalent period, a focused-time distribution by Task or Area,
 and a `集中カレンダー` / Focus Calendar view. Selecting a distribution sector or
 legend row shows a named detail panel with daily minute bars for a Task or
 Task/time bars for an Area, within the active filters. Trend and the focus calendar
-each provide an independent `集中 | タスク` switch. Week trends use days, Month trends use seven-day totals,
+each provide an independent `集中 | タスク` switch. Week and Month trends use individual calendar days,
 and Year trends use months; current and previous values are separate direct
 linear series. Week and
 Year use full-width focus calendars, while Month may share a row with Pie. Responsive focus calendars
@@ -181,7 +181,7 @@ instead of the selected period. Matching uses record title, Area, emoji,
 hashtag, intent, or memo in `集中記録`, `タスク`, and `分野` modes. macOS provides
 the same database-wide filtering through its native toolbar search field.
 
-## Connectors — Upcoming 2.0
+## Connectors — Upcoming 1.3.0
 
 macOS, iPhone, and iPad can import unfinished tasks from selected Apple
 Reminders lists or Todoist projects into an active non-Habit Area. The default
@@ -207,7 +207,7 @@ is sent upstream. Repeated external occurrences with the same identifier do
 not generate new local occurrences. Todoist Tasks expose `Todoistで開く` in
 the editor; Reminders has no supported individual-reminder link.
 
-This is upcoming 2.0 scope, independent of the still-deferred APNs backend.
+This is upcoming 1.3.0 scope, independent of the still-deferred APNs backend.
 [Connectors](CONNECTORS.md) owns the identity limitations and release gates.
 The existing free, ad-free core commitment remains; this change defines no
 new pricing policy.
@@ -299,3 +299,8 @@ The Watch does not own a second timer or separate progress model. It restores
 the canonical active `FlowSession` from the shared SwiftData/CloudKit store and
 controls the same `ActiveFlowStore` operations as iPhone and macOS. Task Check
 completion is interactive; Block and Minute progress remains Flow-derived.
+
+Toggl Track is also available in Connectors on macOS and iOS. Users map Areas
+to projects and enable export of new completed focus recorded on this device.
+Rest and paused seconds are excluded. This first version exports time only; it
+does not import Toggl history or update remote entries after later local edits.

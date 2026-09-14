@@ -36,7 +36,7 @@ CloudKit therefore continues using the existing entity and fields; no schema
 migration, duplicate Area entity, or record copy is introduced. A schema
 contract test guards these exact names.
 
-## Connector Link Migration — Upcoming 2.0
+## Connector Link Migration — Upcoming 1.3.0
 
 Connectors add only `Todo.externalTaskLinkRawValue`, a nullable String scalar
 with a `nil` default. Existing Todos stay unlinked and require no backfill.
@@ -161,3 +161,9 @@ additionally require an Apple Distribution certificate and current App Store
 provisioning profiles for the app and each embedded extension. These signing
 assets stay outside the repository and must be checked in Xcode and App Store
 Connect as part of every release gate.
+
+Toggl Track export adds the optional String `FlowSession.recordingDeviceID`.
+Before releasing it, deploy that additive field through the normal Development
+and Production schema gates. Legacy nil values are retained; do not backfill
+ownership. Tokens and the export outbox are device-local. Two-device verification
+must confirm that only the Flow's originating device exports its completed record.

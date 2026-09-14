@@ -1,6 +1,842 @@
 {
   "sourceLanguage" : "ja",
   "strings" : {
+    "7日平均" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "7日平均"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "7-day average"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Среднее за 7 дней"
+          }
+        }
+      }
+    },
+    "3か月平均" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3か月平均"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3-month average"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Среднее за 3 месяца"
+          }
+        }
+      }
+    },
+    "グラフにポインタを合わせると、記録の詳細を確認できます。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "グラフにポインタを合わせると、記録の詳細を確認できます。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hover over the chart to see record details."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Наведите указатель на график, чтобы посмотреть записи."
+          }
+        }
+      }
+    },
+    "グラフをタップすると、記録の詳細を確認できます。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "グラフをタップすると、記録の詳細を確認できます。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap the chart to see record details."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Коснитесь графика, чтобы посмотреть записи."
+          }
+        }
+      }
+    },
+    "完了した集中時間をToggl Trackに送信します。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完了した集中時間をToggl Trackに送信します。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send completed focus time to Toggl Track."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отправляйте завершённое время фокуса в Toggl Track."
+          }
+        }
+      }
+    },
+    "Toggl TrackのAPIトークンを確認してください。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toggl TrackのAPIトークンを確認してください。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check your Toggl Track API token."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проверьте API-токен Toggl Track."
+          }
+        }
+      }
+    },
+    "ワークスペースと分野ごとのプロジェクトを選択してください。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ワークスペースと分野ごとのプロジェクトを選択してください。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a workspace and projects for your Areas."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите рабочее пространство и проекты для областей."
+          }
+        }
+      }
+    },
+    "送信待ちの記録を保存または読み込めませんでした。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "送信待ちの記録を保存または読み込めませんでした。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not save or read pending entries."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось сохранить или прочитать очередь отправки."
+          }
+        }
+      }
+    },
+    "送信結果を確認できません。Togglの記録を確認してください。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "送信結果を確認できません。Togglの記録を確認してください。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The delivery result is unconfirmed. Check your Toggl entries."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Результат отправки не подтверждён. Проверьте записи в Toggl."
+          }
+        }
+      }
+    },
+    "Togglに一致する記録が複数あります。自動再送を停止しました。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Togglに一致する記録が複数あります。自動再送を停止しました。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Multiple matching Toggl entries were found. Automatic retry has stopped."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В Toggl найдено несколько совпадающих записей. Автоматическая повторная отправка остановлена."
+          }
+        }
+      }
+    },
+    "Togglがリクエストを受け付けませんでした。アクセス権とプロジェクトを確認してください。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Togglがリクエストを受け付けませんでした。アクセス権とプロジェクトを確認してください。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toggl rejected the request. Check your access and project."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toggl отклонил запрос. Проверьте права доступа и проект."
+          }
+        }
+      }
+    },
+    "Togglの利用制限に達しました。時間をおいて再試行してください。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Togglの利用制限に達しました。時間をおいて再試行してください。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toggl’s request limit was reached. Try again later."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Достигнут лимит запросов Toggl. Повторите позже."
+          }
+        }
+      }
+    },
+    "Toggl TrackのAPIトークンは、この端末のKeychainに保存されます。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toggl TrackのAPIトークンは、この端末のKeychainに保存されます。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your Toggl Track API token is stored in this device’s Keychain."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API-токен Toggl Track хранится в Keychain этого устройства."
+          }
+        }
+      }
+    },
+    "APIトークン" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "APIトークン"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API token"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API-токен"
+          }
+        }
+      }
+    },
+    "APIトークンを取得" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "APIトークンを取得"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Get an API token"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Получить API-токен"
+          }
+        }
+      }
+    },
+    "接続" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connect"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подключить"
+          }
+        }
+      }
+    },
+    "再接続" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "再接続"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reconnect"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Переподключить"
+          }
+        }
+      }
+    },
+    "ワークスペース" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ワークスペース"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Workspace"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Рабочее пространство"
+          }
+        }
+      }
+    },
+    "送信しない" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "送信しない"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Do not export"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не отправлять"
+          }
+        }
+      }
+    },
+    "集中時間を自動送信" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集中時間を自動送信"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatically export focus time"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Автоматически отправлять время фокуса"
+          }
+        }
+      }
+    },
+    "設定を保存" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定を保存"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save settings"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сохранить настройки"
+          }
+        }
+      }
+    },
+    "分野とプロジェクト" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分野とプロジェクト"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Areas and projects"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Области и проекты"
+          }
+        }
+      }
+    },
+    "有効化後にこの端末で開始したフローを送信します。休憩・過去の記録・他の端末で開始したフローは含みません。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "有効化後にこの端末で開始したフローを送信します。休憩・過去の記録・他の端末で開始したフローは含みません。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exports Flows started on this device after enabling. Breaks, past entries, and Flows started on other devices are excluded."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отправляются Flow, начатые на этом устройстве после включения. Отдых, прошлые записи и Flow с других устройств не включаются."
+          }
+        }
+      }
+    },
+    "自動送信は有効です" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動送信は有効です"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatic export is enabled"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Автоматическая отправка включена"
+          }
+        }
+      }
+    },
+    "自動送信は停止中です" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動送信は停止中です"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatic export is paused"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Автоматическая отправка приостановлена"
+          }
+        }
+      }
+    },
+    "送信待ち：%lld件" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "送信待ち：%lld件"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld entries pending"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ожидают отправки: %lld"
+          }
+        }
+      }
+    },
+    "最終送信" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最終送信"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last export"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Последняя отправка"
+          }
+        }
+      }
+    },
+    "今すぐ送信" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今すぐ送信"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export now"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отправить сейчас"
+          }
+        }
+      }
+    },
+    "送信結果の確認待ち" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "送信結果の確認待ち"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Awaiting delivery confirmation"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Результат отправки не подтверждён"
+          }
+        }
+      }
+    },
+    "記録がない場合に再送…" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "記録がない場合に再送…"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retry if the entry is missing…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Повторить, если записи нет…"
+          }
+        }
+      }
+    },
+    "Toggl Trackで確認" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toggl Trackで確認"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check Toggl Track"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проверить в Toggl Track"
+          }
+        }
+      }
+    },
+    "送信済みの記録は再送しません。ThruFlowでの後からの編集・削除はTogglに反映されません。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "送信済みの記録は再送しません。ThruFlowでの後からの編集・削除はTogglに反映されません。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exported entries are not sent again. Later edits or deletions in ThruFlow do not change Toggl."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отправленные записи не отправляются повторно. Последующие изменения и удаления в ThruFlow не отражаются в Toggl."
+          }
+        }
+      }
+    },
+    "ThruFlowとTogglの記録は残ります。自動送信を停止します。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ThruFlowとTogglの記録は残ります。自動送信を停止します。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entries in ThruFlow and Toggl are retained. Automatic export will stop."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Записи в ThruFlow и Toggl сохранятся. Автоматическая отправка остановится."
+          }
+        }
+      }
+    },
+    "同じ記録がTogglにないことを確認しましたか？" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同じ記録がTogglにないことを確認しましたか？"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Have you checked that this entry is missing from Toggl?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вы проверили, что этой записи нет в Toggl?"
+          }
+        }
+      }
+    },
+    "再送を許可" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "再送を許可"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow retry"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешить повторную отправку"
+          }
+        }
+      }
+    },
+    "すでに送信されている場合は重複します。まずTogglの記録を確認してください。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "すでに送信されている場合は重複します。まずTogglの記録を確認してください。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retrying an already delivered entry creates a duplicate. Check Toggl first."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Повторная отправка уже принятой записи создаст дубликат. Сначала проверьте Toggl."
+          }
+        }
+      }
+    },
+    "タスクの取り込みや集中時間の共有に使うサービスを選べます。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タスクの取り込みや集中時間の共有に使うサービスを選べます。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose services for importing tasks or sharing focus time."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите сервисы для импорта задач или передачи времени фокуса."
+          }
+        }
+      }
+    },
+    "サービスごとに接続を設定できます。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サービスごとに接続を設定できます。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configure each service separately."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Настройте подключение каждого сервиса."
+          }
+        }
+      }
+    },
     "分・ブロック形式の進捗はThruFlow内で管理します。" : {
       "localizations" : {
         "ja" : {

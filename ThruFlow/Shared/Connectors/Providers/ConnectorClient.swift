@@ -3,6 +3,7 @@ import Foundation
 nonisolated enum ConnectorProviderID: String, Codable, CaseIterable, Identifiable, Sendable {
     case reminders
     case todoist
+    case toggl
 
     var id: String { rawValue }
 }

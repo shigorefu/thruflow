@@ -171,7 +171,7 @@ Each platform owns its composition root:
   The Watch does not compile onboarding, review-presentation, or support-store
   UI; those surfaces are owned by the companion iPhone/iPad/macOS application.
 
-## Connector Boundaries — Upcoming 2.0
+## Connector Boundaries — Upcoming 1.3.0
 
 `ConnectorStore` owns per-device connection metadata, selected list/project IDs,
 Area mapping, success timestamps, and sanitized failures. It uses injectable
@@ -405,7 +405,7 @@ transition while the app is suspended requires an ActivityKit push update
 through APNs; `staleDate`, widget timelines, background tasks, and local
 notifications are not reliable substitutes. Version 1.x explicitly accepts
 this presentation limitation and does not require an APNs provider. Remote
-ActivityKit transport remains deferred and optional. Upcoming 2.0 local
+ActivityKit transport remains deferred and optional. Upcoming 1.3.0 local
 connectors are independent of that transport under D-042, and neither may
 replace SwiftData/CloudKit as the source of truth.
 Do not apply `fixedSize()` to the dynamic interval text: ActivityKit supplies a
@@ -542,3 +542,15 @@ the same palette, daily seed, growth, speed, and mode parameters. The Watch
 Tasks page creates new records through a platform form composed of system
 pickers and steppers; it inserts the same shared `Todo` model without adding a
 second task-creation service or watch-only business rules.
+
+### Toggl Track time export
+
+`TogglExportBuilder` projects completed, device-owned Flow segments into immutable
+focused-time payloads. `TogglTrackClient` owns HTTP and DTOs separately from task
+connector clients. `TogglExportStore` owns mapping, activation boundary, the durable
+outbox, receipt recovery, and foreground scheduling; it never holds SwiftData
+models across network awaits or saves an editor's context. `TogglFileStorage`
+atomically persists the local queue. The existing connector Keychain handles the
+Track token; `FlowRecordingDevice` provides device-only export ownership. Shared
+`TogglSetupSections` supplies form content while native macOS/iOS views retain
+navigation ownership. See `docs/CONNECTORS.md` for delivery and retry rules.
