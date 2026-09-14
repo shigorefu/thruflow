@@ -130,7 +130,8 @@ final class TodoistConnectorClient: ConnectorClient {
             "uuid": change.id.uuidString,
             "args": ["id": taskID]
         ]
-        let data = try JSONSerialization.data(withJSONObject: [command])
+        // Preserve an identical request body when retrying the same command UUID.
+        let data = try JSONSerialization.data(withJSONObject: [command], options: [.sortedKeys])
         let commands = String(decoding: data, as: UTF8.self)
         let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-._~"))
         request.httpBody = Data("commands=\(commands.addingPercentEncoding(withAllowedCharacters: allowed)!)".utf8)
