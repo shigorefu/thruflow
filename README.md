@@ -6,10 +6,10 @@ ThruFlow / スルフロ is an Apple-first productivity app that turns focused wo
 Area -> Task -> Flow -> focused time -> progress -> statistics
 ```
 
-Current source version: **1.3.0 (11)**, in release preparation.
+Released app version: **1.3.0 (11)**.
 
-The latest released version is [1.2.0](https://github.com/shigorefu/thruflow/releases/tag/v1.2.0)
-(build `10`), available on the [App Store](https://apps.apple.com/app/id6798609191).
+The latest released version is [1.3.0](https://github.com/shigorefu/thruflow/releases/tag/v1.3.0)
+(build `11`), available on the [App Store](https://apps.apple.com/app/id6798609191).
 See the [changelog](CHANGELOG.md) for released versions. Development branches
 may contain upcoming features; back up important data before testing them and
 report reproducible problems through the
@@ -27,9 +27,9 @@ report reproducible problems through the
 
 `1 Block` is always 25 focused minutes. Breaks are not counted.
 
-## Upcoming 1.3.0: connectors
+## Connectors in 1.3.0
 
-The next development stage adds Apple Reminders and Todoist task imports on
+Version 1.3.0 adds Apple Reminders and Todoist task imports on
 macOS, iPhone, and iPad. Open Connectors above Settings in the Mac sidebar,
 in the iPhone Flow More menu, or in the iPad sidebar footer. Choose lists or
 projects and a destination Area, then import their unfinished tasks.
@@ -38,14 +38,12 @@ Reminders uses the system permission prompt; Todoist opens its own sign-in and
 consent screen. No ThruFlow account or custom backend is required. Access tokens
 stay in the device Keychain, and imported tasks use the existing local and
 private-iCloud storage. Refresh updates external titles and deadlines while
-preserving ThruFlow completion, notes, planning, and Flow history.
+preserving ThruFlow notes, planning, and Flow history. Check-task completion
+and reopening synchronize both ways.
 
-This is upcoming 1.3.0 development work and has not been declared an App Store
-release. Public OAuth website files, signing, physical-device permissions,
-CloudKit migration, and release verification must be checked before delivery.
 See [Connectors](docs/CONNECTORS.md) for behavior, limitations, and setup.
 
-Upcoming connector development also includes Toggl Track: API-token connection,
+Version 1.3.0 also includes Toggl Track: API-token connection,
 Area/project mapping, and outgoing completed focus time from the recording device.
 See [connector behavior and release checks](docs/CONNECTORS.md#toggl-track-outgoing-focus-time).
 

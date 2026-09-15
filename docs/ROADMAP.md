@@ -194,9 +194,9 @@ Released on GitHub on 2026-09-08; shipping build `10`.
   required GitHub CI status resolvable. Run the complete Apple gate whenever
   any non-Markdown file changes.
 
-## 1.3.0 — Current development (unreleased)
+## 1.3.0 — Connectors, statistics, and Flow polish (released)
 
-Implemented on the development branch; these changes are not a published release.
+Released on GitHub on 2026-09-15; shipping build `11`.
 All Xcode targets now use marketing version `1.3.0` and build `11`.
 
 - [x] Optional focus planned-end timeline; rest always shows elapsed time only.
@@ -210,18 +210,16 @@ All Xcode targets now use marketing version `1.3.0` and build `11`.
 - [x] Align macOS Statistics controls and use Flow symbols for Area group headings.
 - [x] Use `フロー` consistently in Japanese workspace, stream, and onboarding copy.
 
-See `CHANGELOG.md` for detailed changes. Release metadata, signing, and the
-physical-device release checks remain part of release preparation.
+See `CHANGELOG.md` and `releases/1.3.0.md` for detailed changes.
 
 ### Local connectors — included in 1.3.0
 
-Local connectors are included in the 1.3.0 (11) preparation scope. This is not
-an App Store release announcement. APNs remains deferred.
+Local connectors are included in released version 1.3.0 (11). APNs remains deferred.
 
-### Implemented in the development branch
+### Included in the release
 
 - [x] Toggl Track outgoing focus time, API-token connection, Area/project mapping,
-  and a device-owned durable export queue; live-account verification remains a release gate.
+  and a device-owned durable export queue.
 
 - [x] Apple Reminders list selection through native EventKit permission.
 - [x] Todoist read/write OAuth with PKCE and public HTTPS client metadata.
@@ -238,7 +236,10 @@ an App Store release announcement. APNs remains deferred.
   and pause-driven deletion after a user changes its Area.
 - [x] Isolated provider, authorization, import, store, and navigation tests.
 
-### Release gates
+### Archived release checklist
+
+The checklist below preserves preparation records, not the publication status.
+Unchecked items are not retroactively claimed as verified by this documentation update.
 
 - [ ] Pass the complete sequential macOS suite and builds for all supported
   targets; finish Japanese, English, and Russian visual/accessibility review.
@@ -259,10 +260,10 @@ an App Store release announcement. APNs remains deferred.
 ### Deferred
 
 - APNs provider, synchronized remote Live Activity delivery, and webhooks.
-- Writing completion or task edits back to external providers.
+- Writing title, date, or other task edits back to external providers.
 - New local occurrences generated from recurring external tasks.
 - Additional providers, connector management on Watch, and any new pricing.
 
 Connector Check completion/reopening now includes a durable retry outbox and
 explicit remote completion reads. Signed two-device conflict and recurrence
-checks remain required before the 1.3.0 release.
+checks remain part of the regression checklist for future releases.

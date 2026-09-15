@@ -2,20 +2,21 @@
 
 This document is the operational checklist for ThruFlow releases. Product scope remains in [`ROADMAP.md`](ROADMAP.md), and CloudKit details remain in [`CLOUDKIT.md`](CLOUDKIT.md).
 
-## Current preparation: 1.3.0 build 11
+## Released version 1.3.0 build 11
 
-All Debug and Release configurations of the app, extensions, Watch, and test
-bundles use marketing version `1.3.0` and build `11`. This preparation combines
-the UI/statistics/Flow changes and local Reminders, Todoist, and Toggl connectors.
-It does not declare an App Store or GitHub Release publication. Signed-device,
-OAuth, real Toggl-account, and CloudKit Production migration gates still apply;
-see `CONNECTORS.md` and `CLOUDKIT.md`. Previous release history below is preserved.
+The maintainer confirmed that 1.3.0 has shipped. macOS and iOS/Watch archives
+use version `1.3.0`, build `11`, from commit
+`36bf54c2b21091c7b031fbfd2f408d627be0b53e`.
+See [release notes](releases/1.3.0.md). Fixes developed on `1.3.1` are not
+included in this release. This documentation update does not claim to rerun
+physical-device, OAuth, or CloudKit Production checks.
 
 ## Published releases
 
 | Version | GitHub publication (JST) | Status |
 | --- | --- | --- |
-| [1.2.0](https://github.com/shigorefu/thruflow/releases/tag/v1.2.0) | 2026-09-08 | Released; latest stable |
+| [1.3.0](https://github.com/shigorefu/thruflow/releases/tag/v1.3.0) | 2026-09-15 | Released; latest stable |
+| [1.2.0](https://github.com/shigorefu/thruflow/releases/tag/v1.2.0) | 2026-09-08 | Released |
 | [1.1.0](https://github.com/shigorefu/thruflow/releases/tag/v1.1.0) | 2026-09-03 | Released |
 | [1.0.0](https://github.com/shigorefu/thruflow/releases/tag/v1.0.0) | 2026-08-26 | Released |
 
@@ -35,7 +36,7 @@ shipping metadata. Upcoming connector work is not part of this release.
 The following sections remain the procedure for future releases. Their presence
 is not a claim that this documentation update reran physical-device or upload
 checks. Every later App Store Connect upload must use a build number greater
-than the last uploaded build; build `10` has already shipped and must not be
+than the last uploaded build; build `11` has already shipped and must not be
 reused for a new upload.
 
 ## Automated checks
