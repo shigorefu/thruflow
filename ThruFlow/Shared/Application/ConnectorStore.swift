@@ -194,6 +194,12 @@ final class ConnectorStore: ObservableObject {
     }
 
     func synchronizeConfigured(modelContext: ModelContext) async {
+        await ConnectorKeychainInteraction.$allowed.withValue(false) {
+            await synchronizeConfiguredWithoutInteraction(modelContext: modelContext)
+        }
+    }
+
+    private func synchronizeConfiguredWithoutInteraction(modelContext: ModelContext) async {
         guard !disablesAutomaticSync, busyProvider == nil, !modelContext.hasChanges else { return }
         let readContext = ModelContext(modelContext.container)
         let outbox = (try? readContext.fetch(FetchDescriptor<Todo>()))?.filter {

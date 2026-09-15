@@ -1,4 +1,5 @@
 import Foundation
+import LocalAuthentication
 import SwiftData
 import Testing
 @testable import ThruFlow
@@ -28,6 +29,29 @@ import Testing
     private func config(_ area: Area) -> TogglConfiguration {
         TogglConfiguration(account: ConnectorAccount(id: "1", name: "Test"), workspaceID: 10,
                            areaProjects: [area.id.uuidString: 20], enabledAt: start.addingTimeInterval(-1), isEnabled: true)
+    }
+
+    @Test func initializationDoesNotResolveRecordingIdentity() {
+        var reads = 0
+        func resolve() -> String? { reads += 1; return "device-a" }
+        let store = TogglExportStore(credentials: InMemoryConnectorCredentials(), storage: TogglMemoryStorage(),
+                                    deviceID: resolve(), factory: { _ in FakeTogglClient() })
+        #expect(reads == 0)
+        #expect(store.configuration == nil)
+        #expect(store.pendingJobs.isEmpty)
+        #expect(reads == 0)
+    }
+
+    @Test func automaticKeychainPolicyIsScopedToItsTask() async {
+        #expect(ConnectorKeychainInteraction.allowed)
+        await ConnectorKeychainInteraction.$allowed.withValue(false) {
+            #expect(!ConnectorKeychainInteraction.allowed)
+            #expect(ConnectorKeychainInteraction.context(allowed: ConnectorKeychainInteraction.allowed).interactionNotAllowed)
+            await Task.yield()
+            #expect(!ConnectorKeychainInteraction.allowed)
+        }
+        #expect(ConnectorKeychainInteraction.allowed)
+        #expect(!ConnectorKeychainInteraction.context(allowed: true).interactionNotAllowed)
     }
 
     @Test func projectionExcludesPausesAndDoesNotRoundFocusedSeconds() throws {
@@ -251,6 +275,27 @@ import Testing
         #expect(store.configuration?.enabledAt == later)
     }
 
+    @Test func mappingAcceptsActiveProjectWithFalseTrackTimeHintButRejectsArchivedAndForeignProjects() async throws {
+        let client = FakeTogglClient()
+        client.availableProjects = [
+            TogglProject(id: 20, workspace_id: 10, name: "Study", can_track_time: false),
+            TogglProject(id: 21, workspace_id: 10, name: "Archived", active: false),
+            TogglProject(id: 22, workspace_id: 11, name: "Other workspace")
+        ]
+        let store = TogglExportStore(credentials: InMemoryConnectorCredentials(), storage: TogglMemoryStorage(),
+                                    deviceID: "device-a", factory: { _ in client })
+        await store.connect(token: "test")
+        let areaID = UUID().uuidString
+        try store.configure(workspaceID: 10, areaProjects: [areaID: 20], enabled: true)
+        #expect(store.configuration?.areaProjects[areaID] == 20)
+        for invalidProject in [Int64(21), 22, 999] {
+            #expect(throws: (any Error).self) {
+                try store.configure(workspaceID: 10, areaProjects: [areaID: invalidProject], enabled: true)
+            }
+        }
+        #expect(store.configuration?.areaProjects[areaID] == 20)
+    }
+
     @Test func fileStorageRoundTripAndCorruptionFailsClosed() throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }
@@ -271,7 +316,8 @@ import Testing
     var foundID: Int64?
     func account() async throws -> ConnectorAccount { ConnectorAccount(id: accountID, name: "Test") }
     func workspaces() async throws -> [TogglWorkspace] { [TogglWorkspace(id: 10, name: "Workspace")] }
-    func projects() async throws -> [TogglProject] { [TogglProject(id: 20, workspace_id: 10, name: "Project")] }
+    var availableProjects = [TogglProject(id: 20, workspace_id: 10, name: "Project")]
+    func projects() async throws -> [TogglProject] { availableProjects }
     func create(_ payload: TogglTimePayload) async throws -> Int64 {
         created.append(payload)
         if let createError { throw createError }

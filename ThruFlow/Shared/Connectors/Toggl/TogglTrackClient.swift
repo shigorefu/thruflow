@@ -39,7 +39,10 @@ private nonisolated struct TogglURLTransport: ConnectorHTTPTransport {
 
     func projects() async throws -> [TogglProject] {
         let values: [TogglProject] = try await request("me/projects")
-        return values.filter { $0.active && $0.can_track_time != false }
+        // Track can return can_track_time=false for active projects visible to this account.
+        // Do not treat that undocumented flag as an authorization gate; the write API
+        // remains authoritative and its errors are surfaced without acknowledging export.
+        return values.filter { $0.active }
     }
 
     func create(_ payload: TogglTimePayload) async throws -> Int64 {

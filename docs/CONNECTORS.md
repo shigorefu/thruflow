@@ -293,6 +293,12 @@ projects, and explicitly saves with automatic export enabled. Unmapped Areas
 are excluded. Tokens remain in the existing per-device Keychain; no backend,
 client secret, OAuth callback, or website change is needed for this connector.
 
+Project choices use active projects returned by `/me/projects`, filtered by the
+selected workspace. The undocumented `can_track_time` hint is not a visibility
+or configuration gate: Track can return `false` for active account projects.
+Actual export authorization is enforced by the write endpoint; errors remain
+visible and failed exports are not acknowledged.
+
 Only completed FlowSessions created and started after activation on the current
 recording device are eligible. A pause/resume of automatic export establishes a
 new start boundary; it does not backfill disabled periods. Existing queued jobs
@@ -358,3 +364,12 @@ API references:
 - <https://engineering.toggl.com/docs/authentication/>
 - <https://engineering.toggl.com/docs/track/api/me/>
 - <https://engineering.toggl.com/docs/track/api/time_entries/>
+
+### Keychain interaction
+
+Automatic connector synchronization never allows Keychain authentication UI.
+If access needs approval, synchronization keeps its pending work and reports
+the error on the connector screen. Explicit connector operations may request
+access for that provider. The Toggl recording identity is resolved lazily and
+without UI during normal app/Flow use; explicit Toggl connection can authorize
+access. An inaccessible identity is not replaced or cached as a permanent failure.
