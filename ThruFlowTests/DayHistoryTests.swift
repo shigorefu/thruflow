@@ -55,7 +55,7 @@ struct DayHistoryTests {
 
     @Test func creatingManualFlowCreatesIndependentSeriesAndAppliesProgress() throws {
         let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let area = Area(name: "仕事", type: .neutral)
@@ -94,7 +94,7 @@ struct DayHistoryTests {
 
     @Test func attachingCreatedTaskUpdatesOpenHistoryItemWithoutRebuild() throws {
         let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let area = Area(
@@ -158,7 +158,7 @@ struct DayHistoryTests {
 
     @Test func movingFlowShiftsSessionAndSegmentsWithoutChangingProgress() throws {
         let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let area = Area(name: "仕事", type: .neutral)
@@ -480,7 +480,7 @@ struct DayHistoryTests {
 
     @Test func editingFlowMovesOnlyItsProgressToTheNewTaskAndArea() throws {
         let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let originalArea = Area(name: "仕事", type: .neutral, focusDurationSeconds: 50 * 60)
@@ -561,7 +561,7 @@ struct DayHistoryTests {
 
     @Test func editingAreaOnlyFlowKeepsItIndependentAndStoresItsResult() throws {
         let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let originalArea = Area(name: "読書", type: .neutral)
@@ -603,7 +603,7 @@ struct DayHistoryTests {
 
     @Test func deletingFlowRebuildsStaleBlockProgressFromRemainingHistory() throws {
         let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let area = Area(name: "学習", type: .habit, focusDurationSeconds: 55 * 60)
@@ -658,7 +658,7 @@ struct DayHistoryTests {
 
     @Test func deletingOneFlowSegmentRemovesOnlyItsProgress() throws {
         let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let area = Area(name: "仕事", type: .neutral, focusDurationSeconds: 25 * 60)
@@ -704,7 +704,7 @@ struct DayHistoryTests {
 
     @Test func editingOneFlowSegmentPreservesSiblingContextAndReconcilesProgress() throws {
         let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let ankiArea = Area(name: "Anki", type: .neutral)
@@ -794,7 +794,7 @@ struct DayHistoryTests {
 
     @Test func deletingFlowSessionSoftDeletesRelatedBreaks() throws {
         let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let area = Area(name: "仕事", type: .neutral)
@@ -832,7 +832,7 @@ struct DayHistoryTests {
 
     @Test func editingBreakPushesOnlyOverlappingSessionsInTheSameSeries() throws {
         let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let area = Area(name: "仕事", type: .neutral)
@@ -959,7 +959,7 @@ struct DayHistoryTests {
 
     @Test func editingBreakStartUpdatesItsIntervalAndPushesOnlyAnOverlap() throws {
         let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let area = Area(name: "仕事", type: .neutral)
@@ -1024,7 +1024,7 @@ struct DayHistoryTests {
 
     @Test func deletingBreakSoftDeletesOnlyThatHistoryRecord() throws {
         let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 300_000)

@@ -89,6 +89,30 @@ struct LocalisationTests {
         #expect(missing.isEmpty, "Missing localisations: \(missing.joined(separator: ", "))")
     }
 
+    @Test func nonInterpolatedLocalizedSourceKeysExistInCatalog() throws {
+        let data = try Data(contentsOf: catalogURL)
+        let root = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let strings = try #require(root["strings"] as? [String: Any])
+        // Interpolated keys are checked from compiler extraction during localization review.
+        let expression = try NSRegularExpression(pattern: #"String\(localized:\s*"([^"\\]+)""#)
+        var missing: [String] = []
+        for directory in ["ThruFlow", "ThruFlowLiveActivity"] {
+            let enumerator = try #require(FileManager.default.enumerator(
+                at: repositoryRoot.appending(path: directory), includingPropertiesForKeys: nil,
+                options: [.skipsHiddenFiles]))
+            for case let file as URL in enumerator where file.pathExtension == "swift" {
+                let source = try String(contentsOf: file, encoding: .utf8)
+                let range = NSRange(source.startIndex..., in: source)
+                for match in expression.matches(in: source, range: range) {
+                    let keyRange = try #require(Range(match.range(at: 1), in: source))
+                    let key = String(source[keyRange])
+                    if strings[key] == nil { missing.append("\(file.lastPathComponent): \(key)") }
+                }
+            }
+        }
+        #expect(missing.isEmpty, "Source keys missing from catalog: \(missing.sorted())")
+    }
+
     @Test func catalogMatchesUnambiguousGlossaryTerms() throws {
         let data = try Data(contentsOf: catalogURL)
         let root = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])

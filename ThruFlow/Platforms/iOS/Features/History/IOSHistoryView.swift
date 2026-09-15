@@ -303,7 +303,7 @@ struct IOSHistoryView: View {
                     selectedMode = mode
                 } label: {
                     if selectedMode == mode {
-                        Label(mode.displayName, systemImage: "checkmark")
+                        Label(mode.displayName, systemImage: "checkmark").labelStyle(.titleAndIcon)
                     } else {
                         Text(mode.displayName)
                     }

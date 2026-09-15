@@ -18,7 +18,7 @@ struct StatisticsAreaSelectionMenu: View {
                 selectedAreaIDs.removeAll()
             } label: {
                 if selectedAreaIDs.isEmpty {
-                    Label(String(localized: "すべて"), systemImage: "checkmark")
+                    Label(String(localized: "すべて"), systemImage: "checkmark").labelStyle(.titleAndIcon)
                 } else {
                     Text(String(localized: "すべて"))
                 }

@@ -458,7 +458,7 @@ struct TodoTests {
             FlowSegment.self,
             FlowBreak.self,
         ])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let date = Date(timeIntervalSince1970: 4 * 86_400)
@@ -500,7 +500,7 @@ struct TodoTests {
             FlowSegment.self,
             FlowBreak.self,
         ])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let monday = date(2026, 7, 6, calendar: calendar)
@@ -574,7 +574,7 @@ struct TodoTests {
             FlowSegment.self,
             FlowBreak.self,
         ])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let monday = date(2026, 7, 6, calendar: calendar)
@@ -644,7 +644,7 @@ struct TodoTests {
             FlowSegment.self,
             FlowBreak.self,
         ])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let monday = date(2026, 7, 6, calendar: calendar)

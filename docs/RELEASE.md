@@ -111,3 +111,22 @@ Never publish by rebuilding after the smoke test. Promote the exact tested build
 - Tag the tested release source as `v<marketing-version>` only after the build
   is accepted and smoke-tested. Existing published tags must not be moved.
 - Publish release notes that clearly identify known limitations and migration behavior.
+
+## SDK 27 compatibility checks (1.3.1)
+
+- Keep the existing deployment targets; SDK 27 does not require raising them.
+- Live Activity attributes and their content state are nonisolated value types,
+  so ActivityKit can transfer them to its concurrent update/end APIs.
+- Explicit checkmark labels in selection menus use `titleAndIcon` to preserve
+  the selected-state indicator under the new menu image defaults.
+- In-memory unit-test stores explicitly disable CloudKit. With automatic
+  CloudKit selection on macOS 27, repeated saves failed with
+  `No eligible connection available`; the application factory already selects
+  `.none` for isolated runs.
+- Xcode 27 requires its matching Metal Toolchain component to compile the Flow
+  shader. Install it with `xcodebuild -downloadComponent MetalToolchain` if absent.
+
+References: [iOS 27 release notes](https://developer.apple.com/documentation/ios-ipados-release-notes/ios-ipados-27-release-notes)
+and [macOS 27 release notes](https://developer.apple.com/documentation/macos-release-notes/macos-27-release-notes).
+Build and unit-test checks do not replace signed physical-device checks for
+Live Activity, widgets, OAuth, and CloudKit Production.

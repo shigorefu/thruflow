@@ -157,3 +157,10 @@ Japanese wording does not imply that English and Russian should use a singular
 entity label in collection navigation. Likewise, English `Area` and Russian
 `Сфера` are independent idiomatic choices; neither should be translated
 mechanically from the other language.
+
+Literal `String(localized:)` keys are also checked against the catalog by
+`LocalisationTests`, so a source key cannot silently fall back to Japanese
+because its EN/RU catalog entry is missing. During SDK upgrades, compare the
+compiler-generated `.stringsdata` from both macOS and iOS/Watch builds with
+the catalog as well; this includes interpolated keys. Review Japanese entries
+marked `new` and mark them translated only after checking their actual copy.

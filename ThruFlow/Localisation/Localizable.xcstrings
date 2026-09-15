@@ -1125,50 +1125,6 @@
         }
       }
     },
-    "%.0f Blocks" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%.0f blocks"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%.0fブロック"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%.0f бл."
-          }
-        }
-      }
-    },
-    "%.1f Blocks" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%.1f blocks"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%.1fブロック"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%.1f бл."
-          }
-        }
-      }
-    },
     "%@\n%@\n%@" : {
       "localizations" : {
         "en" : {
@@ -1179,7 +1135,7 @@
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "%1$@\n%2$@\n%3$@"
           }
         },
@@ -1245,7 +1201,7 @@
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "%1$@ %2$@"
           }
         },
@@ -1290,7 +1246,7 @@
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "%1$@ %2$@ +%3$lld分"
           }
         },
@@ -1357,7 +1313,7 @@
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "%1$@–%2$@"
           }
         },
@@ -1417,7 +1373,7 @@
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "%1$@, %2$@"
           }
         },
@@ -1439,7 +1395,7 @@
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "%1$@, %2$lld %3$@"
           }
         },
@@ -1461,7 +1417,7 @@
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "%1$@、%2$lld分"
           }
         },
@@ -1483,7 +1439,7 @@
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "%1$@: %2$@ - %3$@"
           }
         },
@@ -1505,7 +1461,7 @@
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "%1$@: %2$lld"
           }
         },
@@ -1635,7 +1591,7 @@
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "%1$lld / %2$lld"
           }
         },
@@ -1643,28 +1599,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld / %lld"
-          }
-        }
-      }
-    },
-    "%lld %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$lld %2$@"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld %2$@"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$lld %2$@"
           }
         }
       }
@@ -1724,7 +1658,7 @@
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "%1$lld/%2$lld"
           }
         },
@@ -1780,28 +1714,6 @@
         }
       }
     },
-    "%lld%@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$lld%2$@"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld%2$@"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$lld%2$@"
-          }
-        }
-      }
-    },
     "%lld%%" : {
       "localizations" : {
         "en" : {
@@ -1844,7 +1756,7 @@
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "%1$lld分%2$lld秒"
           }
         },
@@ -1866,7 +1778,7 @@
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "%1$lld年%2$lld月"
           }
         },
@@ -1904,7 +1816,7 @@
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "%1$lld時間%2$lld分"
           }
         },
@@ -1975,7 +1887,7 @@
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "☕️ %1$@ - %2$@"
           }
         },
@@ -2005,22 +1917,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "☕️ %1$@ (%2$@)"
-          }
-        }
-      }
-    },
-    "🎯" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "🎯"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "🎯"
           }
         }
       }
@@ -13622,7 +13518,6 @@
         }
       }
     },
-
     "認証を確認できませんでした。もう一度接続してください。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13757,6 +13652,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Выбранный список не найден. Выберите списки заново."
+          }
+        }
+      }
+    },
+    "タスクを作成" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タスクを作成"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create Task"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Создать задачу"
           }
         }
       }

@@ -2068,7 +2068,7 @@ private struct PriorityChip: View {
     @ViewBuilder
     private func menuRow(text: String, isSelected: Bool) -> some View {
         if isSelected {
-            Label(text, systemImage: "checkmark")
+            Label(text, systemImage: "checkmark").labelStyle(.titleAndIcon)
         } else {
             Text(text)
         }
@@ -2165,7 +2165,7 @@ private struct AreaChip: View {
     @ViewBuilder
     private func menuRow(text: String, isSelected: Bool) -> some View {
         if isSelected {
-            Label(text, systemImage: "checkmark")
+            Label(text, systemImage: "checkmark").labelStyle(.titleAndIcon)
         } else {
             Text(text)
         }
@@ -2273,7 +2273,7 @@ private struct VolumeChip: View {
 
     @ViewBuilder
     private func menuRow(_ text: String, selected: Bool) -> some View {
-        if selected { Label(text, systemImage: "checkmark") } else { Text(text) }
+        if selected { Label(text, systemImage: "checkmark").labelStyle(.titleAndIcon) } else { Text(text) }
     }
 }
 
@@ -2346,7 +2346,7 @@ private struct DateChip: View {
     @ViewBuilder
     private func menuRow(text: String, isSelected: Bool) -> some View {
         if isSelected {
-            Label(text, systemImage: "checkmark")
+            Label(text, systemImage: "checkmark").labelStyle(.titleAndIcon)
         } else {
             Text(text)
         }

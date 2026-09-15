@@ -2,8 +2,8 @@
 import ActivityKit
 import Foundation
 
-struct FlowActivityAttributes: ActivityAttributes {
-    struct ContentState: Codable, Hashable {
+nonisolated struct FlowActivityAttributes: ActivityAttributes {
+    nonisolated struct ContentState: Codable, Hashable, Sendable {
         var taskEmoji: String
         var taskTitle: String
         var areaEmoji: String
