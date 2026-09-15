@@ -29,7 +29,7 @@ struct TasksView: View {
     @State private var anchorDate = Calendar.current.startOfDay(for: .now)
     @State private var selectedDate = Calendar.current.startOfDay(for: .now)
     @State private var calendarRange: TaskCalendarRange = .oneDay
-    @State private var taskFilter: TaskCalendarFilter = .all
+    @State private var taskFilter: TaskCalendarFilter
     @State private var searchText = ""
     @State private var isSearchPresented = false
     @State private var moveError: String?
@@ -38,7 +38,10 @@ struct TasksView: View {
     @State private var calendarDayRevision = 0
     @AppStorage("today.groupOrder") private var groupOrderRaw = TasksTodoGroup.defaultOrderRaw
 
-    private var requiredPlanner: RequiredTodoPlanner { RequiredTodoPlanner(calendar: calendar) }
+    init(initialFilter: TaskCalendarFilter = .all) {
+        _taskFilter = State(initialValue: initialFilter)
+    }
+
     private var calendarBuilder: TaskCalendarBuilder { TaskCalendarBuilder(calendar: calendar) }
     private var rescheduleService: TaskRescheduleService {
         TaskRescheduleService(calendar: calendar, dayBoundary: dayBoundary)
@@ -711,95 +714,13 @@ struct TasksView: View {
             )
         )
         .contextMenu {
-            Button(String(localized: "編集"), systemImage: "pencil") {
-                editingTodo = todo
-            }
-
-            if !todo.isCompleted {
-                if todo.area?.type == .habit {
-                    if todo.area?.goalSchedule == .weeklyCount {
-                        weeklyHabitMoveMenu(for: todo)
-                    }
-                } else {
-                    standardMoveMenu(for: todo)
-                }
-            }
-
-            Divider()
-
-            Button(String(localized: "Flowを開始"), systemImage: "play.fill") {
-                activeFlowStore.configure(area: todo.area, todo: todo)
-            }
-
-            Divider()
-
-            Button(String(localized: "削除"), systemImage: "trash", role: .destructive) {
-                todo.softDelete()
-            }
+            MacTaskContextMenu(todo: todo, onEdit: { editingTodo = todo }, onError: { moveError = $0 })
         }
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
             Button(String(localized: "削除"), systemImage: "trash", role: .destructive) {
                 todo.softDelete()
             }
         }
-    }
-
-    @ViewBuilder
-    private func standardMoveMenu(for todo: Todo) -> some View {
-        Menu(String(localized: "移動")) {
-            Button(String(localized: "今日")) {
-                reschedule(todo, to: .now)
-            }
-            Button(String(localized: "明日")) {
-                reschedule(todo, to: calendar.date(byAdding: .day, value: 1, to: .now))
-            }
-            Button(String(localized: "日付なし")) {
-                reschedule(todo, to: nil)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func weeklyHabitMoveMenu(for todo: Todo) -> some View {
-        let options = requiredPlanner.weeklyRescheduleOptions(for: todo, in: todos)
-
-        Menu(String(localized: "移動")) {
-            ForEach(options, id: \.date) { option in
-                Button(rescheduleLabel(for: option.date)) {
-                    reschedule(todo, to: option.date)
-                }
-                .disabled(!option.isAllowed)
-                .help(option.isAllowed ? "" : String(localized: "週間目標を達成できなくなるため移動できません"))
-            }
-        }
-    }
-
-    private func reschedule(_ todo: Todo, to date: Date?) {
-        if let date {
-            _ = moveTodo(todo, to: date)
-        } else {
-            guard !todo.isCompleted, todo.area?.type != .habit else { return }
-            todo.reschedule(to: nil)
-            _ = modelContext.saveReporting(.taskUpdate)
-        }
-    }
-
-    private func rescheduleLabel(for date: Date) -> String {
-        if calendar.isDateInToday(date) {
-            return String(localized: "今日")
-        }
-        if calendar.isDateInTomorrow(date) {
-            return String(localized: "明日")
-        }
-
-        return rescheduleDateFormatter.string(from: date)
-    }
-
-    private var rescheduleDateFormatter: DateFormatter {
-        let formatter = DateFormatter()
-        formatter.locale = locale
-        formatter.setLocalizedDateFormatFromTemplate("MdE")
-        return formatter
     }
 
     private func moveGroups(

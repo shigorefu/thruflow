@@ -42,6 +42,7 @@ struct FlowDashboardView: View {
     @Binding private var cachedSnapshot: FlowDashboardSnapshot?
     @Binding private var cachedTodoGroups: FlowDashboardTodoGroups?
     let isVisible: Bool
+    let onOpenTasks: (TaskCalendarFilter) -> Void
 
     private let progressCalculator = TodoProgressCalculator()
     private let historyEditor = FlowHistoryEditor()
@@ -58,7 +59,8 @@ struct FlowDashboardView: View {
         isVisible: Bool = true,
         areas: [Area],
         cachedSnapshot: Binding<FlowDashboardSnapshot?>,
-        cachedTodoGroups: Binding<FlowDashboardTodoGroups?>
+        cachedTodoGroups: Binding<FlowDashboardTodoGroups?>,
+        onOpenTasks: @escaping (TaskCalendarFilter) -> Void = { _ in }
     ) {
         let cutoff = Calendar.current.date(byAdding: .day, value: -16, to: .now) ?? .distantPast
         let todoUpperBound = Calendar.current.date(byAdding: .day, value: 2, to: .now) ?? .distantFuture
@@ -83,6 +85,7 @@ struct FlowDashboardView: View {
             sort: \FlowBreak.updatedAt,
             order: .reverse
         )
+        self.onOpenTasks = onOpenTasks
         _cachedSnapshot = cachedSnapshot
         _cachedTodoGroups = cachedTodoGroups
     }
@@ -665,6 +668,7 @@ struct FlowDashboardView: View {
                 progressText: progressText,
                 onToggle: toggleTodo,
                 onOpen: { editingTodo = $0 },
+                onOpenSection: { onOpenTasks(.tasks) },
                 addControl: AnyView(dashboardAddButton)
             )
             DashboardTodoColumn(
@@ -673,7 +677,8 @@ struct FlowDashboardView: View {
                 todos: habitTodos,
                 progressText: progressText,
                 onToggle: toggleTodo,
-                onOpen: { editingTodo = $0 }
+                onOpen: { editingTodo = $0 },
+                onOpenSection: { onOpenTasks(.habits) }
             )
 
             if !niceTodos.isEmpty {
@@ -1622,13 +1627,22 @@ private struct DashboardTodoColumn: View {
     let progressText: (Todo) -> String
     let onToggle: (Todo) -> Void
     let onOpen: (Todo) -> Void
+    var onOpenSection: (() -> Void)?
     var addControl: AnyView?
+    @State private var moveError: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Label(title, systemImage: systemImage)
-                    .font(.headline)
+                if let onOpenSection {
+                    Button(action: onOpenSection) {
+                        Label(title, systemImage: systemImage).font(.headline)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("flow.openTasks.\(systemImage)")
+                } else {
+                    Label(title, systemImage: systemImage).font(.headline)
+                }
                 Spacer()
                 Text("\(todos.filter { !$0.isCompleted }.count)")
                     .font(.caption.weight(.semibold))
@@ -1649,6 +1663,9 @@ private struct DashboardTodoColumn: View {
                 VStack(spacing: 0) {
                     ForEach(todos.prefix(6)) { todo in
                         todoRow(todo)
+                            .contextMenu {
+                                MacTaskContextMenu(todo: todo, onEdit: { onOpen(todo) }, onError: { moveError = $0 })
+                            }
 
                         if todo.id != todos.prefix(6).last?.id {
                             Divider().opacity(0.5)
@@ -1657,6 +1674,13 @@ private struct DashboardTodoColumn: View {
                 }
             }
 
+        }
+        .alert(String(localized: "移動できません"), isPresented: Binding(
+            get: { moveError != nil }, set: { if !$0 { moveError = nil } }
+        )) {
+            Button(String(localized: "OK"), role: .cancel) { moveError = nil }
+        } message: {
+            Text(moveError ?? "")
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(16)

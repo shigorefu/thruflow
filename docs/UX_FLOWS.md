@@ -861,3 +861,10 @@ completed Task count below the chart without covering the plotted lines.
 Custom ranges use daily trend buckets through 120 days and monthly buckets
 above that; trend axis labels follow the actual aggregation independently of
 Dots layout. Dots and distribution totals retain their existing behavior.
+
+### macOS Flow task shortcuts
+
+Task cards in the Flow dashboard use the same context menu as Tasks: edit,
+reschedule where allowed, select for Flow, and soft delete. Weekly Habit moves
+retain the existing schedule validation. The Tasks and Habits column headings
+open the Tasks workspace with the corresponding filter selected.
