@@ -72,6 +72,8 @@ final class Todo {
     var hashtagsRawValue: String?
     /// Optional scalar for additive local-store and CloudKit migration.
     var externalTaskLinkRawValue: String? = nil
+    /// Nil preserves classification of records created before this field existed.
+    var habitOccurrence: Bool? = nil
     /// Persisted as `direction` for SwiftData and CloudKit compatibility.
     var direction: Area?
     var measurementRawValue: String = TodoMeasurement.checkbox.rawValue
@@ -100,6 +102,7 @@ final class Todo {
         notes: String? = nil,
         hashtags: [String] = [],
         area: Area,
+        habitOccurrence: Bool? = nil,
         measurement: TodoMeasurement = .checkbox,
         priority: TodoPriority = .medium,
         isRoomIfPossible: Bool = false,
@@ -121,6 +124,7 @@ final class Todo {
         self.notes = notes
         self.hashtagsRawValue = TodoHashtagCodec.encode(hashtags)
         self.direction = area
+        self.habitOccurrence = habitOccurrence
         self.measurementRawValue = measurement.rawValue
         self.priorityRawValue = priority.rawValue
         self.isRoomIfPossible = isRoomIfPossible
@@ -142,6 +146,14 @@ final class Todo {
     var area: Area? {
         get { direction }
         set { direction = newValue }
+    }
+
+    var isHabitOccurrence: Bool {
+        area?.type == .habit && (habitOccurrence ?? true) && externalTaskLinkRawValue == nil
+    }
+
+    var taskType: AreaType {
+        isHabitOccurrence ? .habit : (area?.type == .nice ? .nice : .neutral)
     }
 
     var measurement: TodoMeasurement {

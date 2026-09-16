@@ -935,12 +935,12 @@ private struct IOSGroupedTodos {
     let nice: [Todo]
 
     init(todos: [Todo]) {
-        habits = todos.filter { $0.area?.type == .habit }
+        habits = todos.filter { $0.taskType == .habit }
         tasks = todos.filter { todo in
             guard let area = todo.area else { return true }
-            return area.type == .neutral || DefaultAreas.isTaskInbox(area)
+            return todo.taskType == .neutral || DefaultAreas.isTaskInbox(area)
         }
-        nice = todos.filter { $0.area?.type == .nice }
+        nice = todos.filter { $0.taskType == .nice }
     }
 }
 

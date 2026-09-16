@@ -699,7 +699,7 @@ struct TasksView: View {
 
     private func canDrag(_ todo: Todo) -> Bool {
         guard !todo.isCompleted else { return false }
-        guard todo.area?.type == .habit else { return true }
+        guard todo.taskType == .habit else { return true }
         return todo.area?.goalSchedule == .weeklyCount
     }
 
@@ -789,6 +789,7 @@ struct TasksView: View {
             title: draft.trimmedTitle,
             hashtags: draft.hashtags,
             area: area,
+            habitOccurrence: false,
             measurement: newTodoVolume.measurement,
             priority: newTodoPriority,
             isRoomIfPossible: newTodoPriority == .low && newTodoIsRoomIfPossible,
@@ -1897,6 +1898,7 @@ struct QuickTodoCreationPopover: View {
             notes: draft.trimmedNotes,
             hashtags: draft.hashtags,
             area: area,
+            habitOccurrence: false,
             measurement: volume.measurement,
             priority: priority,
             isRoomIfPossible: priority == .low && isRoomIfPossible,
@@ -2335,7 +2337,7 @@ private struct TasksTodoGroup: Identifiable {
     }
 
     static func type(for todo: Todo) -> AreaType {
-        todo.area?.type ?? .neutral
+        todo.taskType
     }
 
     nonisolated private static func todoSort(_ lhs: Todo, _ rhs: Todo) -> Bool {

@@ -44,15 +44,15 @@ enum TaskCalendarFilter: String, CaseIterable, Identifiable {
     }
 
     func includes(_ todo: Todo) -> Bool {
-        guard let area = todo.area else { return false }
+        guard todo.area != nil else { return false }
 
         switch self {
         case .all:
             return true
         case .tasks:
-            return area.type != .habit
+            return !todo.isHabitOccurrence
         case .habits:
-            return area.type == .habit
+            return todo.isHabitOccurrence
         }
     }
 }
@@ -198,7 +198,7 @@ struct TaskRescheduleService {
             return .failure(.completedTask)
         }
 
-        guard todo.area?.type == .habit else {
+        guard todo.taskType == .habit else {
             return .success(())
         }
 

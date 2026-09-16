@@ -23,7 +23,8 @@ struct HabitScheduleChangeReconciler {
         let today = dayBoundary.day(containing: now, calendar: calendar)
         let planner = RequiredTodoPlanner(calendar: calendar)
         let futureTodos = todos.filter { todo in
-            guard todo.area?.id == area.id,
+            guard todo.isHabitOccurrence,
+                  todo.area?.id == area.id,
                   todo.externalTaskLinkRawValue == nil,
                   !todo.isArchived,
                   !todo.isDeleted,

@@ -200,6 +200,7 @@ struct HistoryTaskRecordEditor {
         let todo = Todo(
             title: normalizedTitle,
             area: area,
+            habitOccurrence: false,
             measurement: measurement,
             priority: priority,
             isRoomIfPossible: priority == .low && isRoomIfPossible,
@@ -221,8 +222,8 @@ struct HistoryTaskRecordEditor {
     }
 
     private func taskSort(_ lhs: Todo, _ rhs: Todo) -> Bool {
-        let lhsHabit = lhs.area?.type == .habit
-        let rhsHabit = rhs.area?.type == .habit
+        let lhsHabit = lhs.taskType == .habit
+        let rhsHabit = rhs.taskType == .habit
         if lhsHabit != rhsHabit { return lhsHabit }
         if lhs.isCompleted != rhs.isCompleted { return !lhs.isCompleted }
         if lhs.priority != rhs.priority {
@@ -243,6 +244,7 @@ struct HistoryTaskRecordEditor {
         let todo = Todo(
             title: "",
             area: area,
+            habitOccurrence: true,
             measurement: measurement(for: goalUnit),
             priority: .high,
             isRoomIfPossible: false,

@@ -877,3 +877,10 @@ across Flow, Tasks, History, Areas, and Statistics. Content safe areas and keybo
 avoidance remain active. Period-swipe containers clip horizontal page transitions
 while allowing scroll content to extend into the bottom safe area beneath the
 floating tab bar.
+
+### Creating a Task under a Habit Area
+
+Quick capture and Task editors create an independent Task even when AWS or another
+Habit Area is selected. It stays in Tasks, keeps its title and measurement, and can
+be scheduled independently. It neither replaces nor suppresses that Area's Habit
+occurrence. Editing it preserves this distinction.

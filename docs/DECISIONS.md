@@ -781,3 +781,10 @@ configuration uses version 1.3.0 and build 11. Merge the consolidated work into
 main and delete the merged 1.3.0 and codex/connectors branches. This changes
 release scope and source metadata, not the historical publication status of
 1.2.0 or the outstanding physical-device/CloudKit release gates.
+
+### 2026-09-16 — Preserve independent Tasks in Habit Areas
+
+Manual Task creation must not turn into a Habit because of the selected Area.
+Use an optional persisted occurrence flag; explicit independent Tasks are excluded
+from Habit generation, deduplication, pauses, and schedule reconciliation. Legacy
+records retain their existing classification without a destructive backfill.

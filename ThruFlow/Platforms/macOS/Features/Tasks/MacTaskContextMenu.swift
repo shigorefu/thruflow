@@ -18,7 +18,7 @@ struct MacTaskContextMenu: View {
     var body: some View {
         Button(String(localized: "編集"), systemImage: "pencil", action: onEdit)
         if !todo.isCompleted {
-            if todo.area?.type == .habit {
+            if todo.taskType == .habit {
                 if todo.area?.goalSchedule == .weeklyCount {
                     Menu(String(localized: "移動")) {
                         ForEach(RequiredTodoPlanner(calendar: calendar).weeklyRescheduleOptions(for: todo, in: todos), id: \.date) { option in
@@ -59,7 +59,7 @@ struct MacTaskContextMenu: View {
                 return
             }
         } else {
-            guard !todo.isCompleted, todo.area?.type != .habit else { return }
+            guard !todo.isCompleted, todo.taskType != .habit else { return }
             todo.reschedule(to: nil)
         }
         do { try modelContext.save() }

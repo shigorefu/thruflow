@@ -28,7 +28,7 @@ struct IOSFlowContextPicker: View {
         _selectedTab = State(
             initialValue: selectedTodoID == nil
                 ? .areas
-                : selectedTodo?.area?.type == .habit ? .habits : .tasks
+                : selectedTodo?.taskType == .habit ? .habits : .tasks
         )
     }
 

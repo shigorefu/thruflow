@@ -274,9 +274,9 @@ struct FlowDashboardTodoGroupBuilder {
 
         return FlowDashboardTodoGroups(
             all: sorted,
-            standard: sorted.filter { ($0.area?.type ?? .neutral) == .neutral },
-            habits: sorted.filter { $0.area?.type == .habit },
-            nice: sorted.filter { $0.area?.type == .nice }
+            standard: sorted.filter { $0.taskType == .neutral },
+            habits: sorted.filter { $0.taskType == .habit },
+            nice: sorted.filter { $0.taskType == .nice }
         )
     }
 }

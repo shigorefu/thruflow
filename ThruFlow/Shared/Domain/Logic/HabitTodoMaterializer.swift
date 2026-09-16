@@ -55,7 +55,7 @@ struct HabitTodoMaterializer {
         // unfinished and can roll forward to today.
         let measuredWeeklyTodos = todos.filter {
             !$0.isDeleted && !$0.isArchived && $0.measurement != .checkbox &&
-                $0.area?.type == .habit && $0.area?.goalSchedule == .weeklyCount
+                $0.taskType == .habit && $0.area?.goalSchedule == .weeklyCount
         }
         if !measuredWeeklyTodos.isEmpty {
             let previous = measuredWeeklyTodos.map {

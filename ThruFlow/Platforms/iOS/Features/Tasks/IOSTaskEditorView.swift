@@ -202,7 +202,7 @@ struct IOSTaskEditorView: View {
     }
 
     private var isHabitTodoEdit: Bool {
-        editedTodo?.area?.type == .habit
+        editedTodo?.taskType == .habit
     }
 
     private var selectedArea: Area? {
@@ -290,6 +290,7 @@ struct IOSTaskEditorView: View {
                 notes: notes,
                 hashtags: tags,
                 area: area,
+                habitOccurrence: false,
                 measurement: measurement,
                 priority: priority,
                 isRoomIfPossible: priority == .low && isRoomIfPossible,

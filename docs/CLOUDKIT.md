@@ -167,3 +167,11 @@ Before releasing it, deploy that additive field through the normal Development
 and Production schema gates. Legacy nil values are retained; do not backfill
 ownership. Tokens and the export outbox are device-local. Two-device verification
 must confirm that only the Flow's originating device exports its completed record.
+
+### 1.3.1 Habit occurrence field
+
+The optional `Todo.habitOccurrence` Boolean must be materialized in Development
+and deployed to Production before shipping the updated clients. Missing values
+retain legacy classification. Older clients do not understand independent Tasks
+in Habit Areas and can still merge them: use updated clients on all devices for
+this workflow. Local tests do not validate Production schema deployment.

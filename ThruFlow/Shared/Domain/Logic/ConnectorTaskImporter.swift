@@ -147,6 +147,7 @@ struct ConnectorTaskImporter {
                         title: task.title.trimmingCharacters(in: .whitespacesAndNewlines),
                         notes: task.notes,
                         area: area,
+                        habitOccurrence: false,
                         measurement: .checkbox,
                         scheduledDate: nil,
                         deadline: task.dueDate,
