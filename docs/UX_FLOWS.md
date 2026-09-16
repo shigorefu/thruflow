@@ -868,3 +868,12 @@ Task cards in the Flow dashboard use the same context menu as Tasks: edit,
 reschedule where allowed, select for Flow, and soft delete. Weekly Habit moves
 retain the existing schedule validation. The Tasks and Habits column headings
 open the Tasks workspace with the corresponding filter selected.
+
+### iPhone tab-bar background
+
+Each compact-width tab keeps the system tab controls without an opaque full-width
+bottom backing. On iOS 26 and later, the bottom scroll-edge effect is also hidden
+across Flow, Tasks, History, Areas, and Statistics. Content safe areas and keyboard
+avoidance remain active. Period-swipe containers clip horizontal page transitions
+while allowing scroll content to extend into the bottom safe area beneath the
+floating tab bar.
