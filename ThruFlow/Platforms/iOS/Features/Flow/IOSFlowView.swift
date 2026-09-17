@@ -72,7 +72,11 @@ struct IOSFlowView: View {
                     Button {
                         open(.connectors)
                     } label: {
-                        Label(String(localized: "コネクタ"), systemImage: "puzzlepiece.extension")
+                        Label {
+                            Text(String(localized: "コネクタ")) + Text(verbatim: "  Beta")
+                        } icon: {
+                            Image(systemName: "puzzlepiece.extension")
+                        }
                     }
                     .accessibilityIdentifier("connectors.open")
 

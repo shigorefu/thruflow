@@ -1103,6 +1103,33 @@ struct FlowTests {
         #expect(notifications.runningTooLong.last?.fireDate == start.addingTimeInterval(70 * 60))
     }
 
+    @Test @MainActor func extendingPastOneHourCancelsForgottenTimerReminder() throws {
+        let config = ModelConfiguration(isStoredInMemoryOnly: true, cloudKitDatabase: .none)
+        let container = try ModelContainer(for: Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self, configurations: config)
+        let context = container.mainContext
+        let start = Date(timeIntervalSince1970: 25_000)
+        let area = Area(name: "Work", type: .neutral)
+        context.insert(area)
+        let notifications = TestFlowNotificationService()
+        let store = ActiveFlowStore(defaults: UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!, notifications: notifications)
+        store.configure(area: area, todo: nil, mode: .twentyFiveFive)
+        store.start(area: area, todo: nil, modelContext: context, now: start)
+        for _ in 0..<7 { store.seekForward(modelContext: context, now: start) }
+        #expect(store.timerState?.plannedFocusDurationSeconds == 3_600)
+        let remindersAtOneHour = notifications.runningTooLong.count
+        let cancellations = notifications.cancelCount
+        store.seekForward(modelContext: context, now: start)
+        #expect(store.timerState?.plannedFocusDurationSeconds == 3_900)
+        #expect(notifications.cancelCount > cancellations)
+        #expect(notifications.runningTooLong.count == remindersAtOneHour)
+        #expect(notifications.focusFinishedDates.last == start.addingTimeInterval(3_900))
+        store.pause(modelContext: context, now: start.addingTimeInterval(60))
+        store.resume(modelContext: context, now: start.addingTimeInterval(120))
+        #expect(notifications.runningTooLong.count == remindersAtOneHour)
+        store.seekBackward(modelContext: context, now: start.addingTimeInterval(120))
+        #expect(notifications.runningTooLong.count == remindersAtOneHour + 1)
+    }
+
     @Test func staleNotificationRegistrationCannotSurviveCancellation() throws {
         let suiteName = "FlowNotificationTests.\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suiteName))

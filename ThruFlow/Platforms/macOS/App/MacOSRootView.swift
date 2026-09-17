@@ -79,7 +79,7 @@ struct MacOSRootView: View {
                 Button {
                     showsConnectors = true
                 } label: {
-                    Label(String(localized: "コネクタ"), systemImage: "puzzlepiece.extension")
+                    ConnectorNavigationLabel()
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .contentShape(Rectangle())
                 }

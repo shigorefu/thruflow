@@ -178,7 +178,7 @@ struct IOSRootView: View {
                     Button {
                         showsConnectors = true
                     } label: {
-                        Label(IOSAppRoute.connectors.title, systemImage: IOSAppRoute.connectors.systemImage)
+                        ConnectorNavigationLabel()
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .contentShape(Rectangle())
                     }

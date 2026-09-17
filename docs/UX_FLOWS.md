@@ -495,7 +495,9 @@ copy starts with `お疲れ様です。`. Break completion prompts the user to r
 `フロー`.
 
 Focus and break each schedule an additional forgotten-timer reminder after 60
-minutes of active phase time. Paused time shifts that deadline and does not
+minutes of active phase time, unless the planned phase duration exceeds one hour.
+Manually extending beyond one hour cancels the pending forgotten-timer reminder;
+the normal completion notification remains. Paused time shifts that deadline and does not
 count toward the hour. Pausing, stopping, destroying, or changing phase cancels
 obsolete pending reminders. Notification request identifiers include a persisted
 generation. Cancellation rotates that generation and removes every identifier
@@ -884,3 +886,9 @@ Quick capture and Task editors create an independent Task even when AWS or anoth
 Habit Area is selected. It stays in Tasks, keeps its title and measurement, and can
 be scheduled independently. It neither replaces nor suppresses that Area's Habit
 occurrence. Editing it preserves this distinction.
+
+### Connector Beta indicator
+
+The Connectors entry carries a Beta capsule in the macOS/iPad sidebar. The native
+iPhone popup menu shows the same Beta status as a title suffix, preserving the
+system menu presentation.
