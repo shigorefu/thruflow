@@ -175,3 +175,13 @@ and deployed to Production before shipping the updated clients. Missing values
 retain legacy classification. Older clients do not understand independent Tasks
 in Habit Areas and can still merge them: use updated clients on all devices for
 this workflow. Local tests do not validate Production schema deployment.
+
+### Production schema repair — 2026-09-18
+
+CloudKit Console confirmed deployment of two missing String fields to Production:
+`CD_FlowSession.CD_recordingDeviceID` and `CD_Todo.CD_externalTaskLinkRawValue`.
+Both were missing from Development as well and were added there first. The reviewed
+deployment changed two record types, with no index or security-role changes.
+The missing recording-device field had caused CKError 12/2006 and rejected a batch
+of 80 records from the installed 1.3.0 (11) macOS app. No records were deleted or reset.
+This deployment does not include the 1.3.1 `habitOccurrence` field described above.
