@@ -73,7 +73,7 @@ struct IOSFlowView: View {
                         open(.connectors)
                     } label: {
                         Label {
-                            Text(String(localized: "コネクタ")) + Text(verbatim: "  Beta")
+                            Text(String(localized: "コネクタ"))
                         } icon: {
                             Image(systemName: "puzzlepiece.extension")
                         }
@@ -1095,7 +1095,7 @@ private struct IOSDashboardStatisticsView: View {
                         style: StrokeStyle(lineWidth: 12, lineCap: .round)
                     )
                     .rotationEffect(.degrees(-90))
-                Text("\(Int((ratio * 100).rounded()))%")
+                Text(ratio, format: .percent.precision(.fractionLength(0)))
                     .font(.title3.bold())
                     .monospacedDigit()
             }

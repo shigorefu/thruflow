@@ -1846,22 +1846,6 @@
         }
       }
     },
-    "%lld%%" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld%%"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld%%"
-          }
-        }
-      }
-    },
     "%lld分" : {
       "localizations" : {
         "en" : {
@@ -13784,28 +13768,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Выбранный список не найден. Выберите списки заново."
-          }
-        }
-      }
-    },
-    "タスクを作成" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "タスクを作成"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Create Task"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Создать задачу"
           }
         }
       }

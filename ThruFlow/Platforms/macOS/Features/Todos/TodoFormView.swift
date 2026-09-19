@@ -622,7 +622,7 @@ private extension TodoMeasurement {
     }
 }
 
-#Preview(String(localized: "タスクを作成")) {
+#Preview("Create Task") {
     TodoFormView(mode: .create)
         .modelContainer(for: [Area.self, Todo.self], inMemory: true)
 }

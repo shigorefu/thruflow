@@ -866,7 +866,7 @@ struct FlowDashboardView: View {
                     .trim(from: 0, to: ratio)
                     .stroke(Color.accentColor, style: StrokeStyle(lineWidth: 12, lineCap: .round))
                     .rotationEffect(.degrees(-90))
-                Text("\(Int((ratio * 100).rounded()))%")
+                Text(ratio, format: .percent.precision(.fractionLength(0)))
                     .font(.title3.bold())
                     .monospacedDigit()
             }

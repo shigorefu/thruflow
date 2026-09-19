@@ -1,12 +1,9 @@
 import SwiftUI
 
-/// Sidebar label; native popup menus use a plain Beta suffix instead.
+/// Navigation stays neutral; each provider row carries its own Beta badge.
 struct ConnectorNavigationLabel: View {
     var body: some View {
-        HStack(spacing: 8) {
-            Label(String(localized: "コネクタ"), systemImage: "puzzlepiece.extension")
-            ConnectorBetaBadge()
-        }
+        Label(String(localized: "コネクタ"), systemImage: "puzzlepiece.extension")
     }
 }
 
