@@ -59,8 +59,12 @@ struct ConnectorProviderRow: View {
         HStack(alignment: .center, spacing: 12) {
             ConnectorProviderLogo(provider: provider)
             VStack(alignment: .leading, spacing: 4) {
-                Text(provider.connectorTitle)
-                    .font(.headline)
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(provider.connectorTitle)
+                        .font(.headline)
+                        .fixedSize(horizontal: false, vertical: true)
+                    ConnectorBetaBadge()
+                }
                 if connection != nil {
                     Label(String(localized: "接続済み"), systemImage: "checkmark.circle.fill")
                         .font(.caption)
