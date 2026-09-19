@@ -51,17 +51,26 @@ private struct MacOSConnectorDetailView: View {
     let provider: ConnectorProviderID
     @EnvironmentObject private var connectors: ConnectorStore
     @Query(sort: \Area.sortIndex) private var areas: [Area]
+    @State private var hasContinuedToToggl = false
 
     var body: some View {
         Form {
             if provider == .toggl {
-                TogglSetupSections(store: connectors.toggl, areas: areas)
+                if hasContinuedToToggl {
+                    TogglSetupSections(store: connectors.toggl, areas: areas)
+                } else {
+                    Section { TogglConnectorRow(store: connectors.toggl) }
+                }
             } else {
                 ConnectorSetupSections(provider: provider, areas: areas)
             }
         }
         .formStyle(.grouped)
         .navigationTitle(provider.connectorTitle)
+        .modifier(TogglKeychainExplanation(
+            isRequired: provider == .toggl,
+            hasContinued: $hasContinuedToToggl
+        ))
     }
 }
 #endif

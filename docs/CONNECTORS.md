@@ -385,3 +385,12 @@ the error on the connector screen. Explicit connector operations may request
 access for that provider. The Toggl recording identity is resolved lazily and
 without UI during normal app/Flow use; explicit Toggl connection can authorize
 access. An inaccessible identity is not replaced or cached as a permanent failure.
+
+Opening Toggl settings on macOS or iOS first presents a native explanation of
+its API token and this device's Keychain storage. On macOS it also explains
+that reading or saving the key may trigger a system permission/login-password
+prompt for ThruFlow's credentials, not access to other apps' passwords. The
+setup sections (including their project-loading task) are created only after
+Continue. Cancel returns to the connector list without an interactive credential
+read. This acknowledgement lasts only for that visit; it does not change system
+permissions or disable an existing connection's noninteractive automatic export.

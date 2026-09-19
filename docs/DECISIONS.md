@@ -806,3 +806,11 @@ Task ownership remain unchanged. Legacy local settings resolve to equivalent
 mappings. macOS and iOS share native labeled mapping rows with Toggl, whose
 project mapping remains outgoing-only. Saving an empty import mapping disables
 imports without deleting existing Tasks.
+
+### 2026-09-19 — Explain Toggl credential access before setup (1.3.1)
+
+Each visit to Toggl settings begins with a native API-token/Keychain explanation
+on macOS and iOS. Only Continue creates the setup content and allows its saved
+credential read; Cancel returns to the provider list. The macOS explanation
+prepares users for the possible system access/password prompt. This adds no
+permission override and preserves noninteractive automatic synchronization.
