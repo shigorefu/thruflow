@@ -83,7 +83,8 @@ struct RequiredTodoPlanner {
     ) -> Todo? {
         guard area.type == .habit,
               area.goalSchedule == .weeklyCount,
-              shouldAppearToday(area, on: date) else {
+              shouldAppearToday(area, on: date),
+              existingRequiredTodo(for: area, in: todos, on: date) == nil else {
             return nil
         }
 

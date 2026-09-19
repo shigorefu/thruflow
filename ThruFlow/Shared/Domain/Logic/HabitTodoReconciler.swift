@@ -14,19 +14,27 @@ struct HabitTodoReconciliationResult {
 struct HabitTodoReconciler {
     var calendar: Calendar = .current
 
+    // Checking identities is cheap; load history only when a collision exists.
+    func hasDuplicateOccurrences(in todos: [Todo]) -> Bool {
+        var seen = Set<String>()
+        return todos.contains { todo in
+            guard isCandidate(todo) else { return false }
+            return !seen.insert(occurrenceKey(todo)).inserted
+        }
+    }
+
+    private func isCandidate(_ todo: Todo) -> Bool {
+        todo.isHabitOccurrence && todo.externalTaskLinkRawValue == nil &&
+            !todo.isArchived && !todo.isDeleted && todo.scheduledDate != nil
+    }
+
     func reconcile(
         todos: [Todo],
         sessions: [FlowSession],
         segments: [FlowSegment],
         now: Date = .now
     ) -> HabitTodoReconciliationResult {
-        let candidates = todos.filter { todo in
-            return todo.isHabitOccurrence &&
-                todo.externalTaskLinkRawValue == nil &&
-                !todo.isArchived &&
-                !todo.isDeleted &&
-                todo.scheduledDate != nil
-        }
+        let candidates = todos.filter(isCandidate)
         let groups = Dictionary(grouping: candidates, by: occurrenceKey)
 
         var canonicalTodos: [Todo] = []

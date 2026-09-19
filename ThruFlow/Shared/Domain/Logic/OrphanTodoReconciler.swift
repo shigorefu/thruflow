@@ -4,9 +4,10 @@ import SwiftData
 struct OrphanTodoReconciliationResult: Equatable {
     let reconnectedFromHistoryCount: Int
     let reconnectedFromHabitTemplateCount: Int
+    let reconciledHabitDuplicates: Bool
 
     var changed: Bool {
-        reconnectedFromHistoryCount > 0 || reconnectedFromHabitTemplateCount > 0
+        reconnectedFromHistoryCount > 0 || reconnectedFromHabitTemplateCount > 0 || reconciledHabitDuplicates
     }
 }
 
@@ -63,12 +64,6 @@ struct OrphanTodoReconciler {
             templateCount += 1
         }
 
-        let result = OrphanTodoReconciliationResult(
-            reconnectedFromHistoryCount: historyCount,
-            reconnectedFromHabitTemplateCount: templateCount
-        )
-        guard result.changed else { return result }
-
         let habitReconciliation = HabitTodoReconciler(calendar: calendar).reconcile(
             todos: todos,
             sessions: sessions,
@@ -83,6 +78,13 @@ struct OrphanTodoReconciler {
                 now: now
             )
         }
+
+        let result = OrphanTodoReconciliationResult(
+            reconnectedFromHistoryCount: historyCount,
+            reconnectedFromHabitTemplateCount: templateCount,
+            reconciledHabitDuplicates: habitReconciliation.changed
+        )
+        guard result.changed else { return result }
 
         try modelContext.save()
         return result

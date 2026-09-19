@@ -103,6 +103,53 @@ struct OrphanTodoReconcilerTests {
         )
     }
 
+    @Test func reconcilesLinkedMinuteDuplicatesWithoutAnyOrphans() throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+        let day = Date(timeIntervalSince1970: 4 * 86_400)
+        let area = dailyOccurrenceHabit(name: "筋トレ")
+        area.goalSchedule = .weeklyCount
+        area.goalUnit = .minutes
+        area.goalTarget = 40
+        let first = Todo(title: "筋トレ", area: area, measurement: .minutes,
+                         plannedAmount: 40, scheduledDate: day, createdAt: day)
+        let duplicate = Todo(title: "筋トレ", area: area, measurement: .minutes,
+                             plannedAmount: 40, scheduledDate: day.addingTimeInterval(60),
+                             createdAt: day.addingTimeInterval(60))
+        let manual = Todo(title: "筋トレ", area: area, habitOccurrence: false, scheduledDate: day)
+        let otherArea = dailyOccurrenceHabit(name: "筋トレ")
+        let unrelated = Todo(title: "筋トレ", area: otherArea, scheduledDate: day)
+        context.insert(area)
+        context.insert(otherArea)
+        for todo in [first, duplicate, manual, unrelated] { context.insert(todo) }
+        let session = FlowSession(
+            area: area, todo: duplicate, mode: .sprint, startedAt: day,
+            plannedEndAt: day.addingTimeInterval(1_500),
+            plannedFocusDurationSeconds: 1_500, plannedBreakDurationSeconds: 300
+        )
+        session.actualFocusDurationSeconds = 1_500
+        session.complete(now: day.addingTimeInterval(1_500))
+        context.insert(session)
+        try context.save()
+
+        let reconciler = OrphanTodoReconciler(calendar: testCalendar())
+        let result = try reconciler.reconcile(modelContext: context, now: day.addingTimeInterval(2_000))
+        #expect(result.changed)
+        #expect(result.reconnectedFromHistoryCount == 0)
+        #expect(result.reconnectedFromHabitTemplateCount == 0)
+        #expect(result.reconciledHabitDuplicates)
+        #expect(first.isDeleted)
+        #expect(!duplicate.isDeleted)
+        #expect(!manual.isDeleted)
+        #expect(!unrelated.isDeleted)
+        #expect(session.todo?.id == duplicate.id)
+        #expect(duplicate.actualProgress == 25)
+        #expect(duplicate.recordedFocusSeconds == 1_500)
+        #expect(try !reconciler.reconcile(modelContext: context, now: day.addingTimeInterval(3_000)).changed)
+        let reloaded = try ModelContext(container).fetch(FetchDescriptor<Todo>())
+        #expect(reloaded.filter { !$0.isDeleted && $0.isHabitOccurrence && $0.area?.id == area.id }.count == 1)
+    }
+
     private func dailyOccurrenceHabit(name: String) -> Area {
         Area(
             name: name,

@@ -403,6 +403,22 @@ struct TodoTests {
         )
     }
 
+    @Test(arguments: [false, true])
+    func pendingWeeklyHabitDoesNotRollOntoAnExistingOccurrence(completed: Bool) {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let area = weeklyHabitArea()
+        let yesterday = date(2026, 7, 6, calendar: calendar)
+        let today = date(2026, 7, 7, calendar: calendar)
+        let old = Todo(title: "筋トレ", area: area, scheduledDate: yesterday)
+        let current = Todo(title: "筋トレ", area: area, scheduledDate: today)
+        current.setCompleted(completed, now: today)
+        #expect(RequiredTodoPlanner(calendar: calendar).pendingWeeklyTodoToRollForward(
+            for: area, in: [old, current], on: today
+        ) == nil)
+        #expect(old.scheduledDate == yesterday)
+    }
+
     @Test func pendingWeeklyHabitDoesNotRollBackwardOrAcrossWeeks() {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
@@ -528,7 +544,7 @@ struct TodoTests {
         #expect(!recorded.isDeleted)
     }
 
-    @Test @MainActor func lightweightHabitMaterializationDoesNotReconcileHistory() throws {
+    @Test @MainActor func lightweightHabitMaterializationRepairsImportedDuplicates() throws {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         let schema = Schema([
@@ -565,9 +581,12 @@ struct TodoTests {
             reconcilesDuplicates: false
         )
 
-        #expect(!changed)
-        #expect(!first.isDeleted)
-        #expect(!duplicate.isDeleted)
+        #expect(changed)
+        #expect([first, duplicate].filter { !$0.isDeleted }.count == 1)
+        #expect(try !HabitTodoMaterializer(calendar: calendar).materialize(
+            areas: [area], dates: [date], modelContext: context, now: date,
+            knownTodos: [first, duplicate], reconcilesDuplicates: false
+        ))
     }
 
     @Test @MainActor func habitScheduleChangeRebuildsUnstartedFutureOccurrences() throws {
