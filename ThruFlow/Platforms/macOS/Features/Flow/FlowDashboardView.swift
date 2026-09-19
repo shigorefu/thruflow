@@ -746,7 +746,8 @@ struct FlowDashboardView: View {
     }
 
     private func statisticsDistributionPage(snapshot: FlowDashboardSnapshot) -> some View {
-        VStack(spacing: 12) {
+        let rows = distributionRows(snapshot: snapshot)
+        return VStack(spacing: 12) {
             Picker(String(localized: "集計単位"), selection: $distributionMode) {
                 ForEach(DashboardDistributionMode.allCases) { mode in
                     Text(mode.title).tag(mode)
@@ -758,7 +759,7 @@ struct FlowDashboardView: View {
             statisticsDonut(snapshot: snapshot)
 
             VStack(alignment: .leading, spacing: 9) {
-                ForEach(distributionRows(snapshot: snapshot).prefix(4)) { row in
+                ForEach(rows.prefix(4)) { row in
                     VStack(alignment: .leading, spacing: 4) {
                         HStack {
                             Text("\(row.symbol) \(row.title)")
@@ -770,16 +771,12 @@ struct FlowDashboardView: View {
                                 .foregroundStyle(.secondary)
                                 .monospacedDigit()
                         }
-                        GeometryReader { proxy in
-                            Capsule()
-                                .fill(Color.primary.opacity(0.07))
-                                .overlay(alignment: .leading) {
-                                    Capsule()
-                                        .fill(Color(hex: row.colorHex))
-                                        .frame(width: proxy.size.width * distributionRatio(row, snapshot: snapshot))
-                                }
-                        }
-                        .frame(height: 5)
+                        DashboardDistributionBar(
+                            fraction: snapshot.focusShare(for: row.focusSeconds),
+                            precedingFraction: snapshot.focusShare(for: rows.prefix { $0.id != row.id }
+                                .reduce(0) { $0 + $1.focusSeconds }),
+                            color: Color(hex: row.colorHex)
+                        )
                     }
                 }
             }
@@ -976,13 +973,6 @@ struct FlowDashboardView: View {
             cursor += fraction
             return slice
         }
-    }
-
-    private func distributionRatio(
-        _ row: DashboardDistributionRow,
-        snapshot: FlowDashboardSnapshot
-    ) -> Double {
-        snapshot.focusShare(for: row.focusSeconds)
     }
 
     private func comparisonRow(_ title: String, value: String, systemImage: String) -> some View {

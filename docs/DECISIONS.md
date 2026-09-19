@@ -788,3 +788,11 @@ Manual Task creation must not turn into a Habit because of the selected Area.
 Use an optional persisted occurrence flag; explicit independent Tasks are excluded
 from Habit generation, deduplication, pauses, and schedule reconciliation. Legacy
 records retain their existing classification without a destructive backfill.
+
+### 2026-09-19 — Cumulative Flow distribution bars (1.3.1)
+
+On macOS and iOS, compact Flow Statistics bars stack from right to left across
+rows sorted by focused duration. Width remains each Task/Area's share of the
+entire daily focus total, including entries beyond the four visible rows.
+The offset is the sum of preceding rows, not the time of day. The donut,
+duration labels, and recorded data are unchanged.

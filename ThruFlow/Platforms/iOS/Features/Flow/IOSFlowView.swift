@@ -960,7 +960,8 @@ private struct IOSDashboardStatisticsView: View {
     }
 
     private var distributionPage: some View {
-        VStack(spacing: 12) {
+        let rows = distributionRows
+        return VStack(spacing: 12) {
             Picker(String(localized: "集計単位"), selection: $distributionMode) {
                 ForEach(IOSDashboardDistributionMode.allCases) { mode in
                     Text(mode.title).tag(mode)
@@ -972,7 +973,7 @@ private struct IOSDashboardStatisticsView: View {
             distributionDonut
 
             VStack(alignment: .leading, spacing: 9) {
-                ForEach(distributionRows.prefix(4)) { row in
+                ForEach(rows.prefix(4)) { row in
                     VStack(alignment: .leading, spacing: 4) {
                         HStack {
                             Text("\(row.symbol) \(row.title)")
@@ -984,19 +985,12 @@ private struct IOSDashboardStatisticsView: View {
                                 .foregroundStyle(.secondary)
                                 .monospacedDigit()
                         }
-                        GeometryReader { proxy in
-                            Capsule()
-                                .fill(Color.primary.opacity(0.07))
-                                .overlay(alignment: .leading) {
-                                    Capsule()
-                                        .fill(Color(hex: row.colorHex))
-                                        .frame(
-                                            width: proxy.size.width
-                                                * CGFloat(snapshot.focusShare(for: row.focusSeconds))
-                                        )
-                                }
-                        }
-                        .frame(height: 5)
+                        DashboardDistributionBar(
+                            fraction: snapshot.focusShare(for: row.focusSeconds),
+                            precedingFraction: snapshot.focusShare(for: rows.prefix { $0.id != row.id }
+                                .reduce(0) { $0 + $1.focusSeconds }),
+                            color: Color(hex: row.colorHex)
+                        )
                     }
                 }
             }
