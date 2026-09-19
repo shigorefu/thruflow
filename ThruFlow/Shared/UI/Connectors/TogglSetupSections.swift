@@ -53,13 +53,18 @@ struct TogglSetupSections: View {
                         Text(String(localized: "選択")).tag(Int64(0))
                         ForEach(store.workspaces) { Text($0.name).tag($0.id) }
                     }
+                    ConnectorMappingColumnHeaders(destination: String(localized: "プロジェクト"))
                     ForEach(activeAreas) { area in
-                        Picker(area.name, selection: Binding(
-                            get: { mappings[area.id.uuidString] ?? 0 },
-                            set: { if $0 == 0 { mappings.removeValue(forKey: area.id.uuidString) } else { mappings[area.id.uuidString] = $0 } }
-                        )) {
-                            Text(String(localized: "送信しない")).tag(Int64(0))
-                            ForEach(projects) { Text($0.name).tag($0.id) }
+                        ConnectorAreaMappingRow(area: area) {
+                            Picker(area.name, selection: Binding(
+                                get: { mappings[area.id.uuidString] ?? 0 },
+                                set: { if $0 == 0 { mappings.removeValue(forKey: area.id.uuidString) } else { mappings[area.id.uuidString] = $0 } }
+                            )) {
+                                Text(String(localized: "送信しない")).tag(Int64(0))
+                                ForEach(projects) { Text($0.name).tag($0.id) }
+                            }
+                            .labelsHidden()
+                            .disabled(store.isBusy)
                         }
                     }
                     Toggle(String(localized: "集中時間を自動送信"), isOn: $enabled)

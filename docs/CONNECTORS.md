@@ -10,10 +10,22 @@ APNs, webhooks, and an application server are outside this implementation.
 
 Open `コネクタ` immediately above Settings in the macOS sidebar footer, the
 iPhone Flow More menu, or the regular-width iPad sidebar footer. Choose a
-service, authorize access, select one or more lists/projects, and choose an
-active non-Habit Area. The default destination is `その他` when available.
-Press Import to save the selection and import Tasks. Changing the destination
-later applies only to newly imported Tasks.
+service and authorize access. The connected form shows a mapping table with
+active non-Habit Areas on the left and Reminders lists or Todoist projects on
+the right. Each Area can select multiple sources; a source belongs to only one
+Area to avoid ambiguous imports. Unmapped sources are excluded. Save settings
+persists the mapping without importing; Import saves and synchronizes. Clearing
+all mappings stops imports. Changing a destination affects newly imported Tasks
+only; existing Tasks keep their local Area and history. Toggl uses the same row
+presentation with one existing project per Area and retains its outgoing-only
+behavior.
+
+Legacy source selections resolve to their former destination without losing
+any selected lists. Per-source UUID mappings live in the existing device-local
+connection JSON, with no new SwiftData/CloudKit fields. The full multi-Area
+import uses one transaction. Missing sources remain visible as a selection that
+needs attention until cleared or reloaded; refreshing the source list does not
+silently erase the draft.
 
 Apple Reminders presents the system permission dialog. Todoist presents its own
 login and read/write consent flow; no ThruFlow registration or provider password

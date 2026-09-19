@@ -6,6 +6,71 @@ import Testing
 @Suite(.serialized)
 @MainActor
 struct ConnectorStoreTests {
+    @Test func legacySourceSelectionResolvesWithoutLosingLists() throws {
+        let areaID = UUID()
+        let legacy: [String: Any] = [
+            "provider": "reminders", "account": ["id": "local", "name": "Reminders"],
+            "selectedSourceIDs": ["work", "home"], "areaID": areaID.uuidString,
+            "lastImportedCount": 0
+        ]
+        let connection = try JSONDecoder().decode(ConnectorConnection.self,
+            from: JSONSerialization.data(withJSONObject: legacy))
+        #expect(connection.sourceAreaIDs == nil)
+        #expect(connection.resolvedSourceAreaIDs == ["work": areaID, "home": areaID])
+    }
+
+    @Test func mappedSourcesRouteNewTasksAndPreserveExistingLocalArea() async throws {
+        let fixture = try makeFixture()
+        defer { fixture.cleanUp() }
+        fixture.client.currentSources.append(ConnectorSource(id: "list-b", name: "家"))
+        await fixture.store.connectTodoist(apiToken: "token")
+        let container = try makeContainer()
+        let context = container.mainContext
+        let work = Area(name: "Work", type: .neutral)
+        let home = Area(name: "Home", type: .nice)
+        context.insert(work)
+        context.insert(home)
+        try context.save()
+        let mappings = ["list-a": work.id, "list-b": home.id]
+        try fixture.store.configure(provider: .todoist, sourceAreaIDs: mappings)
+        let restored = restoredStore(from: fixture, authorization: MockAuthorization())
+        #expect(restored.connection(for: .todoist)?.resolvedSourceAreaIDs == mappings)
+        fixture.client.currentTasks = [
+            ConnectorTask(id: "a", sourceID: "list-a", title: "Work task"),
+            ConnectorTask(id: "b", sourceID: "list-b", title: "Home task")
+        ]
+        await restored.synchronize(provider: .todoist, modelContext: context)
+        #expect(restored.errorMessage == nil)
+        var saved = try ModelContext(container).fetch(FetchDescriptor<Todo>())
+        #expect(saved.first { $0.externalTaskLink?.taskID == "a" }?.area?.id == work.id)
+        #expect(saved.first { $0.externalTaskLink?.taskID == "b" }?.area?.id == home.id)
+        #expect(restored.connection(for: .todoist)?.lastImportedCount == 2)
+
+        try fixture.store.configure(provider: .todoist, sourceAreaIDs: ["list-a": home.id, "list-b": home.id])
+        fixture.client.currentTasks.append(ConnectorTask(id: "c", sourceID: "list-a", title: "New home task"))
+        await fixture.store.synchronize(provider: .todoist, modelContext: context)
+        saved = try ModelContext(container).fetch(FetchDescriptor<Todo>())
+        #expect(saved.count == 3)
+        #expect(saved.first { $0.externalTaskLink?.taskID == "a" }?.area?.id == work.id)
+        #expect(saved.first { $0.externalTaskLink?.taskID == "c" }?.area?.id == home.id)
+        try fixture.store.configure(provider: .todoist, sourceAreaIDs: [:])
+        let cleared = restoredStore(from: fixture, authorization: MockAuthorization())
+        #expect(cleared.connection(for: .todoist)?.resolvedSourceAreaIDs.isEmpty == true)
+        #expect(cleared.connection(for: .todoist)?.selectedSourceIDs.isEmpty == true)
+    }
+
+    @Test func mappingRejectsUnknownSourcesWithoutReplacingSavedSelection() async throws {
+        let fixture = try makeFixture()
+        defer { fixture.cleanUp() }
+        await fixture.store.connectTodoist(apiToken: "token")
+        let mappings = ["list-a": UUID()]
+        try fixture.store.configure(provider: .todoist, sourceAreaIDs: mappings)
+        #expect(throws: ConnectorProviderError.self) {
+            try fixture.store.configure(provider: .todoist, sourceAreaIDs: ["missing": UUID()])
+        }
+        #expect(fixture.store.connection(for: .todoist)?.resolvedSourceAreaIDs == mappings)
+    }
+
     @Test func completionOutboxSurvivesFailureAndRetriesTheSameCommand() async throws {
         let fixture = try makeFixture()
         defer { fixture.cleanUp() }

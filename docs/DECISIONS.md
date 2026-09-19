@@ -796,3 +796,13 @@ rows sorted by focused duration. Width remains each Task/Area's share of the
 entire daily focus total, including entries beyond the four visible rows.
 The offset is the sum of preceding rows, not the time of day. The donut,
 duration labels, and recorded data are unchanged.
+
+### 2026-09-19 — Connector Area mapping tables (1.3.1)
+
+Connected Reminders and Todoist forms map sources per destination Area instead
+of importing every selected source into one Area. One source has one destination;
+an Area can receive multiple sources. Existing destination eligibility and local
+Task ownership remain unchanged. Legacy local settings resolve to equivalent
+mappings. macOS and iOS share native labeled mapping rows with Toggl, whose
+project mapping remains outgoing-only. Saving an empty import mapping disables
+imports without deleting existing Tasks.
