@@ -200,7 +200,7 @@ The reviewed deployment changed one field on one record type, with no index
 or security-role changes. A fresh Production page showed 27 CD_Todo fields,
 including `CD_habitOccurrence`. No user records or stores were deleted/reset.
 
-This repairs a confirmed schema prerequisite for 1.3.1; successful schema
-deployment alone does not establish end-to-end recovery. Verify a subsequent
-iPhone export and the same Task/History record on the Mac. Existing 1.3.0 clients
-still lack the independent-Task/Habit classification rules added in 1.3.1.
+After the deployment, the maintainer confirmed on 2026-09-20 that cross-device
+synchronization worked again. This is user-confirmed recovery, not an automated
+record-by-record comparison. Existing 1.3.0 clients still lack the independent-Task/
+Habit classification rules added in 1.3.1; use updated clients on both devices.

@@ -6,7 +6,7 @@ ThruFlow / スルフロ is an Apple-first productivity app that turns focused wo
 Area -> Task -> Flow -> focused time -> progress -> statistics
 ```
 
-Current development version: **1.3.1 (12)**.
+Current prepared version: **1.3.1 (12)**. See the [release notes](docs/releases/1.3.1.md).
 
 Released app version: **1.3.0 (11)**.
 

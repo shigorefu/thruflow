@@ -5,9 +5,12 @@ This document is the operational checklist for ThruFlow releases. Product scope 
 ## Preparing version 1.3.1 build 12
 
 Current Xcode Debug and Release configurations use version `1.3.1`, build `12`,
-for macOS, iOS, Live Activity/widgets, Watch, and test targets. This is local
-release preparation; no upload or publication is implied. Version `1.3.0`
-(build `11`) remains the latest published release.
+for macOS, iOS, Live Activity/widgets, Watch, and test targets. Local archive
+metadata confirms both macOS and iOS build 12 were uploaded to Apple on
+2026-09-20. A GitHub release draft is prepared with [English notes](releases/1.3.1.md).
+App Store approval/publication is not implied. The maintainer confirmed restored
+Mac/iPhone synchronization after the Production schema repair. Version `1.3.0`
+(build `11`) remains the latest published GitHub release until the draft is published.
 
 ## Released version 1.3.0 build 11
 

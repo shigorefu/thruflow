@@ -197,7 +197,10 @@ Released on GitHub on 2026-09-08; shipping build `10`.
 ## 1.3.1 — Release preparation
 
 Current development version: `1.3.1`, build `12`, across all Xcode targets and
-configurations. Publication and App Store Connect upload are still pending.
+configurations. Both platform archives were uploaded to App Store Connect on
+2026-09-20. GitHub release notes are prepared; publication remains pending.
+Production CloudKit schema deployment and user-confirmed sync recovery are
+recorded in `CLOUDKIT.md`.
 
 ## 1.3.0 — Connectors, statistics, and Flow polish (released)
 

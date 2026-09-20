@@ -110,6 +110,20 @@ current.
 - If tests consume unusual memory or CPU, stop the runners and QA app, report
   it, and continue with a narrower sequential check. Diagnose memory using RSS,
   not reserved virtual address space (VSZ).
+- Always verify the live CloudKit Production schema when preparing a release or
+  diagnosing cross-device sync. Also perform this check whenever persisted models
+  change. Inspect the actual container/environment, record types, field names and
+  types, and required indexes; do not infer readiness from source code, local
+  tests, Development, or a successful App Store Connect upload.
+- Compare persisted model changes with both live schemas. Materialize missing
+  additive fields in Development, review the deployment diff, deploy to
+  Production, and reload Production to confirm the result before distributing
+  affected builds. Preserve records and stores; never reset them to fix a schema
+  mismatch. If live verification is unavailable, explicitly mark this release
+  gate unverified rather than claiming sync compatibility.
+- Record the date, environment, inspected/deployed schema changes, and evidence
+  in `docs/CLOUDKIT.md`. Verify actual Mac/iPhone exchange or record the user's
+  confirmation; schema deployment alone does not prove synchronization recovered.
 - Run `git diff --check` and inspect the final diff.
 - Never claim that a build or test passed unless it actually ran. If the
   environment blocks verification, state the exact reason.
