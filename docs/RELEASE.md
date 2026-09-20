@@ -46,6 +46,15 @@ checks. Every later App Store Connect upload must use a build number greater
 than the last uploaded build; build `11` has already shipped and must not be
 reused for a new upload.
 
+## CloudKit schema gate for every model change
+
+Before uploading a build that adds persisted properties, compare its SwiftData
+fields with the live Development and Production record types. Materialize and
+deploy additive fields, reload Production to verify names/types, then confirm a
+real two-device exchange. Local builds/tests and an upload marked successful do
+not satisfy this gate. For 1.3.1, `CD_Todo.CD_habitOccurrence` (`INT64`) was deployed
+on 2026-09-20; see [the incident record](CLOUDKIT.md#production-schema-repair--2026-09-20).
+
 ## Automated checks
 
 Run unit tests sequentially to avoid excessive simulator and test-runner memory use:
