@@ -878,16 +878,14 @@ final class ActiveFlowStore: ObservableObject {
                 focusedSeconds: state.plannedFocusDurationSeconds,
                 fireDate: state.plannedEndAt
             )
-            notifications.scheduleRunningTooLong(
-                phase: .focus,
-                fireDate: runningTooLongReminderDate(for: state)
-            )
+            if let reminderDate = runningTooLongReminderDate(for: state) {
+                notifications.scheduleRunningTooLong(phase: .focus, fireDate: reminderDate)
+            }
         case .breakTime:
             notifications.scheduleBreakFinished(fireDate: state.plannedEndAt)
-            notifications.scheduleRunningTooLong(
-                phase: .breakTime,
-                fireDate: runningTooLongReminderDate(for: state)
-            )
+            if let reminderDate = runningTooLongReminderDate(for: state) {
+                notifications.scheduleRunningTooLong(phase: .breakTime, fireDate: reminderDate)
+            }
         default:
             break
         }
@@ -898,10 +896,11 @@ final class ActiveFlowStore: ObservableObject {
         scheduleNotifications(for: state)
     }
 
-    private func runningTooLongReminderDate(for state: FlowTimerState) -> Date {
+    private func runningTooLongReminderDate(for state: FlowTimerState) -> Date? {
         let plannedDuration = state.phase == .breakTime
             ? state.plannedBreakDurationSeconds
             : state.plannedFocusDurationSeconds
+        guard plannedDuration <= Self.forgottenTimerReminderSeconds else { return nil }
         let activePhaseStart = state.plannedEndAt.addingTimeInterval(-TimeInterval(plannedDuration))
         return activePhaseStart.addingTimeInterval(TimeInterval(Self.forgottenTimerReminderSeconds))
     }

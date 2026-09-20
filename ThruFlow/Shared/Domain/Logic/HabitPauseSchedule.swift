@@ -165,7 +165,8 @@ struct HabitPauseService {
         now: Date
     ) {
         for todo in todos {
-            guard todo.area?.id == area.id,
+            guard todo.isHabitOccurrence,
+                  todo.area?.id == area.id,
                   todo.externalTaskLinkRawValue == nil,
                   !todo.isArchived,
                   !todo.isDeleted,

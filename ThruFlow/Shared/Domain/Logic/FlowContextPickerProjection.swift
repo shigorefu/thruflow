@@ -24,13 +24,13 @@ struct FlowContextPickerProjection {
 
         taskGroups = Self.taskGroupOrder.compactMap { type in
             let items = activeTodos
-                .filter { ($0.area?.type ?? .neutral) == type }
+                .filter { $0.taskType == type }
                 .sorted(by: Self.sortTodos)
             guard !items.isEmpty else { return nil }
             return FlowContextPickerTaskGroup(type: type, todos: items)
         }
         habitTodos = activeTodos
-            .filter { $0.area?.type == .habit }
+            .filter { $0.taskType == .habit }
             .sorted(by: Self.sortTodos)
         otherArea = DefaultAreas.existingTaskInbox(in: activeAreas)
         userAreas = activeAreas

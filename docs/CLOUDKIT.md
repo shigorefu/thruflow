@@ -167,3 +167,40 @@ Before releasing it, deploy that additive field through the normal Development
 and Production schema gates. Legacy nil values are retained; do not backfill
 ownership. Tokens and the export outbox are device-local. Two-device verification
 must confirm that only the Flow's originating device exports its completed record.
+
+### 1.3.1 Habit occurrence field
+
+The optional `Todo.habitOccurrence` Boolean is represented in CloudKit as
+`CD_Todo.CD_habitOccurrence` (`INT64`). It was added in Development and deployed
+to Production on 2026-09-20; the Production field was verified after reloading
+CloudKit Console. Missing values
+retain legacy classification. Older clients do not understand independent Tasks
+in Habit Areas and can still merge them: use updated clients on all devices for
+this workflow. Local tests do not validate Production schema deployment.
+
+### Production schema repair — 2026-09-18
+
+CloudKit Console confirmed deployment of two missing String fields to Production:
+`CD_FlowSession.CD_recordingDeviceID` and `CD_Todo.CD_externalTaskLinkRawValue`.
+Both were missing from Development as well and were added there first. The reviewed
+deployment changed two record types, with no index or security-role changes.
+The missing recording-device field had caused CKError 12/2006 and rejected a batch
+of 80 records from the installed 1.3.0 (11) macOS app. No records were deleted or reset.
+This deployment does not include the 1.3.1 `habitOccurrence` field described above.
+
+### Production schema repair — 2026-09-20
+
+The installed Mac app was 1.3.0 (11), signed for Production; the maintainer
+reported iPhone 1.3.1. Production logs showed an iPhone private-database
+`RecordSave` rejected with `BAD_REQUEST` at 04:10:43 UTC, while a Mac export
+completed at 04:10:02 UTC. The server entry did not expose a field-level cause.
+Inspection confirmed `CD_Todo.CD_habitOccurrence` was absent from both schemas.
+Added the optional field as `INT64` in Development and deployed it to Production.
+The reviewed deployment changed one field on one record type, with no index
+or security-role changes. A fresh Production page showed 27 CD_Todo fields,
+including `CD_habitOccurrence`. No user records or stores were deleted/reset.
+
+After the deployment, the maintainer confirmed on 2026-09-20 that cross-device
+synchronization worked again. This is user-confirmed recovery, not an automated
+record-by-record comparison. Existing 1.3.0 clients still lack the independent-Task/
+Habit classification rules added in 1.3.1; use updated clients on both devices.

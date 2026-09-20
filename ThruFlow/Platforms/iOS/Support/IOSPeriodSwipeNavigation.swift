@@ -16,7 +16,12 @@ private struct IOSPeriodSwipeNavigationModifier<PageID: Hashable>: ViewModifier 
                     .transition(pageTransition)
             }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                .clipped()
+                // Clip horizontal page transitions without cutting off the
+                // scroll content underneath the floating tab bar.
+                .mask {
+                    Rectangle()
+                        .ignoresSafeArea(.container, edges: .bottom)
+                }
                 .contentShape(Rectangle())
                 .simultaneousGesture(
                     DragGesture(minimumDistance: 24)

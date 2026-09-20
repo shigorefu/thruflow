@@ -57,7 +57,7 @@ struct TodoFormView: View {
     }
 
     private var isHabitTodoEdit: Bool {
-        editedTodo?.area?.type == .habit
+        editedTodo?.taskType == .habit
     }
 
     init(
@@ -522,6 +522,7 @@ struct TodoFormView: View {
                 notes: draft.trimmedNotes,
                 hashtags: draft.hashtags,
                 area: area,
+                habitOccurrence: false,
                 measurement: measurement,
                 priority: priority,
                 isRoomIfPossible: isRoomIfPossible,
@@ -621,7 +622,7 @@ private extension TodoMeasurement {
     }
 }
 
-#Preview(String(localized: "タスクを作成")) {
+#Preview("Create Task") {
     TodoFormView(mode: .create)
         .modelContainer(for: [Area.self, Todo.self], inMemory: true)
 }

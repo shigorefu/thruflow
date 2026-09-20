@@ -125,13 +125,13 @@ struct HistoryTaskRecordForm: View {
     }
 
     private var taskTodos: [Todo] {
-        dayTodos.filter { $0.area?.type != .habit }
+        dayTodos.filter { $0.taskType != .habit }
     }
 
     private var habitOptions: [HistoryHabitOption] {
         let existingByArea = Dictionary(
             dayTodos
-                .filter { $0.area?.type == .habit }
+                .filter { $0.taskType == .habit }
                 .compactMap { todo -> (UUID, Todo)? in
                     guard let areaID = todo.area?.id else { return nil }
                     return (areaID, todo)

@@ -2,6 +2,16 @@
 
 This document is the operational checklist for ThruFlow releases. Product scope remains in [`ROADMAP.md`](ROADMAP.md), and CloudKit details remain in [`CLOUDKIT.md`](CLOUDKIT.md).
 
+## Preparing version 1.3.1 build 12
+
+Current Xcode Debug and Release configurations use version `1.3.1`, build `12`,
+for macOS, iOS, Live Activity/widgets, Watch, and test targets. Local archive
+metadata confirms both macOS and iOS build 12 were uploaded to Apple on
+2026-09-20. A GitHub release draft is prepared with [English notes](releases/1.3.1.md).
+App Store approval/publication is not implied. The maintainer confirmed restored
+Mac/iPhone synchronization after the Production schema repair. Version `1.3.0`
+(build `11`) remains the latest published GitHub release until the draft is published.
+
 ## Released version 1.3.0 build 11
 
 The maintainer confirmed that 1.3.0 has shipped. macOS and iOS/Watch archives
@@ -38,6 +48,15 @@ is not a claim that this documentation update reran physical-device or upload
 checks. Every later App Store Connect upload must use a build number greater
 than the last uploaded build; build `11` has already shipped and must not be
 reused for a new upload.
+
+## CloudKit schema gate for every model change
+
+Before uploading a build that adds persisted properties, compare its SwiftData
+fields with the live Development and Production record types. Materialize and
+deploy additive fields, reload Production to verify names/types, then confirm a
+real two-device exchange. Local builds/tests and an upload marked successful do
+not satisfy this gate. For 1.3.1, `CD_Todo.CD_habitOccurrence` (`INT64`) was deployed
+on 2026-09-20; see [the incident record](CLOUDKIT.md#production-schema-repair--2026-09-20).
 
 ## Automated checks
 
@@ -111,3 +130,22 @@ Never publish by rebuilding after the smoke test. Promote the exact tested build
 - Tag the tested release source as `v<marketing-version>` only after the build
   is accepted and smoke-tested. Existing published tags must not be moved.
 - Publish release notes that clearly identify known limitations and migration behavior.
+
+## SDK 27 compatibility checks (1.3.1)
+
+- Keep the existing deployment targets; SDK 27 does not require raising them.
+- Live Activity attributes and their content state are nonisolated value types,
+  so ActivityKit can transfer them to its concurrent update/end APIs.
+- Explicit checkmark labels in selection menus use `titleAndIcon` to preserve
+  the selected-state indicator under the new menu image defaults.
+- In-memory unit-test stores explicitly disable CloudKit. With automatic
+  CloudKit selection on macOS 27, repeated saves failed with
+  `No eligible connection available`; the application factory already selects
+  `.none` for isolated runs.
+- Xcode 27 requires its matching Metal Toolchain component to compile the Flow
+  shader. Install it with `xcodebuild -downloadComponent MetalToolchain` if absent.
+
+References: [iOS 27 release notes](https://developer.apple.com/documentation/ios-ipados-release-notes/ios-ipados-27-release-notes)
+and [macOS 27 release notes](https://developer.apple.com/documentation/macos-release-notes/macos-27-release-notes).
+Build and unit-test checks do not replace signed physical-device checks for
+Live Activity, widgets, OAuth, and CloudKit Production.

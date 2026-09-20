@@ -619,7 +619,7 @@ struct FlowTests {
 
     @Test @MainActor func activeFlowSwitchesTaskWithoutResettingTimer() throws {
         let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 8_000)
@@ -657,7 +657,7 @@ struct FlowTests {
 
     @Test @MainActor func subMinuteTaskSwitchTransfersElapsedTimeToNewTask() throws {
         let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 8_250)
@@ -706,7 +706,7 @@ struct FlowTests {
 
     @Test @MainActor func returningWithinOneMinuteMergesBackIntoPreviousTaskSegment() throws {
         let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 8_400)
@@ -753,7 +753,7 @@ struct FlowTests {
 
     @Test @MainActor func cancellingResultMemoRestoresFlowAndRemovesProvisionalProgress() throws {
         let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 8_500)
@@ -783,7 +783,7 @@ struct FlowTests {
 
     @Test @MainActor func completingWithoutMemoPreservesExistingTaskMemo() throws {
         let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 8_750)
@@ -814,7 +814,7 @@ struct FlowTests {
 
     @Test @MainActor func startingBreakWithoutMemoPreservesExistingTaskMemo() throws {
         let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 8_900)
@@ -845,7 +845,7 @@ struct FlowTests {
 
     @Test @MainActor func everyEligibleRestPressPublishesANewVisualInteraction() throws {
         let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 8_950)
@@ -899,7 +899,7 @@ struct FlowTests {
 
     @Test @MainActor func startingWorkDuringBreakImmediatelyCreatesNextFlow() throws {
         let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 9_000)
@@ -942,7 +942,7 @@ struct FlowTests {
 
     @Test @MainActor func destroyingDuringBreakDeletesOnlyBreak() throws {
         let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 10_000)
@@ -976,7 +976,7 @@ struct FlowTests {
 
     @Test @MainActor func destroyingCreditedFlowRollsBackTaskAndAreaProgress() throws {
         let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 11_000)
@@ -1004,7 +1004,7 @@ struct FlowTests {
 
     @Test @MainActor func startingAfterContinuationWindowCreatesNewSeries() throws {
         let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 12_000)
@@ -1028,7 +1028,7 @@ struct FlowTests {
 
     @Test @MainActor func fourthAccumulatedBlockStartsLongBreak() throws {
         let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 20_000)
@@ -1078,7 +1078,7 @@ struct FlowTests {
 
     @Test @MainActor func flowNotificationsWarnAfterOneActiveHourAndAccountForPause() throws {
         let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 25_000)
@@ -1101,6 +1101,33 @@ struct FlowTests {
         #expect(notifications.focusFinishedDates.last == start.addingTimeInterval(35 * 60))
         #expect(notifications.runningTooLong.last?.phase == .focus)
         #expect(notifications.runningTooLong.last?.fireDate == start.addingTimeInterval(70 * 60))
+    }
+
+    @Test @MainActor func extendingPastOneHourCancelsForgottenTimerReminder() throws {
+        let config = ModelConfiguration(isStoredInMemoryOnly: true, cloudKitDatabase: .none)
+        let container = try ModelContainer(for: Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self, configurations: config)
+        let context = container.mainContext
+        let start = Date(timeIntervalSince1970: 25_000)
+        let area = Area(name: "Work", type: .neutral)
+        context.insert(area)
+        let notifications = TestFlowNotificationService()
+        let store = ActiveFlowStore(defaults: UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!, notifications: notifications)
+        store.configure(area: area, todo: nil, mode: .twentyFiveFive)
+        store.start(area: area, todo: nil, modelContext: context, now: start)
+        for _ in 0..<7 { store.seekForward(modelContext: context, now: start) }
+        #expect(store.timerState?.plannedFocusDurationSeconds == 3_600)
+        let remindersAtOneHour = notifications.runningTooLong.count
+        let cancellations = notifications.cancelCount
+        store.seekForward(modelContext: context, now: start)
+        #expect(store.timerState?.plannedFocusDurationSeconds == 3_900)
+        #expect(notifications.cancelCount > cancellations)
+        #expect(notifications.runningTooLong.count == remindersAtOneHour)
+        #expect(notifications.focusFinishedDates.last == start.addingTimeInterval(3_900))
+        store.pause(modelContext: context, now: start.addingTimeInterval(60))
+        store.resume(modelContext: context, now: start.addingTimeInterval(120))
+        #expect(notifications.runningTooLong.count == remindersAtOneHour)
+        store.seekBackward(modelContext: context, now: start.addingTimeInterval(120))
+        #expect(notifications.runningTooLong.count == remindersAtOneHour + 1)
     }
 
     @Test func staleNotificationRegistrationCannotSurviveCancellation() throws {
@@ -1132,7 +1159,7 @@ struct FlowTests {
 
     @Test @MainActor func breakNotificationsWarnAfterOneActiveHourAndResumeAsBreak() throws {
         let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 28_000)
@@ -1253,7 +1280,7 @@ struct FlowTests {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let yesterday = Date(timeIntervalSince1970: 1_800_000_000)
@@ -1283,7 +1310,7 @@ struct FlowTests {
 
     @Test @MainActor func activeFlowPublishesLiveActivityContextAndPauseState() throws {
         let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 30_000)
@@ -1331,7 +1358,7 @@ struct FlowTests {
 
     @Test @MainActor func breakPublishesCountdownLiveActivityState() throws {
         let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 40_000)
@@ -1364,7 +1391,7 @@ struct FlowTests {
 
     @Test @MainActor func activeFlowPublishesLiveActivityOvertimeBoundaryOnce() throws {
         let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 45_000)
@@ -1426,7 +1453,7 @@ struct FlowTests {
 
     @Test @MainActor func activeFlowStoreAdoptsPersistedRuntimeFromAnotherClient() throws {
         let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 60_000)
@@ -1471,7 +1498,7 @@ struct FlowTests {
 
     @Test @MainActor func activeFlowStoreAppliesNewerRemotePauseRevision() throws {
         let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 70_000)
@@ -1514,7 +1541,7 @@ struct FlowTests {
 
     @Test @MainActor func activeFlowStoreClearsRuntimeAfterRemoteCompletion() throws {
         let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 75_000)
@@ -1555,7 +1582,7 @@ struct FlowTests {
 
     @Test @MainActor func remotePersistenceChangeCancelsNotificationsWhilePollingIsStopped() async throws {
         let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 77_000)
@@ -1602,7 +1629,7 @@ struct FlowTests {
 
     @Test @MainActor func syncCoordinatorInterruptsOlderConcurrentActiveFlow() throws {
         let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let start = Date(timeIntervalSince1970: 80_000)

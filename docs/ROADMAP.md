@@ -194,10 +194,18 @@ Released on GitHub on 2026-09-08; shipping build `10`.
   required GitHub CI status resolvable. Run the complete Apple gate whenever
   any non-Markdown file changes.
 
+## 1.3.1 — Release preparation
+
+Current development version: `1.3.1`, build `12`, across all Xcode targets and
+configurations. Both platform archives were uploaded to App Store Connect on
+2026-09-20. GitHub release notes are prepared; publication remains pending.
+Production CloudKit schema deployment and user-confirmed sync recovery are
+recorded in `CLOUDKIT.md`.
+
 ## 1.3.0 — Connectors, statistics, and Flow polish (released)
 
 Released on GitHub on 2026-09-15; shipping build `11`.
-All Xcode targets now use marketing version `1.3.0` and build `11`.
+The released Xcode targets used marketing version `1.3.0` and build `11`.
 
 - [x] Optional focus planned-end timeline; rest always shows elapsed time only.
 - [x] Repair weekly measured-Habit rollover and minimal focus Activity ring direction.

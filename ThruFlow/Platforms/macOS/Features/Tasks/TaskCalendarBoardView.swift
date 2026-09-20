@@ -156,7 +156,7 @@ private struct TaskDayColumn: View {
 
     private func canDrag(_ todo: Todo) -> Bool {
         guard !todo.isCompleted else { return false }
-        guard todo.area?.type == .habit else { return true }
+        guard todo.taskType == .habit else { return true }
         return todo.area?.goalSchedule == .weeklyCount
     }
 
@@ -245,7 +245,7 @@ struct TaskMonthGrid: View {
                     }
                 }
 
-                if dayTodos.contains(where: { $0.area?.type == .habit && !$0.isCompleted }) {
+                if dayTodos.contains(where: { $0.taskType == .habit && !$0.isCompleted }) {
                     Label(String(localized: "習慣一覧"), systemImage: "exclamationmark.circle.fill")
                         .font(.caption2)
                         .foregroundStyle(.red)
@@ -288,7 +288,7 @@ struct TaskMonthGrid: View {
 
     private func canDrag(_ todo: Todo) -> Bool {
         guard !todo.isCompleted else { return false }
-        guard todo.area?.type == .habit else { return true }
+        guard todo.taskType == .habit else { return true }
         return todo.area?.goalSchedule == .weeklyCount
     }
 
@@ -417,7 +417,7 @@ private struct TaskBoardGroup: Identifiable {
     static func groups(for todos: [Todo]) -> [TaskBoardGroup] {
         let order: [AreaType] = [.habit, .neutral, .nice]
         return order.compactMap { type in
-            let matching = todos.filter { ($0.area?.type ?? .neutral) == type }
+            let matching = todos.filter { $0.taskType == type }
             return matching.isEmpty ? nil : TaskBoardGroup(type: type, todos: matching)
         }
     }

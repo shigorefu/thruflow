@@ -11,6 +11,38 @@ struct TogglConnectorRow: View {
     }
 }
 
+/// Explains credential access before the destination creates its setup sections.
+/// Keep this on the platform Form, outside its individual/lazy sections.
+struct TogglKeychainExplanation: ViewModifier {
+    @Environment(\.dismiss) private var dismiss
+    let isRequired: Bool
+    @Binding var hasContinued: Bool
+    @State private var showsExplanation = false
+
+    private var message: String {
+#if os(macOS)
+        String(localized: "Toggl Trackへの接続には、APIトークン（接続用のキー）を使います。プロジェクトの取得と集中時間の送信に必要です。\n\nトークンは、このMacのKeychain（Appleの安全な保管場所）に保存します。読み取りや保存の際、macOSが許可やMacのログインパスワードを求めることがあります。他のアプリのパスワードへのアクセスを求めるものではありません。")
+#else
+        String(localized: "Toggl Trackへの接続には、APIトークン（接続用のキー）を使います。プロジェクトの取得と集中時間の送信に必要です。\n\nトークンは、この端末のKeychain（Appleの安全な保管場所）に保存します。iCloudには同期せず、Togglとの通信に使います。")
+#endif
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .onAppear {
+                if isRequired && !hasContinued { showsExplanation = true }
+            }
+            .alert(String(localized: "Toggl Trackとの接続について"), isPresented: $showsExplanation) {
+                Button(String(localized: "続ける")) { hasContinued = true }
+                    .accessibilityIdentifier("connectors.toggl.explanation.continue")
+                Button(String(localized: "キャンセル"), role: .cancel) { dismiss() }
+                    .accessibilityIdentifier("connectors.toggl.explanation.cancel")
+            } message: {
+                Text(message)
+            }
+    }
+}
+
 struct TogglSetupSections: View {
     @Environment(\.modelContext) private var modelContext
     @ObservedObject var store: TogglExportStore
@@ -53,13 +85,18 @@ struct TogglSetupSections: View {
                         Text(String(localized: "選択")).tag(Int64(0))
                         ForEach(store.workspaces) { Text($0.name).tag($0.id) }
                     }
+                    ConnectorMappingColumnHeaders(destination: String(localized: "プロジェクト"))
                     ForEach(activeAreas) { area in
-                        Picker(area.name, selection: Binding(
-                            get: { mappings[area.id.uuidString] ?? 0 },
-                            set: { if $0 == 0 { mappings.removeValue(forKey: area.id.uuidString) } else { mappings[area.id.uuidString] = $0 } }
-                        )) {
-                            Text(String(localized: "送信しない")).tag(Int64(0))
-                            ForEach(projects) { Text($0.name).tag($0.id) }
+                        ConnectorAreaMappingRow(area: area) {
+                            Picker(area.name, selection: Binding(
+                                get: { mappings[area.id.uuidString] ?? 0 },
+                                set: { if $0 == 0 { mappings.removeValue(forKey: area.id.uuidString) } else { mappings[area.id.uuidString] = $0 } }
+                            )) {
+                                Text(String(localized: "送信しない")).tag(Int64(0))
+                                ForEach(projects) { Text($0.name).tag($0.id) }
+                            }
+                            .labelsHidden()
+                            .disabled(store.isBusy)
                         }
                     }
                     Toggle(String(localized: "集中時間を自動送信"), isOn: $enabled)

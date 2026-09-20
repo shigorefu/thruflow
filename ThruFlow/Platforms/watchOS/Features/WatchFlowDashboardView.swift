@@ -770,7 +770,7 @@ private struct WatchStatisticsView: View {
                     Gauge(value: completionProgress) {
                         Text(String(localized: "達成状況"))
                     } currentValueLabel: {
-                        Text("\(Int((completionProgress * 100).rounded()))%")
+                        Text(completionProgress, format: .percent.precision(.fractionLength(0)))
                             .font(.headline)
                     }
                     .gaugeStyle(.accessoryCircularCapacity)

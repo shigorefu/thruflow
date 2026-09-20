@@ -248,7 +248,7 @@ The dashboard timeline uses a neutral dark rail for time without Flow. Every ser
 
 Hovering a rest shows its type, interval, and duration above the timeline. Clicking a completed rest opens a duration editor anchored to that rest. Start time is fixed. If the new end overlaps the next Flow, that Flow and all later Flow/rest records in the same series move forward by the overlap. Free space absorbs an extension without shifting, shortening does not pull history backward, and unrelated series never move.
 
-Below the Flow stage are today's `タスク` and `習慣` columns. `できたら` is omitted when empty. Rows use the same square Check and circular Block/Minute progress controls as the Tasks screen. Check can be completed manually; Block and Minute rings are read-only because recorded Flow owns their progress. Rows can be opened for editing. The fixed-height compact `統計` carousel provides Task/Area focused-time distribution, a seven-day Flow trend with previous-day comparisons, and today's completion status. On iOS its pages change with a horizontal swipe; page dots remain visible and previous/next arrow buttons are omitted.
+Below the Flow stage are today's `タスク` and `習慣` columns. `できたら` is omitted when empty. Rows use the same square Check and circular Block/Minute progress controls as the Tasks screen. Check can be completed manually; Block and Minute rings are read-only because recorded Flow owns their progress. Rows can be opened for editing. The fixed-height compact `統計` carousel provides Task/Area focused-time distribution, a seven-day Flow trend with previous-day comparisons, and today's completion status. On iOS its pages change with a horizontal swipe; page dots remain visible and previous/next arrow buttons are omitted. The Task/Area distribution rows stay ordered by focused duration. Their bars occupy consecutive shares of the full daily focus total from right to left: the largest row ends at the right edge, and each following row ends where the preceding one begins. This is cumulative duration, not clock time; labels and the donut retain their existing meaning.
 
 The Dashboard Task header `+` opens the shared messenger-style composer. On
 compact iOS layouts it slides above the tab bar on an opaque system background;
@@ -495,7 +495,9 @@ copy starts with `お疲れ様です。`. Break completion prompts the user to r
 `フロー`.
 
 Focus and break each schedule an additional forgotten-timer reminder after 60
-minutes of active phase time. Paused time shifts that deadline and does not
+minutes of active phase time, unless the planned phase duration exceeds one hour.
+Manually extending beyond one hour cancels the pending forgotten-timer reminder;
+the normal completion notification remains. Paused time shifts that deadline and does not
 count toward the hour. Pausing, stopping, destroying, or changing phase cancels
 obsolete pending reminders. Notification request identifiers include a persisted
 generation. Cancellation rotates that generation and removes every identifier
@@ -861,3 +863,32 @@ completed Task count below the chart without covering the plotted lines.
 Custom ranges use daily trend buckets through 120 days and monthly buckets
 above that; trend axis labels follow the actual aggregation independently of
 Dots layout. Dots and distribution totals retain their existing behavior.
+
+### macOS Flow task shortcuts
+
+Task cards in the Flow dashboard use the same context menu as Tasks: edit,
+reschedule where allowed, select for Flow, and soft delete. Weekly Habit moves
+retain the existing schedule validation. The Tasks and Habits column headings
+open the Tasks workspace with the corresponding filter selected.
+
+### iPhone tab-bar background
+
+Each compact-width tab keeps the system tab controls without an opaque full-width
+bottom backing. On iOS 26 and later, the bottom scroll-edge effect is also hidden
+across Flow, Tasks, History, Areas, and Statistics. Content safe areas and keyboard
+avoidance remain active. Period-swipe containers clip horizontal page transitions
+while allowing scroll content to extend into the bottom safe area beneath the
+floating tab bar.
+
+### Creating a Task under a Habit Area
+
+Quick capture and Task editors create an independent Task even when AWS or another
+Habit Area is selected. It stays in Tasks, keeps its title and measurement, and can
+be scheduled independently. It neither replaces nor suppresses that Area's Habit
+occurrence. Editing it preserves this distinction.
+
+### Connector Beta indicator
+
+The Connectors entry carries a Beta capsule in the macOS/iPad sidebar. The native
+iPhone popup menu shows the same Beta status as a title suffix, preserving the
+system menu presentation.

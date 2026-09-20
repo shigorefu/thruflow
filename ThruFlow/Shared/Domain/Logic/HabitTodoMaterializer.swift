@@ -28,7 +28,9 @@ struct HabitTodoMaterializer {
         }
         var changed = false
 
-        if reconcilesDuplicates {
+        // Live view updates use the lightweight path, but imported duplicates
+        // still require reconciliation even when no full refresh was requested.
+        if reconcilesDuplicates || HabitTodoReconciler(calendar: calendar).hasDuplicateOccurrences(in: todos) {
             let sessions = try modelContext.fetch(FetchDescriptor<FlowSession>())
             let segments = try modelContext.fetch(FetchDescriptor<FlowSegment>())
             let reconciliation = HabitTodoReconciler(calendar: calendar).reconcile(
@@ -55,7 +57,7 @@ struct HabitTodoMaterializer {
         // unfinished and can roll forward to today.
         let measuredWeeklyTodos = todos.filter {
             !$0.isDeleted && !$0.isArchived && $0.measurement != .checkbox &&
-                $0.area?.type == .habit && $0.area?.goalSchedule == .weeklyCount
+                $0.taskType == .habit && $0.area?.goalSchedule == .weeklyCount
         }
         if !measuredWeeklyTodos.isEmpty {
             let previous = measuredWeeklyTodos.map {

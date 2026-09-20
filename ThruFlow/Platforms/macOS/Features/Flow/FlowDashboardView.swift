@@ -42,6 +42,7 @@ struct FlowDashboardView: View {
     @Binding private var cachedSnapshot: FlowDashboardSnapshot?
     @Binding private var cachedTodoGroups: FlowDashboardTodoGroups?
     let isVisible: Bool
+    let onOpenTasks: (TaskCalendarFilter) -> Void
 
     private let progressCalculator = TodoProgressCalculator()
     private let historyEditor = FlowHistoryEditor()
@@ -58,7 +59,8 @@ struct FlowDashboardView: View {
         isVisible: Bool = true,
         areas: [Area],
         cachedSnapshot: Binding<FlowDashboardSnapshot?>,
-        cachedTodoGroups: Binding<FlowDashboardTodoGroups?>
+        cachedTodoGroups: Binding<FlowDashboardTodoGroups?>,
+        onOpenTasks: @escaping (TaskCalendarFilter) -> Void = { _ in }
     ) {
         let cutoff = Calendar.current.date(byAdding: .day, value: -16, to: .now) ?? .distantPast
         let todoUpperBound = Calendar.current.date(byAdding: .day, value: 2, to: .now) ?? .distantFuture
@@ -83,6 +85,7 @@ struct FlowDashboardView: View {
             sort: \FlowBreak.updatedAt,
             order: .reverse
         )
+        self.onOpenTasks = onOpenTasks
         _cachedSnapshot = cachedSnapshot
         _cachedTodoGroups = cachedTodoGroups
     }
@@ -665,6 +668,7 @@ struct FlowDashboardView: View {
                 progressText: progressText,
                 onToggle: toggleTodo,
                 onOpen: { editingTodo = $0 },
+                onOpenSection: { onOpenTasks(.tasks) },
                 addControl: AnyView(dashboardAddButton)
             )
             DashboardTodoColumn(
@@ -673,7 +677,8 @@ struct FlowDashboardView: View {
                 todos: habitTodos,
                 progressText: progressText,
                 onToggle: toggleTodo,
-                onOpen: { editingTodo = $0 }
+                onOpen: { editingTodo = $0 },
+                onOpenSection: { onOpenTasks(.habits) }
             )
 
             if !niceTodos.isEmpty {
@@ -741,7 +746,8 @@ struct FlowDashboardView: View {
     }
 
     private func statisticsDistributionPage(snapshot: FlowDashboardSnapshot) -> some View {
-        VStack(spacing: 12) {
+        let rows = distributionRows(snapshot: snapshot)
+        return VStack(spacing: 12) {
             Picker(String(localized: "集計単位"), selection: $distributionMode) {
                 ForEach(DashboardDistributionMode.allCases) { mode in
                     Text(mode.title).tag(mode)
@@ -753,7 +759,7 @@ struct FlowDashboardView: View {
             statisticsDonut(snapshot: snapshot)
 
             VStack(alignment: .leading, spacing: 9) {
-                ForEach(distributionRows(snapshot: snapshot).prefix(4)) { row in
+                ForEach(rows.prefix(4)) { row in
                     VStack(alignment: .leading, spacing: 4) {
                         HStack {
                             Text("\(row.symbol) \(row.title)")
@@ -765,16 +771,12 @@ struct FlowDashboardView: View {
                                 .foregroundStyle(.secondary)
                                 .monospacedDigit()
                         }
-                        GeometryReader { proxy in
-                            Capsule()
-                                .fill(Color.primary.opacity(0.07))
-                                .overlay(alignment: .leading) {
-                                    Capsule()
-                                        .fill(Color(hex: row.colorHex))
-                                        .frame(width: proxy.size.width * distributionRatio(row, snapshot: snapshot))
-                                }
-                        }
-                        .frame(height: 5)
+                        DashboardDistributionBar(
+                            fraction: snapshot.focusShare(for: row.focusSeconds),
+                            precedingFraction: snapshot.focusShare(for: rows.prefix { $0.id != row.id }
+                                .reduce(0) { $0 + $1.focusSeconds }),
+                            color: Color(hex: row.colorHex)
+                        )
                     }
                 }
             }
@@ -864,7 +866,7 @@ struct FlowDashboardView: View {
                     .trim(from: 0, to: ratio)
                     .stroke(Color.accentColor, style: StrokeStyle(lineWidth: 12, lineCap: .round))
                     .rotationEffect(.degrees(-90))
-                Text("\(Int((ratio * 100).rounded()))%")
+                Text(ratio, format: .percent.precision(.fractionLength(0)))
                     .font(.title3.bold())
                     .monospacedDigit()
             }
@@ -971,13 +973,6 @@ struct FlowDashboardView: View {
             cursor += fraction
             return slice
         }
-    }
-
-    private func distributionRatio(
-        _ row: DashboardDistributionRow,
-        snapshot: FlowDashboardSnapshot
-    ) -> Double {
-        snapshot.focusShare(for: row.focusSeconds)
     }
 
     private func comparisonRow(_ title: String, value: String, systemImage: String) -> some View {
@@ -1622,13 +1617,22 @@ private struct DashboardTodoColumn: View {
     let progressText: (Todo) -> String
     let onToggle: (Todo) -> Void
     let onOpen: (Todo) -> Void
+    var onOpenSection: (() -> Void)?
     var addControl: AnyView?
+    @State private var moveError: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Label(title, systemImage: systemImage)
-                    .font(.headline)
+                if let onOpenSection {
+                    Button(action: onOpenSection) {
+                        Label(title, systemImage: systemImage).font(.headline)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("flow.openTasks.\(systemImage)")
+                } else {
+                    Label(title, systemImage: systemImage).font(.headline)
+                }
                 Spacer()
                 Text("\(todos.filter { !$0.isCompleted }.count)")
                     .font(.caption.weight(.semibold))
@@ -1649,6 +1653,9 @@ private struct DashboardTodoColumn: View {
                 VStack(spacing: 0) {
                     ForEach(todos.prefix(6)) { todo in
                         todoRow(todo)
+                            .contextMenu {
+                                MacTaskContextMenu(todo: todo, onEdit: { onOpen(todo) }, onError: { moveError = $0 })
+                            }
 
                         if todo.id != todos.prefix(6).last?.id {
                             Divider().opacity(0.5)
@@ -1657,6 +1664,13 @@ private struct DashboardTodoColumn: View {
                 }
             }
 
+        }
+        .alert(String(localized: "移動できません"), isPresented: Binding(
+            get: { moveError != nil }, set: { if !$0 { moveError = nil } }
+        )) {
+            Button(String(localized: "OK"), role: .cancel) { moveError = nil }
+        } message: {
+            Text(moveError ?? "")
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(16)

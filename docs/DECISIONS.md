@@ -781,3 +781,36 @@ configuration uses version 1.3.0 and build 11. Merge the consolidated work into
 main and delete the merged 1.3.0 and codex/connectors branches. This changes
 release scope and source metadata, not the historical publication status of
 1.2.0 or the outstanding physical-device/CloudKit release gates.
+
+### 2026-09-16 — Preserve independent Tasks in Habit Areas
+
+Manual Task creation must not turn into a Habit because of the selected Area.
+Use an optional persisted occurrence flag; explicit independent Tasks are excluded
+from Habit generation, deduplication, pauses, and schedule reconciliation. Legacy
+records retain their existing classification without a destructive backfill.
+
+### 2026-09-19 — Cumulative Flow distribution bars (1.3.1)
+
+On macOS and iOS, compact Flow Statistics bars stack from right to left across
+rows sorted by focused duration. Width remains each Task/Area's share of the
+entire daily focus total, including entries beyond the four visible rows.
+The offset is the sum of preceding rows, not the time of day. The donut,
+duration labels, and recorded data are unchanged.
+
+### 2026-09-19 — Connector Area mapping tables (1.3.1)
+
+Connected Reminders and Todoist forms map sources per destination Area instead
+of importing every selected source into one Area. One source has one destination;
+an Area can receive multiple sources. Existing destination eligibility and local
+Task ownership remain unchanged. Legacy local settings resolve to equivalent
+mappings. macOS and iOS share native labeled mapping rows with Toggl, whose
+project mapping remains outgoing-only. Saving an empty import mapping disables
+imports without deleting existing Tasks.
+
+### 2026-09-19 — Explain Toggl credential access before setup (1.3.1)
+
+Each visit to Toggl settings begins with a native API-token/Keychain explanation
+on macOS and iOS. Only Continue creates the setup content and allows its saved
+credential read; Cancel returns to the provider list. The macOS explanation
+prepares users for the possible system access/password prompt. This adds no
+permission override and preserves noninteractive automatic synchronization.

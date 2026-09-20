@@ -21,6 +21,7 @@ struct MacOSRootView: View {
     @Query private var onboardingFlowBreaks: [FlowBreak]
     @State private var selection: AppSection? = .flow
     @State private var showsConnectors = false
+    @State private var tasksInitialFilter: TaskCalendarFilter = .all
     @State private var historyDate = Calendar.current.startOfDay(for: .now)
     @State private var didReconcileFlowProgress = false
     @State private var flowSnapshotCache: FlowDashboardSnapshot?
@@ -78,7 +79,7 @@ struct MacOSRootView: View {
                 Button {
                     showsConnectors = true
                 } label: {
-                    Label(String(localized: "コネクタ"), systemImage: "puzzlepiece.extension")
+                    ConnectorNavigationLabel()
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .contentShape(Rectangle())
                 }
@@ -153,11 +154,15 @@ struct MacOSRootView: View {
                     isVisible: !onboarding.isPresented,
                     areas: areas,
                     cachedSnapshot: $flowSnapshotCache,
-                    cachedTodoGroups: $flowTodoGroupsCache
+                    cachedTodoGroups: $flowTodoGroupsCache,
+                    onOpenTasks: { filter in
+                        tasksInitialFilter = filter
+                        selection = .tasks
+                    }
                 )
             }
         case .tasks:
-            TasksView()
+            TasksView(initialFilter: tasksInitialFilter)
         case .history:
             DayHistoryView(initialDate: historyDate)
                 .id(historyDate)

@@ -1,5 +1,16 @@
 import Foundation
 import Security
+import LocalAuthentication
+
+nonisolated enum ConnectorKeychainInteraction {
+    @TaskLocal static var allowed = true
+
+    static func context(allowed: Bool) -> LAContext {
+        let context = LAContext()
+        context.interactionNotAllowed = !allowed
+        return context
+    }
+}
 
 nonisolated struct ConnectorCredentials: Codable, Equatable, Sendable {
     var accessToken: String
@@ -65,7 +76,8 @@ final class ConnectorKeychain: ConnectorCredentialStorage {
         [kSecClass as String: kSecClassGenericPassword,
          kSecAttrService as String: service,
          kSecAttrAccount as String: provider.rawValue,
-         kSecAttrSynchronizable as String: false]
+         kSecAttrSynchronizable as String: false,
+         kSecUseAuthenticationContext as String: ConnectorKeychainInteraction.context(allowed: ConnectorKeychainInteraction.allowed)]
     }
 }
 

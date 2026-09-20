@@ -178,7 +178,7 @@ struct IOSRootView: View {
                     Button {
                         showsConnectors = true
                     } label: {
-                        Label(IOSAppRoute.connectors.title, systemImage: IOSAppRoute.connectors.systemImage)
+                        ConnectorNavigationLabel()
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .contentShape(Rectangle())
                     }
@@ -224,7 +224,7 @@ struct IOSRootView: View {
         TabView(selection: selectionBinding) {
             ForEach(IOSAppRoute.tabs) { route in
                 NavigationStack {
-                    destination(for: route)
+                    tabContent(for: route)
                 }
                 .tabItem {
                     routeLabel(for: route)
@@ -234,7 +234,23 @@ struct IOSRootView: View {
             }
         }
         .tint(.accentColor)
-        .toolbarBackground(.hidden, for: .tabBar)
+    }
+
+    @ViewBuilder
+    private func tabContent(for route: IOSAppRoute) -> some View {
+        // Tab-bar preferences belong to each tab's content, not the TabView.
+        // The bottom scroll-edge effect is separate from the bar background.
+        if #available(iOS 26.0, *) {
+            destination(for: route)
+                .toolbarBackgroundVisibility(.hidden, for: .tabBar)
+                .scrollEdgeEffectHidden(true, for: .bottom)
+        } else if #available(iOS 18.0, *) {
+            destination(for: route)
+                .toolbarBackgroundVisibility(.hidden, for: .tabBar)
+        } else {
+            destination(for: route)
+                .toolbarBackground(.hidden, for: .tabBar)
+        }
     }
 
     @ViewBuilder

@@ -59,8 +59,12 @@ struct ConnectorProviderRow: View {
         HStack(alignment: .center, spacing: 12) {
             ConnectorProviderLogo(provider: provider)
             VStack(alignment: .leading, spacing: 4) {
-                Text(provider.connectorTitle)
-                    .font(.headline)
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(provider.connectorTitle)
+                        .font(.headline)
+                        .fixedSize(horizontal: false, vertical: true)
+                    ConnectorBetaBadge()
+                }
                 if connection != nil {
                     Label(String(localized: "接続済み"), systemImage: "checkmark.circle.fill")
                         .font(.caption)
@@ -82,8 +86,7 @@ struct ConnectorSetupSections: View {
     let provider: ConnectorProviderID
     let areas: [Area]
 
-    @State private var selectedSourceIDs: Set<String> = []
-    @State private var selectedAreaID: UUID?
+    @State private var sourceAreaIDs: [String: UUID] = [:]
     @State private var showsDisconnectConfirmation = false
     @State private var didLoadDraft = false
 
@@ -104,10 +107,9 @@ struct ConnectorSetupSections: View {
     }
 
     private var hasValidSelection: Bool {
-        guard let selectedAreaID,
-              availableAreas.contains(where: { $0.id == selectedAreaID }) else { return false }
-        return !selectedSourceIDs.isEmpty &&
-            selectedSourceIDs.isSubset(of: Set(availableSources.map(\.id)))
+        let areaIDs = Set(availableAreas.map(\.id))
+        return Set(sourceAreaIDs.keys).isSubset(of: Set(availableSources.map(\.id))) &&
+            sourceAreaIDs.values.allSatisfy { areaIDs.contains($0) }
     }
 
     var body: some View {
@@ -126,10 +128,7 @@ struct ConnectorSetupSections: View {
                     .onChange(of: connection?.account.id) { _, _ in
                         restoreSelection()
                     }
-                    .onChange(of: connectors.sources[provider]) { _, sources in
-                        guard let sources else { return }
-                        selectedSourceIDs.formIntersection(Set(sources.map(\.id)))
-                    }
+
 
                 if connection == nil {
                     authorization
@@ -147,7 +146,6 @@ struct ConnectorSetupSections: View {
 
             if let connection {
                 sourceSelection
-                destinationSelection
                 synchronization(connection)
                 disconnectSection
             }
@@ -211,24 +209,40 @@ struct ConnectorSetupSections: View {
 
     private var sourceSelection: some View {
         Section {
+            ConnectorMappingColumnHeaders(destination: provider == .reminders
+                ? String(localized: "リスト") : String(localized: "プロジェクト"))
+            ForEach(availableAreas) { area in
+                ConnectorAreaMappingRow(area: area) {
+                    Menu {
+                        Button(String(localized: "取り込まない")) {
+                            sourceAreaIDs = sourceAreaIDs.filter { $0.value != area.id }
+                        }
+                        ForEach(availableSources) { source in
+                            Toggle(source.name, isOn: Binding(
+                                get: { sourceAreaIDs[source.id] == area.id },
+                                set: { selected in
+                                    if selected { sourceAreaIDs[source.id] = area.id }
+                                    else { sourceAreaIDs.removeValue(forKey: source.id) }
+                                }
+                            ))
+                            .disabled(sourceAreaIDs[source.id].map { $0 != area.id } ?? false)
+                        }
+                    } label: {
+                        Text(selectionTitle(for: area))
+                            .lineLimit(2)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    .accessibilityLabel(area.name)
+                    .accessibilityValue(selectionTitle(for: area))
+                    .accessibilityIdentifier("connectors.mapping.\(area.id)")
+                    .disabled(isBusy)
+                }
+            }
             if availableSources.isEmpty && !isBusy {
                 Text(String(localized: "取り込み元がありません。リストやプロジェクトを確認して、再読み込みしてください。"))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
-            }
-            ForEach(availableSources, id: \.id) { source in
-                Toggle(source.name, isOn: Binding(
-                    get: { selectedSourceIDs.contains(source.id) },
-                    set: { isSelected in
-                        if isSelected {
-                            selectedSourceIDs.insert(source.id)
-                        } else {
-                            selectedSourceIDs.remove(source.id)
-                        }
-                    }
-                ))
-                .disabled(isBusy)
             }
             Button {
                 Task { await connectors.loadSources(for: provider) }
@@ -236,26 +250,26 @@ struct ConnectorSetupSections: View {
                 Label(String(localized: "取り込み元を再読み込み"), systemImage: "arrow.clockwise")
             }
             .disabled(isBusy)
+            Button(String(localized: "設定を保存")) { _ = saveSelection() }
+                .disabled(isBusy || !hasValidSelection)
+                .accessibilityIdentifier("connectors.mapping.save")
         } header: {
             Text(provider == .reminders
-                 ? String(localized: "取り込むリスト")
-                 : String(localized: "取り込むプロジェクト"))
+                 ? String(localized: "分野とリスト")
+                 : String(localized: "分野とプロジェクト"))
+        } footer: {
+            Text(String(localized: "分野ごとに取り込み元を選びます。同じ取り込み元を複数の分野には割り当てられません。取り込み済みのタスクの分野や集中履歴は変更しません。"))
         }
     }
 
-    private var destinationSelection: some View {
-        Section {
-            Picker(String(localized: "取り込み先の分野"), selection: $selectedAreaID) {
-                Text(String(localized: "分野を選択")).tag(nil as UUID?)
-                ForEach(availableAreas) { area in
-                    Text(area.name).tag(Optional(area.id))
-                }
-            }
-            .disabled(isBusy)
-            .accessibilityIdentifier("connectors.area")
-        } footer: {
-            Text(String(localized: "新しいタスクをこの分野に追加します。取り込み済みのタスクの分野や集中履歴は変更しません。"))
+    private func selectionTitle(for area: Area) -> String {
+        let selectedIDs = Set(sourceAreaIDs.filter { $0.value == area.id }.keys)
+        guard !selectedIDs.isEmpty else { return String(localized: "取り込まない") }
+        let selected = availableSources.filter { selectedIDs.contains($0.id) }
+        guard selected.count == selectedIDs.count else {
+            return String(localized: "取り込み元を確認してください")
         }
+        return selected.map(\.name).joined(separator: "、")
     }
 
     private func synchronization(_ connection: ConnectorConnection) -> some View {
@@ -272,6 +286,7 @@ struct ConnectorSetupSections: View {
             }
             .buttonStyle(.borderedProminent)
             .disabled(isBusy || !hasValidSelection)
+            .disabled(sourceAreaIDs.isEmpty)
             .accessibilityIdentifier("connectors.import")
 
             if let lastSyncedAt = connection.lastSyncedAt {
@@ -315,30 +330,25 @@ struct ConnectorSetupSections: View {
     }
 
     private func restoreSelection() {
-        selectedSourceIDs = connection?.selectedSourceIDs ?? []
-        if let cached = connectors.sources[provider] {
-            selectedSourceIDs.formIntersection(Set(cached.map(\.id)))
-        }
-        if let savedAreaID = connection?.areaID {
-            selectedAreaID = availableAreas.contains(where: { $0.id == savedAreaID }) ? savedAreaID : nil
-        } else {
-            selectedAreaID = availableAreas.first(where: { DefaultAreas.isTaskInboxRecord($0) })?.id
-                ?? availableAreas.first?.id
+        let activeIDs = Set(availableAreas.map(\.id))
+        sourceAreaIDs = (connection?.resolvedSourceAreaIDs ?? [:]).filter { activeIDs.contains($0.value) }
+    }
+
+    @discardableResult
+    private func saveSelection() -> Bool {
+        guard hasValidSelection else { return false }
+        do {
+            try connectors.configure(provider: provider, sourceAreaIDs: sourceAreaIDs)
+            connectors.errorMessage = nil
+            return true
+        } catch {
+            connectors.errorMessage = error.localizedDescription
+            return false
         }
     }
 
     private func importTasks() {
-        guard let selectedAreaID, hasValidSelection else { return }
-        do {
-            try connectors.configure(
-                provider: provider,
-                sourceIDs: selectedSourceIDs,
-                areaID: selectedAreaID
-            )
-        } catch {
-            connectors.errorMessage = error.localizedDescription
-            return
-        }
+        guard !sourceAreaIDs.isEmpty, saveSelection() else { return }
         Task {
             await connectors.synchronize(provider: provider, modelContext: modelContext)
         }

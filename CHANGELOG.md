@@ -3,6 +3,34 @@
 All notable user-facing changes to ThruFlow are documented in this file.
 Release dates below record GitHub publication in Asia/Tokyo (JST).
 
+## [1.3.1] - Unreleased
+
+App, extensions, Watch, and test targets use version **1.3.1**, build **12**.
+
+### Added
+
+- Per-Area source mappings for Reminders and Todoist, with existing imported
+  Tasks retaining their local Area and history.
+- Mac Flow Task context menus and navigation from Task/Habit headings.
+- A localized API-token/Keychain explanation before opening Toggl setup.
+
+### Changed
+
+- Flow distribution bars stack cumulatively from right to left.
+- Beta badges appear on each connector, rather than the main navigation entry.
+- Manually extended focus sessions over one hour skip the one-hour reminder.
+
+### Fixed
+
+- Missing active Toggl projects and unexpected startup Keychain prompts.
+- Duplicate Habit reconciliation and manual Tasks incorrectly treated as Habits.
+- iPhone bottom-control backgrounds and Mac History header bounds.
+- Localization gaps and SDK 27 compatibility issues.
+- Missing Production CloudKit Habit occurrence field; cross-device recovery
+  confirmed by the maintainer after deployment on 2026-09-20.
+
+See [release notes](docs/releases/1.3.1.md) for details and connector limitations.
+
 ## [1.3.0] - 2026-09-15
 
 App, extensions, Watch, and test targets use version **1.3.0**, build **11**.
@@ -220,6 +248,7 @@ App, extensions, Watch, and test targets use version **1.3.0**, build **11**.
 
 - Improved History timeline editing and natural localized copy before release.
 
+[1.3.1]: https://github.com/shigorefu/thruflow/compare/v1.3.0...main
 [1.3.0]: https://github.com/shigorefu/thruflow/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/shigorefu/thruflow/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/shigorefu/thruflow/compare/v1.0.0...v1.1.0

@@ -239,3 +239,10 @@ fails closed. Toggl tokens use the connector Keychain namespace. The local atomi
 Area/project mapping, immutable queued payloads, uncertainty flags, cancellation
 flags, and remote receipts. It contains no credentials and is not shared through
 CloudKit. A restored outbox cannot be dispatched by a different recording device.
+
+### Habit occurrence identity (1.3.1)
+
+`Todo.habitOccurrence: Bool? = nil` is an additive optional scalar. Manual creation
+on macOS, iOS, watchOS, and history recording writes `false`; Habit generation writes
+`true`. Older stores and CloudKit records read `nil` and preserve legacy Area-based
+classification. No existing records are rewritten or guessed from their titles.

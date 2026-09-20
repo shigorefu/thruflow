@@ -12,7 +12,8 @@ import SwiftData
     private let credentials: any ConnectorCredentialStorage
     private let storage: any TogglExportStorage
     private let factory: (String) -> any TogglTrackClientProtocol
-    private let deviceID: String?
+    private let resolveDeviceID: () -> String?
+    private var deviceID: String? { resolveDeviceID() }
     private let automaticDisabled: Bool
     private var storageFailed = false
     private var nextAutomaticSync = Date.distantPast
@@ -23,7 +24,7 @@ import SwiftData
     }
 
     init(credentials: (any ConnectorCredentialStorage)? = nil, storage: (any TogglExportStorage)? = nil,
-         deviceID: String? = FlowRecordingDevice.id, factory: ((String) -> any TogglTrackClientProtocol)? = nil) {
+         deviceID: @autoclosure @escaping () -> String? = FlowRecordingDevice.id, factory: ((String) -> any TogglTrackClientProtocol)? = nil) {
         let process = ProcessInfo.processInfo
         let isolated = process.arguments.contains("--uitesting") || process.arguments.contains("--demo-data") ||
             process.arguments.contains("--onboarding-preview") || process.environment["XCTestConfigurationFilePath"] != nil ||
@@ -31,7 +32,7 @@ import SwiftData
         self.credentials = credentials ?? (isolated ? InMemoryConnectorCredentials() : ConnectorKeychain())
         self.storage = storage ?? (isolated ? TogglMemoryStorage() : TogglFileStorage())
         self.factory = factory ?? { TogglTrackClient(token: $0) }
-        self.deviceID = deviceID
+        self.resolveDeviceID = deviceID
         automaticDisabled = isolated
         do { state = try self.storage.load() }
         catch { storageFailed = true; errorMessage = TogglError.storage.localizedDescription }
@@ -48,6 +49,8 @@ import SwiftData
             let spaces = try await client.workspaces()
             let projects = try await client.projects()
             try Task.checkCancellation()
+            // Only an explicit connection may authorize the recording identity.
+            if deviceID == nil { _ = FlowRecordingDevice.resolve(allowInteraction: true) }
             let oldCredentials = try credentials.read(for: .toggl)
             try credentials.save(ConnectorCredentials(accessToken: token), for: .toggl)
             var updated = state
@@ -79,7 +82,7 @@ import SwiftData
     func configure(workspaceID: Int64, areaProjects: [String: Int64], enabled: Bool, now: Date = .now) throws {
         guard !isBusy, !storageFailed, deviceID != nil, var config = configuration else { throw TogglError.configuration }
         guard workspaces.contains(where: { $0.id == workspaceID }), !areaProjects.isEmpty,
-              areaProjects.values.allSatisfy({ id in projects.contains { $0.id == id && $0.workspace_id == workspaceID && $0.active && $0.can_track_time != false } }) else {
+              areaProjects.values.allSatisfy({ id in projects.contains { $0.id == id && $0.workspace_id == workspaceID && $0.active } }) else {
             throw TogglError.configuration
         }
         if enabled && !config.isEnabled { config.enabledAt = now }
@@ -115,7 +118,9 @@ import SwiftData
     func automaticSync(modelContext: ModelContext) async {
         guard !automaticDisabled, Date.now >= nextAutomaticSync, configuration?.isEnabled == true else { return }
         nextAutomaticSync = Date.now.addingTimeInterval(30)
-        await synchronize(modelContext: modelContext)
+        await ConnectorKeychainInteraction.$allowed.withValue(false) {
+            await synchronize(modelContext: modelContext)
+        }
     }
 
     func synchronize(modelContext: ModelContext, now: Date = .now) async {

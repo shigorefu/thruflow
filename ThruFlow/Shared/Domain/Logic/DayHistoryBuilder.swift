@@ -99,7 +99,7 @@ struct DayHistorySnapshot {
                 todos: [representative] + displayedTodos.filter { $0.id != representative.id },
                 linkedTodoIDs: todoIDs,
                 areaID: area?.id,
-                areaType: area?.type ?? .neutral,
+                areaType: representative.taskType,
                 title: TodoDisplay.title(for: representative),
                 areaSymbol: area?.symbolName ?? "📥",
                 areaName: area?.name ?? String(localized: "その他"),

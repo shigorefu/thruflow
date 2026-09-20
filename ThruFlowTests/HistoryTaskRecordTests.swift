@@ -326,7 +326,7 @@ struct HistoryTaskRecordTests {
 
     private func makeContainer() throws -> ModelContainer {
         let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         return try ModelContainer(for: schema, configurations: [configuration])
     }
 }

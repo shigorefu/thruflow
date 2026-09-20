@@ -7,6 +7,24 @@ import Testing
 struct ConnectorTaskImporterTests {
     private let now = Date(timeIntervalSince1970: 1_800_000_000)
 
+    @Test func invalidMappedDestinationDoesNotPartiallyImportBatch() throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+        let work = try makeArea(context)
+        let archived = Area(name: "Archived", type: .neutral)
+        archived.archive()
+        context.insert(archived)
+        try context.save()
+        #expect(throws: ConnectorImportError.self) {
+            try ConnectorTaskImporter().importTasks([
+                ConnectorTask(id: "a", sourceID: "a", title: "First"),
+                ConnectorTask(id: "b", sourceID: "b", title: "Second")
+            ], provider: .reminders, accountID: "local",
+               areasBySourceID: ["a": work, "b": archived], modelContext: context)
+        }
+        #expect(try context.fetchCount(FetchDescriptor<Todo>()) == 0)
+    }
+
     @Test func sourceCompletionAndReopeningUpdateCheckboxWithoutAnEcho() throws {
         let container = try makeContainer()
         let context = container.mainContext

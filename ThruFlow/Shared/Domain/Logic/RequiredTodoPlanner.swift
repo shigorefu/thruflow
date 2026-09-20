@@ -63,7 +63,8 @@ struct RequiredTodoPlanner {
 
     func existingRequiredTodo(for area: Area, in todos: [Todo], on date: Date = .now) -> Todo? {
         todos.first { todo in
-            guard todo.area?.id == area.id,
+            guard todo.isHabitOccurrence,
+                  todo.area?.id == area.id,
                   todo.externalTaskLinkRawValue == nil,
                   !todo.isArchived,
                   !todo.isDeleted,
@@ -82,7 +83,8 @@ struct RequiredTodoPlanner {
     ) -> Todo? {
         guard area.type == .habit,
               area.goalSchedule == .weeklyCount,
-              shouldAppearToday(area, on: date) else {
+              shouldAppearToday(area, on: date),
+              existingRequiredTodo(for: area, in: todos, on: date) == nil else {
             return nil
         }
 
@@ -114,6 +116,7 @@ struct RequiredTodoPlanner {
         return Todo(
             title: "",
             area: area,
+            habitOccurrence: true,
             measurement: measurement(for: goalUnit),
             priority: .high,
             isRoomIfPossible: false,
@@ -128,7 +131,8 @@ struct RequiredTodoPlanner {
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .isEmpty ?? true
 
-        guard todo.externalTaskLinkRawValue == nil,
+        guard todo.habitOccurrence != false,
+              todo.externalTaskLinkRawValue == nil,
               let scheduledDate = todo.scheduledDate,
               area.type == .habit,
               !area.isArchived,
@@ -154,7 +158,8 @@ struct RequiredTodoPlanner {
         for area: Area,
         now: Date = .now
     ) -> Bool {
-        guard todo.externalTaskLinkRawValue == nil,
+        guard todo.isHabitOccurrence,
+              todo.externalTaskLinkRawValue == nil,
               let goalUnit = area.goalUnit else { return false }
 
         let target = max(1, area.goalTarget ?? area.weeklyTargetCount ?? 1)
@@ -179,7 +184,8 @@ struct RequiredTodoPlanner {
         in todos: [Todo],
         now: Date = .now
     ) -> [RescheduleOption] {
-        guard todo.externalTaskLinkRawValue == nil,
+        guard todo.isHabitOccurrence,
+              todo.externalTaskLinkRawValue == nil,
               let area = todo.area,
               area.type == .habit,
               area.goalSchedule == .weeklyCount,
@@ -262,7 +268,8 @@ struct RequiredTodoPlanner {
         }
 
         return todos.filter { todo in
-            guard todo.area?.id == area.id,
+            guard todo.isHabitOccurrence,
+                  todo.area?.id == area.id,
                   todo.externalTaskLinkRawValue == nil,
                   !todo.isArchived,
                   !todo.isDeleted,

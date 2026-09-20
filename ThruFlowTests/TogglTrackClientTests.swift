@@ -26,6 +26,16 @@ import Testing
         #expect(body["api_token"] == nil)
     }
 
+    @Test func activeProjectsRemainSelectableRegardlessOfTrackTimeHint() async throws {
+        let response = #"[{"id":20,"workspace_id":10,"name":"Study","active":true,"can_track_time":false},{"id":21,"workspace_id":10,"name":"Work","active":true,"can_track_time":true},{"id":22,"workspace_id":11,"name":"Other workspace","active":true},{"id":23,"workspace_id":10,"name":"Archived","active":false,"can_track_time":true}]"#
+        let transport = TogglHTTPStub(responses: [(200, response, [:])])
+        let client = TogglTrackClient(token: "test", transport: transport, requestSpacing: 0)
+        let projects = try await client.projects()
+        #expect(projects.map(\.id) == [20, 21, 22])
+        #expect(projects.filter { $0.workspace_id == 10 }.map(\.id) == [20, 21])
+        #expect(await transport.requests.first?.url?.path == "/api/v9/me/projects")
+    }
+
     @Test func lookupChecksIdentityAndRejectsAmbiguousMatches() async throws {
         let transport = TogglHTTPStub(responses: [(200, "[\(entry)]", [:]), (200, "[\(entry),\(entry)]", [:])])
         let client = TogglTrackClient(token: "test", transport: transport, requestSpacing: 0)

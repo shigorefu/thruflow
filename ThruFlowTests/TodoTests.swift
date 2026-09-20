@@ -11,6 +11,86 @@ import Testing
 
 struct TodoTests {
 
+    @Test @MainActor func independentTaskInHabitAreaSurvivesMaterializationAndReload() throws {
+        let config = ModelConfiguration(isStoredInMemoryOnly: true, cloudKitDatabase: .none)
+        let container = try ModelContainer(for: Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self, configurations: config)
+        let context = ModelContext(container)
+        let day = Calendar.current.startOfDay(for: .now)
+        let area = Area(name: "AWS", type: .habit)
+        area.goalUnit = .focusBlocks
+        area.goalTarget = 2
+        area.goalPeriod = .daily
+        area.goalSchedule = .everyDay
+        let task = Todo(title: "模擬試験", area: area, habitOccurrence: false, scheduledDate: day)
+        context.insert(area)
+        context.insert(task)
+        try context.save()
+        let materializer = HabitTodoMaterializer()
+        try materializer.materialize(areas: [area], dates: [day], modelContext: context, now: day)
+        try materializer.materialize(areas: [area], dates: [day], modelContext: context, now: day)
+        let loaded = try ModelContext(container).fetch(FetchDescriptor<Todo>())
+        let savedTask = try #require(loaded.first { $0.id == task.id })
+        #expect(!savedTask.isDeleted)
+        #expect(savedTask.title == "模擬試験")
+        #expect(savedTask.habitOccurrence == false)
+        #expect(TaskCalendarFilter.tasks.includes(savedTask))
+        #expect(!TaskCalendarFilter.habits.includes(savedTask))
+        #expect(loaded.filter { !$0.isDeleted && $0.isHabitOccurrence }.count == 1)
+        let later = day.addingTimeInterval(86_400 * 10)
+        if case .failure = TaskRescheduleService().validate(savedTask, movingTo: later, among: loaded, now: day) {
+            Issue.record("An independent task must be movable outside the habit schedule")
+        }
+        #expect(TaskBacklogBuilder().build(todos: [savedTask], now: later).overdue.count == 1)
+        area.goalSchedule = .weeklyCount
+        area.weeklyTargetCount = 2
+        _ = HabitScheduleChangeReconciler().reconcile(area: area, todos: loaded, modelContext: context, now: day)
+        #expect(!savedTask.isDeleted)
+        #expect(savedTask.measurement == .checkbox)
+    }
+
+    @Test @MainActor func independentTaskKeepsItsKindAfterEditingAndHabitPause() {
+        let area = weeklyHabitArea()
+        let day = Calendar.current.startOfDay(for: .now)
+        let task = Todo(title: "模擬試験", area: area, habitOccurrence: false, scheduledDate: day)
+        task.update(title: "模擬試験 2", notes: nil, hashtags: [], area: area,
+                    measurement: .minutes, priority: .medium, isRoomIfPossible: false,
+                    plannedAmount: 120, actualProgress: 0, scheduledDate: day, deadline: nil)
+        #expect(!task.isHabitOccurrence)
+        let habit = Todo(title: "", area: area, habitOccurrence: true, scheduledDate: day)
+        #expect(HabitPauseService().pauseToday(area, todos: [task, habit], now: day))
+        #expect(!task.isDeleted)
+        #expect(habit.isDeleted)
+        let projection = FlowContextPickerProjection(areas: [area], todos: [task])
+        #expect(projection.taskGroups.flatMap(\.todos).map(\.id) == [task.id])
+        #expect(projection.habitTodos.isEmpty)
+    }
+
+    @Test func independentTasksDoNotConsumeWeeklyHabitQuotaOrRollForward() {
+        let area = weeklyHabitArea()
+        let day = Calendar.current.startOfDay(for: .now)
+        let task = Todo(title: "模擬試験", area: area, habitOccurrence: false, scheduledDate: day)
+        let planner = RequiredTodoPlanner()
+        #expect(planner.shouldCreateRequiredTodo(for: area, in: [task], on: day))
+        task.setCompleted(true)
+        #expect(planner.shouldCreateRequiredTodo(for: area, in: [task], on: day))
+        task.setCompleted(false)
+        #expect(planner.pendingWeeklyTodoToRollForward(for: area, in: [task], on: day.addingTimeInterval(86_400)) == nil)
+    }
+
+    @Test func manualTaskDoesNotMergeWithRenamedLegacyHabit() {
+        let area = weeklyHabitArea()
+        let day = Calendar.current.startOfDay(for: .now)
+        let habit = Todo(title: "AWS study", area: area, scheduledDate: day)
+        let task = Todo(title: "模擬試験", area: area, habitOccurrence: false, scheduledDate: day)
+        let result = HabitTodoReconciler().reconcile(todos: [habit, task], sessions: [], segments: [])
+        #expect(!result.changed)
+        #expect(!task.isDeleted)
+        #expect(habit.isHabitOccurrence)
+        #expect(!task.isHabitOccurrence)
+        #expect(RequiredTodoPlanner().existingRequiredTodo(for: area, in: [task], on: day) == nil)
+    }
+
+
     @Test func checkboxProgressCompletesWhenChecked() {
         let calculator = TodoProgressCalculator()
 
@@ -323,6 +403,22 @@ struct TodoTests {
         )
     }
 
+    @Test(arguments: [false, true])
+    func pendingWeeklyHabitDoesNotRollOntoAnExistingOccurrence(completed: Bool) {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let area = weeklyHabitArea()
+        let yesterday = date(2026, 7, 6, calendar: calendar)
+        let today = date(2026, 7, 7, calendar: calendar)
+        let old = Todo(title: "筋トレ", area: area, scheduledDate: yesterday)
+        let current = Todo(title: "筋トレ", area: area, scheduledDate: today)
+        current.setCompleted(completed, now: today)
+        #expect(RequiredTodoPlanner(calendar: calendar).pendingWeeklyTodoToRollForward(
+            for: area, in: [old, current], on: today
+        ) == nil)
+        #expect(old.scheduledDate == yesterday)
+    }
+
     @Test func pendingWeeklyHabitDoesNotRollBackwardOrAcrossWeeks() {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
@@ -448,7 +544,7 @@ struct TodoTests {
         #expect(!recorded.isDeleted)
     }
 
-    @Test @MainActor func lightweightHabitMaterializationDoesNotReconcileHistory() throws {
+    @Test @MainActor func lightweightHabitMaterializationRepairsImportedDuplicates() throws {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         let schema = Schema([
@@ -458,7 +554,7 @@ struct TodoTests {
             FlowSegment.self,
             FlowBreak.self,
         ])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let date = Date(timeIntervalSince1970: 4 * 86_400)
@@ -485,9 +581,12 @@ struct TodoTests {
             reconcilesDuplicates: false
         )
 
-        #expect(!changed)
-        #expect(!first.isDeleted)
-        #expect(!duplicate.isDeleted)
+        #expect(changed)
+        #expect([first, duplicate].filter { !$0.isDeleted }.count == 1)
+        #expect(try !HabitTodoMaterializer(calendar: calendar).materialize(
+            areas: [area], dates: [date], modelContext: context, now: date,
+            knownTodos: [first, duplicate], reconcilesDuplicates: false
+        ))
     }
 
     @Test @MainActor func habitScheduleChangeRebuildsUnstartedFutureOccurrences() throws {
@@ -500,7 +599,7 @@ struct TodoTests {
             FlowSegment.self,
             FlowBreak.self,
         ])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let monday = date(2026, 7, 6, calendar: calendar)
@@ -574,7 +673,7 @@ struct TodoTests {
             FlowSegment.self,
             FlowBreak.self,
         ])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let monday = date(2026, 7, 6, calendar: calendar)
@@ -644,7 +743,7 @@ struct TodoTests {
             FlowSegment.self,
             FlowBreak.self,
         ])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
         let monday = date(2026, 7, 6, calendar: calendar)

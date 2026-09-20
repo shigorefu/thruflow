@@ -19,6 +19,13 @@ nonisolated struct ConnectorConnection: Codable, Equatable, Identifiable {
     var account: ConnectorAccount
     var selectedSourceIDs: Set<String> = []
     var areaID: UUID?
+    /// Optional for decoding configurations saved before per-source routing.
+    var sourceAreaIDs: [String: UUID]?
+    var resolvedSourceAreaIDs: [String: UUID] {
+        if let sourceAreaIDs { return sourceAreaIDs }
+        guard let areaID else { return [:] }
+        return Dictionary(uniqueKeysWithValues: selectedSourceIDs.map { ($0, areaID) })
+    }
     var lastSyncedAt: Date?
     var lastImportedCount: Int = 0
     var id: ConnectorProviderID { provider }
@@ -128,6 +135,20 @@ final class ConnectorStore: ObservableObject {
         }
         connection.selectedSourceIDs = sourceIDs
         connection.areaID = areaID
+        connection.sourceAreaIDs = Dictionary(uniqueKeysWithValues: sourceIDs.map { ($0, areaID) })
+        try replace(connection)
+    }
+
+    func configure(provider: ConnectorProviderID, sourceAreaIDs: [String: UUID]) throws {
+        guard busyProvider == nil else { throw ConnectorStoreError.busy }
+        guard var connection = connection(for: provider) else { throw ConnectorStoreError.missingConnection }
+        let sourceIDs = Set(sourceAreaIDs.keys)
+        guard sourceIDs.isEmpty || sources[provider].map({ sourceIDs.isSubset(of: Set($0.map(\.id))) }) == true else {
+            throw ConnectorProviderError.sourceUnavailable
+        }
+        connection.sourceAreaIDs = sourceAreaIDs
+        connection.selectedSourceIDs = sourceIDs
+        connection.areaID = nil
         try replace(connection)
     }
 
@@ -145,7 +166,8 @@ final class ConnectorStore: ObservableObject {
         do {
             guard var connection = connection(for: provider) else { throw ConnectorStoreError.missingConnection }
             guard !connection.selectedSourceIDs.isEmpty else { throw ConnectorStoreError.chooseSources }
-            guard let areaID = connection.areaID else { throw ConnectorStoreError.missingArea }
+            let sourceAreaIDs = connection.resolvedSourceAreaIDs
+            guard !sourceAreaIDs.isEmpty else { throw ConnectorStoreError.missingArea }
             guard !modelContext.hasChanges else { throw ConnectorStoreError.busy }
             let client = try await client(for: provider)
             guard try await client.account().id == connection.account.id else {
@@ -179,12 +201,18 @@ final class ConnectorStore: ObservableObject {
             guard !modelContext.hasChanges else { throw ConnectorStoreError.busy }
             // Keep importer rollback isolated from an open Task/Flow editor.
             let context = ModelContext(modelContext.container)
-            let descriptor = FetchDescriptor<Area>(predicate: #Predicate { $0.id == areaID })
-            guard let area = try context.fetch(descriptor).first else { throw ConnectorStoreError.missingArea }
+            let areas = try context.fetch(FetchDescriptor<Area>())
+            var areasBySourceID: [String: Area] = [:]
+            for (sourceID, areaID) in sourceAreaIDs {
+                guard let area = areas.first(where: { $0.id == areaID && !$0.isArchived && $0.type != .habit }) else {
+                    throw ConnectorStoreError.missingArea
+                }
+                areasBySourceID[sourceID] = area
+            }
             let now = Date.now
             let result = try ConnectorTaskImporter().importTasks(
                 tasks, provider: provider, accountID: connection.account.id,
-                area: area, modelContext: context, now: now
+                areasBySourceID: areasBySourceID, modelContext: context, now: now
             )
             connection.lastSyncedAt = refreshStartedAt
             connection.lastImportedCount = result.inserted
@@ -194,6 +222,12 @@ final class ConnectorStore: ObservableObject {
     }
 
     func synchronizeConfigured(modelContext: ModelContext) async {
+        await ConnectorKeychainInteraction.$allowed.withValue(false) {
+            await synchronizeConfiguredWithoutInteraction(modelContext: modelContext)
+        }
+    }
+
+    private func synchronizeConfiguredWithoutInteraction(modelContext: ModelContext) async {
         guard !disablesAutomaticSync, busyProvider == nil, !modelContext.hasChanges else { return }
         let readContext = ModelContext(modelContext.container)
         let outbox = (try? readContext.fetch(FetchDescriptor<Todo>()))?.filter {
@@ -204,7 +238,7 @@ final class ConnectorStore: ObservableObject {
                 (lastAutomaticSync.map({ Date.now.timeIntervalSince($0) >= 60 }) ?? true) else { return }
         lastAutomaticSync = .now
         lastAutomaticOutbox = outbox
-        let configured = connections.filter { $0.areaID != nil && !$0.selectedSourceIDs.isEmpty }
+        let configured = connections.filter { !$0.resolvedSourceAreaIDs.isEmpty }
         // Foreground refresh keeps failures on the connection screen rather than interrupting Flow.
         var firstError: String?
         for connection in configured {

@@ -84,6 +84,28 @@ struct ConnectorTaskImporter {
         guard !area.isArchived, area.type != .habit else {
             throw ConnectorImportError.unavailableArea
         }
+        return try importTasks(
+            tasks, provider: provider, accountID: accountID,
+            areasBySourceID: Dictionary(uniqueKeysWithValues: Set(tasks.map(\.sourceID)).map { ($0, area) }),
+            modelContext: modelContext, now: now
+        )
+    }
+
+    /// Route a complete batch in one transaction, preserving existing local Areas.
+    func importTasks(
+        _ tasks: [ConnectorTask],
+        provider: ConnectorProviderID,
+        accountID: String,
+        areasBySourceID: [String: Area],
+        modelContext: ModelContext,
+        now: Date = .now
+    ) throws -> ConnectorImportResult {
+        guard areasBySourceID.values.allSatisfy({ !$0.isArchived && $0.type != .habit }) else {
+            throw ConnectorImportError.unavailableArea
+        }
+        guard tasks.allSatisfy({ areasBySourceID[$0.sourceID] != nil }) else {
+            throw ConnectorImportError.invalidIdentity
+        }
         guard !accountID.isEmpty,
               tasks.allSatisfy({ !$0.id.isEmpty && !$0.sourceID.isEmpty }) else {
             throw ConnectorImportError.invalidIdentity
@@ -143,10 +165,14 @@ struct ConnectorTaskImporter {
                     canonical.updatedAt = now
                     result.updated += 1
                 } else if !task.isCompleted {
+                    guard let area = areasBySourceID[task.sourceID] else {
+                        throw ConnectorImportError.invalidIdentity
+                    }
                     let todo = Todo(
                         title: task.title.trimmingCharacters(in: .whitespacesAndNewlines),
                         notes: task.notes,
                         area: area,
+                        habitOccurrence: false,
                         measurement: .checkbox,
                         scheduledDate: nil,
                         deadline: task.dueDate,

@@ -10,10 +10,22 @@ APNs, webhooks, and an application server are outside this implementation.
 
 Open `コネクタ` immediately above Settings in the macOS sidebar footer, the
 iPhone Flow More menu, or the regular-width iPad sidebar footer. Choose a
-service, authorize access, select one or more lists/projects, and choose an
-active non-Habit Area. The default destination is `その他` when available.
-Press Import to save the selection and import Tasks. Changing the destination
-later applies only to newly imported Tasks.
+service and authorize access. The connected form shows a mapping table with
+active non-Habit Areas on the left and Reminders lists or Todoist projects on
+the right. Each Area can select multiple sources; a source belongs to only one
+Area to avoid ambiguous imports. Unmapped sources are excluded. Save settings
+persists the mapping without importing; Import saves and synchronizes. Clearing
+all mappings stops imports. Changing a destination affects newly imported Tasks
+only; existing Tasks keep their local Area and history. Toggl uses the same row
+presentation with one existing project per Area and retains its outgoing-only
+behavior.
+
+Legacy source selections resolve to their former destination without losing
+any selected lists. Per-source UUID mappings live in the existing device-local
+connection JSON, with no new SwiftData/CloudKit fields. The full multi-Area
+import uses one transaction. Missing sources remain visible as a selection that
+needs attention until cleared or reloaded; refreshing the source list does not
+silently erase the draft.
 
 Apple Reminders presents the system permission dialog. Todoist presents its own
 login and read/write consent flow; no ThruFlow registration or provider password
@@ -293,6 +305,12 @@ projects, and explicitly saves with automatic export enabled. Unmapped Areas
 are excluded. Tokens remain in the existing per-device Keychain; no backend,
 client secret, OAuth callback, or website change is needed for this connector.
 
+Project choices use active projects returned by `/me/projects`, filtered by the
+selected workspace. The undocumented `can_track_time` hint is not a visibility
+or configuration gate: Track can return `false` for active account projects.
+Actual export authorization is enforced by the write endpoint; errors remain
+visible and failed exports are not acknowledged.
+
 Only completed FlowSessions created and started after activation on the current
 recording device are eligible. A pause/resume of automatic export establishes a
 new start boundary; it does not backfill disabled periods. Existing queued jobs
@@ -358,3 +376,21 @@ API references:
 - <https://engineering.toggl.com/docs/authentication/>
 - <https://engineering.toggl.com/docs/track/api/me/>
 - <https://engineering.toggl.com/docs/track/api/time_entries/>
+
+### Keychain interaction
+
+Automatic connector synchronization never allows Keychain authentication UI.
+If access needs approval, synchronization keeps its pending work and reports
+the error on the connector screen. Explicit connector operations may request
+access for that provider. The Toggl recording identity is resolved lazily and
+without UI during normal app/Flow use; explicit Toggl connection can authorize
+access. An inaccessible identity is not replaced or cached as a permanent failure.
+
+Opening Toggl settings on macOS or iOS first presents a native explanation of
+its API token and this device's Keychain storage. On macOS it also explains
+that reading or saving the key may trigger a system permission/login-password
+prompt for ThruFlow's credentials, not access to other apps' passwords. The
+setup sections (including their project-loading task) are created only after
+Continue. Cancel returns to the connector list without an interactive credential
+read. This acknowledgement lasts only for that visit; it does not change system
+permissions or disable an existing connection's noninteractive automatic export.

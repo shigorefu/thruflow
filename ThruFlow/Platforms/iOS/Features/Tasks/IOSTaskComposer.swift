@@ -823,6 +823,7 @@ struct IOSTaskComposer: View {
             title: normalizedTitle,
             hashtags: TodoHashtagNormalizer.normalize(hashtags + result.hashtags),
             area: area,
+            habitOccurrence: false,
             measurement: resolvedMeasurement,
             priority: result.priority ?? priority,
             isRoomIfPossible: result.isRoomIfPossible ?? isRoomIfPossible,

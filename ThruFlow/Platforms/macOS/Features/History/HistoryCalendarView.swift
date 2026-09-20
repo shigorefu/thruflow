@@ -455,6 +455,7 @@ struct HistoryTimeGrid: View {
                     .frame(width: contentWidth)
             }
             .scrollIndicators(.automatic)
+            .clipped()
         }
     }
 
@@ -496,7 +497,7 @@ struct HistoryTimeGrid: View {
                             dayHeader(dayWidth: dayWidth)
                             Divider()
                         }
-                        .background(.bar)
+                        .background(.bar, ignoresSafeAreaEdges: [])
                     }
                 }
                 .frame(width: contentWidth)

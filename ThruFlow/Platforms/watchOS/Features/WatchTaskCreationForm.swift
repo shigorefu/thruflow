@@ -119,6 +119,7 @@ struct WatchTaskCreationForm: View {
         let todo = Todo(
             title: "",
             area: area,
+            habitOccurrence: false,
             measurement: measurement,
             priority: priority,
             plannedAmount: measurement == .checkbox ? nil : plannedAmount,

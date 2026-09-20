@@ -1,6 +1,226 @@
 {
   "sourceLanguage" : "ja",
   "strings" : {
+    "Toggl Trackとの接続について" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connecting to Toggl Track"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toggl Trackとの接続について"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подключение к Toggl Track"
+          }
+        }
+      }
+    },
+    "続ける" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "続ける"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Продолжить"
+          }
+        }
+      }
+    },
+    "Toggl Trackへの接続には、APIトークン（接続用のキー）を使います。プロジェクトの取得と集中時間の送信に必要です。\n\nトークンは、このMacのKeychain（Appleの安全な保管場所）に保存します。読み取りや保存の際、macOSが許可やMacのログインパスワードを求めることがあります。他のアプリのパスワードへのアクセスを求めるものではありません。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ThruFlow connects to Toggl Track using an API token, a key that lets it load your projects and send focused time.\n\nThe token is saved in this Mac’s Keychain, Apple’s secure storage. When ThruFlow reads or saves it, macOS may ask for permission or your Mac login password. This request does not grant access to other apps’ passwords."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toggl Trackへの接続には、APIトークン（接続用のキー）を使います。プロジェクトの取得と集中時間の送信に必要です。\n\nトークンは、このMacのKeychain（Appleの安全な保管場所）に保存します。読み取りや保存の際、macOSが許可やMacのログインパスワードを求めることがあります。他のアプリのパスワードへのアクセスを求めるものではありません。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для подключения к Toggl Track нужен API-токен — ключ, с помощью которого ThruFlow получает список проектов и отправляет время фокуса.\n\nТокен сохраняется в Keychain — защищённом хранилище Apple на этом Mac. При чтении или сохранении macOS может запросить разрешение или пароль входа в Mac. Этот запрос не даёт доступ к паролям других приложений."
+          }
+        }
+      }
+    },
+    "Toggl Trackへの接続には、APIトークン（接続用のキー）を使います。プロジェクトの取得と集中時間の送信に必要です。\n\nトークンは、この端末のKeychain（Appleの安全な保管場所）に保存します。iCloudには同期せず、Togglとの通信に使います。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ThruFlow connects to Toggl Track using an API token, a key that lets it load your projects and send focused time.\n\nThe token is saved in this device’s Keychain, Apple’s secure storage. It is used to communicate with Toggl and is not synced through iCloud."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toggl Trackへの接続には、APIトークン（接続用のキー）を使います。プロジェクトの取得と集中時間の送信に必要です。\n\nトークンは、この端末のKeychain（Appleの安全な保管場所）に保存します。iCloudには同期せず、Togglとの通信に使います。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для подключения к Toggl Track нужен API-токен — ключ, с помощью которого ThruFlow получает список проектов и отправляет время фокуса.\n\nТокен сохраняется в Keychain — защищённом хранилище Apple на этом устройстве. Он используется для связи с Toggl и не синхронизируется через iCloud."
+          }
+        }
+      }
+    },
+    "リスト" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "リスト"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lists"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Списки"
+          }
+        }
+      }
+    },
+    "プロジェクト" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プロジェクト"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Projects"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проекты"
+          }
+        }
+      }
+    },
+    "取り込まない" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取り込まない"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Do not import"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не импортировать"
+          }
+        }
+      }
+    },
+    "分野とリスト" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分野とリスト"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Areas and lists"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сферы и списки"
+          }
+        }
+      }
+    },
+    "取り込み元を確認してください" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取り込み元を確認してください"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check selected sources"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проверьте выбранные источники"
+          }
+        }
+      }
+    },
+    "分野ごとに取り込み元を選びます。同じ取り込み元を複数の分野には割り当てられません。取り込み済みのタスクの分野や集中履歴は変更しません。" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分野ごとに取り込み元を選びます。同じ取り込み元を複数の分野には割り当てられません。取り込み済みのタスクの分野や集中履歴は変更しません。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose sources for each Area. Each source can be assigned to only one Area. Previously imported Tasks and focus history stay unchanged."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите источники для каждой сферы. Один источник можно привязать только к одной сфере. Сферы уже импортированных задач и история фокуса не изменятся."
+          }
+        }
+      }
+    },
     "7日平均" : {
       "localizations" : {
         "ja" : {
@@ -1125,50 +1345,6 @@
         }
       }
     },
-    "%.0f Blocks" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%.0f blocks"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%.0fブロック"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%.0f бл."
-          }
-        }
-      }
-    },
-    "%.1f Blocks" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%.1f blocks"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%.1fブロック"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%.1f бл."
-          }
-        }
-      }
-    },
     "%@\n%@\n%@" : {
       "localizations" : {
         "en" : {
@@ -1179,7 +1355,7 @@
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "%1$@\n%2$@\n%3$@"
           }
         },
@@ -1245,7 +1421,7 @@
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "%1$@ %2$@"
           }
         },
@@ -1290,7 +1466,7 @@
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "%1$@ %2$@ +%3$lld分"
           }
         },
@@ -1357,7 +1533,7 @@
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "%1$@–%2$@"
           }
         },
@@ -1417,7 +1593,7 @@
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "%1$@, %2$@"
           }
         },
@@ -1439,7 +1615,7 @@
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "%1$@, %2$lld %3$@"
           }
         },
@@ -1461,7 +1637,7 @@
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "%1$@、%2$lld分"
           }
         },
@@ -1483,7 +1659,7 @@
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "%1$@: %2$@ - %3$@"
           }
         },
@@ -1505,7 +1681,7 @@
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "%1$@: %2$lld"
           }
         },
@@ -1635,7 +1811,7 @@
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "%1$lld / %2$lld"
           }
         },
@@ -1643,28 +1819,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld / %lld"
-          }
-        }
-      }
-    },
-    "%lld %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$lld %2$@"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld %2$@"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$lld %2$@"
           }
         }
       }
@@ -1724,7 +1878,7 @@
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "%1$lld/%2$lld"
           }
         },
@@ -1780,44 +1934,6 @@
         }
       }
     },
-    "%lld%@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$lld%2$@"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld%2$@"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$lld%2$@"
-          }
-        }
-      }
-    },
-    "%lld%%" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld%%"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld%%"
-          }
-        }
-      }
-    },
     "%lld分" : {
       "localizations" : {
         "en" : {
@@ -1844,7 +1960,7 @@
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "%1$lld分%2$lld秒"
           }
         },
@@ -1866,7 +1982,7 @@
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "%1$lld年%2$lld月"
           }
         },
@@ -1904,7 +2020,7 @@
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "%1$lld時間%2$lld分"
           }
         },
@@ -1975,7 +2091,7 @@
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "☕️ %1$@ - %2$@"
           }
         },
@@ -2005,22 +2121,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "☕️ %1$@ (%2$@)"
-          }
-        }
-      }
-    },
-    "🎯" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "🎯"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "🎯"
           }
         }
       }
@@ -13622,7 +13722,6 @@
         }
       }
     },
-
     "認証を確認できませんでした。もう一度接続してください。" : {
       "extractionState" : "manual",
       "localizations" : {
