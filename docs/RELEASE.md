@@ -2,6 +2,13 @@
 
 This document is the operational checklist for ThruFlow releases. Product scope remains in [`ROADMAP.md`](ROADMAP.md), and CloudKit details remain in [`CLOUDKIT.md`](CLOUDKIT.md).
 
+## Preparing version 1.3.1 build 12
+
+Current Xcode Debug and Release configurations use version `1.3.1`, build `12`,
+for macOS, iOS, Live Activity/widgets, Watch, and test targets. This is local
+release preparation; no upload or publication is implied. Version `1.3.0`
+(build `11`) remains the latest published release.
+
 ## Released version 1.3.0 build 11
 
 The maintainer confirmed that 1.3.0 has shipped. macOS and iOS/Watch archives
