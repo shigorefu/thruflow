@@ -194,11 +194,11 @@ Released on GitHub on 2026-09-08; shipping build `10`.
   required GitHub CI status resolvable. Run the complete Apple gate whenever
   any non-Markdown file changes.
 
-## 1.3.1 — Release preparation
+## 1.3.1 — Connector mappings and synchronization fixes (released)
 
-Current development version: `1.3.1`, build `12`, across all Xcode targets and
+Released on 2026-09-21: `1.3.1`, build `12`, across all Xcode targets and
 configurations. Both platform archives were uploaded to App Store Connect on
-2026-09-20. GitHub release notes are prepared; publication remains pending.
+2026-09-20. See [release notes](releases/1.3.1.md).
 Production CloudKit schema deployment and user-confirmed sync recovery are
 recorded in `CLOUDKIT.md`.
 

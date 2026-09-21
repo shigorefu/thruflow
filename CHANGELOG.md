@@ -3,7 +3,7 @@
 All notable user-facing changes to ThruFlow are documented in this file.
 Release dates below record GitHub publication in Asia/Tokyo (JST).
 
-## [1.3.1] - Unreleased
+## [1.3.1] - 2026-09-21
 
 App, extensions, Watch, and test targets use version **1.3.1**, build **12**.
 
@@ -248,7 +248,7 @@ App, extensions, Watch, and test targets use version **1.3.0**, build **11**.
 
 - Improved History timeline editing and natural localized copy before release.
 
-[1.3.1]: https://github.com/shigorefu/thruflow/compare/v1.3.0...main
+[1.3.1]: https://github.com/shigorefu/thruflow/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/shigorefu/thruflow/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/shigorefu/thruflow/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/shigorefu/thruflow/compare/v1.0.0...v1.1.0

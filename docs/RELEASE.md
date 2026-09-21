@@ -2,15 +2,17 @@
 
 This document is the operational checklist for ThruFlow releases. Product scope remains in [`ROADMAP.md`](ROADMAP.md), and CloudKit details remain in [`CLOUDKIT.md`](CLOUDKIT.md).
 
-## Preparing version 1.3.1 build 12
+## Released version 1.3.1 build 12
 
-Current Xcode Debug and Release configurations use version `1.3.1`, build `12`,
-for macOS, iOS, Live Activity/widgets, Watch, and test targets. Local archive
-metadata confirms both macOS and iOS build 12 were uploaded to Apple on
-2026-09-20. A GitHub release draft is prepared with [English notes](releases/1.3.1.md).
-App Store approval/publication is not implied. The maintainer confirmed restored
-Mac/iPhone synchronization after the Production schema repair. Version `1.3.0`
-(build `11`) remains the latest published GitHub release until the draft is published.
+The maintainer confirmed on 2026-09-21 that 1.3.1 has shipped. macOS and iOS/Watch
+use version `1.3.1`, build `12`; both platform archives were uploaded to Apple on
+2026-09-20. The GitHub release source is
+`a6f1b33a32da2caf3dba8f042265331744fa6e25`.
+See [English release notes](releases/1.3.1.md).
+
+The live Production schema was inspected and repaired on 2026-09-20, and the
+maintainer confirmed restored Mac/iPhone synchronization. This publication
+update records the released status; it does not claim a new device or schema test.
 
 ## Released version 1.3.0 build 11
 
@@ -25,7 +27,8 @@ physical-device, OAuth, or CloudKit Production checks.
 
 | Version | GitHub publication (JST) | Status |
 | --- | --- | --- |
-| [1.3.0](https://github.com/shigorefu/thruflow/releases/tag/v1.3.0) | 2026-09-15 | Released; latest stable |
+| [1.3.1](https://github.com/shigorefu/thruflow/releases/tag/v1.3.1) | 2026-09-21 | Released; latest stable |
+| [1.3.0](https://github.com/shigorefu/thruflow/releases/tag/v1.3.0) | 2026-09-15 | Released |
 | [1.2.0](https://github.com/shigorefu/thruflow/releases/tag/v1.2.0) | 2026-09-08 | Released |
 | [1.1.0](https://github.com/shigorefu/thruflow/releases/tag/v1.1.0) | 2026-09-03 | Released |
 | [1.0.0](https://github.com/shigorefu/thruflow/releases/tag/v1.0.0) | 2026-08-26 | Released |
@@ -46,7 +49,7 @@ shipping metadata. Upcoming connector work is not part of this release.
 The following sections remain the procedure for future releases. Their presence
 is not a claim that this documentation update reran physical-device or upload
 checks. Every later App Store Connect upload must use a build number greater
-than the last uploaded build; build `11` has already shipped and must not be
+than the last uploaded build; build `12` has already shipped and must not be
 reused for a new upload.
 
 ## CloudKit schema gate for every model change
