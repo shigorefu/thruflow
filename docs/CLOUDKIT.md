@@ -36,7 +36,7 @@ CloudKit therefore continues using the existing entity and fields; no schema
 migration, duplicate Area entity, or record copy is introduced. A schema
 contract test guards these exact names.
 
-## Connector Link Migration — Upcoming 1.3.0
+## Connector Link Migration — Released in 1.3.0
 
 Connectors add only `Todo.externalTaskLinkRawValue`, a nullable String scalar
 with a `nil` default. Existing Todos stay unlinked and require no backfill.

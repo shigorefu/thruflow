@@ -6,12 +6,10 @@ ThruFlow / スルフロ is an Apple-first productivity app that turns focused wo
 Area -> Task -> Flow -> focused time -> progress -> statistics
 ```
 
-Current prepared version: **1.3.1 (12)**. See the [release notes](docs/releases/1.3.1.md).
+Released app version: **1.3.1 (12)**. See the [release notes](docs/releases/1.3.1.md).
 
-Released app version: **1.3.0 (11)**.
-
-The latest released version is [1.3.0](https://github.com/shigorefu/thruflow/releases/tag/v1.3.0)
-(build `11`), available on the [App Store](https://apps.apple.com/app/id6798609191).
+The latest released version is [1.3.1](https://github.com/shigorefu/thruflow/releases/tag/v1.3.1)
+(build `12`), available on the [App Store](https://apps.apple.com/app/id6798609191).
 See the [changelog](CHANGELOG.md) for released versions. Development branches
 may contain upcoming features; back up important data before testing them and
 report reproducible problems through the
@@ -29,12 +27,14 @@ report reproducible problems through the
 
 `1 Block` is always 25 focused minutes. Breaks are not counted.
 
-## Connectors in 1.3.0
+## Connectors
 
 Version 1.3.0 adds Apple Reminders and Todoist task imports on
 macOS, iPhone, and iPad. Open Connectors above Settings in the Mac sidebar,
 in the iPhone Flow More menu, or in the iPad sidebar footer. Choose lists or
-projects and a destination Area, then import their unfinished tasks.
+projects for each destination Area, then import their unfinished tasks.
+Version 1.3.1 adds per-Area mappings and improves Toggl project loading and
+Keychain access prompts. Connectors remain in beta.
 
 Reminders uses the system permission prompt; Todoist opens its own sign-in and
 consent screen. No ThruFlow account or custom backend is required. Access tokens
