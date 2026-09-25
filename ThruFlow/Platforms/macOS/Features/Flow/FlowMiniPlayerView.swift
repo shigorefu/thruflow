@@ -260,7 +260,8 @@ struct FlowMiniPlayerView: View {
             QuickTodoCreationPopover(
                 areas: activeAreas,
                 showsQuickInputLegend: false,
-                suggestionsBelow: taskSuggestionsBelow
+                suggestionsBelow: taskSuggestionsBelow,
+                isPresented: $showsTaskComposer
             ) { todo in
                 activeFlowStore.selectContext(
                     area: todo.area,

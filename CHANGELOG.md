@@ -9,6 +9,10 @@ Release dates below record GitHub publication in Asia/Tokyo (JST).
 
 - Focus timer rings on Mac, iPhone/iPad, and Watch retain each recorded Area color when switching Tasks, with boundaries based on focused time.
 
+### Fixed
+
+- Added Escape dismissal for Mac quick Task creation and explicit presentation-state dismissal for the Flow player composer.
+
 ## [1.3.1] - 2026-09-21
 
 App, extensions, Watch, and test targets use version **1.3.1**, build **12**.

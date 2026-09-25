@@ -1779,6 +1779,7 @@ struct QuickTodoCreationPopover: View {
     let showsQuickInputLegend: Bool
     let suggestionsBelow: Bool
     let initialDraft: TodoDraft?
+    let isPresented: Binding<Bool>?
     let onCreated: ((Todo) -> Void)?
 
     @State private var title = ""
@@ -1799,12 +1800,14 @@ struct QuickTodoCreationPopover: View {
         showsQuickInputLegend: Bool = true,
         suggestionsBelow: Bool = false,
         initialDraft: TodoDraft? = nil,
+        isPresented: Binding<Bool>? = nil,
         onCreated: ((Todo) -> Void)? = nil
     ) {
         self.areas = areas
         self.showsQuickInputLegend = showsQuickInputLegend
         self.suggestionsBelow = suggestionsBelow
         self.initialDraft = initialDraft
+        self.isPresented = isPresented
         self.onCreated = onCreated
 
         let resolvedScheduledDate: Date?
@@ -1861,10 +1864,19 @@ struct QuickTodoCreationPopover: View {
             showsOuterBackground: false,
             suggestionsBelow: suggestionsBelow,
             allowsQuickInputLegend: showsQuickInputLegend,
-            onCancel: { dismiss() },
+            onCancel: closeComposer,
             onSubmit: createTodo
         )
         .frame(width: 520)
+        .onExitCommand(perform: closeComposer)
+    }
+
+    private func closeComposer() {
+        if let isPresented {
+            isPresented.wrappedValue = false
+        } else {
+            dismiss()
+        }
     }
 
     private func createTodo() {
@@ -1918,7 +1930,7 @@ struct QuickTodoCreationPopover: View {
         do {
             try modelContext.save()
             onCreated?(todo)
-            dismiss()
+            closeComposer()
         } catch {
             modelContext.rollback()
             validationMessage = String(localized: "記録を保存できませんでした。")
