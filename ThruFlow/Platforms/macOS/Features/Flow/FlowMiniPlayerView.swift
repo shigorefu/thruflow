@@ -26,6 +26,7 @@ struct FlowMiniPlayerView: View {
     @State private var showsTaskPicker = false
     @State private var showsTaskComposer = false
     @State private var presentsTaskComposerAfterPicker = false
+    @State private var taskComposerPresentationTask: Task<Void, Never>?
     @State private var resultText = ""
     @State private var editingTaskTitleID: UUID?
     @State private var taskTitleDraft = ""
@@ -82,6 +83,10 @@ struct FlowMiniPlayerView: View {
                     reconcileSelectedTodo(now: context.date)
                 }
         }
+        .background {
+            MacWindowPresentationAnchor(onHidden: dismissTaskPopovers)
+        }
+        .onDisappear(perform: dismissTaskPopovers)
         .onAppear {
             reconcileSelectedTodo()
         }
@@ -274,9 +279,12 @@ struct FlowMiniPlayerView: View {
             guard !isPresented, presentsTaskComposerAfterPicker else { return }
             presentsTaskComposerAfterPicker = false
 
-            Task { @MainActor in
+            taskComposerPresentationTask?.cancel()
+            taskComposerPresentationTask = Task { @MainActor in
                 await Task.yield()
+                guard !Task.isCancelled else { return }
                 showsTaskComposer = true
+                taskComposerPresentationTask = nil
             }
         }
         .onChange(of: selectedTodo?.id) { _, newID in
@@ -289,6 +297,14 @@ struct FlowMiniPlayerView: View {
                 commitTaskTitle()
             }
         }
+    }
+
+    private func dismissTaskPopovers() {
+        taskComposerPresentationTask?.cancel()
+        taskComposerPresentationTask = nil
+        presentsTaskComposerAfterPicker = false
+        showsTaskPicker = false
+        showsTaskComposer = false
     }
 
     private func presentTaskComposer() {

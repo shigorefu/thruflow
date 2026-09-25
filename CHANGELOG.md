@@ -11,6 +11,7 @@ Release dates below record GitHub publication in Asia/Tokyo (JST).
 
 ### Fixed
 
+- Fixed Mac Task creation remaining on the desktop after the menu-bar timer closes or its host window is minimized. Owned forms and suggestions now follow the host window lifetime.
 - Added Escape dismissal for Mac quick Task creation and explicit presentation-state dismissal for the Flow player composer.
 
 ## [1.3.1] - 2026-09-21
