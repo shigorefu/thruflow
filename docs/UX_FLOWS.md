@@ -169,6 +169,7 @@ In the narrow vertical dashboard layout, the player comes first, followed by the
 - starting rest derives its duration from actual focused time rather than the selected mode: under 24 minutes gives 3 minutes, 24...48:59 gives 5 minutes, and 49 minutes or more gives 10 minutes. The 24- and 49-minute boundaries normalize Block credit to 25 and 50 minutes while longer actual time remains exact;
 - break time counts down past zero with a positive overtime sign; its neutral-gray progress ring drains while the Area-colored focus ring fills. Starting work during rest completes the previous Flow and immediately starts the next one, while the Japanese menu bar status becomes `☕️ 休憩 - time` or `☕️ 長休憩 - time`;
 - choosing another Task during focus or pause keeps the current Flow running and starts a new history segment; no memo prompt is shown for this switch;
+- on Mac, iPhone/iPad, and Watch, the focus ring preserves recorded Area colors: switching at 12 minutes in a 25-minute Flow keeps the first 48% in the original color, and subsequent focus fills in the new color. Pause retains these boundaries; duration changes rescale them, and overtime clamps at one full ring. Rest retains its neutral countdown. The existing sub-minute context-transfer rule also applies to the ring because it reads the same history segments;
 - when the configured app day changes while Flow is idle, a selected Task from
   the previous day is replaced with today's incomplete occurrence from the
   same Area when possible, otherwise with another incomplete Task for today.

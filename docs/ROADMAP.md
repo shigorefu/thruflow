@@ -194,6 +194,11 @@ Released on GitHub on 2026-09-08; shipping build `10`.
   required GitHub CI status resolvable. Run the complete Apple gate whenever
   any non-Markdown file changes.
 
+## 1.3.2 — In development
+
+- Segmented focus timer colors on Mac, iPhone/iPad, and Watch, using existing history boundaries.
+- Shipping version/build metadata remains at 1.3.1 (12) until release preparation.
+
 ## 1.3.1 — Connector mappings and synchronization fixes (released)
 
 Released on 2026-09-21: `1.3.1`, build `12`, across all Xcode targets and

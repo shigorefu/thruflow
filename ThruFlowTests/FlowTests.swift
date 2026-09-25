@@ -617,6 +617,81 @@ struct FlowTests {
         #expect(session.resolvedSegments.contains { $0.endedAt == nil })
     }
 
+    @Test @MainActor func timerRingRetainsAreasAcrossSwitchPauseRestoreAndExtension() throws {
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let start = Date(timeIntervalSince1970: 8_000)
+        let blue = Area(name: "Blue", type: .neutral, colorHex: "#007AFF")
+        let green = Area(name: "Green", type: .neutral, colorHex: "#34C759")
+        let orange = Area(name: "Orange", type: .neutral, colorHex: "#FF9500")
+        [blue, green, orange].forEach { context.insert($0) }
+        let store = ActiveFlowStore(
+            defaults: UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!,
+            notifications: TestFlowNotificationService()
+        )
+        store.configure(area: blue, todo: nil, mode: .twentyFiveFive)
+        store.start(area: blue, todo: nil, modelContext: context, now: start)
+        #expect(store.timerRingSlices(now: start).isEmpty)
+        store.selectContext(area: green, todo: nil, modelContext: context, now: start.addingTimeInterval(720))
+        #expect(store.timerRingSlices(now: start.addingTimeInterval(720)) == [
+            FlowTimerRingSlice(start: 0, end: 0.48, colorHex: blue.colorHex)
+        ])
+        let expected = [
+            FlowTimerRingSlice(start: 0, end: 0.48, colorHex: blue.colorHex),
+            FlowTimerRingSlice(start: 0.48, end: 0.6, colorHex: green.colorHex)
+        ]
+        store.pause(modelContext: context, now: start.addingTimeInterval(900))
+        #expect(store.timerRingSlices(now: start.addingTimeInterval(1_200)) == expected)
+
+        let restored = ActiveFlowStore(
+            defaults: UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!,
+            notifications: TestFlowNotificationService()
+        )
+        restored.synchronizeFromPersistence(modelContext: context, now: start.addingTimeInterval(1_200))
+        #expect(restored.timerRingSlices(now: start.addingTimeInterval(1_200)) == expected)
+        store.selectContext(area: orange, todo: nil, modelContext: context, now: start.addingTimeInterval(1_200))
+        store.resume(modelContext: context, now: start.addingTimeInterval(1_500))
+        let now = start.addingTimeInterval(1_800)
+        #expect(store.timerRingSlices(now: now) == expected + [
+            FlowTimerRingSlice(start: 0.6, end: 0.8, colorHex: orange.colorHex)
+        ])
+        store.seekForward(modelContext: context, now: now)
+        #expect(store.timerRingSlices(now: now) == [
+            FlowTimerRingSlice(start: 0, end: 0.4, colorHex: blue.colorHex),
+            FlowTimerRingSlice(start: 0.4, end: 0.5, colorHex: green.colorHex),
+            FlowTimerRingSlice(start: 0.5, end: 2.0 / 3, colorHex: orange.colorHex)
+        ])
+        #expect(store.timerRingSlices(now: start.addingTimeInterval(5_000)).last?.end == 1)
+        let state = try #require(store.timerState)
+        store.timerState = FlowTimerEngine().startBreak(state, now: now)
+        #expect(store.timerRingSlices(now: now).isEmpty)
+        store.timerState = FlowTimerEngine().pause(try #require(store.timerState), now: now)
+        #expect(store.timerRingSlices(now: now.addingTimeInterval(60)).isEmpty)
+    }
+
+    @Test func timerRingClipsOvertimeAndIgnoresZeroLengthSegments() {
+        let start = Date(timeIntervalSince1970: 8_000)
+        let area = Area(name: "Area", type: .neutral)
+        let session = FlowSession(
+            area: area, mode: .twentyFiveFive, startedAt: start,
+            plannedEndAt: start.addingTimeInterval(1_500),
+            plannedFocusDurationSeconds: 1_500, plannedBreakDurationSeconds: 300
+        )
+        let projection = FlowTimerRingProjection()
+        #expect(projection.slices(session: session, plannedSeconds: 1_500, focusedSeconds: 100).isEmpty)
+        let first = FlowSegment(session: session, area: area, todo: nil, startedAt: start, startFocusSeconds: 0)
+        first.close(at: start.addingTimeInterval(1_600), totalFocusSeconds: 1_600)
+        let overtime = FlowSegment(session: session, area: area, todo: nil, startedAt: start, startFocusSeconds: 1_600)
+        session.resolvedSegments = [overtime, first]
+        #expect(projection.slices(session: session, plannedSeconds: 1_500, focusedSeconds: 1_700) == [
+            FlowTimerRingSlice(start: 0, end: 1, colorHex: area.colorHex)
+        ])
+        #expect(projection.slices(session: session, plannedSeconds: 0, focusedSeconds: 100).isEmpty)
+        #expect(projection.slices(session: session, plannedSeconds: 1_500, focusedSeconds: -1).isEmpty)
+    }
+
     @Test @MainActor func activeFlowSwitchesTaskWithoutResettingTimer() throws {
         let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)

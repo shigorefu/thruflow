@@ -303,7 +303,8 @@ struct IOSFlowView: View {
                 tint: timerTint(at: now),
                 eyebrow: activeFlowStore.phase.displayName,
                 timeText: timerText(at: now),
-                footer: activeFlowStore.selectedMode.displayName
+                footer: activeFlowStore.selectedMode.displayName,
+                slices: activeFlowStore.timerRingSlices(now: now)
             )
         ) {
             contextButton(now: now)

@@ -179,7 +179,8 @@ struct FlowMiniPlayerView: View {
                 tint: timerRingColor,
                 eyebrow: timerEyebrow,
                 timeText: dashboardTimerText(now: now),
-                footer: timerPhaseName
+                footer: timerPhaseName,
+                slices: activeFlowStore.timerRingSlices(now: now)
             ),
             timerAccessibilityLabel: String(localized: "Flowタイマー")
         ) {

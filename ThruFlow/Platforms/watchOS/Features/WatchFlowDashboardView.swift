@@ -287,14 +287,12 @@ private struct WatchTimerView: View {
         ZStack {
             Circle()
                 .stroke(timerTint.opacity(0.2), lineWidth: 8)
-            Circle()
-                .trim(from: 0, to: activeFlowStore.phaseProgress(now: now))
-                .stroke(timerTint, style: StrokeStyle(lineWidth: 8, lineCap: .round))
-                .rotationEffect(.degrees(-90))
-                .animation(
-                    reduceMotion ? nil : .easeInOut(duration: 0.38),
-                    value: activeFlowStore.phaseProgress(now: now)
-                )
+            FlowTimerProgressRing(
+                progress: activeFlowStore.phaseProgress(now: now),
+                tint: timerTint,
+                slices: activeFlowStore.timerRingSlices(now: now),
+                lineWidth: 8
+            )
 
             VStack(spacing: 0) {
                 Text(activeFlowStore.phase.displayName)

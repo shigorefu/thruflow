@@ -814,3 +814,12 @@ on macOS and iOS. Only Continue creates the setup content and allows its saved
 credential read; Cancel returns to the provider list. The macOS explanation
 prepares users for the possible system access/password prompt. This adds no
 permission override and preserves noninteractive automatic synchronization.
+
+### 2026-09-25 — Segmented focus timer colors (1.3.2)
+
+The focus timer ring uses existing FlowSegment focused-second ranges and Area
+colors on macOS, iOS/iPadOS, and watchOS. Earlier recorded context keeps its
+color when another Task is selected. Pause, restoration, and duration changes
+use the same persisted ranges, excluding paused wall time. The existing
+sub-minute transfer rule is unchanged. No persisted model or CloudKit schema
+change is needed; widget and Live Activity snapshot formats are unchanged.

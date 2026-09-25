@@ -783,6 +783,15 @@ final class ActiveFlowStore: ObservableObject {
         return min(max(1 - (Double(remaining) / Double(duration)), 0), 1)
     }
 
+    func timerRingSlices(now: Date = .now) -> [FlowTimerRingSlice] {
+        guard let timerState, let activeSession, !isBreakPhase else { return [] }
+        return FlowTimerRingProjection().slices(
+            session: activeSession,
+            plannedSeconds: timerState.plannedFocusDurationSeconds,
+            focusedSeconds: actualFocusSeconds(now: now)
+        )
+    }
+
     func activeTimerTimelineEndAt(now: Date = .now) -> Date? {
         guard let timerState else { return nil }
         return engine.timelineEndAt(for: timerState, now: now)
