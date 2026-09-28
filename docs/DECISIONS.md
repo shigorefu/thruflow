@@ -823,3 +823,19 @@ color when another Task is selected. Pause, restoration, and duration changes
 use the same persisted ranges, excluding paused wall time. The existing
 sub-minute transfer rule is unchanged. No persisted model or CloudKit schema
 change is needed; widget and Live Activity snapshot formats are unchanged.
+
+
+### 2026-09-28 — Earned rest and actual recovery (1.3.2)
+
+Replace counting created long-break records with a chronological projection of
+actual focus and rest. Sprint retains 3 minutes; one, two, and three uninterrupted
+Blocks earn 5, 10, and 15 minutes. Skipped ordinary rest carries focus forward;
+partial ordinary rest pays the short-rest balance. At four accumulated Blocks
+since the last fully paid long rest, recommend 20 minutes; at five recommend 25,
+and at six or more cap at 30. Earlier short rests do not pay the long-rest
+balance. Partial long rest does, including when the user resumes before its
+timer finishes. Reset the cycle only when actual long rest pays the target.
+Keep existing Block rounding and series continuation at 1.5 times the initial
+rest recommendation; manual timer adjustments do not change earned rest.
+Use existing FlowSession/FlowBreak records and explicit runtime long-rest
+identity, including remaining balances below 20 minutes. No schema change.

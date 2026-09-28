@@ -680,24 +680,38 @@ final class ActiveFlowStore: ObservableObject {
             PersistenceIssueCenter.shared.report(error, operation: .dataLoad)
             return false
         }
-        let priorSeriesSeconds = storedSessions
+        let priorSessions = storedSessions
             .filter { $0.id != activeSession.id && ($0.seriesID ?? $0.id) == seriesID }
-            .reduce(0) { $0 + $1.resolvedActualFocusDurationSeconds }
-        let completedLongBreaks = storedBreaks
-            .filter { $0.seriesID == seriesID && $0.isLongBreak && !$0.isDeleted }
-            .count
-        let usesLongBreak = seriesPolicy.shouldUseLongBreak(
-            totalSeriesFocusSeconds: priorSeriesSeconds + focusedSeconds,
-            completedLongBreakCount: completedLongBreaks
-        )
-        let regularBreakState = engine.startBreak(state, now: now)
-        let plannedBreakSeconds = usesLongBreak
-            ? FlowSeriesPolicy.longBreakDurationSeconds
-            : regularBreakState.plannedBreakDurationSeconds
+            .sorted {
+                if $0.startedAt != $1.startedAt { return $0.startedAt < $1.startedAt }
+                return $0.id.uuidString < $1.id.uuidString
+            }
+        let breaksBySession = Dictionary(grouping: storedBreaks.filter {
+            $0.seriesID == seriesID && !$0.isDeleted
+        }, by: \.previousSessionID)
+        var periods = priorSessions.enumerated().map { index, session in
+            // Bound rest at the next focus start, even if edited history overlaps it.
+            let nextStart = index + 1 < priorSessions.count
+                ? priorSessions[index + 1].startedAt : activeSession.startedAt
+            let flowBreak = breaksBySession[session.id]?.max { $0.startedAt < $1.startedAt }
+            let restedSeconds = flowBreak.map {
+                max(0, Int(min($0.resolvedEndAt(referenceDate: now), nextStart, now)
+                    .timeIntervalSince($0.startedAt)))
+            } ?? 0
+            return FlowSeriesPolicy.FocusPeriod(
+                focusedSeconds: session.resolvedActualFocusDurationSeconds,
+                restedSeconds: restedSeconds
+            )
+        }
+        periods.append(.init(focusedSeconds: focusedSeconds))
+        let recommendation = seriesPolicy.recommendation(after: periods)
+        let plannedBreakSeconds = recommendation.durationSeconds
+        let usesLongBreak = recommendation.isLong
         let next = engine.startBreak(
             state,
             now: now,
-            plannedBreakDurationSeconds: plannedBreakSeconds
+            plannedBreakDurationSeconds: plannedBreakSeconds,
+            isLongBreak: usesLongBreak
         )
         let flowBreak = FlowBreak(
             seriesID: seriesID,

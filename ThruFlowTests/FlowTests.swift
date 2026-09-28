@@ -57,13 +57,138 @@ struct FlowTests {
         #expect(FlowSeriesPolicy.continuationWindow(forPlannedBreakSeconds: 20 * 60) == 30 * 60)
     }
 
-    @Test func longBreakIsDueAfterEveryFourAccumulatedBlocks() {
+    @Test func restRecommendationScalesWithFocusAndCapsAtThirtyMinutes() {
         let policy = FlowSeriesPolicy()
+        for (focus, rest, isLong) in [(12, 3, false), (25, 5, false), (50, 10, false),
+                                      (75, 15, false), (100, 20, true), (125, 25, true),
+                                      (150, 30, true), (250, 30, true)] {
+            #expect(policy.recommendation(after: [.init(focusedSeconds: focus * 60)]) ==
+                .init(durationSeconds: rest * 60, isLong: isLong))
+        }
+        #expect(!policy.recommendation(after: [.init(focusedSeconds: 95 * 60)]).isLong)
+        #expect(policy.recommendation(after: [.init(focusedSeconds: 96 * 60)]).isLong)
+    }
 
-        #expect(!policy.shouldUseLongBreak(totalSeriesFocusSeconds: 95 * 60, completedLongBreakCount: 0))
-        #expect(policy.shouldUseLongBreak(totalSeriesFocusSeconds: 96 * 60, completedLongBreakCount: 0))
-        #expect(!policy.shouldUseLongBreak(totalSeriesFocusSeconds: 96 * 60, completedLongBreakCount: 1))
-        #expect(policy.shouldUseLongBreak(totalSeriesFocusSeconds: 192 * 60, completedLongBreakCount: 1))
+    @Test func skippedAndPartialLongRestCarryForwardUntilActuallyPaid() {
+        let policy = FlowSeriesPolicy()
+        #expect(policy.recommendation(after: [
+            .init(focusedSeconds: 100 * 60), .init(focusedSeconds: 25 * 60)
+        ]) == .init(durationSeconds: 25 * 60, isLong: true))
+        #expect(policy.recommendation(after: [
+            .init(focusedSeconds: 100 * 60, restedSeconds: 5 * 60),
+            .init(focusedSeconds: 25 * 60)
+        ]) == .init(durationSeconds: 20 * 60, isLong: true))
+        #expect(policy.recommendation(after: [
+            .init(focusedSeconds: 100 * 60, restedSeconds: 5 * 60),
+            .init(focusedSeconds: 25 * 60, restedSeconds: 10 * 60),
+            .init(focusedSeconds: 25 * 60)
+        ]) == .init(durationSeconds: 15 * 60, isLong: true))
+    }
+
+    @Test func fullLongRestResetsCycleAtActualFocusTotal() {
+        let policy = FlowSeriesPolicy()
+        // A completed long rest after five Blocks resets from five, not the old multiple of four.
+        #expect(policy.recommendation(after: [
+            .init(focusedSeconds: 125 * 60, restedSeconds: 25 * 60),
+            .init(focusedSeconds: 25 * 60, restedSeconds: 5 * 60),
+            .init(focusedSeconds: 25 * 60, restedSeconds: 5 * 60),
+            .init(focusedSeconds: 25 * 60)
+        ]) == .init(durationSeconds: 5 * 60, isLong: false))
+        #expect(policy.recommendation(after: [
+            .init(focusedSeconds: 125 * 60, restedSeconds: 25 * 60),
+            .init(focusedSeconds: 100 * 60)
+        ]) == .init(durationSeconds: 20 * 60, isLong: true))
+    }
+
+    @Test func shortRestsDoNotReduceLongRestAndSkippedShortRestsAccumulate() {
+        let policy = FlowSeriesPolicy()
+        #expect(policy.recommendation(after: [
+            .init(focusedSeconds: 25 * 60, restedSeconds: 5 * 60),
+            .init(focusedSeconds: 25 * 60, restedSeconds: 5 * 60),
+            .init(focusedSeconds: 25 * 60, restedSeconds: 5 * 60),
+            .init(focusedSeconds: 25 * 60)
+        ]) == .init(durationSeconds: 20 * 60, isLong: true))
+        #expect(policy.recommendation(after: [
+            .init(focusedSeconds: 25 * 60), .init(focusedSeconds: 25 * 60)
+        ]) == .init(durationSeconds: 10 * 60, isLong: false))
+        #expect(policy.recommendation(after: [
+            .init(focusedSeconds: 12 * 60, restedSeconds: 3 * 60),
+            .init(focusedSeconds: 12 * 60)
+        ]) == .init(durationSeconds: 3 * 60, isLong: false))
+    }
+
+    @Test(arguments: [0, 5, 15, 20])
+    func nextFlowUsesActualLongRestAndRestoresItsIdentity(restMinutes: Int) throws {
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let area = Area(name: "休憩テスト", type: .neutral)
+        context.insert(area)
+        let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
+        let store = ActiveFlowStore(defaults: defaults, notifications: TestFlowNotificationService())
+        var now = Date(timeIntervalSince1970: 30_000)
+        store.configure(area: area, todo: nil, mode: .twentyFiveFive)
+        store.start(area: area, todo: nil, modelContext: context, now: now)
+        for block in 1...4 {
+            now = now.addingTimeInterval(25 * 60)
+            store.startBreak(modelContext: context, now: now)
+            #expect(store.timerState?.plannedBreakDurationSeconds == (block == 4 ? 20 : 5) * 60)
+            if block < 4 {
+                now = now.addingTimeInterval(5 * 60)
+                store.startNextFlow(area: area, todo: nil, modelContext: context, now: now)
+            }
+        }
+        // Recreate the store to ensure the calculation depends on persisted history.
+        let restored = ActiveFlowStore(defaults: defaults, notifications: TestFlowNotificationService())
+        restored.synchronizeFromPersistence(modelContext: context, now: now)
+        now = now.addingTimeInterval(TimeInterval(restMinutes * 60))
+        restored.startNextFlow(area: area, todo: nil, modelContext: context, now: now)
+        now = now.addingTimeInterval(25 * 60)
+        restored.startBreak(modelContext: context, now: now)
+        let expectedMinutes = restMinutes == 20 ? 5 : 25 - restMinutes
+        #expect(restored.timerState?.plannedBreakDurationSeconds == expectedMinutes * 60)
+        #expect(restored.timerState?.isLongBreak == (restMinutes < 20))
+        let restoredAgain = ActiveFlowStore(defaults: defaults, notifications: TestFlowNotificationService())
+        restoredAgain.synchronizeFromPersistence(modelContext: context, now: now)
+        #expect(restoredAgain.timerState?.isLongBreak == (restMinutes < 20))
+        #expect(restoredAgain.timerState?.plannedBreakDurationSeconds == expectedMinutes * 60)
+    }
+
+    @Test func skippingShortRestBetweenTwoFlowsGivesTenMinutes() throws {
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let area = Area(name: "連続集中", type: .neutral)
+        context.insert(area)
+        let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
+        let store = ActiveFlowStore(defaults: defaults, notifications: TestFlowNotificationService())
+        let start = Date(timeIntervalSince1970: 50_000)
+        store.configure(area: area, todo: nil, mode: .twentyFiveFive)
+        store.start(area: area, todo: nil, modelContext: context, now: start)
+        let firstEnd = start.addingTimeInterval(25 * 60)
+        store.startBreak(modelContext: context, now: firstEnd)
+        store.startNextFlow(area: area, todo: nil, modelContext: context, now: firstEnd)
+        store.startBreak(modelContext: context, now: firstEnd.addingTimeInterval(25 * 60))
+        #expect(store.timerState?.plannedBreakDurationSeconds == 10 * 60)
+        #expect(store.timerState?.isLongBreak == false)
+    }
+
+    @Test func partiallyPaidLongRestKeepsLongIdentityBelowTwentyMinutes() {
+        let policy = FlowSeriesPolicy()
+        let recommendation = policy.recommendation(after: [
+            .init(focusedSeconds: 100 * 60, restedSeconds: 15 * 60),
+            .init(focusedSeconds: 25 * 60)
+        ])
+        #expect(recommendation == .init(durationSeconds: 10 * 60, isLong: true))
+        let engine = FlowTimerEngine()
+        let start = Date(timeIntervalSince1970: 40_000)
+        let rest = engine.startBreak(engine.start(mode: .twentyFiveFive, now: start),
+                                     now: start.addingTimeInterval(25 * 60),
+                                     plannedBreakDurationSeconds: recommendation.durationSeconds,
+                                     isLongBreak: recommendation.isLong)
+        #expect(rest.isLongBreak)
     }
 
     @Test func timerStartPauseResumeAndFinishUseAbsoluteDates() {

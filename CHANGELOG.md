@@ -9,6 +9,10 @@ Release dates below record GitHub publication in Asia/Tokyo (JST).
 
 - Focus timer rings on Mac, iPhone/iPad, and Watch retain each recorded Area color when switching Tasks, with boundaries based on focused time.
 
+### Changed
+
+- Rest now accounts for skipped and partial breaks: Sprint retains 3 minutes, two uninterrupted Blocks earn 10, and long rest grows from 20 to 30 minutes after four to six Blocks. Only actual long rest resets the cycle.
+
 ### Fixed
 
 - Fixed Mac Task creation remaining on the desktop after the menu-bar timer closes or its host window is minimized. Owned forms and suggestions now follow the host window lifetime.
