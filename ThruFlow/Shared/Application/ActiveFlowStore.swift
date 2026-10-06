@@ -219,13 +219,43 @@ final class ActiveFlowStore: ObservableObject {
         startLiveActivity(now: now)
     }
 
+    /// Explicit Area selection in the timer creates a normal, editable Task.
+    /// Initial configuration and historical Area-only records remain untouched.
+    @discardableResult
+    func selectPickerContext(
+        area: Area?,
+        todo: Todo?,
+        modelContext: ModelContext,
+        now: Date = .now,
+        calendar: Calendar = .current,
+        dayBoundary: AppDayBoundary = .midnight
+    ) -> Bool {
+        guard let area, !area.isArchived else { return false }
+        let selectedTask: Todo
+        if let todo {
+            selectedTask = todo
+        } else {
+            selectedTask = Todo(
+                title: "",
+                area: area,
+                habitOccurrence: false,
+                scheduledDate: dayBoundary.day(containing: now, calendar: calendar),
+                createdAt: now,
+                updatedAt: now
+            )
+            modelContext.insert(selectedTask)
+        }
+        return selectContext(area: area, todo: selectedTask, modelContext: modelContext, now: now)
+    }
+
+    @discardableResult
     func selectContext(
         area: Area?,
         todo: Todo?,
         modelContext: ModelContext,
         now: Date = .now
-    ) {
-        guard let area else { return }
+    ) -> Bool {
+        guard let area else { return false }
         let previousAreaID = selectedAreaID
         let previousTodoID = selectedTodoID
 
@@ -271,10 +301,11 @@ final class ActiveFlowStore: ObservableObject {
             selectedAreaID = previousAreaID
             selectedTodoID = previousTodoID
             persistConfiguration()
-            return
+            return false
         }
         lastAppliedRuntimeVersion = activeSession?.runtimeVersion
         synchronizeLiveActivity(now: now)
+        return true
     }
 
     func beginSynchronization(modelContext: ModelContext, now: Date = .now) {
@@ -416,8 +447,11 @@ final class ActiveFlowStore: ObservableObject {
         _ = apply(engine.finish(timerState, now: now), modelContext: modelContext, now: now)
     }
 
-    func completeResult(_ result: String?, modelContext: ModelContext, now: Date = .now) {
+    @discardableResult
+    func completeResult(_ result: String?, taskTitle: String? = nil, modelContext: ModelContext, now: Date = .now) -> Bool {
+        guard let timerState, activeSession != nil, timerState.phase == .awaitingResult else { return false }
         let completedSessionID = activeSession?.id
+        updateMemoTaskTitle(taskTitle, now: now)
         let normalizedResult = normalizedResult(result)
         activeSession?.result = normalizedResult
         if let normalizedResult {
@@ -425,13 +459,11 @@ final class ActiveFlowStore: ObservableObject {
         }
         activeSession?.complete(now: now)
 
-        if let timerState {
-            guard apply(
-                engine.completeResult(timerState, now: now),
-                modelContext: modelContext,
-                now: now
-            ) else { return }
-        }
+        guard apply(
+            engine.completeResult(timerState, now: now),
+            modelContext: modelContext,
+            now: now
+        ) else { return false }
 
         activeSession = nil
         self.timerState = nil
@@ -445,6 +477,7 @@ final class ActiveFlowStore: ObservableObject {
             TaskCompletionFeedbackPlayer.shared.playFlow(for: completedSessionID, now: now)
             NotificationCenter.default.post(name: .flowDidComplete, object: completedSessionID)
         }
+        return true
     }
 
     func cancelResultMemo(modelContext: ModelContext, now: Date = .now) {
@@ -505,22 +538,33 @@ final class ActiveFlowStore: ObservableObject {
         isAwaitingBreakMemo = true
     }
 
-    func completeBreakMemo(_ result: String?, modelContext: ModelContext, now: Date = .now) {
-        guard let timerState else { return }
-        guard isAwaitingBreakMemo else { return }
+    @discardableResult
+    func completeBreakMemo(_ result: String?, taskTitle: String? = nil, modelContext: ModelContext, now: Date = .now) -> Bool {
+        guard let timerState else { return false }
+        guard isAwaitingBreakMemo else { return false }
         guard timerState.phase == .focusing || timerState.phase == .awaitingExtensionDecision else {
             isAwaitingBreakMemo = false
-            return
+            return false
         }
 
-        guard !discardShortFlowIfNeeded(timerState, modelContext: modelContext, now: now) else { return }
+        guard !discardShortFlowIfNeeded(timerState, modelContext: modelContext, now: now) else { return false }
+        updateMemoTaskTitle(taskTitle, now: now)
         let normalizedResult = normalizedResult(result)
         activeSession?.result = normalizedResult
         if let normalizedResult {
             activeSession?.todo?.setMemo(normalizedResult, now: now)
         }
+        guard beginBreak(from: timerState, modelContext: modelContext, now: now) else { return false }
         isAwaitingBreakMemo = false
-        _ = beginBreak(from: timerState, modelContext: modelContext, now: now)
+        return true
+    }
+
+    private func updateMemoTaskTitle(_ title: String?, now: Date) {
+        guard let title, let todo = activeSession?.todo else { return }
+        let normalized = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard todo.title != normalized else { return }
+        todo.title = normalized
+        todo.updatedAt = now
     }
 
     private func normalizedResult(_ result: String?) -> String? {

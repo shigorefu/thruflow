@@ -573,18 +573,13 @@ private struct WatchFlowContextPicker: View {
     }
 
     private func select(area: Area?, todo: Todo?) {
-        guard let area else { return }
-        if activeFlowStore.timerState == nil {
-            activeFlowStore.configure(area: area, todo: todo)
-        } else {
-            activeFlowStore.selectContext(
-                area: area,
-                todo: todo,
-                modelContext: modelContext
-            )
-        }
+        guard activeFlowStore.selectPickerContext(
+            area: area, todo: todo, modelContext: modelContext,
+            calendar: calendar, dayBoundary: dayBoundary
+        ) else { return }
         dismiss()
     }
+
 }
 
 private struct WatchFlowModePicker: View {
@@ -625,12 +620,20 @@ private struct WatchFlowMemoView: View {
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
 
     @State private var memo = ""
+    @State private var taskTitle = ""
     let onComplete: () -> Void
 
     var body: some View {
         NavigationStack {
             Form {
-                TextField(String(localized: "何をしましたか"), text: $memo)
+                if activeFlowStore.activeSession?.todo != nil {
+                    Section(String(localized: "タスク名")) {
+                        TextField(String(localized: "タスク名"), text: $taskTitle)
+                    }
+                }
+                Section(String(localized: "取り組んだこと")) {
+                    TextField(String(localized: "何をしましたか"), text: $memo)
+                }
 
                 Button(String(localized: "メモを保存して続ける")) {
                     submit(memo)
@@ -645,15 +648,18 @@ private struct WatchFlowMemoView: View {
                 }
             }
             .navigationTitle(String(localized: "メモ"))
+            .onAppear { taskTitle = activeFlowStore.activeSession?.todo?.title ?? "" }
         }
     }
 
     private func submit(_ value: String?) {
+        let didSave: Bool
         if activeFlowStore.isAwaitingBreakMemo {
-            activeFlowStore.completeBreakMemo(value, modelContext: modelContext)
+            didSave = activeFlowStore.completeBreakMemo(value, taskTitle: taskTitle, modelContext: modelContext)
         } else {
-            activeFlowStore.completeResult(value, modelContext: modelContext)
+            didSave = activeFlowStore.completeResult(value, taskTitle: taskTitle, modelContext: modelContext)
         }
+        guard didSave else { return }
         onComplete()
         dismiss()
     }

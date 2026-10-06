@@ -194,6 +194,11 @@ Released on GitHub on 2026-09-08; shipping build `10`.
   required GitHub CI status resolvable. Run the complete Apple gate whenever
   any non-Markdown file changes.
 
+## 1.4.0 — In development
+
+- Explicit timer Area selection creates an unnamed Task visible in Tasks.
+- Flow completion/rest captures Task name above the result memo on every platform.
+
 ## 1.3.2 — In development
 
 - Segmented focus timer colors on Mac, iPhone/iPad, and Watch, using existing history boundaries.

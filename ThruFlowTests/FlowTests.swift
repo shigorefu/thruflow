@@ -13,6 +13,138 @@ import UserNotifications
 
 @MainActor
 struct FlowTests {
+    @Test func areaPickerCreatesAnUntitledTaskForTheConfiguredDay() throws {
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let container = try ModelContainer(for: schema, configurations: [
+            ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
+        ])
+        let context = container.mainContext
+        let area = Area(name: "AWS", type: .habit)
+        context.insert(area)
+        let store = ActiveFlowStore(defaults: UserDefaults(suiteName: "FlowTests.\(UUID())")!,
+                                    notifications: TestFlowNotificationService())
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let now = calendar.date(from: DateComponents(year: 2026, month: 10, day: 6, hour: 2))!
+        let boundary = AppDayBoundary(hour: 4)
+        #expect(store.selectPickerContext(area: area, todo: nil, modelContext: context,
+                                         now: now, calendar: calendar, dayBoundary: boundary))
+        let todos = try context.fetch(FetchDescriptor<Todo>())
+        let todo = try #require(todos.first)
+        #expect(todos.count == 1)
+        #expect(todo.title.isEmpty)
+        #expect(todo.area?.id == area.id)
+        #expect(!todo.isHabitOccurrence)
+        #expect(todo.measurement == .checkbox)
+        #expect(TodayTodoFilter(calendar: calendar, dayBoundary: boundary).includes(todo, now: now))
+        #expect(TodoDisplay.title(for: todo) == "(AWS)")
+        #expect(store.selectedTodoID == todo.id)
+        // Picking the actual task and starting it must reuse its identity.
+        #expect(store.selectPickerContext(area: area, todo: todo, modelContext: context, now: now))
+        store.start(area: area, todo: todo, modelContext: context, now: now)
+        #expect(try context.fetchCount(FetchDescriptor<Todo>()) == 1)
+        #expect(store.activeSession?.todo?.id == todo.id)
+        #expect(store.activeSession?.resolvedSegments.first?.todo?.id == todo.id)
+    }
+
+    @Test(arguments: [false, true])
+    func flowMemoSavesTaskNameAndResultTogether(startRest: Bool) throws {
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let container = try ModelContainer(for: schema, configurations: [
+            ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
+        ])
+        let context = container.mainContext
+        let area = Area(name: "仕事", type: .neutral)
+        context.insert(area)
+        let store = ActiveFlowStore(defaults: UserDefaults(suiteName: "FlowTests.\(UUID())")!,
+                                    notifications: TestFlowNotificationService())
+        let now = Date(timeIntervalSince1970: 300_000)
+        #expect(store.selectPickerContext(area: area, todo: nil, modelContext: context, now: now))
+        let todo = try #require(context.fetch(FetchDescriptor<Todo>()).first)
+        store.start(area: area, todo: todo, modelContext: context, now: now)
+        let session = try #require(store.activeSession)
+        let end = now.addingTimeInterval(25 * 60)
+        if startRest {
+            store.requestBreakMemo(modelContext: context, now: end)
+            #expect(store.completeBreakMemo("  APIを実装  ", taskTitle: "  模擬試験  ",
+                                           modelContext: context, now: end))
+            #expect(store.isBreakPhase)
+        } else {
+            store.stop(modelContext: context, now: end)
+            #expect(store.completeResult("  APIを実装  ", taskTitle: "  模擬試験  ",
+                                        modelContext: context, now: end))
+            #expect(store.activeSession == nil)
+        }
+        #expect(todo.title == "模擬試験")
+        #expect(todo.notes == "APIを実装")
+        #expect(session.result == "APIを実装")
+        #expect(session.todo?.id == todo.id)
+        #expect(!todo.isCompleted)
+        #expect(try context.fetchCount(FetchDescriptor<Todo>()) == 1)
+    }
+
+    @Test func areaChoiceDuringFocusCreatesLinkedTaskWithoutRestartingTimer() throws {
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let container = try ModelContainer(for: schema, configurations: [
+            ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
+        ])
+        let context = container.mainContext
+        let first = Area(name: "最初", type: .neutral)
+        let second = Area(name: "次", type: .habit)
+        context.insert(first)
+        context.insert(second)
+        let original = Todo(title: "Existing", area: first)
+        context.insert(original)
+        let store = ActiveFlowStore(defaults: UserDefaults(suiteName: "FlowTests.\(UUID())")!,
+                                    notifications: TestFlowNotificationService())
+        let now = Date(timeIntervalSince1970: 400_000)
+        store.start(area: first, todo: original, modelContext: context, now: now)
+        let session = try #require(store.activeSession)
+        let deadline = store.timerState?.plannedEndAt
+        #expect(store.selectPickerContext(area: second, todo: nil, modelContext: context,
+                                         now: now.addingTimeInterval(120)))
+        let created = try #require(session.todo)
+        #expect(created.id != original.id)
+        #expect(created.title.isEmpty)
+        #expect(!created.isHabitOccurrence)
+        #expect(session.resolvedSegments.count == 2)
+        let segments = session.resolvedSegments.sorted { $0.startFocusSeconds < $1.startFocusSeconds }
+        #expect(segments.first?.todo?.id == original.id)
+        #expect(segments.last?.todo?.id == created.id)
+        #expect(store.timerState?.plannedEndAt == deadline)
+        let end = now.addingTimeInterval(300)
+        store.requestBreakMemo(modelContext: context, now: end)
+        store.cancelBreakMemo()
+        #expect(created.title.isEmpty)
+        store.requestBreakMemo(modelContext: context, now: end)
+        #expect(store.completeBreakMemo(nil, taskTitle: "New task", modelContext: context, now: end))
+        #expect(created.title == "New task")
+        #expect(original.title == "Existing")
+    }
+
+    @Test func emptyMemoKeepsExistingTaskNoteAndAllowsUnnamedTask() throws {
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let container = try ModelContainer(for: schema, configurations: [
+            ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
+        ])
+        let context = container.mainContext
+        let area = Area(name: "仕事", type: .neutral)
+        context.insert(area)
+        let todo = Todo(title: "Old title", notes: "Keep this note", area: area)
+        context.insert(todo)
+        let store = ActiveFlowStore(defaults: UserDefaults(suiteName: "FlowTests.\(UUID())")!,
+                                    notifications: TestFlowNotificationService())
+        let now = Date(timeIntervalSince1970: 500_000)
+        store.start(area: area, todo: todo, modelContext: context, now: now)
+        store.stop(modelContext: context, now: now.addingTimeInterval(120))
+        store.cancelResultMemo(modelContext: context, now: now.addingTimeInterval(121))
+        #expect(todo.title == "Old title")
+        store.stop(modelContext: context, now: now.addingTimeInterval(180))
+        #expect(store.completeResult(nil, taskTitle: "  ", modelContext: context, now: now.addingTimeInterval(180)))
+        #expect(todo.title.isEmpty)
+        #expect(todo.notes == "Keep this note")
+    }
+
     @Test @MainActor func timerPrimaryControlUsesSemanticPhaseColors() {
         #expect(FlowTimerPrimaryTintRole(phase: .focusing, isFocusOvertime: false) == .area)
         #expect(FlowTimerPrimaryTintRole(phase: .focusing, isFocusOvertime: true) == .area)

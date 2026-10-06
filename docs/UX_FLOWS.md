@@ -159,7 +159,7 @@ In the narrow vertical dashboard layout, the player comes first, followed by the
 - left Task card with Area icon, Task title, and smaller Area name;
 - Task card opens a picker with `タスク`, `習慣`, and `分野` tabs;
 - `タスク` and `習慣` use separate lists of today's items;
-- `分野` uses an emoji-and-name grid with `その他` first for Area-only starts;
+- `分野` uses an emoji-and-name grid with `その他` first; explicitly selecting an Area creates and selects an unnamed Check Task for the current app day;
 - on iPhone and iPad the same three context tabs use touch-native lists, open on
   the currently selected context type, and keep `その他` first;
 - Area icon color follows the selected Task Area;
@@ -201,10 +201,7 @@ The `集中モード` / Flow Mode labels are:
 The internal adaptive mode is labeled `自動` / Auto / Авто whenever it appears
 in saved data.
 
-Flow can be started with a selected Task, with only an Area, or with neither.
-Area-only work does not create an implicit Todo. If no Area is chosen, the
-resolved Area is `その他`. Version 1.0 never creates a Task
-implicitly from Flow.
+Selecting an Area in the timer picker creates a new unnamed Check Task with that Area and the current app day (including the configured day boundary). The Task immediately appears in Tasks; Habit Areas still create ordinary Tasks, not generated Habit occurrences. Choosing an existing Task reuses it. The same selection during focus links the new Task through the normal context-switch segmentation without resetting the timer. Mac double-click edits the title inline; iPhone/iPad double-tap opens the existing Task editor. Merely opening/dismissing the picker or preparing the default context creates nothing. Existing Area-only history and manual History creation remain unchanged. If no Area is chosen, the resolved Area is `その他`.
 
 At the planned focus end, Flow does not auto-switch. The timer continues. The user chooses:
 
@@ -232,7 +229,7 @@ is persisted or resets the stream phase. Reduce Motion suppresses the transient
 movement while keeping the static regular/long-rest appearance and accessible
 rest label.
 
-Stopping focus or starting break opens the same square note panel in the dashboard and macOS menu bar player. It shows `お疲れ様です。メモを追加しますか？`, a large editor, `キャンセル` on the left, and one checkmark submit button on the right. The submit label is `メモなしで送信` for an empty editor and `送信` when text exists. Focus keeps counting while a break note is open. Submitting text writes it to `FlowSession.result` and mirrors it to `Todo.notes` when linked; submitting an empty editor continues without clearing an existing Task note. Cancelling returns to the state before the prompt: a pending break returns to focus, while a stop prompt restores the previous running or paused Flow and removes its provisional progress. Stopping or skipping an existing rest never asks for a note again.
+Stopping focus or starting break opens the same square note panel in the dashboard and macOS menu bar player. For a linked Task it shows a `タスク名` field prefilled with the current title, then `取り組んだこと` above the memo editor, `キャンセル` on the left, and one checkmark submit button on the right. The submit label is `メモなしで送信` for an empty editor and `送信` when text exists. Focus keeps counting while a break note is open. Submitting saves the trimmed Task title (which may remain empty) and writes non-empty memo text to `FlowSession.result` and mirrors it to `Todo.notes` when linked; submitting an empty editor continues without clearing an existing Task note. Cancelling returns to the state before the prompt: a pending break returns to focus, while a stop prompt restores the previous running or paused Flow and removes its provisional progress. Stopping or skipping an existing rest never asks for a note again.
 
 On iPhone, successfully submitting the stop memo or starting the requested rest
 produces one system success haptic for the completed Flow. Cancelling the memo,

@@ -178,3 +178,11 @@ be distinguished from manually entered Tasks. Only Habit occurrences participate
 in duplicate reconciliation, schedule changes, pauses, weekly quotas, and roll-forward.
 Task filters, Flow pickers, editors, and rescheduling use the Todo classification.
 Existing merged/deleted records are not automatically restored.
+
+
+Explicit Area selection in the live Flow picker creates an unnamed normal
+Check Todo (`habitOccurrence = false`) using the existing scheduled-date and
+Area fields. It follows normal Todo progress/history ownership. Flow memo
+submission optionally updates that same Todo's title atomically with its memo;
+no new persisted field or entity is introduced. Historical Area-only sessions
+remain valid and do not materialize Tasks merely by being viewed.

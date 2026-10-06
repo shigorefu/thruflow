@@ -839,3 +839,18 @@ Keep existing Block rounding and series continuation at 1.5 times the initial
 rest recommendation; manual timer adjustments do not change earned rest.
 Use existing FlowSession/FlowBreak records and explicit runtime long-rest
 identity, including remaining balances below 20 minutes. No schema change.
+
+
+### 2026-10-06 — Area selection creates an unnamed Flow Task
+
+Supersedes the no-implicit-Task rule for explicit Area selection in the timer
+picker only. Create an unnamed Check Todo scheduled for the current app day,
+with `habitOccurrence = false`, and select it through the existing context
+switch path. It is visible in Tasks and reuses existing placeholder display and
+Mac double-click title editing; iPhone/iPad double-tap opens Task editing.
+Default configuration, opening the picker, and historical Area-only Flow remain
+unchanged. The Flow completion/rest form saves Task name above the result memo;
+existing titles are prefilled, empty names remain valid, cancel discards drafts,
+and empty memo submission preserves existing Task notes. Saving Flow does not
+automatically mark a Check Task completed. All platforms use the same creation
+and save operations. Existing persisted fields suffice; no schema migration.

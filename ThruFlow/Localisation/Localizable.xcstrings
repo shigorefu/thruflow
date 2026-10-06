@@ -1,6 +1,28 @@
 {
   "sourceLanguage" : "ja",
   "strings" : {
+    "取り組んだこと": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取り組んだこと"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What was done"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Что было сделано"
+          }
+        }
+      }
+    },
     "Toggl Trackとの接続について" : {
       "localizations" : {
         "en" : {

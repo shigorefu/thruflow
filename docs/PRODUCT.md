@@ -101,10 +101,7 @@ Flow sessions may share a stable series ID when the next session starts within 1
 The active creditable Flow updates the dashboard live. Completed timeline
 segments open the existing platform History detail/editor.
 
-Flow may start with a Task, only an Area, or neither. Area-only work is persisted
-through its selected `Area` relationship without an implicit Todo; work
-without either resolves to system `その他`. Version 1.0 never creates a Task
-implicitly from Flow.
+Explicitly selecting an Area in the Flow context picker creates an unnamed Check Task for the current app day and selects it immediately. It appears in Tasks, including when its Area is a Habit (the new Task is not a generated occurrence). Empty titles use the existing Area placeholder. The Mac timer supports inline double-click renaming; iPhone/iPad offer double-tap editing. Finishing Flow or starting rest offers Task name above the result memo, saving both together. Initial/default configuration and historical Area-only Flow do not create Tasks; work without either context still resolves to system `その他`.
 
 ## Statistics
 
