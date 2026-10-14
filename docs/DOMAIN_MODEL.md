@@ -186,3 +186,11 @@ Area fields. It follows normal Todo progress/history ownership. Flow memo
 submission optionally updates that same Todo's title atomically with its memo;
 no new persisted field or entity is introduced. Historical Area-only sessions
 remain valid and do not materialize Tasks merely by being viewed.
+
+
+Archiving a Habit Area stops generation and soft-deletes its unstarted generated
+occurrences from the logical archive day onward, including future calendar
+preplanning. Completed records, progress, linked Flow history, earlier days,
+manual Tasks and connector Tasks are preserved. The shared materializer repeats
+this repair for late-arriving/pre-existing occurrences even if the caller only
+supplies active Areas. Archival and cleanup use existing fields; no schema change.

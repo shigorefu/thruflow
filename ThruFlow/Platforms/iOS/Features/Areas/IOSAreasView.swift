@@ -2,6 +2,8 @@ import SwiftData
 import SwiftUI
 
 struct IOSAreasView: View {
+    @Environment(\.calendar) private var calendar
+    @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.modelContext) private var modelContext
     @AppStorage("directionKanbanColumnOrder") private var groupOrderRaw = AreaGroupOrder.encode(AreaGroupOrder.defaultValue)
 
@@ -69,7 +71,7 @@ struct IOSAreasView: View {
                         .swipeActions(edge: .trailing) {
                             if !area.isArchived {
                                 Button(role: .destructive) {
-                                    area.archive()
+                                    area.archive(calendar: calendar, dayBoundary: dayBoundary)
                                     _ = modelContext.saveReporting(.areaUpdate)
                                 } label: {
                                     Label(String(localized: "アーカイブする"), systemImage: "archivebox")

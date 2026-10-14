@@ -854,3 +854,13 @@ existing titles are prefilled, empty names remain valid, cancel discards drafts,
 and empty memo submission preserves existing Task notes. Saving Flow does not
 automatically mark a Check Task completed. All platforms use the same creation
 and save operations. Existing persisted fields suffice; no schema migration.
+
+
+### 2026-10-14 — Retire preplanned Habit occurrences on Area archival
+
+Archival must retire unstarted generated occurrences from the Area's logical
+archive day onward, not merely prevent new generation. Preserve completed or
+started Tasks, Flow links, earlier dates, manual Tasks and connector imports.
+Repeat the idempotent repair during Habit materialization to handle existing
+and late-arriving records. Every Area archive UI saves the archive and cleanup
+together; a failed save keeps editors open. No persisted schema change.

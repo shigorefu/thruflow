@@ -9,6 +9,8 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct AreaListView: View {
+    @Environment(\.calendar) private var calendar
+    @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.modelContext) private var modelContext
     @AppStorage("directionKanbanColumnOrder") private var areaGroupOrderRaw = AreaGroupOrder.encode(AreaGroupOrder.defaultValue)
 
@@ -115,7 +117,7 @@ struct AreaListView: View {
                                     .contextMenu {
                                         if !area.isArchived {
                                             Button(String(localized: "アーカイブする"), systemImage: "archivebox", role: .destructive) {
-                                                area.archive()
+                                                area.archive(calendar: calendar, dayBoundary: dayBoundary)
                                                 _ = modelContext.saveReporting(.areaUpdate)
                                             }
                                         }

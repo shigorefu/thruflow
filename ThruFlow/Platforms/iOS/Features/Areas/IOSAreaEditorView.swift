@@ -159,8 +159,8 @@ struct IOSAreaEditorView: View {
             if case .edit(let area) = mode {
                 Section {
                     Button(String(localized: "方向を削除"), role: .destructive) {
-                        area.archive()
-                        _ = modelContext.saveReporting(.areaUpdate)
+                        area.archive(calendar: calendar, dayBoundary: dayBoundary)
+                        guard modelContext.saveReporting(.areaUpdate) else { return }
                         dismiss()
                     }
                 }

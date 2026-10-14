@@ -304,9 +304,15 @@ final class Direction {
         updatedAt = now
     }
 
-    func archive(now: Date = .now) {
-        archivedAt = now
+    func archive(
+        now: Date = .now,
+        calendar: Calendar = .current,
+        dayBoundary: AppDayBoundary = .midnight
+    ) {
+        archivedAt = archivedAt ?? now
         updatedAt = now
+        ArchivedHabitTodoReconciler(calendar: calendar, dayBoundary: dayBoundary)
+            .reconcile(todos: todos ?? [], now: now)
     }
 
     func addFocusDuration(seconds: Int, now: Date = .now) {

@@ -510,7 +510,8 @@ struct AreaFormView: View {
     private func deleteArea() {
         guard case .edit(let area) = mode else { return }
 
-        area.archive()
+        area.archive(calendar: calendar, dayBoundary: dayBoundary)
+        guard modelContext.saveReporting(.areaUpdate) else { return }
         dismiss()
     }
 

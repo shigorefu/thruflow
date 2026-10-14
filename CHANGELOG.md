@@ -10,6 +10,10 @@ Release dates below record GitHub publication in Asia/Tokyo (JST).
 - Selecting an Area in the Flow timer creates an unnamed Task for today, with title editing and visibility in Tasks.
 - Flow completion and rest forms now accept the Task name above the result memo on Mac, iPhone/iPad, and Watch.
 
+### Fixed
+
+- Archiving a Habit Area now retires unused preplanned daily Tasks while preserving completed work and history; the Mac Area editor explicitly saves archival.
+
 ## [1.3.2] - Unreleased
 
 ### Added

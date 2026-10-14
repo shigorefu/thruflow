@@ -890,3 +890,9 @@ occurrence. Editing it preserves this distinction.
 The Connectors entry carries a Beta capsule in the macOS/iPad sidebar. The native
 iPhone popup menu shows the same Beta status as a title suffix, preserving the
 system menu presentation.
+
+
+Archiving a Habit Area immediately removes unstarted generated Tasks scheduled
+on or after its logical archive day, including days preplanned by Week/Month.
+Completed Tasks and Tasks with progress or Flow history remain, as do manual
+Tasks in that Area. Existing stale occurrences are repaired during planning.
