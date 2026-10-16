@@ -127,6 +127,12 @@ Recommended public URLs after the files are merged to `main`:
 5. Verify offline-to-online changes, simultaneous edits, deletion, history recalculation, active Flow adoption, widgets, Live Activity, and notifications.
 6. Verify migration using a copy of the current user database before changing or deleting any real store.
 
+## Automated TestFlight delivery
+
+The [TestFlight pipeline](TESTFLIGHT.md) defines protected tag/manual delivery,
+Fastlane signing and required environment settings. Ordinary pushes only run CI.
+Initial setup and live Production verification are required before its first upload.
+
 ## Archive and upload
 
 1. Select the `ThruFlow iOS` scheme and a generic iOS device destination.
