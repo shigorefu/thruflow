@@ -26,6 +26,7 @@ For documentation-only changes, write "Not applicable".
 - Shared operation; Watch/widget consumers where applicable:
 - Intentional platform differences / why an unchanged counterpart is correct:
 - Independent counterpart reviewer findings (or disclose a direct review):
+- For logic changes: agreed behavior contract and final macOS/iOS agent verdicts; unresolved disagreements or unavailable checks:
 - Checks actually run; unverified scenarios:
 
 ## Screenshots or recordings

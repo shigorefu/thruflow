@@ -95,6 +95,39 @@ This is standing authorization to delegate the bounded reviews below; an explici
 user restriction on delegation or scope takes precedence. Documentation-only
 changes do not require platform agents.
 
+### Required agreement for logic changes
+
+For changes to business rules, validation, state transitions, persistence, or
+UI-to-command behavior, use an **orchestrator**, a **macOS agent**, and an
+**iOS/iPadOS agent**. This three-role agreement is mandatory even when the
+implementation changes only Shared or one client. Include a Watch/widget review
+when those consumers are affected.
+
+- **Before implementation:** the orchestrator proposes the common behavior,
+  shared owner/API, affected callers, native exceptions, and acceptance scenarios.
+  Both client agents inspect their implementation, exchange findings with each
+  other and the orchestrator, and explicitly agree on that contract before edits.
+- **During implementation:** assign disjoint file ownership and one owner for
+  Shared changes. A changed contract or newly discovered cross-client effect
+  must be communicated and agreed again; no agent silently changes shared rules.
+- **After implementation:** both client agents review the final diff, each other's
+  findings, and the evidence for the agreed scenarios. They explicitly report
+  agreed / changes required / unverified, with reasons and file references.
+  The orchestrator resolves disagreements and requests re-review after fixes.
+- **Completion:** the orchestrator records the agreed behavior, each client's
+  verdict, intentional differences, and checks actually run. Unresolved objections
+  block a claim that the logic change is complete; missing runtime evidence must
+  remain visible. Silence, a passing build, or a single agent's approval does not
+  constitute agreement. Routine technical disagreements are resolved by agents
+  using product rules and evidence; ask the user only for a genuinely missing
+  product decision or a blocker requiring their input.
+
+The lighter counterpart-review process below remains sufficient for changes
+that do not alter logic. If delegation is unavailable, the fallback below is a
+single-agent review only and must not be described as multi-agent agreement.
+
+### Review workflow
+
 1. Run `python3 scripts/platform_review.py --base HEAD` for uncommitted work,
    or use the task's actual starting commit to include committed changes. The
    report maps changed paths to counterpart entry points and suggested tests.

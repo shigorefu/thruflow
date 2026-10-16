@@ -52,7 +52,9 @@ there is a diff). For a completed task, use its starting commit as `--base`.
 Review the same user action and expected result on Mac and iPhone/iPad, including
 UI-to-shared-command wiring. Native presentation differences are intentional;
 unchanged counterpart files are not by themselves a failure. Agent contributors
-follow the independent counterpart-review workflow in `AGENTS.md`.
+follow `AGENTS.md`: logic changes require agreement between the orchestrator,
+macOS agent, and iOS/iPadOS agent before implementation and after final review;
+other app changes use the independent counterpart-review workflow.
 
 The report is also published in the CI job summary. It is an impact checklist,
 not a behavior test. CI runs shared unit tests on Mac and builds both clients;
