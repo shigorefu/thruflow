@@ -105,6 +105,7 @@ CloudKit synchronization cannot be validated in the simulator. Use signed builds
 
 ## Project policies
 
+- [AI agent instructions](AGENTS.md)
 - [Contributing](CONTRIBUTING.md)
 - [Contributors and attribution](CONTRIBUTORS.md)
 - [Licensing model](LICENSING.md)

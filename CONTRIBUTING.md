@@ -41,7 +41,8 @@ other material whose license is incompatible with this arrangement.
   permitted.
 - Never commit signing certificates, provisioning profiles, tokens, private
   user data, exports, or local Xcode state.
-- Follow [`CODEX.md`](CODEX.md) and the architecture documents linked from it.
+- Follow [`AGENTS.md`](AGENTS.md) for repository working rules, verification
+  commands, and the task-specific documentation map.
 
 ## Verification
 
