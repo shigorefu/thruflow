@@ -18,6 +18,8 @@ Release dates below record GitHub publication in Asia/Tokyo (JST).
 
 ### Fixed
 
+- Failed Task/Area saves now restore the values held by the interface on macOS 26, including Habit schedule changes, without discarding unrelated pending edits.
+
 - Toggl setup now distinguishes a connected account from active export, shows unsaved settings and delivery results, and explains missing device-identity access instead of silently skipping export.
 - Task editing now preserves undated Tasks and accepts unnamed Tasks consistently on Mac and iPhone/iPad; editing also retains the current archived Area.
 - Area editors now apply the same Habit schedule validation and goal defaults on both clients.

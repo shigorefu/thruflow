@@ -40,12 +40,17 @@ struct AreaEditingService {
         let weeklyCount = schedule == .weeklyCount ? draft.weeklyTargetCount : nil
         let weekdayMask = schedule != nil && schedule != .everyDay ? draft.weekdayMask : nil
 
+        let journal = EditorMutationJournal(modelContext: modelContext)
+        if let area { journal.capture(area) }
         do {
             let savedArea: Area
             if let area {
                 let wasHabit = area.type == .habit
                 let todos = wasHabit && draft.type == .habit
                     ? try modelContext.fetch(FetchDescriptor<Todo>()) : []
+                for todo in todos where todo.area?.id == area.id {
+                    journal.capture(todo)
+                }
                 area.update(
                     name: draft.trimmedName, type: draft.type,
                     symbolName: draft.normalizedSymbolName, colorHex: draft.colorHex,
@@ -76,7 +81,7 @@ struct AreaEditingService {
             try saveChanges(modelContext)
             return savedArea
         } catch {
-            modelContext.rollback()
+            journal.restore(modelContext: modelContext)
             throw error
         }
     }

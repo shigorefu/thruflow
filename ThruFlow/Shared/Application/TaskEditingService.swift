@@ -30,6 +30,8 @@ struct TaskEditingService {
         let errors = TodoValidator().validate(draft)
         guard errors.isEmpty else { throw TaskEditingError.validation(errors) }
 
+        let journal = EditorMutationJournal(modelContext: modelContext)
+        if let todo { journal.capture(todo) }
         do {
             let area = try resolvedArea(draft.area, modelContext: modelContext, now: now)
             let plannedAmount = draft.measurement == .checkbox ? nil : draft.plannedAmount
@@ -69,7 +71,7 @@ struct TaskEditingService {
             try saveChanges(modelContext)
             return savedTodo
         } catch {
-            modelContext.rollback()
+            journal.restore(modelContext: modelContext)
             throw error
         }
     }

@@ -926,3 +926,23 @@ persisted fields or CloudKit schema changes are needed.
 
 Rename the unreleased 1.3.2 branch and scope to 1.4.0, retaining every existing
 change. Shipping metadata stays at 1.3.1 (12) until release preparation.
+
+
+### 2026-10-16 — Restore editor-owned changes before SwiftData rollback
+
+PR #26 exposed two retained-model rollback failures on the macOS 26 CI runner:
+persisted records reverted, but a Task title and a reconciled Habit tombstone
+remained changed in objects held by the UI. The local macOS 27 suite did not
+reproduce this difference. Both native clients now share an editor mutation
+journal, following the existing connector import recovery pattern.
+
+The journal restores fields touched by Task editing, Area editing and Habit
+schedule reconciliation, including connector completion metadata. It removes
+new records created during the failed operation and rolls back the context only
+when no edits were already pending. Pre-existing pending edits and insertions
+remain available. Native forms still keep their drafts and report save errors.
+No persisted fields or CloudKit schema are changed.
+
+macOS and iOS agents explicitly agreed on this contract and reviewed each
+other's implementation/tests. The original failing assertions remain, with
+additional retained-field, relationship, pending-edit and insertion coverage.

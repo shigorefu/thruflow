@@ -353,6 +353,11 @@ substitutes today while editing an undated Task, rejects valid unnamed Tasks,
 or bypasses shared weekday validation. Regression coverage is in
 `ThruFlowTests/EditorServiceTests.swift`, including injected save failures and
 rollback of Area schedule changes together with their Task projections.
+The editor mutation journal restores touched fields on retained models before
+rollback, including connector completion metadata and Habit projections. It
+removes only operation-created records and avoids rolling back unrelated edits
+that were already pending. This covers SwiftData 26, where rollback alone can
+restore storage while leaving retained instances with stale values.
 
 Native exceptions remain explicit: iOS validates live and disables Save while
 Mac reports errors on Save; Mac retains quick-capture presets and iOS resets

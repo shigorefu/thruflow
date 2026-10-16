@@ -197,14 +197,33 @@ struct EditorServiceTests {
         let container = try makeContainer()
         let context = ModelContext(container)
         let area = Area(name: "Study", type: .neutral)
-        let todo = Todo(title: "Original", area: area, habitOccurrence: false)
+        let destination = Area(name: "Destination", type: .neutral)
+        let todo = Todo(title: "Original", notes: "Original notes", hashtags: ["original"],
+                        area: area, habitOccurrence: false, scheduledDate: sunday,
+                        deadline: monday, createdAt: sunday, updatedAt: sunday)
+        todo.externalTaskLinkRawValue = try ExternalTaskLink(
+            provider: .todoist, accountID: "account", taskID: "task", sourceID: "source",
+            lastSyncedAt: sunday, remoteCompletion: false
+        ).encoded()
+        let originalExternalLink = todo.externalTaskLinkRawValue
         context.insert(area)
+        context.insert(destination)
         context.insert(todo)
         try context.save()
         var draft = TodoDraft(todo: todo)
         draft.title = "Changed"
+        draft.notes = "Changed notes"
+        draft.hashtags = ["changed"]
+        draft.area = destination
+        draft.priority = .low
+        draft.isRoomIfPossible = true
+        draft.scheduledDate = tuesday
+        draft.deadline = wednesday
         draft.actualProgress = 1
-        let service = TaskEditingService(saveChanges: { _ in throw SaveFailure.expected })
+        let service = TaskEditingService(saveChanges: { _ in
+            #expect(todo.externalTaskLinkRawValue != originalExternalLink)
+            throw SaveFailure.expected
+        })
 
         #expect(throws: SaveFailure.expected) {
             try service.save(draft: draft, editing: todo, modelContext: context, now: monday)
@@ -213,7 +232,78 @@ struct EditorServiceTests {
         #expect(loaded.title == "Original")
         #expect(loaded.actualProgress == 0)
         #expect(todo.title == "Original")
+        #expect(todo.notes == "Original notes")
+        #expect(todo.hashtags == ["original"])
+        #expect(todo.area?.id == area.id)
+        #expect(area.todos?.contains { $0.id == todo.id } == true)
+        #expect(destination.todos?.contains { $0.id == todo.id } != true)
+        #expect(todo.measurement == .checkbox)
+        #expect(todo.priority == .medium)
+        #expect(!todo.isRoomIfPossible)
+        #expect(todo.plannedAmount == nil)
+        #expect(todo.actualProgress == 0)
+        #expect(todo.status == .active)
+        #expect(todo.completedAt == nil)
+        #expect(todo.scheduledDate == sunday)
+        #expect(todo.deadline == monday)
+        #expect(todo.updatedAt == sunday)
+        #expect(todo.externalTaskLinkRawValue == originalExternalLink)
+        #expect(loaded.externalTaskLinkRawValue == originalExternalLink)
         #expect(!context.hasChanges)
+    }
+
+    @Test func failedTaskEditPreservesUnrelatedPendingChangesAndRemovesAutomaticInbox() throws {
+        let container = try makeContainer()
+        let context = ModelContext(container)
+        let area = Area(name: "Study", type: .neutral)
+        let todo = Todo(title: "Original", area: area, habitOccurrence: false)
+        let unrelated = Todo(title: "Unrelated", notes: "Saved", area: area, habitOccurrence: false)
+        context.insert(area)
+        context.insert(todo)
+        context.insert(unrelated)
+        try context.save()
+        unrelated.notes = "Pending edit"
+        var draft = TodoDraft(todo: todo)
+        draft.title = "Failed edit"
+        draft.area = nil
+        let service = TaskEditingService(saveChanges: { _ in throw SaveFailure.expected })
+
+        #expect(throws: SaveFailure.expected) {
+            try service.save(draft: draft, editing: todo, modelContext: context, now: monday)
+        }
+
+        #expect(todo.title == "Original")
+        #expect(todo.area?.id == area.id)
+        #expect(unrelated.notes == "Pending edit")
+        #expect(context.hasChanges)
+        #expect(try context.fetch(FetchDescriptor<Area>()).count == 1)
+        #expect(draft.title == "Failed edit")
+        try context.save()
+        let loaded = try ModelContext(container).fetch(FetchDescriptor<Todo>())
+        #expect(try #require(loaded.first { $0.id == todo.id }).title == "Original")
+        #expect(try #require(loaded.first { $0.id == unrelated.id }).notes == "Pending edit")
+    }
+
+    @Test func failedTaskCreationKeepsPreviouslyPendingInsertion() throws {
+        let container = try makeContainer()
+        let context = ModelContext(container)
+        let area = Area(name: "Study", type: .neutral)
+        context.insert(area)
+        try context.save()
+        let pending = Todo(title: "Already pending", area: area, habitOccurrence: false)
+        context.insert(pending)
+        let service = TaskEditingService(saveChanges: { _ in throw SaveFailure.expected })
+
+        #expect(throws: SaveFailure.expected) {
+            try service.save(draft: TodoDraft(title: "Failed creation"), modelContext: context, now: monday)
+        }
+
+        let tasks = try context.fetch(FetchDescriptor<Todo>())
+        #expect(tasks.map(\.id) == [pending.id])
+        #expect(try context.fetch(FetchDescriptor<Area>()).map(\.id) == [area.id])
+        #expect(context.hasChanges)
+        try context.save()
+        #expect(try ModelContext(container).fetch(FetchDescriptor<Todo>()).map(\.id) == [pending.id])
     }
 
     @Test func habitWithoutSelectedWeekdaysIsRejectedWithoutMutation() throws {
@@ -291,11 +381,17 @@ struct EditorServiceTests {
         let container = try makeContainer()
         let context = ModelContext(container)
         let area = makeHabit()
-        let future = Todo(title: "Future", area: area, habitOccurrence: true, scheduledDate: wednesday)
+        let originalUpdatedAt = area.updatedAt
+        let future = Todo(title: "Future", area: area, habitOccurrence: true,
+                          scheduledDate: wednesday, createdAt: sunday, updatedAt: sunday)
         context.insert(area)
         context.insert(future)
         try context.save()
         var draft = AreaDraft(area: area)
+        draft.name = "Changed habit"
+        draft.symbolName = "📚"
+        draft.colorHex = "#34C759"
+        draft.goalTarget = 90
         draft.goalSchedule = .weekdays
         draft.weekdayMask = GoalWeekday.tuesday.rawValue
         let service = AreaEditingService(calendar: calendar, saveChanges: { _ in throw SaveFailure.expected })
@@ -309,6 +405,82 @@ struct EditorServiceTests {
         #expect(loadedTasks.count == 1)
         #expect(loadedTasks.first?.isDeleted == false)
         #expect(!future.isDeleted)
+        #expect(area.name == "Workout")
+        #expect(area.symbolName == "🎯")
+        #expect(area.colorHex == "#007AFF")
+        #expect(area.goalTarget == 30)
+        #expect(area.goalUnit == .minutes)
+        #expect(area.goalSchedule == .everyDay)
+        #expect(area.weekdayMask == nil)
+        #expect(area.updatedAt == originalUpdatedAt)
+        #expect(future.title == "Future")
+        #expect(future.scheduledDate == wednesday)
+        #expect(future.deletedAt == nil)
+        #expect(future.updatedAt == sunday)
+        #expect(!context.hasChanges)
+    }
+
+    @Test func failedAreaEditPreservesUnrelatedPendingChangesAndRemovesGeneratedTasks() throws {
+        let container = try makeContainer()
+        let context = ModelContext(container)
+        let area = makeHabit()
+        let future = Todo(title: "Future", area: area, habitOccurrence: true, scheduledDate: wednesday)
+        let unrelated = Todo(title: "Unrelated", notes: "Saved", area: area, habitOccurrence: false)
+        context.insert(area)
+        context.insert(future)
+        context.insert(unrelated)
+        try context.save()
+        unrelated.notes = "Pending edit"
+        var draft = AreaDraft(area: area)
+        draft.goalSchedule = .weekdays
+        draft.weekdayMask = GoalWeekday.tuesday.rawValue
+        let service = AreaEditingService(calendar: calendar, saveChanges: { _ in throw SaveFailure.expected })
+
+        #expect(throws: SaveFailure.expected) {
+            try service.save(draft: draft, editing: area, modelContext: context, now: monday)
+        }
+
+        #expect(area.goalSchedule == .everyDay)
+        #expect(!future.isDeleted)
+        #expect(unrelated.notes == "Pending edit")
+        #expect(context.hasChanges)
+        #expect(Set(try context.fetch(FetchDescriptor<Todo>()).map(\.id)) == [future.id, unrelated.id])
+        try context.save()
+        let loaded = try ModelContext(container).fetch(FetchDescriptor<Todo>())
+        #expect(loaded.count == 2)
+        #expect(try #require(loaded.first { $0.id == future.id }).isDeleted == false)
+        #expect(try #require(loaded.first { $0.id == unrelated.id }).notes == "Pending edit")
+    }
+
+    @Test func failedAreaTemplateEditRestoresRetainedGeneratedTaskFields() throws {
+        let container = try makeContainer()
+        let context = ModelContext(container)
+        let area = makeHabit()
+        let todo = Todo(title: "Generated", area: area, habitOccurrence: true,
+                        measurement: .minutes, priority: .high, plannedAmount: 30,
+                        scheduledDate: monday, createdAt: sunday, updatedAt: sunday)
+        context.insert(area)
+        context.insert(todo)
+        try context.save()
+        var draft = AreaDraft(area: area)
+        draft.goalUnit = .focusBlocks
+        draft.goalTarget = 2
+        let service = AreaEditingService(calendar: calendar, saveChanges: { _ in
+            #expect(todo.measurement == .focusBlocks)
+            #expect(todo.plannedAmount == 2)
+            throw SaveFailure.expected
+        })
+
+        #expect(throws: SaveFailure.expected) {
+            try service.save(draft: draft, editing: area, modelContext: context, now: monday)
+        }
+
+        #expect(area.goalUnit == .minutes)
+        #expect(area.goalTarget == 30)
+        #expect(todo.measurement == .minutes)
+        #expect(todo.plannedAmount == 30)
+        #expect(todo.priority == .high)
+        #expect(todo.updatedAt == sunday)
         #expect(!context.hasChanges)
     }
 
