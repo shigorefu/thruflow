@@ -46,6 +46,27 @@ SwiftData entity. The optional scalar keeps existing stores and CloudKit
 lightweight migration compatible. Pausing changes future planning only:
 completed/progressed Todos and persisted Flow records are never removed.
 
+## Project (1.4.0)
+
+The schema adds `Project` as its sixth entity. Stored fields are `id`, `name`,
+`notes`, `createdAt`, `updatedAt`, `completedAt`, and optional `direction`
+(the parent Area). `Area.projects` and `Project.todos` are optional inverse
+arrays; `Todo.project` is an optional to-one relationship. Deletion rules are
+nullifying, with no cascade into Tasks or history. Required scalars have defaults;
+there are no uniqueness constraints, entity/field renames or backfills.
+
+Existing stores migrate additively. Existing Tasks keep a nil Project and their
+canonical Area. `ProjectTests.existingStoreMigratesWithoutLosingIdentityOrHistory`
+creates an on-disk store with the frozen pre-Project schema, reopens it with the
+current schema, checks UUIDs, progress, Flow and segment links, then assigns a
+Project. Local migration does not establish cross-device synchronization.
+
+CloudKit materializes `CD_Project` and the String `CD_Todo.CD_project` link.
+Inverse arrays use the existing Core Data CloudKit relationship representation,
+not new array fields on `CD_Direction`. See [CloudKit](CLOUDKIT.md) for the live
+deployment evidence and the remaining signed-device check. Reset All Data also
+removes Projects; ordinary Area archive/restore preserves them.
+
 ## Todo
 
 `Todo` is the actionable record for both manually created Tasks and generated Habit instances.

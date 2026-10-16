@@ -174,6 +174,8 @@ final class Direction {
     var createdAt: Date = Date.now
     var updatedAt: Date = Date.now
     var archivedAt: Date?
+    @Relationship(inverse: \Project.direction)
+    var projects: [Project]?
     @Relationship(inverse: \Todo.direction)
     var todos: [Todo]?
     @Relationship(inverse: \FlowSession.direction)

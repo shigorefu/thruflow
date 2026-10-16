@@ -72,21 +72,31 @@
     },
     {
       "id": "areas",
-      "name": "Areas",
+      "name": "Areas and Projects",
       "triggers": [
         "ThruFlow/Platforms/macOS/Features/Areas",
-        "ThruFlow/Platforms/iOS/Features/Areas"
+        "ThruFlow/Platforms/iOS/Features/Areas",
+        "ThruFlow/Shared/UI/Projects",
+        "ThruFlow/Shared/Domain/Models/Project.swift",
+        "ThruFlow/Shared/Application/ProjectEditingService.swift",
+        "ThruFlow/Shared/Application/AreaLifecycleService.swift"
       ],
       "review": [
         "ThruFlow/Platforms/macOS/Features/Areas",
         "ThruFlow/Platforms/iOS/Features/Areas",
         "ThruFlow/Shared/Domain/Logic/AreaValidation.swift",
-        "ThruFlow/Shared/Application/AreaEditingService.swift"
+        "ThruFlow/Shared/Application/AreaEditingService.swift",
+        "ThruFlow/Shared/UI/Projects",
+        "ThruFlow/Shared/Application/ProjectEditingService.swift",
+        "ThruFlow/Shared/Application/AreaLifecycleService.swift",
+        "ThruFlow/Platforms/watchOS/Features/WatchTaskCreationForm.swift"
       ],
       "tests": [
         "ThruFlowTests/AreaGroupOrderTests.swift",
         "ThruFlowTests/ArchivedHabitTodoTests.swift",
-        "ThruFlowTests/EditorServiceTests.swift"
+        "ThruFlowTests/EditorServiceTests.swift",
+        "ThruFlowTests/ProjectTests.swift",
+        "ThruFlowTests/AreaLifecycleTests.swift"
       ]
     },
     {

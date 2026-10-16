@@ -19,6 +19,7 @@ struct AreaListView: View {
     @State private var isShowingAddSheet = false
     @State private var editingAreaID: UUID?
     @State private var showingArchived = false
+    @State private var lifecycleError: String?
     @State private var draggedAreaID: UUID?
     @State private var dropTargetID: UUID?
     @State private var draggedGroupType: AreaType?
@@ -115,10 +116,13 @@ struct AreaListView: View {
                                         )
                                     )
                                     .contextMenu {
-                                        if !area.isArchived {
+                                        if area.isArchived {
+                                            Button(String(localized: "分野を復元"), systemImage: "arrow.uturn.backward") {
+                                                updateArchiveState(area, restore: true)
+                                            }
+                                        } else {
                                             Button(String(localized: "アーカイブする"), systemImage: "archivebox", role: .destructive) {
-                                                area.archive(calendar: calendar, dayBoundary: dayBoundary)
-                                                _ = modelContext.saveReporting(.areaUpdate)
+                                                updateArchiveState(area, restore: false)
                                             }
                                         }
                                     }
@@ -162,6 +166,11 @@ struct AreaListView: View {
                 .toggleStyle(.button)
             }
         }
+        .alert(String(localized: "記録を保存できませんでした。"), isPresented: Binding(
+            get: { lifecycleError != nil }, set: { if !$0 { lifecycleError = nil } }
+        )) {
+            Button(String(localized: "閉じる"), role: .cancel) { lifecycleError = nil }
+        }
         .onAppear(perform: normalizeSortIndexesIfNeeded)
         .sheet(isPresented: $isShowingAddSheet) {
             AreaFormView(mode: .create)
@@ -177,6 +186,16 @@ struct AreaListView: View {
                 AreaFormView(mode: .edit(editingArea))
                     .frame(width: 420)
             }
+        }
+    }
+
+    private func updateArchiveState(_ area: Area, restore: Bool) {
+        let service = AreaLifecycleService(calendar: calendar, dayBoundary: dayBoundary)
+        do {
+            if restore { try service.restore(area, modelContext: modelContext) }
+            else { try service.archive(area, modelContext: modelContext) }
+        } catch {
+            lifecycleError = String(localized: "記録を保存できませんでした。")
         }
     }
 
@@ -342,6 +361,15 @@ private struct AreaRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(area.name)
                     .font(.headline)
+
+                let projectCount = (area.projects ?? []).count
+                if projectCount > 0 {
+                    Label("\(projectCount)", systemImage: "folder")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .accessibilityLabel(String(localized: "プロジェクト"))
+                        .accessibilityValue(projectCount.formatted())
+                }
 
                 if let summary {
                     Text(summary)

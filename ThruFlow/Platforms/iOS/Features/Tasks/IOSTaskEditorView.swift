@@ -23,6 +23,7 @@ struct IOSTaskEditorView: View {
         mode: IOSTaskEditorMode,
         areas: [Area],
         fixedArea: Area? = nil,
+        project: Project? = nil,
         scheduledDate: Date? = nil,
         onSave: ((Todo) -> Void)? = nil
     ) {
@@ -35,7 +36,7 @@ struct IOSTaskEditorView: View {
         let draft: TodoDraft
         switch mode {
         case .create:
-            draft = TodoDraft(area: fixedArea, scheduledDate: scheduledDate ?? .now)
+            draft = TodoDraft(area: fixedArea ?? project?.area, project: project, scheduledDate: scheduledDate ?? .now)
         case .edit(let todo):
             draft = TodoDraft(todo: todo)
         }
@@ -74,6 +75,8 @@ struct IOSTaskEditorView: View {
                         }
                     }
                     .disabled(fixedArea != nil)
+
+                    TaskProjectPicker(area: draft.area, selection: $draft.project, currentProject: editedTodo?.project)
 
                     Picker(String(localized: "種類"), selection: $draft.measurement) {
                         ForEach(TodoMeasurement.allCases) { measurement in
@@ -229,6 +232,7 @@ struct IOSTaskEditorView: View {
         Binding(
             get: { areaID },
             set: { id in
+                if areaID != id { draft.project = nil }
                 draft.area = selectableAreas.first { $0.id == id }
                 areaID = id
             }

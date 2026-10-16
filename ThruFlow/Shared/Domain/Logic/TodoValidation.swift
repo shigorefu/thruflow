@@ -11,6 +11,7 @@ struct TodoDraft {
     var notes: String
     var hashtags: [String]
     var area: Area?
+    var project: Project?
     var measurement: TodoMeasurement
     var priority: TodoPriority
     var isRoomIfPossible: Bool
@@ -24,6 +25,7 @@ struct TodoDraft {
         notes: String = "",
         hashtags: [String] = [],
         area: Area? = nil,
+        project: Project? = nil,
         measurement: TodoMeasurement = .checkbox,
         priority: TodoPriority = .medium,
         isRoomIfPossible: Bool = false,
@@ -36,6 +38,7 @@ struct TodoDraft {
         self.notes = notes
         self.hashtags = TodoHashtagNormalizer.normalize(hashtags)
         self.area = area
+        self.project = project
         self.measurement = measurement
         self.priority = priority
         self.isRoomIfPossible = isRoomIfPossible
@@ -50,6 +53,7 @@ struct TodoDraft {
         self.notes = todo.notes ?? ""
         self.hashtags = todo.hashtags
         self.area = todo.area
+        self.project = todo.project
         self.measurement = todo.measurement
         self.priority = todo.priority
         self.isRoomIfPossible = todo.isRoomIfPossible
@@ -72,11 +76,17 @@ struct TodoDraft {
 enum TodoValidationError: Error, Equatable, LocalizedError {
     case invalidPlannedAmount
     case invalidActualProgress
+    case unavailableProject
+    case projectAreaMismatch
 
     var errorDescription: String? {
         switch self {
         case .invalidPlannedAmount:
             String(localized: "予定量は1以上にしてください。")
+        case .unavailableProject:
+            String(localized: "進行中のプロジェクトを選んでください。")
+        case .projectAreaMismatch:
+            String(localized: "選択した分野のプロジェクトを選んでください。")
         case .invalidActualProgress:
             String(localized: "進捗は0以上にしてください。")
         }

@@ -9,6 +9,8 @@ Release candidate: version **1.4.0**, build **13** across all Xcode targets.
 
 ### Added
 
+- Optional Projects within Areas, with task assignment, completion and reopening across Apple clients.
+
 - Simplified Chinese and Traditional Chinese localizations across Mac, iPhone/iPad, Watch, widgets, and permission prompts, with distinct language choices in Settings.
 - Selecting an Area in the Flow timer creates an unnamed Task for today, with title editing and visibility in Tasks.
 - Flow completion and rest forms now accept the Task name above the result memo on Mac, iPhone/iPad, and Watch.
@@ -20,6 +22,7 @@ Release candidate: version **1.4.0**, build **13** across all Xcode targets.
 
 ### Fixed
 
+- Archived Areas can be restored on Mac and iPhone/iPad without losing Tasks or Flow history.
 - Failed Task/Area saves now restore the values held by the interface on macOS 26, including Habit schedule changes, without discarding unrelated pending edits.
 
 - Toggl setup now distinguishes a connected account from active export, shows unsaved settings and delivery results, and explains missing device-identity access instead of silently skipping export.

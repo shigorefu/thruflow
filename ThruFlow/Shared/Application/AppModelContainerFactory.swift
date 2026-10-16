@@ -7,6 +7,7 @@ enum AppModelContainerFactory {
     static let appGroupIdentifier = "group.com.shigorefu.thruflow"
     static let schema = Schema([
         Area.self,
+        Project.self,
         Todo.self,
         FlowSession.self,
         FlowSegment.self,

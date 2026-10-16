@@ -1002,6 +1002,13 @@ struct IOSTaskRow: View {
                     .strikethrough(todo.isCompleted)
                     .foregroundStyle(todo.isCompleted ? .secondary : .primary)
 
+                if let project = todo.project {
+                    Label(project.name, systemImage: "folder")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+
                 HStack(spacing: 5) {
                     if let area = todo.area, !DefaultAreas.isTaskInbox(area) {
                         Text(area.name)

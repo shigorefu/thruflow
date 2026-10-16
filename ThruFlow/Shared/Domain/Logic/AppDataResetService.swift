@@ -32,6 +32,7 @@ struct AppDataResetService {
             let segments = try modelContext.fetch(FetchDescriptor<FlowSegment>())
             let breaks = try modelContext.fetch(FetchDescriptor<FlowBreak>())
             let todos = try modelContext.fetch(FetchDescriptor<Todo>())
+            let projects = try modelContext.fetch(FetchDescriptor<Project>())
             let areas = try modelContext.fetch(FetchDescriptor<Area>())
 
             for segment in segments {
@@ -46,6 +47,9 @@ struct AppDataResetService {
             for todo in todos {
                 modelContext.delete(todo)
             }
+            for project in projects {
+                modelContext.delete(project)
+            }
             for area in areas {
                 modelContext.delete(area)
             }
@@ -54,6 +58,7 @@ struct AppDataResetService {
                 !breaks.isEmpty ||
                 !sessions.isEmpty ||
                 !todos.isEmpty ||
+                !projects.isEmpty ||
                 !areas.isEmpty
 
             if hasChanges {

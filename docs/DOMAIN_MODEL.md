@@ -33,6 +33,20 @@ has no measured or focused progress, and has no FlowSession or FlowSegment
 relationship. Past and started occurrences preserve their identity and original
 goal snapshot.
 
+## Project
+
+`Project` is a finite goal within one Area, with a required nonblank name,
+optional memo, stable UUID, creation/update timestamps and optional
+`completedAt`. Its parent Area is fixed. Completion/reopening only changes the
+Project; Tasks and Flow keep their identities, progress and history. There is
+no automatic project completion and no automatic Task completion.
+
+`Todo.project` is optional. New assignments require an active Project in the
+Task's selected, unarchived Area. Existing assignments survive title/memo edits
+even after Project completion or Area archival. Generated Habit occurrences
+cannot acquire a Project through Task editing. The existing `direction`
+relationship remains the canonical Task Area.
+
 ## Todo
 
 `Todo` is the task model used by the daily `タスク` screen.
@@ -194,3 +208,13 @@ preplanning. Completed records, progress, linked Flow history, earlier days,
 manual Tasks and connector Tasks are preserved. The shared materializer repeats
 this repair for late-arriving/pre-existing occurrences even if the caller only
 supplies active Areas. Archival and cleanup use existing fields; no schema change.
+
+## Restoring an archived Area
+
+`AreaLifecycleService` owns saved archive/restore actions on both clients.
+Restoring clears `archivedAt` without replacing the Area or undeleting Tasks.
+For a Habit, the logical days from archive through the day before restoration
+are retained as a bounded interval in `habitPausePeriodsRawValue`. Independent
+manual pauses remain intact. Normal Habit materialization resumes at its next
+refresh, at most once per eligible day. Restoring on the same logical day adds
+no pause. Failed saves restore retained models as well as persisted values.

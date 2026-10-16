@@ -198,6 +198,8 @@ Released on GitHub on 2026-09-08; shipping build `10`.
 
 The unreleased work previously scoped as 1.3.2 is consolidated under 1.4.0.
 
+- Optional Projects inside Areas, with Task assignment and explicit completion/reopening.
+- Saved Area restoration on both clients, preserving Habit archive intervals and history.
 - Toggl export diagnostics distinguish disabled delivery, unsaved settings, no eligible records, and unavailable recording identity.
 
 - Simplified Chinese (`zh-Hans`) and Traditional Chinese (`zh-Hant`) across app targets, widgets, and system permission copy.
@@ -210,7 +212,7 @@ The unreleased work previously scoped as 1.3.2 is consolidated under 1.4.0.
 - Task and Area editors share validation and save commands across clients, preserving undated/unnamed Tasks and consistent Habit schedule rules.
 - Repository AI instructions are consolidated in `AGENTS.md`, with required orchestrator/macOS/iOS agreement for logic changes.
 - All Xcode target configurations now use version `1.4.0`, build `13`.
-- Publication is pending live CloudKit Production inspection, signed archives, App Store Connect processing and device smoke tests; see [Release](RELEASE.md).
+- Production schema additions were deployed and verified on 2026-10-16. Publication is pending signed archives, App Store Connect processing and device sync/smoke tests; see [Release](RELEASE.md).
 
 ## 1.3.1 — Connector mappings and synchronization fixes (released)
 

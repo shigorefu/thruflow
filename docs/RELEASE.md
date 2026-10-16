@@ -14,12 +14,22 @@ Before upload:
 - Confirm build 13 has not already been uploaded in App Store Connect; local
   metadata advances the last documented shipped build 12 but does not inspect
   the account's upload history.
-- Complete live CloudKit Production inspection. On 2026-10-16, the CLI had no
-  management token and CloudKit Console required Apple Account sign-in; the
-  current schema remains unverified for this candidate.
+- Verify signed Mac/iPhone exchange of Projects and Task assignments. The live
+  Production schema was inspected, additively updated and read back on
+  2026-10-16; see [CloudKit evidence](CLOUDKIT.md#projects-and-area-restoration--2026-10-16).
 - Produce and validate signed distribution archives, then verify the exact
   processed TestFlight builds on Mac, iPhone/iPad and Watch.
 - Keep 1.3.1 marked as the latest stable release until publication is confirmed.
+
+Local Projects/Area-restoration validation on 2026-10-16: 499 tests passed,
+including pre-Project disk-store migration and rollback. Release macOS and
+iOS/Watch builds succeeded without warnings. macOS UI was exercised using an
+isolated in-memory demo: create Project/Task, complete/reopen Project, archive and
+restore Area. The iOS 27 simulator build also succeeded without warnings and
+launched with in-memory demo data, but interactive iPhone/iPad visual QA remains
+unverified because this Xcode installation has no Simulator.app UI. The temporary
+simulator was shut down and removed. These checks do not validate signed-device
+sync or a distributed build.
 
 ## Released version 1.3.1 build 12
 

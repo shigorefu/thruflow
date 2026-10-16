@@ -11,6 +11,7 @@ struct WatchTaskCreationForm: View {
 
     @State private var saveErrorMessage: String?
     @State private var areaID: UUID?
+    @State private var project: Project?
     @State private var measurement = TodoMeasurement.checkbox
     @State private var plannedAmount = 1
     @State private var priority = TodoPriority.medium
@@ -31,6 +32,8 @@ struct WatchTaskCreationForm: View {
                             .tag(Optional(area.id))
                         }
                     }
+
+                    TaskProjectPicker(area: selectedArea, selection: $project)
 
                     Picker(String(localized: "種類"), selection: $measurement) {
                         ForEach(TodoMeasurement.allCases) { value in
@@ -82,6 +85,9 @@ struct WatchTaskCreationForm: View {
                 }
             }
             .navigationTitle(String(localized: "タスクを追加"))
+            .onChange(of: areaID) { _, newValue in
+                if project?.area?.id != newValue { project = nil }
+            }
         }
     }
 
@@ -116,6 +122,7 @@ struct WatchTaskCreationForm: View {
         saveErrorMessage = nil
         let draft = TodoDraft(
             area: selectedArea,
+            project: project,
             measurement: measurement,
             priority: priority,
             plannedAmount: measurement == .checkbox ? nil : plannedAmount,

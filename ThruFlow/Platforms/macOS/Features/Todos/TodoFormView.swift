@@ -70,6 +70,7 @@ struct TodoFormView: View {
     init(
         mode: Mode,
         fixedArea: Area? = nil,
+        project: Project? = nil,
         scheduledDate: Date? = nil,
         onSave: ((Todo) -> Void)? = nil
     ) {
@@ -80,11 +81,12 @@ struct TodoFormView: View {
         switch mode {
         case .create:
             var draft = TodoDraft()
-            draft.area = fixedArea
+            draft.area = fixedArea ?? project?.area
+            draft.project = project
             draft.scheduledDate = scheduledDate ?? .now
             _draft = State(initialValue: draft)
             _hashtagsText = State(initialValue: draft.hashtags.map { "#\($0)" }.joined(separator: " "))
-            _selectedAreaID = State(initialValue: fixedArea?.id)
+            _selectedAreaID = State(initialValue: draft.area?.id)
             _usesScheduledDate = State(initialValue: true)
             _usesDeadline = State(initialValue: false)
         case .edit(let todo):
@@ -191,6 +193,11 @@ struct TodoFormView: View {
                 systemImage: ProductSymbol.area
             ) {
                 areaControl
+            }
+
+            if !isHabitTodoEdit {
+                Divider()
+                TaskProjectPicker(area: selectedArea, selection: $draft.project, currentProject: editedTodo?.project)
             }
 
             Divider()
@@ -459,6 +466,7 @@ struct TodoFormView: View {
         Binding(
             get: { selectedAreaID },
             set: {
+                if selectedAreaID != $0 { draft.project = nil }
                 selectedAreaID = $0
                 draft.area = area(for: $0)
             }

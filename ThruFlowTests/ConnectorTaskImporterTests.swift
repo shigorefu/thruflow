@@ -547,7 +547,7 @@ struct ConnectorTaskImporterTests {
 
     @Test func externalLinkAddsNoEntityAndExistingTasksRemainUnlinked() throws {
         let schema = AppModelContainerFactory.schema
-        #expect(schema.entities.count == 5)
+        #expect(Set(schema.entities.map(\.name)) == ["Direction", "Project", "Todo", "FlowSession", "FlowSegment", "FlowBreak"])
         let entity = try #require(schema.entities.first { $0.name == "Todo" })
         let property = try #require(entity.properties.first { $0.name == "externalTaskLinkRawValue" })
         #expect(property.isOptional)

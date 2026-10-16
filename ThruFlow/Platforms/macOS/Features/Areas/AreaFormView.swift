@@ -80,6 +80,17 @@ struct AreaFormView: View {
                     }
 
                     colorCard
+                    if case .edit(let area) = mode {
+                        AreaSectionCard {
+                            ProjectManagementSection(area: area) { todo, project in
+                                TodoFormView(
+                                    mode: todo.map(TodoFormView.Mode.edit) ?? .create,
+                                    fixedArea: todo == nil ? area : nil,
+                                    project: project
+                                )
+                            }
+                        }
+                    }
                     validationCard
                     deleteCard
                 }
@@ -124,8 +135,8 @@ struct AreaFormView: View {
                 .frame(width: 560, height: 680)
         }
 #endif
-        .confirmationDialog(String(localized: "この方向を削除しますか？"), isPresented: $isShowingDeleteConfirmation) {
-            Button(String(localized: "削除"), role: .destructive, action: deleteArea)
+        .confirmationDialog(String(localized: "この分野をアーカイブしますか？"), isPresented: $isShowingDeleteConfirmation) {
+            Button(String(localized: "アーカイブする"), role: .destructive, action: deleteArea)
             Button(String(localized: "キャンセル"), role: .cancel) {}
         } message: {
             Text(String(localized: "履歴と関連タスクを保つため、方向はアーカイブされます。"))
@@ -357,18 +368,21 @@ struct AreaFormView: View {
 
     @ViewBuilder
     private var deleteCard: some View {
-        if case .edit = mode {
+        if case .edit(let area) = mode {
             AreaSectionCard {
-                Button(role: .destructive) {
-                    isShowingDeleteConfirmation = true
-                } label: {
-                    Label(String(localized: "方向を削除"), systemImage: "trash")
+                if area.isArchived {
+                    Button(String(localized: "分野を復元"), systemImage: "arrow.uturn.backward", action: restoreArea)
                         .frame(maxWidth: .infinity)
+                        .buttonStyle(.borderedProminent)
+                } else {
+                    Button(role: .destructive) {
+                        isShowingDeleteConfirmation = true
+                    } label: {
+                        Label(String(localized: "アーカイブする"), systemImage: "archivebox")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(.red)
-                .controlSize(.large)
-                .accessibilityHint(String(localized: "この方向を削除します"))
             }
         }
     }
@@ -459,9 +473,24 @@ struct AreaFormView: View {
     private func deleteArea() {
         guard case .edit(let area) = mode else { return }
 
-        area.archive(calendar: calendar, dayBoundary: dayBoundary)
-        guard modelContext.saveReporting(.areaUpdate) else { return }
-        dismiss()
+        do {
+            try AreaLifecycleService(calendar: calendar, dayBoundary: dayBoundary)
+                .archive(area, modelContext: modelContext)
+            dismiss()
+        } catch {
+            saveErrorMessage = String(localized: "記録を保存できませんでした。")
+        }
+    }
+
+    private func restoreArea() {
+        guard case .edit(let area) = mode else { return }
+        do {
+            try AreaLifecycleService(calendar: calendar, dayBoundary: dayBoundary)
+                .restore(area, modelContext: modelContext)
+            dismiss()
+        } catch {
+            saveErrorMessage = String(localized: "記録を保存できませんでした。")
+        }
     }
 
     private var logicalToday: Date {

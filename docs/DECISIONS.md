@@ -954,3 +954,18 @@ Release preparation advances all target version/build settings from 1.3.1 (12)
 to 1.4.0 (13). The earlier decision to retain shipping metadata until preparation
 is now fulfilled. Historical releases and incident version numbers remain intact.
 No tag, GitHub release, App Store upload or publication is implied by this bump.
+
+### 2026-10-16 — Optional Projects and reversible Area archival (1.4.0)
+
+The maintainer approved Area → optional Project → Task, with Projects managed
+inside Area and direct Tasks retained. A Project has a fixed Area, name, memo,
+and explicit complete/reopen state. It does not change Task completion, timer
+behavior, historical attribution or connector mappings. New assignments require
+an active Project and parent Area; existing assignments survive editing.
+Generated Habit instances remain Area-owned. Additive optional relationships
+preserve existing stores and require the live CloudKit schema gate.
+
+Archived Area restoration was absent from both clients. Add one shared saved
+lifecycle command and native restore actions. Preserve identity/history and
+retired Task tombstones. Habit restoration records the inactive logical-day
+interval using the existing pause field, preserving independent manual pauses.

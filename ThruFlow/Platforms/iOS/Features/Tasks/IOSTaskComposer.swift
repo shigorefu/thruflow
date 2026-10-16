@@ -15,6 +15,7 @@ struct IOSTaskComposer: View {
 
     @State private var title = ""
     @State private var areaID: UUID?
+    @State private var project: Project?
     @State private var measurement = TodoMeasurement.checkbox
     @State private var plannedAmount = 1
     @State private var priority = TodoPriority.medium
@@ -54,6 +55,7 @@ struct IOSTaskComposer: View {
 
         _title = State(initialValue: initialTitle)
         _areaID = State(initialValue: draft.area?.id)
+        _project = State(initialValue: draft.project)
         _measurement = State(initialValue: draft.measurement)
         _plannedAmount = State(initialValue: max(1, draft.plannedAmount ?? 1))
         _priority = State(initialValue: draft.priority)
@@ -135,6 +137,10 @@ struct IOSTaskComposer: View {
                         HStack(spacing: 6) {
                             measurementMenu
                             areaMenu
+                            if selectedArea != nil {
+                                TaskProjectPicker(area: selectedArea, selection: $project)
+                                    .pickerStyle(.menu)
+                            }
                             priorityMenu
                             dateMenu
                         }
@@ -189,6 +195,7 @@ struct IOSTaskComposer: View {
             updateExistingInlineToken(.measurement(measurement, newValue))
         }
         .onChange(of: areaID) { _, newValue in
+            if project?.area?.id != newValue { project = nil }
             updateExistingInlineToken(newValue.map(IOSTaskComposerInlineToken.area), id: "area")
         }
         .onChange(of: priority) { _, newValue in
@@ -526,6 +533,7 @@ struct IOSTaskComposer: View {
         !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             || hasExplicitMeasurement || hasExplicitArea || hasExplicitPriority || hasExplicitDate
             || !inlineTokens.isEmpty || !hashtags.isEmpty
+            || project != nil
     }
 
     private var measurementTitle: String {
@@ -821,6 +829,8 @@ struct IOSTaskComposer: View {
         draft.title = result.title
         draft.hashtags = TodoHashtagNormalizer.normalize(hashtags + result.hashtags)
         draft.area = areas.first { $0.id == (result.areaID ?? areaID) }
+        // A trailing @ token can change the Area synchronously on submission.
+        draft.project = project?.area?.id == draft.area?.id ? project : nil
         draft.measurement = result.measurement ?? measurement
         draft.plannedAmount = result.measurement == nil ? plannedAmount : result.plannedAmount ?? 1
         draft.priority = result.priority ?? priority
@@ -845,6 +855,7 @@ struct IOSTaskComposer: View {
         isRoomIfPossible = false
         scheduledDate = currentAppDay
         areaID = nil
+        project = nil
         hasExplicitMeasurement = false
         hasExplicitArea = false
         hasExplicitPriority = false

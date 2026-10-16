@@ -20,6 +20,7 @@ final class EditorMutationJournal {
         remember(todo, \.notes)
         remember(todo, \.hashtagsRawValue)
         remember(todo, \.direction)
+        remember(todo, \.project)
         remember(todo, \.measurementRawValue)
         remember(todo, \.priorityRawValue)
         remember(todo, \.isRoomIfPossible)
@@ -47,6 +48,15 @@ final class EditorMutationJournal {
         remember(area, \.weeklyTargetCount)
         remember(area, \.weekdayMask)
         remember(area, \.updatedAt)
+        remember(area, \.archivedAt)
+        remember(area, \.habitPausePeriodsRawValue)
+    }
+
+    func capture(_ project: Project) {
+        remember(project, \.name)
+        remember(project, \.notes)
+        remember(project, \.completedAt)
+        remember(project, \.updatedAt)
     }
 
     func restore(modelContext: ModelContext) {

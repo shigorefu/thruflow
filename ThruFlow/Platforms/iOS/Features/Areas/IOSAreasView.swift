@@ -14,6 +14,7 @@ struct IOSAreasView: View {
     @State private var showingArchived = false
     @State private var isEditingOrder = false
     @State private var showsGroupOrder = false
+    @State private var saveErrorMessage: String?
 
     init() {
         let first = AreaGroupOrder.defaultValue.first ?? .habit
@@ -69,10 +70,16 @@ struct IOSAreasView: View {
                         }
                         .buttonStyle(.plain)
                         .swipeActions(edge: .trailing) {
-                            if !area.isArchived {
+                            if area.isArchived {
+                                Button {
+                                    updateArchiveState(area, archived: false)
+                                } label: {
+                                    Label(String(localized: "分野を復元"), systemImage: "arrow.uturn.backward")
+                                }
+                                .tint(.accentColor)
+                            } else {
                                 Button(role: .destructive) {
-                                    area.archive(calendar: calendar, dayBoundary: dayBoundary)
-                                    _ = modelContext.saveReporting(.areaUpdate)
+                                    updateArchiveState(area, archived: true)
                                 } label: {
                                     Label(String(localized: "アーカイブする"), systemImage: "archivebox")
                                 }
@@ -94,6 +101,14 @@ struct IOSAreasView: View {
             .environment(\.editMode, .constant(isEditingOrder ? .active : .inactive))
         }
         .iosCenteredNavigationTitle(String(localized: "方向"))
+        .alert(String(localized: "記録を保存できませんでした。"), isPresented: Binding(
+            get: { saveErrorMessage != nil },
+            set: { if !$0 { saveErrorMessage = nil } }
+        )) {
+            Button(String(localized: "完了"), role: .cancel) { saveErrorMessage = nil }
+        } message: {
+            Text(saveErrorMessage ?? "")
+        }
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Menu {
@@ -142,9 +157,19 @@ struct IOSAreasView: View {
                 .frame(width: 44, height: 44)
                 .background(Color(hex: area.colorHex).opacity(0.16), in: RoundedRectangle(cornerRadius: 10))
 
-            Text(area.name)
-                .font(.body.weight(.semibold))
-                .foregroundStyle(.primary)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(area.name)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.primary)
+                let projectCount = (area.projects ?? []).count
+                if projectCount > 0 {
+                    Label("\(projectCount)", systemImage: "folder")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .accessibilityLabel(String(localized: "プロジェクト"))
+                        .accessibilityValue(projectCount.formatted())
+                }
+            }
 
             Spacer(minLength: 0)
             Image(systemName: isEditingOrder ? "line.3.horizontal" : "chevron.right")
@@ -168,6 +193,19 @@ struct IOSAreasView: View {
             area.setSortIndex(index)
         }
         _ = modelContext.saveReporting(.areaUpdate)
+    }
+
+    private func updateArchiveState(_ area: Area, archived: Bool) {
+        let service = AreaLifecycleService(calendar: calendar, dayBoundary: dayBoundary)
+        do {
+            if archived {
+                try service.archive(area, modelContext: modelContext)
+            } else {
+                try service.restore(area, modelContext: modelContext)
+            }
+        } catch {
+            saveErrorMessage = String(localized: "記録を保存できませんでした。")
+        }
     }
 
     private func areaSort(_ lhs: Area, _ rhs: Area) -> Bool {
