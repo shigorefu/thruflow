@@ -194,7 +194,7 @@ Released on GitHub on 2026-09-08; shipping build `10`.
   required GitHub CI status resolvable. Run the complete Apple gate whenever
   any non-Markdown file changes.
 
-## 1.4.0 — In development
+## 1.4.0 — Release preparation
 
 The unreleased work previously scoped as 1.3.2 is consolidated under 1.4.0.
 
@@ -209,7 +209,8 @@ The unreleased work previously scoped as 1.3.2 is consolidated under 1.4.0.
 - Archiving a Habit Area retires unused preplanned Tasks while preserving progress and history; the Mac editor explicitly saves archival.
 - Task and Area editors share validation and save commands across clients, preserving undated/unnamed Tasks and consistent Habit schedule rules.
 - Repository AI instructions are consolidated in `AGENTS.md`, with required orchestrator/macOS/iOS agreement for logic changes.
-- Shipping version/build metadata remains at 1.3.1 (12) until release preparation.
+- All Xcode target configurations now use version `1.4.0`, build `13`.
+- Publication is pending live CloudKit Production inspection, signed archives, App Store Connect processing and device smoke tests; see [Release](RELEASE.md).
 
 ## 1.3.1 — Connector mappings and synchronization fixes (released)
 

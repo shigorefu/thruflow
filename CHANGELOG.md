@@ -5,6 +5,8 @@ Release dates below record GitHub publication in Asia/Tokyo (JST).
 
 ## [1.4.0] - Unreleased
 
+Release candidate: version **1.4.0**, build **13** across all Xcode targets.
+
 ### Added
 
 - Simplified Chinese and Traditional Chinese localizations across Mac, iPhone/iPad, Watch, widgets, and permission prompts, with distinct language choices in Settings.
@@ -274,7 +276,7 @@ App, extensions, Watch, and test targets use version **1.3.0**, build **11**.
 
 - Improved History timeline editing and natural localized copy before release.
 
-[1.4.0]: https://github.com/shigorefu/thruflow/compare/v1.3.1...1.4.0
+[1.4.0]: https://github.com/shigorefu/thruflow/compare/v1.3.1...main
 [1.3.1]: https://github.com/shigorefu/thruflow/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/shigorefu/thruflow/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/shigorefu/thruflow/compare/v1.1.0...v1.2.0

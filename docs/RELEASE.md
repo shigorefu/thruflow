@@ -2,6 +2,25 @@
 
 This document is the operational checklist for ThruFlow releases. Product scope remains in [`ROADMAP.md`](ROADMAP.md), and CloudKit details remain in [`CLOUDKIT.md`](CLOUDKIT.md).
 
+## Release candidate 1.4.0 build 13
+
+Prepared on 2026-10-16 from the merged 1.4.0 development scope. All Debug and
+Release configurations for macOS, iOS, Watch, the widget/Live Activity extension
+and test bundles use marketing version `1.4.0`, build `13`. This is preparation,
+not a published release. See [draft release notes](releases/1.4.0.md).
+
+Before upload:
+
+- Confirm build 13 has not already been uploaded in App Store Connect; local
+  metadata advances the last documented shipped build 12 but does not inspect
+  the account's upload history.
+- Complete live CloudKit Production inspection. On 2026-10-16, the CLI had no
+  management token and CloudKit Console required Apple Account sign-in; the
+  current schema remains unverified for this candidate.
+- Produce and validate signed distribution archives, then verify the exact
+  processed TestFlight builds on Mac, iPhone/iPad and Watch.
+- Keep 1.3.1 marked as the latest stable release until publication is confirmed.
+
 ## Released version 1.3.1 build 12
 
 The maintainer confirmed on 2026-09-21 that 1.3.1 has shipped. macOS and iOS/Watch
