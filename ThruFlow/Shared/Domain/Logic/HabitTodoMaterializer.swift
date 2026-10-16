@@ -74,6 +74,14 @@ struct HabitTodoMaterializer {
             }
         }
 
+        // A calendar may have generated future days before archiving, including
+        // records received later from another device. The Area need not be in
+        // the caller's active-area list for these unused occurrences to retire.
+        let archivedChanged = ArchivedHabitTodoReconciler(
+            calendar: calendar, dayBoundary: dayBoundary
+        ).reconcile(todos: todos, now: now)
+        changed = archivedChanged || changed
+
         var knownTodos = todos.filter { !$0.isDeleted && !$0.isArchived }
         var nextSortIndex = (knownTodos.map(\.sortIndex).min() ?? 0) - 1
         let today = dayBoundary.day(containing: now, calendar: calendar)

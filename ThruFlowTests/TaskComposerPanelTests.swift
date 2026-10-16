@@ -15,6 +15,9 @@ import Testing
         defer { window.close() }
         let anchor = TaskComposerSuggestionAnchorView(frame: NSRect(x: 0, y: 0, width: 400, height: 90))
         window.contentView = anchor
+        // Suggestions only exist while their real host is visible.
+        window.orderFrontRegardless()
+        #expect(window.isVisible)
         let originalFrame = window.frame
         anchor.update(content: AnyView(Text("Suggestion").padding().frame(width: 320)), isPresented: true, showsBelow: showsBelow)
         let panel = try #require(window.childWindows?.first)

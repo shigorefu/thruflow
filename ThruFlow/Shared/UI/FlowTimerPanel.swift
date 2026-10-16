@@ -18,6 +18,7 @@ struct FlowTimerPresentation {
     let eyebrow: String
     let timeText: String
     let footer: String
+    var slices: [FlowTimerRingSlice] = []
 }
 
 /// Production Flow player chrome shared by the real player and onboarding.
@@ -93,7 +94,8 @@ struct FlowTimerPanelShell<Context: View, Mode: View, Controls: View>: View {
             eyebrow: timer.eyebrow,
             timeText: timer.timeText,
             footer: timer.footer,
-            style: style.timerStyle
+            style: style.timerStyle,
+            slices: timer.slices
         )
 
         if let timerAccessibilityLabel {

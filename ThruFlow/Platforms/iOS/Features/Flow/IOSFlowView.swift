@@ -120,10 +120,11 @@ struct IOSFlowView: View {
         .sheet(isPresented: $showsMemo) {
             IOSFlowMemoView(
                 isBreakMemo: activeFlowStore.isAwaitingBreakMemo,
+                taskTitle: activeFlowStore.activeSession?.todo?.title,
                 cancel: cancelMemo,
                 submit: submitMemo
             )
-            .presentationDetents([.medium])
+            .presentationDetents([.medium, .large])
         }
         .sheet(item: $editorMode) { mode in
             NavigationStack {
@@ -303,7 +304,8 @@ struct IOSFlowView: View {
                 tint: timerTint(at: now),
                 eyebrow: activeFlowStore.phase.displayName,
                 timeText: timerText(at: now),
-                footer: activeFlowStore.selectedMode.displayName
+                footer: activeFlowStore.selectedMode.displayName,
+                slices: activeFlowStore.timerRingSlices(now: now)
             )
         ) {
             contextButton(now: now)
@@ -329,6 +331,20 @@ struct IOSFlowView: View {
             action: { showsContextPicker = true }
         ) {
             Text(selectedContextTitle)
+                .highPriorityGesture(
+                    TapGesture(count: 2).exclusively(before: TapGesture(count: 1))
+                        .onEnded { gesture in
+                            switch gesture {
+                            case .first:
+                                if let selectedTodo { editorMode = .edit(selectedTodo) }
+                            case .second:
+                                showsContextPicker = true
+                            }
+                        }
+                )
+                .accessibilityAction(named: String(localized: "タスク名を編集")) {
+                    if let selectedTodo { editorMode = .edit(selectedTodo) }
+                }
         } progress: {
             Group {
                 if let todo = selectedTodo {
@@ -690,11 +706,10 @@ struct IOSFlowView: View {
     }
 
     private func select(area: Area, todo: Todo?) {
-        if activeFlowStore.timerState == nil {
-            activeFlowStore.configure(area: area, todo: todo)
-        } else {
-            activeFlowStore.selectContext(area: area, todo: todo, modelContext: modelContext)
-        }
+        activeFlowStore.selectPickerContext(
+            area: area, todo: todo, modelContext: modelContext,
+            calendar: calendar, dayBoundary: dayBoundary
+        )
     }
 
     private func inspectTimelineSelection(_ selection: IOSFlowTimelineSelection) {
@@ -804,13 +819,14 @@ struct IOSFlowView: View {
         showsMemo = false
     }
 
-    private func submitMemo(_ memo: String?) {
+    private func submitMemo(_ memo: String?, taskTitle: String?) {
+        let didSave: Bool
         if activeFlowStore.isAwaitingBreakMemo {
-            activeFlowStore.completeBreakMemo(memo, modelContext: modelContext)
+            didSave = activeFlowStore.completeBreakMemo(memo, taskTitle: taskTitle, modelContext: modelContext)
         } else {
-            activeFlowStore.completeResult(memo, modelContext: modelContext)
+            didSave = activeFlowStore.completeResult(memo, taskTitle: taskTitle, modelContext: modelContext)
         }
-        showsMemo = false
+        if didSave { showsMemo = false }
     }
 
     private func presentTaskComposer() {

@@ -814,3 +814,135 @@ on macOS and iOS. Only Continue creates the setup content and allows its saved
 credential read; Cancel returns to the provider list. The macOS explanation
 prepares users for the possible system access/password prompt. This adds no
 permission override and preserves noninteractive automatic synchronization.
+
+### 2026-09-25 — Segmented focus timer colors (1.4.0)
+
+The focus timer ring uses existing FlowSegment focused-second ranges and Area
+colors on macOS, iOS/iPadOS, and watchOS. Earlier recorded context keeps its
+color when another Task is selected. Pause, restoration, and duration changes
+use the same persisted ranges, excluding paused wall time. The existing
+sub-minute transfer rule is unchanged. No persisted model or CloudKit schema
+change is needed; widget and Live Activity snapshot formats are unchanged.
+
+
+### 2026-09-28 — Earned rest and actual recovery (1.4.0)
+
+Replace counting created long-break records with a chronological projection of
+actual focus and rest. Sprint retains 3 minutes; one, two, and three uninterrupted
+Blocks earn 5, 10, and 15 minutes. Skipped ordinary rest carries focus forward;
+partial ordinary rest pays the short-rest balance. At four accumulated Blocks
+since the last fully paid long rest, recommend 20 minutes; at five recommend 25,
+and at six or more cap at 30. Earlier short rests do not pay the long-rest
+balance. Partial long rest does, including when the user resumes before its
+timer finishes. Reset the cycle only when actual long rest pays the target.
+Keep existing Block rounding and series continuation at 1.5 times the initial
+rest recommendation; manual timer adjustments do not change earned rest.
+Use existing FlowSession/FlowBreak records and explicit runtime long-rest
+identity, including remaining balances below 20 minutes. No schema change.
+
+
+### 2026-10-06 — Area selection creates an unnamed Flow Task
+
+Supersedes the no-implicit-Task rule for explicit Area selection in the timer
+picker only. Create an unnamed Check Todo scheduled for the current app day,
+with `habitOccurrence = false`, and select it through the existing context
+switch path. It is visible in Tasks and reuses existing placeholder display and
+Mac double-click title editing; iPhone/iPad double-tap opens Task editing.
+Default configuration, opening the picker, and historical Area-only Flow remain
+unchanged. The Flow completion/rest form saves Task name above the result memo;
+existing titles are prefilled, empty names remain valid, cancel discards drafts,
+and empty memo submission preserves existing Task notes. Saving Flow does not
+automatically mark a Check Task completed. All platforms use the same creation
+and save operations. Existing persisted fields suffice; no schema migration.
+
+
+### 2026-10-14 — Retire preplanned Habit occurrences on Area archival
+
+Archival must retire unstarted generated occurrences from the Area's logical
+archive day onward, not merely prevent new generation. Preserve completed or
+started Tasks, Flow links, earlier dates, manual Tasks and connector imports.
+Repeat the idempotent repair during Habit materialization to handle existing
+and late-arriving records. Every Area archive UI saves the archive and cleanup
+together; a failed save keeps editors open. No persisted schema change.
+
+### 2026-10-16 — Simplified and Traditional Chinese localization (1.4.0)
+
+Support `zh-Hans` and `zh-Hant` independently across the shared app and
+InfoPlist catalogs. Keep full locale identifiers in the Mac/iOS language picker
+and persisted language preference. Japanese remains the default and fallback;
+app and provider brand names, persisted models, user content, and universal
+English quick-input aliases stay unchanged. Both Chinese catalogs, format
+placeholders, glossary terms, and built app resources are covered by tests.
+
+Chinese language selection also shows a quiet caption explaining that the
+translation uses AI and may contain inaccuracies, with a link to support for
+reporting issues. Both Mac and iPhone/iPad use the same notice.
+
+
+### 2026-10-16 — Shared Task and Area editing commands (1.4.0)
+
+All native Task editors and manual quick-capture forms use
+`TaskEditingService`; Mac and iOS Area editors use `AreaEditingService`.
+Shared code owns normalization, validation, generated Habit field protection,
+Other Area fallback, ordering, persistence and rollback. Existing unnamed and
+undated Tasks stay valid; a current archived Area survives editing. A manual
+Task in a Habit Area remains independent. An untouched empty composer remains
+a no-op, while explicit metadata permits unnamed creation.
+
+Area drafts share type/schedule normalization and reject a weekday Habit with
+no selected days. Habit schedule reconciliation is saved atomically with the
+Area update and preserves started Tasks and history. Native callers dismiss,
+clear input and invoke success callbacks only after a successful save.
+
+Platform presentation remains native: Mac shows validation errors on Save and
+retains quick-capture presets; iOS validates live and resets presets after
+success. iOS preserves live progress/deadline values because its editor does
+not expose those fields. Mac edits those fields explicitly. No persisted model,
+CloudKit schema, widget snapshot, or runtime dependency changes are required.
+
+The orchestrator and both client agents agreed on the command contract before
+implementation and exchanged counterpart reviews. Remaining token reducers,
+bulk Task operations and other extraction candidates are tracked in Architecture.
+
+Verification for this extraction: macOS and iOS agents both agreed after mutual
+final review, including Watch creation, with no unresolved source objections.
+The full macOS suite passed 473 tests across 46 suites (14 editor-service
+regressions); final macOS and iOS/embedded Watch Release builds passed without
+compiler warnings. Eight platform-review tooling tests also passed.
+An isolated Mac app verified weekday validation, manual unnamed creation in a
+Habit Area, and saving a Task without a date. Interactive iPhone/iPad and Watch
+checks remain unverified; builds and shared tests do not establish UI parity.
+
+
+### 2026-10-16 — Toggl export feedback and release scope 1.4.0
+
+The maintainer confirmed outgoing ThruFlow-to-Toggl delivery only. Preserve
+recording-device ownership, activation cutoff, immutable exported payloads and
+uncertain-delivery safeguards. A connected account must not imply export is on.
+Use the same setup state and synchronization result on Mac and iOS; explicit
+setup can authorize the recording identity, while automatic sync remains
+noninteractive. Missing identity must produce an actionable error. No new
+persisted fields or CloudKit schema changes are needed.
+
+Rename the unreleased 1.3.2 branch and scope to 1.4.0, retaining every existing
+change. Shipping metadata stays at 1.3.1 (12) until release preparation.
+
+
+### 2026-10-16 — Restore editor-owned changes before SwiftData rollback
+
+PR #26 exposed two retained-model rollback failures on the macOS 26 CI runner:
+persisted records reverted, but a Task title and a reconciled Habit tombstone
+remained changed in objects held by the UI. The local macOS 27 suite did not
+reproduce this difference. Both native clients now share an editor mutation
+journal, following the existing connector import recovery pattern.
+
+The journal restores fields touched by Task editing, Area editing and Habit
+schedule reconciliation, including connector completion metadata. It removes
+new records created during the failed operation and rolls back the context only
+when no edits were already pending. Pre-existing pending edits and insertions
+remain available. Native forms still keep their drafts and report save errors.
+No persisted fields or CloudKit schema are changed.
+
+macOS and iOS agents explicitly agreed on this contract and reviewed each
+other's implementation/tests. The original failing assertions remain, with
+additional retained-field, relationship, pending-edit and insertion coverage.

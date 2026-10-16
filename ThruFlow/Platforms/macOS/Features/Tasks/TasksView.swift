@@ -48,7 +48,6 @@ struct TasksView: View {
     }
     private var searchBuilder: DatabaseSearchBuilder { DatabaseSearchBuilder(calendar: calendar) }
     private let progress = TodoProgressCalculator()
-    private let validator = TodoValidator()
 
     private var isSearching: Bool {
         DatabaseSearchQuery(text: searchText).isActive
@@ -763,7 +762,7 @@ struct TasksView: View {
         _ = modelContext.saveReporting(.taskUpdate)
     }
 
-    private func createInlineTodo() {
+    private func createInlineTodo() -> Bool {
         let draft = TodoDraft(
             title: newTodoTitle,
             hashtags: newTodoHashtags,
@@ -777,36 +776,15 @@ struct TasksView: View {
                 dayBoundary: dayBoundary
             )
         )
-        let errors = validator.validate(draft)
-
-        guard errors.isEmpty else {
+        do {
+            _ = try TaskEditingService().save(draft: draft, modelContext: modelContext)
+        } catch TaskEditingError.validation(let errors) {
             newTodoError = errors.map(\.localizedDescription).joined(separator: "\n")
-            return
+            return false
+        } catch {
+            newTodoError = String(localized: "記録を保存できませんでした。")
+            return false
         }
-
-        let area = resolvedArea(for: newTodoAreaID)
-        let todo = Todo(
-            title: draft.trimmedTitle,
-            hashtags: draft.hashtags,
-            area: area,
-            habitOccurrence: false,
-            measurement: newTodoVolume.measurement,
-            priority: newTodoPriority,
-            isRoomIfPossible: newTodoPriority == .low && newTodoIsRoomIfPossible,
-            plannedAmount: newTodoVolume.plannedAmount,
-            status: progress.status(
-                measurement: newTodoVolume.measurement,
-                plannedAmount: newTodoVolume.plannedAmount,
-                actualProgress: 0
-            ),
-            scheduledDate: newTodoDateOption.resolvedDate(
-                calendar: calendar,
-                dayBoundary: dayBoundary
-            ),
-            sortIndex: (todos.map(\.sortIndex).min() ?? 0) - 1
-        )
-        modelContext.insert(todo)
-        _ = modelContext.saveReporting(.taskUpdate)
 
         newTodoTitle = ""
         newTodoHashtags = []
@@ -814,6 +792,7 @@ struct TasksView: View {
             newTodoIsRoomIfPossible = false
         }
         newTodoError = nil
+        return true
     }
 
     private func ensureRequiredTodosForVisibleDates(
@@ -884,20 +863,6 @@ struct TasksView: View {
         let appToday = dayBoundary.day(containing: now, calendar: calendar)
         selectedDate = appToday
         anchorDate = appToday
-    }
-
-    private func resolvedArea(for id: UUID?) -> Area {
-        if let area = area(for: id) {
-            return area
-        }
-
-        if let taskInbox = DefaultAreas.existingTaskInbox(in: activeAreas) {
-            return taskInbox
-        }
-
-        let taskInbox = DefaultAreas.makeTaskInbox()
-        modelContext.insert(taskInbox)
-        return taskInbox
     }
 
     private func area(for id: UUID?) -> Area? {
@@ -1044,7 +1009,7 @@ struct MessengerTodoComposer: View {
     var suggestionsBelow = false
     var allowsQuickInputLegend = true
     var onCancel: (() -> Void)?
-    let onSubmit: () -> Void
+    let onSubmit: () -> Bool
 
     @FocusState private var isFocused: Bool
     @AppStorage("settings.showsTaskQuickInputLegend") private var showsQuickInputLegend = true
@@ -1244,6 +1209,7 @@ struct MessengerTodoComposer: View {
     }
 
     private func submit() {
+        guard canSubmit else { return }
         let result = parser.parse(
             title,
             areas: parserAreas,
@@ -1260,8 +1226,9 @@ struct MessengerTodoComposer: View {
         }
         pendingAreaName = nil
         parserMessage = nil
-        onSubmit()
-        clearInlineTokensAfterSubmission()
+        if onSubmit() {
+            clearInlineTokensAfterSubmission()
+        }
         isFocused = true
     }
 
@@ -1271,6 +1238,11 @@ struct MessengerTodoComposer: View {
 
     private var hasComposerContent: Bool {
         !trimmedTitle.isEmpty || !inlineTokens.isEmpty
+    }
+
+    private var canSubmit: Bool {
+        hasComposerContent || hasExplicitArea || hasExplicitPriority || hasExplicitDate
+            || volume != .unspecified || !hashtags.isEmpty
     }
 
     private var autocompleteToken: String? {
@@ -1307,8 +1279,8 @@ struct MessengerTodoComposer: View {
         .help(String(localized: "タスクを追加"))
         .accessibilityLabel(String(localized: "タスクを追加"))
         .accessibilityIdentifier("task.composer.submit")
-        .disabled(trimmedTitle.isEmpty)
-        .opacity(trimmedTitle.isEmpty ? 0.45 : 1)
+        .disabled(!canSubmit)
+        .opacity(canSubmit ? 1 : 0.45)
     }
 
     private var quickInputLegend: some View {
@@ -1511,8 +1483,9 @@ struct MessengerTodoComposer: View {
                 removeAreaToken(named: name)
                 pendingAreaName = nil
                 parserMessage = nil
-                onSubmit()
-                clearInlineTokensAfterSubmission()
+                if onSubmit() {
+                    clearInlineTokensAfterSubmission()
+                }
             }
             .buttonStyle(.bordered)
         }
@@ -1773,12 +1746,12 @@ struct QuickTodoCreationPopover: View {
     @Environment(\.calendar) private var calendar
     @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \Todo.sortIndex, order: .forward) private var allTodos: [Todo]
 
     let areas: [Area]
     let showsQuickInputLegend: Bool
     let suggestionsBelow: Bool
     let initialDraft: TodoDraft?
+    let isPresented: Binding<Bool>?
     let onCreated: ((Todo) -> Void)?
 
     @State private var title = ""
@@ -1790,21 +1763,20 @@ struct QuickTodoCreationPopover: View {
     @State private var hashtags: [String] = []
     @State private var validationMessage: String?
 
-    private let validator = TodoValidator()
-    private let progressCalculator = TodoProgressCalculator()
-
     init(
         areas: [Area],
         scheduledDate: Date? = .now,
         showsQuickInputLegend: Bool = true,
         suggestionsBelow: Bool = false,
         initialDraft: TodoDraft? = nil,
+        isPresented: Binding<Bool>? = nil,
         onCreated: ((Todo) -> Void)? = nil
     ) {
         self.areas = areas
         self.showsQuickInputLegend = showsQuickInputLegend
         self.suggestionsBelow = suggestionsBelow
         self.initialDraft = initialDraft
+        self.isPresented = isPresented
         self.onCreated = onCreated
 
         let resolvedScheduledDate: Date?
@@ -1861,13 +1833,22 @@ struct QuickTodoCreationPopover: View {
             showsOuterBackground: false,
             suggestionsBelow: suggestionsBelow,
             allowsQuickInputLegend: showsQuickInputLegend,
-            onCancel: { dismiss() },
+            onCancel: closeComposer,
             onSubmit: createTodo
         )
         .frame(width: 520)
+        .onExitCommand(perform: closeComposer)
     }
 
-    private func createTodo() {
+    private func closeComposer() {
+        if let isPresented {
+            isPresented.wrappedValue = false
+        } else {
+            dismiss()
+        }
+    }
+
+    private func createTodo() -> Bool {
         validationMessage = nil
         let selectedArea = selectedAreaID.flatMap { id in
             selectableAreas.first { $0.id == id }
@@ -1885,54 +1866,18 @@ struct QuickTodoCreationPopover: View {
             scheduledDate: dateOption.resolvedDate(calendar: calendar, dayBoundary: dayBoundary),
             deadline: initialDraft?.deadline
         )
-        let errors = validator.validate(draft)
-
-        guard errors.isEmpty else {
-            validationMessage = errors.map(\.localizedDescription).joined(separator: "\n")
-            return
-        }
-
-        let area = selectedArea ?? resolvedOtherArea()
-        let todo = Todo(
-            title: draft.trimmedTitle,
-            notes: draft.trimmedNotes,
-            hashtags: draft.hashtags,
-            area: area,
-            habitOccurrence: false,
-            measurement: volume.measurement,
-            priority: priority,
-            isRoomIfPossible: priority == .low && isRoomIfPossible,
-            plannedAmount: volume.plannedAmount,
-            actualProgress: draft.actualProgress,
-            status: progressCalculator.status(
-                measurement: volume.measurement,
-                plannedAmount: volume.plannedAmount,
-                actualProgress: draft.actualProgress
-            ),
-            scheduledDate: draft.scheduledDate,
-            deadline: draft.deadline,
-            sortIndex: (allTodos.map(\.sortIndex).min() ?? 0) - 1
-        )
-        modelContext.insert(todo)
-
         do {
-            try modelContext.save()
+            let todo = try TaskEditingService().save(draft: draft, modelContext: modelContext)
             onCreated?(todo)
-            dismiss()
+            closeComposer()
+            return true
+        } catch TaskEditingError.validation(let errors) {
+            validationMessage = errors.map(\.localizedDescription).joined(separator: "\n")
+            return false
         } catch {
-            modelContext.rollback()
             validationMessage = String(localized: "記録を保存できませんでした。")
+            return false
         }
-    }
-
-    private func resolvedOtherArea() -> Area {
-        if let existing = DefaultAreas.existingTaskInbox(in: activeAreas) {
-            return existing
-        }
-
-        let area = DefaultAreas.makeTaskInbox()
-        modelContext.insert(area)
-        return area
     }
 }
 

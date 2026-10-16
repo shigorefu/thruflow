@@ -43,13 +43,6 @@ struct FlowTimerDial: View {
             case .dashboard: Color.primary.opacity(0.08)
             }
         }
-
-        var progressAnimation: Animation? {
-            switch self {
-            case .mobile, .dashboard:
-                .easeInOut(duration: 0.38)
-            }
-        }
     }
 
     let progress: Double
@@ -59,24 +52,19 @@ struct FlowTimerDial: View {
     let footer: String
     let style: Style
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    var slices: [FlowTimerRingSlice] = []
 
     var body: some View {
         ZStack {
             Circle()
                 .stroke(style.trackColor, lineWidth: style.lineWidth)
 
-            Circle()
-                .trim(from: 0, to: clampedProgress)
-                .stroke(
-                    tint,
-                    style: StrokeStyle(lineWidth: style.lineWidth, lineCap: .round)
-                )
-                .rotationEffect(.degrees(-90))
-                .animation(
-                    reduceMotion ? nil : style.progressAnimation,
-                    value: clampedProgress
-                )
+            FlowTimerProgressRing(
+                progress: progress,
+                tint: tint,
+                slices: slices,
+                lineWidth: style.lineWidth
+            )
 
             VStack(spacing: style.contentSpacing) {
                 Text(eyebrow)
@@ -95,7 +83,4 @@ struct FlowTimerDial: View {
         .frame(width: style.size, height: style.size)
     }
 
-    private var clampedProgress: Double {
-        min(max(progress, 0), 1)
-    }
 }

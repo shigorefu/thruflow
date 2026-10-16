@@ -4,18 +4,35 @@
 
 `ThruFlow/Localisation/Localizable.xcstrings` owns in-app user-facing copy.
 `ThruFlow/Localisation/InfoPlist.xcstrings` owns the system-visible application
-name used below the icon and in the macOS menu bar. Japanese is the development
+name used below the icon and in the macOS menu bar, plus system permission text.
+Japanese is the development
 and fallback language. The catalogs are part of the application targets and use
 Apple's String Catalog format so macOS, iOS/iPadOS, and watchOS share
 translations without sharing screen layouts.
 
 The system-visible application name is `スルフロ` in Japanese and `ThruFlow`
-in English and Russian. This localization does not change bundle identifiers,
+in English, Russian, and both Chinese variants. This localization does not change
+bundle identifiers,
 persisted values, or the separately maintained App Store product name.
 
-The maintained application locales are Japanese (`ja`), English (`en`), and
-Russian (`ru`). Every catalog entry must contain complete English and Russian
-translations before the localisation tests pass.
+The maintained application locales are Japanese (`ja`), English (`en`),
+Russian (`ru`), Simplified Chinese (`zh-Hans`), and Traditional Chinese
+(`zh-Hant`). Both catalogs require complete translations for every non-source
+locale before localisation tests pass. Chinese support is part of 1.4.0.
+Settings preserves complete locale identifiers so the two scripts remain
+separately selectable on Mac and iPhone/iPad. Changes apply after restarting;
+Watch and widgets use their system/bundle language selection.
+When either Chinese variant is selected (including via the system language),
+Mac and iPhone/iPad Settings show a small AI translation notice and a support
+link below the language picker. The notice follows the selection immediately;
+the interface language itself still requires a restart.
+
+Chinese terminology uses 领域 / 領域 for Area, 任务 / 任務 for Task,
+习惯 / 習慣 for Habit, 专注记录 / 專注記錄 for saved Flow, and
+专注块 / 專注區塊 for the 25-minute Block. Main Flow navigation and ThruFlow
+retain their names. Traditional Chinese copy uses familiar terms such as
+提醒事項, 鑰匙圈, API 權杖, 專案, and 清單.
+User-authored data and quick-input syntax are unchanged.
 
 ## Code Rules
 
@@ -102,19 +119,21 @@ update must not migrate user data or user-authored content.
 ## Contributor Workflow
 
 The non-programmer workflow is documented in `Localisation/README.md`. A new
-language is added in Xcode's String Catalog editor and requires no Swift or
-SwiftData changes. Local SwiftData remains independent of the selected locale.
+language is added in Xcode's String Catalog editor, the project localizations,
+the glossary, and the localization tests. It requires no SwiftData changes.
+Local SwiftData remains independent of the selected locale.
 
 Xcode may update the catalog automatically while extracting SwiftUI and
 accessibility strings. Review those diffs against the originating Swift code:
 empty keys indicate an extraction bug, obsolete `stale` entries should be
 removed when no source still references them, and dynamic placeholders must use
-translator-readable source keys with complete `ja`, `en`, and `ru` values.
+translator-readable source keys with complete values for every supported locale.
 
 `Localisation/TERMS.csv` is the contributor-facing terminology glossary. Its
 first two columns are English metadata, its third column contains the actual
 Japanese String Catalog source key, and its final columns contain approved
-English and Russian UI translations. A source key can intentionally have a
+English, Russian, Simplified Chinese, and Traditional Chinese UI translations.
+A source key can intentionally have a
 different Japanese catalog override; translators must not expose technical or
 legacy source-key wording to users. The CSV is not loaded at runtime and
 therefore cannot diverge application behavior from the validated String
@@ -160,7 +179,19 @@ mechanically from the other language.
 
 Literal `String(localized:)` keys are also checked against the catalog by
 `LocalisationTests`, so a source key cannot silently fall back to Japanese
-because its EN/RU catalog entry is missing. During SDK upgrades, compare the
-compiler-generated `.stringsdata` from both macOS and iOS/Watch builds with
+because its translation in a supported locale is missing. During SDK upgrades,
+compare the compiler-generated `.stringsdata` from both macOS and iOS/Watch builds with
 the catalog as well; this includes interpolated keys. Review Japanese entries
 marked `new` and mark them translated only after checking their actual copy.
+
+
+## Localization agent review
+
+The orchestrator assigns a dedicated localization agent when app copy changes,
+as required by [AGENTS.md](../AGENTS.md#localization-agent). It reviews affected
+copy in Japanese, English, Russian, Simplified Chinese and Traditional Chinese
+for natural, context-appropriate wording and can correct translations directly.
+All catalog/glossary writes have a single assigned owner. Preserve source keys,
+format arguments, plural forms and product terminology; check short labels and
+accessibility text as well as explanations. Report actual language coverage and
+separate linguistic source review from visual checks on each device.

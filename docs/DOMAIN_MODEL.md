@@ -104,7 +104,7 @@ mirrors the text to `Todo.notes` for the Task-level memo.
 
 ## FlowBreak
 
-`FlowBreak` persists explicit rest between Flow sessions using stable session UUID references. It stores the series ID, previous/next session IDs, rest start, timer-stop, connection, optional adjusted-end timestamps, planned duration, and `長休憩` state. Sessions started within planned rest × 1.5 share the same series ID. A `長休憩` lasts 20 minutes after every 4 accumulated Blocks in a series and permits continuation for 30 minutes from rest start. `FlowBreakEditor` applies manual start and duration corrections and pushes only overlapping downstream records from the same series. Deletion is a soft delete so the removal synchronizes safely through CloudKit.
+`FlowBreak` persists explicit rest between Flow sessions using stable session UUID references. It stores the series ID, previous/next session IDs, rest start, timer-stop, connection, optional adjusted-end timestamps, planned duration, and `長休憩` state. Sessions started within planned rest × 1.5 share the same series ID. The shared rest projection replays focused seconds and actual rest intervals in series order. Four accumulated Blocks earn a 20-minute `長休憩`, five earn 25, and six or more earn 30. Only rest actually taken after reaching the long-rest threshold pays this balance; completing it resets the cycle from that point. Short rest before that threshold does not reduce the long-rest balance. Skipped rest pays nothing. Ordinary rest is 3 minutes for Sprint, 5 for one Block, 10 for two uninterrupted Blocks, and 15 for three; partial ordinary rest is credited within the uninterrupted-focus group. Existing Block rounding is preserved. Recommendations and balances are derived from existing records with no new persisted fields. Actual rest uses the resolved historical end, bounded by the next focus start. Long-rest identity is explicit even when its remaining balance is less than 20 minutes. `FlowBreakEditor` applies manual start and duration corrections and pushes only overlapping downstream records from the same series. Deletion is a soft delete so the removal synchronizes safely through CloudKit.
 
 The Flow dashboard is a projection, not a persisted model. `FlowDashboardBuilder` derives today's totals, Area color palette, timeline segments, breaks, and connected series spans from `FlowSession` and `FlowBreak`; the active session contributes a live overlay only after the one-minute credit threshold. See `DATA_MODEL.md` for the complete persistence inventory.
 
@@ -178,3 +178,19 @@ be distinguished from manually entered Tasks. Only Habit occurrences participate
 in duplicate reconciliation, schedule changes, pauses, weekly quotas, and roll-forward.
 Task filters, Flow pickers, editors, and rescheduling use the Todo classification.
 Existing merged/deleted records are not automatically restored.
+
+
+Explicit Area selection in the live Flow picker creates an unnamed normal
+Check Todo (`habitOccurrence = false`) using the existing scheduled-date and
+Area fields. It follows normal Todo progress/history ownership. Flow memo
+submission optionally updates that same Todo's title atomically with its memo;
+no new persisted field or entity is introduced. Historical Area-only sessions
+remain valid and do not materialize Tasks merely by being viewed.
+
+
+Archiving a Habit Area stops generation and soft-deletes its unstarted generated
+occurrences from the logical archive day onward, including future calendar
+preplanning. Completed records, progress, linked Flow history, earlier days,
+manual Tasks and connector Tasks are preserved. The shared materializer repeats
+this repair for late-arriving/pre-existing occurrences even if the caller only
+supplies active Areas. Archival and cleanup use existing fields; no schema change.

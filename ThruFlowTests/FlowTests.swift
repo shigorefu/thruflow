@@ -13,6 +13,138 @@ import UserNotifications
 
 @MainActor
 struct FlowTests {
+    @Test func areaPickerCreatesAnUntitledTaskForTheConfiguredDay() throws {
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let container = try ModelContainer(for: schema, configurations: [
+            ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
+        ])
+        let context = container.mainContext
+        let area = Area(name: "AWS", type: .habit)
+        context.insert(area)
+        let store = ActiveFlowStore(defaults: UserDefaults(suiteName: "FlowTests.\(UUID())")!,
+                                    notifications: TestFlowNotificationService())
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let now = calendar.date(from: DateComponents(year: 2026, month: 10, day: 6, hour: 2))!
+        let boundary = AppDayBoundary(hour: 4)
+        #expect(store.selectPickerContext(area: area, todo: nil, modelContext: context,
+                                         now: now, calendar: calendar, dayBoundary: boundary))
+        let todos = try context.fetch(FetchDescriptor<Todo>())
+        let todo = try #require(todos.first)
+        #expect(todos.count == 1)
+        #expect(todo.title.isEmpty)
+        #expect(todo.area?.id == area.id)
+        #expect(!todo.isHabitOccurrence)
+        #expect(todo.measurement == .checkbox)
+        #expect(TodayTodoFilter(calendar: calendar, dayBoundary: boundary).includes(todo, now: now))
+        #expect(TodoDisplay.title(for: todo) == "(AWS)")
+        #expect(store.selectedTodoID == todo.id)
+        // Picking the actual task and starting it must reuse its identity.
+        #expect(store.selectPickerContext(area: area, todo: todo, modelContext: context, now: now))
+        store.start(area: area, todo: todo, modelContext: context, now: now)
+        #expect(try context.fetchCount(FetchDescriptor<Todo>()) == 1)
+        #expect(store.activeSession?.todo?.id == todo.id)
+        #expect(store.activeSession?.resolvedSegments.first?.todo?.id == todo.id)
+    }
+
+    @Test(arguments: [false, true])
+    func flowMemoSavesTaskNameAndResultTogether(startRest: Bool) throws {
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let container = try ModelContainer(for: schema, configurations: [
+            ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
+        ])
+        let context = container.mainContext
+        let area = Area(name: "仕事", type: .neutral)
+        context.insert(area)
+        let store = ActiveFlowStore(defaults: UserDefaults(suiteName: "FlowTests.\(UUID())")!,
+                                    notifications: TestFlowNotificationService())
+        let now = Date(timeIntervalSince1970: 300_000)
+        #expect(store.selectPickerContext(area: area, todo: nil, modelContext: context, now: now))
+        let todo = try #require(context.fetch(FetchDescriptor<Todo>()).first)
+        store.start(area: area, todo: todo, modelContext: context, now: now)
+        let session = try #require(store.activeSession)
+        let end = now.addingTimeInterval(25 * 60)
+        if startRest {
+            store.requestBreakMemo(modelContext: context, now: end)
+            #expect(store.completeBreakMemo("  APIを実装  ", taskTitle: "  模擬試験  ",
+                                           modelContext: context, now: end))
+            #expect(store.isBreakPhase)
+        } else {
+            store.stop(modelContext: context, now: end)
+            #expect(store.completeResult("  APIを実装  ", taskTitle: "  模擬試験  ",
+                                        modelContext: context, now: end))
+            #expect(store.activeSession == nil)
+        }
+        #expect(todo.title == "模擬試験")
+        #expect(todo.notes == "APIを実装")
+        #expect(session.result == "APIを実装")
+        #expect(session.todo?.id == todo.id)
+        #expect(!todo.isCompleted)
+        #expect(try context.fetchCount(FetchDescriptor<Todo>()) == 1)
+    }
+
+    @Test func areaChoiceDuringFocusCreatesLinkedTaskWithoutRestartingTimer() throws {
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let container = try ModelContainer(for: schema, configurations: [
+            ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
+        ])
+        let context = container.mainContext
+        let first = Area(name: "最初", type: .neutral)
+        let second = Area(name: "次", type: .habit)
+        context.insert(first)
+        context.insert(second)
+        let original = Todo(title: "Existing", area: first)
+        context.insert(original)
+        let store = ActiveFlowStore(defaults: UserDefaults(suiteName: "FlowTests.\(UUID())")!,
+                                    notifications: TestFlowNotificationService())
+        let now = Date(timeIntervalSince1970: 400_000)
+        store.start(area: first, todo: original, modelContext: context, now: now)
+        let session = try #require(store.activeSession)
+        let deadline = store.timerState?.plannedEndAt
+        #expect(store.selectPickerContext(area: second, todo: nil, modelContext: context,
+                                         now: now.addingTimeInterval(120)))
+        let created = try #require(session.todo)
+        #expect(created.id != original.id)
+        #expect(created.title.isEmpty)
+        #expect(!created.isHabitOccurrence)
+        #expect(session.resolvedSegments.count == 2)
+        let segments = session.resolvedSegments.sorted { $0.startFocusSeconds < $1.startFocusSeconds }
+        #expect(segments.first?.todo?.id == original.id)
+        #expect(segments.last?.todo?.id == created.id)
+        #expect(store.timerState?.plannedEndAt == deadline)
+        let end = now.addingTimeInterval(300)
+        store.requestBreakMemo(modelContext: context, now: end)
+        store.cancelBreakMemo()
+        #expect(created.title.isEmpty)
+        store.requestBreakMemo(modelContext: context, now: end)
+        #expect(store.completeBreakMemo(nil, taskTitle: "New task", modelContext: context, now: end))
+        #expect(created.title == "New task")
+        #expect(original.title == "Existing")
+    }
+
+    @Test func emptyMemoKeepsExistingTaskNoteAndAllowsUnnamedTask() throws {
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let container = try ModelContainer(for: schema, configurations: [
+            ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
+        ])
+        let context = container.mainContext
+        let area = Area(name: "仕事", type: .neutral)
+        context.insert(area)
+        let todo = Todo(title: "Old title", notes: "Keep this note", area: area)
+        context.insert(todo)
+        let store = ActiveFlowStore(defaults: UserDefaults(suiteName: "FlowTests.\(UUID())")!,
+                                    notifications: TestFlowNotificationService())
+        let now = Date(timeIntervalSince1970: 500_000)
+        store.start(area: area, todo: todo, modelContext: context, now: now)
+        store.stop(modelContext: context, now: now.addingTimeInterval(120))
+        store.cancelResultMemo(modelContext: context, now: now.addingTimeInterval(121))
+        #expect(todo.title == "Old title")
+        store.stop(modelContext: context, now: now.addingTimeInterval(180))
+        #expect(store.completeResult(nil, taskTitle: "  ", modelContext: context, now: now.addingTimeInterval(180)))
+        #expect(todo.title.isEmpty)
+        #expect(todo.notes == "Keep this note")
+    }
+
     @Test @MainActor func timerPrimaryControlUsesSemanticPhaseColors() {
         #expect(FlowTimerPrimaryTintRole(phase: .focusing, isFocusOvertime: false) == .area)
         #expect(FlowTimerPrimaryTintRole(phase: .focusing, isFocusOvertime: true) == .area)
@@ -57,13 +189,138 @@ struct FlowTests {
         #expect(FlowSeriesPolicy.continuationWindow(forPlannedBreakSeconds: 20 * 60) == 30 * 60)
     }
 
-    @Test func longBreakIsDueAfterEveryFourAccumulatedBlocks() {
+    @Test func restRecommendationScalesWithFocusAndCapsAtThirtyMinutes() {
         let policy = FlowSeriesPolicy()
+        for (focus, rest, isLong) in [(12, 3, false), (25, 5, false), (50, 10, false),
+                                      (75, 15, false), (100, 20, true), (125, 25, true),
+                                      (150, 30, true), (250, 30, true)] {
+            #expect(policy.recommendation(after: [.init(focusedSeconds: focus * 60)]) ==
+                .init(durationSeconds: rest * 60, isLong: isLong))
+        }
+        #expect(!policy.recommendation(after: [.init(focusedSeconds: 95 * 60)]).isLong)
+        #expect(policy.recommendation(after: [.init(focusedSeconds: 96 * 60)]).isLong)
+    }
 
-        #expect(!policy.shouldUseLongBreak(totalSeriesFocusSeconds: 95 * 60, completedLongBreakCount: 0))
-        #expect(policy.shouldUseLongBreak(totalSeriesFocusSeconds: 96 * 60, completedLongBreakCount: 0))
-        #expect(!policy.shouldUseLongBreak(totalSeriesFocusSeconds: 96 * 60, completedLongBreakCount: 1))
-        #expect(policy.shouldUseLongBreak(totalSeriesFocusSeconds: 192 * 60, completedLongBreakCount: 1))
+    @Test func skippedAndPartialLongRestCarryForwardUntilActuallyPaid() {
+        let policy = FlowSeriesPolicy()
+        #expect(policy.recommendation(after: [
+            .init(focusedSeconds: 100 * 60), .init(focusedSeconds: 25 * 60)
+        ]) == .init(durationSeconds: 25 * 60, isLong: true))
+        #expect(policy.recommendation(after: [
+            .init(focusedSeconds: 100 * 60, restedSeconds: 5 * 60),
+            .init(focusedSeconds: 25 * 60)
+        ]) == .init(durationSeconds: 20 * 60, isLong: true))
+        #expect(policy.recommendation(after: [
+            .init(focusedSeconds: 100 * 60, restedSeconds: 5 * 60),
+            .init(focusedSeconds: 25 * 60, restedSeconds: 10 * 60),
+            .init(focusedSeconds: 25 * 60)
+        ]) == .init(durationSeconds: 15 * 60, isLong: true))
+    }
+
+    @Test func fullLongRestResetsCycleAtActualFocusTotal() {
+        let policy = FlowSeriesPolicy()
+        // A completed long rest after five Blocks resets from five, not the old multiple of four.
+        #expect(policy.recommendation(after: [
+            .init(focusedSeconds: 125 * 60, restedSeconds: 25 * 60),
+            .init(focusedSeconds: 25 * 60, restedSeconds: 5 * 60),
+            .init(focusedSeconds: 25 * 60, restedSeconds: 5 * 60),
+            .init(focusedSeconds: 25 * 60)
+        ]) == .init(durationSeconds: 5 * 60, isLong: false))
+        #expect(policy.recommendation(after: [
+            .init(focusedSeconds: 125 * 60, restedSeconds: 25 * 60),
+            .init(focusedSeconds: 100 * 60)
+        ]) == .init(durationSeconds: 20 * 60, isLong: true))
+    }
+
+    @Test func shortRestsDoNotReduceLongRestAndSkippedShortRestsAccumulate() {
+        let policy = FlowSeriesPolicy()
+        #expect(policy.recommendation(after: [
+            .init(focusedSeconds: 25 * 60, restedSeconds: 5 * 60),
+            .init(focusedSeconds: 25 * 60, restedSeconds: 5 * 60),
+            .init(focusedSeconds: 25 * 60, restedSeconds: 5 * 60),
+            .init(focusedSeconds: 25 * 60)
+        ]) == .init(durationSeconds: 20 * 60, isLong: true))
+        #expect(policy.recommendation(after: [
+            .init(focusedSeconds: 25 * 60), .init(focusedSeconds: 25 * 60)
+        ]) == .init(durationSeconds: 10 * 60, isLong: false))
+        #expect(policy.recommendation(after: [
+            .init(focusedSeconds: 12 * 60, restedSeconds: 3 * 60),
+            .init(focusedSeconds: 12 * 60)
+        ]) == .init(durationSeconds: 3 * 60, isLong: false))
+    }
+
+    @Test(arguments: [0, 5, 15, 20])
+    func nextFlowUsesActualLongRestAndRestoresItsIdentity(restMinutes: Int) throws {
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let area = Area(name: "休憩テスト", type: .neutral)
+        context.insert(area)
+        let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
+        let store = ActiveFlowStore(defaults: defaults, notifications: TestFlowNotificationService())
+        var now = Date(timeIntervalSince1970: 30_000)
+        store.configure(area: area, todo: nil, mode: .twentyFiveFive)
+        store.start(area: area, todo: nil, modelContext: context, now: now)
+        for block in 1...4 {
+            now = now.addingTimeInterval(25 * 60)
+            store.startBreak(modelContext: context, now: now)
+            #expect(store.timerState?.plannedBreakDurationSeconds == (block == 4 ? 20 : 5) * 60)
+            if block < 4 {
+                now = now.addingTimeInterval(5 * 60)
+                store.startNextFlow(area: area, todo: nil, modelContext: context, now: now)
+            }
+        }
+        // Recreate the store to ensure the calculation depends on persisted history.
+        let restored = ActiveFlowStore(defaults: defaults, notifications: TestFlowNotificationService())
+        restored.synchronizeFromPersistence(modelContext: context, now: now)
+        now = now.addingTimeInterval(TimeInterval(restMinutes * 60))
+        restored.startNextFlow(area: area, todo: nil, modelContext: context, now: now)
+        now = now.addingTimeInterval(25 * 60)
+        restored.startBreak(modelContext: context, now: now)
+        let expectedMinutes = restMinutes == 20 ? 5 : 25 - restMinutes
+        #expect(restored.timerState?.plannedBreakDurationSeconds == expectedMinutes * 60)
+        #expect(restored.timerState?.isLongBreak == (restMinutes < 20))
+        let restoredAgain = ActiveFlowStore(defaults: defaults, notifications: TestFlowNotificationService())
+        restoredAgain.synchronizeFromPersistence(modelContext: context, now: now)
+        #expect(restoredAgain.timerState?.isLongBreak == (restMinutes < 20))
+        #expect(restoredAgain.timerState?.plannedBreakDurationSeconds == expectedMinutes * 60)
+    }
+
+    @Test func skippingShortRestBetweenTwoFlowsGivesTenMinutes() throws {
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let area = Area(name: "連続集中", type: .neutral)
+        context.insert(area)
+        let defaults = UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!
+        let store = ActiveFlowStore(defaults: defaults, notifications: TestFlowNotificationService())
+        let start = Date(timeIntervalSince1970: 50_000)
+        store.configure(area: area, todo: nil, mode: .twentyFiveFive)
+        store.start(area: area, todo: nil, modelContext: context, now: start)
+        let firstEnd = start.addingTimeInterval(25 * 60)
+        store.startBreak(modelContext: context, now: firstEnd)
+        store.startNextFlow(area: area, todo: nil, modelContext: context, now: firstEnd)
+        store.startBreak(modelContext: context, now: firstEnd.addingTimeInterval(25 * 60))
+        #expect(store.timerState?.plannedBreakDurationSeconds == 10 * 60)
+        #expect(store.timerState?.isLongBreak == false)
+    }
+
+    @Test func partiallyPaidLongRestKeepsLongIdentityBelowTwentyMinutes() {
+        let policy = FlowSeriesPolicy()
+        let recommendation = policy.recommendation(after: [
+            .init(focusedSeconds: 100 * 60, restedSeconds: 15 * 60),
+            .init(focusedSeconds: 25 * 60)
+        ])
+        #expect(recommendation == .init(durationSeconds: 10 * 60, isLong: true))
+        let engine = FlowTimerEngine()
+        let start = Date(timeIntervalSince1970: 40_000)
+        let rest = engine.startBreak(engine.start(mode: .twentyFiveFive, now: start),
+                                     now: start.addingTimeInterval(25 * 60),
+                                     plannedBreakDurationSeconds: recommendation.durationSeconds,
+                                     isLongBreak: recommendation.isLong)
+        #expect(rest.isLongBreak)
     }
 
     @Test func timerStartPauseResumeAndFinishUseAbsoluteDates() {
@@ -615,6 +872,81 @@ struct FlowTests {
         #expect(FlowTimerEngine().remainingSeconds(for: after, now: now) == remaining)
         #expect(remaining == 18 * 60)
         #expect(session.resolvedSegments.contains { $0.endedAt == nil })
+    }
+
+    @Test @MainActor func timerRingRetainsAreasAcrossSwitchPauseRestoreAndExtension() throws {
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let start = Date(timeIntervalSince1970: 8_000)
+        let blue = Area(name: "Blue", type: .neutral, colorHex: "#007AFF")
+        let green = Area(name: "Green", type: .neutral, colorHex: "#34C759")
+        let orange = Area(name: "Orange", type: .neutral, colorHex: "#FF9500")
+        [blue, green, orange].forEach { context.insert($0) }
+        let store = ActiveFlowStore(
+            defaults: UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!,
+            notifications: TestFlowNotificationService()
+        )
+        store.configure(area: blue, todo: nil, mode: .twentyFiveFive)
+        store.start(area: blue, todo: nil, modelContext: context, now: start)
+        #expect(store.timerRingSlices(now: start).isEmpty)
+        store.selectContext(area: green, todo: nil, modelContext: context, now: start.addingTimeInterval(720))
+        #expect(store.timerRingSlices(now: start.addingTimeInterval(720)) == [
+            FlowTimerRingSlice(start: 0, end: 0.48, colorHex: blue.colorHex)
+        ])
+        let expected = [
+            FlowTimerRingSlice(start: 0, end: 0.48, colorHex: blue.colorHex),
+            FlowTimerRingSlice(start: 0.48, end: 0.6, colorHex: green.colorHex)
+        ]
+        store.pause(modelContext: context, now: start.addingTimeInterval(900))
+        #expect(store.timerRingSlices(now: start.addingTimeInterval(1_200)) == expected)
+
+        let restored = ActiveFlowStore(
+            defaults: UserDefaults(suiteName: "FlowTests.\(UUID().uuidString)")!,
+            notifications: TestFlowNotificationService()
+        )
+        restored.synchronizeFromPersistence(modelContext: context, now: start.addingTimeInterval(1_200))
+        #expect(restored.timerRingSlices(now: start.addingTimeInterval(1_200)) == expected)
+        store.selectContext(area: orange, todo: nil, modelContext: context, now: start.addingTimeInterval(1_200))
+        store.resume(modelContext: context, now: start.addingTimeInterval(1_500))
+        let now = start.addingTimeInterval(1_800)
+        #expect(store.timerRingSlices(now: now) == expected + [
+            FlowTimerRingSlice(start: 0.6, end: 0.8, colorHex: orange.colorHex)
+        ])
+        store.seekForward(modelContext: context, now: now)
+        #expect(store.timerRingSlices(now: now) == [
+            FlowTimerRingSlice(start: 0, end: 0.4, colorHex: blue.colorHex),
+            FlowTimerRingSlice(start: 0.4, end: 0.5, colorHex: green.colorHex),
+            FlowTimerRingSlice(start: 0.5, end: 2.0 / 3, colorHex: orange.colorHex)
+        ])
+        #expect(store.timerRingSlices(now: start.addingTimeInterval(5_000)).last?.end == 1)
+        let state = try #require(store.timerState)
+        store.timerState = FlowTimerEngine().startBreak(state, now: now)
+        #expect(store.timerRingSlices(now: now).isEmpty)
+        store.timerState = FlowTimerEngine().pause(try #require(store.timerState), now: now)
+        #expect(store.timerRingSlices(now: now.addingTimeInterval(60)).isEmpty)
+    }
+
+    @Test func timerRingClipsOvertimeAndIgnoresZeroLengthSegments() {
+        let start = Date(timeIntervalSince1970: 8_000)
+        let area = Area(name: "Area", type: .neutral)
+        let session = FlowSession(
+            area: area, mode: .twentyFiveFive, startedAt: start,
+            plannedEndAt: start.addingTimeInterval(1_500),
+            plannedFocusDurationSeconds: 1_500, plannedBreakDurationSeconds: 300
+        )
+        let projection = FlowTimerRingProjection()
+        #expect(projection.slices(session: session, plannedSeconds: 1_500, focusedSeconds: 100).isEmpty)
+        let first = FlowSegment(session: session, area: area, todo: nil, startedAt: start, startFocusSeconds: 0)
+        first.close(at: start.addingTimeInterval(1_600), totalFocusSeconds: 1_600)
+        let overtime = FlowSegment(session: session, area: area, todo: nil, startedAt: start, startFocusSeconds: 1_600)
+        session.resolvedSegments = [overtime, first]
+        #expect(projection.slices(session: session, plannedSeconds: 1_500, focusedSeconds: 1_700) == [
+            FlowTimerRingSlice(start: 0, end: 1, colorHex: area.colorHex)
+        ])
+        #expect(projection.slices(session: session, plannedSeconds: 0, focusedSeconds: 100).isEmpty)
+        #expect(projection.slices(session: session, plannedSeconds: 1_500, focusedSeconds: -1).isEmpty)
     }
 
     @Test @MainActor func activeFlowSwitchesTaskWithoutResettingTimer() throws {

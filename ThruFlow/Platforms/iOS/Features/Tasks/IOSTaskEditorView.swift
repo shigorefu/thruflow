@@ -12,16 +12,11 @@ struct IOSTaskEditorView: View {
     private let fixedArea: Area?
     private let onSave: ((Todo) -> Void)?
 
-    @State private var title: String
-    @State private var notes: String
-    @State private var hashtags: String
+    @State private var draft: TodoDraft
+    @State private var hashtagsText: String
     @State private var areaID: UUID?
-    @State private var measurement: TodoMeasurement
-    @State private var priority: TodoPriority
-    @State private var isRoomIfPossible: Bool
-    @State private var plannedAmount: Int
-    @State private var scheduledDate: Date?
     @State private var datePickerValue: Date
+    @State private var saveErrorMessage: String?
     @FocusState private var isTitleFocused: Bool
 
     init(
@@ -36,30 +31,30 @@ struct IOSTaskEditorView: View {
         self.fixedArea = fixedArea
         self.onSave = onSave
 
-        let todo: Todo?
-        if case .edit(let value) = mode { todo = value } else { todo = nil }
-
-        _title = State(initialValue: todo?.title ?? "")
-        _notes = State(initialValue: todo?.notes ?? "")
-        _hashtags = State(initialValue: todo?.hashtags.map { "#\($0)" }.joined(separator: " ") ?? "")
-        _areaID = State(initialValue: todo?.area?.id ?? fixedArea?.id ?? areas.first?.id)
-        _measurement = State(initialValue: todo?.measurement ?? .checkbox)
-        _priority = State(initialValue: todo?.priority ?? .medium)
-        _isRoomIfPossible = State(initialValue: todo?.isRoomIfPossible ?? false)
-        _plannedAmount = State(initialValue: max(1, todo?.plannedAmount ?? 1))
-        _scheduledDate = State(initialValue: todo?.scheduledDate ?? scheduledDate ?? .now)
-        _datePickerValue = State(initialValue: todo?.scheduledDate ?? scheduledDate ?? .now)
+        // The editor owns a one-time draft; cancelling never mutates the model.
+        let draft: TodoDraft
+        switch mode {
+        case .create:
+            draft = TodoDraft(area: fixedArea, scheduledDate: scheduledDate ?? .now)
+        case .edit(let todo):
+            draft = TodoDraft(todo: todo)
+        }
+        _draft = State(initialValue: draft)
+        _hashtagsText = State(initialValue: draft.hashtags.map { "#\($0)" }.joined(separator: " "))
+        _areaID = State(initialValue: draft.area?.id)
+        _datePickerValue = State(initialValue: draft.scheduledDate ?? .now)
+        _saveErrorMessage = State(initialValue: nil)
     }
 
     var body: some View {
         Form {
             Section {
-                TextField(String(localized: "タスク名"), text: $title, axis: .vertical)
+                TextField(String(localized: "タスク名"), text: $draft.title, axis: .vertical)
                     .lineLimit(1...3)
                     .focused($isTitleFocused)
-                TextField(String(localized: "メモ"), text: $notes, axis: .vertical)
+                TextField(String(localized: "メモ"), text: $draft.notes, axis: .vertical)
                     .lineLimit(2...5)
-                TextField("#tag", text: $hashtags)
+                TextField("#tag", text: $hashtagsText)
                     .textInputAutocapitalization(.never)
             }
 
@@ -71,56 +66,64 @@ struct IOSTaskEditorView: View {
                 habitStructureSection
             } else {
                 Section {
-                    Picker(String(localized: "分野"), selection: $areaID) {
-                        ForEach(areas) { area in
+                    Picker(String(localized: "分野"), selection: selectedAreaBinding) {
+                        Text(String(localized: "未選択")).tag(UUID?.none)
+                        ForEach(selectableAreas) { area in
                             Text("\(area.symbolName) \(area.name)")
                                 .tag(Optional(area.id))
                         }
                     }
                     .disabled(fixedArea != nil)
 
-                    Picker(String(localized: "種類"), selection: $measurement) {
+                    Picker(String(localized: "種類"), selection: $draft.measurement) {
                         ForEach(TodoMeasurement.allCases) { measurement in
                             Text(measurement.displayName).tag(measurement)
                         }
                     }
 
-                    if measurement != .checkbox {
-                        Stepper(value: $plannedAmount, in: 1...999) {
+                    if draft.measurement != .checkbox {
+                        Stepper(value: plannedAmountBinding, in: 1...999) {
                             Text(targetText)
                         }
                     }
 
-                    Picker(String(localized: "優先度"), selection: $priority) {
+                    Picker(String(localized: "優先度"), selection: $draft.priority) {
                         ForEach(TodoPriority.allCases) { priority in
                             Text(priority.displayName).tag(priority)
                         }
                     }
 
-                    if priority == .low {
-                        Toggle(String(localized: "余裕があれば"), isOn: $isRoomIfPossible)
+                    if draft.priority == .low {
+                        Toggle(String(localized: "余裕があれば"), isOn: $draft.isRoomIfPossible)
                     }
 
                     Toggle(
                         String(localized: "日付なし"),
                         isOn: Binding(
-                            get: { scheduledDate == nil },
+                            get: { draft.scheduledDate == nil },
                             set: { hasNoDate in
-                                scheduledDate = hasNoDate ? nil : datePickerValue
+                                draft.scheduledDate = hasNoDate ? nil : datePickerValue
                             }
                         )
                     )
 
-                    if scheduledDate != nil {
+                    if draft.scheduledDate != nil {
                         DatePicker(
                             String(localized: "日付"),
                             selection: $datePickerValue,
                             displayedComponents: .date
                         )
                         .onChange(of: datePickerValue) { _, newValue in
-                            scheduledDate = newValue
+                            draft.scheduledDate = newValue
                         }
                     }
+                }
+            }
+
+            if let saveErrorMessage {
+                Section {
+                    Label(saveErrorMessage, systemImage: "exclamationmark.triangle")
+                        .foregroundStyle(.red)
                 }
             }
         }
@@ -137,6 +140,11 @@ struct IOSTaskEditorView: View {
         .iosCenteredNavigationTitle(
             isEditing ? String(localized: "タスクを編集") : String(localized: "タスクを追加")
         )
+        .onChange(of: draft.measurement) { _, measurement in
+            if measurement != .checkbox, draft.plannedAmount == nil {
+                draft.plannedAmount = 1
+            }
+        }
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button(String(localized: "キャンセル")) { dismiss() }
@@ -151,7 +159,7 @@ struct IOSTaskEditorView: View {
     private var titleSuggestions: [TaskTitleSuggestion] {
         guard isTitleFocused else { return [] }
         return TaskTitleSuggestionBuilder().suggestions(
-            query: title,
+            query: draft.title,
             todos: suggestionTodos,
             excludingTodoID: editedTodo?.id
         )
@@ -162,7 +170,7 @@ struct IOSTaskEditorView: View {
             HStack(spacing: 8) {
                 ForEach(titleSuggestions) { suggestion in
                     Button {
-                        title = suggestion.title
+                        draft.title = suggestion.title
                         isTitleFocused = true
                     } label: {
                         Label(suggestion.title, systemImage: "clock.arrow.circlepath")
@@ -205,20 +213,54 @@ struct IOSTaskEditorView: View {
         editedTodo?.taskType == .habit
     }
 
-    private var selectedArea: Area? {
-        areas.first { $0.id == areaID }
-            ?? (isHabitTodoEdit ? editedTodo?.area : nil)
+    private var selectableAreas: [Area] {
+        if let existingArea = editedTodo?.area ?? draft.area,
+           !areas.contains(where: { $0.id == existingArea.id }) {
+            return areas + [existingArea]
+        }
+        return areas
     }
 
     private var canSave: Bool {
-        !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && selectedArea != nil
+        TaskEditingService().validationErrors(for: submittedDraft, editing: editedTodo).isEmpty
+    }
+
+    private var selectedAreaBinding: Binding<UUID?> {
+        Binding(
+            get: { areaID },
+            set: { id in
+                draft.area = selectableAreas.first { $0.id == id }
+                areaID = id
+            }
+        )
+    }
+
+    private var submittedDraft: TodoDraft {
+        var result = draft
+        result.hashtags = TodoHashtagNormalizer.normalize(
+            hashtagsText.split(whereSeparator: { $0.isWhitespace || $0 == "," }).map(String.init)
+        )
+        // These fields have no controls on iOS. Preserve changes made by an
+        // active Flow or synchronization while this editor was open.
+        if let editedTodo {
+            result.actualProgress = editedTodo.actualProgress
+            result.deadline = editedTodo.deadline
+        }
+        return result
+    }
+
+    private var plannedAmountBinding: Binding<Int> {
+        Binding(
+            get: { draft.plannedAmount ?? 1 },
+            set: { draft.plannedAmount = $0 }
+        )
     }
 
     private var targetText: String {
-        switch measurement {
+        switch draft.measurement {
         case .checkbox: ""
-        case .focusBlocks: "\(plannedAmount) \(String(localized: "ブロック"))"
-        case .minutes: "\(plannedAmount) \(String(localized: "分"))"
+        case .focusBlocks: "\(draft.plannedAmount ?? 1) \(String(localized: "ブロック"))"
+        case .minutes: "\(draft.plannedAmount ?? 1) \(String(localized: "分"))"
         }
     }
 
@@ -277,56 +319,19 @@ struct IOSTaskEditorView: View {
     }
 
     private func save() {
-        guard let area = isHabitTodoEdit ? editedTodo?.area : selectedArea else { return }
-        let normalizedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        let tags = hashtags
-            .split(whereSeparator: { $0.isWhitespace || $0 == "," })
-            .map { String($0).trimmingCharacters(in: CharacterSet(charactersIn: "#")) }
-
-        switch mode {
-        case .create:
-            let todo = Todo(
-                title: normalizedTitle,
-                notes: notes,
-                hashtags: tags,
-                area: area,
-                habitOccurrence: false,
-                measurement: measurement,
-                priority: priority,
-                isRoomIfPossible: priority == .low && isRoomIfPossible,
-                plannedAmount: measurement == .checkbox ? nil : plannedAmount,
-                scheduledDate: scheduledDate
-            )
-            modelContext.insert(todo)
-            onSave?(todo)
-        case .edit(let todo):
-            let savedMeasurement = isHabitTodoEdit ? todo.measurement : measurement
-            let savedPriority = isHabitTodoEdit ? todo.priority : priority
-            let savedRoomIfPossible = isHabitTodoEdit
-                ? todo.isRoomIfPossible
-                : priority == .low && isRoomIfPossible
-            let savedPlannedAmount = isHabitTodoEdit
-                ? todo.plannedAmount
-                : measurement == .checkbox ? nil : plannedAmount
-            let savedDate = isHabitTodoEdit ? todo.scheduledDate : scheduledDate
-
-            todo.update(
-                title: normalizedTitle,
-                notes: notes,
-                hashtags: tags,
-                area: area,
-                measurement: savedMeasurement,
-                priority: savedPriority,
-                isRoomIfPossible: savedRoomIfPossible,
-                plannedAmount: savedPlannedAmount,
-                actualProgress: todo.actualProgress,
-                scheduledDate: savedDate,
-                deadline: todo.deadline
+        saveErrorMessage = nil
+        do {
+            let todo = try TaskEditingService().save(
+                draft: submittedDraft,
+                editing: editedTodo,
+                modelContext: modelContext
             )
             onSave?(todo)
+            dismiss()
+        } catch TaskEditingError.validation(let errors) {
+            saveErrorMessage = errors.map(\.localizedDescription).joined(separator: "\n")
+        } catch {
+            saveErrorMessage = String(localized: "記録を保存できませんでした。")
         }
-
-        _ = modelContext.saveReporting(.taskUpdate)
-        dismiss()
     }
 }

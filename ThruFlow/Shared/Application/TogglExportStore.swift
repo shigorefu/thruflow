@@ -9,10 +9,12 @@ import SwiftData
     @Published private(set) var projects: [TogglProject] = []
     @Published private(set) var isBusy = false
     @Published var errorMessage: String?
+    @Published private(set) var lastSyncResult: TogglSyncResult?
     private let credentials: any ConnectorCredentialStorage
     private let storage: any TogglExportStorage
     private let factory: (String) -> any TogglTrackClientProtocol
     private let resolveDeviceID: () -> String?
+    private let authorizeDeviceID: () -> String?
     private var deviceID: String? { resolveDeviceID() }
     private let automaticDisabled: Bool
     private var storageFailed = false
@@ -24,7 +26,8 @@ import SwiftData
     }
 
     init(credentials: (any ConnectorCredentialStorage)? = nil, storage: (any TogglExportStorage)? = nil,
-         deviceID: @autoclosure @escaping () -> String? = FlowRecordingDevice.id, factory: ((String) -> any TogglTrackClientProtocol)? = nil) {
+         deviceID: @autoclosure @escaping () -> String? = FlowRecordingDevice.id,
+         authorizeDeviceID: @escaping () -> String? = { FlowRecordingDevice.resolve(allowInteraction: true) }, factory: ((String) -> any TogglTrackClientProtocol)? = nil) {
         let process = ProcessInfo.processInfo
         let isolated = process.arguments.contains("--uitesting") || process.arguments.contains("--demo-data") ||
             process.arguments.contains("--onboarding-preview") || process.environment["XCTestConfigurationFilePath"] != nil ||
@@ -33,6 +36,7 @@ import SwiftData
         self.storage = storage ?? (isolated ? TogglMemoryStorage() : TogglFileStorage())
         self.factory = factory ?? { TogglTrackClient(token: $0) }
         self.resolveDeviceID = deviceID
+        self.authorizeDeviceID = authorizeDeviceID
         automaticDisabled = isolated
         do { state = try self.storage.load() }
         catch { storageFailed = true; errorMessage = TogglError.storage.localizedDescription }
@@ -50,7 +54,7 @@ import SwiftData
             let projects = try await client.projects()
             try Task.checkCancellation()
             // Only an explicit connection may authorize the recording identity.
-            if deviceID == nil { _ = FlowRecordingDevice.resolve(allowInteraction: true) }
+            try prepareRecordingIdentity()
             let oldCredentials = try credentials.read(for: .toggl)
             try credentials.save(ConnectorCredentials(accessToken: token), for: .toggl)
             var updated = state
@@ -72,6 +76,8 @@ import SwiftData
         guard begin() else { return }
         defer { isBusy = false }
         do {
+            // Called only after the explicit connector access explanation.
+            try prepareRecordingIdentity()
             let client = try client()
             try await checkAccount(client)
             workspaces = try await client.workspaces()
@@ -80,7 +86,8 @@ import SwiftData
     }
 
     func configure(workspaceID: Int64, areaProjects: [String: Int64], enabled: Bool, now: Date = .now) throws {
-        guard !isBusy, !storageFailed, deviceID != nil, var config = configuration else { throw TogglError.configuration }
+        guard !isBusy, !storageFailed, var config = configuration else { throw TogglError.configuration }
+        guard deviceID != nil else { throw TogglError.recordingIdentity }
         guard workspaces.contains(where: { $0.id == workspaceID }), !areaProjects.isEmpty,
               areaProjects.values.allSatisfy({ id in projects.contains { $0.id == id && $0.workspace_id == workspaceID && $0.active } }) else {
             throw TogglError.configuration
@@ -92,6 +99,7 @@ import SwiftData
         var updated = state
         updated.configuration = config
         try persist(updated)
+        lastSyncResult = nil
         nextAutomaticSync = .distantPast
     }
 
@@ -105,6 +113,7 @@ import SwiftData
         workspaces = []
         projects = []
         errorMessage = nil
+        lastSyncResult = nil
     }
 
     func allowRetry(jobID: String) throws {
@@ -124,9 +133,10 @@ import SwiftData
     }
 
     func synchronize(modelContext: ModelContext, now: Date = .now) async {
-        guard configuration?.isEnabled == true, let config = configuration, let deviceID, begin() else { return }
+        guard configuration?.isEnabled == true, let config = configuration, begin() else { return }
         defer { isBusy = false }
         do {
+            guard let deviceID else { throw TogglError.recordingIdentity }
             // Never save/roll back an editor's context or retain model objects across network awaits.
             guard !modelContext.hasChanges else { throw ConnectorStoreError.busy }
             let context = ModelContext(modelContext.container)
@@ -139,7 +149,8 @@ import SwiftData
             let capturedSessions = Set(updated.jobs.filter { $0.accountID == config.account.id }.map(\.sessionID))
             updated.jobs += candidates.filter { !capturedSessions.contains($0.sessionID) }
             try persist(updated) // Durable outbox is written before any network operation.
-            guard !pendingJobs.isEmpty else { return }
+            guard !pendingJobs.isEmpty else { lastSyncResult = .noNewEntries; return }
+            var deliveredCount = 0
             let client = try client()
             try await checkAccount(client)
             for job in pendingJobs {
@@ -148,6 +159,7 @@ import SwiftData
                 if job.uncertain {
                     if let remoteID = try await client.find(job.payload) {
                         try acknowledge(index: index, remoteID: remoteID)
+                        deliveredCount += 1
                         continue
                     }
                     throw TogglError.uncertain // No blind retry after an ambiguous POST.
@@ -166,6 +178,7 @@ import SwiftData
                 do {
                     let remoteID = try await client.create(job.payload)
                     try acknowledge(index: index, remoteID: remoteID)
+                    deliveredCount += 1
                 } catch {
                     if Self.definitelyNotCreated(error) {
                         var retryable = state
@@ -175,9 +188,14 @@ import SwiftData
                     throw error
                 }
             }
-            var finished = state
-            finished.configuration?.lastSyncedAt = now
-            try persist(finished)
+            if deliveredCount > 0 {
+                var finished = state
+                finished.configuration?.lastSyncedAt = now
+                try persist(finished)
+                lastSyncResult = .delivered(deliveredCount)
+            } else {
+                lastSyncResult = pendingJobs.isEmpty ? .noNewEntries : .waitingForCompletion
+            }
         } catch { present(error) }
     }
 
@@ -192,6 +210,11 @@ import SwiftData
         updated.jobs[index].remoteID = remoteID
         updated.jobs[index].uncertain = false
         try persist(updated)
+    }
+
+    private func prepareRecordingIdentity() throws {
+        guard deviceID == nil else { return }
+        guard authorizeDeviceID() != nil else { throw TogglError.recordingIdentity }
     }
 
     private func client() throws -> any TogglTrackClientProtocol {
@@ -211,6 +234,7 @@ import SwiftData
     private func begin() -> Bool {
         guard !isBusy, !storageFailed else { return false }
         errorMessage = nil
+        lastSyncResult = nil
         isBusy = true
         return true
     }

@@ -3,6 +3,32 @@
 All notable user-facing changes to ThruFlow are documented in this file.
 Release dates below record GitHub publication in Asia/Tokyo (JST).
 
+## [1.4.0] - Unreleased
+
+### Added
+
+- Simplified Chinese and Traditional Chinese localizations across Mac, iPhone/iPad, Watch, widgets, and permission prompts, with distinct language choices in Settings.
+- Selecting an Area in the Flow timer creates an unnamed Task for today, with title editing and visibility in Tasks.
+- Flow completion and rest forms now accept the Task name above the result memo on Mac, iPhone/iPad, and Watch.
+- Focus timer rings on Mac, iPhone/iPad, and Watch retain each recorded Area color when switching Tasks, with boundaries based on focused time.
+
+### Changed
+
+- Rest now accounts for skipped and partial breaks: Sprint retains 3 minutes, two uninterrupted Blocks earn 10, and long rest grows from 20 to 30 minutes after four to six Blocks. Only actual long rest resets the cycle.
+
+### Fixed
+
+- Failed Task/Area saves now restore the values held by the interface on macOS 26, including Habit schedule changes, without discarding unrelated pending edits.
+
+- Toggl setup now distinguishes a connected account from active export, shows unsaved settings and delivery results, and explains missing device-identity access instead of silently skipping export.
+- Task editing now preserves undated Tasks and accepts unnamed Tasks consistently on Mac and iPhone/iPad; editing also retains the current archived Area.
+- Area editors now apply the same Habit schedule validation and goal defaults on both clients.
+- Task editors preserve spaces while entering multiple hashtags; the iPhone editor keeps progress updated by an active timer while the form is open.
+- Failed Task/Area saves keep forms and entered text available for retry; manual Tasks in Habit Areas remain independent across Mac, iPhone/iPad, and Watch.
+- Archiving a Habit Area now retires unused preplanned daily Tasks while preserving completed work and history; the Mac Area editor explicitly saves archival.
+- Fixed Mac Task creation remaining on the desktop after the menu-bar timer closes or its host window is minimized. Owned forms and suggestions now follow the host window lifetime.
+- Added Escape dismissal for Mac quick Task creation and explicit presentation-state dismissal for the Flow player composer.
+
 ## [1.3.1] - 2026-09-21
 
 App, extensions, Watch, and test targets use version **1.3.1**, build **12**.
@@ -248,6 +274,7 @@ App, extensions, Watch, and test targets use version **1.3.0**, build **11**.
 
 - Improved History timeline editing and natural localized copy before release.
 
+[1.4.0]: https://github.com/shigorefu/thruflow/compare/v1.3.1...1.4.0
 [1.3.1]: https://github.com/shigorefu/thruflow/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/shigorefu/thruflow/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/shigorefu/thruflow/compare/v1.1.0...v1.2.0

@@ -27,6 +27,7 @@ final class TaskComposerSuggestionAnchorView: NSView {
     private var panel: NSPanel?
     private var hostingView: NSHostingView<AnyView>?
     private var observers: [NSObjectProtocol] = []
+    private var lifetime: MacWindowPresentationLifetime?
     private var content = AnyView(EmptyView())
     private var isPresented = false
     private var showsBelow = false
@@ -35,6 +36,9 @@ final class TaskComposerSuggestionAnchorView: NSView {
         super.viewDidMoveToWindow()
         dismiss()
         guard let window else { return }
+        lifetime = MacWindowPresentationLifetime(window: window) { [weak self] in
+            self?.dismissPanel()
+        }
         for name in [NSWindow.didMoveNotification, NSWindow.didResizeNotification] {
             observers.append(NotificationCenter.default.addObserver(
                 forName: name, object: window, queue: .main
@@ -58,7 +62,8 @@ final class TaskComposerSuggestionAnchorView: NSView {
     }
 
     private func refresh() {
-        guard isPresented, let window else {
+        guard isPresented, let window, window.isVisible,
+              !window.isMiniaturized, !NSApp.isHidden else {
             dismissPanel()
             return
         }
@@ -105,6 +110,8 @@ final class TaskComposerSuggestionAnchorView: NSView {
     }
 
     func dismiss() {
+        lifetime?.invalidate()
+        lifetime = nil
         dismissPanel()
         observers.forEach(NotificationCenter.default.removeObserver)
         observers.removeAll()

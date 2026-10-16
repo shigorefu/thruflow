@@ -168,6 +168,15 @@ final class AppSettings: ObservableObject {
         )
     }
 
+    /// Keep script and region subtags so Chinese variants remain distinct.
+    func availableLanguageCodes(localizations: [String] = Bundle.main.localizations) -> [String] {
+        var codes = Set(localizations.filter { $0 != "Base" })
+        if languageCode != Self.systemLanguageCode {
+            codes.insert(languageCode)
+        }
+        return codes.sorted()
+    }
+
     private func applyLanguagePreference() {
         if languageCode == Self.systemLanguageCode {
             defaults.removeObject(forKey: "AppleLanguages")

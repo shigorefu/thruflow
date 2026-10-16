@@ -23,7 +23,7 @@ report reproducible problems through the
 - Shows daily, weekly, monthly, yearly, Task, and Area statistics.
 - Syncs through the user's private iCloud database while retaining a local-only development mode.
 - Provides iPhone and macOS widgets, Live Activity and Dynamic Island, plus an Apple Watch companion.
-- Uses Japanese by default and includes English and Russian localizations.
+- Uses Japanese by default and includes English, Russian, Simplified Chinese, and Traditional Chinese localizations.
 
 `1 Block` is always 25 focused minutes. Breaks are not counted.
 
@@ -105,6 +105,7 @@ CloudKit synchronization cannot be validated in the simulator. Use signed builds
 
 ## Project policies
 
+- [AI agent instructions](AGENTS.md)
 - [Contributing](CONTRIBUTING.md)
 - [Contributors and attribution](CONTRIBUTORS.md)
 - [Licensing model](LICENSING.md)

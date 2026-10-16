@@ -5,16 +5,19 @@ The application catalog is
 It is the single source of truth for user-facing text. Japanese (`ja`) is the
 source and fallback language.
 
-The app currently ships Japanese (`ja`), English (`en`), and Russian (`ru`).
-Unit tests require every catalog key to be translated into English and Russian
-and verify that unambiguous glossary terms match `TERMS.csv`.
+The app supports Japanese (`ja`), English (`en`), Russian (`ru`), Simplified
+Chinese (`zh-Hans`), and Traditional Chinese (`zh-Hant`). The Chinese locales
+are included in the upcoming 1.4.0 release. Unit tests require complete
+translations for every supported locale in both catalogs, preserve format
+placeholders, and verify unambiguous glossary terms against `TERMS.csv`.
 
 [`TERMS.csv`](TERMS.csv) is the shared product glossary. It maps stable code
-names to their meaning and approved terminology in Japanese, English, and
-Russian. The CSV helps translators stay consistent; the runtime source of truth
+names to their meaning and approved terminology in Japanese, English, Russian,
+Simplified Chinese, and Traditional Chinese. The CSV helps translators stay
+consistent; the runtime source of truth
 remains `Localizable.xcstrings`.
 
-## Add a language without changing Swift code
+## Add a language
 
 1. Open `ThruFlow/Localisation/Localizable.xcstrings` in Xcode.
 2. Choose `Editor` -> `New Localization`.
@@ -22,7 +25,11 @@ remains `Localizable.xcstrings`.
 4. Translate the `String` column. Do not edit the source key.
 5. Preserve placeholders such as `%lld`, `%@`, and `%1$@`. Xcode validates
    placeholder types and plural variants.
-6. Select the language in the app scheme and build the macOS app for review.
+6. Translate `ThruFlow/Localisation/InfoPlist.xcstrings` too, including permissions.
+7. Add the full locale code to the Xcode project's localizations and the
+   localization test coverage. Preserve script subtags such as `zh-Hans` and
+   `zh-Hant`; do not collapse them to `zh`.
+8. Select the language in the app scheme and build the macOS app for review.
 
 ## Contribute a language through GitHub
 

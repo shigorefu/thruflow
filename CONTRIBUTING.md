@@ -31,7 +31,7 @@ other material whose license is incompatible with this arrangement.
 
 - Keep the Area → Task → Flow → progress loop coherent.
 - Use Japanese as the default user-facing language and update Japanese,
-  English, and Russian localizations together.
+  English, Russian, Simplified Chinese, and Traditional Chinese localizations together.
 - Keep business rules outside SwiftUI views and add focused tests for domain or
   persistence behavior.
 - Preserve stable identifiers, enum raw values, and existing user history.
@@ -41,9 +41,32 @@ other material whose license is incompatible with this arrangement.
   permitted.
 - Never commit signing certificates, provisioning profiles, tokens, private
   user data, exports, or local Xcode state.
-- Follow [`CODEX.md`](CODEX.md) and the architecture documents linked from it.
+- Follow [`AGENTS.md`](AGENTS.md) for repository working rules, verification
+  commands, and the task-specific documentation map.
 
 ## Verification
+
+Before editing a feature, identify its other client entry point with
+`python3 scripts/platform_review.py --base HEAD` (or pass explicit paths before
+there is a diff). For a completed task, use its starting commit as `--base`.
+Review the same user action and expected result on Mac and iPhone/iPad, including
+UI-to-shared-command wiring. Native presentation differences are intentional;
+unchanged counterpart files are not by themselves a failure. Agent contributors
+follow `AGENTS.md`: logic changes require agreement between the orchestrator,
+macOS agent, and iOS/iPadOS agent before implementation and after final review;
+other app changes use the independent counterpart-review workflow.
+
+The report is also published in the CI job summary. It is an impact checklist,
+not a behavior test. CI runs shared unit tests on Mac and builds both clients;
+the iOS scheme currently has no configured UI-test target. Record actual manual
+or device checks and any gaps separately.
+
+Validate the routing tool after changing it or its map:
+
+```sh
+python3 scripts/platform_review.py --validate-map
+python3 -m unittest discover -s scripts/tests -p 'test_*.py'
+```
 
 Run relevant tests sequentially:
 

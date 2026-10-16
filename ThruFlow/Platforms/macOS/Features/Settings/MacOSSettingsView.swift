@@ -27,7 +27,6 @@ struct MacOSSettingsView: View {
                     Text(String(localized: "ライト")).tag(AppAppearance.light)
                     Text(String(localized: "ダーク")).tag(AppAppearance.dark)
                 }
-                .pickerStyle(.segmented)
             }
 
             Section(String(localized: "言語")) {
@@ -36,6 +35,8 @@ struct MacOSSettingsView: View {
                         Text(option.name).tag(option.code)
                     }
                 }
+
+                ChineseTranslationNotice(languageCode: settings.languageCode)
 
                 if settings.requiresRestartForLanguage {
                     Label(String(localized: "言語はアプリの再起動後に適用されます"), systemImage: "arrow.clockwise")
@@ -185,15 +186,7 @@ struct MacOSSettingsView: View {
     }
 
     private var languageOptions: [(code: String, name: String)] {
-        var codes = Bundle.main.localizations
-            .filter { $0 != "Base" }
-            .map { Locale(identifier: $0).language.languageCode?.identifier ?? $0 }
-
-        if settings.languageCode != AppSettings.systemLanguageCode {
-            codes.append(settings.languageCode)
-        }
-
-        let uniqueCodes = Array(Set(codes)).sorted { lhs, rhs in
+        let uniqueCodes = settings.availableLanguageCodes().sorted { lhs, rhs in
             languageName(for: lhs).localizedStandardCompare(languageName(for: rhs)) == .orderedAscending
         }
 

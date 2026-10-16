@@ -6,7 +6,6 @@ struct IOSAreaEditorView: View {
     @Environment(\.calendar) private var calendar
     @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \Area.sortIndex) private var areas: [Area]
 
     let mode: IOSAreaEditorMode
     let onSaved: ((Area) -> Void)?
@@ -41,12 +40,12 @@ struct IOSAreaEditorView: View {
         switch mode {
         case .create(let name):
             if let initialDraft {
-                draft = initialDraft
+                draft = initialDraft.normalizedForEditing
             } else {
-                draft = AreaDraft(name: name ?? "")
+                draft = AreaDraft(name: name ?? "").normalizedForEditing
             }
         case .edit(let value):
-            draft = AreaDraft(area: value)
+            draft = AreaDraft(area: value).normalizedForEditing
         }
 
         _name = State(initialValue: draft.name)
@@ -159,9 +158,18 @@ struct IOSAreaEditorView: View {
             if case .edit(let area) = mode {
                 Section {
                     Button(String(localized: "方向を削除"), role: .destructive) {
-                        area.archive()
-                        _ = modelContext.saveReporting(.areaUpdate)
+                        area.archive(calendar: calendar, dayBoundary: dayBoundary)
+                        guard modelContext.saveReporting(.areaUpdate) else { return }
                         dismiss()
+                    }
+                }
+            }
+
+            if !draft.trimmedName.isEmpty, !validationErrors.isEmpty {
+                Section {
+                    ForEach(validationErrors, id: \.self) { error in
+                        Label(error.localizedDescription, systemImage: "exclamationmark.triangle")
+                            .foregroundStyle(.red)
                     }
                 }
             }
@@ -176,6 +184,14 @@ struct IOSAreaEditorView: View {
         .iosCenteredNavigationTitle(
             isEditing ? String(localized: "方向を編集") : String(localized: "方向を作成")
         )
+        .onChange(of: type) { _, _ in
+            let normalized = draft.normalizedForEditing
+            goalTarget = normalized.goalTarget ?? 1
+            goalUnit = normalized.goalUnit ?? .occurrences
+            goalSchedule = normalized.goalSchedule ?? .everyDay
+            weeklyTargetCount = normalized.weeklyTargetCount ?? 1
+            weekdayMask = normalized.weekdayMask ?? 0
+        }
         .sheet(isPresented: $showsEmojiPicker) {
             IOSEmojiPickerView(selection: $symbolName)
         }
@@ -215,82 +231,50 @@ struct IOSAreaEditorView: View {
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
+    private var draft: AreaDraft {
+        AreaDraft(
+            name: name,
+            type: type,
+            symbolName: symbolName,
+            colorHex: colorHex,
+            goalTarget: goalTarget,
+            goalUnit: goalUnit,
+            goalSchedule: goalSchedule,
+            weeklyTargetCount: weeklyTargetCount,
+            weekdayMask: weekdayMask
+        )
+    }
+
+    private var editingService: AreaEditingService {
+        AreaEditingService(calendar: calendar, dayBoundary: dayBoundary)
+    }
+
+    private var validationErrors: [AreaValidationError] {
+        editingService.validationErrors(for: draft)
+    }
+
     private var canSave: Bool {
-        !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            && EmojiValidation.normalizedSingleEmoji(from: symbolName) != nil
+        validationErrors.isEmpty
     }
 
     private func save() {
         saveErrorMessage = nil
-        let normalizedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        let emoji = EmojiValidation.normalizedSingleEmoji(from: symbolName) ?? "🎯"
-        let goalPeriod = type == .habit ? goalSchedule.goalPeriod : nil
-        let unit: GoalUnit? = type == .habit ? goalUnit : nil
-        let target: Int? = type == .habit ? goalTarget : nil
-        let schedule: GoalScheduleKind? = type == .habit ? goalSchedule : nil
-        let weeklyCount: Int? = type == .habit && goalSchedule == .weeklyCount ? weeklyTargetCount : nil
-        let selectedWeekdays: Int? = type == .habit && goalSchedule != .everyDay ? weekdayMask : nil
+        let editedArea: Area?
+        if case .edit(let area) = mode { editedArea = area } else { editedArea = nil }
 
         do {
-            let savedArea: Area
-            switch mode {
-            case .create:
-                let area = Area(
-                    name: normalizedName,
-                    type: type,
-                    symbolName: emoji,
-                    colorHex: colorHex,
-                    goalTarget: target,
-                    goalPeriod: goalPeriod,
-                    goalUnit: unit,
-                    goalSchedule: schedule,
-                    weeklyTargetCount: weeklyCount,
-                    weekdayMask: selectedWeekdays,
-                    sortIndex: (areas.map(\.sortIndex).max() ?? -1) + 1
-                )
-                modelContext.insert(area)
-                savedArea = area
-            case .edit(let area):
-                let wasHabit = area.type == .habit
-                let todos = wasHabit && type == .habit
-                    ? try modelContext.fetch(FetchDescriptor<Todo>())
-                    : []
-                area.update(
-                    name: normalizedName,
-                    type: type,
-                    symbolName: emoji,
-                    colorHex: colorHex,
-                    goalTarget: target,
-                    goalPeriod: goalPeriod,
-                    goalUnit: unit,
-                    goalSchedule: schedule,
-                    weeklyTargetCount: weeklyCount,
-                    weekdayMask: selectedWeekdays
-                )
-                if wasHabit, area.type == .habit {
-                    reconcileFutureHabitTodos(for: area, todos: todos)
-                }
-                savedArea = area
-            }
-
-            try modelContext.save()
-            onSaved?(savedArea)
+            let area = try editingService.save(
+                draft: draft,
+                editing: editedArea,
+                modelContext: modelContext
+            )
+            onSaved?(area)
             dismiss()
+        } catch AreaEditingError.validation(let errors) {
+            saveErrorMessage = errors.map(\.localizedDescription).joined(separator: "\n")
         } catch {
-            modelContext.rollback()
             saveErrorMessage = String(localized: "記録を保存できませんでした。")
         }
-    }
-
-    private func reconcileFutureHabitTodos(for area: Area, todos: [Todo]) {
-        _ = HabitScheduleChangeReconciler(
-            calendar: calendar,
-            dayBoundary: dayBoundary
-        ).reconcile(
-            area: area,
-            todos: todos,
-            modelContext: modelContext
-        )
     }
 }
 

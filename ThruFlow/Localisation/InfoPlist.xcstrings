@@ -21,6 +21,18 @@
             "state" : "translated",
             "value" : "ThruFlow"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ThruFlow"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ThruFlow"
+          }
         }
       }
     },
@@ -40,6 +52,18 @@
           }
         },
         "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ThruFlow"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ThruFlow"
+          }
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "ThruFlow"
@@ -66,6 +90,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Импорт напоминаний из выбранных списков и синхронизация выполнения и повторного открытия с ThruFlow."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用于导入所选列表中的提醒事项，并与 ThruFlow 同步完成和重新打开状态。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用於匯入所選清單中的提醒事項，並與 ThruFlow 同步完成和重新開啟狀態。"
           }
         }
       }

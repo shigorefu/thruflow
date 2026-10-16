@@ -94,7 +94,8 @@ struct FlowTimerEngine {
     func startBreak(
         _ state: FlowTimerState,
         now: Date,
-        plannedBreakDurationSeconds: Int? = nil
+        plannedBreakDurationSeconds: Int? = nil,
+        isLongBreak: Bool? = nil
     ) -> FlowTimerState {
         let elapsedFocusSeconds = elapsedFocusDuration(for: state, now: now)
         let actualFocusSeconds = creditableFocusDuration(normalizedFocusDurationForBreak(elapsedFocusSeconds))
@@ -106,7 +107,7 @@ struct FlowTimerEngine {
         next.phase = .breakTime
         next.breakStartedAt = now
         next.plannedEndAt = now.addingTimeInterval(TimeInterval(breakSeconds))
-        next.plannedBreakIsLong = breakSeconds == FlowSeriesPolicy.longBreakDurationSeconds
+        next.plannedBreakIsLong = isLongBreak ?? (breakSeconds >= FlowSeriesPolicy.longBreakDurationSeconds)
         return next
     }
 
@@ -252,14 +253,7 @@ struct FlowTimerEngine {
     }
 
     private func breakDurationForBreak(_ elapsedFocusSeconds: Int) -> Int {
-        switch elapsedFocusSeconds {
-        case (49 * 60)...:
-            10 * 60
-        case (24 * 60)...:
-            5 * 60
-        default:
-            3 * 60
-        }
+        FlowSeriesPolicy.regularBreakDuration(forFocusedSeconds: elapsedFocusSeconds)
     }
 
 }

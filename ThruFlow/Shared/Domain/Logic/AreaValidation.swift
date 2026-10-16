@@ -59,6 +59,30 @@ struct AreaDraft {
         self.weekdayMask = area.weekdayMask
     }
 
+    /// Defaults for editor controls; persisted values are selected by schedule below.
+    var normalizedForEditing: AreaDraft {
+        var draft = self
+        guard draft.type == .habit else {
+            draft.goalEnabled = false
+            draft.goalTarget = nil
+            draft.goalPeriod = nil
+            draft.goalUnit = nil
+            draft.goalSchedule = nil
+            draft.weeklyTargetCount = nil
+            draft.weekdayMask = nil
+            return draft
+        }
+        draft.goalEnabled = true
+        draft.goalTarget = draft.goalTarget ?? 1
+        draft.goalUnit = draft.goalUnit ?? .occurrences
+        draft.goalSchedule = draft.goalSchedule ?? .everyDay
+        draft.goalPeriod = draft.goalSchedule?.goalPeriod
+        if draft.goalSchedule == .weeklyCount {
+            draft.weeklyTargetCount = draft.weeklyTargetCount ?? 1
+        }
+        return draft
+    }
+
     var trimmedName: String {
         name.trimmingCharacters(in: .whitespacesAndNewlines)
     }

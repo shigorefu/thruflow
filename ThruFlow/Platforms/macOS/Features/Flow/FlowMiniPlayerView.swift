@@ -26,7 +26,10 @@ struct FlowMiniPlayerView: View {
     @State private var showsTaskPicker = false
     @State private var showsTaskComposer = false
     @State private var presentsTaskComposerAfterPicker = false
+    @State private var taskComposerPresentationTask: Task<Void, Never>?
     @State private var resultText = ""
+    @State private var resultTaskTitle = ""
+    @FocusState private var isResultTitleFocused: Bool
     @State private var editingTaskTitleID: UUID?
     @State private var taskTitleDraft = ""
     @State private var taskCardIsPressed = false
@@ -82,6 +85,10 @@ struct FlowMiniPlayerView: View {
                     reconcileSelectedTodo(now: context.date)
                 }
         }
+        .background {
+            MacWindowPresentationAnchor(onHidden: dismissTaskPopovers)
+        }
+        .onDisappear(perform: dismissTaskPopovers)
         .onAppear {
             reconcileSelectedTodo()
         }
@@ -179,7 +186,8 @@ struct FlowMiniPlayerView: View {
                 tint: timerRingColor,
                 eyebrow: timerEyebrow,
                 timeText: dashboardTimerText(now: now),
-                footer: timerPhaseName
+                footer: timerPhaseName,
+                slices: activeFlowStore.timerRingSlices(now: now)
             ),
             timerAccessibilityLabel: String(localized: "Flowタイマー")
         ) {
@@ -247,10 +255,12 @@ struct FlowMiniPlayerView: View {
                 selectedTodoID: activeFlowStore.selectedTodoID,
                 onCreateTask: presentTaskComposer
             ) { area, todo in
-                activeFlowStore.selectContext(
+                activeFlowStore.selectPickerContext(
                     area: area,
                     todo: todo,
-                    modelContext: modelContext
+                    modelContext: modelContext,
+                    calendar: calendar,
+                    dayBoundary: dayBoundary
                 )
             }
             .frame(width: 520, height: 460)
@@ -259,7 +269,8 @@ struct FlowMiniPlayerView: View {
             QuickTodoCreationPopover(
                 areas: activeAreas,
                 showsQuickInputLegend: false,
-                suggestionsBelow: taskSuggestionsBelow
+                suggestionsBelow: taskSuggestionsBelow,
+                isPresented: $showsTaskComposer
             ) { todo in
                 activeFlowStore.selectContext(
                     area: todo.area,
@@ -272,9 +283,12 @@ struct FlowMiniPlayerView: View {
             guard !isPresented, presentsTaskComposerAfterPicker else { return }
             presentsTaskComposerAfterPicker = false
 
-            Task { @MainActor in
+            taskComposerPresentationTask?.cancel()
+            taskComposerPresentationTask = Task { @MainActor in
                 await Task.yield()
+                guard !Task.isCancelled else { return }
                 showsTaskComposer = true
+                taskComposerPresentationTask = nil
             }
         }
         .onChange(of: selectedTodo?.id) { _, newID in
@@ -287,6 +301,14 @@ struct FlowMiniPlayerView: View {
                 commitTaskTitle()
             }
         }
+    }
+
+    private func dismissTaskPopovers() {
+        taskComposerPresentationTask?.cancel()
+        taskComposerPresentationTask = nil
+        presentsTaskComposerAfterPicker = false
+        showsTaskPicker = false
+        showsTaskComposer = false
     }
 
     private func presentTaskComposer() {
@@ -881,6 +903,19 @@ struct FlowMiniPlayerView: View {
             Label(String(localized: "お疲れ様です。メモを追加しますか？"), systemImage: "note.text")
                 .font(.headline)
 
+            if activeFlowStore.activeSession?.todo != nil {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(String(localized: "タスク名"))
+                        .font(.subheadline.weight(.medium))
+                    TextField(String(localized: "タスク名"), text: $resultTaskTitle)
+                        .textFieldStyle(.roundedBorder)
+                        .focused($isResultTitleFocused)
+                        .onSubmit { isMemoFocused = true }
+                }
+            }
+            Text(String(localized: "取り組んだこと"))
+                .font(.subheadline.weight(.medium))
+
             ZStack(alignment: .topLeading) {
                 if resultText.isEmpty {
                     Text(String(localized: "何をしましたか？"))
@@ -938,8 +973,13 @@ struct FlowMiniPlayerView: View {
                 .strokeBorder(Color.primary.opacity(0.08))
         }
         .onAppear {
+            resultTaskTitle = activeFlowStore.activeSession?.todo?.title ?? ""
             Task { @MainActor in
-                isMemoFocused = true
+                if activeFlowStore.activeSession?.todo != nil && resultTaskTitle.isEmpty {
+                    isResultTitleFocused = true
+                } else {
+                    isMemoFocused = true
+                }
             }
         }
     }
@@ -1013,29 +1053,21 @@ struct FlowMiniPlayerView: View {
     }
 
     private func submitResult() {
+        let didSave: Bool
         if activeFlowStore.isAwaitingBreakMemo {
-            activeFlowStore.completeBreakMemo(resultText, modelContext: modelContext)
+            didSave = activeFlowStore.completeBreakMemo(
+                resultText, taskTitle: resultTaskTitle, modelContext: modelContext
+            )
         } else {
-            activeFlowStore.completeResult(resultText, modelContext: modelContext)
+            didSave = activeFlowStore.completeResult(
+                resultText, taskTitle: resultTaskTitle, modelContext: modelContext
+            )
         }
-        resultText = ""
-    }
-
-    private func submitWithoutResult() {
-        resultText = ""
-        if activeFlowStore.isAwaitingBreakMemo {
-            activeFlowStore.completeBreakMemo(nil, modelContext: modelContext)
-        } else {
-            activeFlowStore.completeResult(nil, modelContext: modelContext)
-        }
+        if didSave { resultText = "" }
     }
 
     private func submitMemo() {
-        if hasMemoText {
-            submitResult()
-        } else {
-            submitWithoutResult()
-        }
+        submitResult()
     }
 
     private func cancelMemo() {

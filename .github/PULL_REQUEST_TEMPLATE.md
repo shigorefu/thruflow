@@ -9,11 +9,25 @@ Describe the user-visible outcome and why it belongs in ThruFlow.
 ## Verification
 
 - [ ] Relevant unit tests pass sequentially.
-- [ ] Affected Release target builds.
+- [ ] Both client Release targets build when shared behavior is affected.
 - [ ] UI changes were checked on every affected platform and size class.
-- [ ] Japanese, English, and Russian strings were reviewed when user-facing text changed.
+- [ ] Japanese, English, Russian, Simplified Chinese, and Traditional Chinese strings were reviewed when user-facing text changed.
 - [ ] `git diff --check` passes.
 - [ ] Documentation and migrations are updated when behavior or stored data changed.
+
+## Cross-platform review
+
+For app changes, use `python3 scripts/platform_review.py --base <task-start-commit>`.
+For documentation-only changes, write "Not applicable".
+
+- User action and expected result:
+- macOS entry point and evidence:
+- iOS/iPadOS counterpart and evidence:
+- Shared operation; Watch/widget consumers where applicable:
+- Intentional platform differences / why an unchanged counterpart is correct:
+- Independent counterpart reviewer findings (or disclose a direct review):
+- For logic changes: agreed behavior contract and final macOS/iOS agent verdicts; unresolved disagreements or unavailable checks:
+- Checks actually run; unverified scenarios:
 
 ## Screenshots or recordings
 
