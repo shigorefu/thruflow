@@ -22,6 +22,10 @@ locale before localisation tests pass. Chinese support is part of 1.3.2.
 Settings preserves complete locale identifiers so the two scripts remain
 separately selectable on Mac and iPhone/iPad. Changes apply after restarting;
 Watch and widgets use their system/bundle language selection.
+When either Chinese variant is selected (including via the system language),
+Mac and iPhone/iPad Settings show a small AI translation notice and a support
+link below the language picker. The notice follows the selection immediately;
+the interface language itself still requires a restart.
 
 Chinese terminology uses 领域 / 領域 for Area, 任务 / 任務 for Task,
 习惯 / 習慣 for Habit, 专注记录 / 專注記錄 for saved Flow, and

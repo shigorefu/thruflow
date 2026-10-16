@@ -37,6 +37,8 @@ struct MacOSSettingsView: View {
                     }
                 }
 
+                ChineseTranslationNotice(languageCode: settings.languageCode)
+
                 if settings.requiresRestartForLanguage {
                     Label(String(localized: "言語はアプリの再起動後に適用されます"), systemImage: "arrow.clockwise")
                         .font(.caption)

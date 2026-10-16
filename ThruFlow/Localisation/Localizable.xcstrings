@@ -1,6 +1,40 @@
 {
   "sourceLanguage" : "ja",
   "strings" : {
+    "中国語の翻訳にはAIを使用しているため、不正確な表現が含まれる場合があります。お気づきの点はサポートまでお知らせください。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The Chinese translations were created with AI and may contain inaccuracies. Please contact support if you notice any issues."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "中国語の翻訳にはAIを使用しているため、不正確な表現が含まれる場合があります。お気づきの点はサポートまでお知らせください。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перевод на китайский выполнен с помощью ИИ и может содержать неточности. Если заметите ошибку, напишите в поддержку."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "中文翻译由 AI 完成，可能存在不准确的表述。如发现问题，请联系支持团队。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "中文翻譯由 AI 完成，可能有不準確的表達。如發現問題，請聯絡支援團隊。"
+          }
+        }
+      }
+    },
     "取り組んだこと": {
       "localizations": {
         "ja": {

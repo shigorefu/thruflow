@@ -873,3 +873,7 @@ and persisted language preference. Japanese remains the default and fallback;
 app and provider brand names, persisted models, user content, and universal
 English quick-input aliases stay unchanged. Both Chinese catalogs, format
 placeholders, glossary terms, and built app resources are covered by tests.
+
+Chinese language selection also shows a quiet caption explaining that the
+translation uses AI and may contain inaccuracies, with a link to support for
+reporting issues. Both Mac and iPhone/iPad use the same notice.
