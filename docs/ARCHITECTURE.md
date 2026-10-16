@@ -636,3 +636,22 @@ atomically persists the local queue. The existing connector Keychain handles the
 Track token; `FlowRecordingDevice` provides device-only export ownership. Shared
 `TogglSetupSections` supplies form content while native macOS/iOS views retain
 navigation ownership. See `docs/CONNECTORS.md` for delivery and retry rules.
+
+### Optional Projects and Area lifecycle (1.4.0)
+
+`Shared/Domain/Models/Project.swift` owns the additive Project entity.
+`ProjectEditingService` validates names and fixed Area ownership and saves
+completion/reopening without cascading to children. `TaskEditingService` validates
+optional project assignments on all creation/editor paths. Existing Task/Flow
+Area attribution stays canonical. `AreaLifecycleService` coordinates saved archive
+and restore, including the bounded Habit pause interval and mutation-journal
+rollback. `Shared/UI/Projects` supplies the small Project management/detail/editor
+surfaces and optional picker; native clients provide their Task editor bodies.
+Watch uses the picker and shared model, while widgets keep their existing snapshots.
+
+Orchestrator, Mac and iOS agents agreed before implementation and reviewed each
+other's final callers. A separate localization agent reviewed the 16 new keys in
+all five locales. Intentional differences: Mac quick capture preserves the last
+Area/Project, iOS resets both after success; Watch offers Task assignment rather
+than full Project management. Verification evidence belongs in Release/CloudKit;
+source agreement alone is not device or synchronization verification.

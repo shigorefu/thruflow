@@ -529,8 +529,16 @@ private struct WatchFlowContextPicker: View {
                             select(area: todo.area, todo: todo)
                         } label: {
                             Label {
-                                Text(TodoDisplay.title(for: todo))
-                                    .lineLimit(1)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(TodoDisplay.title(for: todo))
+                                        .lineLimit(1)
+                                    if let project = todo.project {
+                                        Text(project.name)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                            .lineLimit(1)
+                                    }
+                                }
                             } icon: {
                                 Text(todo.area?.symbolName ?? "📝")
                             }

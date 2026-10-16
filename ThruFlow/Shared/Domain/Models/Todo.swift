@@ -75,6 +75,7 @@ final class Todo {
     /// Nil preserves classification of records created before this field existed.
     var habitOccurrence: Bool? = nil
     /// Persisted as `direction` for SwiftData and CloudKit compatibility.
+    var project: Project?
     var direction: Area?
     var measurementRawValue: String = TodoMeasurement.checkbox.rawValue
     var priorityRawValue: String = TodoPriority.medium.rawValue
@@ -102,6 +103,7 @@ final class Todo {
         notes: String? = nil,
         hashtags: [String] = [],
         area: Area,
+        project: Project? = nil,
         habitOccurrence: Bool? = nil,
         measurement: TodoMeasurement = .checkbox,
         priority: TodoPriority = .medium,
@@ -124,6 +126,7 @@ final class Todo {
         self.notes = notes
         self.hashtagsRawValue = TodoHashtagCodec.encode(hashtags)
         self.direction = area
+        self.project = project
         self.habitOccurrence = habitOccurrence
         self.measurementRawValue = measurement.rawValue
         self.priorityRawValue = priority.rawValue
@@ -145,7 +148,14 @@ final class Todo {
 
     var area: Area? {
         get { direction }
-        set { direction = newValue }
+        set {
+            direction = newValue
+            // Explicit reclassification must not leave a known cross-Area link.
+            // A missing imported Project parent may still arrive through CloudKit.
+            if let projectAreaID = project?.area?.id, projectAreaID != newValue?.id {
+                project = nil
+            }
+        }
     }
 
     var isHabitOccurrence: Bool {
@@ -231,7 +241,7 @@ final class Todo {
         self.title = title
         self.notes = notes
         self.hashtags = hashtags
-        self.direction = area
+        self.area = area
         self.measurement = measurement
         self.priority = priority
         self.isRoomIfPossible = priority == .low && isRoomIfPossible

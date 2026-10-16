@@ -6,6 +6,7 @@ struct IOSAreaEditorView: View {
     @Environment(\.calendar) private var calendar
     @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.modelContext) private var modelContext
+    @Query(sort: \Area.sortIndex) private var areas: [Area]
 
     let mode: IOSAreaEditorMode
     let onSaved: ((Area) -> Void)?
@@ -156,11 +157,26 @@ struct IOSAreaEditorView: View {
             }
 
             if case .edit(let area) = mode {
+                ProjectManagementSection(area: area) { todo, project in
+                    NavigationStack {
+                        IOSTaskEditorView(
+                            mode: todo.map(IOSTaskEditorMode.edit) ?? .create,
+                            areas: areas.filter { !$0.isArchived },
+                            fixedArea: todo == nil ? area : nil,
+                            project: project
+                        )
+                    }
+                }
+
                 Section {
-                    Button(String(localized: "方向を削除"), role: .destructive) {
-                        area.archive(calendar: calendar, dayBoundary: dayBoundary)
-                        guard modelContext.saveReporting(.areaUpdate) else { return }
-                        dismiss()
+                    if area.isArchived {
+                        Button(String(localized: "分野を復元"), systemImage: "arrow.uturn.backward") {
+                            updateArchiveState(area, archived: false)
+                        }
+                    } else {
+                        Button(String(localized: "アーカイブする"), role: .destructive) {
+                            updateArchiveState(area, archived: true)
+                        }
                     }
                 }
             }
@@ -272,6 +288,21 @@ struct IOSAreaEditorView: View {
             dismiss()
         } catch AreaEditingError.validation(let errors) {
             saveErrorMessage = errors.map(\.localizedDescription).joined(separator: "\n")
+        } catch {
+            saveErrorMessage = String(localized: "記録を保存できませんでした。")
+        }
+    }
+
+    private func updateArchiveState(_ area: Area, archived: Bool) {
+        saveErrorMessage = nil
+        let service = AreaLifecycleService(calendar: calendar, dayBoundary: dayBoundary)
+        do {
+            if archived {
+                try service.archive(area, modelContext: modelContext)
+            } else {
+                try service.restore(area, modelContext: modelContext)
+            }
+            dismiss()
         } catch {
             saveErrorMessage = String(localized: "記録を保存できませんでした。")
         }

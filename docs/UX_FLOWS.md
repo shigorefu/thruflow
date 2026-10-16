@@ -896,3 +896,22 @@ Archiving a Habit Area immediately removes unstarted generated Tasks scheduled
 on or after its logical archive day, including days preplanned by Week/Month.
 Completed Tasks and Tasks with progress or Flow history remain, as do manual
 Tasks in that Area. Existing stale occurrences are repaired during planning.
+
+## Projects and Area restoration (1.4.0)
+
+Area rows show a folder count when Projects exist. Open a saved Area to manage
+its Projects; use the add button for a named Project with optional memo. Active
+and completed Projects are separated. A Project opens its Task list, native Task
+creation/editing, and explicit complete/reopen actions. Completing a Project
+leaves its Tasks and Flow history unchanged. Projects are optional: Task editors
+and quick capture provide a None option after the Area control. Changing the
+Area clears an incompatible Project. Existing completed memberships remain
+visible while editing. Watch uses the same selection/validation rules without a
+separate Project management screen.
+
+Archived Areas provide Restore in the Mac context menu, the iPhone swipe action,
+and both Area editors. Restore saves through the common lifecycle service before
+closing the editor. Failures remain visible and keep the original archive state.
+Habit restoration resumes planning without generating Tasks for the inactive
+archive interval; it does not resurrect soft-deleted occurrences or erase manual
+pauses.

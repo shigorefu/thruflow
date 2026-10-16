@@ -208,8 +208,47 @@ Habit classification rules added in 1.3.1; use updated clients on both devices.
 
 ### 1.4.0 (13) release preparation — 2026-10-16
 
-Live Production inspection was attempted but remains unverified: `cktool`
+The initial live Production inspection was blocked: `cktool`
 reported no management token, and CloudKit Console opened the Apple Account
 sign-in screen. No schema deployment or user-data mutation was performed.
-Inspect current record types, fields and indexes after authentication before
-distributing this candidate; prior 1.3.1 evidence is not a current schema check.
+This initial result is superseded by the authenticated inspection below; prior
+1.3.1 evidence alone was not treated as a current schema check.
+
+
+### Projects and Area restoration — 2026-10-16
+
+After the maintainer authenticated, both live environments of
+`iCloud.com.shigorefu.thruflow` (team `BR727PS795`) were inspected in CloudKit
+Console. Their exported schemas contained the same five application record
+types and lacked three fields already used by the app, as well as Projects.
+The full Development schema was imported with additive changes only:
+
+| Record type | Added fields | CloudKit types |
+| --- | --- | --- |
+| `CD_Direction` | `CD_weekdayMask` | `INT64` |
+| `CD_Todo` | `CD_archivedAt`, `CD_deadline` | `TIMESTAMP` (Date/Time in Console) |
+| `CD_Todo` | `CD_project` | `STRING` |
+| `CD_Project` | `CD_id`, `CD_name`, `CD_notes`, `CD_direction`, `CD_entityName` | `STRING` |
+| `CD_Project` | `CD_createdAt`, `CD_updatedAt`, `CD_completedAt` | `TIMESTAMP` |
+
+The relationships use the same Core Data CloudKit String representation as
+existing to-one links; inverse collections are not added as array fields.
+New scalar fields have Queryable/Sortable indexes; String fields also have
+Searchable indexes, matching the existing generated schema convention.
+The reviewed deployment diff showed 2 new indexes on Direction, 7 on Todo and
+21 on Project. It removed or altered no existing fields, indexes or permissions.
+The new record type follows the existing record-type grants; app records remain
+in the user's private database. No user records or stores were modified/reset.
+
+Console first reported a successful Development import, then **Changes Deployed:
+The schema is deployed to Production**. After switching to Production and
+reloading, the record list showed `CD_Project` (14 fields including metadata),
+`CD_Direction` (25) and `CD_Todo` (30). The fields and their indexes above were
+read back on the live Production detail pages. The additive Development revision
+was `b1314881-c95b-11f1-a6b6-bfa6b1f81655`.
+
+This verifies the deployed schema, not physical-device synchronization. A signed
+Mac/iPhone exchange creating, editing and completing a Project and assigning a
+Task still needs to run before distribution. Local migration was verified against
+a disk store with the pre-Project schema, preserving identities, progress and
+Flow history; the full 499-test suite passed.

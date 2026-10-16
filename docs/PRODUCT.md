@@ -5,7 +5,7 @@ ThruFlow / スルフロ records focused work and turns it into visible task prog
 Core loop:
 
 ```text
-Area -> Task -> Flow -> focused time -> progress -> statistics
+Area -> optional Project -> Task -> Flow -> focused time -> progress -> statistics
 ```
 
 User-facing English uses `Area` / `Areas`, and user-facing Russian uses
@@ -23,6 +23,27 @@ concept is shown as `Area` in English and `Сфера` in Russian.
 - `習慣` / Habit / Привычка: scheduled recurring requirement that creates Habit Tasks.
 - `できたら` / Optional / Если получится: positive activity that does not block day completion.
 - `その他` / Other / Другое: system Area for Tasks and Flow without a chosen Area. Its stable role is `taskInbox`; it is hidden only from Area management, not from Statistics.
+
+## Projects
+
+Projects are optional finite goals within an Area: for example, the Cloud Area
+can contain AWS and Azure projects. Each Project has one fixed parent Area, a
+name, an optional memo and a completed state. Manage them inside the saved Area
+editor on Mac and iPhone/iPad; open a Project to create or edit its Tasks.
+
+Tasks may remain directly in an Area without a Project. Project selection is
+available in the Task editor, quick capture (including Mac Menu Bar), and Watch
+creation. A Project must belong to the selected Area; changing Area clears the
+selection. Generated Habit occurrences remain owned by their Area and do not
+receive a Project, while independent Tasks in Habit Areas may use one.
+
+Completing or reopening a Project never completes, hides or deletes its Tasks
+and never changes recorded Flow. Completed Projects retain their Task list and
+can be reopened; they are unavailable for new assignments until reopened.
+Editing an existing Task preserves its completed Project. A Project inherits
+its Area's presentation color; it does not introduce another timer or progress
+unit. Connector project mappings continue to refer to provider projects and
+remain Area-based.
 
 ## Tasks
 

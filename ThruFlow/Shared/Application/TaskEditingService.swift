@@ -16,7 +16,19 @@ struct TaskEditingService {
     }
 
     func validationErrors(for draft: TodoDraft, editing todo: Todo? = nil) -> [TodoValidationError] {
-        TodoValidator().validate(effectiveDraft(draft, editing: todo))
+        let draft = effectiveDraft(draft, editing: todo)
+        var errors = TodoValidator().validate(draft)
+        if let project = draft.project {
+            let retainingAssignment = todo?.project?.id == project.id && todo?.area?.id == draft.area?.id
+            if !retainingAssignment {
+                if project.area?.id != draft.area?.id || project.area == nil {
+                    errors.append(.projectAreaMismatch)
+                } else if !project.isAvailableForNewTasks {
+                    errors.append(.unavailableProject)
+                }
+            }
+        }
+        return errors
     }
 
     @discardableResult
@@ -27,7 +39,7 @@ struct TaskEditingService {
         now: Date = .now
     ) throws -> Todo {
         let draft = effectiveDraft(draft, editing: todo)
-        let errors = TodoValidator().validate(draft)
+        let errors = validationErrors(for: draft, editing: todo)
         guard errors.isEmpty else { throw TaskEditingError.validation(errors) }
 
         let journal = EditorMutationJournal(modelContext: modelContext)
@@ -46,6 +58,7 @@ struct TaskEditingService {
                     plannedAmount: plannedAmount, actualProgress: actualProgress,
                     scheduledDate: draft.scheduledDate, deadline: draft.deadline, now: now
                 )
+                todo.project = draft.project
                 savedTodo = todo
             } else {
                 var descriptor = FetchDescriptor<Todo>(sortBy: [SortDescriptor(\Todo.sortIndex)])
@@ -57,7 +70,7 @@ struct TaskEditingService {
                 )
                 let created = Todo(
                     title: draft.trimmedTitle, notes: draft.trimmedNotes, hashtags: draft.hashtags,
-                    area: area, habitOccurrence: false, measurement: draft.measurement,
+                    area: area, project: draft.project, habitOccurrence: false, measurement: draft.measurement,
                     priority: draft.priority,
                     isRoomIfPossible: draft.priority == .low && draft.isRoomIfPossible,
                     plannedAmount: plannedAmount, actualProgress: actualProgress, status: status,
@@ -81,6 +94,7 @@ struct TaskEditingService {
         var result = draft
         // A generated occurrence keeps its Area-owned structure and schedule.
         result.area = todo.area
+        result.project = todo.project
         result.measurement = todo.measurement
         result.plannedAmount = todo.plannedAmount
         result.priority = todo.priority

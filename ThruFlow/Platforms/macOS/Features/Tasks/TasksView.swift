@@ -20,6 +20,7 @@ struct TasksView: View {
     @State private var editingTodo: Todo?
     @State private var newTodoTitle = ""
     @State private var newTodoAreaID: UUID?
+    @State private var newTodoProject: Project?
     @State private var newTodoVolume: QuickTodoVolume = .unspecified
     @State private var newTodoPriority: TodoPriority = .medium
     @State private var newTodoIsRoomIfPossible = false
@@ -140,6 +141,7 @@ struct TasksView: View {
             MessengerTodoComposer(
                 title: $newTodoTitle,
                 selectedAreaID: $newTodoAreaID,
+                selectedProject: $newTodoProject,
                 volume: $newTodoVolume,
                 priority: $newTodoPriority,
                 isRoomIfPossible: $newTodoIsRoomIfPossible,
@@ -767,6 +769,7 @@ struct TasksView: View {
             title: newTodoTitle,
             hashtags: newTodoHashtags,
             area: area(for: newTodoAreaID),
+            project: newTodoProject,
             measurement: newTodoVolume.measurement,
             priority: newTodoPriority,
             isRoomIfPossible: newTodoPriority == .low && newTodoIsRoomIfPossible,
@@ -996,6 +999,7 @@ struct MessengerTodoComposer: View {
 
     @Binding var title: String
     @Binding var selectedAreaID: UUID?
+    @Binding var selectedProject: Project?
     @Binding var volume: QuickTodoVolume
     @Binding var priority: TodoPriority
     @Binding var isRoomIfPossible: Bool
@@ -1055,6 +1059,7 @@ struct MessengerTodoComposer: View {
             )
         }
         .onChange(of: selectedAreaID) { _, newValue in
+            if selectedProject?.area?.id != newValue { selectedProject = nil }
             updateExistingInlineToken(newValue.map(TaskComposerInlineToken.area), id: "area")
         }
         .onChange(of: priority) { _, newValue in
@@ -1076,6 +1081,10 @@ struct MessengerTodoComposer: View {
             inputArea
 
             controlBar
+            if let area = areas.first(where: { $0.id == selectedAreaID }) {
+                TaskProjectPicker(area: area, selection: $selectedProject)
+                    .font(.caption)
+            }
 
             if let message = parserMessage ?? validationMessage {
                 Text(message)
@@ -1218,6 +1227,8 @@ struct MessengerTodoComposer: View {
             consumeTrailingToken: true
         )
         apply(result)
+        // A trailing @ token can change Area before onChange is delivered.
+        if selectedProject?.area?.id != selectedAreaID { selectedProject = nil }
         if let unresolved = result.unresolvedArea, !unresolved.isEmpty {
             pendingAreaName = unresolved
             parserMessage = String(localized: "方向「\(unresolved)」が見つかりません")
@@ -1242,7 +1253,7 @@ struct MessengerTodoComposer: View {
 
     private var canSubmit: Bool {
         hasComposerContent || hasExplicitArea || hasExplicitPriority || hasExplicitDate
-            || volume != .unspecified || !hashtags.isEmpty
+            || volume != .unspecified || !hashtags.isEmpty || selectedProject != nil
     }
 
     private var autocompleteToken: String? {
@@ -1756,6 +1767,7 @@ struct QuickTodoCreationPopover: View {
 
     @State private var title = ""
     @State private var selectedAreaID: UUID?
+    @State private var selectedProject: Project?
     @State private var volume: QuickTodoVolume = .unspecified
     @State private var priority: TodoPriority = .medium
     @State private var isRoomIfPossible = false
@@ -1798,6 +1810,7 @@ struct QuickTodoCreationPopover: View {
 
         _title = State(initialValue: initialDraft?.title ?? "")
         _selectedAreaID = State(initialValue: initialDraft?.area?.id)
+        _selectedProject = State(initialValue: initialDraft?.project)
         _volume = State(initialValue: initialVolume)
         _priority = State(initialValue: initialDraft?.priority ?? .medium)
         _isRoomIfPossible = State(
@@ -1822,6 +1835,7 @@ struct QuickTodoCreationPopover: View {
         MessengerTodoComposer(
             title: $title,
             selectedAreaID: $selectedAreaID,
+            selectedProject: $selectedProject,
             volume: $volume,
             priority: $priority,
             isRoomIfPossible: $isRoomIfPossible,
@@ -1858,6 +1872,7 @@ struct QuickTodoCreationPopover: View {
             notes: initialDraft?.notes ?? "",
             hashtags: hashtags,
             area: selectedArea,
+            project: selectedProject,
             measurement: volume.measurement,
             priority: priority,
             isRoomIfPossible: priority == .low && isRoomIfPossible,
@@ -2384,6 +2399,11 @@ private struct TodoRow: View {
                     if let area = todo.area, !DefaultAreas.isTaskInbox(area) {
                         Text("\(area.symbolName) \(area.name)")
                             .foregroundStyle(checkboxTint)
+                        Text("·")
+                    }
+
+                    if let project = todo.project {
+                        Label(project.name, systemImage: "folder")
                         Text("·")
                     }
 
