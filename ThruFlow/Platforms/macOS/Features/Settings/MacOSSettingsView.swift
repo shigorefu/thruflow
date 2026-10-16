@@ -27,7 +27,6 @@ struct MacOSSettingsView: View {
                     Text(String(localized: "ライト")).tag(AppAppearance.light)
                     Text(String(localized: "ダーク")).tag(AppAppearance.dark)
                 }
-                .pickerStyle(.segmented)
             }
 
             Section(String(localized: "言語")) {
