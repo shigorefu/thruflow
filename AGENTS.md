@@ -81,7 +81,8 @@ Read the documents relevant to the task rather than loading all documentation.
   soft deletion when physical deletion would invalidate history.
 - `1 Block = 25 focused minutes`; breaks are excluded and 12 focused minutes
   are presented as `0.5 Block`.
-- Update Japanese, English, and Russian app copy together. Review Xcode changes
+- Update all supported locales together: Japanese, English, Russian, Simplified
+  Chinese (`zh-Hans`), and Traditional Chinese (`zh-Hant`). Review Xcode changes
   to `ThruFlow/Localisation/Localizable.xcstrings` against the source; remove
   task-related empty/stale keys, retain meaningful translations, and avoid
   unrelated catalog reformatting.

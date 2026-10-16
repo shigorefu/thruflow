@@ -864,3 +864,12 @@ started Tasks, Flow links, earlier dates, manual Tasks and connector imports.
 Repeat the idempotent repair during Habit materialization to handle existing
 and late-arriving records. Every Area archive UI saves the archive and cleanup
 together; a failed save keeps editors open. No persisted schema change.
+
+### 2026-10-16 — Simplified and Traditional Chinese localization (1.3.2)
+
+Support `zh-Hans` and `zh-Hant` independently across the shared app and
+InfoPlist catalogs. Keep full locale identifiers in the Mac/iOS language picker
+and persisted language preference. Japanese remains the default and fallback;
+app and provider brand names, persisted models, user content, and universal
+English quick-input aliases stay unchanged. Both Chinese catalogs, format
+placeholders, glossary terms, and built app resources are covered by tests.

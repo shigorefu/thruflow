@@ -7,6 +7,7 @@ Release dates below record GitHub publication in Asia/Tokyo (JST).
 
 ### Added
 
+- Simplified Chinese and Traditional Chinese localizations across Mac, iPhone/iPad, Watch, widgets, and permission prompts, with distinct language choices in Settings.
 - Selecting an Area in the Flow timer creates an unnamed Task for today, with title editing and visibility in Tasks.
 - Flow completion and rest forms now accept the Task name above the result memo on Mac, iPhone/iPad, and Watch.
 - Focus timer rings on Mac, iPhone/iPad, and Watch retain each recorded Area color when switching Tasks, with boundaries based on focused time.

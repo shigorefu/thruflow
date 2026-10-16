@@ -116,6 +116,26 @@ struct AppSettingsTests {
         #expect(defaults.persistentDomain(forName: suiteName)?["AppleLanguages"] == nil)
     }
 
+    @Test(arguments: ["zh-Hans", "zh-Hant"])
+    func chineseLanguageSelectionPreservesScript(code: String) {
+        let defaults = makeDefaults()
+        let settings = AppSettings(defaults: defaults)
+        settings.languageCode = code
+
+        #expect(settings.requiresRestartForLanguage)
+        #expect(defaults.stringArray(forKey: "AppleLanguages") == [code])
+        let restored = AppSettings(defaults: defaults)
+        #expect(restored.languageCode == code)
+        #expect(restored.effectiveLocale.language.script?.identifier ==
+            (code == "zh-Hans" ? "Hans" : "Hant"))
+        #expect(!restored.requiresRestartForLanguage)
+
+        let options = restored.availableLanguageCodes(
+            localizations: ["Base", "ja", "en", "ru", "zh-Hans", "zh-Hant", "zh-Hans"]
+        )
+        #expect(options == ["en", "ja", "ru", "zh-Hans", "zh-Hant"])
+    }
+
     private func makeDefaults() -> UserDefaults {
         let suiteName = "AppSettingsTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!

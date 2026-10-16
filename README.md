@@ -23,7 +23,7 @@ report reproducible problems through the
 - Shows daily, weekly, monthly, yearly, Task, and Area statistics.
 - Syncs through the user's private iCloud database while retaining a local-only development mode.
 - Provides iPhone and macOS widgets, Live Activity and Dynamic Island, plus an Apple Watch companion.
-- Uses Japanese by default and includes English and Russian localizations.
+- Uses Japanese by default and includes English, Russian, Simplified Chinese, and Traditional Chinese localizations.
 
 `1 Block` is always 25 focused minutes. Breaks are not counted.
 

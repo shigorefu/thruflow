@@ -52,8 +52,10 @@ struct LocalisationTests {
         #expect(violations.isEmpty, "Unlocalized Japanese literals: \(violations.joined(separator: ", "))")
     }
 
-    @Test func catalogContainsCompleteEnglishAndRussianLocalisations() throws {
-        let data = try Data(contentsOf: catalogURL)
+    @Test(arguments: ["Localizable", "InfoPlist"])
+    func catalogsContainAllSupportedLocalisations(catalog: String) throws {
+        let url = repositoryRoot.appending(path: "ThruFlow/Localisation/\(catalog).xcstrings")
+        let data = try Data(contentsOf: url)
         let root = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
         let strings = try #require(root["strings"] as? [String: Any])
         var missing: [String] = []
@@ -67,7 +69,7 @@ struct LocalisationTests {
                 continue
             }
 
-            for language in ["en", "ru"] {
+            for language in ["en", "ru", "zh-Hans", "zh-Hant"] {
                 guard
                     let localisation = localisations[language] as? [String: Any],
                     let stringUnit = localisation["stringUnit"] as? [String: Any],
@@ -124,17 +126,15 @@ struct LocalisationTests {
         var mismatches: [String] = []
 
         for (japanese, rows) in groupedRows {
-            let approvedPairs = Set(rows.map { "\($0[3])\u{0}\($0[4])" })
-            guard approvedPairs.count == 1, let rawEntry = strings[japanese] else { continue }
-            guard
-                let entry = rawEntry as? [String: Any],
-                let localisations = entry["localizations"] as? [String: Any],
-                let english = localisedValue(language: "en", from: localisations),
-                let russian = localisedValue(language: "ru", from: localisations),
-                approvedPairs.contains("\(english)\u{0}\(russian)")
-            else {
-                mismatches.append(japanese)
-                continue
+            guard let rawEntry = strings[japanese] else { continue }
+            let entry = try #require(rawEntry as? [String: Any])
+            let localisations = try #require(entry["localizations"] as? [String: Any])
+            for (offset, language) in ["en", "ru", "zh-Hans", "zh-Hant"].enumerated() {
+                let approved = Set(rows.map { $0[offset + 3] })
+                guard approved.count == 1 else { continue }
+                if let value = localisedValue(language: language, from: localisations),
+                   approved.contains(value) { continue }
+                mismatches.append("\(language):\(japanese)")
             }
         }
 
@@ -275,6 +275,22 @@ struct LocalisationTests {
         )
     }
 
+    @Test(arguments: ["zh-Hans", "zh-Hant"])
+    func chineseResourcesResolveFromBuiltApp(language: String) throws {
+        let path = try #require(Bundle.main.path(forResource: language, ofType: "lproj"))
+        let bundle = try #require(Bundle(path: path))
+        #expect(bundle.localizedString(forKey: "タスク", value: nil, table: nil) ==
+            (language == "zh-Hans" ? "任务" : "任務"))
+        #expect(bundle.localizedString(forKey: "設定", value: nil, table: nil) ==
+            (language == "zh-Hans" ? "设置" : "設定"))
+        #expect(bundle.localizedString(forKey: "CFBundleDisplayName", value: nil, table: "InfoPlist") ==
+            "ThruFlow")
+        let permission = bundle.localizedString(
+            forKey: "NSRemindersFullAccessUsageDescription", value: nil, table: "InfoPlist"
+        )
+        #expect(permission.contains(language == "zh-Hans" ? "提醒事项" : "提醒事項"))
+    }
+
     private var repositoryRoot: URL {
         URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
@@ -354,7 +370,7 @@ struct LocalisationTests {
             row.append(field)
             rows.append(row)
         }
-        guard rows.allSatisfy({ $0.count == 5 }) else {
+        guard rows.allSatisfy({ $0.count == 7 }) else {
             throw CocoaError(.fileReadCorruptFile)
         }
         return rows
