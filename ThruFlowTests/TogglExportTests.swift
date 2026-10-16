@@ -42,6 +42,201 @@ import Testing
         #expect(reads == 0)
     }
 
+    @Test func missingRecordingIdentityReportsErrorWithoutNetworkOrAuthorization() async throws {
+        let (container, area, _) = try setup()
+        let storage = TogglMemoryStorage()
+        storage.state.configuration = config(area)
+        let client = FakeTogglClient()
+        var authorizationCalls = 0
+        let store = TogglExportStore(
+            credentials: InMemoryConnectorCredentials(), storage: storage, deviceID: nil,
+            authorizeDeviceID: { authorizationCalls += 1; return nil },
+            factory: { _ in client }
+        )
+
+        await store.synchronize(modelContext: container.mainContext, now: start.addingTimeInterval(1000))
+
+        #expect(store.errorMessage == TogglError.recordingIdentity.localizedDescription)
+        #expect(store.lastSyncResult == nil)
+        #expect(client.accountCalls == 0)
+        #expect(client.created.isEmpty)
+        #expect(authorizationCalls == 0)
+        #expect(storage.state.jobs.isEmpty)
+    }
+
+    @Test func explicitSetupCanAuthorizeMissingRecordingIdentity() async throws {
+        let (container, area, _) = try setup()
+        defer { withExtendedLifetime(container) {} }
+        let storage = TogglMemoryStorage()
+        storage.state.configuration = config(area)
+        let credentials = InMemoryConnectorCredentials()
+        try credentials.save(ConnectorCredentials(accessToken: "test"), for: .toggl)
+        let client = FakeTogglClient()
+        var identity: String?
+        var authorizationCalls = 0
+        let store = TogglExportStore(
+            credentials: credentials, storage: storage, deviceID: identity,
+            authorizeDeviceID: {
+                authorizationCalls += 1
+                identity = "device-a"
+                return identity
+            },
+            factory: { _ in client }
+        )
+
+        await store.loadOptions()
+
+        #expect(authorizationCalls == 1)
+        #expect(client.accountCalls == 1)
+        #expect(store.errorMessage == nil)
+        #expect(store.workspaces.map(\.id) == [10])
+        #expect(store.lastSyncResult == nil)
+        #expect(client.created.isEmpty)
+    }
+
+    @Test func failedExplicitIdentityAuthorizationDoesNotLoadProviderOptions() async throws {
+        let (container, area, _) = try setup()
+        defer { withExtendedLifetime(container) {} }
+        let storage = TogglMemoryStorage()
+        storage.state.configuration = config(area)
+        let credentials = InMemoryConnectorCredentials()
+        try credentials.save(ConnectorCredentials(accessToken: "test"), for: .toggl)
+        let client = FakeTogglClient()
+        var authorizationCalls = 0
+        let store = TogglExportStore(
+            credentials: credentials, storage: storage, deviceID: nil,
+            authorizeDeviceID: { authorizationCalls += 1; return nil },
+            factory: { _ in client }
+        )
+
+        await store.loadOptions()
+
+        #expect(authorizationCalls == 1)
+        #expect(client.accountCalls == 0)
+        #expect(store.errorMessage == TogglError.recordingIdentity.localizedDescription)
+        #expect(store.workspaces.isEmpty)
+        #expect(client.created.isEmpty)
+    }
+
+    @Test func noEligibleFlowReportsNoNewEntriesWithoutProviderRequestOrDeliveryTimestamp() async throws {
+        let (container, area, _) = try setup()
+        let storage = TogglMemoryStorage()
+        var configuration = config(area)
+        configuration.enabledAt = start.addingTimeInterval(1)
+        storage.state.configuration = configuration
+        let client = FakeTogglClient()
+        let store = TogglExportStore(
+            credentials: InMemoryConnectorCredentials(), storage: storage,
+            deviceID: "device-a", factory: { _ in client }
+        )
+
+        await store.synchronize(modelContext: container.mainContext, now: start.addingTimeInterval(1000))
+
+        #expect(store.lastSyncResult == .noNewEntries)
+        #expect(store.errorMessage == nil)
+        #expect(store.configuration?.lastSyncedAt == nil)
+        #expect(storage.state.jobs.isEmpty)
+        #expect(client.accountCalls == 0)
+        #expect(client.created.isEmpty)
+    }
+
+    @Test func deliveryResultCountsAcknowledgementsAndEmptyFollowupKeepsDeliveryTimestamp() async throws {
+        let (container, area, _) = try setup()
+        let storage = TogglMemoryStorage()
+        storage.state.configuration = config(area)
+        let credentials = InMemoryConnectorCredentials()
+        try credentials.save(ConnectorCredentials(accessToken: "test"), for: .toggl)
+        let client = FakeTogglClient()
+        let store = TogglExportStore(
+            credentials: credentials, storage: storage, deviceID: "device-a", factory: { _ in client }
+        )
+        let deliveredAt = start.addingTimeInterval(1000)
+
+        await store.synchronize(modelContext: container.mainContext, now: deliveredAt)
+        #expect(store.lastSyncResult == .delivered(1))
+        #expect(store.configuration?.lastSyncedAt == deliveredAt)
+        #expect(client.accountCalls == 1)
+
+        await store.synchronize(modelContext: container.mainContext, now: deliveredAt.addingTimeInterval(30))
+        #expect(store.lastSyncResult == .noNewEntries)
+        #expect(store.configuration?.lastSyncedAt == deliveredAt)
+        #expect(client.accountCalls == 1)
+        #expect(client.created.count == 1)
+    }
+
+    @Test func missingIdentityClearsPreviousSuccessResult() async throws {
+        let (container, area, _) = try setup()
+        let storage = TogglMemoryStorage()
+        storage.state.configuration = config(area)
+        let credentials = InMemoryConnectorCredentials()
+        try credentials.save(ConnectorCredentials(accessToken: "test"), for: .toggl)
+        let client = FakeTogglClient()
+        var identity: String? = "device-a"
+        let store = TogglExportStore(
+            credentials: credentials, storage: storage, deviceID: identity,
+            authorizeDeviceID: { nil }, factory: { _ in client }
+        )
+        await store.synchronize(modelContext: container.mainContext, now: start.addingTimeInterval(1000))
+        #expect(store.lastSyncResult == .delivered(1))
+
+        identity = nil
+        await store.synchronize(modelContext: container.mainContext, now: start.addingTimeInterval(1030))
+
+        #expect(store.lastSyncResult == nil)
+        #expect(store.errorMessage == TogglError.recordingIdentity.localizedDescription)
+        #expect(client.accountCalls == 1)
+        #expect(client.created.count == 1)
+    }
+
+    @Test func savingConfigurationAndDisconnectClearPreviousSyncResult() async throws {
+        let (container, area, _) = try setup()
+        let storage = TogglMemoryStorage()
+        storage.state.configuration = config(area)
+        let credentials = InMemoryConnectorCredentials()
+        try credentials.save(ConnectorCredentials(accessToken: "test"), for: .toggl)
+        let client = FakeTogglClient()
+        let store = TogglExportStore(
+            credentials: credentials, storage: storage, deviceID: "device-a", factory: { _ in client }
+        )
+        await store.loadOptions()
+        await store.synchronize(modelContext: container.mainContext, now: start.addingTimeInterval(1000))
+        #expect(store.lastSyncResult == .delivered(1))
+
+        try store.configure(workspaceID: 10, areaProjects: [area.id.uuidString: 20], enabled: true)
+        #expect(store.lastSyncResult == nil)
+        await store.synchronize(modelContext: container.mainContext, now: start.addingTimeInterval(1030))
+        #expect(store.lastSyncResult == .noNewEntries)
+
+        try store.disconnect()
+        #expect(store.lastSyncResult == nil)
+        #expect(store.configuration == nil)
+        #expect(client.created.count == 1)
+    }
+
+    @Test func incompleteQueuedFlowReportsWaitingWithoutUpdatingDeliveryTimestamp() async throws {
+        let (container, area, session) = try setup()
+        let storage = TogglMemoryStorage()
+        storage.state.configuration = config(area)
+        let credentials = InMemoryConnectorCredentials()
+        try credentials.save(ConnectorCredentials(accessToken: "test"), for: .toggl)
+        let client = FakeTogglClient()
+        client.createError = URLError(.notConnectedToInternet)
+        let store = TogglExportStore(
+            credentials: credentials, storage: storage, deviceID: "device-a", factory: { _ in client }
+        )
+        await store.synchronize(modelContext: container.mainContext, now: start.addingTimeInterval(1000))
+        session.status = .awaitingResult
+        try container.mainContext.save()
+        client.createError = nil
+
+        await store.synchronize(modelContext: container.mainContext, now: start.addingTimeInterval(1030))
+
+        #expect(store.lastSyncResult == .waitingForCompletion)
+        #expect(store.configuration?.lastSyncedAt == nil)
+        #expect(store.pendingJobs.count == 1)
+        #expect(client.created.count == 1)
+    }
+
     @Test func automaticKeychainPolicyIsScopedToItsTask() async {
         #expect(ConnectorKeychainInteraction.allowed)
         await ConnectorKeychainInteraction.$allowed.withValue(false) {
@@ -311,10 +506,14 @@ import Testing
 
 @MainActor private final class FakeTogglClient: TogglTrackClientProtocol {
     var accountID = "1"
+    var accountCalls = 0
     var created: [TogglTimePayload] = []
     var createError: (any Error)?
     var foundID: Int64?
-    func account() async throws -> ConnectorAccount { ConnectorAccount(id: accountID, name: "Test") }
+    func account() async throws -> ConnectorAccount {
+        accountCalls += 1
+        return ConnectorAccount(id: accountID, name: "Test")
+    }
     func workspaces() async throws -> [TogglWorkspace] { [TogglWorkspace(id: 10, name: "Workspace")] }
     var availableProjects = [TogglProject(id: 20, workspace_id: 10, name: "Project")]
     func projects() async throws -> [TogglProject] { availableProjects }

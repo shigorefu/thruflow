@@ -74,11 +74,12 @@ nonisolated struct TogglExportState: Codable, Sendable {
 }
 
 nonisolated enum TogglError: Error, LocalizedError {
-    case credentials, configuration, storage, uncertain, ambiguous
+    case credentials, configuration, storage, uncertain, ambiguous, recordingIdentity
     case rejected(Int)
     case rateLimited(TimeInterval)
     var errorDescription: String? {
         switch self {
+        case .recordingIdentity: String(localized: "この端末の識別情報を読み取れません。Togglの接続画面を開き直し、Keychainへのアクセスを許可してください。過去の記録は自動送信されません。")
         case .credentials: String(localized: "Toggl TrackのAPIトークンを確認してください。")
         case .configuration: String(localized: "ワークスペースと分野ごとのプロジェクトを選択してください。")
         case .storage: String(localized: "送信待ちの記録を保存または読み込めませんでした。")
@@ -86,6 +87,24 @@ nonisolated enum TogglError: Error, LocalizedError {
         case .ambiguous: String(localized: "Togglに一致する記録が複数あります。自動再送を停止しました。")
         case .rejected: String(localized: "Togglがリクエストを受け付けませんでした。アクセス権とプロジェクトを確認してください。")
         case .rateLimited: String(localized: "Togglの利用制限に達しました。時間をおいて再試行してください。")
+        }
+    }
+}
+
+
+nonisolated enum TogglSyncResult: Equatable {
+    case noNewEntries
+    case delivered(Int)
+    case waitingForCompletion
+
+    var localizedDescription: String {
+        switch self {
+        case .noNewEntries:
+            String(localized: "新しく送信できる記録はありません。有効化後にこの端末で開始したフローのうち、完了済みで分野のプロジェクト設定があるものが対象です。")
+        case .delivered(let count):
+            String(localized: "Togglへの送信を確認：\(count)件")
+        case .waitingForCompletion:
+            String(localized: "送信待ちのフローが完了するまで待機しています。")
         }
     }
 }

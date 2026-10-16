@@ -313,8 +313,8 @@ or updated after iOS adopts the persisted runtime.
 
 ## Cross-platform duplication and extraction priorities
 
-Source review on 2026-10-16 (1.3.2, app code at `7afe3442`) found the following
-duplication. The Task/Area save extraction below is implemented in 1.3.2;
+Source review on 2026-10-16 (1.4.0, app code at `7afe3442`) found the following
+duplication. The Task/Area save extraction below is implemented in 1.4.0;
 the table tracks the remaining candidates. Keep native shells separate and
 extract one behavior at a time with paired
 client scenarios. The executable entry-point map is
@@ -330,7 +330,7 @@ ownership and completion rules live only in [`AGENTS.md`](../AGENTS.md).
 | Small first extraction — Settings | [Mac](../ThruFlow/Platforms/macOS/Features/Settings/MacOSSettingsView.swift), [iOS](../ThruFlow/Platforms/iOS/Features/Settings/IOSSettingsView.swift) | Shared language/calendar/clock/timeline sections and language-option projection; shared reset status with platform completion callback | Both Chinese variants and notice; restart hint; day boundary; active Flow blocks reset |
 | Lower priority — emoji selection and app composition | [Mac emoji picker](../ThruFlow/Platforms/macOS/Features/Areas/EmojiPickerView.swift), picker inside iOS Area editor; both App/RootView entry points | Shared emoji catalog/search/recents policy and common settings environment; assess lifecycle extraction separately | Literal emoji search, recent order and legacy preference migration; launch/foreground behavior without duplicate sync work |
 
-### Task and Area editing extraction (1.3.2)
+### Task and Area editing extraction (1.4.0)
 
 `Shared/Application/TaskEditingService.swift` owns Task validation, generated
 Habit field protection, default Other Area resolution, creation ordering,

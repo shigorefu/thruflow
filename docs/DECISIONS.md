@@ -815,7 +815,7 @@ credential read; Cancel returns to the provider list. The macOS explanation
 prepares users for the possible system access/password prompt. This adds no
 permission override and preserves noninteractive automatic synchronization.
 
-### 2026-09-25 — Segmented focus timer colors (1.3.2)
+### 2026-09-25 — Segmented focus timer colors (1.4.0)
 
 The focus timer ring uses existing FlowSegment focused-second ranges and Area
 colors on macOS, iOS/iPadOS, and watchOS. Earlier recorded context keeps its
@@ -825,7 +825,7 @@ sub-minute transfer rule is unchanged. No persisted model or CloudKit schema
 change is needed; widget and Live Activity snapshot formats are unchanged.
 
 
-### 2026-09-28 — Earned rest and actual recovery (1.3.2)
+### 2026-09-28 — Earned rest and actual recovery (1.4.0)
 
 Replace counting created long-break records with a chronological projection of
 actual focus and rest. Sprint retains 3 minutes; one, two, and three uninterrupted
@@ -865,7 +865,7 @@ Repeat the idempotent repair during Habit materialization to handle existing
 and late-arriving records. Every Area archive UI saves the archive and cleanup
 together; a failed save keeps editors open. No persisted schema change.
 
-### 2026-10-16 — Simplified and Traditional Chinese localization (1.3.2)
+### 2026-10-16 — Simplified and Traditional Chinese localization (1.4.0)
 
 Support `zh-Hans` and `zh-Hant` independently across the shared app and
 InfoPlist catalogs. Keep full locale identifiers in the Mac/iOS language picker
@@ -879,7 +879,7 @@ translation uses AI and may contain inaccuracies, with a link to support for
 reporting issues. Both Mac and iPhone/iPad use the same notice.
 
 
-### 2026-10-16 — Shared Task and Area editing commands (1.3.2)
+### 2026-10-16 — Shared Task and Area editing commands (1.4.0)
 
 All native Task editors and manual quick-capture forms use
 `TaskEditingService`; Mac and iOS Area editors use `AreaEditingService`.
@@ -912,3 +912,17 @@ compiler warnings. Eight platform-review tooling tests also passed.
 An isolated Mac app verified weekday validation, manual unnamed creation in a
 Habit Area, and saving a Task without a date. Interactive iPhone/iPad and Watch
 checks remain unverified; builds and shared tests do not establish UI parity.
+
+
+### 2026-10-16 — Toggl export feedback and release scope 1.4.0
+
+The maintainer confirmed outgoing ThruFlow-to-Toggl delivery only. Preserve
+recording-device ownership, activation cutoff, immutable exported payloads and
+uncertain-delivery safeguards. A connected account must not imply export is on.
+Use the same setup state and synchronization result on Mac and iOS; explicit
+setup can authorize the recording identity, while automatic sync remains
+noninteractive. Missing identity must produce an actionable error. No new
+persisted fields or CloudKit schema changes are needed.
+
+Rename the unreleased 1.3.2 branch and scope to 1.4.0, retaining every existing
+change. Shipping metadata stays at 1.3.1 (12) until release preparation.

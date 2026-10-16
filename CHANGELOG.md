@@ -3,7 +3,7 @@
 All notable user-facing changes to ThruFlow are documented in this file.
 Release dates below record GitHub publication in Asia/Tokyo (JST).
 
-## [1.3.2] - Unreleased
+## [1.4.0] - Unreleased
 
 ### Added
 
@@ -18,6 +18,7 @@ Release dates below record GitHub publication in Asia/Tokyo (JST).
 
 ### Fixed
 
+- Toggl setup now distinguishes a connected account from active export, shows unsaved settings and delivery results, and explains missing device-identity access instead of silently skipping export.
 - Task editing now preserves undated Tasks and accepts unnamed Tasks consistently on Mac and iPhone/iPad; editing also retains the current archived Area.
 - Area editors now apply the same Habit schedule validation and goal defaults on both clients.
 - Task editors preserve spaces while entering multiple hashtags; the iPhone editor keeps progress updated by an active timer while the form is open.
@@ -271,7 +272,7 @@ App, extensions, Watch, and test targets use version **1.3.0**, build **11**.
 
 - Improved History timeline editing and natural localized copy before release.
 
-[1.3.2]: https://github.com/shigorefu/thruflow/compare/v1.3.1...1.3.2
+[1.4.0]: https://github.com/shigorefu/thruflow/compare/v1.3.1...1.4.0
 [1.3.1]: https://github.com/shigorefu/thruflow/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/shigorefu/thruflow/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/shigorefu/thruflow/compare/v1.1.0...v1.2.0

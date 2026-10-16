@@ -18,7 +18,7 @@ persisted values, or the separately maintained App Store product name.
 The maintained application locales are Japanese (`ja`), English (`en`),
 Russian (`ru`), Simplified Chinese (`zh-Hans`), and Traditional Chinese
 (`zh-Hant`). Both catalogs require complete translations for every non-source
-locale before localisation tests pass. Chinese support is part of 1.3.2.
+locale before localisation tests pass. Chinese support is part of 1.4.0.
 Settings preserves complete locale identifiers so the two scripts remain
 separately selectable on Mac and iPhone/iPad. Changes apply after restarting;
 Watch and widgets use their system/bundle language selection.

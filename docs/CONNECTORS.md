@@ -1,7 +1,8 @@
 # Connectors
 
-This document describes the upcoming 1.3.0 implementation. It does not declare
-an App Store release or completion of the device and deployment checks below.
+This document describes the local connectors shipped in 1.3.0/1.3.1 and the
+1.4.0 improvements identified below. Historical verification notes do not
+establish completion of the current device and deployment checks.
 Apple Reminders and Todoist run directly from macOS, iPhone, and iPad. The
 existing local SwiftData/CloudKit core remains usable without any connection.
 APNs, webhooks, and an application server are outside this implementation.
@@ -383,8 +384,8 @@ Automatic connector synchronization never allows Keychain authentication UI.
 If access needs approval, synchronization keeps its pending work and reports
 the error on the connector screen. Explicit connector operations may request
 access for that provider. The Toggl recording identity is resolved lazily and
-without UI during normal app/Flow use; explicit Toggl connection can authorize
-access. An inaccessible identity is not replaced or cached as a permanent failure.
+without UI during normal app/Flow use; explicit Toggl connection or opening
+its setup screen after Continue can authorize access. An inaccessible identity is not replaced or cached as a permanent failure.
 
 Opening Toggl settings on macOS or iOS first presents a native explanation of
 its API token and this device's Keychain storage. On macOS it also explains
@@ -394,3 +395,34 @@ setup sections (including their project-loading task) are created only after
 Continue. Cancel returns to the connector list without an interactive credential
 read. This acknowledgement lasts only for that visit; it does not change system
 permissions or disable an existing connection's noninteractive automatic export.
+
+
+### Export feedback (1.4.0)
+
+Authentication and automatic export are separate states. A connected token does
+not enable delivery: choose the Area/project mapping, enable automatic export,
+and save. The setup header now shows the saved export state. Unsaved changes
+show a Save hint and disable Send now until applied, so a send cannot silently
+use an older mapping. Turning export on keeps the existing activation boundary;
+records made before activation are not backfilled.
+
+A synchronization attempt reports no new eligible records, a count of confirmed
+deliveries (including recovered receipts), or waiting for queued Flows to finish.
+No eligible records means no API request and does not advance Last sent. A
+missing recording identity now reports an actionable error instead of silently
+returning. Explicit setup can recover Keychain access; automatic synchronization
+never authorizes it and old records are never assigned a new recording identity.
+
+On 2026-10-16, live inspection of the installed 1.3.1 (12) confirmed a saved
+connection with automatic export disabled. Re-enabling and saving succeeded.
+A new 84-second diagnostic Flow then appeared in Toggl Track under the mapped
+project with the ThruFlow tag; the app queue returned to zero. This verifies
+outgoing delivery from the installed macOS release. The new feedback UI itself
+has source review and build coverage, not a device interaction test. This configuration explains the
+observed lack of new outgoing records; the identity error was a separate
+source-level silent-failure path, not an established cause on that installation.
+
+The full macOS suite passed 481 tests in 46 suites, including eight new Toggl
+regressions; macOS and iOS/embedded Watch Release builds passed without compiler
+warnings. Both client agents agreed on the shared behavior and reviewed each
+other's changes. Physical iPhone execution remains unverified.

@@ -56,11 +56,34 @@ struct TogglSetupSections: View {
 
     private var projects: [TogglProject] { store.projects.filter { $0.workspace_id == workspaceID } }
     private var activeAreas: [Area] { areas.filter { !$0.isArchived } }
+    private var activeMappings: [String: Int64] {
+        let activeIDs = Set(activeAreas.map { $0.id.uuidString })
+        return mappings.filter { activeIDs.contains($0.key) }
+    }
+    private var hasUnsavedChanges: Bool {
+        guard let configuration = store.configuration else { return false }
+        let activeIDs = Set(activeAreas.map { $0.id.uuidString })
+        let savedMappings = configuration.areaProjects.filter { activeIDs.contains($0.key) }
+        return workspaceID != (configuration.workspaceID ?? 0)
+            || activeMappings != savedMappings || enabled != configuration.isEnabled
+    }
 
     var body: some View {
         Group {
             Section {
                 TogglConnectorRow(store: store)
+                if let configuration = store.configuration {
+                    Label {
+                        Text(configuration.isEnabled
+                             ? String(localized: "自動送信は有効です")
+                             : String(localized: "接続済みですが、集中時間の自動送信は停止中です。"))
+                    } icon: {
+                        Image(systemName: configuration.isEnabled ? "checkmark.circle" : "pause.circle")
+                    }
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                }
                 Text(String(localized: "Toggl TrackのAPIトークンは、この端末のKeychainに保存されます。"))
                     .font(.subheadline).foregroundStyle(.secondary)
                 SecureField(String(localized: "APIトークン"), text: $token)
@@ -85,6 +108,7 @@ struct TogglSetupSections: View {
                         Text(String(localized: "選択")).tag(Int64(0))
                         ForEach(store.workspaces) { Text($0.name).tag($0.id) }
                     }
+                    .disabled(store.isBusy)
                     ConnectorMappingColumnHeaders(destination: String(localized: "プロジェクト"))
                     ForEach(activeAreas) { area in
                         ConnectorAreaMappingRow(area: area) {
@@ -100,14 +124,20 @@ struct TogglSetupSections: View {
                         }
                     }
                     Toggle(String(localized: "集中時間を自動送信"), isOn: $enabled)
+                        .disabled(store.isBusy)
+                    if hasUnsavedChanges {
+                        Text(String(localized: "変更はまだ保存されていません。「設定を保存」を押すと反映されます。"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                     Button(String(localized: "設定を保存")) {
                         do {
-                            let activeIDs = Set(activeAreas.map { $0.id.uuidString })
-                            try store.configure(workspaceID: workspaceID, areaProjects: mappings.filter { activeIDs.contains($0.key) }, enabled: enabled)
+                            try store.configure(workspaceID: workspaceID, areaProjects: activeMappings, enabled: enabled)
                             Task { await store.synchronize(modelContext: modelContext) }
                         } catch { store.errorMessage = error.localizedDescription }
                     }
-                    .disabled(store.isBusy || workspaceID == 0 || mappings.isEmpty)
+                    .disabled(store.isBusy || workspaceID == 0 || activeMappings.isEmpty)
                     .accessibilityIdentifier("connectors.toggl.save")
                 } header: {
                     Text(String(localized: "分野とプロジェクト"))
@@ -116,15 +146,20 @@ struct TogglSetupSections: View {
                 }
 
                 Section {
-                    Text(configuration.isEnabled ? String(localized: "自動送信は有効です") : String(localized: "自動送信は停止中です"))
                     Text(String(localized: "送信待ち：\(store.pendingJobs.count)件"))
+                    if let result = store.lastSyncResult, !hasUnsavedChanges {
+                        Text(result.localizedDescription)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                     if let date = configuration.lastSyncedAt {
                         LabeledContent(String(localized: "最終送信"), value: date.formatted(date: .abbreviated, time: .shortened))
                     }
                     Button(String(localized: "今すぐ送信")) {
                         Task { await store.synchronize(modelContext: modelContext) }
                     }
-                    .disabled(store.isBusy || !configuration.isEnabled)
+                    .disabled(store.isBusy || !configuration.isEnabled || hasUnsavedChanges)
                     ForEach(store.pendingJobs.filter(\.uncertain)) { job in
                         VStack(alignment: .leading, spacing: 4) {
                             Text(job.payload.description).font(.headline)

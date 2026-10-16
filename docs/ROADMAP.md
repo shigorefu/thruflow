@@ -194,7 +194,11 @@ Released on GitHub on 2026-09-08; shipping build `10`.
   required GitHub CI status resolvable. Run the complete Apple gate whenever
   any non-Markdown file changes.
 
-## 1.3.2 — In development
+## 1.4.0 — In development
+
+The unreleased work previously scoped as 1.3.2 is consolidated under 1.4.0.
+
+- Toggl export diagnostics distinguish disabled delivery, unsaved settings, no eligible records, and unavailable recording identity.
 
 - Simplified Chinese (`zh-Hans`) and Traditional Chinese (`zh-Hant`) across app targets, widgets, and system permission copy.
 - Explicit timer Area selection creates an unnamed Task visible in Tasks.

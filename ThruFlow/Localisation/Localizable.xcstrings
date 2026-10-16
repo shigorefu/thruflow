@@ -1,6 +1,210 @@
 {
   "sourceLanguage" : "ja",
   "strings" : {
+    "接続済みですが、集中時間の自動送信は停止中です。": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "接続済みですが、集中時間の自動送信は停止中です。"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connected, but automatic focus-time export is off."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Подключено, но автоматическая передача времени выключена."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已连接，但专注时间自动发送已关闭。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已連線，但專注時間自動傳送已關閉。"
+          }
+        }
+      }
+    },
+    "変更はまだ保存されていません。「設定を保存」を押すと反映されます。": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "変更はまだ保存されていません。「設定を保存」を押すと反映されます。"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your changes are not saved yet. Choose Save settings to apply them."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Изменения ещё не сохранены. Нажмите «Сохранить настройки», чтобы применить их."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更改尚未保存。点击“保存设置”以应用更改。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "變更尚未儲存。點選「儲存設定」以套用變更。"
+          }
+        }
+      }
+    },
+    "この端末の識別情報を読み取れません。Togglの接続画面を開き直し、Keychainへのアクセスを許可してください。過去の記録は自動送信されません。": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "この端末の識別情報を読み取れません。Togglの接続画面を開き直し、Keychainへのアクセスを許可してください。過去の記録は自動送信されません。"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cannot read this device’s recording identity. Reopen Toggl connection settings and allow Keychain access. Past records will not be exported automatically."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось прочитать идентификатор устройства. Откройте настройки подключения Toggl заново и разрешите доступ к Keychain. Прошлые записи автоматически не отправляются."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法读取此设备的记录标识。请重新打开 Toggl 连接设置并允许访问钥匙串。历史记录不会自动发送。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法讀取此裝置的記錄識別資訊。請重新開啟 Toggl 連線設定並允許存取鑰匙圈。歷史記錄不會自動傳送。"
+          }
+        }
+      }
+    },
+    "新しく送信できる記録はありません。有効化後にこの端末で開始したフローのうち、完了済みで分野のプロジェクト設定があるものが対象です。": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新しく送信できる記録はありません。有効化後にこの端末で開始したフローのうち、完了済みで分野のプロジェクト設定があるものが対象です。"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No new records are ready to send. Eligible flows must have started on this device after export was enabled, be completed, and belong to an Area mapped to a project."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Новых записей для отправки нет. Отправляются завершённые потоки, начатые на этом устройстве после включения передачи, если для их Area выбран проект."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没有可发送的新记录。仅发送启用后在此设备上开始、现已完成且所属领域已关联项目的心流。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "沒有可傳送的新記錄。僅傳送啟用後在此裝置上開始、現已完成且所屬領域已連結專案的心流。"
+          }
+        }
+      }
+    },
+    "Togglへの送信を確認：%lld件": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Togglへの送信を確認：%lld件"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirmed in Toggl: %lld records"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Подтверждено в Toggl: %lld записей"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已确认发送至 Toggl：%lld 条记录"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已確認傳送至 Toggl：%lld 筆記錄"
+          }
+        }
+      }
+    },
+    "送信待ちのフローが完了するまで待機しています。": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "送信待ちのフローが完了するまで待機しています。"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for queued flows to finish."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ожидание завершения потоков в очереди отправки."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在等待待发送的心流完成。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在等待待傳送的心流完成。"
+          }
+        }
+      }
+    },
     "中国語の翻訳にはAIを使用しているため、不正確な表現が含まれる場合があります。お気づきの点はサポートまでお知らせください。": {
       "localizations": {
         "en": {
@@ -1221,40 +1425,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "自動傳送已啟用"
-          }
-        }
-      }
-    },
-    "自動送信は停止中です" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自動送信は停止中です"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Automatic export is paused"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Автоматическая отправка приостановлена"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自动发送已暂停"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自動傳送已暫停"
           }
         }
       }
