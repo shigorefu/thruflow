@@ -39,3 +39,14 @@ Local.xcconfig
 
 # Website is maintained in shigorefu/thruflow-site
 website/
+
+# Release tooling and local Ruby/Python state
+.bundle/
+vendor/bundle/
+fastlane/report.xml
+fastlane/README.md
+*.provisionprofile
+*.pkg
+*.keychain-db
+__pycache__/
+*.pyc

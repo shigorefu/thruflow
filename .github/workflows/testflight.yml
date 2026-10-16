@@ -1,0 +1,135 @@
+name: TestFlight
+
+on:
+  push:
+    tags: ['testflight/v*']
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Platform to upload (select one when retrying a partial upload)
+        type: choice
+        options: [both, ios, macos]
+        default: both
+        required: true
+
+permissions:
+  contents: read
+
+# Do not interrupt an upload, or race two builds for the same App Store app.
+concurrency:
+  group: testflight-upload
+  cancel-in-progress: false
+
+env:
+  DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+  FASTLANE_SKIP_UPDATE_CHECK: '1'
+  FASTLANE_HIDE_CHANGELOG: '1'
+  FASTLANE_OPT_OUT_USAGE: '1'
+  BUNDLE_FROZEN: 'true'
+
+jobs:
+  verify:
+    name: Verify release source (no signing secrets)
+    runs-on: macos-26
+    timeout-minutes: 45
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+      build: ${{ steps.release.outputs.build }}
+      sha: ${{ steps.release.outputs.sha }}
+      platforms: ${{ steps.release.outputs.platforms }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate release ref and all target versions
+        id: release
+        env:
+          RELEASE_PLATFORM: ${{ inputs.platform || 'both' }}
+        run: python3 scripts/testflight_preflight.py
+      - name: Test release automation
+        run: python3 -m unittest discover -s scripts/tests -p 'test_*.py'
+      - uses: ruby/setup-ruby@651ff0d62c5c79bed6d53ec518387aae20e72c1a # v1
+        with:
+          ruby-version: '3.3'
+      - name: Test Fastlane helpers without credentials
+        run: |
+          ruby -c fastlane/Fastfile
+          ruby fastlane/tests/testflight_support_test.rb
+      - name: Test macOS domain and app logic
+        env:
+          THRUFLOW_DISABLE_CLOUDKIT: '1'
+        run: |
+          xcodebuild test -project ThruFlow.xcodeproj -scheme ThruFlow \
+            -destination 'platform=macOS' -only-testing:ThruFlowTests \
+            -parallel-testing-enabled NO -maximum-parallel-testing-workers 1 \
+            -derivedDataPath DerivedData/TestFlightTests \
+            CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO
+
+  upload:
+    name: TestFlight ${{ matrix.platform }}
+    needs: verify
+    runs-on: macos-26
+    timeout-minutes: 90
+    environment: testflight
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        platform: ${{ fromJSON(needs.verify.outputs.platforms) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.verify.outputs.sha }}
+          persist-credentials: false
+      - name: Require configured release gates
+        env:
+          TESTFLIGHT_ENABLED: ${{ vars.TESTFLIGHT_ENABLED }}
+          CLOUDKIT_VERIFIED_SHA: ${{ vars.CLOUDKIT_VERIFIED_SHA }}
+          RELEASE_SHA: ${{ needs.verify.outputs.sha }}
+        run: |
+          test "$TESTFLIGHT_ENABLED" = true || { echo 'Configure the protected testflight environment first.'; exit 1; }
+          test "$CLOUDKIT_VERIFIED_SHA" = "$RELEASE_SHA" || { echo 'Live CloudKit Production verification is required for this commit.'; exit 1; }
+      - uses: ruby/setup-ruby@651ff0d62c5c79bed6d53ec518387aae20e72c1a # v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true
+      - name: Archive, validate and upload
+        env:
+          RELEASE_PLATFORM: ${{ matrix.platform }}
+          RELEASE_VERSION: ${{ needs.verify.outputs.version }}
+          RELEASE_BUILD: ${{ needs.verify.outputs.build }}
+          APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+          MAC_INSTALLER_CERT_NAME: ${{ vars.MAC_INSTALLER_CERT_NAME }}
+          MATCH_GIT_URL: ${{ vars.MATCH_GIT_URL }}
+          MATCH_GIT_BRANCH: ${{ vars.MATCH_GIT_BRANCH }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_CONTENT_BASE64: ${{ secrets.ASC_KEY_CONTENT_BASE64 }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+        run: |
+          case "$RELEASE_PLATFORM" in
+            ios) bundle exec fastlane ios beta ;;
+            macos) bundle exec fastlane mac beta ;;
+            *) exit 1 ;;
+          esac
+      - name: Clean temporary signing state
+        if: always()
+        run: |
+          for keychain in "$HOME"/Library/Keychains/thruflow-testflight-*.keychain-db; do
+            test -f "$keychain" || continue
+            security delete-keychain "$keychain"
+          done
+          for project in "$GITHUB_WORKSPACE"/ThruFlow-TestFlight-*.xcodeproj; do
+            test -d "$project" || continue
+            rm -rf "$project"
+          done
+      - name: Deployment summary
+        env:
+          RELEASE_PLATFORM: ${{ matrix.platform }}
+          RELEASE_VERSION: ${{ needs.verify.outputs.version }}
+          RELEASE_BUILD: ${{ needs.verify.outputs.build }}
+          RELEASE_SHA: ${{ needs.verify.outputs.sha }}
+        run: |
+          printf '### TestFlight %s\nVersion: %s (%s)\nSource: `%s`\n' "$RELEASE_PLATFORM" "$RELEASE_VERSION" "$RELEASE_BUILD" "$RELEASE_SHA" >> "$GITHUB_STEP_SUMMARY"
