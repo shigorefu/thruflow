@@ -87,6 +87,43 @@ Read the documents relevant to the task rather than loading all documentation.
   task-related empty/stale keys, retain meaningful translations, and avoid
   unrelated catalog reformatting.
 
+## Cross-platform agent orchestration
+
+For changes to app code, UI interactions, shared APIs, persistence, or localization,
+the lead agent must check the corresponding behavior on both macOS and iOS/iPadOS.
+This is standing authorization to delegate the bounded reviews below; an explicit
+user restriction on delegation or scope takes precedence. Documentation-only
+changes do not require platform agents.
+
+1. Run `python3 scripts/platform_review.py --base HEAD` for uncommitted work,
+   or use the task's actual starting commit to include committed changes. The
+   report maps changed paths to counterpart entry points and suggested tests.
+   Follow actual callers too: the map is a starting point, not a dependency graph.
+2. The lead owns the implementation and defines the user action, expected result,
+   and intentional native differences. Prefer one shared operation over copied
+   validation, draft transformations, or persistence commands. Keep native
+   navigation, keyboard, window, and gesture behavior in platform code.
+3. Assign an independent **counterpart reviewer** a read-only task with the final
+   diff, affected feature, scenarios, and both client entry points. For a Mac-only
+   edit they inspect iOS; for an iOS-only edit they inspect Mac; for a shared edit
+   they inspect both callers. Review Watch/widgets when they consume the change.
+   Larger changes may use separate client reviewers with disjoint ownership.
+4. The reviewer reports counterpart coverage, shared command wiring, intentional
+   differences, findings with file/line evidence, and checks run or unavailable.
+   An unchanged counterpart can be correct; do not demand a cosmetic second diff.
+   Re-review after changes that affect a finding or the reviewed behavior.
+5. The lead integrates findings and owns build/test execution. Reviewers must not
+   start competing builds or macOS test runners unless explicitly assigned an
+   isolated check. Do not mark parity verified from a successful build alone.
+6. If agent tools are unavailable, perform the same counterpart review directly
+   and disclose that it was not independent. Report unresolved findings and
+   unverified device/UI scenarios instead of claiming completion of those checks.
+
+The feature map is `scripts/platform_review_map.json`; update it when moving or
+adding feature boundaries. CI publishes its report and builds both clients;
+AGENTS governs the AI review inside coding tasks. The report does not launch AI
+agents, prove UI parity, or require a paid external AI service.
+
 ## Verification
 
 Match checks to the change:

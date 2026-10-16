@@ -1,0 +1,166 @@
+{
+  "always_review_all": [
+    "ThruFlow/Shared",
+    "ThruFlow/Localisation",
+    "ThruFlow.xcodeproj"
+  ],
+  "unknown_review_all": [
+    "ThruFlow",
+    "ThruFlowTests",
+    "ThruFlowUITests",
+    "ThruFlowLiveActivity"
+  ],
+  "groups": [
+    {
+      "id": "flow",
+      "name": "Flow",
+      "triggers": [
+        "ThruFlow/Platforms/macOS/Features/Flow",
+        "ThruFlow/Platforms/iOS/Features/Flow"
+      ],
+      "review": [
+        "ThruFlow/Platforms/macOS/Features/Flow",
+        "ThruFlow/Platforms/iOS/Features/Flow",
+        "ThruFlow/Shared/Application/ActiveFlowStore.swift",
+        "ThruFlow/Shared/Domain/Logic/FlowDashboardBuilder.swift"
+      ],
+      "tests": [
+        "ThruFlowTests/FlowTests.swift",
+        "ThruFlowTests/FlowDashboardTests.swift",
+        "ThruFlowTests/FlowContextPickerProjectionTests.swift"
+      ]
+    },
+    {
+      "id": "tasks",
+      "name": "Tasks and composer",
+      "triggers": [
+        "ThruFlow/Platforms/macOS/Features/Tasks",
+        "ThruFlow/Platforms/macOS/Features/Todos",
+        "ThruFlow/Platforms/iOS/Features/Tasks"
+      ],
+      "review": [
+        "ThruFlow/Platforms/macOS/Features/Tasks",
+        "ThruFlow/Platforms/macOS/Features/Todos",
+        "ThruFlow/Platforms/iOS/Features/Tasks",
+        "ThruFlow/Shared/Domain/Logic/TaskComposerSuggestionBuilder.swift"
+      ],
+      "tests": [
+        "ThruFlowTests/TodoTests.swift",
+        "ThruFlowTests/TaskCalendarTests.swift",
+        "ThruFlowTests/TaskComposerSuggestionTests.swift"
+      ]
+    },
+    {
+      "id": "history",
+      "name": "History",
+      "triggers": [
+        "ThruFlow/Platforms/macOS/Features/History",
+        "ThruFlow/Platforms/iOS/Features/History"
+      ],
+      "review": [
+        "ThruFlow/Platforms/macOS/Features/History",
+        "ThruFlow/Platforms/iOS/Features/History",
+        "ThruFlow/Shared/Domain/Logic/HistoryCalendarBuilder.swift"
+      ],
+      "tests": [
+        "ThruFlowTests/DayHistoryTests.swift",
+        "ThruFlowTests/HistoryCalendarTests.swift",
+        "ThruFlowTests/HistoryTaskRecordTests.swift"
+      ]
+    },
+    {
+      "id": "areas",
+      "name": "Areas",
+      "triggers": [
+        "ThruFlow/Platforms/macOS/Features/Areas",
+        "ThruFlow/Platforms/iOS/Features/Areas"
+      ],
+      "review": [
+        "ThruFlow/Platforms/macOS/Features/Areas",
+        "ThruFlow/Platforms/iOS/Features/Areas",
+        "ThruFlow/Shared/Domain/Logic/AreaValidation.swift"
+      ],
+      "tests": [
+        "ThruFlowTests/AreaGroupOrderTests.swift",
+        "ThruFlowTests/ArchivedHabitTodoTests.swift"
+      ]
+    },
+    {
+      "id": "settings",
+      "name": "Settings",
+      "triggers": [
+        "ThruFlow/Platforms/macOS/Features/Settings",
+        "ThruFlow/Platforms/iOS/Features/Settings"
+      ],
+      "review": [
+        "ThruFlow/Platforms/macOS/Features/Settings",
+        "ThruFlow/Platforms/iOS/Features/Settings",
+        "ThruFlow/Shared/Application/AppSettings.swift"
+      ],
+      "tests": [
+        "ThruFlowTests/AppSettingsTests.swift",
+        "ThruFlowTests/LocalisationTests.swift"
+      ]
+    },
+    {
+      "id": "connectors",
+      "name": "Connectors",
+      "triggers": [
+        "ThruFlow/Platforms/macOS/Features/Connectors",
+        "ThruFlow/Platforms/iOS/Features/Connectors"
+      ],
+      "review": [
+        "ThruFlow/Platforms/macOS/Features/Connectors",
+        "ThruFlow/Platforms/iOS/Features/Connectors",
+        "ThruFlow/Shared/UI/Connectors",
+        "ThruFlow/Shared/Application/ConnectorStore.swift",
+        "ThruFlow/Shared/Application/TogglExportStore.swift"
+      ],
+      "tests": [
+        "ThruFlowTests/ConnectorStoreTests.swift",
+        "ThruFlowTests/ConnectorTaskImporterTests.swift",
+        "ThruFlowTests/TogglExportTests.swift"
+      ]
+    },
+    {
+      "id": "statistics",
+      "name": "Statistics",
+      "triggers": [
+        "ThruFlow/Platforms/macOS/Features/Statistics",
+        "ThruFlow/Platforms/iOS/Features/Statistics"
+      ],
+      "review": [
+        "ThruFlow/Platforms/macOS/Features/Statistics",
+        "ThruFlow/Platforms/iOS/Features/Statistics",
+        "ThruFlow/Shared/Domain/Logic/StatisticsPeriodBuilder.swift"
+      ],
+      "tests": [
+        "ThruFlowTests/StatisticsTests.swift",
+        "ThruFlowTests/StatisticsPeriodTests.swift",
+        "ThruFlowTests/StatisticsTrendSmoothingTests.swift"
+      ]
+    },
+    {
+      "id": "consumers",
+      "name": "App composition, Watch and widgets",
+      "triggers": [
+        "ThruFlow/Platforms/macOS/App",
+        "ThruFlow/Platforms/iOS/App",
+        "ThruFlow/Platforms/watchOS",
+        "ThruFlowLiveActivity"
+      ],
+      "review": [
+        "ThruFlow/Platforms/macOS/App",
+        "ThruFlow/Platforms/iOS/App",
+        "ThruFlow/Platforms/watchOS",
+        "ThruFlowLiveActivity",
+        "ThruFlow.xcodeproj/project.pbxproj"
+      ],
+      "tests": [
+        "ThruFlowTests/ProductWidgetSnapshotTests.swift",
+        "ThruFlowTests/FlowTimerWidgetSnapshotTests.swift",
+        "ThruFlowTests/PersistenceSchemaTests.swift"
+      ]
+    }
+  ]
+}

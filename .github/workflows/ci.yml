@@ -27,6 +27,11 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Validate cross-platform review routing
+        run: |
+          python3 scripts/platform_review.py --validate-map
+          python3 -m unittest discover -s scripts/tests -p 'test_*.py'
+
       - name: Detect Markdown-only changes
         id: classify
         env:
@@ -44,6 +49,13 @@ jobs:
           else
             base="$BEFORE_SHA"
             head="$CURRENT_SHA"
+          fi
+
+          if [[ -n "$base" && ! "$base" =~ ^0+$ ]] && git cat-file -e "$base^{commit}"; then
+            python3 scripts/platform_review.py --base "$base" --head "$head" >> "$GITHUB_STEP_SUMMARY"
+          else
+            # Unknown baseline: conservatively request all client entry points.
+            python3 scripts/platform_review.py ThruFlow.xcodeproj/project.pbxproj >> "$GITHUB_STEP_SUMMARY"
           fi
 
           if [[ -z "$base" || "$base" =~ ^0+$ ]] || ! git cat-file -e "$base^{commit}"; then

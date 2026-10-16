@@ -46,6 +46,26 @@ other material whose license is incompatible with this arrangement.
 
 ## Verification
 
+Before editing a feature, identify its other client entry point with
+`python3 scripts/platform_review.py --base HEAD` (or pass explicit paths before
+there is a diff). For a completed task, use its starting commit as `--base`.
+Review the same user action and expected result on Mac and iPhone/iPad, including
+UI-to-shared-command wiring. Native presentation differences are intentional;
+unchanged counterpart files are not by themselves a failure. Agent contributors
+follow the independent counterpart-review workflow in `AGENTS.md`.
+
+The report is also published in the CI job summary. It is an impact checklist,
+not a behavior test. CI runs shared unit tests on Mac and builds both clients;
+the iOS scheme currently has no configured UI-test target. Record actual manual
+or device checks and any gaps separately.
+
+Validate the routing tool after changing it or its map:
+
+```sh
+python3 scripts/platform_review.py --validate-map
+python3 -m unittest discover -s scripts/tests -p 'test_*.py'
+```
+
 Run relevant tests sequentially:
 
 ```sh
