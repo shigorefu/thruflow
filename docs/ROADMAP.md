@@ -194,15 +194,15 @@ Released on GitHub on 2026-09-08; shipping build `10`.
   required GitHub CI status resolvable. Run the complete Apple gate whenever
   any non-Markdown file changes.
 
-## 1.4.0 — In development
+## 1.3.2 — In development
 
 - Explicit timer Area selection creates an unnamed Task visible in Tasks.
 - Flow completion/rest captures Task name above the result memo on every platform.
-
-## 1.3.2 — In development
-
 - Segmented focus timer colors on Mac, iPhone/iPad, and Watch, using existing history boundaries.
 - Earned rest based on actual focus and recovery: 3-minute Sprint rest, 10 minutes for two uninterrupted Blocks, and 20–30-minute long rest with partial-rest credit.
+- Mac Task creation forms and suggestions close with their host window; quick creation supports Escape dismissal.
+- Archiving a Habit Area retires unused preplanned Tasks while preserving progress and history; the Mac editor explicitly saves archival.
+- Repository AI instructions are consolidated in `AGENTS.md`.
 - Shipping version/build metadata remains at 1.3.1 (12) until release preparation.
 
 ## 1.3.1 — Connector mappings and synchronization fixes (released)
