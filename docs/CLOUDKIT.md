@@ -204,3 +204,12 @@ After the deployment, the maintainer confirmed on 2026-09-20 that cross-device
 synchronization worked again. This is user-confirmed recovery, not an automated
 record-by-record comparison. Existing 1.3.0 clients still lack the independent-Task/
 Habit classification rules added in 1.3.1; use updated clients on both devices.
+
+
+### 1.4.0 (13) release preparation — 2026-10-16
+
+Live Production inspection was attempted but remains unverified: `cktool`
+reported no management token, and CloudKit Console opened the Apple Account
+sign-in screen. No schema deployment or user-data mutation was performed.
+Inspect current record types, fields and indexes after authentication before
+distributing this candidate; prior 1.3.1 evidence is not a current schema check.

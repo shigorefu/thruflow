@@ -946,3 +946,11 @@ No persisted fields or CloudKit schema are changed.
 macOS and iOS agents explicitly agreed on this contract and reviewed each
 other's implementation/tests. The original failing assertions remain, with
 additional retained-field, relationship, pending-edit and insertion coverage.
+
+
+### 2026-10-16 — Prepare 1.4.0 (13)
+
+Release preparation advances all target version/build settings from 1.3.1 (12)
+to 1.4.0 (13). The earlier decision to retain shipping metadata until preparation
+is now fulfilled. Historical releases and incident version numbers remain intact.
+No tag, GitHub release, App Store upload or publication is implied by this bump.
