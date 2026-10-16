@@ -38,7 +38,6 @@ struct AreaFormView: View {
     @State private var isShowingHabitPauseDateSheet = false
     @State private var habitPauseEndDate = Date.now
 
-    private let validator = AreaValidator()
     private let typeOptions: [AreaType] = [.neutral, .habit, .nice]
 
     init(
@@ -107,13 +106,13 @@ struct AreaFormView: View {
             }
         }
         .onAppear {
-            normalizeGoalState(for: draft.type)
+            draft = draft.normalizedForEditing
         }
-        .onChange(of: draft.type) { _, newType in
-            normalizeGoalState(for: newType)
+        .onChange(of: draft.type) { _, _ in
+            draft = draft.normalizedForEditing
         }
         .onChange(of: draft.goalSchedule) { _, _ in
-            normalizeGoalState(for: draft.type)
+            draft = draft.normalizedForEditing
         }
 #if os(iOS)
         .sheet(isPresented: $isShowingEmojiPicker) {
@@ -434,77 +433,27 @@ struct AreaFormView: View {
 
     private func save() {
         saveErrorMessage = nil
-        normalizeGoalState(for: draft.type)
-        validationErrors = validator.validate(draft)
+        draft = draft.normalizedForEditing
+        let service = AreaEditingService(calendar: calendar, dayBoundary: dayBoundary)
+        validationErrors = service.validationErrors(for: draft)
         guard validationErrors.isEmpty else { return }
 
-        let requiresGoal = draft.type == .habit
-        let goalSchedule = requiresGoal ? draft.goalSchedule : nil
-        let goalTarget = requiresGoal ? draft.goalTarget : nil
-        let goalPeriod = goalSchedule?.goalPeriod
-        let goalUnit = requiresGoal ? draft.goalUnit : nil
-        let weeklyTargetCount = requiresGoal && goalSchedule == .weeklyCount ? draft.weeklyTargetCount : nil
-        let weekdayMask = requiresGoal && goalSchedule != .everyDay ? draft.weekdayMask : nil
+        let editedArea: Area?
+        if case .edit(let area) = mode { editedArea = area } else { editedArea = nil }
 
         do {
-            let savedArea: Area
-            switch mode {
-            case .create:
-                let area = Area(
-                    name: draft.trimmedName,
-                    type: draft.type,
-                    symbolName: draft.normalizedSymbolName,
-                    colorHex: draft.colorHex,
-                    goalTarget: goalTarget,
-                    goalPeriod: goalPeriod,
-                    goalUnit: goalUnit,
-                    goalSchedule: goalSchedule,
-                    weeklyTargetCount: weeklyTargetCount,
-                    weekdayMask: weekdayMask
-                )
-                modelContext.insert(area)
-                savedArea = area
-            case .edit(let area):
-                let wasHabit = area.type == .habit
-                let todos = wasHabit && draft.type == .habit
-                    ? try modelContext.fetch(FetchDescriptor<Todo>())
-                    : []
-                area.update(
-                    name: draft.trimmedName,
-                    type: draft.type,
-                    symbolName: draft.normalizedSymbolName,
-                    colorHex: draft.colorHex,
-                    goalTarget: goalTarget,
-                    goalPeriod: goalPeriod,
-                    goalUnit: goalUnit,
-                    goalSchedule: goalSchedule,
-                    weeklyTargetCount: weeklyTargetCount,
-                    weekdayMask: weekdayMask
-                )
-                if wasHabit, area.type == .habit {
-                    reconcileFutureHabitTodos(for: area, todos: todos)
-                }
-                savedArea = area
-            }
-
-            try modelContext.save()
-            onSaved?(savedArea)
+            let area = try service.save(
+                draft: draft,
+                editing: editedArea,
+                modelContext: modelContext
+            )
+            onSaved?(area)
             dismiss()
+        } catch AreaEditingError.validation(let errors) {
+            validationErrors = errors
         } catch {
-            modelContext.rollback()
             saveErrorMessage = String(localized: "記録を保存できませんでした。")
         }
-    }
-
-    private func reconcileFutureHabitTodos(for area: Area, todos: [Todo]) {
-        _ = HabitScheduleChangeReconciler(
-            calendar: calendar,
-            dayBoundary: dayBoundary
-        ).reconcile(
-            area: area,
-            todos: todos,
-            modelContext: modelContext
-        )
     }
 
     private func deleteArea() {
@@ -589,29 +538,6 @@ struct AreaFormView: View {
             _ = modelContext.saveReporting(.areaUpdate)
         } catch {
             PersistenceIssueCenter.shared.report(error, operation: .dataLoad)
-        }
-    }
-
-    private func normalizeGoalState(for type: AreaType) {
-        guard type == .habit else {
-            draft.goalEnabled = false
-            draft.goalTarget = nil
-            draft.goalPeriod = nil
-            draft.goalUnit = nil
-            draft.goalSchedule = nil
-            draft.weeklyTargetCount = nil
-            draft.weekdayMask = nil
-            return
-        }
-
-        draft.goalEnabled = true
-        draft.goalTarget = draft.goalTarget ?? 1
-        draft.goalUnit = draft.goalUnit ?? .occurrences
-        draft.goalSchedule = draft.goalSchedule ?? .everyDay
-        draft.goalPeriod = draft.goalSchedule?.goalPeriod
-
-        if draft.goalSchedule == .weeklyCount {
-            draft.weeklyTargetCount = draft.weeklyTargetCount ?? 1
         }
     }
 }

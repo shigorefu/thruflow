@@ -18,6 +18,10 @@ Release dates below record GitHub publication in Asia/Tokyo (JST).
 
 ### Fixed
 
+- Task editing now preserves undated Tasks and accepts unnamed Tasks consistently on Mac and iPhone/iPad; editing also retains the current archived Area.
+- Area editors now apply the same Habit schedule validation and goal defaults on both clients.
+- Task editors preserve spaces while entering multiple hashtags; the iPhone editor keeps progress updated by an active timer while the form is open.
+- Failed Task/Area saves keep forms and entered text available for retry; manual Tasks in Habit Areas remain independent across Mac, iPhone/iPad, and Watch.
 - Archiving a Habit Area now retires unused preplanned daily Tasks while preserving completed work and history; the Mac Area editor explicitly saves archival.
 - Fixed Mac Task creation remaining on the desktop after the menu-bar timer closes or its host window is minimized. Owned forms and suggestions now follow the host window lifetime.
 - Added Escape dismissal for Mac quick Task creation and explicit presentation-state dismissal for the Flow player composer.

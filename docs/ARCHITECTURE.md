@@ -314,39 +314,52 @@ or updated after iOS adopts the persisted runtime.
 ## Cross-platform duplication and extraction priorities
 
 Source review on 2026-10-16 (1.3.2, app code at `7afe3442`) found the following
-remaining duplication. These are extraction candidates, not completed refactors.
-Keep native shells separate and extract one behavior at a time with paired
+duplication. The Task/Area save extraction below is implemented in 1.3.2;
+the table tracks the remaining candidates. Keep native shells separate and
+extract one behavior at a time with paired
 client scenarios. The executable entry-point map is
 [`platform_review_map.json`](../scripts/platform_review_map.json); agent review
 ownership and completion rules live only in [`AGENTS.md`](../AGENTS.md).
 
 | Priority / feature | Current duplicate entry points | Proposed shared boundary | Paired scenario to verify |
 | --- | --- | --- | --- |
-| 1 — Task editor and composer | [Mac editor](../ThruFlow/Platforms/macOS/Features/Todos/TodoFormView.swift), [iOS editor](../ThruFlow/Platforms/iOS/Features/Tasks/IOSTaskEditorView.swift), Mac `TasksView` and iOS `IOSTaskComposer` | Reuse `TodoDraft`/`TodoValidator`; share draft initialization, token application/removal, Habit field protection and save command in Domain/Application | Edit unnamed and undated Tasks; manual Task in a Habit Area; remove quick-input tokens; failed save preserves input |
-| 1 — Area editor | [Mac](../ThruFlow/Platforms/macOS/Features/Areas/AreaFormView.swift), [iOS](../ThruFlow/Platforms/iOS/Features/Areas/IOSAreaEditorView.swift) | One normalized `AreaDraft`, `AreaValidator` and Application save/reconciliation operation | Empty weekday selection; schedule changes preserve history/progress; save failure leaves editor open |
+| 1 — Task quick-input state | Mac `TasksView` and iOS `IOSTaskComposer` | Shared token application/removal around the existing parser; creation and editor save already use `TaskEditingService` | Remove/replace Area, date, priority, and tag tokens while preserving native capture behavior |
 | 2 — Flow command dispatch | [Mac player](../ThruFlow/Platforms/macOS/Features/Flow/FlowMiniPlayerView.swift), [iOS Flow](../ThruFlow/Platforms/iOS/Features/Flow/IOSFlowView.swift) | Shared primary-action resolution and memo command; retain native sheet/popover state | Idle, focusing, paused, overtime, resting, pending result; memo submit/cancel and Task switching |
 | 2 — History commit and Task bulk actions | [Mac inspector](../ThruFlow/Platforms/macOS/Features/History/FlowHistoryInspectorView.swift), [iOS History](../ThruFlow/Platforms/iOS/Features/History/IOSHistoryView.swift); Mac `TasksView` / iOS `IOSTasksView` | Application transactions around existing `FlowHistoryEditor` and `TodoRescheduleService`, including rename/save/rollback and bulk ordering | Switched-session edit updates measured progress; failed save rolls back rename; mixed eligible/blocked Tasks move consistently |
 | 3 — Statistics workspace | [Mac](../ThruFlow/Platforms/macOS/Features/Statistics/StatisticsView.swift), [iOS](../ThruFlow/Platforms/iOS/Features/Statistics/IOSStatisticsView.swift) | Pure period selection plus Application request/cache/export lifecycle; preserve cancellation and stale-result guards | September range; exact custom range; multiple Areas; calendar/day-boundary invalidation; late requests and CSV range |
 | Small first extraction — Settings | [Mac](../ThruFlow/Platforms/macOS/Features/Settings/MacOSSettingsView.swift), [iOS](../ThruFlow/Platforms/iOS/Features/Settings/IOSSettingsView.swift) | Shared language/calendar/clock/timeline sections and language-option projection; shared reset status with platform completion callback | Both Chinese variants and notice; restart hint; day boundary; active Flow blocks reset |
 | Lower priority — emoji selection and app composition | [Mac emoji picker](../ThruFlow/Platforms/macOS/Features/Areas/EmojiPickerView.swift), picker inside iOS Area editor; both App/RootView entry points | Shared emoji catalog/search/recents policy and common settings environment; assess lifecycle extraction separately | Literal emoji search, recent order and legacy preference migration; launch/foreground behavior without duplicate sync work |
 
-### Confirmed source-level discrepancies
+### Task and Area editing extraction (1.3.2)
 
-These paths were inspected, but the scenarios below were not reproduced on a
-running device during this review. They remain unresolved by the review tooling:
+`Shared/Application/TaskEditingService.swift` owns Task validation, generated
+Habit field protection, default Other Area resolution, creation ordering,
+completion initialization, updates, and explicit save/rollback. Mac Task forms,
+both Mac quick-capture paths, iOS editors/composer, and Watch creation call it.
+`TodoDraft(todo:)` preserves an existing Task's nil scheduled date. Unnamed
+Tasks are valid; an untouched blank quick composer still performs no action.
+Manual Tasks in Habit Areas remain independent, and editing keeps an existing
+archived Area. Native forms report failures and only dismiss, clear input, or
+invoke success callbacks after a successful save.
 
-- iOS `IOSTaskEditorView.init` initializes `scheduledDate` using
-  `todo?.scheduledDate ?? scheduledDate ?? .now`. For an existing undated Task
-  with no explicit date argument this substitutes today. Mac's
-  `TodoDraft(todo:)` preserves the missing date. Regression scenario: edit only
-  the title of an undated Task and verify it stays undated.
-- iOS `IOSTaskEditorView.canSave` requires a nonempty title. Mac uses the shared
-  validator, and [Product](PRODUCT.md#tasks) explicitly permits unnamed Tasks.
-  Regression scenario: edit another field of a Task created unnamed from Flow.
-- iOS `IOSAreaEditorView.canSave` checks name and emoji but its save path does
-  not call `AreaValidator`. Mac does. The shared validator rejects a weekday
-  Habit with no selected weekdays. Regression scenario: deselect every weekday
-  and try to save on both clients.
+`Shared/Application/AreaEditingService.swift` owns Area validation, ordering,
+updates and Habit schedule reconciliation in one save. Both clients use
+`AreaDraft.normalizedForEditing` for type/schedule transitions. Weekday Habits
+require at least one weekday; reconciliation preserves started/completed Tasks
+and history. Persisted models and CloudKit fields are unchanged.
+
+This resolves the source audit's three confirmed discrepancies: iOS no longer
+substitutes today while editing an undated Task, rejects valid unnamed Tasks,
+or bypasses shared weekday validation. Regression coverage is in
+`ThruFlowTests/EditorServiceTests.swift`, including injected save failures and
+rollback of Area schedule changes together with their Task projections.
+
+Native exceptions remain explicit: iOS validates live and disables Save while
+Mac reports errors on Save; Mac retains quick-capture presets and iOS resets
+them after success. iOS has no progress/deadline controls, so editing preserves
+those live model values at submission; Mac exposes editable draft values.
+Both Task editors retain raw hashtag text while typing and normalize on save.
+Navigation, keyboard behavior, and token presentation stay platform-owned.
 
 Different Statistics debounce intervals, Flow button dispatch branches, and
 emoji preference keys are confirmed implementation differences, not established

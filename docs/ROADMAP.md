@@ -203,7 +203,8 @@ Released on GitHub on 2026-09-08; shipping build `10`.
 - Earned rest based on actual focus and recovery: 3-minute Sprint rest, 10 minutes for two uninterrupted Blocks, and 20–30-minute long rest with partial-rest credit.
 - Mac Task creation forms and suggestions close with their host window; quick creation supports Escape dismissal.
 - Archiving a Habit Area retires unused preplanned Tasks while preserving progress and history; the Mac editor explicitly saves archival.
-- Repository AI instructions are consolidated in `AGENTS.md`.
+- Task and Area editors share validation and save commands across clients, preserving undated/unnamed Tasks and consistent Habit schedule rules.
+- Repository AI instructions are consolidated in `AGENTS.md`, with required orchestrator/macOS/iOS agreement for logic changes.
 - Shipping version/build metadata remains at 1.3.1 (12) until release preparation.
 
 ## 1.3.1 — Connector mappings and synchronization fixes (released)

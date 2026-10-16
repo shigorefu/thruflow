@@ -8,8 +8,8 @@ struct WatchTaskCreationForm: View {
     @Environment(\.modelContext) private var modelContext
 
     @Query(sort: \Area.sortIndex) private var areas: [Area]
-    @Query private var todos: [Todo]
 
+    @State private var saveErrorMessage: String?
     @State private var areaID: UUID?
     @State private var measurement = TodoMeasurement.checkbox
     @State private var plannedAmount = 1
@@ -21,7 +21,8 @@ struct WatchTaskCreationForm: View {
             Form {
                 Section {
                     Picker(String(localized: "分野"), selection: $areaID) {
-                        ForEach(activeAreas) { area in
+                        Text(String(localized: "その他")).tag(nil as UUID?)
+                        ForEach(activeAreas.filter { !DefaultAreas.isTaskInbox($0) }) { area in
                             Label {
                                 Text(area.name)
                             } icon: {
@@ -73,16 +74,14 @@ struct WatchTaskCreationForm: View {
                 } label: {
                     Label(String(localized: "タスクを追加"), systemImage: "plus.circle.fill")
                 }
-                .disabled(selectedArea == nil)
+
+                if let saveErrorMessage {
+                    Text(saveErrorMessage)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
             }
             .navigationTitle(String(localized: "タスクを追加"))
-            .task {
-                guard areaID == nil else { return }
-                areaID = (
-                    DefaultAreas.existingTaskInbox(in: activeAreas)
-                        ?? activeAreas.first
-                )?.id
-            }
         }
     }
 
@@ -114,25 +113,24 @@ struct WatchTaskCreationForm: View {
     }
 
     private func save() {
-        guard let area = selectedArea else { return }
-
-        let todo = Todo(
-            title: "",
-            area: area,
-            habitOccurrence: false,
+        saveErrorMessage = nil
+        let draft = TodoDraft(
+            area: selectedArea,
             measurement: measurement,
             priority: priority,
             plannedAmount: measurement == .checkbox ? nil : plannedAmount,
-            scheduledDate: schedule.date(
-                calendar: calendar,
-                dayBoundary: dayBoundary
-            ),
-            sortIndex: (todos.map(\.sortIndex).max() ?? -1) + 1
+            scheduledDate: schedule.date(calendar: calendar, dayBoundary: dayBoundary)
         )
-        modelContext.insert(todo)
-        _ = modelContext.saveReporting(.taskUpdate)
-        dismiss()
+        do {
+            _ = try TaskEditingService().save(draft: draft, modelContext: modelContext)
+            dismiss()
+        } catch TaskEditingError.validation(let errors) {
+            saveErrorMessage = errors.map(\.localizedDescription).joined(separator: "\n")
+        } catch {
+            saveErrorMessage = String(localized: "記録を保存できませんでした。")
+        }
     }
+
 }
 
 private enum WatchTaskSchedule: String, CaseIterable, Identifiable {

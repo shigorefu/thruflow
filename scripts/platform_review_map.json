@@ -42,12 +42,14 @@
         "ThruFlow/Platforms/macOS/Features/Tasks",
         "ThruFlow/Platforms/macOS/Features/Todos",
         "ThruFlow/Platforms/iOS/Features/Tasks",
-        "ThruFlow/Shared/Domain/Logic/TaskComposerSuggestionBuilder.swift"
+        "ThruFlow/Shared/Domain/Logic/TaskComposerSuggestionBuilder.swift",
+        "ThruFlow/Shared/Application/TaskEditingService.swift"
       ],
       "tests": [
         "ThruFlowTests/TodoTests.swift",
         "ThruFlowTests/TaskCalendarTests.swift",
-        "ThruFlowTests/TaskComposerSuggestionTests.swift"
+        "ThruFlowTests/TaskComposerSuggestionTests.swift",
+        "ThruFlowTests/EditorServiceTests.swift"
       ]
     },
     {
@@ -78,11 +80,13 @@
       "review": [
         "ThruFlow/Platforms/macOS/Features/Areas",
         "ThruFlow/Platforms/iOS/Features/Areas",
-        "ThruFlow/Shared/Domain/Logic/AreaValidation.swift"
+        "ThruFlow/Shared/Domain/Logic/AreaValidation.swift",
+        "ThruFlow/Shared/Application/AreaEditingService.swift"
       ],
       "tests": [
         "ThruFlowTests/AreaGroupOrderTests.swift",
-        "ThruFlowTests/ArchivedHabitTodoTests.swift"
+        "ThruFlowTests/ArchivedHabitTodoTests.swift",
+        "ThruFlowTests/EditorServiceTests.swift"
       ]
     },
     {

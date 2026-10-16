@@ -877,3 +877,38 @@ placeholders, glossary terms, and built app resources are covered by tests.
 Chinese language selection also shows a quiet caption explaining that the
 translation uses AI and may contain inaccuracies, with a link to support for
 reporting issues. Both Mac and iPhone/iPad use the same notice.
+
+
+### 2026-10-16 — Shared Task and Area editing commands (1.3.2)
+
+All native Task editors and manual quick-capture forms use
+`TaskEditingService`; Mac and iOS Area editors use `AreaEditingService`.
+Shared code owns normalization, validation, generated Habit field protection,
+Other Area fallback, ordering, persistence and rollback. Existing unnamed and
+undated Tasks stay valid; a current archived Area survives editing. A manual
+Task in a Habit Area remains independent. An untouched empty composer remains
+a no-op, while explicit metadata permits unnamed creation.
+
+Area drafts share type/schedule normalization and reject a weekday Habit with
+no selected days. Habit schedule reconciliation is saved atomically with the
+Area update and preserves started Tasks and history. Native callers dismiss,
+clear input and invoke success callbacks only after a successful save.
+
+Platform presentation remains native: Mac shows validation errors on Save and
+retains quick-capture presets; iOS validates live and resets presets after
+success. iOS preserves live progress/deadline values because its editor does
+not expose those fields. Mac edits those fields explicitly. No persisted model,
+CloudKit schema, widget snapshot, or runtime dependency changes are required.
+
+The orchestrator and both client agents agreed on the command contract before
+implementation and exchanged counterpart reviews. Remaining token reducers,
+bulk Task operations and other extraction candidates are tracked in Architecture.
+
+Verification for this extraction: macOS and iOS agents both agreed after mutual
+final review, including Watch creation, with no unresolved source objections.
+The full macOS suite passed 473 tests across 46 suites (14 editor-service
+regressions); final macOS and iOS/embedded Watch Release builds passed without
+compiler warnings. Eight platform-review tooling tests also passed.
+An isolated Mac app verified weekday validation, manual unnamed creation in a
+Habit Area, and saving a Task without a date. Interactive iPhone/iPad and Watch
+checks remain unverified; builds and shared tests do not establish UI parity.

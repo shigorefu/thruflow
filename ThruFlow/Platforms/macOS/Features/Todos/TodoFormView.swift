@@ -32,20 +32,27 @@ struct TodoFormView: View {
     private let onSave: ((Todo) -> Void)?
 
     @State private var draft: TodoDraft
+    @State private var hashtagsText: String
     @State private var selectedAreaID: UUID?
     @State private var usesScheduledDate: Bool
     @State private var usesDeadline: Bool
     @State private var validationErrors: [TodoValidationError] = []
+    @State private var saveErrorMessage: String?
     @FocusState private var isTitleFocused: Bool
 
-    private let validator = TodoValidator()
+    private let editingService = TaskEditingService()
 
     private var activeAreas: [Area] {
         areas.filter { !$0.isArchived }
     }
 
     private var visibleAreas: [Area] {
-        activeAreas.filter { !DefaultAreas.isTaskInbox($0) }
+        var result = activeAreas.filter { !DefaultAreas.isTaskInbox($0) }
+        if let currentArea = editedTodo?.area,
+           !result.contains(where: { $0.id == currentArea.id }) {
+            result.append(currentArea)
+        }
+        return result
     }
 
     private var editedTodo: Todo? {
@@ -76,12 +83,14 @@ struct TodoFormView: View {
             draft.area = fixedArea
             draft.scheduledDate = scheduledDate ?? .now
             _draft = State(initialValue: draft)
+            _hashtagsText = State(initialValue: draft.hashtags.map { "#\($0)" }.joined(separator: " "))
             _selectedAreaID = State(initialValue: fixedArea?.id)
             _usesScheduledDate = State(initialValue: true)
             _usesDeadline = State(initialValue: false)
         case .edit(let todo):
             let draft = TodoDraft(todo: todo)
             _draft = State(initialValue: draft)
+            _hashtagsText = State(initialValue: draft.hashtags.map { "#\($0)" }.joined(separator: " "))
             _selectedAreaID = State(initialValue: todo.area?.id)
             _usesScheduledDate = State(initialValue: todo.scheduledDate != nil)
             _usesDeadline = State(initialValue: todo.deadline != nil)
@@ -169,7 +178,7 @@ struct TodoFormView: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
 
-                TextField(String(localized: "ハッシュタグ"), text: hashtagsBinding)
+                TextField(String(localized: "ハッシュタグ"), text: $hashtagsText)
                     .textFieldStyle(.roundedBorder)
             }
         }
@@ -239,10 +248,14 @@ struct TodoFormView: View {
 
     @ViewBuilder
     private var validationCard: some View {
-        if !validationErrors.isEmpty {
+        if !validationErrors.isEmpty || saveErrorMessage != nil {
             TodoEditorCard {
                 ForEach(validationErrors, id: \.self) { error in
                     Label(error.localizedDescription, systemImage: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.red)
+                }
+                if let saveErrorMessage {
+                    Label(saveErrorMessage, systemImage: "exclamationmark.triangle.fill")
                         .foregroundStyle(.red)
                 }
             }
@@ -495,93 +508,35 @@ struct TodoFormView: View {
     }
 
     private func save() {
+        saveErrorMessage = nil
+        draft.hashtags = TodoHashtagNormalizer.normalize(
+            hashtagsText.split(whereSeparator: { $0.isWhitespace || $0 == "," }).map(String.init)
+        )
         if !isHabitTodoEdit {
             draft.area = fixedArea ?? area(for: selectedAreaID)
             draft.scheduledDate = usesScheduledDate ? draft.scheduledDate ?? .now : nil
             draft.deadline = usesDeadline ? draft.deadline ?? .now : nil
         }
 
-        validationErrors = validator.validate(draft)
+        validationErrors = editingService.validationErrors(for: draft, editing: editedTodo)
         guard validationErrors.isEmpty else { return }
 
-        let area = fixedArea ?? (isHabitTodoEdit ? editedTodo?.area ?? resolvedArea(for: selectedAreaID) : resolvedArea(for: selectedAreaID))
-        let measurement = isHabitTodoEdit ? editedTodo?.measurement ?? draft.measurement : draft.measurement
-        let priority = isHabitTodoEdit ? editedTodo?.priority ?? draft.priority : draft.priority
-        let isRoomIfPossible = isHabitTodoEdit ? editedTodo?.isRoomIfPossible ?? false : draft.priority == .low && draft.isRoomIfPossible
-        let scheduledDate = isHabitTodoEdit ? editedTodo?.scheduledDate : draft.scheduledDate
-        let deadline = isHabitTodoEdit ? editedTodo?.deadline : draft.deadline
-        draft.area = area
-
-        let plannedAmount = measurement == .checkbox ? nil : isHabitTodoEdit ? editedTodo?.plannedAmount : draft.plannedAmount
-        let actualProgress = measurement == .checkbox ? min(max(draft.actualProgress, 0), 1) : max(0, draft.actualProgress)
-
-        switch mode {
-        case .create:
-            let todo = Todo(
-                title: draft.trimmedTitle,
-                notes: draft.trimmedNotes,
-                hashtags: draft.hashtags,
-                area: area,
-                habitOccurrence: false,
-                measurement: measurement,
-                priority: priority,
-                isRoomIfPossible: isRoomIfPossible,
-                plannedAmount: plannedAmount,
-                actualProgress: actualProgress,
-                status: TodoProgressCalculator().status(
-                    measurement: measurement,
-                    plannedAmount: plannedAmount,
-                    actualProgress: actualProgress
-                ),
-                scheduledDate: scheduledDate,
-                deadline: deadline
-            )
-            modelContext.insert(todo)
-            onSave?(todo)
-        case .edit(let todo):
-            todo.update(
-                title: draft.trimmedTitle,
-                notes: draft.trimmedNotes,
-                hashtags: draft.hashtags,
-                area: area,
-                measurement: measurement,
-                priority: priority,
-                isRoomIfPossible: isRoomIfPossible,
-                plannedAmount: plannedAmount,
-                actualProgress: actualProgress,
-                scheduledDate: scheduledDate,
-                deadline: deadline
+        do {
+            let todo = try editingService.save(
+                draft: draft,
+                editing: editedTodo,
+                modelContext: modelContext
             )
             onSave?(todo)
+            dismiss()
+        } catch TaskEditingError.validation(let errors) {
+            validationErrors = errors
+        } catch {
+            saveErrorMessage = String(localized: "記録を保存できませんでした。")
         }
-
-        dismiss()
     }
 
-    private func resolvedArea(for id: UUID?) -> Area {
-        if let area = area(for: id) {
-            return area
-        }
 
-        if let taskInbox = DefaultAreas.existingTaskInbox(in: activeAreas) {
-            return taskInbox
-        }
-
-        let taskInbox = DefaultAreas.makeTaskInbox()
-        modelContext.insert(taskInbox)
-        return taskInbox
-    }
-
-    private var hashtagsBinding: Binding<String> {
-        Binding(
-            get: { draft.hashtags.map { "#\($0)" }.joined(separator: " ") },
-            set: { value in
-                draft.hashtags = TodoHashtagNormalizer.normalize(
-                    value.split(whereSeparator: { $0.isWhitespace || $0 == "," }).map(String.init)
-                )
-            }
-        )
-    }
 }
 
 private struct TodoEditorCard<Content: View>: View {

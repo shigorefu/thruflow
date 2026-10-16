@@ -519,11 +519,13 @@ struct IOSTaskComposer: View {
     }
 
     private var defaultArea: Area? {
-        DefaultAreas.existingTaskInbox(in: areas) ?? areas.first
+        DefaultAreas.existingTaskInbox(in: areas)
     }
 
     private var canSubmit: Bool {
-        !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && defaultArea != nil
+        !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            || hasExplicitMeasurement || hasExplicitArea || hasExplicitPriority || hasExplicitDate
+            || !inlineTokens.isEmpty || !hashtags.isEmpty
     }
 
     private var measurementTitle: String {
@@ -799,6 +801,7 @@ struct IOSTaskComposer: View {
     }
 
     private func submit() {
+        guard canSubmit else { return }
         saveErrorMessage = nil
         let parserAreas = areas.map { TaskQuickInputArea(id: $0.id, name: $0.name) }
         let result = parser.parse(
@@ -812,35 +815,28 @@ struct IOSTaskComposer: View {
             return
         }
 
-        let normalizedTitle = result.title.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !normalizedTitle.isEmpty,
-              let area = areas.first(where: { $0.id == result.areaID ?? areaID })
-                ?? defaultArea else { return }
-
-        let resolvedMeasurement = result.measurement ?? measurement
-        let resolvedPlannedAmount = result.measurement == nil ? plannedAmount : result.plannedAmount ?? 1
-        let todo = Todo(
-            title: normalizedTitle,
-            hashtags: TodoHashtagNormalizer.normalize(hashtags + result.hashtags),
-            area: area,
-            habitOccurrence: false,
-            measurement: resolvedMeasurement,
-            priority: result.priority ?? priority,
-            isRoomIfPossible: result.isRoomIfPossible ?? isRoomIfPossible,
-            plannedAmount: resolvedMeasurement == .checkbox ? nil : resolvedPlannedAmount,
-            scheduledDate: resolvedDate(from: result.date)
-        )
-        modelContext.insert(todo)
+        // Keep seed-only fields (notes, progress, deadline) when quick capture
+        // is opened by onboarding or another feature.
+        var draft = initialDraft ?? TodoDraft()
+        draft.title = result.title
+        draft.hashtags = TodoHashtagNormalizer.normalize(hashtags + result.hashtags)
+        draft.area = areas.first { $0.id == (result.areaID ?? areaID) }
+        draft.measurement = result.measurement ?? measurement
+        draft.plannedAmount = result.measurement == nil ? plannedAmount : result.plannedAmount ?? 1
+        draft.priority = result.priority ?? priority
+        draft.isRoomIfPossible = result.isRoomIfPossible ?? isRoomIfPossible
+        draft.scheduledDate = resolvedDate(from: result.date)
 
         do {
-            try modelContext.save()
+            let todo = try TaskEditingService().save(draft: draft, modelContext: modelContext)
+            onCreated?(todo)
+        } catch TaskEditingError.validation(let errors) {
+            saveErrorMessage = errors.map(\.localizedDescription).joined(separator: "\n")
+            return
         } catch {
-            modelContext.rollback()
             saveErrorMessage = String(localized: "記録を保存できませんでした。")
             return
         }
-
-        onCreated?(todo)
 
         title = ""
         measurement = .checkbox
