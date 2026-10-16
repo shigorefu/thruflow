@@ -183,3 +183,15 @@ because its translation in a supported locale is missing. During SDK upgrades,
 compare the compiler-generated `.stringsdata` from both macOS and iOS/Watch builds with
 the catalog as well; this includes interpolated keys. Review Japanese entries
 marked `new` and mark them translated only after checking their actual copy.
+
+
+## Localization agent review
+
+The orchestrator assigns a dedicated localization agent when app copy changes,
+as required by [AGENTS.md](../AGENTS.md#localization-agent). It reviews affected
+copy in Japanese, English, Russian, Simplified Chinese and Traditional Chinese
+for natural, context-appropriate wording and can correct translations directly.
+All catalog/glossary writes have a single assigned owner. Preserve source keys,
+format arguments, plural forms and product terminology; check short labels and
+accessibility text as well as explanations. Report actual language coverage and
+separate linguistic source review from visual checks on each device.

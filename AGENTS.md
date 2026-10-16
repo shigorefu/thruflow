@@ -126,6 +126,33 @@ The lighter counterpart-review process below remains sufficient for changes
 that do not alter logic. If delegation is unavailable, the fallback below is a
 single-agent review only and must not be described as multi-agent agreement.
 
+### Localization agent
+
+Whenever user-facing copy or localization resources change, the orchestrator
+must delegate a separate **localization agent** in addition to the required
+client reviewers. This is standing authorization for that bounded review.
+
+- Review every affected string in all five supported locales: Japanese, English,
+  Russian, Simplified Chinese, and Traditional Chinese. Judge naturalness
+  (自然な表現), grammar, tone, brevity and terminology in the actual UI context,
+  not just literal translation or whether a key exists.
+- The localization agent may fix awkward, incorrect or missing translations
+  directly within its assigned files. Assign one writer for catalogs/glossary;
+  client agents coordinate copy changes through that owner to avoid conflicts.
+- Follow [Localization](docs/LOCALISATION.md) and `Localisation/TERMS.csv`.
+  Preserve meaning, stable source keys, placeholders, plural rules, shortcuts
+  and accessibility intent. For shared keys with different UI meanings, agree
+  on context-specific wording/keys with the orchestrator before changing them.
+- Check Mac, iPhone/iPad, Watch and widget contexts where applicable. Report
+  languages and strings reviewed, corrections, terminology questions and any
+  unverified layouts. Do not claim native-speaker or visual verification from
+  source review alone.
+- Before completion, report **agreed / changes required / unverified** and
+  resolve wording objections with the orchestrator. Missing agent access must
+  be disclosed; it is not an independent localization review.
+- Feature work reviews affected copy across all locales. A full existing-catalog
+  audit is a separate scope and must not be claimed from a diff-only review.
+
 ### Review workflow
 
 1. Run `python3 scripts/platform_review.py --base HEAD` for uncommitted work,
