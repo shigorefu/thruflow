@@ -25,6 +25,8 @@ struct TasksView: View {
     @State private var newTodoPriority: TodoPriority = .medium
     @State private var newTodoIsRoomIfPossible = false
     @State private var newTodoDateOption: QuickTodoDate = .today
+    @State private var newTodoTimeMinutes: Int?
+    @State private var newTodoReminderEnabled = false
     @State private var newTodoHashtags: [String] = []
     @State private var newTodoError: String?
     @State private var anchorDate = Calendar.current.startOfDay(for: .now)
@@ -146,6 +148,8 @@ struct TasksView: View {
                 priority: $newTodoPriority,
                 isRoomIfPossible: $newTodoIsRoomIfPossible,
                 dateOption: $newTodoDateOption,
+                timeMinutes: $newTodoTimeMinutes,
+                reminderEnabled: $newTodoReminderEnabled,
                 hashtags: $newTodoHashtags,
                 areas: visibleAreas,
                 validationMessage: newTodoError,
@@ -777,7 +781,9 @@ struct TasksView: View {
             scheduledDate: newTodoDateOption.resolvedDate(
                 calendar: calendar,
                 dayBoundary: dayBoundary
-            )
+            ),
+            scheduledTimeMinutes: newTodoTimeMinutes,
+            reminderEnabled: newTodoReminderEnabled
         )
         do {
             _ = try TaskEditingService().save(draft: draft, modelContext: modelContext)
@@ -791,6 +797,8 @@ struct TasksView: View {
 
         newTodoTitle = ""
         newTodoHashtags = []
+        newTodoTimeMinutes = nil
+        newTodoReminderEnabled = false
         if newTodoPriority != .low {
             newTodoIsRoomIfPossible = false
         }
@@ -1004,6 +1012,8 @@ struct MessengerTodoComposer: View {
     @Binding var priority: TodoPriority
     @Binding var isRoomIfPossible: Bool
     @Binding var dateOption: QuickTodoDate
+    @Binding var timeMinutes: Int?
+    @Binding var reminderEnabled: Bool
     @Binding var hashtags: [String]
 
     let areas: [Area]
@@ -1024,6 +1034,7 @@ struct MessengerTodoComposer: View {
     @State private var hasExplicitArea = false
     @State private var hasExplicitPriority = false
     @State private var hasExplicitDate = false
+    @State private var showsTimingControls = false
     @State private var selectedAutocompleteSuggestionID: String?
 
     private let parser = TaskQuickInputParser()
@@ -1070,6 +1081,11 @@ struct MessengerTodoComposer: View {
         }
         .onChange(of: dateOption) { _, newValue in
             updateExistingInlineToken(.date(newValue))
+            clearTimingIfUndated()
+        }
+        .onChange(of: timeMinutes) { _, newValue in
+            updateExistingInlineToken(newValue.map(TaskComposerInlineToken.time), id: "time")
+            if newValue == nil { reminderEnabled = false }
         }
         .onChange(of: activeAutocompleteSuggestions.map(\.id)) { _, _ in
             selectedAutocompleteSuggestionID = nil
@@ -1199,6 +1215,8 @@ struct MessengerTodoComposer: View {
                     .accessibilityLabel(String(localized: "日付 今日"))
             }
 
+            timingButton
+
             ForEach(hashtags, id: \.self) { hashtag in
                 Button {
                     hashtags.removeAll { $0.caseInsensitiveCompare(hashtag) == .orderedSame }
@@ -1215,6 +1233,39 @@ struct MessengerTodoComposer: View {
         }
         .lineLimit(1)
         .minimumScaleFactor(0.8)
+    }
+
+    private var timingButton: some View {
+        Button {
+            showsTimingControls = true
+        } label: {
+            Group {
+                if let timeMinutes {
+                    TaskTimeLabel(minutes: timeMinutes, reminderEnabled: reminderEnabled)
+                } else {
+                    Label(String(localized: "時刻"), systemImage: "clock")
+                }
+            }
+            .chipStyle(tint: .secondary)
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("task.composer.timing")
+        .popover(isPresented: $showsTimingControls) {
+            TaskTimingControls(
+                scheduledDate: dateOption.resolvedDate(calendar: calendar, dayBoundary: dayBoundary),
+                timeMinutes: $timeMinutes,
+                reminderEnabled: $reminderEnabled
+            )
+            .padding(16)
+            .frame(width: 300)
+        }
+    }
+
+    private func clearTimingIfUndated() {
+        guard dateOption == .none else { return }
+        timeMinutes = nil
+        reminderEnabled = false
+        inlineTokens.removeAll { $0.id == "time" }
     }
 
     private func submit() {
@@ -1253,7 +1304,7 @@ struct MessengerTodoComposer: View {
 
     private var canSubmit: Bool {
         hasComposerContent || hasExplicitArea || hasExplicitPriority || hasExplicitDate
-            || volume != .unspecified || !hashtags.isEmpty || selectedProject != nil
+            || volume != .unspecified || !hashtags.isEmpty || selectedProject != nil || timeMinutes != nil
     }
 
     private var autocompleteToken: String? {
@@ -1325,6 +1376,7 @@ struct MessengerTodoComposer: View {
 
                 GridRow {
                     legendItem(shortcut: "[25m]", label: String(localized: "25分"))
+                    legendItem(shortcut: "HH:mm", label: String(localized: "時刻"))
                 }
             }
         }
@@ -1543,6 +1595,10 @@ struct MessengerTodoComposer: View {
             dateOption = quickDate(for: date)
             hasExplicitDate = true
         }
+        if let time = result.timeMinutes {
+            timeMinutes = time
+        }
+        clearTimingIfUndated()
         hashtags = TodoHashtagNormalizer.normalize(hashtags + result.hashtags)
     }
 
@@ -1573,6 +1629,9 @@ struct MessengerTodoComposer: View {
         }
         if allowsDateSelection, let date = result.date {
             replaceInlineToken(.date(quickDate(for: date)))
+        }
+        if let time = result.timeMinutes {
+            replaceInlineToken(.time(time))
         }
         for hashtag in result.hashtags {
             replaceInlineToken(.hashtag(hashtag))
@@ -1617,6 +1676,9 @@ struct MessengerTodoComposer: View {
         case .date:
             dateOption = .today
             hasExplicitDate = false
+        case .time:
+            timeMinutes = nil
+            reminderEnabled = false
         case .hashtag(let hashtag):
             hashtags.removeAll { $0.caseInsensitiveCompare(hashtag) == .orderedSame }
         }
@@ -1669,6 +1731,8 @@ struct MessengerTodoComposer: View {
             Image(systemName: "exclamationmark")
         case .date:
             Image(systemName: "calendar")
+        case .time:
+            Image(systemName: "clock")
         case .hashtag:
             Image(systemName: "number")
         }
@@ -1691,6 +1755,8 @@ struct MessengerTodoComposer: View {
             return later ? String(localized: "余裕があれば") : priority.displayName
         case .date(let date):
             return date.chipLabel
+        case .time(let minutes):
+            return TaskTimeFormatting.text(minutes: minutes)
         case .hashtag(let hashtag):
             return "#\(hashtag)"
         }
@@ -1734,6 +1800,7 @@ private enum TaskComposerInlineToken: Equatable, Identifiable {
     case area(UUID)
     case priority(TodoPriority, Bool)
     case date(QuickTodoDate)
+    case time(Int)
     case hashtag(String)
 
     var id: String {
@@ -1742,6 +1809,7 @@ private enum TaskComposerInlineToken: Equatable, Identifiable {
         case .area: "area"
         case .priority: "priority"
         case .date: "date"
+        case .time: "time"
         case .hashtag(let value): "hashtag:\(value.lowercased(with: Locale(identifier: "en_US_POSIX")))"
         }
     }
@@ -1772,6 +1840,8 @@ struct QuickTodoCreationPopover: View {
     @State private var priority: TodoPriority = .medium
     @State private var isRoomIfPossible = false
     @State private var dateOption: QuickTodoDate = .today
+    @State private var timeMinutes: Int?
+    @State private var reminderEnabled = false
     @State private var hashtags: [String] = []
     @State private var validationMessage: String?
 
@@ -1819,6 +1889,8 @@ struct QuickTodoCreationPopover: View {
         _dateOption = State(
             initialValue: resolvedScheduledDate.map(QuickTodoDate.custom) ?? .none
         )
+        _timeMinutes = State(initialValue: initialDraft?.scheduledTimeMinutes)
+        _reminderEnabled = State(initialValue: initialDraft?.reminderEnabled ?? false)
         _hashtags = State(initialValue: initialDraft?.hashtags ?? [])
         _validationMessage = State(initialValue: nil)
     }
@@ -1840,6 +1912,8 @@ struct QuickTodoCreationPopover: View {
             priority: $priority,
             isRoomIfPossible: $isRoomIfPossible,
             dateOption: $dateOption,
+            timeMinutes: $timeMinutes,
+            reminderEnabled: $reminderEnabled,
             hashtags: $hashtags,
             areas: selectableAreas,
             validationMessage: validationMessage,
@@ -1879,6 +1953,8 @@ struct QuickTodoCreationPopover: View {
             plannedAmount: volume.plannedAmount,
             actualProgress: initialDraft?.actualProgress ?? 0,
             scheduledDate: dateOption.resolvedDate(calendar: calendar, dayBoundary: dayBoundary),
+            scheduledTimeMinutes: timeMinutes,
+            reminderEnabled: reminderEnabled,
             deadline: initialDraft?.deadline
         )
         do {
@@ -2404,6 +2480,11 @@ private struct TodoRow: View {
 
                     if let project = todo.project {
                         Label(project.name, systemImage: "folder")
+                        Text("·")
+                    }
+
+                    if let minutes = todo.scheduledTimeMinutes {
+                        TaskTimeLabel(minutes: minutes, reminderEnabled: todo.reminderEnabled)
                         Text("·")
                     }
 

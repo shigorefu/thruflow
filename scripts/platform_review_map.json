@@ -43,13 +43,20 @@
         "ThruFlow/Platforms/macOS/Features/Todos",
         "ThruFlow/Platforms/iOS/Features/Tasks",
         "ThruFlow/Shared/Domain/Logic/TaskComposerSuggestionBuilder.swift",
-        "ThruFlow/Shared/Application/TaskEditingService.swift"
+        "ThruFlow/Shared/Application/TaskEditingService.swift",
+        "ThruFlow/Shared/Domain/Logic/TaskReminderPlan.swift",
+        "ThruFlow/Shared/Domain/Logic/TaskTimingReconciler.swift",
+        "ThruFlow/Shared/Application/TaskReminderScheduler.swift",
+        "ThruFlow/Shared/UI/TaskTimingControls.swift",
+        "ThruFlow/Platforms/watchOS/Features/WatchTaskCreationForm.swift"
       ],
       "tests": [
         "ThruFlowTests/TodoTests.swift",
         "ThruFlowTests/TaskCalendarTests.swift",
         "ThruFlowTests/TaskComposerSuggestionTests.swift",
-        "ThruFlowTests/EditorServiceTests.swift"
+        "ThruFlowTests/EditorServiceTests.swift",
+        "ThruFlowTests/TaskTimingTests.swift",
+        "ThruFlowTests/TaskReminderDeliveryTests.swift"
       ]
     },
     {

@@ -1002,6 +1002,12 @@ struct IOSTaskRow: View {
                     .strikethrough(todo.isCompleted)
                     .foregroundStyle(todo.isCompleted ? .secondary : .primary)
 
+                if let minutes = todo.scheduledTimeMinutes {
+                    TaskTimeLabel(minutes: minutes, reminderEnabled: todo.reminderEnabled)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
                 if let project = todo.project {
                     Label(project.name, systemImage: "folder")
                         .font(.caption)

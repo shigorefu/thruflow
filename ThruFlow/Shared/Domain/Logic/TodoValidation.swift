@@ -18,6 +18,8 @@ struct TodoDraft {
     var plannedAmount: Int?
     var actualProgress: Int
     var scheduledDate: Date?
+    var scheduledTimeMinutes: Int?
+    var reminderEnabled: Bool
     var deadline: Date?
 
     init(
@@ -32,6 +34,8 @@ struct TodoDraft {
         plannedAmount: Int? = nil,
         actualProgress: Int = 0,
         scheduledDate: Date? = .now,
+        scheduledTimeMinutes: Int? = nil,
+        reminderEnabled: Bool = false,
         deadline: Date? = nil
     ) {
         self.title = title
@@ -45,6 +49,8 @@ struct TodoDraft {
         self.plannedAmount = plannedAmount
         self.actualProgress = actualProgress
         self.scheduledDate = scheduledDate
+        self.scheduledTimeMinutes = scheduledTimeMinutes
+        self.reminderEnabled = reminderEnabled
         self.deadline = deadline
     }
 
@@ -60,6 +66,8 @@ struct TodoDraft {
         self.plannedAmount = todo.plannedAmount
         self.actualProgress = todo.actualProgress
         self.scheduledDate = todo.scheduledDate
+        self.scheduledTimeMinutes = todo.scheduledTimeMinutes
+        self.reminderEnabled = todo.reminderEnabled
         self.deadline = todo.deadline
     }
 
@@ -75,12 +83,15 @@ struct TodoDraft {
 
 enum TodoValidationError: Error, Equatable, LocalizedError {
     case invalidPlannedAmount
+    case invalidScheduledTime
     case invalidActualProgress
     case unavailableProject
     case projectAreaMismatch
 
     var errorDescription: String? {
         switch self {
+        case .invalidScheduledTime:
+            String(localized: "時刻は00:00から23:59で指定してください。")
         case .invalidPlannedAmount:
             String(localized: "予定量は1以上にしてください。")
         case .unavailableProject:
@@ -103,6 +114,10 @@ struct TodoValidator {
 
         if draft.actualProgress < 0 {
             errors.append(.invalidActualProgress)
+        }
+
+        if let minutes = draft.scheduledTimeMinutes, !(0..<1440).contains(minutes) {
+            errors.append(.invalidScheduledTime)
         }
 
         return errors

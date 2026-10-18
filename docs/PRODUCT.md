@@ -49,6 +49,23 @@ remain Area-based.
 
 Tasks are the daily Todo surface.
 
+A Task may have an optional local clock time (`HH:mm`) and an independently
+opted-in reminder. The clock time is separate from its planned focused duration:
+`Read 14:30 [30m]` schedules 14:30 with a 30-minute goal. A date is required for
+a clock time; removing the date clears the time and reminder. Moving a Task to
+another date retains its clock time. Generated Habit occurrences may set their
+own time without changing the Area's recurrence. Existing list ordering remains
+unchanged.
+
+Reminders use local system notifications on each device after the Task has
+arrived through sync. Permission is requested only by an explicit reminder
+control, never by startup or synchronization. Saving a past time does not fire
+immediately or move the Task to tomorrow. Completion, deletion, Task archival,
+and Area archival cancel pending reminders when the app processes the change.
+The selected civil date and local time determine delivery; the custom Flow day
+boundary does not shift the hour. Devices that cannot receive/process a remote
+change may retain an older notification until the next refresh.
+
 Task title may be empty. When empty, UI displays `(分野)`, for example `(読書)` or `(その他)`.
 
 Task creation on macOS, iPhone, and iPad suggests matching titles from local

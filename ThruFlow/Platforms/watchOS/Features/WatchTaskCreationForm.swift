@@ -16,6 +16,8 @@ struct WatchTaskCreationForm: View {
     @State private var plannedAmount = 1
     @State private var priority = TodoPriority.medium
     @State private var schedule = WatchTaskSchedule.today
+    @State private var scheduledTimeMinutes: Int?
+    @State private var reminderEnabled = false
 
     var body: some View {
         NavigationStack {
@@ -72,6 +74,14 @@ struct WatchTaskCreationForm: View {
                     }
                 }
 
+                Section {
+                    TaskTimingControls(
+                        scheduledDate: schedule.date(calendar: calendar, dayBoundary: dayBoundary),
+                        timeMinutes: $scheduledTimeMinutes,
+                        reminderEnabled: $reminderEnabled
+                    )
+                }
+
                 Button {
                     save()
                 } label: {
@@ -126,7 +136,9 @@ struct WatchTaskCreationForm: View {
             measurement: measurement,
             priority: priority,
             plannedAmount: measurement == .checkbox ? nil : plannedAmount,
-            scheduledDate: schedule.date(calendar: calendar, dayBoundary: dayBoundary)
+            scheduledDate: schedule.date(calendar: calendar, dayBoundary: dayBoundary),
+            scheduledTimeMinutes: scheduledTimeMinutes,
+            reminderEnabled: reminderEnabled
         )
         do {
             _ = try TaskEditingService().save(draft: draft, modelContext: modelContext)

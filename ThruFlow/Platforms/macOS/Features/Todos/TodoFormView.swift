@@ -109,9 +109,7 @@ struct TodoFormView: View {
                     }
                     classificationCard
 
-                    if !isHabitTodoEdit {
-                        scheduleCard
-                    }
+                    scheduleCard
 
                     validationCard
                 }
@@ -139,6 +137,14 @@ struct TodoFormView: View {
         .onAppear {
             selectInitialAreaIfNeeded()
             isTitleFocused = true
+        }
+        .onChange(of: usesScheduledDate) { _, hasDate in
+            if hasDate {
+                draft.scheduledDate = draft.scheduledDate ?? .now
+            } else {
+                draft.scheduledTimeMinutes = nil
+                draft.reminderEnabled = false
+            }
         }
         .onChange(of: draft.measurement) { _, measurement in
             if measurement != .checkbox, draft.plannedAmount == nil {
@@ -234,22 +240,34 @@ struct TodoFormView: View {
     }
 
     private var scheduleCard: some View {
-        TodoEditorCard(title: String(localized: "日付")) {
-            dateControlRow(
-                title: String(localized: "予定日"),
-                systemImage: "calendar",
-                isEnabled: $usesScheduledDate,
-                selection: scheduledDateBinding
+        TodoEditorCard(title: isHabitTodoEdit ? String(localized: "時刻") : String(localized: "日付")) {
+            if !isHabitTodoEdit {
+                dateControlRow(
+                    title: String(localized: "予定日"),
+                    systemImage: "calendar",
+                    isEnabled: $usesScheduledDate,
+                    selection: scheduledDateBinding
+                )
+
+                Divider()
+            }
+
+            TaskTimingControls(
+                scheduledDate: usesScheduledDate ? draft.scheduledDate : nil,
+                timeMinutes: $draft.scheduledTimeMinutes,
+                reminderEnabled: $draft.reminderEnabled
             )
 
-            Divider()
+            if !isHabitTodoEdit {
+                Divider()
 
-            dateControlRow(
-                title: String(localized: "期限"),
-                systemImage: "calendar.badge.exclamationmark",
-                isEnabled: $usesDeadline,
-                selection: deadlineBinding
-            )
+                dateControlRow(
+                    title: String(localized: "期限"),
+                    systemImage: "calendar.badge.exclamationmark",
+                    isEnabled: $usesDeadline,
+                    selection: deadlineBinding
+                )
+            }
         }
     }
 

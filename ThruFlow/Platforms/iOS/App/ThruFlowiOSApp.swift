@@ -7,6 +7,7 @@ struct ThruFlowiOSApp: App {
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var activeFlowStore: ActiveFlowStore
     @StateObject private var settings = AppSettings()
+    @StateObject private var taskReminders = TaskReminderScheduler()
     @StateObject private var onboarding = OnboardingStore()
     @StateObject private var connectors = ConnectorStore()
 
@@ -71,6 +72,10 @@ struct ThruFlowiOSApp: App {
                 .environment(\.locale, settings.effectiveLocale)
                 .preferredColorScheme(settings.preferredColorScheme)
                 .onAppear {
+                    taskReminders.start(
+                        modelContext: modelContainer.mainContext,
+                        calendar: settings.effectiveCalendar
+                    )
                     activeFlowStore.clearNotificationBadge()
                     activeFlowStore.beginSynchronization(
                         modelContext: modelContainer.mainContext
@@ -88,6 +93,10 @@ struct ThruFlowiOSApp: App {
                 }
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active {
+                        taskReminders.start(
+                            modelContext: modelContainer.mainContext,
+                            calendar: settings.effectiveCalendar
+                        )
                         activeFlowStore.clearNotificationBadge()
                         activeFlowStore.beginSynchronization(
                             modelContext: modelContainer.mainContext

@@ -93,3 +93,5 @@
 "Support.ramen","Optional consumable purchase without an entitlement","ラーメンを贈る","Buy Me Ramen","Угостить рамэном","请我吃碗拉面","請我吃碗拉麵"
 "Project","Optional project field for a Task","対象プロジェクト","Project","Проект","项目","專案"
 "Projects","Collection of Projects in an Area","プロジェクト","Projects","Проекты","项目","專案"
+"Todo.scheduledTimeMinutes","Optional Task clock time, distinct from its duration","時刻","Time","Время","时刻","時刻"
+"Todo.reminderEnabled","Opt-in reminder at the scheduled Task clock time","この時刻に通知","Remind Me at This Time","Напомнить в это время","在此时间提醒","在此時間提醒"

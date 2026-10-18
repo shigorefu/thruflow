@@ -79,6 +79,16 @@ Persisted data includes:
 - active/completed status, completion timestamp, generation metadata, and sort order;
 - creation/update timestamps and deletion state.
 
+Task timing adds `scheduledTimeMinutes: Int?` (0–1439),
+`reminderEnabled: Bool = false`, and `scheduledTimeUpdatedAt: Date?`.
+All are additive scalars; old records migrate with no clock and no reminder.
+`scheduledDate` remains the existing day assignment, with no entity/field renames.
+Only actual clock/reminder changes update the timing timestamp, including an
+explicit clear. Habit and connector duplicate reconciliation copy the latest
+explicit timing pair with a deterministic UUID tie-break; unrelated progress or
+newly generated occurrences cannot erase it. Existing date-selection rules
+remain unchanged. Timing fields participate in save-failure restoration.
+
 `Todo.notes` stores the Task-level memo. A Flow-specific result is stored on
 `FlowSession.result`; linked Flow currently mirrors that text to `Todo.notes`,
 while Area-only Flow remains fully descriptive without a Todo.

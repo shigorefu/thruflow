@@ -86,6 +86,11 @@ final class Todo {
     var statusRawValue: String = TodoStatus.active.rawValue
     var completedAt: Date?
     var scheduledDate: Date?
+    /// Local wall-clock minutes, separate from the calendar-day assignment.
+    var scheduledTimeMinutes: Int? = nil
+    var reminderEnabled: Bool = false
+    /// Tracks explicit timing edits, independently of progress and Habit materialization.
+    var scheduledTimeUpdatedAt: Date? = nil
     var deadline: Date?
     var sortIndex: Int = 0
     var createdAt: Date = Date.now
@@ -114,6 +119,8 @@ final class Todo {
         status: TodoStatus = .active,
         completedAt: Date? = nil,
         scheduledDate: Date? = nil,
+        scheduledTimeMinutes: Int? = nil,
+        reminderEnabled: Bool = false,
         deadline: Date? = nil,
         sortIndex: Int = 0,
         createdAt: Date = .now,
@@ -137,6 +144,9 @@ final class Todo {
         self.statusRawValue = status.rawValue
         self.completedAt = completedAt
         self.scheduledDate = scheduledDate
+        self.scheduledTimeMinutes = scheduledDate == nil ? nil : scheduledTimeMinutes
+        self.reminderEnabled = scheduledDate != nil && scheduledTimeMinutes != nil && reminderEnabled
+        self.scheduledTimeUpdatedAt = self.scheduledTimeMinutes == nil ? nil : updatedAt
         self.deadline = deadline
         self.sortIndex = sortIndex
         self.createdAt = createdAt
@@ -248,6 +258,9 @@ final class Todo {
         self.plannedAmount = plannedAmount
         self.actualProgress = actualProgress
         self.scheduledDate = scheduledDate
+        if scheduledDate == nil {
+            setTiming(minutes: nil, reminderEnabled: false, now: now)
+        }
         self.deadline = deadline
         let nextStatus = TodoProgressCalculator().status(
             measurement: measurement,
@@ -313,6 +326,19 @@ final class Todo {
 
     func reschedule(to date: Date?, now: Date = .now) {
         scheduledDate = date
+        if date == nil {
+            setTiming(minutes: nil, reminderEnabled: false, now: now)
+        }
+        updatedAt = now
+    }
+
+    func setTiming(minutes: Int?, reminderEnabled: Bool, now: Date = .now) {
+        let minutes = scheduledDate == nil ? nil : minutes
+        let reminder = minutes != nil && reminderEnabled
+        guard scheduledTimeMinutes != minutes || self.reminderEnabled != reminder else { return }
+        scheduledTimeMinutes = minutes
+        self.reminderEnabled = reminder
+        scheduledTimeUpdatedAt = now
         updatedAt = now
     }
 

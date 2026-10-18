@@ -218,3 +218,14 @@ are retained as a bounded interval in `habitPausePeriodsRawValue`. Independent
 manual pauses remain intact. Normal Habit materialization resumes at its next
 refresh, at most once per eligible day. Restoring on the same logical day adds
 no pause. Failed saves restore retained models as well as persisted values.
+
+## Task clock and reminders (1.4.0)
+
+`scheduledTimeMinutes` is a local wall-clock value, not focused duration. It
+requires `scheduledDate`; `reminderEnabled` additionally requires the clock.
+`TaskEditingService` normalizes these invariants at persistence, including for
+Habit occurrence edits. `Todo.reschedule` preserves the clock on dated moves and
+clears the pair on undating. `TaskReminderPlan` derives future eligible requests
+from committed Tasks; it excludes completed, archived, deleted and orphan Tasks
+and archived Areas. DST gaps resolve to the next valid time on that civil day;
+repeated times use the first occurrence. No next-day rollover occurs.

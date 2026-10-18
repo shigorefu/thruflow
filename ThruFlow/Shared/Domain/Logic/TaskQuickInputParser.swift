@@ -16,6 +16,7 @@ enum TaskQuickInputTokenKind: Equatable {
     case unresolvedArea(String)
     case priority(TodoPriority, isRoomIfPossible: Bool)
     case date(TaskQuickInputDate)
+    case time(Int)
     case hashtag(String)
     case unrecognized
 }
@@ -36,6 +37,7 @@ struct TaskQuickInputParseResult: Equatable {
     let priority: TodoPriority?
     let isRoomIfPossible: Bool?
     let date: TaskQuickInputDate?
+    let timeMinutes: Int?
     let hashtags: [String]
 
     var recognizedTokens: [TaskQuickInputToken] {
@@ -65,6 +67,7 @@ struct TaskQuickInputParser {
         var priority: TodoPriority?
         var isRoomIfPossible: Bool?
         var parsedDate: TaskQuickInputDate?
+        var timeMinutes: Int?
         var hashtags: [String] = []
 
         for range in ranges {
@@ -98,6 +101,9 @@ struct TaskQuickInputParser {
             case .date(let value):
                 parsedDate = value
                 consumedRanges.append(range)
+            case .time(let value):
+                timeMinutes = value
+                consumedRanges.append(range)
             case .hashtag(let value):
                 hashtags.append(value)
                 consumedRanges.append(range)
@@ -120,6 +126,7 @@ struct TaskQuickInputParser {
             priority: priority,
             isRoomIfPossible: isRoomIfPossible,
             date: parsedDate,
+            timeMinutes: timeMinutes,
             hashtags: TodoHashtagNormalizer.normalize(hashtags)
         )
     }
@@ -167,6 +174,7 @@ struct TaskQuickInputParser {
         if let date = dateToken(rawValue, anchorDate: anchorDate, calendar: calendar) {
             return .date(date)
         }
+        if let minutes = TaskTimeFormatting.parse(rawValue) { return .time(minutes) }
         if rawValue.hasPrefix("#"), rawValue.count > 1 {
             return .hashtag(String(rawValue.dropFirst()))
         }

@@ -969,3 +969,24 @@ Archived Area restoration was absent from both clients. Add one shared saved
 lifecycle command and native restore actions. Preserve identity/history and
 retired Task tombstones. Habit restoration records the inactive logical-day
 interval using the existing pause field, preserving independent manual pauses.
+
+### 2026-10-18 — Optional Task time and opt-in reminders (1.4.0)
+
+Accepted after the maintainer clarified that "mention" means a Task reminder.
+Task time uses strict `HH:mm` quick input, separately from focused duration and
+calendar-day assignment. Notification opt-in is explicit; no startup/sync prompt,
+past-time catch-up, implicit tomorrow shift, or time-based list reordering.
+The shared plan uses civil date/time without applying the Flow day boundary.
+
+Orchestrator, macOS and iOS/Watch agents agreed before implementation and reviewed
+each other's callers. The additional field-specific timing timestamp was agreed
+to preserve both configured times and explicit clears during duplicate merges;
+general `updatedAt` is unsuitable because progress also changes it. Native
+capture resets remain intentionally different. Localization review covers six
+new keys and two reused labels in all five locales. Source agreement does not
+claim physical-device notification delivery or cross-device runtime validation.
+
+Final review: macOS and iOS/Watch agents both reported **agreed**, exchanged
+findings and raised no unresolved objections. The localization agent also
+reported **agreed**. Executed checks and remaining device gates are recorded in
+[Release](RELEASE.md); live schema deployment/readback is in [CloudKit](CLOUDKIT.md#task-times-and-reminders--2026-10-18).

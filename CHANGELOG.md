@@ -9,6 +9,8 @@ Release candidate: version **1.4.0**, build **13** across all Xcode targets.
 
 ### Added
 
+- Optional Task times and opt-in reminders on Mac, iPhone/iPad and Watch, with `HH:mm` quick capture on Mac and iOS.
+
 - Optional Projects within Areas, with task assignment, completion and reopening across Apple clients.
 
 - Simplified Chinese and Traditional Chinese localizations across Mac, iPhone/iPad, Watch, widgets, and permission prompts, with distinct language choices in Settings.
