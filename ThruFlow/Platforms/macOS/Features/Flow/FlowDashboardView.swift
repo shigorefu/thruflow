@@ -1701,6 +1701,12 @@ private struct DashboardTodoColumn: View {
                             .strikethrough(todo.isCompleted)
                             .lineLimit(1)
 
+                        if let minutes = todo.scheduledTimeMinutes {
+                            TaskTimeLabel(minutes: minutes, reminderEnabled: todo.reminderEnabled)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+
                         Text(todoDetail(todo))
                             .font(.caption2)
                             .foregroundStyle(.secondary)

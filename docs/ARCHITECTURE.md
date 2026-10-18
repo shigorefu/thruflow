@@ -655,3 +655,19 @@ all five locales. Intentional differences: Mac quick capture preserves the last
 Area/Project, iOS resets both after success; Watch offers Task assignment rather
 than full Project management. Verification evidence belongs in Release/CloudKit;
 source agreement alone is not device or synchronization verification.
+
+## Task reminder scheduling
+
+`TaskReminderPlan` owns clock resolution and eligibility; `TaskTimingReconciler`
+owns explicit timing conflict resolution. `TaskReminderScheduler` is an
+app-lifetime object in Mac, iOS/iPadOS and Watch roots. It reads committed models
+through a fresh context on save/import, foreground/start, clock/timezone changes,
+and a minute cadence while the process can run. The Mac Menu Bar initializes the
+same owner; hiding a window does not tear down persistence observation.
+
+`TaskReminderDelivery` serializes replacement/cancellation and only owns
+`task.reminder.<UUID>` identifiers. Up to 60 nearest Task reminders are queued,
+with at least four system slots reserved for Flow; other pending notifications
+can reduce that capacity. A later refresh refills the queue. Only the explicit
+shared UI control requests authorization. Widgets remain snapshot consumers and
+do not schedule notifications. No backend or APNs service is introduced.

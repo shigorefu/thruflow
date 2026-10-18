@@ -362,6 +362,7 @@ struct ConnectorTaskImporter {
         canonical.recordedFocusSeconds = all.map(\.recordedFocusSeconds).max() ?? canonical.recordedFocusSeconds
         if canonical.area == nil { canonical.area = all.compactMap(\.area).first }
         if canonical.scheduledDate == nil { canonical.scheduledDate = all.compactMap(\.scheduledDate).first }
+        TaskTimingReconciler().merge(todos: all, into: canonical)
         if canonical.measurement == .checkbox,
            let measured = all.first(where: { $0.measurement != .checkbox }) {
             canonical.measurement = measured.measurement
@@ -406,6 +407,9 @@ struct ConnectorTaskImporter {
             remember(todo, \.statusRawValue)
             remember(todo, \.completedAt)
             remember(todo, \.scheduledDate)
+            remember(todo, \.scheduledTimeMinutes)
+            remember(todo, \.reminderEnabled)
+            remember(todo, \.scheduledTimeUpdatedAt)
             remember(todo, \.deadline)
             remember(todo, \.archivedAt)
             remember(todo, \.deletedAt)

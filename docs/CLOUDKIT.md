@@ -252,3 +252,35 @@ Mac/iPhone exchange creating, editing and completing a Project and assigning a
 Task still needs to run before distribution. Local migration was verified against
 a disk store with the pre-Project schema, preserving identities, progress and
 Flow history; the full 499-test suite passed.
+
+
+### Task times and reminders — 2026-10-18
+
+After the maintainer renewed the CloudKit Console session, both live schemas for
+`iCloud.com.shigorefu.thruflow` (team `BR727PS795`) were inspected. Their schema
+exports matched before this change, with six application record types and
+`CD_Todo` containing 30 fields including metadata. Both lacked the new timing
+fields. Added these fields in Development using the record-type editor:
+
+| Record type | Added field | CloudKit type | Indexes |
+| --- | --- | --- | --- |
+| `CD_Todo` | `CD_scheduledTimeMinutes` | `INT64` | Queryable, Sortable |
+| `CD_Todo` | `CD_reminderEnabled` | `INT64` | Queryable, Sortable |
+| `CD_Todo` | `CD_scheduledTimeUpdatedAt` | `TIMESTAMP` | Queryable, Sortable |
+
+The exact deployment diff contained only these three additive field lines,
+each with both indexes. Existing fields, record types and security grants were
+unchanged. The Development revision reviewed was
+`72af16b0-cab3-11f1-bd59-17680b734955`. Console confirmed **Changes Deployed**.
+After switching to Production and reloading, `CD_Todo` showed 33 fields; all
+three names, types and Queryable/Sortable indexes were read back on its live
+field page. No user records or local stores were modified or reset.
+
+Legacy records retain no time and reminders off. Permission remains device-local;
+only the time, reminder preference and timing revision synchronize. Completion,
+archival or time changes update local notification requests after a save/import
+is processed; an offline or force-quit device may retain an obsolete request
+until its next reconciliation. Actual signed Mac/iPhone exchange and notification
+delivery remain unverified and are required before distribution. Full local
+validation passed 521 tests, including disk migration and timing reconciliation;
+see [Release](RELEASE.md) for platform evidence and remaining gates.

@@ -106,6 +106,10 @@ struct IOSTaskEditorView: View {
                             get: { draft.scheduledDate == nil },
                             set: { hasNoDate in
                                 draft.scheduledDate = hasNoDate ? nil : datePickerValue
+                                if hasNoDate {
+                                    draft.scheduledTimeMinutes = nil
+                                    draft.reminderEnabled = false
+                                }
                             }
                         )
                     )
@@ -121,6 +125,14 @@ struct IOSTaskEditorView: View {
                         }
                     }
                 }
+            }
+
+            Section {
+                TaskTimingControls(
+                    scheduledDate: draft.scheduledDate,
+                    timeMinutes: $draft.scheduledTimeMinutes,
+                    reminderEnabled: $draft.reminderEnabled
+                )
             }
 
             if let saveErrorMessage {

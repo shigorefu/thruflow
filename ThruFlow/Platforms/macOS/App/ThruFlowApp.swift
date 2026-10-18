@@ -22,6 +22,7 @@ struct ThruFlowApp: App {
     @StateObject private var settings = AppSettings()
     @StateObject private var onboarding = OnboardingStore()
     @StateObject private var connectors = ConnectorStore()
+    @StateObject private var taskReminders = TaskReminderScheduler()
     @NSApplicationDelegateAdaptor(MacOSAppDelegate.self) private var appDelegate
 
     private let sharedModelContainer = AppModelContainerFactory.make()
@@ -36,6 +37,10 @@ struct ThruFlowApp: App {
                 .environmentObject(connectors)
                 .appSettingsEnvironment(settings)
                 .onAppear {
+                    taskReminders.start(
+                        modelContext: sharedModelContainer.mainContext,
+                        calendar: settings.effectiveCalendar
+                    )
                     activeFlowStore.clearNotificationBadge()
                     activeFlowStore.beginSynchronization(
                         modelContext: sharedModelContainer.mainContext
@@ -49,6 +54,10 @@ struct ThruFlowApp: App {
                 }
                 .task(id: scenePhase) {
                     guard scenePhase == .active else { return }
+                    taskReminders.start(
+                        modelContext: sharedModelContainer.mainContext,
+                        calendar: settings.effectiveCalendar
+                    )
                     await connectors.runForegroundSync(modelContext: sharedModelContainer.mainContext)
                 }
                 .onChange(of: scenePhase) { _, phase in
@@ -77,6 +86,12 @@ struct ThruFlowApp: App {
                 .appSettingsEnvironment(settings)
                 .frame(width: 310, height: 410)
                 .padding(16)
+                .onAppear {
+                    taskReminders.start(
+                        modelContext: sharedModelContainer.mainContext,
+                        calendar: settings.effectiveCalendar
+                    )
+                }
         } label: {
             MacOSFlowMenuBarLabel()
                 .environmentObject(activeFlowStore)

@@ -59,6 +59,7 @@ struct TaskEditingService {
                     scheduledDate: draft.scheduledDate, deadline: draft.deadline, now: now
                 )
                 todo.project = draft.project
+                todo.setTiming(minutes: draft.scheduledTimeMinutes, reminderEnabled: draft.reminderEnabled, now: now)
                 savedTodo = todo
             } else {
                 var descriptor = FetchDescriptor<Todo>(sortBy: [SortDescriptor(\Todo.sortIndex)])
@@ -75,7 +76,9 @@ struct TaskEditingService {
                     isRoomIfPossible: draft.priority == .low && draft.isRoomIfPossible,
                     plannedAmount: plannedAmount, actualProgress: actualProgress, status: status,
                     completedAt: status == .completed ? now : nil,
-                    scheduledDate: draft.scheduledDate, deadline: draft.deadline,
+                    scheduledDate: draft.scheduledDate,
+                    scheduledTimeMinutes: draft.scheduledTimeMinutes, reminderEnabled: draft.reminderEnabled,
+                    deadline: draft.deadline,
                     sortIndex: sortIndex, createdAt: now, updatedAt: now
                 )
                 modelContext.insert(created)

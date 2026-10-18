@@ -110,6 +110,7 @@ struct HabitTodoReconciler {
         now: Date
     ) {
         let allTodos = [canonical] + duplicates
+        TaskTimingReconciler().merge(todos: allTodos, into: canonical)
         let completedAt = allTodos.compactMap(\.completedAt).min()
         let bestTitle = allTodos
             .map(\.title)

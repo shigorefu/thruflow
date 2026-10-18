@@ -523,13 +523,48 @@ struct ConnectorTaskImporterTests {
         #expect(canonical.externalTaskLink?.supersededByTodoID == nil)
     }
 
+    @Test func duplicateMergeKeepsLatestLocalTimingWithoutChangingCanonicalDate() throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+        let area = try makeArea(context)
+        _ = try run([task()], area: area, context: context)
+        let canonical = try #require(context.fetch(FetchDescriptor<Todo>()).first)
+        let canonicalDate = now.addingTimeInterval(86_400)
+        canonical.reschedule(to: canonicalDate, now: now)
+        canonical.setTiming(minutes: 570, reminderEnabled: false, now: now)
+        let duplicate = try makeDuplicate(of: canonical, context: context)
+        duplicate.reschedule(to: now.addingTimeInterval(2 * 86_400), now: now)
+        let timingRevision = now.addingTimeInterval(10)
+        duplicate.setTiming(minutes: 1080, reminderEnabled: true, now: timingRevision)
+        // A later unrelated edit on the canonical must not erase the chosen time.
+        canonical.setMemo("Local memo", now: now.addingTimeInterval(100))
+        try context.save()
+
+        try ConnectorTaskImporter().reconcileDuplicates(modelContext: context, now: now.addingTimeInterval(200))
+
+        #expect(canonical.scheduledDate == canonicalDate)
+        #expect(canonical.scheduledTimeMinutes == 1080)
+        #expect(canonical.reminderEnabled)
+        #expect(canonical.scheduledTimeUpdatedAt == timingRevision)
+        #expect(duplicate.isDeleted)
+        #expect(duplicate.externalTaskLink?.supersededByTodoID == canonical.id)
+        let saved = try #require(try ModelContext(container).fetch(FetchDescriptor<Todo>()).first { $0.id == canonical.id })
+        #expect(saved.scheduledTimeMinutes == 1080)
+        #expect(saved.reminderEnabled)
+        #expect(saved.scheduledDate == canonicalDate)
+    }
+
     @Test func failedDuplicateSaveRestoresRelationshipsAndTombstones() throws {
         let container = try makeContainer()
         let context = container.mainContext
         let area = try makeArea(context)
         _ = try run([task()], area: area, context: context)
         let canonical = try #require(context.fetch(FetchDescriptor<Todo>()).first)
+        canonical.reschedule(to: now.addingTimeInterval(86_400), now: now)
+        canonical.setTiming(minutes: 570, reminderEnabled: true, now: now)
         let duplicate = try makeDuplicate(of: canonical, context: context)
+        duplicate.reschedule(to: canonical.scheduledDate, now: now)
+        duplicate.setTiming(minutes: 600, reminderEnabled: false, now: now.addingTimeInterval(10))
         let (session, segment) = addHistory(for: duplicate, area: area, seconds: 60, context: context)
         try context.save()
         let importer = ConnectorTaskImporter(save: { _ in throw TestFailure.expected })
@@ -542,6 +577,16 @@ struct ConnectorTaskImporterTests {
         #expect(duplicate.externalTaskLink?.supersededByTodoID == nil)
         #expect(session.todo?.id == duplicate.id)
         #expect(segment.todo?.id == duplicate.id)
+        #expect(canonical.scheduledTimeMinutes == 570)
+        #expect(canonical.reminderEnabled)
+        #expect(canonical.scheduledTimeUpdatedAt == now)
+        #expect(duplicate.scheduledTimeMinutes == 600)
+        #expect(!duplicate.reminderEnabled)
+        #expect(duplicate.scheduledTimeUpdatedAt == now.addingTimeInterval(10))
+        let saved = try #require(try ModelContext(container).fetch(FetchDescriptor<Todo>()).first { $0.id == canonical.id })
+        #expect(saved.scheduledTimeMinutes == 570)
+        #expect(saved.reminderEnabled)
+        #expect(saved.scheduledTimeUpdatedAt == now)
         #expect(!context.hasChanges)
     }
 

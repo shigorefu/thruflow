@@ -532,6 +532,11 @@ private struct WatchFlowContextPicker: View {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(TodoDisplay.title(for: todo))
                                         .lineLimit(1)
+                                    if let minutes = todo.scheduledTimeMinutes {
+                                        TaskTimeLabel(minutes: minutes, reminderEnabled: todo.reminderEnabled)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
                                     if let project = todo.project {
                                         Text(project.name)
                                             .font(.caption)
@@ -710,6 +715,11 @@ private struct WatchTasksView: View {
                             Text(TodoDisplay.title(for: todo))
                                 .lineLimit(2)
                                 .strikethrough(todo.isCompleted)
+                            if let minutes = todo.scheduledTimeMinutes {
+                                TaskTimeLabel(minutes: minutes, reminderEnabled: todo.reminderEnabled)
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
                             Text(progressText(todo))
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)

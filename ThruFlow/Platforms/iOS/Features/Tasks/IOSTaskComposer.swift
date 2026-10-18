@@ -21,6 +21,9 @@ struct IOSTaskComposer: View {
     @State private var priority = TodoPriority.medium
     @State private var isRoomIfPossible = false
     @State private var scheduledDate: Date? = .now
+    @State private var scheduledTimeMinutes: Int?
+    @State private var reminderEnabled = false
+    @State private var showsTimingControls = false
     @State private var datePickerValue = Date.now
     @State private var showsDatePicker = false
     @State private var unresolvedArea: String?
@@ -61,6 +64,8 @@ struct IOSTaskComposer: View {
         _priority = State(initialValue: draft.priority)
         _isRoomIfPossible = State(initialValue: draft.priority == .low && draft.isRoomIfPossible)
         _scheduledDate = State(initialValue: draft.scheduledDate)
+        _scheduledTimeMinutes = State(initialValue: draft.scheduledTimeMinutes)
+        _reminderEnabled = State(initialValue: draft.reminderEnabled)
         _datePickerValue = State(initialValue: draft.scheduledDate ?? .now)
         _hasExplicitMeasurement = State(initialValue: initialDraft != nil)
         _hasExplicitArea = State(initialValue: initialDraft?.area != nil)
@@ -143,6 +148,7 @@ struct IOSTaskComposer: View {
                             }
                             priorityMenu
                             dateMenu
+                            timingButton
                         }
                     }
                     .scrollIndicators(.hidden)
@@ -206,6 +212,15 @@ struct IOSTaskComposer: View {
         }
         .onChange(of: scheduledDate) { _, newValue in
             updateExistingInlineToken(.date(newValue))
+            if newValue == nil {
+                scheduledTimeMinutes = nil
+                reminderEnabled = false
+                inlineTokens.removeAll { $0.id == "time" }
+            }
+        }
+        .onChange(of: scheduledTimeMinutes) { _, newValue in
+            updateExistingInlineToken(newValue.map(IOSTaskComposerInlineToken.time), id: "time")
+            if newValue == nil { reminderEnabled = false }
         }
         .sheet(isPresented: $showsDatePicker) {
             NavigationStack {
@@ -372,6 +387,40 @@ struct IOSTaskComposer: View {
         .menuOrder(.fixed)
     }
 
+    private var timingButton: some View {
+        Button {
+            showsTimingControls = true
+        } label: {
+            if let scheduledTimeMinutes {
+                TaskTimeLabel(minutes: scheduledTimeMinutes, reminderEnabled: reminderEnabled)
+            } else {
+                Label(String(localized: "時刻"), systemImage: "clock")
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("task.composer.timing")
+        .popover(isPresented: $showsTimingControls) {
+            NavigationStack {
+                Form {
+                    TaskTimingControls(
+                        scheduledDate: scheduledDate,
+                        timeMinutes: $scheduledTimeMinutes,
+                        reminderEnabled: $reminderEnabled
+                    )
+                }
+                .iosCenteredNavigationTitle(String(localized: "時刻"))
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button(String(localized: "完了")) { showsTimingControls = false }
+                    }
+                }
+            }
+            .frame(idealWidth: 360, idealHeight: 320)
+            .presentationCompactAdaptation(.sheet)
+            .presentationDetents([.medium])
+        }
+    }
+
     private var quickInputLegend: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
@@ -403,6 +452,7 @@ struct IOSTaskComposer: View {
                 }
                 GridRow {
                     legendItem("#", String(localized: "タグ"))
+                    legendItem("HH:mm", String(localized: "時刻"))
                 }
             }
         }
@@ -533,7 +583,7 @@ struct IOSTaskComposer: View {
         !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             || hasExplicitMeasurement || hasExplicitArea || hasExplicitPriority || hasExplicitDate
             || !inlineTokens.isEmpty || !hashtags.isEmpty
-            || project != nil
+            || project != nil || scheduledTimeMinutes != nil
     }
 
     private var measurementTitle: String {
@@ -655,6 +705,13 @@ struct IOSTaskComposer: View {
             case .noDate: scheduledDate = nil
             }
         }
+        if scheduledDate != nil {
+            if let minutes = result.timeMinutes { scheduledTimeMinutes = minutes }
+        } else {
+            scheduledTimeMinutes = nil
+            reminderEnabled = false
+            inlineTokens.removeAll { $0.id == "time" }
+        }
         hashtags = TodoHashtagNormalizer.normalize(hashtags + result.hashtags)
     }
 
@@ -675,6 +732,9 @@ struct IOSTaskComposer: View {
             case .noDate:
                 replaceInlineToken(.date(nil))
             }
+        }
+        if let minutes = result.timeMinutes {
+            replaceInlineToken(.time(minutes))
         }
         for hashtag in result.hashtags {
             replaceInlineToken(.hashtag(hashtag))
@@ -718,6 +778,9 @@ struct IOSTaskComposer: View {
         case .date:
             scheduledDate = currentAppDay
             hasExplicitDate = false
+        case .time:
+            scheduledTimeMinutes = nil
+            reminderEnabled = false
         case .hashtag(let hashtag):
             hashtags.removeAll {
                 $0.caseInsensitiveCompare(hashtag) == .orderedSame
@@ -760,6 +823,8 @@ struct IOSTaskComposer: View {
             Image(systemName: "exclamationmark")
         case .date:
             Image(systemName: "calendar")
+        case .time:
+            Image(systemName: "clock")
         case .hashtag:
             Image(systemName: "number")
         }
@@ -782,6 +847,8 @@ struct IOSTaskComposer: View {
             return later ? String(localized: "余裕があれば") : priority.displayName
         case .date(let date):
             return inlineTokenDateLabel(date)
+        case .time(let minutes):
+            return TaskTimeFormatting.text(minutes: minutes)
         case .hashtag(let hashtag):
             return "#\(hashtag)"
         }
@@ -836,6 +903,8 @@ struct IOSTaskComposer: View {
         draft.priority = result.priority ?? priority
         draft.isRoomIfPossible = result.isRoomIfPossible ?? isRoomIfPossible
         draft.scheduledDate = resolvedDate(from: result.date)
+        draft.scheduledTimeMinutes = draft.scheduledDate == nil ? nil : result.timeMinutes ?? scheduledTimeMinutes
+        draft.reminderEnabled = draft.scheduledTimeMinutes != nil && reminderEnabled
 
         do {
             let todo = try TaskEditingService().save(draft: draft, modelContext: modelContext)
@@ -854,6 +923,8 @@ struct IOSTaskComposer: View {
         priority = .medium
         isRoomIfPossible = false
         scheduledDate = currentAppDay
+        scheduledTimeMinutes = nil
+        reminderEnabled = false
         areaID = nil
         project = nil
         hasExplicitMeasurement = false
@@ -902,6 +973,7 @@ private enum IOSTaskComposerInlineToken: Equatable, Identifiable {
     case area(UUID)
     case priority(TodoPriority, Bool)
     case date(Date?)
+    case time(Int)
     case hashtag(String)
 
     var id: String {
@@ -914,6 +986,8 @@ private enum IOSTaskComposerInlineToken: Equatable, Identifiable {
             "priority"
         case .date:
             "date"
+        case .time:
+            "time"
         case .hashtag(let value):
             "hashtag:\(value.lowercased(with: Locale(identifier: "en_US_POSIX")))"
         }

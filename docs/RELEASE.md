@@ -14,9 +14,10 @@ Before upload:
 - Confirm build 13 has not already been uploaded in App Store Connect; local
   metadata advances the last documented shipped build 12 but does not inspect
   the account's upload history.
-- Verify signed Mac/iPhone exchange of Projects and Task assignments. The live
-  Production schema was inspected, additively updated and read back on
-  2026-10-16; see [CloudKit evidence](CLOUDKIT.md#projects-and-area-restoration--2026-10-16).
+- Verify signed Mac/iPhone exchange of Projects, Task assignments and Task times/
+  reminder preferences, including delivery and cancellation of local notifications.
+  Live Production schema additions were deployed and read back on 2026-10-16
+  (Projects) and 2026-10-18 (Task timing); see [CloudKit evidence](CLOUDKIT.md#task-times-and-reminders--2026-10-18).
 - Produce and validate signed distribution archives, then verify the exact
   processed TestFlight builds on Mac, iPhone/iPad and Watch.
 - Keep 1.3.1 marked as the latest stable release until publication is confirmed.
@@ -30,6 +31,28 @@ launched with in-memory demo data, but interactive iPhone/iPad visual QA remains
 unverified because this Xcode installation has no Simulator.app UI. The temporary
 simulator was shut down and removed. These checks do not validate signed-device
 sync or a distributed build.
+
+Task-time/reminder validation on 2026-10-18: **521 tests in 50 suites passed**;
+Release macOS and iOS builds succeeded without compiler warnings, including the
+embedded Watch app. Tests cover strict `HH:mm` parsing, separate duration input,
+save/readback/rollback, migration defaults, Habit/connector timing reconciliation,
+DST, notification eligibility, capacity, retries and serialized updates. Expected
+injected persistence-failure logs and incidental system `com.apple.linkd` messages
+did not fail the test run.
+
+An isolated in-memory macOS QA app verified pasted quick input
+`QA reminder 14:30 [30m]`, separate clock/duration chips, native time controls,
+reminders off by default, save/reset, editor readback, and clearing the date/time.
+The temporary app was stopped; no task-owned test runners remained. Physical
+typing, iPhone/iPad/Watch visual layouts, OS permission prompts, signed notification
+delivery and cross-device synchronization were not verified by this check.
+
+The macOS and iOS/Watch reviewers explicitly agreed on the final shared contract
+and each other's findings. A separate localization reviewer agreed on six new
+keys and two reused labels across all five locales; this was a source review,
+not native-speaker or device-layout verification. These checks do not replace the
+signed-device gates above. Version/build remains 1.4.0 (13); nothing was uploaded
+or published as part of this feature implementation.
 
 ## Released version 1.3.1 build 12
 
