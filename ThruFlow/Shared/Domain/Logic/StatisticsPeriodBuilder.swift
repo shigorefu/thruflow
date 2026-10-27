@@ -81,6 +81,8 @@ struct StatisticsPeriodFlowRecord: Equatable, Sendable {
     let todoNotes: String
     let intent: String
     let result: String
+    var projectID: UUID? = nil
+    var projectName: String = ""
 }
 
 struct StatisticsPeriodAchievementRecord: Equatable, Sendable {
@@ -162,6 +164,8 @@ struct StatisticsPeriodSnapshot: Equatable, Sendable {
     let trendPeriod: StatisticsPeriod
     let taskDistribution: [StatisticsDistributionItem]
     let areaDistribution: [StatisticsDistributionItem]
+    let projectDistribution: [StatisticsDistributionItem]
+    let habitCompletion: HabitCompletionSummary
     let flowDays: [StatisticsDay]
     let achievementDays: [AchievementDay]
     let csvRows: [StatisticsCSVRow]
@@ -272,7 +276,9 @@ struct StatisticsPeriodBuilder: Sendable {
     nonisolated func build(
         flowRecords: [StatisticsPeriodFlowRecord],
         achievementRecords: [StatisticsPeriodAchievementRecord],
-        filter: StatisticsPeriodFilter
+        filter: StatisticsPeriodFilter,
+        habitRecords: [HabitCompletionRecord] = [],
+        now: Date = .now
     ) -> StatisticsPeriodSnapshot {
         let periodBounds = bounds(for: filter)
         let filteredFlows = flowRecords.filter {
@@ -312,6 +318,11 @@ struct StatisticsPeriodBuilder: Sendable {
             trendPeriod: trendPeriod(for: filter, bounds: periodBounds),
             taskDistribution: makeDistribution(flows: currentFlows, dimension: .task),
             areaDistribution: makeDistribution(flows: currentFlows, dimension: .area),
+            projectDistribution: makeDistribution(flows: currentFlows, dimension: .project),
+            habitCompletion: HabitCompletionBuilder().build(
+                records: habitRecords, filter: filter, bounds: periodBounds,
+                today: dayBoundary.day(containing: now, calendar: calendar)
+            ),
             flowDays: makeFlowDays(days: days, flows: currentFlows),
             achievementDays: makeAchievementDays(days: days, achievements: currentAchievements),
             csvRows: makeCSVRows(flows: currentFlows, achievements: currentAchievements)
@@ -498,6 +509,7 @@ struct StatisticsPeriodBuilder: Sendable {
     private enum DistributionDimension {
         case task
         case area
+        case project
     }
 
     private struct DistributionAccumulator {
@@ -528,6 +540,11 @@ struct StatisticsPeriodBuilder: Sendable {
                 key = record.areaID.map { "area:\($0.uuidString)" } ?? "area:other"
                 name = record.areaName.isEmpty ? String(localized: "その他") : record.areaName
                 symbol = record.areaSymbol.isEmpty ? nil : record.areaSymbol
+            case .project:
+                key = record.projectID.map { "project:\($0.uuidString)" } ?? "project:unassigned"
+                let projectName = record.projectName.trimmingCharacters(in: .whitespacesAndNewlines)
+                name = record.projectID == nil || projectName.isEmpty ? String(localized: "プロジェクトなし") : projectName
+                symbol = record.areaSymbol.isEmpty ? nil : record.areaSymbol
             }
 
             var accumulator = grouped[key] ?? DistributionAccumulator(
@@ -555,7 +572,8 @@ struct StatisticsPeriodBuilder: Sendable {
             )
         }.sorted {
             if $0.focusSeconds != $1.focusSeconds { return $0.focusSeconds > $1.focusSeconds }
-            return $0.name.localizedStandardCompare($1.name) == .orderedAscending
+            let nameOrder = $0.name.localizedStandardCompare($1.name)
+            return nameOrder == .orderedSame ? $0.id < $1.id : nameOrder == .orderedAscending
         }
 
         guard sorted.count > 6 else { return sorted }
@@ -593,6 +611,25 @@ struct StatisticsPeriodBuilder: Sendable {
                     id: "day:\(day.timeIntervalSinceReferenceDate)", date: day, name: "",
                     focusSeconds: days[day, default: []].reduce(0) { $0 + $1.focusSeconds }
                 )
+            }
+        case .project:
+            // Projects and their Tasks are grouped by stable identity, including
+            // same-named and unnamed Tasks. Legacy Area-only Flow has no Task.
+            let tasks = Dictionary(grouping: flows) { $0.todoID?.uuidString ?? "unassigned" }
+            return tasks.map { key, records in
+                let record = records[0]
+                let title = record.todoTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+                let projectName = record.projectName.trimmingCharacters(in: .whitespacesAndNewlines)
+                let fallback = record.todoID != nil && !projectName.isEmpty
+                    ? projectName : String(localized: "タスクなし")
+                return StatisticsDistributionDetail(
+                    id: "task:\(key)", date: nil, name: title.isEmpty ? fallback : title,
+                    focusSeconds: records.reduce(0) { $0 + $1.focusSeconds }
+                )
+            }.sorted {
+                if $0.focusSeconds != $1.focusSeconds { return $0.focusSeconds > $1.focusSeconds }
+                if $0.name != $1.name { return $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+                return $0.id < $1.id
             }
         case .area:
             let tasks = Dictionary(grouping: flows) {

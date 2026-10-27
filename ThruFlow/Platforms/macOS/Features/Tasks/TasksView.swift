@@ -16,6 +16,7 @@ struct TasksView: View {
 
     @Query(sort: \Area.name, order: .forward) private var areas: [Area]
     @Query(sort: \Todo.sortIndex, order: .forward) private var todos: [Todo]
+    @Query(sort: \Project.createdAt) private var projects: [Project]
 
     @State private var editingTodo: Todo?
     @State private var newTodoTitle = ""
@@ -552,7 +553,7 @@ struct TasksView: View {
             .buttonStyle(.plain)
             .foregroundStyle(.secondary)
             .help(String(localized: "今日へ移動"))
-            .accessibilityLabel(String(localized: "\(TodoDisplay.title(for: todo))を今日へ移動"))
+            .accessibilityLabel(String(localized: "\(TodoDisplay.taskTitle(for: todo))を今日へ移動"))
         }
     }
 
@@ -705,7 +706,7 @@ struct TasksView: View {
     private func canDrag(_ todo: Todo) -> Bool {
         guard !todo.isCompleted else { return false }
         guard todo.taskType == .habit else { return true }
-        return todo.area?.goalSchedule == .weeklyCount
+        return HabitDefinition(todo: todo)?.goalSchedule == .weeklyCount
     }
 
     private func todoRow(_ todo: Todo) -> some View {
@@ -786,7 +787,8 @@ struct TasksView: View {
             reminderEnabled: newTodoReminderEnabled
         )
         do {
-            _ = try TaskEditingService().save(draft: draft, modelContext: modelContext)
+            let todo = try TaskEditingService().save(draft: draft, modelContext: modelContext)
+            if todo.reminderEnabled { TaskReminderAuthorization.requestForUserAction() }
         } catch TaskEditingError.validation(let errors) {
             newTodoError = errors.map(\.localizedDescription).joined(separator: "\n")
             return false
@@ -864,6 +866,12 @@ struct TasksView: View {
                         isArchived: $0.isArchived
                     )
                 },
+            projectRevisions: projects.map {
+                MacProjectHabitMaterializationRevision(
+                    id: $0.id, updatedAt: $0.updatedAt, completedAt: $0.completedAt,
+                    areaUpdatedAt: $0.area?.updatedAt, areaArchivedAt: $0.area?.archivedAt
+                )
+            }.sorted { $0.id.uuidString < $1.id.uuidString },
             calendarDayRevision: calendarDayRevision
         )
     }
@@ -891,7 +899,16 @@ private struct MacRequiredTodoMaterializationID: Hashable {
     let rangeRawValue: String
     let visibleDates: [Date]
     let habitRevisions: [MacHabitMaterializationRevision]
+    let projectRevisions: [MacProjectHabitMaterializationRevision]
     let calendarDayRevision: Int
+}
+
+private struct MacProjectHabitMaterializationRevision: Hashable {
+    let id: UUID
+    let updatedAt: Date
+    let completedAt: Date?
+    let areaUpdatedAt: Date?
+    let areaArchivedAt: Date?
 }
 
 private struct MacHabitMaterializationRevision: Hashable {
@@ -1064,6 +1081,7 @@ struct MessengerTodoComposer: View {
                 }
             }
         }
+        .taskTimingDefaults(timeMinutes: $timeMinutes, reminderEnabled: $reminderEnabled)
         .onChange(of: volume) { _, newValue in
             updateExistingInlineToken(
                 .measurement(newValue.measurement, newValue.plannedAmount)
@@ -1082,10 +1100,6 @@ struct MessengerTodoComposer: View {
         .onChange(of: dateOption) { _, newValue in
             updateExistingInlineToken(.date(newValue))
             clearTimingIfUndated()
-        }
-        .onChange(of: timeMinutes) { _, newValue in
-            updateExistingInlineToken(newValue.map(TaskComposerInlineToken.time), id: "time")
-            if newValue == nil { reminderEnabled = false }
         }
         .onChange(of: activeAutocompleteSuggestions.map(\.id)) { _, _ in
             selectedAutocompleteSuggestionID = nil
@@ -1239,16 +1253,18 @@ struct MessengerTodoComposer: View {
         Button {
             showsTimingControls = true
         } label: {
-            Group {
+            HStack(spacing: 5) {
                 if let timeMinutes {
                     TaskTimeLabel(minutes: timeMinutes, reminderEnabled: reminderEnabled)
                 } else {
                     Label(String(localized: "時刻"), systemImage: "clock")
                 }
+                Image(systemName: "chevron.down")
+                    .font(.caption2)
             }
-            .chipStyle(tint: .secondary)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.bordered)
+        .controlSize(.small)
         .accessibilityIdentifier("task.composer.timing")
         .popover(isPresented: $showsTimingControls) {
             TaskTimingControls(
@@ -1265,7 +1281,6 @@ struct MessengerTodoComposer: View {
         guard dateOption == .none else { return }
         timeMinutes = nil
         reminderEnabled = false
-        inlineTokens.removeAll { $0.id == "time" }
     }
 
     private func submit() {
@@ -1376,7 +1391,7 @@ struct MessengerTodoComposer: View {
 
                 GridRow {
                     legendItem(shortcut: "[25m]", label: String(localized: "25分"))
-                    legendItem(shortcut: "HH:mm", label: String(localized: "時刻"))
+                    legendItem(shortcut: "9:00", label: String(localized: "時刻"))
                 }
             }
         }
@@ -1596,6 +1611,7 @@ struct MessengerTodoComposer: View {
             hasExplicitDate = true
         }
         if let time = result.timeMinutes {
+            if timeMinutes == nil { reminderEnabled = true }
             timeMinutes = time
         }
         clearTimingIfUndated()
@@ -1629,9 +1645,6 @@ struct MessengerTodoComposer: View {
         }
         if allowsDateSelection, let date = result.date {
             replaceInlineToken(.date(quickDate(for: date)))
-        }
-        if let time = result.timeMinutes {
-            replaceInlineToken(.time(time))
         }
         for hashtag in result.hashtags {
             replaceInlineToken(.hashtag(hashtag))
@@ -1676,9 +1689,6 @@ struct MessengerTodoComposer: View {
         case .date:
             dateOption = .today
             hasExplicitDate = false
-        case .time:
-            timeMinutes = nil
-            reminderEnabled = false
         case .hashtag(let hashtag):
             hashtags.removeAll { $0.caseInsensitiveCompare(hashtag) == .orderedSame }
         }
@@ -1731,8 +1741,6 @@ struct MessengerTodoComposer: View {
             Image(systemName: "exclamationmark")
         case .date:
             Image(systemName: "calendar")
-        case .time:
-            Image(systemName: "clock")
         case .hashtag:
             Image(systemName: "number")
         }
@@ -1755,8 +1763,6 @@ struct MessengerTodoComposer: View {
             return later ? String(localized: "余裕があれば") : priority.displayName
         case .date(let date):
             return date.chipLabel
-        case .time(let minutes):
-            return TaskTimeFormatting.text(minutes: minutes)
         case .hashtag(let hashtag):
             return "#\(hashtag)"
         }
@@ -1800,7 +1806,6 @@ private enum TaskComposerInlineToken: Equatable, Identifiable {
     case area(UUID)
     case priority(TodoPriority, Bool)
     case date(QuickTodoDate)
-    case time(Int)
     case hashtag(String)
 
     var id: String {
@@ -1809,7 +1814,6 @@ private enum TaskComposerInlineToken: Equatable, Identifiable {
         case .area: "area"
         case .priority: "priority"
         case .date: "date"
-        case .time: "time"
         case .hashtag(let value): "hashtag:\(value.lowercased(with: Locale(identifier: "en_US_POSIX")))"
         }
     }
@@ -1959,6 +1963,7 @@ struct QuickTodoCreationPopover: View {
         )
         do {
             let todo = try TaskEditingService().save(draft: draft, modelContext: modelContext)
+            if todo.reminderEnabled { TaskReminderAuthorization.requestForUserAction() }
             onCreated?(todo)
             closeComposer()
             return true
@@ -2473,12 +2478,14 @@ private struct TodoRow: View {
 
                 HStack(spacing: 6) {
                     if let area = todo.area, !DefaultAreas.isTaskInbox(area) {
-                        Text("\(area.symbolName) \(area.name)")
+                        Text(area.symbolName)
                             .foregroundStyle(checkboxTint)
+                            .help(area.name)
+                            .accessibilityLabel(area.name)
                         Text("·")
                     }
 
-                    if let project = todo.project {
+                    if let project = todo.project, !titleIsPlaceholder {
                         Label(project.name, systemImage: "folder")
                         Text("·")
                     }
@@ -2490,9 +2497,10 @@ private struct TodoRow: View {
 
                     Text(priorityLabel)
 
-                    Text("·")
-
-                    Text(summary)
+                    if todo.measurement != .checkbox {
+                        Text("·")
+                        Text(summary)
+                    }
 
                     ForEach(todo.hashtags, id: \.self) { hashtag in
                         Text(verbatim: "#\(hashtag)")
@@ -2542,7 +2550,7 @@ private struct TodoRow: View {
                 .onSubmit(commitTitle)
                 .accessibilityLabel(String(localized: "タスク名"))
         } else {
-            Text(TodoDisplay.title(for: todo))
+            Text(TodoDisplay.taskTitle(for: todo))
                 .font(titleIsPlaceholder ? .body.weight(.medium).italic() : .body.weight(.medium))
                 .strikethrough(todo.isCompleted)
                 .foregroundStyle(titleColor)
@@ -2590,7 +2598,7 @@ private struct TodoRow: View {
     }
 
     private var titlePlaceholder: String {
-        TodoDisplay.placeholder(for: todo)
+        TodoDisplay.taskPlaceholder(for: todo)
     }
 
     private var titleIsPlaceholder: Bool {

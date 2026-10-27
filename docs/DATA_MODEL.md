@@ -49,7 +49,7 @@ completed/progressed Todos and persisted Flow records are never removed.
 ## Project (1.4.0)
 
 The schema adds `Project` as its sixth entity. Stored fields are `id`, `name`,
-`notes`, `createdAt`, `updatedAt`, `completedAt`, and optional `direction`
+`notes`, `createdAt`, `updatedAt`, `completedAt`, optional `habitSettingsRawValue`, and optional `direction`
 (the parent Area). `Area.projects` and `Project.todos` are optional inverse
 arrays; `Todo.project` is an optional to-one relationship. Deletion rules are
 nullifying, with no cascade into Tasks or history. Required scalars have defaults;
@@ -66,6 +66,27 @@ Inverse arrays use the existing Core Data CloudKit relationship representation,
 not new array fields on `CD_Direction`. See [CloudKit](CLOUDKIT.md) for the live
 deployment evidence and the remaining signed-device check. Reset All Data also
 removes Projects; ordinary Area archive/restore preserves them.
+
+### Project Habit compatibility
+
+`Project.habitSettingsRawValue: String?` stores a Codable goal configuration plus
+first activation date and inactive intervals. Nil means never enabled. Disabling
+retains the value; it does not erase its schedule or lifecycle history. The memo
+field remains persisted although its editor was removed.
+
+`Todo.habitOwnerKeyRawValue: String?` stamps `area:<UUID>` or `project:<UUID>` on
+new explicit generated occurrences. It is immutable during Task editing and
+prevents merging unrelated owners while CloudKit relationships resolve. A matching
+key reserves an occurrence for planning; mutation/deduplication/statistics defer
+until the relationships agree with it. Legacy nil uses the prior relationship
+inference. No existing IDs, raw values or history are rewritten.
+
+Both fields are additive nullable strings. `ProjectHabitTests` upgrades an on-disk
+pre-Habit Project store, checking Project/Task identity, notes, assignment and
+Task time/reminder before enabling the new Habit. `PreProjectHabitSchema` freezes
+that prior shape. CloudKit names are `CD_Project.CD_habitSettingsRawValue` and
+`CD_Todo.CD_habitOwnerKeyRawValue`; no new index is required because these values
+are decoded after fetching rather than used as server predicates.
 
 ## Todo
 

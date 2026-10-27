@@ -5,10 +5,12 @@ struct IOSFlowView: View {
     @Environment(\.calendar) private var calendar
     @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
 
     @Query(sort: \Area.updatedAt, order: .reverse) private var areas: [Area]
+    @Query(sort: \Project.createdAt) private var projects: [Project]
     @Query private var todos: [Todo]
     @Query private var sessions: [FlowSession]
     @Query private var flowBreaks: [FlowBreak]
@@ -20,6 +22,8 @@ struct IOSFlowView: View {
 
     @State private var showsContextPicker = false
     @State private var showsMemo = false
+    @State private var presentedTaskSwitchID: UUID?
+    @State private var isMemoDismissing = false
     @State private var showsTaskComposer = false
     @State private var editorMode: IOSTaskEditorMode?
     @State private var selectedHistoryItem: HistoryCalendarItem?
@@ -93,8 +97,10 @@ struct IOSFlowView: View {
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            if showsTaskComposer, horizontalSizeClass != .regular {
+            if showsTaskComposer {
                 taskComposer
+                    .frame(maxWidth: 640)
+                    .frame(maxWidth: .infinity)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                     .background {
                         Rectangle()
@@ -103,7 +109,7 @@ struct IOSFlowView: View {
                     }
             }
         }
-        .sheet(isPresented: $showsContextPicker) {
+        .sheet(isPresented: $showsContextPicker, onDismiss: presentMemoIfNeeded) {
             NavigationStack {
                 IOSFlowContextPicker(
                     todos: todayTodos,
@@ -117,14 +123,20 @@ struct IOSFlowView: View {
             }
             .presentationDetents([.medium, .large])
         }
-        .sheet(isPresented: $showsMemo) {
+        .sheet(isPresented: $showsMemo, onDismiss: {
+            presentedTaskSwitchID = nil
+            isMemoDismissing = false
+            presentMemoIfNeeded()
+        }) {
             IOSFlowMemoView(
                 isBreakMemo: activeFlowStore.isAwaitingBreakMemo,
-                taskTitle: activeFlowStore.activeSession?.todo?.title,
+                isTaskSwitchMemo: presentedTaskSwitchID != nil,
+                todo: activeFlowStore.memoTodo,
                 cancel: cancelMemo,
                 submit: submitMemo
             )
             .presentationDetents([.medium, .large])
+            .interactiveDismissDisabled(presentedTaskSwitchID != nil)
         }
         .sheet(item: $editorMode) { mode in
             NavigationStack {
@@ -159,6 +171,9 @@ struct IOSFlowView: View {
         .onChange(of: activeFlowStore.isAwaitingBreakMemo) { _, _ in
             presentMemoIfNeeded()
         }
+        .onChange(of: activeFlowStore.pendingTaskSwitch?.id) { _, _ in
+            presentMemoIfNeeded()
+        }
         .onChange(of: activeFlowStore.phase) { _, _ in
             if isVisible {
                 cachedSnapshot = makeSnapshot(at: .now)
@@ -186,11 +201,11 @@ struct IOSFlowView: View {
         let snapshot = cachedSnapshot ?? .empty()
 
         return ScrollView {
-            ViewThatFits(in: .horizontal) {
-                wideDashboard(snapshot: snapshot)
-                    .frame(minWidth: 900)
-
-                compactDashboard(snapshot: snapshot)
+            IOSFlowDashboardLayout(allowsColumns: horizontalSizeClass == .regular && !dynamicTypeSize.isAccessibilitySize) {
+                flowCard(snapshot: snapshot)
+                playerCard()
+                dashboardTasks()
+                statisticsCard(snapshot: snapshot)
             }
             .frame(maxWidth: 1_200)
             .padding(.horizontal, 16)
@@ -198,35 +213,6 @@ struct IOSFlowView: View {
             .frame(maxWidth: .infinity)
         }
         .background(backgroundColor.ignoresSafeArea())
-    }
-
-    private func compactDashboard(snapshot: FlowDashboardSnapshot) -> some View {
-        LazyVStack(spacing: 16) {
-            flowCard(snapshot: snapshot)
-            playerCard()
-            dashboardTasks()
-            statisticsCard(snapshot: snapshot)
-        }
-    }
-
-    private func wideDashboard(snapshot: FlowDashboardSnapshot) -> some View {
-        VStack(spacing: 16) {
-            HStack(alignment: .top, spacing: 16) {
-                flowCard(snapshot: snapshot, minHeight: 320)
-                    .frame(maxWidth: .infinity)
-
-                playerCard(minHeight: 320)
-                    .frame(width: 340)
-            }
-
-            HStack(alignment: .top, spacing: 16) {
-                dashboardTasks(minHeight: 330)
-                    .frame(maxWidth: .infinity)
-
-                statisticsCard(snapshot: snapshot)
-                    .frame(maxWidth: .infinity)
-            }
-        }
     }
 
     private func statisticsCard(snapshot: FlowDashboardSnapshot) -> some View {
@@ -280,7 +266,7 @@ struct IOSFlowView: View {
     }
 
     private var selectedContextTitle: String {
-        if let selectedTodo { return TodoDisplay.title(for: selectedTodo) }
+        if let selectedTodo { return TodoDisplay.flowTitle(for: selectedTodo) }
         return selectedArea?.name ?? String(localized: "タスクを選択")
     }
 
@@ -321,7 +307,7 @@ struct IOSFlowView: View {
             style: .mobile,
             presentation: FlowTimerContextPresentation(
                 symbol: selectedArea?.symbolName ?? "🎯",
-                areaTitle: selectedArea?.name ?? String(localized: "分野"),
+                areaTitle: selectedArea == nil ? String(localized: "分野") : TodoDisplay.flowContextName(for: selectedTodo, area: selectedArea),
                 tint: tint,
                 detail: nil,
                 isPlaceholder: selectedArea == nil,
@@ -480,12 +466,6 @@ struct IOSFlowView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(String(localized: "タスクを追加"))
-                .popover(isPresented: regularTaskComposerPresentation, arrowEdge: .top) {
-                    taskComposer
-                        .frame(width: 520)
-                        .presentationCompactAdaptation(.popover)
-                }
-
                 Button {
                     open(.tasks)
                 } label: {
@@ -510,7 +490,7 @@ struct IOSFlowView: View {
                 )
             } else {
                 ForEach(filteredDashboardTodos) { todo in
-                    IOSTaskRow(todo: todo) {
+                    IOSTaskRow(todo: todo, showsContextSubtitle: true) {
                         editorMode = .edit(todo)
                     }
                     if todo.id != filteredDashboardTodos.last?.id {
@@ -650,6 +630,12 @@ struct IOSFlowView: View {
             latestAreaUpdate: areas.first?.updatedAt,
             todoCount: todos.count,
             latestTodoUpdate: todos.first?.updatedAt,
+            projectRevisions: projects.map {
+                IOSFlowProjectRevision(
+                    id: $0.id, updatedAt: $0.updatedAt, completedAt: $0.completedAt,
+                    areaUpdatedAt: $0.area?.updatedAt, areaArchivedAt: $0.area?.archivedAt
+                )
+            }.sorted { $0.id.uuidString < $1.id.uuidString },
             revision: preparationRevision
         )
     }
@@ -807,26 +793,51 @@ struct IOSFlowView: View {
     }
 
     private func presentMemoIfNeeded() {
-        showsMemo = activeFlowStore.isAwaitingBreakMemo || activeFlowStore.phase == .awaitingResult
+        guard !showsContextPicker, !isMemoDismissing else { return }
+        if showsMemo, let requestID = presentedTaskSwitchID {
+            if activeFlowStore.pendingTaskSwitch?.id != requestID { dismissMemo() }
+            return
+        }
+        guard !showsMemo else { return }
+        presentedTaskSwitchID = activeFlowStore.pendingTaskSwitch?.id
+        showsMemo = presentedTaskSwitchID != nil || activeFlowStore.isAwaitingBreakMemo
+            || activeFlowStore.phase == .awaitingResult
     }
 
     private func cancelMemo() {
-        if activeFlowStore.isAwaitingBreakMemo {
+        if let requestID = presentedTaskSwitchID {
+            if activeFlowStore.pendingTaskSwitch?.id == requestID {
+                activeFlowStore.cancelTaskSwitchMemo()
+            }
+        } else if activeFlowStore.isAwaitingBreakMemo {
             activeFlowStore.cancelBreakMemo()
         } else {
             activeFlowStore.cancelResultMemo(modelContext: modelContext)
         }
-        showsMemo = false
+        dismissMemo()
     }
 
-    private func submitMemo(_ memo: String?, taskTitle: String?) {
+    private func submitMemo(_ memo: String?, taskTitle: String?, project: Project?) {
         let didSave: Bool
-        if activeFlowStore.isAwaitingBreakMemo {
-            didSave = activeFlowStore.completeBreakMemo(memo, taskTitle: taskTitle, modelContext: modelContext)
+        if let requestID = presentedTaskSwitchID {
+            guard activeFlowStore.pendingTaskSwitch?.id == requestID else {
+                dismissMemo()
+                return
+            }
+            didSave = activeFlowStore.completeTaskSwitchMemo(
+                memo, taskTitle: taskTitle, taskProject: project, modelContext: modelContext
+            )
+        } else if activeFlowStore.isAwaitingBreakMemo {
+            didSave = activeFlowStore.completeBreakMemo(memo, taskTitle: taskTitle, taskProject: project, modelContext: modelContext)
         } else {
-            didSave = activeFlowStore.completeResult(memo, taskTitle: taskTitle, modelContext: modelContext)
+            didSave = activeFlowStore.completeResult(memo, taskTitle: taskTitle, taskProject: project, modelContext: modelContext)
         }
-        if didSave { showsMemo = false }
+        if didSave { dismissMemo() }
+    }
+
+    private func dismissMemo() {
+        isMemoDismissing = true
+        showsMemo = false
     }
 
     private func presentTaskComposer() {
@@ -845,17 +856,6 @@ struct IOSFlowView: View {
         IOSTaskComposer(
             areas: activeAreas,
             onClose: dismissTaskComposer
-        )
-    }
-
-    private var regularTaskComposerPresentation: Binding<Bool> {
-        Binding(
-            get: { showsTaskComposer && horizontalSizeClass == .regular },
-            set: { isPresented in
-                if !isPresented {
-                    showsTaskComposer = false
-                }
-            }
         )
     }
 
@@ -898,7 +898,16 @@ private struct IOSFlowPreparationID: Hashable {
     let latestAreaUpdate: Date?
     let todoCount: Int
     let latestTodoUpdate: Date?
+    let projectRevisions: [IOSFlowProjectRevision]
     let revision: Int
+}
+
+private struct IOSFlowProjectRevision: Hashable {
+    let id: UUID
+    let updatedAt: Date
+    let completedAt: Date?
+    let areaUpdatedAt: Date?
+    let areaArchivedAt: Date?
 }
 
 private enum IOSDashboardTaskFilter: String, CaseIterable, Identifiable {
@@ -913,6 +922,53 @@ private enum IOSDashboardTaskFilter: String, CaseIterable, Identifiable {
         case .task: String(localized: "タスク")
         case .habit: String(localized: "習慣一覧")
         case .nice: String(localized: "ナイス")
+        }
+    }
+}
+
+/// One hierarchy for both arrangements keeps card-local selection and presentation
+/// state alive while a window or display changes its available width.
+private nonisolated struct IOSFlowDashboardLayout: Layout {
+    var allowsColumns: Bool
+    private let spacing: CGFloat = 16
+    private let minimumColumnWidth: CGFloat = 360
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = max(0, proposal.width ?? minimumColumnWidth)
+        let columns = columnCount(for: width)
+        let cellWidth = max(0, (width - spacing * CGFloat(columns - 1)) / CGFloat(columns))
+        let heights = rowHeights(subviews: subviews, width: cellWidth, columns: columns)
+        return CGSize(width: width, height: heights.reduce(0, +) + spacing * CGFloat(max(0, heights.count - 1)))
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let columns = columnCount(for: bounds.width)
+        let cellWidth = max(0, (bounds.width - spacing * CGFloat(columns - 1)) / CGFloat(columns))
+        let heights = rowHeights(subviews: subviews, width: cellWidth, columns: columns)
+        var y = bounds.minY
+        for (row, height) in heights.enumerated() {
+            for column in 0..<columns {
+                let index = row * columns + column
+                guard index < subviews.count else { break }
+                subviews[index].place(
+                    at: CGPoint(x: bounds.minX + CGFloat(column) * (cellWidth + spacing), y: y),
+                    anchor: .topLeading,
+                    proposal: ProposedViewSize(width: cellWidth, height: height)
+                )
+            }
+            y += height + spacing
+        }
+    }
+
+    private func columnCount(for width: CGFloat) -> Int {
+        allowsColumns && width >= minimumColumnWidth * 2 + spacing ? 2 : 1
+    }
+
+    private func rowHeights(subviews: Subviews, width: CGFloat, columns: Int) -> [CGFloat] {
+        stride(from: 0, to: subviews.count, by: columns).map { start in
+            (start..<min(start + columns, subviews.count)).map {
+                subviews[$0].sizeThatFits(ProposedViewSize(width: width, height: nil)).height
+            }.max() ?? 0
         }
     }
 }

@@ -70,9 +70,11 @@ struct ProjectManagementSection<TaskEditor: View>: View {
     }
 }
 
-private struct ProjectDetailView<TaskEditor: View>: View {
+struct ProjectDetailView<TaskEditor: View>: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.calendar) private var calendar
+    @Environment(\.appDayBoundary) private var dayBoundary
     @Query(sort: \Todo.sortIndex) private var todos: [Todo]
     let project: Project
     let taskEditor: (Todo?, Project) -> TaskEditor
@@ -87,26 +89,21 @@ private struct ProjectDetailView<TaskEditor: View>: View {
     var body: some View {
         NavigationStack {
             Form {
-                if let notes = project.notes, !notes.isEmpty {
-                    Section(String(localized: "メモ")) { Text(notes) }
+                Section(String(localized: "プロジェクトの習慣")) {
+                    Button(String(localized: "プロジェクトを編集")) { isEditingProject = true }
+                    ForEach(projectTodos.filter(\.isHabitOccurrence)) { todo in
+                        taskRow(todo)
+                    }
                 }
                 Section(String(localized: "タスク")) {
-                    ForEach(projectTodos) { todo in
-                        Button { taskRoute = ProjectTaskRoute(todo: todo) } label: {
-                            Label(TodoDisplay.title(for: todo), systemImage: todo.isCompleted ? "checkmark.circle.fill" : "circle")
-                                .foregroundStyle(todo.isCompleted ? .secondary : .primary)
-                        }
-                    }
-                    if !project.isCompleted && project.area?.isArchived == false {
-                        Button(String(localized: "タスクを追加"), systemImage: "plus") {
-                            taskRoute = ProjectTaskRoute(todo: nil)
-                        }
+                    ForEach(projectTodos.filter { !$0.isHabitOccurrence }) { todo in
+                        taskRow(todo)
                     }
                 }
                 Section {
                     Button(String(localized: project.isCompleted ? "プロジェクトを再開" : "プロジェクトを完了")) {
                         do {
-                            try ProjectEditingService().setCompleted(
+                            try ProjectEditingService(calendar: calendar, dayBoundary: dayBoundary).setCompleted(
                                 !project.isCompleted, for: project, modelContext: modelContext
                             )
                         } catch {
@@ -137,6 +134,18 @@ private struct ProjectDetailView<TaskEditor: View>: View {
             taskEditor(route.todo, project)
         }
     }
+    private func taskRow(_ todo: Todo) -> some View {
+        Button { taskRoute = ProjectTaskRoute(todo: todo) } label: {
+            HStack {
+                Label(TodoDisplay.taskTitle(for: todo), systemImage: todo.isCompleted ? "checkmark.circle.fill" : "circle")
+                Spacer()
+                if todo.isHabitOccurrence, let date = todo.scheduledDate {
+                    Text(date, format: .dateTime.month().day()).foregroundStyle(.secondary)
+                }
+            }
+            .foregroundStyle(todo.isCompleted ? .secondary : .primary)
+        }
+    }
 }
 
 private struct ProjectTaskRoute: Identifiable {
@@ -144,13 +153,15 @@ private struct ProjectTaskRoute: Identifiable {
     let todo: Todo?
 }
 
-private struct ProjectEditorView: View {
+struct ProjectEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.calendar) private var calendar
+    @Environment(\.appDayBoundary) private var dayBoundary
     let area: Area
     let project: Project?
     @State private var name: String
-    @State private var notes: String
+    @State private var habit: ProjectHabitSettings
     @State private var saveError: String?
 
     init(area: Area, project: Project? = nil) {
@@ -158,19 +169,16 @@ private struct ProjectEditorView: View {
         self.project = project
         // One-time editor draft; cancellation does not change persisted models.
         _name = State(initialValue: project?.name ?? "")
-        _notes = State(initialValue: project?.notes ?? "")
+        _habit = State(initialValue: project?.habitSettings ?? ProjectHabitSettings())
     }
 
     var body: some View {
         NavigationStack {
-            Form {
-                TextField(String(localized: "プロジェクト名"), text: $name)
-                TextField(String(localized: "メモ"), text: $notes, axis: .vertical)
-                    .lineLimit(3...6)
-                if let saveError { Text(saveError).foregroundStyle(.red) }
-            }
-            .formStyle(.grouped)
+            editorContent
             .navigationTitle(String(localized: project == nil ? "プロジェクトを追加" : "プロジェクトを編集"))
+#if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+#endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(String(localized: "キャンセル")) { dismiss() }
@@ -182,16 +190,74 @@ private struct ProjectEditorView: View {
             }
         }
 #if os(macOS)
-        .frame(minWidth: 420, minHeight: 280)
+        .frame(minWidth: 500, idealWidth: 560, minHeight: 380, idealHeight: 540)
+#endif
+    }
+
+    @ViewBuilder
+    private var editorContent: some View {
+#if os(macOS)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                EditorSectionCard { identityHeader }
+                ProjectHabitFormSection(settings: $habit)
+                if let saveError {
+                    EditorSectionCard { Text(saveError).foregroundStyle(.red) }
+                }
+            }
+            .padding(24)
+            .frame(maxWidth: 760, alignment: .leading)
+            .frame(maxWidth: .infinity)
+        }
+        .background(.background)
+#else
+        Form {
+            Section { identityHeader }
+            ProjectHabitFormSection(settings: $habit)
+            if let saveError { Section { Text(saveError).foregroundStyle(.red) } }
+        }
+#endif
+    }
+
+    private var identityHeader: some View {
+        HStack(spacing: identitySpacing) {
+            Text(area.symbolName)
+#if os(macOS)
+                .font(.system(size: 48))
+                .frame(width: 76, height: 76)
+#else
+                .font(.largeTitle)
+                .frame(width: 58, height: 58)
+#endif
+                .background(Color(hex: area.colorHex).opacity(0.18), in: RoundedRectangle(cornerRadius: 10))
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 6) {
+                TextField(String(localized: "プロジェクト名"), text: $name)
+                    .font(.title3.weight(.semibold))
+                    .textFieldStyle(.plain)
+                Text(area.name)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var identitySpacing: CGFloat {
+#if os(macOS)
+        18
+#else
+        12
 #endif
     }
 
     private func save() {
         do {
-            _ = try ProjectEditingService().save(
-                name: name, notes: notes, area: area, editing: project, modelContext: modelContext
+            _ = try ProjectEditingService(calendar: calendar, dayBoundary: dayBoundary).save(
+                name: name, notes: project?.notes ?? "", area: area, editing: project, habit: habit, modelContext: modelContext
             )
             dismiss()
+        } catch let error as ProjectEditingError {
+            saveError = error.localizedDescription
         } catch {
             saveError = String(localized: "記録を保存できませんでした。")
         }

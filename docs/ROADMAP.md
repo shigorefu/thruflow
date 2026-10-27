@@ -198,8 +198,13 @@ Released on GitHub on 2026-09-08; shipping build `10`.
 
 The unreleased work previously scoped as 1.3.2 is consolidated under 1.4.0.
 
-- Optional Projects inside Areas, with Task assignment and explicit completion/reopening.
-- Optional Task clock times, `HH:mm` quick input, and per-Task local reminders.
+- iPhone Duo adaptation: horizontal onboarding, native expanded sidebar, content-fit Flow columns and drafts preserved across folding on iOS 18+.
+
+- Partial Habit completion statistics and fresh daily attempts without automatic progress carryover.
+- Colored Area/Project tree tiles with emoji-anchored branches; Project creation stays inside the Area editor.
+- One optional Habit per Project with independent schedule and progress, lifecycle gaps and sync-safe owner identity.
+- Optional Projects displayed as Area children, with Task assignment in editors and Flow completion, plus explicit completion/reopening.
+- Optional Task clock times, `9:00` quick input, dropdown controls and reminders enabled by default for newly assigned times.
 - Saved Area restoration on both clients, preserving Habit archive intervals and history.
 - Toggl export diagnostics distinguish disabled delivery, unsaved settings, no eligible records, and unavailable recording identity.
 
@@ -213,7 +218,7 @@ The unreleased work previously scoped as 1.3.2 is consolidated under 1.4.0.
 - Task and Area editors share validation and save commands across clients, preserving undated/unnamed Tasks and consistent Habit schedule rules.
 - Repository AI instructions are consolidated in `AGENTS.md`, with required orchestrator/macOS/iOS agreement for logic changes.
 - All Xcode target configurations now use version `1.4.0`, build `13`.
-- Production schema additions were deployed and verified on 2026-10-16 (Projects) and 2026-10-18 (Task timing). Publication is pending signed archives, App Store Connect processing and device sync/notification/smoke tests; see [Release](RELEASE.md).
+- Production schema additions were deployed and verified on 2026-10-16 (Projects), 2026-10-18 (Task timing) and 2026-10-23 (Project Habits and owner keys). Publication is pending signed archives, App Store Connect processing and device sync/notification/smoke tests; see [Release](RELEASE.md).
 
 ## 1.3.1 — Connector mappings and synchronization fixes (released)
 

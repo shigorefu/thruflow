@@ -202,7 +202,7 @@ struct TaskRescheduleService {
             return .success(())
         }
 
-        guard todo.area?.goalSchedule == .weeklyCount else {
+        guard HabitDefinition(todo: todo)?.goalSchedule == .weeklyCount else {
             return .failure(.fixedHabit)
         }
 

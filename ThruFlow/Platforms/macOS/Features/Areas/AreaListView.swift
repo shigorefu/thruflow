@@ -15,9 +15,11 @@ struct AreaListView: View {
     @AppStorage("directionKanbanColumnOrder") private var areaGroupOrderRaw = AreaGroupOrder.encode(AreaGroupOrder.defaultValue)
 
     @Query(sort: \Area.sortIndex, order: .forward) private var areas: [Area]
+    @Query(sort: \Project.createdAt) private var projects: [Project]
 
     @State private var isShowingAddSheet = false
     @State private var editingAreaID: UUID?
+    @State private var selectedProject: Project?
     @State private var showingArchived = false
     @State private var lifecycleError: String?
     @State private var draggedAreaID: UUID?
@@ -91,41 +93,55 @@ struct AreaListView: View {
                             }
 
                             ForEach(group.areas) { area in
-                                AreaRow(area: area)
-                                    .contentShape(Rectangle())
-                                    .overlay {
-                                        if dropTargetID == area.id {
-                                            RoundedRectangle(cornerRadius: 8)
-                                                .strokeBorder(Color.accentColor, lineWidth: 2)
-                                        }
-                                    }
-                                    .onTapGesture {
-                                        editingAreaID = area.id
-                                    }
-                                    .onDrag {
-                                        draggedAreaID = area.id
-                                        return NSItemProvider(object: area.id.uuidString as NSString)
-                                    }
-                                    .onDrop(
-                                        of: [UTType.text],
-                                        delegate: AreaReorderDropDelegate(
-                                            targetID: area.id,
-                                            draggedAreaID: $draggedAreaID,
-                                            dropTargetID: $dropTargetID,
-                                            move: moveArea
-                                        )
-                                    )
-                                    .contextMenu {
-                                        if area.isArchived {
-                                            Button(String(localized: "分野を復元"), systemImage: "arrow.uturn.backward") {
-                                                updateArchiveState(area, restore: true)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    HStack(spacing: 6) {
+                                        AreaRow(area: area)
+                                            .contentShape(Rectangle())
+                                            .overlay {
+                                                if dropTargetID == area.id {
+                                                    RoundedRectangle(cornerRadius: 8)
+                                                        .strokeBorder(Color.accentColor, lineWidth: 2)
+                                                }
                                             }
-                                        } else {
-                                            Button(String(localized: "アーカイブする"), systemImage: "archivebox", role: .destructive) {
-                                                updateArchiveState(area, restore: false)
+                                            .onTapGesture {
+                                                editingAreaID = area.id
                                             }
-                                        }
+                                            .onDrag {
+                                                draggedAreaID = area.id
+                                                return NSItemProvider(object: area.id.uuidString as NSString)
+                                            }
+                                            .onDrop(
+                                                of: [UTType.text],
+                                                delegate: AreaReorderDropDelegate(
+                                                    targetID: area.id,
+                                                    draggedAreaID: $draggedAreaID,
+                                                    dropTargetID: $dropTargetID,
+                                                    move: moveArea
+                                                )
+                                            )
+                                            .contextMenu {
+                                                if area.isArchived {
+                                                    Button(String(localized: "分野を復元"), systemImage: "arrow.uturn.backward") {
+                                                        updateArchiveState(area, restore: true)
+                                                    }
+                                                } else {
+                                                    Button(String(localized: "アーカイブする"), systemImage: "archivebox", role: .destructive) {
+                                                        updateArchiveState(area, restore: false)
+                                                    }
+                                                }
+                                            }
+
                                     }
+                                    .background {
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .fill(Color(hex: area.colorHex).opacity(area.isArchived ? 0.04 : 0.08))
+                                    }
+
+                                    projectRows(for: area)
+                                }
+                                .backgroundPreferenceValue(AreaProjectTreeAnchors.self) { anchors in
+                                    treeConnections(for: area, anchors: anchors)
+                                }
                             }
                         }
                         .padding(.bottom, 8)
@@ -172,6 +188,15 @@ struct AreaListView: View {
             Button(String(localized: "閉じる"), role: .cancel) { lifecycleError = nil }
         }
         .onAppear(perform: normalizeSortIndexesIfNeeded)
+        .sheet(item: $selectedProject) { project in
+            ProjectDetailView(project: project) { todo, project in
+                TodoFormView(
+                    mode: todo.map(TodoFormView.Mode.edit) ?? .create,
+                    fixedArea: todo == nil ? project.area : nil,
+                    project: project
+                )
+            }
+        }
         .sheet(isPresented: $isShowingAddSheet) {
             AreaFormView(mode: .create)
                 .frame(width: 420)
@@ -187,6 +212,65 @@ struct AreaListView: View {
                     .frame(width: 420)
             }
         }
+    }
+
+    private func projectRows(for area: Area) -> some View {
+        let areaProjects = projects.filter { $0.area?.id == area.id }
+        let orderedProjects = areaProjects.filter { !$0.isCompleted } + areaProjects.filter(\.isCompleted)
+        return ForEach(orderedProjects) { project in
+            Button { selectedProject = project } label: {
+                HStack(spacing: 8) {
+                    Text(project.name)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    if project.isCompleted {
+                        Text(String(localized: "プロジェクト完了済み"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.vertical, 10)
+                .padding(.horizontal, 12)
+                .background {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color(hex: area.colorHex).opacity(project.isCompleted ? 0.045 : 0.08))
+                }
+                .contentShape(RoundedRectangle(cornerRadius: 8))
+                .anchorPreference(key: AreaProjectTreeAnchors.self, value: .bounds) {
+                    [.project(project.id): $0]
+                }
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(project.isCompleted ? .secondary : .primary)
+            .padding(.leading, 52)
+        }
+    }
+
+    private func treeConnections(
+        for area: Area,
+        anchors: [AreaProjectTreeNode: Anchor<CGRect>]
+    ) -> some View {
+        GeometryReader { geometry in
+            Path { path in
+                guard let areaAnchor = anchors[.area(area.id)] else { return }
+                let parent = geometry[areaAnchor]
+                let children = projects.filter { $0.area?.id == area.id }.compactMap { project in
+                    anchors[.project(project.id)].map { geometry[$0] }
+                }
+                guard let lastY = children.map(\.midY).max() else { return }
+                path.move(to: CGPoint(x: parent.midX, y: parent.maxY))
+                path.addLine(to: CGPoint(x: parent.midX, y: lastY))
+                for child in children {
+                    path.move(to: CGPoint(x: parent.midX, y: child.midY))
+                    path.addLine(to: CGPoint(x: child.minX, y: child.midY))
+                }
+            }
+            .stroke(Color(hex: area.colorHex).opacity(0.38), style: StrokeStyle(lineWidth: 1.25, lineCap: .round))
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 
     private func updateArchiveState(_ area: Area, restore: Bool) {
@@ -357,19 +441,13 @@ private struct AreaRow: View {
                 .background(Color(hex: area.colorHex).opacity(0.12))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
                 .accessibilityHidden(true)
+                .anchorPreference(key: AreaProjectTreeAnchors.self, value: .bounds) {
+                    [.area(area.id): $0]
+                }
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(area.name)
                     .font(.headline)
-
-                let projectCount = (area.projects ?? []).count
-                if projectCount > 0 {
-                    Label("\(projectCount)", systemImage: "folder")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .accessibilityLabel(String(localized: "プロジェクト"))
-                        .accessibilityValue(projectCount.formatted())
-                }
 
                 if let summary {
                     Text(summary)
@@ -386,7 +464,6 @@ private struct AreaRow: View {
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 8)
-        .background(rowBackground)
     }
 
     private var summary: String? {
@@ -401,10 +478,21 @@ private struct AreaRow: View {
         return "\(target) \(unit.displayName.lowercased()) \(period.displayName.lowercased())"
     }
 
-    private var rowBackground: some View {
-        RoundedRectangle(cornerRadius: 10)
-            .fill(Color(hex: area.colorHex).opacity(area.isArchived ? 0.04 : 0.08))
-            .padding(.vertical, 2)
+}
+
+private enum AreaProjectTreeNode: Hashable {
+    case area(UUID)
+    case project(UUID)
+}
+
+private struct AreaProjectTreeAnchors: PreferenceKey {
+    static let defaultValue: [AreaProjectTreeNode: Anchor<CGRect>] = [:]
+
+    static func reduce(
+        value: inout [AreaProjectTreeNode: Anchor<CGRect>],
+        nextValue: () -> [AreaProjectTreeNode: Anchor<CGRect>]
+    ) {
+        value.merge(nextValue(), uniquingKeysWith: { _, new in new })
     }
 }
 

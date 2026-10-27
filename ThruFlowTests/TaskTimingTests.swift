@@ -5,7 +5,7 @@ import Testing
 
 @MainActor
 struct TaskTimingTests {
-    @Test func quickInputReadsStrictClockTimeWithoutChangingDuration() {
+    @Test func quickInputReadsClockTimeWithoutChangingDuration() {
         let parser = TaskQuickInputParser()
         let result = parser.parse("[25m] Read 09:30 18:45 #Study")
         #expect(result.title == "Read")
@@ -17,9 +17,27 @@ struct TaskTimingTests {
         #expect(parser.parse("Task 23:59").timeMinutes == 1439)
     }
 
+    @Test func singleDigitHourHintWorksOnSpaceAndSubmit() {
+        let parser = TaskQuickInputParser()
+        #expect(parser.parse("Study 9:00").timeMinutes == 540)
+        #expect(parser.parse("Study 9:00 ", consumeTrailingToken: false).timeMinutes == 540)
+        #expect(parser.parse("Study 9:00", consumeTrailingToken: false).timeMinutes == nil)
+        #expect(parser.parse("Study 0:00").timeMinutes == 0)
+        #expect(parser.parse("Study 09:00").timeMinutes == 540)
+        #expect(TaskTimeFormatting.text(minutes: 540) == "9:00")
+    }
+
+    @Test func reminderDefaultsOnlyWhenAssigningANewClock() {
+        #expect(TaskTimingDefaults.reminderEnabled(previousMinutes: nil, newMinutes: 540, current: false))
+        #expect(!TaskTimingDefaults.reminderEnabled(previousMinutes: 540, newMinutes: 600, current: false))
+        #expect(TaskTimingDefaults.reminderEnabled(previousMinutes: 540, newMinutes: 600, current: true))
+        #expect(!TaskTimingDefaults.reminderEnabled(previousMinutes: 540, newMinutes: nil, current: true))
+        #expect(!TaskTimingDefaults.reminderEnabled(previousMinutes: nil, newMinutes: nil, current: true))
+    }
+
     @Test func invalidOrPartialClockTokensStayInTitle() {
         let parser = TaskQuickInputParser()
-        for token in ["9:30", "09:3", "09:", "24:00", "23:60", "-1:20", "０９:３０", "09:30:00", "at09:30"] {
+        for token in ["9:3", "09:3", "09:", "24:00", "23:60", "-1:20", "０９:３０", "09:30:00", "at09:30"] {
             let result = parser.parse("Task \(token)")
             #expect(result.title == "Task \(token)")
             #expect(result.timeMinutes == nil)

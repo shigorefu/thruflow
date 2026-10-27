@@ -10,9 +10,12 @@ struct IOSTaskComposer: View {
 
     let areas: [Area]
     let initialDraft: TodoDraft?
+    let isPresented: Bool
+    let autofocusOnAppear: Bool
     let onClose: (() -> Void)?
     let onCreated: ((Todo) -> Void)?
 
+    @State private var hasInitialized = false
     @State private var title = ""
     @State private var areaID: UUID?
     @State private var project: Project?
@@ -43,11 +46,15 @@ struct IOSTaskComposer: View {
     init(
         areas: [Area],
         initialDraft: TodoDraft? = nil,
+        autofocusOnAppear: Bool = true,
+        isPresented: Bool = true,
         onClose: (() -> Void)? = nil,
         onCreated: ((Todo) -> Void)? = nil
     ) {
         self.areas = areas
         self.initialDraft = initialDraft
+        self.autofocusOnAppear = autofocusOnAppear
+        self.isPresented = isPresented
         self.onClose = onClose
         self.onCreated = onCreated
 
@@ -173,6 +180,7 @@ struct IOSTaskComposer: View {
         .padding(.horizontal, 12)
         .padding(.top, 8)
         .padding(.bottom, 8)
+        .taskTimingDefaults(timeMinutes: $scheduledTimeMinutes, reminderEnabled: $reminderEnabled)
         .overlay(alignment: .top) {
             if horizontalSizeClass != .regular {
                 VStack(spacing: 0) {
@@ -184,13 +192,24 @@ struct IOSTaskComposer: View {
                 .offset(y: -8)
             }
         }
-        .task {
+        .task(id: isPresented) {
+            guard isPresented, !hasInitialized else { return }
+            hasInitialized = true
             if initialDraft == nil {
                 areaID = nil
                 scheduledDate = currentAppDay
             }
+            guard autofocusOnAppear, isPresented else { return }
             await Task.yield()
+            guard !Task.isCancelled, isPresented else { return }
             isFocused = true
+        }
+        .onChange(of: isPresented) { _, presented in
+            isFocused = presented && autofocusOnAppear
+            if !presented {
+                showsTimingControls = false
+                showsDatePicker = false
+            }
         }
         .animation(.snappy(duration: 0.22), value: autocompleteSuggestions.map(\.id))
         .animation(.snappy(duration: 0.22), value: inlineTokens)
@@ -215,12 +234,7 @@ struct IOSTaskComposer: View {
             if newValue == nil {
                 scheduledTimeMinutes = nil
                 reminderEnabled = false
-                inlineTokens.removeAll { $0.id == "time" }
             }
-        }
-        .onChange(of: scheduledTimeMinutes) { _, newValue in
-            updateExistingInlineToken(newValue.map(IOSTaskComposerInlineToken.time), id: "time")
-            if newValue == nil { reminderEnabled = false }
         }
         .sheet(isPresented: $showsDatePicker) {
             NavigationStack {
@@ -391,10 +405,14 @@ struct IOSTaskComposer: View {
         Button {
             showsTimingControls = true
         } label: {
-            if let scheduledTimeMinutes {
-                TaskTimeLabel(minutes: scheduledTimeMinutes, reminderEnabled: reminderEnabled)
-            } else {
-                Label(String(localized: "時刻"), systemImage: "clock")
+            HStack(spacing: 4) {
+                if let scheduledTimeMinutes {
+                    TaskTimeLabel(minutes: scheduledTimeMinutes, reminderEnabled: reminderEnabled)
+                } else {
+                    Label(String(localized: "時刻"), systemImage: "clock")
+                }
+                Image(systemName: "chevron.down")
+                    .font(.caption2)
             }
         }
         .buttonStyle(.plain)
@@ -452,7 +470,7 @@ struct IOSTaskComposer: View {
                 }
                 GridRow {
                     legendItem("#", String(localized: "タグ"))
-                    legendItem("HH:mm", String(localized: "時刻"))
+                    legendItem("9:00", String(localized: "時刻"))
                 }
             }
         }
@@ -706,11 +724,13 @@ struct IOSTaskComposer: View {
             }
         }
         if scheduledDate != nil {
-            if let minutes = result.timeMinutes { scheduledTimeMinutes = minutes }
+            if let minutes = result.timeMinutes {
+                if scheduledTimeMinutes == nil { reminderEnabled = true }
+                scheduledTimeMinutes = minutes
+            }
         } else {
             scheduledTimeMinutes = nil
             reminderEnabled = false
-            inlineTokens.removeAll { $0.id == "time" }
         }
         hashtags = TodoHashtagNormalizer.normalize(hashtags + result.hashtags)
     }
@@ -732,9 +752,6 @@ struct IOSTaskComposer: View {
             case .noDate:
                 replaceInlineToken(.date(nil))
             }
-        }
-        if let minutes = result.timeMinutes {
-            replaceInlineToken(.time(minutes))
         }
         for hashtag in result.hashtags {
             replaceInlineToken(.hashtag(hashtag))
@@ -778,9 +795,6 @@ struct IOSTaskComposer: View {
         case .date:
             scheduledDate = currentAppDay
             hasExplicitDate = false
-        case .time:
-            scheduledTimeMinutes = nil
-            reminderEnabled = false
         case .hashtag(let hashtag):
             hashtags.removeAll {
                 $0.caseInsensitiveCompare(hashtag) == .orderedSame
@@ -823,8 +837,6 @@ struct IOSTaskComposer: View {
             Image(systemName: "exclamationmark")
         case .date:
             Image(systemName: "calendar")
-        case .time:
-            Image(systemName: "clock")
         case .hashtag:
             Image(systemName: "number")
         }
@@ -847,8 +859,6 @@ struct IOSTaskComposer: View {
             return later ? String(localized: "余裕があれば") : priority.displayName
         case .date(let date):
             return inlineTokenDateLabel(date)
-        case .time(let minutes):
-            return TaskTimeFormatting.text(minutes: minutes)
         case .hashtag(let hashtag):
             return "#\(hashtag)"
         }
@@ -904,10 +914,12 @@ struct IOSTaskComposer: View {
         draft.isRoomIfPossible = result.isRoomIfPossible ?? isRoomIfPossible
         draft.scheduledDate = resolvedDate(from: result.date)
         draft.scheduledTimeMinutes = draft.scheduledDate == nil ? nil : result.timeMinutes ?? scheduledTimeMinutes
-        draft.reminderEnabled = draft.scheduledTimeMinutes != nil && reminderEnabled
+        let assignsNewTime = result.timeMinutes != nil && scheduledTimeMinutes == nil
+        draft.reminderEnabled = draft.scheduledTimeMinutes != nil && (reminderEnabled || assignsNewTime)
 
         do {
             let todo = try TaskEditingService().save(draft: draft, modelContext: modelContext)
+            if todo.reminderEnabled { TaskReminderAuthorization.requestForUserAction() }
             onCreated?(todo)
         } catch TaskEditingError.validation(let errors) {
             saveErrorMessage = errors.map(\.localizedDescription).joined(separator: "\n")
@@ -973,7 +985,6 @@ private enum IOSTaskComposerInlineToken: Equatable, Identifiable {
     case area(UUID)
     case priority(TodoPriority, Bool)
     case date(Date?)
-    case time(Int)
     case hashtag(String)
 
     var id: String {
@@ -986,8 +997,6 @@ private enum IOSTaskComposerInlineToken: Equatable, Identifiable {
             "priority"
         case .date:
             "date"
-        case .time:
-            "time"
         case .hashtag(let value):
             "hashtag:\(value.lowercased(with: Locale(identifier: "en_US_POSIX")))"
         }

@@ -24,33 +24,54 @@ concept is shown as `Area` in English and `Сфера` in Russian.
 - `できたら` / Optional / Если получится: positive activity that does not block day completion.
 - `その他` / Other / Другое: system Area for Tasks and Flow without a chosen Area. Its stable role is `taskInbox`; it is hidden only from Area management, not from Statistics.
 
+On expanded iPhone Duo and regular-width iPad, Area management shows all three
+type groups together as a board, like Mac. Compact layouts retain the type picker;
+explicit reorder mode retains the native single-group list.
+
 ## Projects
 
-Projects are optional finite goals within an Area: for example, the Cloud Area
-can contain AWS and Azure projects. Each Project has one fixed parent Area, a
-name, an optional memo and a completed state. Manage them inside the saved Area
-editor on Mac and iPhone/iPad; open a Project to create or edit its Tasks.
+Projects are optional finite goals within an Area: for example, Cloud → AWS or
+Azure. Each has one fixed Area, a name and a completed state. Area lists show
+existing Projects as indented colored children. Areas without Projects keep the
+simple layout; there is no direct `+` on the Area row. Create/manage Projects
+inside the saved Area editor. The Project memo field is no longer shown; old
+stored notes are preserved.
 
-Tasks may remain directly in an Area without a Project. Project selection is
-available in the Task editor, quick capture (including Mac Menu Bar), and Watch
-creation. A Project must belong to the selected Area; changing Area clears the
-selection. Generated Habit occurrences remain owned by their Area and do not
-receive a Project, while independent Tasks in Habit Areas may use one.
+Each Project may enable one independent Habit with its own target, unit and
+schedule, even in a normal Area. The Project editor configures this Habit;
+generated occurrences appear in the usual Habit list. The Area's own Habit and
+its Projects' Habits have independent dates, quotas and progress. Pausing the
+Area Habit does not pause Project Habits; archiving the Area stops all of them.
+Disabling the Project Habit or completing the Project retires only its unused
+current/future occurrences. Started work and history remain. Re-enabling or
+reopening does not backfill the inactive interval.
 
-Completing or reopening a Project never completes, hides or deletes its Tasks
-and never changes recorded Flow. Completed Projects retain their Task list and
-can be reopened; they are unavailable for new assignments until reopened.
-Editing an existing Task preserves its completed Project. A Project inherits
-its Area's presentation color; it does not introduce another timer or progress
-unit. Connector project mappings continue to refer to provider projects and
-remain Area-based.
+Ordinary Tasks are created from Flow or Tasks, not Project detail. Existing Tasks
+remain editable in Project detail. Tasks may belong directly to an Area. Unnamed
+Tasks use the Project name when assigned; this is display-only. Flow dashboard
+Task rows show an Area or Area/Project subtitle beneath the title. Other Task
+lists retain their Area emoji presentation.
+
+Task editors, quick capture (including Mac Menu Bar) and Watch show the optional
+Project picker only when that Area has eligible Projects or an existing selection
+to clear. Changing Area clears an incompatible selection. Existing completed
+assignments remain visible/editable; new assignments require an active Project
+and Area. Generated Habit ownership cannot be changed through Task editing.
+
+Project completion does not complete ordinary Tasks or change recorded Flow.
+Completed Projects keep their existing work and may be reopened. Projects inherit
+the Area color. Connector mappings still refer to provider projects and remain
+Area-based.
 
 ## Tasks
 
-Tasks are the daily Todo surface.
+Tasks are the daily Todo surface. At regular iPad/expanded Duo widths, quick
+capture is a persistent bottom input panel like macOS, without automatic keyboard
+focus. Compact layouts keep the `+` action; folding preserves an open draft.
 
-A Task may have an optional local clock time (`HH:mm`) and an independently
-opted-in reminder. The clock time is separate from its planned focused duration:
+A Task may have an optional local clock time (`H:mm` or `HH:mm`) and an
+independent reminder preference. Assigning a new time defaults the reminder on;
+changing an existing time preserves its current reminder preference. The clock time is separate from its planned focused duration:
 `Read 14:30 [30m]` schedules 14:30 with a 30-minute goal. A date is required for
 a clock time; removing the date clears the time and reminder. Moving a Task to
 another date retains its clock time. Generated Habit occurrences may set their
@@ -58,8 +79,9 @@ own time without changing the Area's recurrence. Existing list ordering remains
 unchanged.
 
 Reminders use local system notifications on each device after the Task has
-arrived through sync. Permission is requested only by an explicit reminder
-control, never by startup or synchronization. Saving a past time does not fire
+arrived through sync. Permission is requested only after a user assigns a time, enables a reminder or
+saves a reminded Task, never by startup or synchronization. Denial on one device
+does not turn off the synchronized preference. Saving a past time does not fire
 immediately or move the Task to tomorrow. Completion, deletion, Task archival,
 and Area archival cancel pending reminders when the app processes the change.
 The selected civil date and local time determine delivery; the custom Flow day
@@ -99,7 +121,7 @@ Task title, Area, emoji, and hashtag without changing stored records or
 Habit materialization. macOS exposes the same database-wide search semantics
 through its native toolbar search field.
 
-Weekly-count Habits create one pending Task at a time. Completion allows the next instance on a later day, while moving the pending Task never creates a duplicate or makes the weekly goal impossible.
+Weekly-count Habits create a fresh occurrence on each eligible current day until the weekly completion target is met. An unfinished past occurrence keeps its original date, progress, and history; it is never automatically moved forward. An explicitly postponed future occurrence reserves the next attempt, while moving a pending Task never creates a same-day duplicate or makes the weekly goal impossible.
 
 Task completion:
 
@@ -113,7 +135,7 @@ Flow is a media-player-like recorder.
 
 `フロー` is the first/default navigation section and today's primary dashboard. In wide layout, one grid aligns the stream/timeline above Tasks on the left and the square player above Statistics on the right. The left column occupies roughly three quarters of the content. Area colors compose the stream palette, while focus duration and session count control its visual volume.
 
-The stream is a field of broad, bright, softly glowing translucent ribbons rendered on the GPU around one shared S-shaped channel with three levels of depth. Its phase motion is tuned 25 percent faster than the original profile while keeping the same 30/60 FPS render budget. A subtle internal current makes that phase motion legible while idle, and the stream immediately accelerates when Flow starts. Its occupied area stops growing at 4 Blocks so depth, transparency, and motion preserve the silhouette without black carved stripes; progress through 6 Blocks instead adds internal detail, parallax, saturation, and motion. A restrained light pulse crosses the stream at each completed half-Block. Every valid `休憩` press sends a short reverse release wave without implying that rest has started. After note confirmation, a regular rest exhales softly; a confirmed `長休憩` opens all seven ribbons into a brighter fan and then keeps a calm breathing form for the rest of the break. These effects are transient presentation state and never change or persist timer data. `短め`, `標準`, and `じっくり` change the wave character, while a subtle mode-specific tint is applied to the dashboard. Below it, today's Anytime Tasks and Habits remain actionable with the same Check, Block, and Minute indicators as Tasks; the Optional `できたら` group appears only when present. On iPhone and iPad, one dashboard Task card switches between `タスク / 習慣 / できたら`; its header offers quick Task capture next to the Tasks deep link. Compact width uses the bottom composer and regular width anchors it as a popover to `+`. The fixed-height compact Statistics panel forms the same three-page carousel on macOS and iPhone for Task/Area time distribution, a seven-day Flow trend with day-over-day deltas, and today's completion status.
+The stream is a field of broad, bright, softly glowing translucent ribbons rendered on the GPU around one shared S-shaped channel with three levels of depth. Its phase motion is tuned 25 percent faster than the original profile while keeping the same 30/60 FPS render budget. A subtle internal current makes that phase motion legible while idle, and the stream immediately accelerates when Flow starts. Its occupied area stops growing at 4 Blocks so depth, transparency, and motion preserve the silhouette without black carved stripes; progress through 6 Blocks instead adds internal detail, parallax, saturation, and motion. A restrained light pulse crosses the stream at each completed half-Block. Every valid `休憩` press sends a short reverse release wave without implying that rest has started. After note confirmation, a regular rest exhales softly; a confirmed `長休憩` opens all seven ribbons into a brighter fan and then keeps a calm breathing form for the rest of the break. These effects are transient presentation state and never change or persist timer data. `短め`, `標準`, and `じっくり` change the wave character, while a subtle mode-specific tint is applied to the dashboard. Below it, today's Anytime Tasks and Habits remain actionable with the same Check, Block, and Minute indicators as Tasks; the Optional `できたら` group appears only when present. On iPhone and iPad, one dashboard Task card switches between `タスク / 習慣 / できたら`; its header offers quick Task capture next to the Tasks deep link. The bottom composer stays in the same hierarchy at compact and regular widths, with a readable maximum width on larger displays, so changing display size preserves the draft. The fixed-height compact Statistics panel forms the same three-page carousel on macOS and iPhone for Task/Area time distribution, a seven-day Flow trend with day-over-day deltas, and today's completion status.
 
 The Flow player uses the same `タスク / 習慣 / 分野` context choice on macOS,
 iPhone, and iPad. The touch presentation uses native segmented tabs and lists,
@@ -139,7 +161,7 @@ Flow sessions may share a stable series ID when the next session starts within 1
 The active creditable Flow updates the dashboard live. Completed timeline
 segments open the existing platform History detail/editor.
 
-Explicitly selecting an Area in the Flow context picker creates an unnamed Check Task for the current app day and selects it immediately. It appears in Tasks, including when its Area is a Habit (the new Task is not a generated occurrence). Empty titles use the existing Area placeholder. The Mac timer supports inline double-click renaming; iPhone/iPad offer double-tap editing. Finishing Flow or starting rest offers Task name above the result memo, saving both together. Initial/default configuration and historical Area-only Flow do not create Tasks; work without either context still resolves to system `その他`.
+Explicitly selecting an Area in the Flow context picker creates an unnamed Check Task for the current app day and selects it immediately. It appears in Tasks, including when its Area is a Habit (the new Task is not a generated occurrence). In the Pomodoro player and its context picker, the subtitle is `Area/Project` when a Project is assigned. An empty Task title displays the Project name; without a Project, the existing Area placeholder remains. These display fallbacks never rename the Task. The Mac timer supports inline double-click renaming; iPhone/iPad offer double-tap editing. Finishing Flow or starting rest offers Task name above the result memo, saving both together. Initial/default configuration and historical Area-only Flow do not create Tasks; work without either context still resolves to system `その他`.
 
 ## Statistics
 
@@ -161,10 +183,10 @@ inclusive start/end date picker; navigation moves either the anchored preset or
 the whole custom range.
 
 The report contains combined summary cards, a period trend with comparison to
-the previous equivalent period, a focused-time distribution by Task or Area,
+the previous equivalent period, a focused-time distribution by Task, Area or Project,
 and a `集中カレンダー` / Focus Calendar view. Selecting a distribution sector or
 legend row shows a named detail panel with daily minute bars for a Task or
-Task/time bars for an Area, within the active filters. Trend and the focus calendar
+Task/time bars for an Area or Project, within the active filters. Project grouping uses stable Project IDs and the Task’s current membership, including completed Projects. Records without a Project form `プロジェクトなし`. Segment-level durations and existing period/Area/search filters remain authoritative. Trend and the focus calendar
 each provide an independent `集中 | タスク` switch. Week and Month trends use individual calendar days,
 and Year trends use months; current and previous values are separate direct
 linear series. Week and
@@ -193,6 +215,15 @@ explicit History action. The Year focus calendar remains a full-width overview w
 as a magnifying-glass toolbar action, and every iPhone navigation title uses the
 same centered inline presentation. The `集中カレンダー` widgets keep their
 separate compact 30/60/90-day snapshots.
+
+Statistics includes `習慣の達成率`: the mean completion fraction of saved, due
+Habit occurrences in the selected period, with an overall value and per-Habit
+breakdown. Partial measured progress counts; each occurrence contributes at
+most 100%. Area/search filters apply. Future, deleted, independent and connector
+Tasks, and paused unstarted occurrences are excluded. Historical obligations
+before Area archival remain counted. No recorded obligations shows an empty
+state, not 0%. This is not a reconstruction of past schedules or a weekly quota
+score.
 
 ## History
 
@@ -280,6 +311,11 @@ separate cards so neither screen becomes overloaded. The workflow card
 summarizes `分野 → タスク → フロー → 履歴・統計 → 次の一歩`; a final dedicated
 card explains private data storage and the free, ad-free core features.
 
+On wide Mac windows and regular-width iPad or unfolded iPhone Duo displays, each
+onboarding step presents its explanation beside the example. Narrow layouts and
+accessibility text sizes use a single column. The header and navigation remain
+visible while the body scrolls; resizing keeps the current step and demo state.
+
 If first launch already contains user data, onboarding becomes a read-only tour
 and creates nothing. `設定 > ヘルプ > 使い方を見る` closes the Settings
 presentation before replaying the same read-only journey from the beginning.
@@ -339,3 +375,9 @@ Toggl Track is also available in Connectors on macOS and iOS. Users map Areas
 to projects and enable export of new completed focus recorded on this device.
 Rest and paused seconds are excluded. This first version exports time only; it
 does not import Toggl history or update remote entries after later local edits.
+
+Switching Tasks during an active Flow first offers the current Task name, optional
+Project and result memo. While editing, the timer continues counting for the
+current Task (or remains paused if already paused). Save/continue switches at
+that moment; cancel retains the previous Task. The note is stored on that Task,
+without replacing the overall Flow result or creating a separate segment note.

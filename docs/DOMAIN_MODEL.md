@@ -36,9 +36,9 @@ goal snapshot.
 ## Project
 
 `Project` is a finite goal within one Area, with a required nonblank name,
-optional memo, stable UUID, creation/update timestamps and optional
-`completedAt`. Its parent Area is fixed. Completion/reopening only changes the
-Project; Tasks and Flow keep their identities, progress and history. There is
+legacy optional memo (not exposed by the editor), stable UUID, creation/update timestamps and optional
+`completedAt`. Its parent Area is fixed. Ordinary Tasks and Flow keep their identities,
+progress and history when completing/reopening a Project. There is
 no automatic project completion and no automatic Task completion.
 
 `Todo.project` is optional. New assignments require an active Project in the
@@ -46,6 +46,14 @@ Task's selected, unarchived Area. Existing assignments survive title/memo edits
 even after Project completion or Area archival. Generated Habit occurrences
 cannot acquire a Project through Task editing. The existing `direction`
 relationship remains the canonical Task Area.
+
+A Project optionally stores one `ProjectHabitSettings` value. `HabitDefinition`
+selects the Area or Project owner without copying persisted Area models. The
+planner, schedule reconciliation, weekly quota and partial statistics share that
+owner. Disabling/completing retains settings and opens an inactive interval;
+re-enabling closes it only when both enabled and not completed. Parent Area
+archive intervals are retained on restore, independently of its own Habit pause.
+Only unstarted current/future occurrences retire; started and past work survives.
 
 ## Todo
 
@@ -137,9 +145,9 @@ The exact seconds are preserved. Block UI displays half-block credits; minute UI
 
 ## Weekly Habit Generation
 
-Weekly-count Habit Areas create one pending Todo at a time. A completed Todo permits the next instance on a later eligible day in the same week. A rescheduled pending Todo blocks duplicate generation, and rescheduling cannot leave too few eligible days to meet the weekly target.
+Weekly-count Habit Areas generate a fresh occurrence on the current eligible logical day while the weekly completed count is below target. Past incomplete Todos stay on their original date with their original progress and Flow links. A pending occurrence explicitly scheduled in the future blocks a replacement; an existing current-day occurrence blocks duplicates. Rescheduling cannot leave too few eligible days to meet the weekly target.
 
-Every Habit Area has at most one active Habit occurrence per local calendar day; independent Tasks in that Area do not count toward this limit. `HabitTodoMaterializer` is the shared macOS/iOS entry point: it fetches current persisted state, normalizes occurrence dates to the start of day, reconciles duplicates, and only then asks `RequiredTodoPlanner` to create missing occurrences. `HabitTodoReconciler` deterministically preserves the occurrence with history or completion state, reassigns related FlowSession and FlowSegment records, merges user data and progress, and soft-deletes the redundant occurrences. This makes repeated calls and CloudKit race recovery idempotent. Lightweight updates still check for occurrence identity collisions and load history only if duplicates exist. Persistence reconciliation repairs linked Habit duplicates even when no orphan Todo was reconnected. Weekly roll-forward never moves an older occurrence onto a day that already has an active occurrence (completed or pending). Different Areas and independent Tasks are not merged by matching display names.
+Every Habit Area has at most one active Habit occurrence per local calendar day; independent Tasks in that Area do not count toward this limit. `HabitTodoMaterializer` is the shared macOS/iOS entry point: it fetches current persisted state, normalizes occurrence dates to the start of day, reconciles duplicates, and only then asks `RequiredTodoPlanner` to create missing occurrences. `HabitTodoReconciler` deterministically preserves the occurrence with history or completion state, reassigns related FlowSession and FlowSegment records, merges user data and progress, and soft-deletes the redundant occurrences. This makes repeated calls and CloudKit race recovery idempotent. Lightweight updates still check for occurrence identity collisions and load history only if duplicates exist. Persistence reconciliation repairs linked Habit duplicates even when no orphan Todo was reconnected. There is no automatic weekly roll-forward. Different Areas and independent Tasks are not merged by matching display names.
 
 `OrphanTodoReconciler` repairs a Todo whose optional persistence relationship to
 Area is missing. Flow history wins when it identifies one Area;
@@ -189,7 +197,7 @@ A manually created Todo remains an independent Task even when its Area is a Habi
 planner-generated and retrospective Habit occurrences (`true`). Legacy `nil` values
 retain Area-based classification because renamed old occurrences cannot reliably
 be distinguished from manually entered Tasks. Only Habit occurrences participate
-in duplicate reconciliation, schedule changes, pauses, weekly quotas, and roll-forward.
+in duplicate reconciliation, schedule changes, pauses, and weekly quotas.
 Task filters, Flow pickers, editors, and rescheduling use the Todo classification.
 Existing merged/deleted records are not automatically restored.
 
@@ -229,3 +237,27 @@ clears the pair on undating. `TaskReminderPlan` derives future eligible requests
 from committed Tasks; it excludes completed, archived, deleted and orphan Tasks
 and archived Areas. DST gaps resolve to the next valid time on that civil day;
 repeated times use the first occurrence. No next-day rollover occurs.
+
+## Habit completion statistics (1.4.0)
+
+`HabitCompletionRecord` detaches eligible saved occurrences inside
+`StatisticsProjectionActor`; `HabitCompletionBuilder` derives the selected-period
+summary without writes or schema changes. The actor separately fetches scheduled
+Todos so incomplete records contribute to the denominator. Scheduled dates are
+logical dates; only the current-day cutoff uses `AppDayBoundary`.
+
+Each Habit owner/day pair counts once (Area UUID or Project UUID with a type prefix) (highest fraction wins a duplicate collision).
+Completed occurrences contribute 1, unchecked occurrences 0. Minutes use exact
+focused seconds / (target × 60); Blocks use seconds / (target × 1500), capped at
+1. This smooth fraction is separate from half-Block display credits; an already
+completed Block occurrence contributes 1. Legacy records with no seconds field
+fall back to stored progress, while an explicit zero remains zero. The overall
+rate is the mean across occurrences, not the mean of Area means. Empty input has
+no rate.
+
+Deleted, independent, connector, future, and unstarted paused occurrences do
+not count. An unused archived Todo is canceled. Unstarted occurrences before an
+Area's archive logical day remain obligations; on/after that day they are
+excluded. Started/completed history remains counted after archival or pause.
+The metric uses saved schedules, without inventing missed days or reconstructing
+historical goal changes.

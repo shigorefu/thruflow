@@ -18,13 +18,17 @@ struct HabitScheduleChangeReconciler {
         modelContext: ModelContext,
         now: Date = .now
     ) -> Bool {
-        guard area.type == .habit else { return false }
+        reconcile(habit: HabitDefinition(area: area), todos: todos, modelContext: modelContext, now: now)
+    }
+
+    @discardableResult
+    func reconcile(habit area: HabitDefinition, todos: [Todo], modelContext: ModelContext, now: Date = .now) -> Bool {
 
         let today = dayBoundary.day(containing: now, calendar: calendar)
         let planner = RequiredTodoPlanner(calendar: calendar)
         let futureTodos = todos.filter { todo in
-            guard todo.isHabitOccurrence,
-                  todo.area?.id == area.id,
+            guard HabitDefinition(todo: todo) != nil,
+                  area.owns(todo),
                   todo.externalTaskLinkRawValue == nil,
                   !todo.isArchived,
                   !todo.isDeleted,

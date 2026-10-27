@@ -23,7 +23,8 @@ actor StatisticsProjectionActor {
             calendar: calendar,
             dayBoundary: dayBoundary
         )
-        let interval = builder.bounds(for: filter).fetchInterval
+        let bounds = builder.bounds(for: filter)
+        let interval = bounds.fetchInterval
         let lowerBound = interval.start
         let upperBound = interval.end
 
@@ -56,10 +57,23 @@ actor StatisticsProjectionActor {
             sortBy: [SortDescriptor(\Todo.updatedAt)]
         ))
 
+        // Habit rates include unfinished saved occurrences. These dates are
+        // logical days, so do not shift the query by the Flow day boundary.
+        let habitStart = bounds.currentStart
+        let habitEnd = bounds.currentEnd
+        let scheduledTodos = try modelContext.fetch(FetchDescriptor<Todo>(
+            predicate: #Predicate { todo in
+                (todo.scheduledDate ?? missingCompletionDate) >= habitStart &&
+                    (todo.scheduledDate ?? missingCompletionDate) < habitEnd &&
+                    todo.deletedAt == nil
+            }
+        ))
+
         return builder.build(
             flowRecords: sessions.flatMap(makePeriodFlowRecords),
             achievementRecords: (completedTodos + legacyCompletedTodos).compactMap(makePeriodAchievementRecord),
-            filter: filter
+            filter: filter,
+            habitRecords: scheduledTodos.compactMap { HabitCompletionRecord(todo: $0, calendar: calendar, dayBoundary: dayBoundary) }
         )
     }
 
@@ -209,7 +223,9 @@ actor StatisticsProjectionActor {
             todoHashtags: todo?.hashtags ?? [],
             todoNotes: todo?.notes ?? "",
             intent: session.intent,
-            result: session.result ?? ""
+            result: session.result ?? "",
+            projectID: todo?.project?.id,
+            projectName: todo?.project?.name ?? ""
         )
     }
 

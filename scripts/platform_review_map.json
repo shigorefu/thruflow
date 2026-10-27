@@ -96,14 +96,18 @@
         "ThruFlow/Shared/UI/Projects",
         "ThruFlow/Shared/Application/ProjectEditingService.swift",
         "ThruFlow/Shared/Application/AreaLifecycleService.swift",
-        "ThruFlow/Platforms/watchOS/Features/WatchTaskCreationForm.swift"
+        "ThruFlow/Platforms/watchOS/Features/WatchTaskCreationForm.swift",
+        "ThruFlow/Shared/Domain/Logic/HabitDefinition.swift",
+        "ThruFlow/Shared/Domain/Logic/ProjectHabitSettings.swift",
+        "ThruFlow/Shared/Domain/Logic/HabitTodoMaterializer.swift"
       ],
       "tests": [
         "ThruFlowTests/AreaGroupOrderTests.swift",
         "ThruFlowTests/ArchivedHabitTodoTests.swift",
         "ThruFlowTests/EditorServiceTests.swift",
         "ThruFlowTests/ProjectTests.swift",
-        "ThruFlowTests/AreaLifecycleTests.swift"
+        "ThruFlowTests/AreaLifecycleTests.swift",
+        "ThruFlowTests/ProjectHabitTests.swift"
       ]
     },
     {
@@ -148,7 +152,10 @@
       "name": "Statistics",
       "triggers": [
         "ThruFlow/Platforms/macOS/Features/Statistics",
-        "ThruFlow/Platforms/iOS/Features/Statistics"
+        "ThruFlow/Platforms/iOS/Features/Statistics",
+        "ThruFlow/Shared/Domain/Logic/HabitCompletionBuilder.swift",
+        "ThruFlow/Shared/UI/HabitCompletionCard.swift",
+        "ThruFlow/Shared/Application/StatisticsProjectionActor.swift"
       ],
       "review": [
         "ThruFlow/Platforms/macOS/Features/Statistics",
@@ -158,6 +165,7 @@
       "tests": [
         "ThruFlowTests/StatisticsTests.swift",
         "ThruFlowTests/StatisticsPeriodTests.swift",
+        "ThruFlowTests/HabitCompletionTests.swift",
         "ThruFlowTests/StatisticsTrendSmoothingTests.swift"
       ]
     },
@@ -181,6 +189,27 @@
         "ThruFlowTests/ProductWidgetSnapshotTests.swift",
         "ThruFlowTests/FlowTimerWidgetSnapshotTests.swift",
         "ThruFlowTests/PersistenceSchemaTests.swift"
+      ]
+    },
+    {
+      "id": "onboarding",
+      "name": "Adaptive navigation and onboarding",
+      "triggers": [
+        "ThruFlow/Shared/UI/OnboardingJourneyView.swift",
+        "ThruFlow/Shared/Application/OnboardingStore.swift",
+        "ThruFlow/Platforms/iOS/App/IOSRootView.swift",
+        "ThruFlow/Platforms/macOS/App/MacOSRootView.swift"
+      ],
+      "review": [
+        "ThruFlow/Shared/UI/OnboardingJourneyView.swift",
+        "ThruFlow/Shared/Application/OnboardingStore.swift",
+        "ThruFlow/Platforms/iOS/App",
+        "ThruFlow/Platforms/macOS/App"
+      ],
+      "tests": [
+        "ThruFlowTests/OnboardingAndReviewPromptTests.swift",
+        "ThruFlowTests/OnboardingWorkspaceInspectorTests.swift",
+        "ThruFlowTests/LocalisationTests.swift"
       ]
     }
   ]

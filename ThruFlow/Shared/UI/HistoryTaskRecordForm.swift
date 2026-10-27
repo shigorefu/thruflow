@@ -484,7 +484,7 @@ struct HistoryTaskRecordForm: View {
 
     private var targetProgressText: String? {
         guard let activeMeasurement else { return nil }
-        if context == .flow, activeMeasurement == .checkbox {
+        if activeMeasurement == .checkbox {
             return nil
         }
 
@@ -995,10 +995,12 @@ private struct HistoryRecordTargetPicker: View {
                         .foregroundStyle(.primary)
                         .lineLimit(1)
 
-                    Text(subtitle)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                    if !subtitle.isEmpty {
+                        Text(subtitle)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
                 }
 
                 Spacer()
@@ -1020,6 +1022,7 @@ private struct HistoryRecordTargetPicker: View {
         guard let todo = option.todo else {
             return String(localized: "この日に記録なし")
         }
+        guard todo.measurement != .checkbox else { return "" }
         return TodoProgressCalculator().summary(
             measurement: todo.measurement,
             plannedAmount: todo.plannedAmount,

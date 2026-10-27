@@ -54,10 +54,10 @@ struct HabitTodoMaterializer {
 
         // Flow history and its derived Todo status may arrive separately.
         // Resolve measured weekly occurrences before deciding which one is
-        // unfinished and can roll forward to today.
+        // completed and counts toward the weekly quota.
         let measuredWeeklyTodos = todos.filter {
             !$0.isDeleted && !$0.isArchived && $0.measurement != .checkbox &&
-                $0.taskType == .habit && $0.area?.goalSchedule == .weeklyCount
+                HabitDefinition(todo: $0)?.goalSchedule == .weeklyCount
         }
         if !measuredWeeklyTodos.isEmpty {
             let previous = measuredWeeklyTodos.map {
@@ -87,22 +87,14 @@ struct HabitTodoMaterializer {
         let today = dayBoundary.day(containing: now, calendar: calendar)
         let normalizedDates = uniqueDays(dates).sorted()
         let planner = RequiredTodoPlanner(calendar: calendar)
-        let activeHabits = areas.filter { $0.type == .habit && !$0.isArchived }
+        let projects = try modelContext.fetch(FetchDescriptor<Project>())
+        let activeHabits = (areas.map { HabitDefinition(area: $0) } +
+            projects.compactMap { HabitDefinition(project: $0) }).filter(\.isActive)
 
         for date in normalizedDates {
             for area in activeHabits {
                 if area.goalSchedule == .weeklyCount &&
                     !calendar.isDate(date, inSameDayAs: today) {
-                    continue
-                }
-
-                if let pendingTodo = planner.pendingWeeklyTodoToRollForward(
-                    for: area,
-                    in: knownTodos,
-                    on: date
-                ) {
-                    pendingTodo.reschedule(to: date, now: now)
-                    changed = true
                     continue
                 }
 

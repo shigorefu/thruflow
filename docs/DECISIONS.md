@@ -87,6 +87,8 @@ Reason: these matched the original Statistics scope and kept GitHub-like statist
 
 ## D-010: Weekly Habits Are Sequential
 
+Status: automatic pending carry-forward superseded by the 2026-10-22 decision below.
+
 A weekly-count Habit creates one pending Task at a time. Moving it does not create a duplicate, and a move is blocked when the remaining eligible days cannot satisfy the weekly target.
 
 Reason: the daily surface stays focused while the weekly commitment remains achievable.
@@ -478,6 +480,9 @@ navigation, density, pointer behavior, and sharing must continue to follow the
 system conventions of each device.
 
 ## D-032: iPad Uses The Universal Adaptive iOS Target
+
+The iOS 18+ shell is refined by the 2026-10-23 Duo adaptation below; iOS 17
+retains this original split/tab implementation.
 
 `ThruFlow iOS` supports both iPhone and iPad rather than shipping a second app
 bundle. Compact widths retain the system tab bar; regular widths switch to a
@@ -990,3 +995,266 @@ Final review: macOS and iOS/Watch agents both reported **agreed**, exchanged
 findings and raised no unresolved objections. The localization agent also
 reported **agreed**. Executed checks and remaining device gates are recorded in
 [Release](RELEASE.md); live schema deployment/readback is in [CloudKit](CLOUDKIT.md#task-times-and-reminders--2026-10-18).
+
+
+### 2026-10-19 — Time dropdowns and visible Project hierarchy (1.4.0)
+
+Supersedes the 2026-10-18 opt-in default and strict two-digit-hour input: the
+hint is `9:00`, input accepts `H:mm` and `HH:mm`, and a new clock defaults the
+reminder preference on. Existing timed Tasks retain their preference. OS
+permission remains local and user-action driven; denial preserves the preference,
+and authorization completion never mutates a draft. The time control is a
+native dropdown/popover instead of an inline removable chip.
+
+Area lists display indented Project children, with parent-only reordering and
+archive actions. Flow completion/rest places an optional same-Area Project picker
+between Task name and memo for currently unassigned non-generated Tasks. Existing
+assignments win over stale drafts. Shared validation precedes metadata mutation;
+no new entity/field, timer accounting or historical attribution is introduced.
+The orchestrator, Mac and iOS/Watch reviewers agreed on these rules before edits.
+
+Verification for the 2026-10-19 time/Project UI refinement:
+- Orchestrator, macOS and iOS reviewers agreed on the shared time-default,
+  Project selection and failed-save restoration contract. Both client reviewers
+  approved the final source after stale-selection and retained-session fixes.
+- Independent localization review agreed on affected copy in all five locales;
+  Project completion uses a context-specific status key.
+- All 526 macOS unit tests in 50 suites passed. The restoration regression tests
+  the mutation journal directly, not an injected end-to-end storage failure.
+- Unsigned Release builds passed for macOS and iOS (including Watch), with no
+  compiler warnings. Platform review report and whitespace checks passed.
+- An isolated demo Mac app visually confirmed the Area/Project hierarchy and
+  the time popover; entering `9:00` selected that time with reminder enabled.
+- iPhone/iPad/Watch visual layouts, completion-form visual layout, signed
+  notification authorization/delivery and cross-device exchange remain unverified.
+  Native differences: iOS temporarily hides children in parent reorder mode;
+  Watch exposes the shared completion picker without an Area management tree.
+- This refinement adds no persisted fields or record types and requires no new
+  schema deployment. Earlier schema verification is recorded in CLOUDKIT.md.
+
+
+### 2026-10-22 — Project context in the Pomodoro player (1.4.0)
+
+The Flow player and context picker display `Area/Project`. An unnamed Task
+uses its assigned Project name as the primary title and inline-edit placeholder;
+existing completed memberships are still displayed. A blank/missing Project
+keeps the previous Area fallback. Named Tasks keep their own title. This is a
+Shared display projection, not a persisted rename. Mac Menu Bar, iOS, Watch
+and active timer widget/Live Activity labels use the same policy; global Tasks,
+history and task widgets retain their existing display rules. Snapshot fields
+and persisted model/schema contracts remain unchanged. Mac and iOS/Watch agents
+explicitly agreed before implementation; localization review approved joining
+user-authored names with a slash across all five supported locales.
+
+Final review: macOS, iOS/Watch and localization reviewers reported **agreed**;
+the Watch blank-Project caption guard was aligned with the shared fallback.
+95 focused Flow, timer-widget snapshot and localization tests passed. Unsigned
+Release builds passed for macOS and iOS with embedded Watch. An isolated Mac demo
+visually confirmed an unnamed Task rendering `AWS` above `テスト・読書/AWS`, plus
+the matching context-picker row. Temporary QA processes were closed. Physical
+iPhone/Watch layouts, VoiceOver and signed Live Activity runtime remain unverified.
+No CloudKit schema change or release was performed for this display-only change.
+
+
+### 2026-10-22 — Project-aware Tasks, direct creation and Statistics (1.4.0)
+
+Task list surfaces, Project detail and Task widget snapshots display the assigned
+Project name for an unnamed Task, retaining the Area emoji. Named Tasks keep
+their title; no Project keeps the old Area fallback. History's generic title
+projection remains unchanged. Mac inline editing uses the same Task placeholder.
+
+Each active nonsystem Area exposes a separate trailing add-Project button. It
+opens the existing shared Project editor and validation; successful save updates
+the existing query-backed tree immediately. The button is not part of the Area
+edit/navigation hit target. Archived Areas and iOS reorder mode do not offer it.
+
+Full Statistics adds Project grouping using current Task→Project membership
+and Project UUID, including completed Projects. No-Project records remain a
+separate bucket; Project details group Tasks by UUID. Segment-based attribution,
+filters and total focused time are preserved. The existing top-five-plus-Other
+rule applies above six groups; equal name/duration ties use stable identity.
+This is a read projection and does not add a persisted Project snapshot to Flow.
+Compact Flow dashboard statistics retain their existing Task/Area modes.
+
+Orchestrator, macOS and iOS/Watch agents explicitly agreed before implementation.
+Native presentation: iOS uses a menu for the three grouping modes; Mac uses a
+segmented picker where space permits and a menu in compact cards. Localization
+review approved the added mode in all five locales and the existing no-Project
+and add-Project labels. No persisted schema, CloudKit field or raw value changed.
+
+Final evidence: macOS and iOS/Watch reviewers agreed on the final source and
+cross-reviewed the counterpart changes; localization agreed on all five locales.
+All 532 macOS unit tests passed, including Project grouping by UUID, segment
+projection, filters, no-Project/remainder totals, stable ordering and Task widget
+fallback. Unsigned Release builds passed for macOS and iOS with embedded Watch;
+no compiler warnings were emitted by those builds. Platform impact report and
+`git diff --check` passed. Visual QA was attempted with an isolated in-memory Mac
+app but blocked by the locked Mac; that temporary process was then stopped.
+iPhone/Watch visual checks and signed widget behavior remain unverified. No
+Production schema deployment is needed for these projection/UI-only changes.
+
+## 2026-10-22 — Independent daily Habit progress and partial completion statistics
+
+Weekly-count occurrences no longer roll forward automatically. Preserve the
+prior incomplete attempt and its history; create a zero-progress occurrence on
+the next eligible current logical day while below the weekly completion quota.
+A future pending occurrence explicitly reserved by the user still blocks a new
+attempt. D-045's progress reconciliation before quota checks remains valid;
+D-010's one-pending-occurrence restriction no longer applies to past attempts.
+Do not infer or rewrite dates already moved by older released versions.
+
+Statistics averages the partial completion of saved due generated occurrences,
+weighted equally per Area/day obligation. It does not fabricate historic
+schedules or substitute a weekly target denominator. Exact measured seconds
+count toward the target, completed records cap at 1, and no eligible data means
+an empty state. Deleted/canceled or paused unstarted obligations are excluded;
+archiving an Area must not erase earlier due obligations. Both client agents
+agreed on this shared contract and archive cutoff; the localization reviewer
+approved affected copy in all five supported locales.
+
+Area trees use tinted parent and Project tiles, no Project folder symbol, and
+branches anchored to the actual Area emoji bounds. The sibling plus belongs
+inside the parent tile. On iOS the native List row groups one tree, so parent
+archive/restore uses the Area context menu rather than an ambiguous whole-tree
+swipe. macOS retains its parent context menu and drag behavior.
+
+
+## 2026-10-23 — Optional Project Habits and simpler Area controls
+
+Supersedes the direct Area-row add button and Project memo/manual-Task creation
+parts of the 2026-10-16 and 2026-10-22 decisions. Restore the Area or Area/Project
+subtitle under Flow dashboard Tasks. Hide Task Project selection when no eligible
+or retained Project exists; a now-unavailable selected Project stays removable.
+Create Projects inside the saved Area editor. No Project means no tree controls.
+
+The maintainer confirmed exactly one optional Habit per Project, with its own
+target/unit/schedule, independently of the parent Area Habit. Shared
+`HabitDefinition`, planner and reconciliation own behavior across Mac, iPhone/iPad
+and Watch. Ordinary Tasks remain created from Flow/Tasks; Project detail edits
+existing work and Project Habit configuration. Persisted notes are retained.
+
+Completion/disable preserves settings and history, retires unused current/future
+occurrences, and records inactive intervals. Reopen/enable does not backfill gaps.
+Parent archive stops all child Habits; pausing only the Area Habit does not affect
+children. Rename-only saves preserve a weekly occurrence's postponed date/UUID.
+Statistics separates Area and Project obligations by owner type/UUID/day.
+
+Optional Project settings JSON and a Todo owner key are additive persistence
+fields. The owner key prevents unrelated Habit merging when CloudKit relationships
+arrive later than scalar data. Unresolved owners reserve their planned date but
+are excluded from mutation/deduplication/statistics until resolved. Legacy orphan
+Area template recovery stays available. No user stores or history were reset.
+
+Agreement: orchestrator, macOS agent and iOS/Watch agent explicitly agreed before
+implementation and after the owner-key refinement; both final source reviews
+reported agreed. Localization independently approved affected copy in all five
+locales. Native presentation remains separate, with one shared Habit editor and
+commands; Watch supports generated occurrences without a Project management UI.
+Verification and live CloudKit evidence are recorded below and in CLOUDKIT.md.
+
+The follow-up Project creation UI request uses the same native presentation as
+Area creation: shared macOS section cards, iOS Form sections, inherited Area
+emoji/name context, and matching goal/schedule controls. No editable Project
+emoji, memo or ordinary Task-creation action was introduced. Both client reviewers
+agreed on the final source, including individual weekday accessibility labels.
+
+Validation on 2026-10-23: 550 tests in 52 suites passed, including Project Habit
+migration and incomplete CloudKit relationship imports. After the editor rewrite,
+9 ProjectHabit tests and 8 Localisation tests passed. macOS and iOS Release builds
+(including embedded Watch) passed without compiler warnings. The Mac in-memory
+demo was visually checked: create/save a weekly Project Habit, Project appears
+under its Area, generated Habit appears in Flow with exact Area/Project subtitle,
+and ordinary Tasks retain their Area subtitle. The iOS Simulator build and launch
+passed, but the installed Xcode bundle has no Simulator.app GUI for CUA visual
+inspection; iPhone/iPad visual layouts remain unverified. Temporary QA processes
+and the task-booted simulator were stopped; the installed production app was
+preserved. Live Production additions were deployed and reloaded successfully;
+see CLOUDKIT.md. Actual signed cross-device exchange remains a release gate.
+
+
+## iPhone Duo adaptive presentation — 2026-10-23
+
+Accepted: expanded iPhone Duo uses the universal iPad-style presentation, based
+on the current proposal and size class, without device-name, screen-size or
+orientation detection. iOS 18+ uses one sidebar-adaptable native TabView; iOS 17
+keeps its legacy fallback. Duo may use the native vertical tab rail instead of
+the preferred sidebar; this system choice is intentional. Navigation stacks,
+filter state and drafts remain
+in the same hierarchy across compact/regular transitions. Flow uses a stable
+four-card Layout with two columns when they fit; accessibility text stacks them.
+
+Onboarding becomes a horizontal explanation/example presentation at readable
+regular widths and on wide Mac windows. One Layout retains its demo subtree;
+compact/accessibility layouts stack it. Header and navigation are pinned, the
+body scrolls, and only the scrim ignores system safe areas. Narrow mobile player
+cards place the timer controls below the dial when their intrinsic widths do not
+fit side by side, preserving the same children. The primary semantic label color
+at reduced opacity keeps supporting text readable on material backgrounds. The ten-step order,
+copy, demo and save commands do not change.
+
+Intentional native difference: regular-width Flow now uses the same centered
+bottom composer as compact Flow and Tasks rather than replacing it with a
+popover. This preserves raw text, parsed tokens and focus while folding. Existing
+macOS presentation remains unchanged except for horizontal onboarding. Watch
+and widgets have no new presentation or shared model contract.
+
+The orchestrator, macOS and iOS agents explicitly agreed before implementation
+and approved the final source. The independent localization agent reviewed the
+affected existing copy in all five locales and approved wrapping/scrolling; no
+translation keys changed. Actual checks and remaining device limits are recorded
+in releases/1.4.0.md.
+
+
+## Duo Area board and mobile player refinement — 2026-10-27
+
+Accepted: regular-width Area management displays all three groups in saved order,
+with existing Area/Project trees and archive/editor actions. Compact width keeps
+its segmented type picker. The board reflows at insufficient readable widths;
+explicit reorder mode uses the existing single-group native List/picker so its
+ordering command remains unchanged. Tasks calendar filters/ranges are unaffected.
+
+The mobile Pomodoro player retains ring-left/controls-right arrangement. A mobile
+ring may fit from 164 down to 144 points; button targets are unchanged. Flow cards
+reserve 360 points per column. Very narrow cards and accessibility text sizes
+retain a vertical fallback, with the same view children and timer state. Mac's
+dashboard timer remains unchanged; no persistence or timer rules change.
+
+The orchestrator and both client agents agreed on this contract before edits.
+Existing localized labels are reused; verification is recorded in releases/1.4.0.md.
+
+
+## Persistent Tasks input at regular width — 2026-10-27
+
+Accepted: regular-width Tasks shows its existing composer immediately, without
+floating add or close buttons and without automatic keyboard focus. Compact width
+keeps explicit add/close. Folding hides the panel and restores add; the hidden
+composer has no layout, interaction, accessibility or keyboard presence. An opaque
+system background separates input from the list. Once mounted, the same composer retains title, tokens
+and metadata through folding and tab navigation until explicit compact dismissal
+or submission. Initial defaults are applied once per composer instance; other
+composer callers retain their automatic-focus default. Task creation commands,
+date defaults and Mac presentation do not change. Both platform agents agreed
+on this presentation/state-lifetime contract before implementation.
+
+## Omit redundant Task completion subtitles — 2026-10-27
+
+Accepted: checkbox Task rows and history target pickers do not repeat textual
+Completed/Incomplete status. The progress control communicates completion;
+accessibility values and explicit filters/actions retain their status wording.
+Block/Minute numeric progress, Area/Project context and priority remain visible.
+This is a rendering change across Mac, iOS/iPadOS and Watch, with no change to
+completion rules or stored state.
+
+## Memo before changing the active Flow Task — 2026-10-27
+
+Accepted user clarification: collect the current Task name, eligible Project and
+result before switching, with no timer stop/reset. A transient Application request
+captures the old Task and destination. Submit saves to that Task and invokes the
+existing context-switch policy at submission time; cancel clears the request only.
+A paused timer remains paused. Pending requests cannot be overwritten; stale
+session/task/phase changes invalidate them. Validation/save errors keep the form
+for retry. New unnamed destination Tasks are created only on confirmed switching.
+Existing Task notes hold the memo; FlowSession.result and persisted models do not
+change. The existing under-one-minute transfer policy remains in force.
+Both client agents agreed before implementation; native presentation waits for
+the picker to dismiss.

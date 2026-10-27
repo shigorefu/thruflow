@@ -5,6 +5,8 @@
 //
 
 import Charts
+import Combine
+import CoreData
 import SwiftData
 import SwiftUI
 
@@ -35,6 +37,7 @@ struct StatisticsView: View {
     @State private var snapshotCache: [StatisticsPeriodFilter: StatisticsPeriodSnapshot] = [:]
     @State private var snapshotCacheOrder: [StatisticsPeriodFilter] = []
     @State private var loadingFilter: StatisticsPeriodFilter?
+    @State private var persistenceRevision = 0
     @State private var isExportPresented = false
     @State private var exportContent: StatisticsCSVContent = .all
     @State private var exportStartDate = Date.now
@@ -141,6 +144,12 @@ struct StatisticsView: View {
         workspace
             .navigationTitle(isVisible ? String(localized: "統計") : "")
             .toolbar { statisticsToolbar }
+            .onReceive(NotificationCenter.default.publisher(for: ModelContext.didSave).receive(on: RunLoop.main)) { _ in
+                if isVisible { persistenceRevision &+= 1 }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .NSPersistentStoreRemoteChange).receive(on: RunLoop.main)) { _ in
+                if isVisible { persistenceRevision &+= 1 }
+            }
             .task(id: refreshID) {
                 await refreshStatisticsWhileVisible()
             }
@@ -194,6 +203,8 @@ struct StatisticsView: View {
             summary: snapshot.summary,
             previousSummary: snapshot.previousSummary
         )
+
+        HabitCompletionCard(summary: snapshot.habitCompletion)
 
         StatisticsTrendCard(
             mode: $trendMode,
@@ -542,6 +553,8 @@ struct StatisticsView: View {
             snapshot.taskDistribution
         case .area:
             snapshot.areaDistribution
+        case .project:
+            snapshot.projectDistribution
         }
     }
 
@@ -625,6 +638,7 @@ struct StatisticsView: View {
             query: searchText,
             areaCount: areas.count,
             latestAreaUpdate: areas.map(\.updatedAt).max(),
+            persistenceRevision: persistenceRevision,
             calendar: calendar,
             dayBoundaryHour: dayBoundary.hour
         )
@@ -917,6 +931,7 @@ private struct StatisticsCustomRangePopover: View {
 private enum StatisticsDistributionDimension: String, CaseIterable, Identifiable {
     case task
     case area
+    case project
 
     var id: String { rawValue }
 
@@ -926,6 +941,8 @@ private enum StatisticsDistributionDimension: String, CaseIterable, Identifiable
             String(localized: "タスク別")
         case .area:
             String(localized: "方向別")
+        case .project:
+            String(localized: "プロジェクト別")
         }
     }
 }
@@ -1030,6 +1047,16 @@ private struct StatisticsDistributionCard: View {
 
     @State private var selectedItemID: String?
 
+    private var dimensionPicker: some View {
+        Picker(String(localized: "内訳"), selection: $dimension) {
+            ForEach(StatisticsDistributionDimension.allCases) { dimension in
+                Text(dimension.displayName).tag(dimension)
+            }
+        }
+        .labelsHidden()
+        .controlSize(.small)
+    }
+
     private var selectedItem: StatisticsDistributionItem? {
         guard let selectedItemID else { return nil }
         return items.first { $0.id == selectedItemID }
@@ -1043,15 +1070,15 @@ private struct StatisticsDistributionCard: View {
             title: String(localized: "集中時間の内訳"),
             minimumHeight: isCompact ? 288 : nil,
             headerAccessory: {
-                Picker(String(localized: "内訳"), selection: $dimension) {
-                    ForEach(StatisticsDistributionDimension.allCases) { dimension in
-                        Text(dimension.displayName).tag(dimension)
-                    }
+                if isCompact {
+                    dimensionPicker
+                        .pickerStyle(.menu)
+                        .fixedSize()
+                } else {
+                    dimensionPicker
+                        .pickerStyle(.segmented)
+                        .frame(width: 280)
                 }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .controlSize(.small)
-                .frame(width: 180)
             }
         ) {
             VStack(alignment: .leading, spacing: 14) {
@@ -1852,6 +1879,7 @@ private struct StatisticsPeriodRefreshID: Hashable {
     let query: String
     let areaCount: Int
     let latestAreaUpdate: Date?
+    let persistenceRevision: Int
     let calendar: Calendar
     let dayBoundaryHour: Int
 }

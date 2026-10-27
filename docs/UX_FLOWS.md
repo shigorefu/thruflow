@@ -113,7 +113,7 @@ already completed Task never repeats the feedback.
 
 Quick capture behaves like a messenger composer. The user can set measurement, Area, priority, date, and multiple hashtags from compact controls. The default measurement control reads `種類`; leaving it untouched creates a Check Task. It is one stable animated control: its leading icon distinguishes Check, Block ring, and filled Minute circle; Block and Minute states expose an inline numeric field and unit before the menu chevron. The remaining metadata controls are text-only on both platforms. Area uses its configured color, priority uses red/neutral/green for high/medium/low, and date always remains neutral. On iOS the metadata row scrolls horizontally instead of compressing or clipping selected values. The priority menu keeps the fixed order `高`, `中`, `低`, `余裕があれば`; the final option persists as low priority with its dedicated room-if-possible flag. Hashtags display with `#`, deduplicate case-insensitively, and preserve the first entered casing.
 
-The composer also recognizes `[]`, `[2b]`, `[30m]`, `@Area`, `!high`, `/today`, `HH:mm`, and `#tag`. Completed tokens are removed from the persisted plain-text title, update the lower controls, and remain visible in a dedicated upper row inside the composer as semantic chips (`[]` becomes a `チェック` chip); clicking a chip removes its semantic value. English aliases always work, while Japanese and Russian aliases work in addition. Typing `@`, `!`, `/`, `[`, or `#` opens a contextual autocomplete list above the composer. On macOS it is a non-activating child panel above regular composers and below the Menu Bar composer, with screen-edge fallback; on iPhone it floats above the bottom composer without increasing its height. iPad popovers keep the list above the input within the popover. Empty `@` shows up to five distinct Areas ordered by their most recent Task creation, with unused Areas filling remaining places alphabetically. Archived/system Areas and deleted Tasks are excluded. Typed Area text filters names; `#` suggests existing tags. Each suggestion is clickable across its full row, and the current suggestion has an accent highlight. Mouse hover or `Up`/`Down` changes selection; `Return` applies it. Quick input only selects existing Areas. An unknown Area shows a validation message; the user can correct it or explicitly create the Task under `その他`. There is no Area-creation action in autocomplete or the composer. Invalid tokens remain ordinary title text. A dismissible syntax legend appears above the composer only after typing begins, groups measurement shortcuts (`[ ]`, `[1b]`, `[25m]`) before metadata shortcuts (`@`, `!`, `/`, `#`), and can be restored from Settings. Autocomplete temporarily replaces the legend so the two surfaces never overlap. The primary submit action is an icon button in the composer's upper-right corner; unset Area, priority, and date controls use neutral placeholder labels. Tasks and menu-bar quick creation use this same composer and interaction model. Priority, date, and measurement suggestions share their labels, icons, and prefix filtering across macOS and iOS; for example, `[2` shows only `[25m]`.
+The composer also recognizes `[]`, `[2b]`, `[30m]`, `@Area`, `!high`, `/today`, `HH:mm`, and `#tag`. Completed tokens are removed from the persisted plain-text title, update the lower controls, and remain visible in a dedicated upper row inside the composer as semantic chips (`[]` becomes a `チェック` chip); clicking a chip removes its semantic value. English aliases always work, while Japanese and Russian aliases work in addition. Typing `@`, `!`, `/`, `[`, or `#` opens a contextual autocomplete list above the composer. On macOS it is a non-activating child panel above regular composers and below the Menu Bar composer, with screen-edge fallback; on iPhone it floats above the bottom composer without increasing its height. The regular-width iPad/Duo bottom composer keeps the same suggestion placement and caps the input width at 640 points. Empty `@` shows up to five distinct Areas ordered by their most recent Task creation, with unused Areas filling remaining places alphabetically. Archived/system Areas and deleted Tasks are excluded. Typed Area text filters names; `#` suggests existing tags. Each suggestion is clickable across its full row, and the current suggestion has an accent highlight. Mouse hover or `Up`/`Down` changes selection; `Return` applies it. Quick input only selects existing Areas. An unknown Area shows a validation message; the user can correct it or explicitly create the Task under `その他`. There is no Area-creation action in autocomplete or the composer. Invalid tokens remain ordinary title text. A dismissible syntax legend appears above the composer only after typing begins, groups measurement shortcuts (`[ ]`, `[1b]`, `[25m]`) before metadata shortcuts (`@`, `!`, `/`, `#`), and can be restored from Settings. Autocomplete temporarily replaces the legend so the two surfaces never overlap. The primary submit action is an icon button in the composer's upper-right corner; unset Area, priority, and date controls use neutral placeholder labels. Tasks and menu-bar quick creation use this same composer and interaction model. Priority, date, and measurement suggestions share their labels, icons, and prefix filtering across macOS and iOS; for example, `[2` shows only `[25m]`.
 
 While the Task title field is active in the iPhone edit screen, matching title-history suggestions appear in a horizontally scrolling row above the Form, below the navigation title. Selecting one replaces only the current title; the edited Task keeps its identity, completion, progress, Area, measurement, priority, date, notes, and hashtags.
 
@@ -168,7 +168,7 @@ In the narrow vertical dashboard layout, the player comes first, followed by the
 - transport seek controls subtract or add exactly five minutes from the current focus or rest timer across macOS, iOS, Apple Watch, and Live Activity. Subtract stops at one minute remaining, while both actions preserve elapsed time, focus mode, and long-rest identity. The timer ring animates to its new proportion after either seek action or a focus-mode change;
 - starting rest derives its duration from actual focused time rather than the selected mode: under 24 minutes gives 3 minutes, 24...48:59 gives 5 minutes, 49...73:59 gives 10 minutes, and three uninterrupted Blocks give 15 minutes before the long-rest threshold. Skipping short rest carries focus forward; actual partial short rest is credited. The 24- and 49-minute boundaries normalize Block credit to 25 and 50 minutes while longer actual time remains exact;
 - break time counts down past zero with a positive overtime sign; its neutral-gray progress ring drains while the Area-colored focus ring fills. Starting work during rest completes the previous Flow and immediately starts the next one, while the Japanese menu bar status becomes `☕️ 休憩 - time` or `☕️ 長休憩 - time`;
-- choosing another Task during focus or pause keeps the current Flow running and starts a new history segment; no memo prompt is shown for this switch;
+- choosing another Task during focus or pause first opens a memo for the current Task (title, eligible Project and result). The timer keeps its existing running/paused state and remains on that Task while the form is open. Saving or continuing without a note switches at submission time; cancel keeps the current Task. The existing short-segment transfer rule is evaluated at that time. An Area-only selection creates its new unnamed Task only after confirmation. The note belongs to the previous Task, not the overall Flow result; no per-segment memo is persisted;
 - on Mac, iPhone/iPad, and Watch, the focus ring preserves recorded Area colors: switching at 12 minutes in a 25-minute Flow keeps the first 48% in the original color, and subsequent focus fills in the new color. Pause retains these boundaries; duration changes rescale them, and overtime clamps at one full ring. Rest retains its neutral countdown. The existing sub-minute context-transfer rule also applies to the ring because it reads the same history segments;
 - when the configured app day changes while Flow is idle, a selected Task from
   the previous day is replaced with today's incomplete occurrence from the
@@ -275,6 +275,10 @@ The real application workspace remains visible beneath a dimmed onboarding
 surface, and the requested feature screen opens behind each guidance step.
 Guidance stays centered and uses platform-native editor, composer, sheet, and
 popover presentation instead of geometry-dependent spotlights or scrim cutouts.
+At readable regular widths, the explanation and example sit side by side in a
+wide card. Compact widths and accessibility text sizes stack them. One stable
+layout preserves the running demo during resizing; only the body scrolls, with
+the header and navigation pinned inside the system safe area.
 The header centers its progress indicator with an icon-only Close control on the
 right, then gives the localized step label its own wrapping row below. Back and Close remain available throughout. Close and Finish close any onboarding
 presentation, return to Flow, and mark the first-run journey complete.
@@ -355,23 +359,42 @@ background without a separate bar-material backing. Native navigation controls
 retain their system appearance.
 
 The system tab bar remains visible in `タスク`, matching the other primary
-destinations. A separate circular `+` command in the lower trailing corner
-opens the messenger composer and focuses its input. The composer includes an
-explicit `×` command that dismisses the keyboard and returns to the task list
-without creating a Task.
+destinations. At compact width, a circular `+` in the lower trailing corner opens
+and focuses the messenger composer; `×` dismisses it without creating a Task.
+At regular width (expanded Duo/iPad), the bottom composer is always visible,
+like macOS, without a separate `+` or close control. It does not automatically
+open the keyboard. Folding hides the panel and restores `+`; reopening it retains
+the mounted draft. Navigation between tabs does not discard that draft; explicit
+compact dismissal does. The input panel uses an opaque system background. Existing submission defaults remain.
 `コネクタ` and `設定` are reached from the Flow More menu, in that order.
 
-At regular iPad widths the five primary destinations move from the bottom tab
-bar into a persistent leading sidebar, matching the macOS information
-architecture and leaving the wide detail area to the selected feature. The
-sidebar footer exposes `コネクタ` immediately above `設定`. Compact Split View and Stage Manager widths return
-to the tab shell automatically, without resetting the active destination or
-feature state. iPad supports portrait and landscape orientations.
+On iOS 18 and later, one native sidebar-adaptable TabView owns all five
+destinations and their NavigationStacks. Regular-width iPad prefers the sidebar;
+iPhone Duo follows native system adaptation, including its vertical tab rail.
+Compact layouts use system tabs. The sidebar footer
+exposes `コネクタ` above `設定`. Folding or changing window size preserves the
+selected destination, filters and draft because the feature hierarchy is not
+replaced. iOS 17 retains the legacy split/tab shells and their existing state
+limitations. iPad supports portrait and landscape orientations; Duo layout follows
+the available size rather than a device or orientation check.
 
 The regular-width Flow dashboard uses the detail area as two balanced columns:
 the live Flow scene and timeline sit beside the player, while Tasks and today’s
 Statistics share the next row. When the detail column becomes too narrow for
-comfortable controls, the dashboard returns to the single-column presentation.
+comfortable controls, or when accessibility text sizes are selected, the dashboard
+returns to one column using the same card instances. Flow and Tasks use a centered
+bottom composer capped at 640 points, including regular widths; folding keeps
+its input, tokens and focus. Statistics caps its reading width at 1,000 points.
+Regular-width Areas shows all three type groups side by side, in saved group order,
+with Project trees inside each group, like macOS. The board reflows when columns
+cannot fit readable content. Compact Areas keeps its type picker and 800-point
+reading limit. Explicit reorder mode retains the native single-group list and
+picker on both sizes. Calendars use the available content width.
+
+The mobile player keeps the timer ring on the left and its buttons on the right.
+Its ring fits between 144 and 164 points while button sizes stay unchanged; Flow
+columns reserve enough width for the full-size player. Only exceptionally narrow
+cards or accessibility text sizes stack the controls below the ring.
 
 The first Flow viewport presents the softened animated stream and Elastic
 timeline before the timer card. It keeps the Task selector, the shared
@@ -389,7 +412,7 @@ cards in the vertical dashboard. The iPhone owns this presentation while reusing
 persistence, timer state, dashboard projections, progress logic, and
 localization.
 
-Opening the `+` command in `タスク` slides a material-backed messenger composer
+At compact width, opening `+` in `タスク` slides a material-backed messenger composer
 in above the persistent system tab bar. Shared quick-input tokens (`[ ]`, `[1b]`,
 `[25m]`, `@`, `!`, `/`, and `#`) update the composer controls while typing, and
 contextual autocomplete is shown above the field. The date control supports
@@ -899,12 +922,21 @@ Tasks in that Area. Existing stale occurrences are repaired during planning.
 
 ## Projects and Area restoration (1.4.0)
 
-Area rows show a folder count when Projects exist. Open a saved Area to manage
-its Projects; use the add button for a named Project with optional memo. Active
-and completed Projects are separated. A Project opens its Task list, native Task
-creation/editing, and explicit complete/reopen actions. Completing a Project
-leaves its Tasks and Flow history unchanged. Projects are optional: Task editors
-and quick capture provide a None option after the Area control. Changing the
+Area lists show a tree: each Area is the parent, with indented Project rows
+below it. Active children precede completed children, which have a completion
+marker. Project rows open their existing detail screen directly. Only parent
+Areas participate in drag/reorder/archive actions; iOS reorder mode temporarily
+shows parents only so row indexes remain Area indexes. Open a saved Area to add
+a named Project and optionally configure its single Habit (goal, unit, schedule).
+Project creation follows the native Area editor: inherited Area emoji and a large
+name field, grouped Habit/Goal settings, matching schedule controls, and native
+Cancel/Save actions. macOS shares the Area card treatment; iOS uses Form sections.
+There is no Project memo field or ordinary Task creation action in Project detail;
+existing Tasks remain editable, and complete/reopen actions remain. Ordinary
+Tasks are created from Flow/Tasks. Completing a Project retires unused generated
+Habit occurrences but preserves started work, ordinary Tasks and Flow history.
+Projects are optional: Task editors and quick capture show the picker only when
+there are eligible Projects or an existing selection to clear. Changing the
 Area clears an incompatible Project. Existing completed memberships remain
 visible while editing. Watch uses the same selection/validation rules without a
 separate Project management screen.
@@ -919,17 +951,73 @@ pauses.
 ## Task timing and reminder controls (1.4.0)
 
 Mac, iPhone/iPad and Watch editors offer `時刻を指定`, a native hour/minute
-picker, and the separate `この時刻に通知` switch. Quick capture on Mac and iOS
-also accepts strict 24-hour `HH:mm` (00:00–23:59), shows a removable clock chip,
-and offers a clock-control popover/sheet. Invalid or partial values remain title
-text; the last valid clock token wins. `[30m]` remains a duration goal. Parsing a
-clock never turns on notifications. A successful capture resets time/reminder.
+picker, and the separate `この時刻に通知` switch. Mac/iOS quick-capture hints show
+`9:00`, and input accepts ASCII `H:mm` and `HH:mm` (0:00–23:59). The bar uses a
+chevron dropdown button opening native time/reminder controls, rather than an
+inline removable time chip. Invalid or partial values remain title text; the
+last valid clock token wins. `[30m]` remains a duration goal.
 
-Removing the date or time clears the reminder. Habit occurrence editors expose
-timing without exposing Area-owned recurrence fields. Permission denial leaves
-new opt-ins off and shows an explanation. A reminder synced to an unprompted
-device offers `この端末で通知を許可`; denying that device does not disable the
-shared reminder. Closing the controls cancels any pending permission response
-from changing a later draft. Mac retains its existing Area/Project capture
-selection; iOS retains its existing full reset behavior. Task/Flow rows and Watch
-show clock/bell captions. No new widget editor or ordering rule is introduced.
+Assigning a new time defaults the reminder on. Editing an already timed Task
+preserves its on/off setting. Removing date/time clears the preference; assigning
+a time again defaults it on. Explicit capture with a trailing clock token follows
+the same rule even when no space was typed before Submit. Successful capture
+resets time/reminder; Mac retains Area/Project and iOS retains its full reset.
+
+The owner observes draft changes, so defaults/permission work while the dropdown
+is closed. System permission is requested only after a user action. The request
+never mutates a draft; it may finish after capture closes and immediately refresh
+saved reminders. Denial keeps the synchronized preference and shows a local
+permission explanation. An enabled reminder on an unprompted device offers
+`この端末で通知を許可`; opening an editor never prompts automatically. Task/Flow
+rows and Watch retain clock/bell captions. Habit occurrence editors expose timing
+without changing recurrence. No widget editor or list ordering change is added.
+
+## Project choice when finishing Flow (1.4.0)
+
+The completion/rest form follows Task name → Project → accomplishment memo.
+For an unassigned, non-Habit-occurrence Task with available Projects in its Area,
+a native dropdown offers those Projects and None. Existing assignments remain
+unchanged, including completed Projects. No Projects means no extra field.
+An Area-only historical Flow does not create a Task. Shared validation rejects a
+new selection that became completed, archived or belongs to another Area before
+changing the Task title, Project or memo. Cancel discards the draft. All clients,
+including Watch, use the same completion commands and eligibility rules.
+
+
+The Pomodoro context header and picker show `Area/Project` for project Tasks.
+The primary label and Mac inline-edit placeholder use the Project name when the
+Task is unnamed; named Tasks keep their title. The fallback is display-only.
+Mac Menu Bar, iOS, Watch and active timer snapshots share this presentation.
+
+
+Task rows display a Project fallback for unnamed Tasks, with Area represented
+by its emoji. Flow dashboard rows additionally restore the Area or Area/Project
+subtitle beneath the title. Projects are created inside the saved Area editor;
+there is no trailing `+` on Area list rows. Saved children appear below the parent. Statistics offers
+Task, Area and Project distributions. Selecting Project shows its Task/time
+breakdown; time without Project stays visible in the no-Project group.
+
+### Area tree tiles and Habit completion (1.4.0)
+
+The Area emoji square connects to the centers of its Project tiles through a
+thin tree line in the Area color. Projects have tinted backgrounds without a
+folder icon. Areas without Projects have no extra tree controls or spacing. The
+lines follow actual layout anchors, including wrapped text. iOS groups one Area
+tree into one List row and offers archive/restore on the parent context menu;
+project taps still open their own editor. macOS retains parent drag/reorder.
+
+Full Statistics on both clients places `習慣の達成率` after the summary: an overall
+percentage, count of saved scheduled occurrences, and per-Habit progress bars.
+Partial progress counts, with scope explained below the card. The selected
+period and Area/text filters apply. Local saves and remote changes refresh the
+projection through the existing debounce, in addition to periodic refresh.
+The compact Flow statistics card is unchanged.
+
+Task row subtitles do not repeat Completed/Incomplete for checkbox Tasks on any
+client, including Flow, Tasks, calendar cards, Inbox and history target pickers.
+The checkbox and accessibility value communicate status; measured Block/Minute
+progress remains visible. Status filters and explicit completion actions remain.
+
+Flow Task rows use two text rows: the title, then Area or Area/Project in the
+Area color followed by priority, measured progress, optional time and tags.
+Metadata shares this second line rather than adding a separate third row.

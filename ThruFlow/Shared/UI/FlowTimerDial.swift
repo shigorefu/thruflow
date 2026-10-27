@@ -7,10 +7,17 @@ struct FlowTimerDial: View {
         case mobile
         case dashboard
 
-        var size: CGFloat {
+        nonisolated var size: CGFloat {
             switch self {
             case .mobile: 164
             case .dashboard: 158
+            }
+        }
+
+        nonisolated var minimumSize: CGFloat {
+            switch self {
+            case .mobile: 144
+            case .dashboard: size
             }
         }
 
@@ -80,7 +87,10 @@ struct FlowTimerDial: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .frame(width: style.size, height: style.size)
+        .frame(
+            minWidth: style.minimumSize, idealWidth: style.size, maxWidth: style.size,
+            minHeight: style.minimumSize, idealHeight: style.size, maxHeight: style.size
+        )
     }
 
 }

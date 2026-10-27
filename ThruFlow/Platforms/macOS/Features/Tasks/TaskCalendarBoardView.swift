@@ -334,7 +334,9 @@ private struct TaskBoardCard: View {
 
                     Spacer(minLength: 0)
 
-                    Text(summary)
+                    if todo.measurement != .checkbox {
+                        Text(summary)
+                    }
                 }
                 .font(.caption2)
                 .foregroundStyle(.secondary)

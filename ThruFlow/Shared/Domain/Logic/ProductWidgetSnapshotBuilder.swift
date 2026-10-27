@@ -63,7 +63,7 @@ struct ProductWidgetSnapshotBuilder {
     private func makeTaskItem(_ todo: Todo) -> TaskWidgetItemSnapshot {
         TaskWidgetItemSnapshot(
             id: todo.id,
-            title: TodoDisplay.title(for: todo),
+            title: TodoDisplay.taskTitle(for: todo),
             areaSymbol: todo.area?.symbolName ?? "📝",
             areaName: todo.area?.name ?? String(localized: "その他"),
             areaColorHex: todo.area?.colorHex ?? "#8E8E93",

@@ -177,6 +177,7 @@ final class TaskReminderScheduler: ObservableObject {
             let center = NotificationCenter.default
             let names: [Notification.Name] = [
                 ModelContext.didSave, .NSManagedObjectContextDidSave, .NSPersistentStoreRemoteChange,
+                TaskReminderAuthorization.didChange,
                 NSPersistentCloudKitContainer.eventChangedNotification,
                 .NSSystemTimeZoneDidChange, .NSSystemClockDidChange
             ]

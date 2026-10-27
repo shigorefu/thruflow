@@ -126,7 +126,7 @@ struct IOSFlowContextPicker: View {
                 } label: {
                     row(
                         emoji: area.symbolName,
-                        title: TodoDisplay.title(for: todo),
+                        title: TodoDisplay.flowTitle(for: todo),
                         subtitle: taskSubtitle(todo),
                         isSelected: selectedTodoID == todo.id,
                         isPlaceholder: todo.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -202,7 +202,7 @@ struct IOSFlowContextPicker: View {
     }
 
     private func taskSubtitle(_ todo: Todo) -> String {
-        let areaName = todo.area?.name ?? String(localized: "その他")
+        let areaName = TodoDisplay.flowContextName(for: todo)
         let priority = todo.priority == .low && todo.isRoomIfPossible
             ? String(localized: "余裕があれば")
             : todo.priority.displayName

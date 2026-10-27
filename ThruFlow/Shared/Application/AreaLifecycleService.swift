@@ -39,6 +39,8 @@ struct AreaLifecycleService {
         guard let archivedAt = area.archivedAt else { return }
         let journal = EditorMutationJournal(modelContext: modelContext)
         journal.capture(area)
+        let projects = try modelContext.fetch(FetchDescriptor<Project>()).filter { $0.area?.id == area.id }
+        for project in projects { journal.capture(project) }
         do {
             // Retain the inactive interval using the existing pause representation.
             // Never undelete a retired occurrence or erase a separate manual pause.
@@ -46,6 +48,14 @@ struct AreaLifecycleService {
             let today = dayBoundary.day(containing: now, calendar: calendar)
             if area.type == .habit, firstDay < today {
                 area.habitPausePeriods += [HabitPausePeriod(startsOn: firstDay, endsBefore: today, createdAt: now)]
+            }
+            if firstDay < today {
+                for project in projects {
+                    guard var settings = project.habitSettings else { continue }
+                    settings.inactivePeriods.append(HabitPausePeriod(startsOn: firstDay, endsBefore: today, createdAt: now))
+                    project.habitSettings = settings
+                    project.updatedAt = now
+                }
             }
             area.archivedAt = nil
             area.updatedAt = now

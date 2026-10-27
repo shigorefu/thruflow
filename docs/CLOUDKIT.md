@@ -284,3 +284,31 @@ until its next reconciliation. Actual signed Mac/iPhone exchange and notificatio
 delivery remain unverified and are required before distribution. Full local
 validation passed 521 tests, including disk migration and timing reconciliation;
 see [Release](RELEASE.md) for platform evidence and remaining gates.
+
+
+### Project Habits and stable ownership — 2026-10-23
+
+After the maintainer renewed the Console session, live Development and Production
+for `iCloud.com.shigorefu.thruflow` (team `BR727PS795`) were compared. Both lacked
+the two new optional scalar fields. Added these fields in Development:
+
+| Record type | Added field | CloudKit type | Indexes |
+| --- | --- | --- | --- |
+| `CD_Project` | `CD_habitSettingsRawValue` | `STRING` | None |
+| `CD_Todo` | `CD_habitOwnerKeyRawValue` | `STRING` | None |
+
+No server predicate or sort uses these fields; reconciliation resolves ownership
+locally. Existing indexes, types and security grants were preserved. The reviewed
+Development revision was `51ee2b30-ce98-11f1-8d2d-dfc7f3b9cc0b`; the deployment
+diff contained only these two additive fields. Console confirmed **Changes
+Deployed**. After switching to Production and reloading, its record list showed
+15 Project fields and 34 Todo fields, including metadata. Both new names and
+STRING types were read back on their live field pages. No user records or stores
+were reset. Screenshot evidence was saved locally during the task.
+
+Old Projects default to no Habit; legacy Todos infer ownership from relationships.
+New generated Todos carry a stable owner key, so incomplete relationship imports
+cannot merge unrelated Area/Project occurrences. The full local suite passed 550
+tests, including disk migration and both relationship arrival orders. Actual
+signed Mac/iPhone exchange of Project settings and generated occurrences remains
+unverified and must be checked before distribution.

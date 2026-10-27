@@ -74,6 +74,8 @@ final class Todo {
     var externalTaskLinkRawValue: String? = nil
     /// Nil preserves classification of records created before this field existed.
     var habitOccurrence: Bool? = nil
+    /// Stable owner while CloudKit relationships are still resolving; nil is legacy.
+    var habitOwnerKeyRawValue: String? = nil
     /// Persisted as `direction` for SwiftData and CloudKit compatibility.
     var project: Project?
     var direction: Area?
@@ -135,6 +137,8 @@ final class Todo {
         self.direction = area
         self.project = project
         self.habitOccurrence = habitOccurrence
+        self.habitOwnerKeyRawValue = habitOccurrence == true
+            ? project.map { "project:\($0.id)" } ?? "area:\(area.id)" : nil
         self.measurementRawValue = measurement.rawValue
         self.priorityRawValue = priority.rawValue
         self.isRoomIfPossible = isRoomIfPossible
@@ -169,7 +173,10 @@ final class Todo {
     }
 
     var isHabitOccurrence: Bool {
-        area?.type == .habit && (habitOccurrence ?? true) && externalTaskLinkRawValue == nil
+        guard externalTaskLinkRawValue == nil, habitOccurrence != false else { return false }
+        if habitOccurrence == true, habitOwnerKeyRawValue != nil { return true }
+        if project != nil { return habitOccurrence == true }
+        return area?.type == .habit
     }
 
     var taskType: AreaType {

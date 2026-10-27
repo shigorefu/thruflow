@@ -65,7 +65,7 @@ struct TodoTests {
         #expect(projection.habitTodos.isEmpty)
     }
 
-    @Test func independentTasksDoNotConsumeWeeklyHabitQuotaOrRollForward() {
+    @Test func independentTasksDoNotConsumeWeeklyHabitQuota() {
         let area = weeklyHabitArea()
         let day = Calendar.current.startOfDay(for: .now)
         let task = Todo(title: "模擬試験", area: area, habitOccurrence: false, scheduledDate: day)
@@ -74,7 +74,7 @@ struct TodoTests {
         task.setCompleted(true)
         #expect(planner.shouldCreateRequiredTodo(for: area, in: [task], on: day))
         task.setCompleted(false)
-        #expect(planner.pendingWeeklyTodoToRollForward(for: area, in: [task], on: day.addingTimeInterval(86_400)) == nil)
+        #expect(planner.shouldCreateRequiredTodo(for: area, in: [task], on: day.addingTimeInterval(86_400)))
     }
 
     @Test func manualTaskDoesNotMergeWithRenamedLegacyHabit() {
@@ -383,28 +383,25 @@ struct TodoTests {
         #expect(planner.shouldCreateRequiredTodo(for: area, in: [completedTodo], on: tuesday))
     }
 
-    @Test func pendingWeeklyHabitRollsForwardWithinCurrentWeek() {
+    @Test func pastIncompleteWeeklyHabitAllowsFreshOccurrence() throws {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
-        calendar.firstWeekday = 1
-
         let area = weeklyHabitArea()
         let planner = RequiredTodoPlanner(calendar: calendar)
-        let sunday = date(2026, 7, 12, calendar: calendar)
-        let wednesday = date(2026, 7, 15, calendar: calendar)
-        let pendingTodo = Todo(title: "", area: area, scheduledDate: sunday)
-
-        #expect(
-            planner.pendingWeeklyTodoToRollForward(
-                for: area,
-                in: [pendingTodo],
-                on: wednesday
-            )?.id == pendingTodo.id
-        )
+        let yesterday = date(2026, 7, 6, calendar: calendar)
+        let today = date(2026, 7, 7, calendar: calendar)
+        let old = Todo(title: "筋トレ", area: area, measurement: .minutes,
+                       plannedAmount: 40, actualProgress: 20, scheduledDate: yesterday)
+        let fresh = try #require(planner.makeRequiredTodo(for: area, existingTodos: [old], on: today))
+        #expect(fresh.id != old.id)
+        #expect(fresh.actualProgress == 0)
+        #expect(fresh.recordedFocusSeconds == 0)
+        #expect(old.scheduledDate == yesterday)
+        #expect(old.actualProgress == 20)
     }
 
     @Test(arguments: [false, true])
-    func pendingWeeklyHabitDoesNotRollOntoAnExistingOccurrence(completed: Bool) {
+    func existingWeeklyOccurrencePreventsDuplicate(completed: Bool) {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         let area = weeklyHabitArea()
@@ -413,32 +410,23 @@ struct TodoTests {
         let old = Todo(title: "筋トレ", area: area, scheduledDate: yesterday)
         let current = Todo(title: "筋トレ", area: area, scheduledDate: today)
         current.setCompleted(completed, now: today)
-        #expect(RequiredTodoPlanner(calendar: calendar).pendingWeeklyTodoToRollForward(
+        #expect(!RequiredTodoPlanner(calendar: calendar).shouldCreateRequiredTodo(
             for: area, in: [old, current], on: today
-        ) == nil)
+        ))
         #expect(old.scheduledDate == yesterday)
     }
 
-    @Test func pendingWeeklyHabitDoesNotRollBackwardOrAcrossWeeks() {
+    @Test func previousWeekDoesNotBlockButExplicitFutureOccurrenceDoes() {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         calendar.firstWeekday = 1
-
         let area = weeklyHabitArea()
         let planner = RequiredTodoPlanner(calendar: calendar)
-        let saturday = date(2026, 7, 11, calendar: calendar)
-        let wednesday = date(2026, 7, 15, calendar: calendar)
-        let friday = date(2026, 7, 17, calendar: calendar)
-        let previousWeekTodo = Todo(title: "", area: area, scheduledDate: saturday)
-        let futureTodo = Todo(title: "", area: area, scheduledDate: friday)
-
-        #expect(
-            planner.pendingWeeklyTodoToRollForward(
-                for: area,
-                in: [previousWeekTodo, futureTodo],
-                on: wednesday
-            ) == nil
-        )
+        let previous = Todo(title: "", area: area, scheduledDate: date(2026, 7, 11, calendar: calendar))
+        let future = Todo(title: "", area: area, scheduledDate: date(2026, 7, 17, calendar: calendar))
+        let today = date(2026, 7, 15, calendar: calendar)
+        #expect(planner.shouldCreateRequiredTodo(for: area, in: [previous], on: today))
+        #expect(!planner.shouldCreateRequiredTodo(for: area, in: [previous, future], on: today))
     }
 
     @Test func weeklyHabitCannotMovePastAchievableDate() {
