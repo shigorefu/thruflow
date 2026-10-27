@@ -7,6 +7,8 @@ final class Project {
     var id: UUID = UUID()
     var name: String = ""
     var notes: String?
+    /// Additive optional scalar; existing Projects have no Habit until enabled.
+    var habitSettingsRawValue: String? = nil
     var createdAt: Date = Date.now
     var updatedAt: Date = Date.now
     var completedAt: Date?
@@ -23,6 +25,17 @@ final class Project {
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.completedAt = completedAt
+    }
+
+    var habitSettings: ProjectHabitSettings? {
+        get {
+            guard let raw = habitSettingsRawValue, let data = raw.data(using: .utf8) else { return nil }
+            return try? JSONDecoder().decode(ProjectHabitSettings.self, from: data)
+        }
+        set {
+            habitSettingsRawValue = newValue.flatMap { try? JSONEncoder().encode($0) }
+                .flatMap { String(data: $0, encoding: .utf8) }
+        }
     }
 
     var area: Area? { direction }

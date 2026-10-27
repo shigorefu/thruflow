@@ -52,6 +52,19 @@ struct ProductWidgetSnapshotTests {
         #expect(snapshot.items[0].areaColorHex == "#34C759")
     }
 
+    @Test func unnamedTaskSnapshotUsesProjectAndRetainsAreaEmoji() throws {
+        let now = Date.now
+        let area = Area(name: "Cloud", type: .neutral, symbolName: "☁️")
+        let project = Project(name: "AWS", area: area)
+        let todo = Todo(title: "", area: area, scheduledDate: now)
+        todo.project = project
+        let snapshot = ProductWidgetSnapshotBuilder(calendar: calendar).tasksSnapshot(todos: [todo], now: now)
+        let item = try #require(snapshot.items.first)
+        #expect(item.title == "AWS")
+        #expect(item.areaSymbol == "☁️")
+        #expect(todo.title.isEmpty)
+    }
+
     @Test func dotsSnapshotUsesCanonical180DayFlowProjection() {
         let now = Date(timeIntervalSince1970: 200 * 86_400)
         let area = Area(

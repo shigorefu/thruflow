@@ -105,7 +105,9 @@ struct IOSRootView: View {
 
     var body: some View {
         Group {
-            if horizontalSizeClass == .regular {
+            if #available(iOS 18.0, *) {
+                adaptiveTabs
+            } else if horizontalSizeClass == .regular {
                 regularWidthShell
             } else {
                 compactWidthShell
@@ -153,6 +155,67 @@ struct IOSRootView: View {
         }
     }
 
+    @available(iOS 18.0, *)
+    private var adaptiveTabs: some View {
+        // Keep the same destination hierarchy when the system changes between
+        // tabs and sidebar, so feature drafts and presented editors survive.
+        adaptiveTabContent
+            .tabViewStyle(.sidebarAdaptable)
+            .defaultAdaptableTabBarPlacement(.sidebar)
+            .tabViewSidebarFooter { sidebarActions }
+            .tint(.accentColor)
+    }
+
+    @available(iOS 18.0, *)
+    @ViewBuilder
+    private var adaptiveTabContent: some View {
+        if #available(iOS 26.0, *) {
+            modernTabs.tabBarMinimizeBehavior(.onScrollDown)
+        } else {
+            modernTabs
+        }
+    }
+
+    @available(iOS 18.0, *)
+    private var modernTabs: some View {
+        TabView(selection: selectionBinding) {
+            ForEach(IOSAppRoute.tabs) { route in
+                Tab(value: route) {
+                    NavigationStack {
+                        tabContent(for: route)
+                    }
+                } label: {
+                    routeLabel(for: route)
+                }
+            }
+        }
+    }
+
+    private var sidebarActions: some View {
+        VStack(spacing: 0) {
+            Button { showsConnectors = true } label: {
+                ConnectorNavigationLabel()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 14)
+            .accessibilityIdentifier("connectors.open")
+
+            Button { showsSettings = true } label: {
+                Label(IOSAppRoute.settings.title, systemImage: IOSAppRoute.settings.systemImage)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 14)
+            .accessibilityLabel(IOSAppRoute.settings.title)
+            .accessibilityIdentifier("settings.open")
+        }
+    }
+
     @ViewBuilder
     private var compactWidthShell: some View {
         if #available(iOS 26.0, *) {
@@ -172,34 +235,9 @@ struct IOSRootView: View {
                 }
             }
             .navigationTitle(String(localized: "スルフロ"))
-            .navigationSplitViewColumnWidth(min: 220, ideal: 250, max: 300)
+            .navigationSplitViewColumnWidth(min: 220, ideal: 250)
             .safeAreaInset(edge: .bottom, spacing: 0) {
-                VStack(spacing: 0) {
-                    Button {
-                        showsConnectors = true
-                    } label: {
-                        ConnectorNavigationLabel()
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 14)
-                    .accessibilityIdentifier("connectors.open")
-
-                    Button {
-                        showsSettings = true
-                    } label: {
-                        Label(IOSAppRoute.settings.title, systemImage: IOSAppRoute.settings.systemImage)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 14)
-                    .accessibilityLabel(IOSAppRoute.settings.title)
-                    .accessibilityIdentifier("settings.open")
-                }
+                sidebarActions
                 .background(.bar)
             }
         } detail: {

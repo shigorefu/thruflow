@@ -29,6 +29,8 @@ struct FlowMiniPlayerView: View {
     @State private var taskComposerPresentationTask: Task<Void, Never>?
     @State private var resultText = ""
     @State private var resultTaskTitle = ""
+    @State private var resultProject: Project?
+    @State private var resultTaskSwitchID: UUID?
     @FocusState private var isResultTitleFocused: Bool
     @State private var editingTaskTitleID: UUID?
     @State private var taskTitleDraft = ""
@@ -92,6 +94,17 @@ struct FlowMiniPlayerView: View {
         .onAppear {
             reconcileSelectedTodo()
         }
+        .onChange(of: activeFlowStore.pendingTaskSwitch?.id) { _, requestID in
+            guard requestID != nil else {
+                resultText = ""
+                resultProject = nil
+                return
+            }
+            dismissTaskPopovers()
+            resultText = ""
+            resultTaskTitle = activeFlowStore.memoTodo?.title ?? ""
+            resultProject = nil
+        }
         .onChange(of: activeFlowStore.timerState == nil) { _, isIdle in
             guard isIdle else { return }
             reconcileSelectedTodo()
@@ -111,7 +124,9 @@ struct FlowMiniPlayerView: View {
     @ViewBuilder
     private func content(now: Date) -> some View {
         VStack(spacing: 8) {
-            if activeFlowStore.phase == .awaitingExtensionDecision {
+            if activeFlowStore.pendingTaskSwitch != nil {
+                resultBar
+            } else if activeFlowStore.phase == .awaitingExtensionDecision {
                 adaptiveDecisionBar
             } else if activeFlowStore.phase == .awaitingResult || activeFlowStore.isAwaitingBreakMemo {
                 resultBar
@@ -272,10 +287,12 @@ struct FlowMiniPlayerView: View {
                 suggestionsBelow: taskSuggestionsBelow,
                 isPresented: $showsTaskComposer
             ) { todo in
-                activeFlowStore.selectContext(
+                activeFlowStore.selectPickerContext(
                     area: todo.area,
                     todo: todo,
-                    modelContext: modelContext
+                    modelContext: modelContext,
+                    calendar: calendar,
+                    dayBoundary: dayBoundary
                 )
             }
         }
@@ -410,7 +427,7 @@ struct FlowMiniPlayerView: View {
     @ViewBuilder
     private var taskTitleEditor: some View {
         if let selectedTodo, editingTaskTitleID == selectedTodo.id {
-            TextField(TodoDisplay.placeholder(for: selectedTodo), text: $taskTitleDraft)
+            TextField(TodoDisplay.flowPlaceholder(for: selectedTodo), text: $taskTitleDraft)
                 .textFieldStyle(.plain)
                 .font(.headline)
                 .focused($isTaskTitleFocused)
@@ -565,7 +582,7 @@ struct FlowMiniPlayerView: View {
 
     private var flowTaskTitle: String {
         if let selectedTodo {
-            return TodoDisplay.title(for: selectedTodo)
+            return TodoDisplay.flowTitle(for: selectedTodo)
         }
 
         if let selectedArea {
@@ -589,7 +606,7 @@ struct FlowMiniPlayerView: View {
     }
 
     private var flowAreaName: String {
-        flowArea?.name ?? String(localized: "その他")
+        TodoDisplay.flowContextName(for: selectedTodo, area: flowArea)
     }
 
     private var artworkColor: Color {
@@ -899,11 +916,23 @@ struct FlowMiniPlayerView: View {
     }
 
     private var resultBar: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            Label(String(localized: "お疲れ様です。メモを追加しますか？"), systemImage: "note.text")
-                .font(.headline)
+        VStack(alignment: .leading, spacing: 12) {
+            Label(
+                activeFlowStore.pendingTaskSwitch != nil
+                    ? String(localized: "メモ")
+                    : String(localized: "お疲れ様です。メモを追加しますか？"),
+                systemImage: "note.text"
+            )
+            .font(.headline)
 
-            if activeFlowStore.activeSession?.todo != nil {
+            if activeFlowStore.pendingTaskSwitch != nil {
+                Text(String(localized: "タスクを切り替える前にメモを残せます。入力中も現在のタスクの時間を記録します。"))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            if activeFlowStore.memoTodo != nil {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(String(localized: "タスク名"))
                         .font(.subheadline.weight(.medium))
@@ -913,6 +942,9 @@ struct FlowMiniPlayerView: View {
                         .onSubmit { isMemoFocused = true }
                 }
             }
+            FlowMemoProjectPicker(todo: activeFlowStore.memoTodo, selection: $resultProject)
+                .pickerStyle(.menu)
+
             Text(String(localized: "取り組んだこと"))
                 .font(.subheadline.weight(.medium))
 
@@ -933,7 +965,7 @@ struct FlowMiniPlayerView: View {
                     .focused($isMemoFocused)
                     .accessibilityLabel(String(localized: "Flowメモ"))
             }
-            .frame(maxWidth: .infinity, minHeight: 150, maxHeight: .infinity)
+            .frame(maxWidth: .infinity, minHeight: 110, maxHeight: .infinity)
             .background(Color.primary.opacity(0.055))
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .overlay {
@@ -973,15 +1005,18 @@ struct FlowMiniPlayerView: View {
                 .strokeBorder(Color.primary.opacity(0.08))
         }
         .onAppear {
-            resultTaskTitle = activeFlowStore.activeSession?.todo?.title ?? ""
+            resultTaskSwitchID = activeFlowStore.pendingTaskSwitch?.id
+            resultTaskTitle = activeFlowStore.memoTodo?.title ?? ""
+            resultProject = nil
             Task { @MainActor in
-                if activeFlowStore.activeSession?.todo != nil && resultTaskTitle.isEmpty {
+                if activeFlowStore.memoTodo != nil && resultTaskTitle.isEmpty {
                     isResultTitleFocused = true
                 } else {
                     isMemoFocused = true
                 }
             }
         }
+        .id(activeFlowStore.pendingTaskSwitch?.id)
     }
 
     private func memoActionButton(
@@ -1054,16 +1089,26 @@ struct FlowMiniPlayerView: View {
 
     private func submitResult() {
         let didSave: Bool
-        if activeFlowStore.isAwaitingBreakMemo {
+        if let requestID = resultTaskSwitchID {
+            guard activeFlowStore.pendingTaskSwitch?.id == requestID else { return }
+            didSave = activeFlowStore.completeTaskSwitchMemo(
+                resultText, taskTitle: resultTaskTitle, taskProject: resultProject, modelContext: modelContext
+            )
+        } else if activeFlowStore.pendingTaskSwitch != nil {
+            return
+        } else if activeFlowStore.isAwaitingBreakMemo {
             didSave = activeFlowStore.completeBreakMemo(
-                resultText, taskTitle: resultTaskTitle, modelContext: modelContext
+                resultText, taskTitle: resultTaskTitle, taskProject: resultProject, modelContext: modelContext
             )
         } else {
             didSave = activeFlowStore.completeResult(
-                resultText, taskTitle: resultTaskTitle, modelContext: modelContext
+                resultText, taskTitle: resultTaskTitle, taskProject: resultProject, modelContext: modelContext
             )
         }
-        if didSave { resultText = "" }
+        if didSave {
+            resultText = ""
+            resultProject = nil
+        }
     }
 
     private func submitMemo() {
@@ -1072,7 +1117,13 @@ struct FlowMiniPlayerView: View {
 
     private func cancelMemo() {
         resultText = ""
-        if activeFlowStore.isAwaitingBreakMemo {
+        resultProject = nil
+        if let requestID = resultTaskSwitchID {
+            guard activeFlowStore.pendingTaskSwitch?.id == requestID else { return }
+            activeFlowStore.cancelTaskSwitchMemo()
+        } else if activeFlowStore.pendingTaskSwitch != nil {
+            return
+        } else if activeFlowStore.isAwaitingBreakMemo {
             activeFlowStore.cancelBreakMemo()
         } else {
             activeFlowStore.cancelResultMemo(modelContext: modelContext)
@@ -1284,7 +1335,7 @@ struct FlowTaskPickerView: View {
         } label: {
             pickerRow(
                 iconText: todo.area?.symbolName ?? DefaultAreas.taskInboxSymbol,
-                title: TodoDisplay.title(for: todo),
+                title: TodoDisplay.flowTitle(for: todo),
                 subtitle: taskSubtitle(todo),
                 color: areaColor(todo.area),
                 isSelected: selectedTodoID == todo.id,
@@ -1387,7 +1438,7 @@ struct FlowTaskPickerView: View {
     }
 
     private func taskSubtitle(_ todo: Todo) -> String {
-        let areaName = todo.area?.name ?? String(localized: "その他")
+        let areaName = TodoDisplay.flowContextName(for: todo)
         let priority = todo.priority == .low && todo.isRoomIfPossible ? String(localized: "余裕があれば") : todo.priority.displayName
         return String(localized: "\(areaName) · \(priority)")
     }

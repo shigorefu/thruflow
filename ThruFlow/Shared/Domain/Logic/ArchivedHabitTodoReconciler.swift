@@ -10,18 +10,29 @@ nonisolated struct ArchivedHabitTodoReconciler {
     func reconcile(todos: [Todo], now: Date = .now) -> Bool {
         var changed = false
         for todo in todos {
-            guard todo.isHabitOccurrence,
-                  let archivedAt = todo.area?.archivedAt,
+            guard HabitDefinition(todo: todo) != nil,
                   let scheduledDate = todo.scheduledDate,
                   !todo.isDeleted, !todo.isArchived, !todo.isCompleted,
                   todo.actualProgress == 0, todo.recordedFocusSeconds == 0,
                   (todo.flowSessions?.isEmpty ?? true),
                   (todo.flowSegments?.isEmpty ?? true),
-                  calendar.startOfDay(for: scheduledDate) >=
-                    dayBoundary.day(containing: archivedAt, calendar: calendar) else { continue }
+                  isInactive(todo, on: calendar.startOfDay(for: scheduledDate)) else { continue }
             todo.softDelete(now: now)
             changed = true
         }
         return changed
+    }
+
+    private func isInactive(_ todo: Todo, on day: Date) -> Bool {
+        if let archivedAt = todo.area?.archivedAt,
+           day >= dayBoundary.day(containing: archivedAt, calendar: calendar) { return true }
+        // The settings relationship may arrive after the Todo from CloudKit.
+        // Do not delete anything until its owner's configuration is available.
+        if let project = todo.project, let settings = project.habitSettings {
+            if let completedAt = project.completedAt,
+               day >= dayBoundary.day(containing: completedAt, calendar: calendar) { return true }
+            return settings.wasInactive(on: day)
+        }
+        return false
     }
 }

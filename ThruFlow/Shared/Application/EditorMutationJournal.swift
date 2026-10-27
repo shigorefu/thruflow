@@ -7,6 +7,7 @@ import SwiftData
 final class EditorMutationJournal {
     private let hadPendingChanges: Bool
     private let originalInsertions: Set<ObjectIdentifier>
+    private var capturedSegments: [FlowSegment] = []
     private var restorations: [MutationKey: () -> Void] = [:]
 
     init(modelContext: ModelContext) {
@@ -39,6 +40,42 @@ final class EditorMutationJournal {
         remember(todo, \.externalTaskLinkRawValue)
     }
 
+    /// Captures retained models changed by completing a Flow or starting rest.
+    func capture(_ session: FlowSession) {
+        remember(session, \.direction)
+        remember(session, \.todo)
+        remember(session, \.segments)
+        remember(session, \.result)
+        remember(session, \.modeRawValue)
+        remember(session, \.phaseRawValue)
+        remember(session, \.statusRawValue)
+        remember(session, \.plannedEndAt)
+        remember(session, \.endedAt)
+        remember(session, \.plannedFocusDurationSeconds)
+        remember(session, \.actualFocusDurationSeconds)
+        remember(session, \.plannedBreakDurationSeconds)
+        remember(session, \.accumulatedPauseDurationSeconds)
+        remember(session, \.pausedAt)
+        remember(session, \.phaseBeforePauseRawValue)
+        remember(session, \.completedAt)
+        remember(session, \.breakStartedAt)
+        remember(session, \.wasPaused)
+        remember(session, \.interruptionCount)
+        remember(session, \.runtimeRevision)
+        remember(session, \.runtimeMutationID)
+        remember(session, \.updatedAt)
+        if let todo = session.todo { capture(todo) }
+        for segment in session.resolvedSegments {
+            capturedSegments.append(segment)
+            remember(segment, \.session)
+            remember(segment, \.direction)
+            remember(segment, \.todo)
+            remember(segment, \.endedAt)
+            remember(segment, \.endFocusSeconds)
+            if let todo = segment.todo { capture(todo) }
+        }
+    }
+
     func capture(_ area: Area) {
         remember(area, \.name)
         remember(area, \.typeRawValue)
@@ -58,6 +95,7 @@ final class EditorMutationJournal {
     func capture(_ project: Project) {
         remember(project, \.name)
         remember(project, \.notes)
+        remember(project, \.habitSettingsRawValue)
         remember(project, \.completedAt)
         remember(project, \.updatedAt)
     }
@@ -67,6 +105,10 @@ final class EditorMutationJournal {
         // belonged to an already-open editor or another pending operation.
         let inserted = modelContext.insertedModelsArray.filter {
             !originalInsertions.contains(ObjectIdentifier($0))
+        }
+        let deleted = Set(modelContext.deletedModelsArray.map { ObjectIdentifier($0) })
+        for segment in capturedSegments where deleted.contains(ObjectIdentifier(segment)) {
+            modelContext.insert(segment)
         }
         for restore in restorations.values { restore() }
         if hadPendingChanges {

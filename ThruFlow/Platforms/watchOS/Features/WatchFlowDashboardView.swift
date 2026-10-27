@@ -9,6 +9,7 @@ struct WatchFlowDashboardView: View {
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
 
     @Query(sort: \Area.sortIndex) private var areas: [Area]
+    @Query(sort: \Project.createdAt) private var projects: [Project]
     @Query private var todos: [Todo]
 
     private let todoSorter = FlowDashboardTodoSorter()
@@ -42,6 +43,19 @@ struct WatchFlowDashboardView: View {
         .onChange(of: todos.map(\.id)) {
             configureInitialContextIfNeeded()
         }
+        .onChange(of: projectMaterializationRevisions) { _, _ in
+            prepareToday()
+            configureInitialContextIfNeeded()
+        }
+    }
+
+    private var projectMaterializationRevisions: [WatchProjectMaterializationRevision] {
+        projects.map {
+            WatchProjectMaterializationRevision(
+                id: $0.id, updatedAt: $0.updatedAt, completedAt: $0.completedAt,
+                areaUpdatedAt: $0.area?.updatedAt, areaArchivedAt: $0.area?.archivedAt
+            )
+        }.sorted { $0.id.uuidString < $1.id.uuidString }
     }
 
     private var activeAreas: [Area] {
@@ -60,7 +74,6 @@ struct WatchFlowDashboardView: View {
     }
 
     private func prepareToday() {
-        guard !activeAreas.isEmpty else { return }
         let today = dayBoundary.day(containing: .now, calendar: calendar)
         do {
             _ = try HabitTodoMaterializer(
@@ -186,6 +199,14 @@ private struct WatchFlowStreamView: View {
     }
 }
 
+private struct WatchProjectMaterializationRevision: Hashable {
+    let id: UUID
+    let updatedAt: Date
+    let completedAt: Date?
+    let areaUpdatedAt: Date?
+    let areaArchivedAt: Date?
+}
+
 private struct WatchTimerView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.appDayBoundary) private var dayBoundary
@@ -197,6 +218,8 @@ private struct WatchTimerView: View {
     @Query private var todos: [Todo]
 
     @State private var showsMemo = false
+    @State private var presentedTaskSwitchID: UUID?
+    @State private var isContextPickerVisible = false
     @State private var restButtonReactionSequence = 0
 
     var body: some View {
@@ -222,16 +245,25 @@ private struct WatchTimerView: View {
                 .padding(.horizontal, 4)
             }
         }
-        .sheet(isPresented: $showsMemo) {
-            WatchFlowMemoView {
+        .sheet(isPresented: $showsMemo, onDismiss: { presentedTaskSwitchID = nil }) {
+            WatchFlowMemoView(todo: activeFlowStore.memoTodo, taskSwitchID: presentedTaskSwitchID) {
                 showsMemo = false
             }
+            .interactiveDismissDisabled(presentedTaskSwitchID != nil)
+        }
+        .onChange(of: activeFlowStore.pendingTaskSwitch?.id) { _, _ in
+            presentTaskSwitchMemoIfNeeded()
         }
     }
 
     private var contextPicker: some View {
         NavigationLink {
             WatchFlowContextPicker()
+                .onAppear { isContextPickerVisible = true }
+                .onDisappear {
+                    isContextPickerVisible = false
+                    presentTaskSwitchMemoIfNeeded()
+                }
         } label: {
             HStack(spacing: 6) {
                 Text(selectedArea?.symbolName ?? "🎯")
@@ -239,7 +271,7 @@ private struct WatchTimerView: View {
                     Text(selectedContextTitle)
                         .font(.caption.weight(.semibold))
                         .lineLimit(1)
-                    Text(selectedArea?.name ?? String(localized: "分野"))
+                    Text(selectedArea == nil ? String(localized: "分野") : TodoDisplay.flowContextName(for: selectedTodo, area: selectedArea))
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
@@ -258,6 +290,17 @@ private struct WatchTimerView: View {
             }
         }
         .buttonStyle(.plain)
+    }
+
+    private func presentTaskSwitchMemoIfNeeded() {
+        guard !isContextPickerVisible else { return }
+        if showsMemo, let requestID = presentedTaskSwitchID {
+            if activeFlowStore.pendingTaskSwitch?.id != requestID { showsMemo = false }
+            return
+        }
+        guard !showsMemo, let requestID = activeFlowStore.pendingTaskSwitch?.id else { return }
+        presentedTaskSwitchID = requestID
+        showsMemo = true
     }
 
     private func modePicker(isCompact: Bool) -> some View {
@@ -407,7 +450,7 @@ private struct WatchTimerView: View {
 
     private var selectedContextTitle: String {
         if let selectedTodo {
-            return TodoDisplay.title(for: selectedTodo)
+            return TodoDisplay.flowTitle(for: selectedTodo)
         }
         return selectedArea?.name ?? String(localized: "タスクを選択")
     }
@@ -530,15 +573,15 @@ private struct WatchFlowContextPicker: View {
                         } label: {
                             Label {
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(TodoDisplay.title(for: todo))
+                                    Text(TodoDisplay.flowTitle(for: todo))
                                         .lineLimit(1)
                                     if let minutes = todo.scheduledTimeMinutes {
                                         TaskTimeLabel(minutes: minutes, reminderEnabled: todo.reminderEnabled)
                                             .font(.caption)
                                             .foregroundStyle(.secondary)
                                     }
-                                    if let project = todo.project {
-                                        Text(project.name)
+                                    if TodoDisplay.flowProjectName(for: todo) != nil {
+                                        Text(TodoDisplay.flowContextName(for: todo))
                                             .font(.caption)
                                             .foregroundStyle(.secondary)
                                             .lineLimit(1)
@@ -633,17 +676,34 @@ private struct WatchFlowMemoView: View {
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
 
     @State private var memo = ""
-    @State private var taskTitle = ""
+    @State private var taskTitle: String
+    @State private var taskProject: Project?
+    private let todo: Todo?
+    private let taskSwitchID: UUID?
     let onComplete: () -> Void
+
+    init(todo: Todo?, taskSwitchID: UUID?, onComplete: @escaping () -> Void) {
+        self.todo = todo
+        self.taskSwitchID = taskSwitchID
+        self.onComplete = onComplete
+        _taskTitle = State(initialValue: todo?.title ?? "")
+    }
 
     var body: some View {
         NavigationStack {
             Form {
-                if activeFlowStore.activeSession?.todo != nil {
+                if taskSwitchID != nil {
+                    Text(String(localized: "タスクを切り替える前にメモを残せます。入力中も現在のタスクの時間を記録します。"))
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                if todo != nil {
                     Section(String(localized: "タスク名")) {
                         TextField(String(localized: "タスク名"), text: $taskTitle)
                     }
                 }
+                FlowMemoProjectPicker(todo: todo, selection: $taskProject)
                 Section(String(localized: "取り組んだこと")) {
                     TextField(String(localized: "何をしましたか"), text: $memo)
                 }
@@ -661,16 +721,24 @@ private struct WatchFlowMemoView: View {
                 }
             }
             .navigationTitle(String(localized: "メモ"))
-            .onAppear { taskTitle = activeFlowStore.activeSession?.todo?.title ?? "" }
         }
     }
 
     private func submit(_ value: String?) {
         let didSave: Bool
-        if activeFlowStore.isAwaitingBreakMemo {
-            didSave = activeFlowStore.completeBreakMemo(value, taskTitle: taskTitle, modelContext: modelContext)
+        if let taskSwitchID {
+            guard activeFlowStore.pendingTaskSwitch?.id == taskSwitchID else {
+                onComplete()
+                dismiss()
+                return
+            }
+            didSave = activeFlowStore.completeTaskSwitchMemo(
+                value, taskTitle: taskTitle, taskProject: taskProject, modelContext: modelContext
+            )
+        } else if activeFlowStore.isAwaitingBreakMemo {
+            didSave = activeFlowStore.completeBreakMemo(value, taskTitle: taskTitle, taskProject: taskProject, modelContext: modelContext)
         } else {
-            didSave = activeFlowStore.completeResult(value, taskTitle: taskTitle, modelContext: modelContext)
+            didSave = activeFlowStore.completeResult(value, taskTitle: taskTitle, taskProject: taskProject, modelContext: modelContext)
         }
         guard didSave else { return }
         onComplete()
@@ -678,7 +746,11 @@ private struct WatchFlowMemoView: View {
     }
 
     private func cancel() {
-        if activeFlowStore.isAwaitingBreakMemo {
+        if let taskSwitchID {
+            if activeFlowStore.pendingTaskSwitch?.id == taskSwitchID {
+                activeFlowStore.cancelTaskSwitchMemo()
+            }
+        } else if activeFlowStore.isAwaitingBreakMemo {
             activeFlowStore.cancelBreakMemo()
         } else {
             activeFlowStore.cancelResultMemo(modelContext: modelContext)
@@ -711,8 +783,9 @@ private struct WatchTasksView: View {
                             _ = modelContext.saveReporting(.flowUpdate)
                         }
                         Text(todo.area?.symbolName ?? "📝")
+                            .accessibilityLabel(todo.area?.name ?? String(localized: "その他"))
                         VStack(alignment: .leading, spacing: 1) {
-                            Text(TodoDisplay.title(for: todo))
+                            Text(TodoDisplay.taskTitle(for: todo))
                                 .lineLimit(2)
                                 .strikethrough(todo.isCompleted)
                             if let minutes = todo.scheduledTimeMinutes {
@@ -720,9 +793,11 @@ private struct WatchTasksView: View {
                                     .font(.caption2)
                                     .foregroundStyle(.secondary)
                             }
-                            Text(progressText(todo))
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
+                            if todo.measurement != .checkbox {
+                                Text(progressText(todo))
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                     }
                 }

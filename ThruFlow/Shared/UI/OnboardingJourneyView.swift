@@ -17,7 +17,6 @@ private struct OnboardingJourneyModifier: ViewModifier {
             .overlay {
                 if store.isPresented {
                     OnboardingJourneyOverlay(store: store)
-                        .ignoresSafeArea()
                         .transition(.opacity)
                 }
             }
@@ -29,25 +28,18 @@ private struct OnboardingJourneyOverlay: View {
     @ObservedObject var store: OnboardingStore
 
     var body: some View {
-        GeometryReader { proxy in
-            let cardWidth = min(520, max(288, proxy.size.width - 32))
+        ZStack {
+            // Only the scrim extends beneath system bars and hardware regions.
+            Color.black.opacity(0.64)
+                .ignoresSafeArea()
+                .contentShape(Rectangle())
 
-            ZStack {
-                Color.black.opacity(0.64)
-                    .contentShape(Rectangle())
-
-                ScrollView {
-                    OnboardingJourneyCard(store: store)
-                        .frame(width: cardWidth)
-                        .frame(maxWidth: .infinity)
-                        .padding(.top, max(16, proxy.safeAreaInsets.top + 8))
-                        .padding(.bottom, max(16, proxy.safeAreaInsets.bottom + 8))
-                        .frame(minHeight: proxy.size.height, alignment: .center)
-                }
-            }
-            .frame(width: proxy.size.width, height: proxy.size.height)
-            .animation(.snappy(duration: 0.28, extraBounce: 0), value: store.step)
+            OnboardingJourneyCard(store: store)
+                .frame(maxWidth: 1_040, maxHeight: 680)
+                .padding(16)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .animation(.snappy(duration: 0.28, extraBounce: 0), value: store.step)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("onboarding.journey")
     }
@@ -55,24 +47,28 @@ private struct OnboardingJourneyOverlay: View {
 
 private struct OnboardingJourneyCard: View {
     @ObservedObject var store: OnboardingStore
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @ScaledMetric(relativeTo: .body) private var minimumColumnWidth = 320.0
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 18) {
             header
 
-            VStack(alignment: .leading, spacing: 8) {
-                Text(store.step.title)
-                    .font(.title2.weight(.bold))
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Text(store.step.body)
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .lineSpacing(3)
-                    .fixedSize(horizontal: false, vertical: true)
+            ScrollView {
+                // A single Layout preserves the demo subtree while folding or
+                // resizing; replacing HStack/VStack branches would cancel it.
+                OnboardingStepLayout(
+                    allowsColumns: allowsColumns,
+                    minimumColumnWidth: minimumColumnWidth
+                ) {
+                    introduction
+                    VStack(alignment: .leading, spacing: 14) { stepContent }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .padding(.vertical, 4)
             }
-
-            stepContent
+            .scrollBounceBehavior(.basedOnSize)
 
             navigationControls
         }
@@ -85,6 +81,29 @@ private struct OnboardingJourneyCard: View {
         .shadow(color: .black.opacity(0.3), radius: 26, y: 10)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("onboarding.card.step.\(store.step.rawValue)")
+    }
+
+    private var allowsColumns: Bool {
+#if os(macOS)
+        !dynamicTypeSize.isAccessibilitySize
+#else
+        horizontalSizeClass == .regular && !dynamicTypeSize.isAccessibilitySize
+#endif
+    }
+
+    private var introduction: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(store.step.title)
+                .font(.title2.weight(.bold))
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text(store.step.body)
+                .font(.callout)
+                .foregroundStyle(Color.primary.opacity(0.72))
+                .lineSpacing(3)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var header: some View {
@@ -104,7 +123,7 @@ private struct OnboardingJourneyCard: View {
                             .background(Color.primary.opacity(0.07), in: Circle())
                     }
                     .buttonStyle(.plain)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.primary.opacity(0.72))
                     .contentShape(Circle())
                     .accessibilityLabel(String(localized: "スキップ"))
                     .accessibilityIdentifier("onboarding.skip")
@@ -230,7 +249,7 @@ private struct OnboardingJourneyCard: View {
                 }
                 .buttonStyle(.plain)
                 .font(.caption.weight(.medium))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.primary.opacity(0.72))
                 .frame(maxWidth: .infinity, alignment: .trailing)
                 .accessibilityIdentifier("onboarding.demo.skip.step.\(store.step.rawValue)")
             }
@@ -321,6 +340,7 @@ private struct OnboardingJourneyCard: View {
                             .controlSize(.small)
                     }
                     Text(primaryButtonTitle)
+                        .fixedSize(horizontal: false, vertical: true)
                     if !store.step.isFinal,
                        !(store.step == .areas && store.canOfferAreaCreation),
                        !(store.step == .tasks && store.canOfferTaskCreation),
@@ -408,6 +428,41 @@ private struct OnboardingJourneyCard: View {
     }
 }
 
+/// A content-sized two-column slide with a stable introduction/example order.
+/// The minimum is a readable column measure, not a device-size breakpoint.
+private nonisolated struct OnboardingStepLayout: Layout {
+    let allowsColumns: Bool
+    let minimumColumnWidth: CGFloat
+    private let spacing: CGFloat = 24
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = max(0, proposal.width ?? minimumColumnWidth)
+        let columns = columnCount(width: width)
+        let childWidth = max(0, (width - CGFloat(columns - 1) * spacing) / CGFloat(columns))
+        let heights = subviews.map { $0.sizeThatFits(ProposedViewSize(width: childWidth, height: nil)).height }
+        let height = columns == 2
+            ? heights.max() ?? 0
+            : heights.reduce(0, +) + CGFloat(max(0, heights.count - 1)) * spacing
+        return CGSize(width: width, height: height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let columns = columnCount(width: bounds.width)
+        let width = max(0, (bounds.width - CGFloat(columns - 1) * spacing) / CGFloat(columns))
+        let childProposal = ProposedViewSize(width: width, height: nil)
+        var y = bounds.minY
+        for (index, subview) in subviews.enumerated() {
+            let x = bounds.minX + (columns == 2 ? CGFloat(index) * (width + spacing) : 0)
+            subview.place(at: CGPoint(x: x, y: y), anchor: .topLeading, proposal: childProposal)
+            if columns == 1 { y += subview.sizeThatFits(childProposal).height + spacing }
+        }
+    }
+
+    private func columnCount(width: CGFloat) -> Int {
+        allowsColumns && width >= minimumColumnWidth * 2 + spacing ? 2 : 1
+    }
+}
+
 private struct OnboardingHintRow: View {
     let title: String
     let detail: String
@@ -437,7 +492,7 @@ private struct OnboardingHintRow: View {
                     .font(.subheadline.weight(.semibold))
                 Text(detail)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.primary.opacity(0.72))
                     .fixedSize(horizontal: false, vertical: true)
             }
 
@@ -472,7 +527,7 @@ private struct OnboardingCallout: View {
                     .font(.caption.weight(.semibold))
                 Text(detail)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.primary.opacity(0.72))
                     .fixedSize(horizontal: false, vertical: true)
             }
 
@@ -513,7 +568,7 @@ private struct OnboardingModeSummary: View {
                 .font(.caption.weight(.semibold))
             Text(mode.detail)
                 .font(.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.primary.opacity(0.72))
         }
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -579,7 +634,7 @@ private struct OnboardingFlowDemo: View {
 
                 Text(demoCaption(for: projection))
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.primary.opacity(0.72))
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         }

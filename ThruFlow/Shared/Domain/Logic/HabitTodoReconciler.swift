@@ -24,7 +24,7 @@ struct HabitTodoReconciler {
     }
 
     private func isCandidate(_ todo: Todo) -> Bool {
-        todo.isHabitOccurrence && todo.externalTaskLinkRawValue == nil &&
+        HabitDefinition(todo: todo) != nil && todo.externalTaskLinkRawValue == nil &&
             !todo.isArchived && !todo.isDeleted && todo.scheduledDate != nil
     }
 
@@ -63,9 +63,9 @@ struct HabitTodoReconciler {
     }
 
     private func occurrenceKey(_ todo: Todo) -> String {
-        let areaID = todo.area?.id.uuidString ?? ""
+        let ownerKey = HabitDefinition(todo: todo)?.ownerKey ?? ""
         let day = calendar.startOfDay(for: todo.scheduledDate ?? .distantPast)
-        return "\(areaID)|\(day.timeIntervalSinceReferenceDate)"
+        return "\(ownerKey)|\(day.timeIntervalSinceReferenceDate)"
     }
 
     private func isPreferred(

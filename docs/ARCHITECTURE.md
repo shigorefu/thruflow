@@ -641,7 +641,10 @@ navigation ownership. See `docs/CONNECTORS.md` for delivery and retry rules.
 
 `Shared/Domain/Models/Project.swift` owns the additive Project entity.
 `ProjectEditingService` validates names and fixed Area ownership and saves
-completion/reopening without cascading to children. `TaskEditingService` validates
+completion/reopening without completing ordinary Tasks. Optional Project Habits
+use `HabitDefinition` for owner-specific planning, lifecycle gaps, reconciliation
+and statistics. Generated occurrences persist their stable owner key; delayed
+CloudKit relationships cannot merge them with another owner. `TaskEditingService` validates
 optional project assignments on all creation/editor paths. Existing Task/Flow
 Area attribution stays canonical. `AreaLifecycleService` coordinates saved archive
 and restore, including the bounded Habit pause interval and mutation-journal
@@ -668,6 +671,8 @@ same owner; hiding a window does not tear down persistence observation.
 `TaskReminderDelivery` serializes replacement/cancellation and only owns
 `task.reminder.<UUID>` identifiers. Up to 60 nearest Task reminders are queued,
 with at least four system slots reserved for Flow; other pending notifications
-can reduce that capacity. A later refresh refills the queue. Only the explicit
-shared UI control requests authorization. Widgets remain snapshot consumers and
+can reduce that capacity. A later refresh refills the queue. `TaskTimingDefaults` owns the new-clock default policy. The owning forms use its
+shared modifier; `TaskReminderAuthorization` coalesces user-action permission
+requests without retaining or mutating drafts and triggers immediate scheduling
+after authorization. Startup and synchronization never request permission. Widgets remain snapshot consumers and
 do not schedule notifications. No backend or APNs service is introduced.

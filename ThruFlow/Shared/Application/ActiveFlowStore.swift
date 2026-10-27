@@ -10,6 +10,17 @@ import CoreData
 import SwiftData
 
 @MainActor
+struct FlowTaskSwitchRequest: Identifiable {
+    let id = UUID()
+    let sessionID: UUID
+    let todo: Todo
+    let area: Area
+    let destinationTodo: Todo?
+    let calendar: Calendar
+    let dayBoundary: AppDayBoundary
+}
+
+@MainActor
 final class ActiveFlowStore: ObservableObject {
     private static let forgottenTimerReminderSeconds = 60 * 60
     private static let persistenceReconciliationInterval: TimeInterval = 30
@@ -21,9 +32,14 @@ final class ActiveFlowStore: ObservableObject {
     @Published var timerState: FlowTimerState? {
         didSet {
             synchronizeDisplayClock()
+            invalidateTaskSwitchIfNeeded()
         }
     }
-    @Published var activeSession: FlowSession?
+    @Published var activeSession: FlowSession? {
+        didSet { invalidateTaskSwitchIfNeeded() }
+    }
+    @Published private(set) var pendingTaskSwitch: FlowTaskSwitchRequest?
+    var memoTodo: Todo? { pendingTaskSwitch?.todo ?? activeSession?.todo }
     // Timer presentation surfaces own their local one-second TimelineView.
     // Publishing this value would invalidate every ActiveFlowStore observer,
     // including the 60 FPS Metal stream, once per second.
@@ -231,6 +247,16 @@ final class ActiveFlowStore: ObservableObject {
         dayBoundary: AppDayBoundary = .midnight
     ) -> Bool {
         guard let area, !area.isArchived else { return false }
+        guard pendingTaskSwitch == nil else { return false }
+        if let session = activeSession, let oldTodo = session.todo,
+           canSwitchActiveTask, !isAwaitingBreakMemo,
+           oldTodo.id != todo?.id || session.area?.id != area.id {
+            pendingTaskSwitch = FlowTaskSwitchRequest(
+                sessionID: session.id, todo: oldTodo, area: area,
+                destinationTodo: todo, calendar: calendar, dayBoundary: dayBoundary
+            )
+            return true
+        }
         let selectedTask: Todo
         if let todo {
             selectedTask = todo
@@ -248,6 +274,75 @@ final class ActiveFlowStore: ObservableObject {
         return selectContext(area: area, todo: selectedTask, modelContext: modelContext, now: now)
     }
 
+    private var canSwitchActiveTask: Bool {
+        guard let phase = timerState?.phase else { return false }
+        return phase == .focusing || phase == .awaitingExtensionDecision ||
+            (phase == .paused && timerState?.phaseBeforePause != .breakTime)
+    }
+
+    private func invalidateTaskSwitchIfNeeded() {
+        guard let request = pendingTaskSwitch else { return }
+        if !canSwitchActiveTask || activeSession?.id != request.sessionID ||
+            activeSession?.todo?.id != request.todo.id {
+            pendingTaskSwitch = nil
+        }
+    }
+
+    func cancelTaskSwitchMemo() {
+        pendingTaskSwitch = nil
+    }
+
+    @discardableResult
+    func completeTaskSwitchMemo(
+        _ result: String?, taskTitle: String? = nil, taskProject: Project? = nil,
+        modelContext: ModelContext, now: Date = .now
+    ) -> Bool {
+        invalidateTaskSwitchIfNeeded()
+        guard let request = pendingTaskSwitch, let session = activeSession,
+              !request.todo.isDeleted, !request.todo.isArchived,
+              !request.area.isArchived else { return false }
+        if let destination = request.destinationTodo {
+            guard !destination.isDeleted, !destination.isArchived,
+                  destination.area?.id == request.area.id else { return false }
+        }
+        do {
+            try FlowMemoProjectPolicy.validate(taskProject, for: request.todo)
+        } catch {
+            PersistenceIssueCenter.shared.report(error, operation: .flowUpdate)
+            return false
+        }
+        let journal = EditorMutationJournal(modelContext: modelContext)
+        journal.capture(session)
+        if let title = taskTitle {
+            request.todo.title = title.trimmingCharacters(in: .whitespacesAndNewlines)
+            request.todo.updatedAt = now
+        }
+        if let taskProject, request.todo.project == nil {
+            request.todo.project = taskProject
+            request.todo.updatedAt = now
+        }
+        if let result = normalizedResult(result) {
+            request.todo.setMemo(result, now: now)
+        }
+        let destination: Todo
+        if let todo = request.destinationTodo {
+            destination = todo
+        } else {
+            destination = Todo(
+                title: "", area: request.area, habitOccurrence: false,
+                scheduledDate: request.dayBoundary.day(containing: now, calendar: request.calendar),
+                createdAt: now, updatedAt: now
+            )
+            modelContext.insert(destination)
+        }
+        guard selectContext(area: request.area, todo: destination, modelContext: modelContext, now: now) else {
+            journal.restore(modelContext: modelContext)
+            return false
+        }
+        pendingTaskSwitch = nil
+        return true
+    }
+
     @discardableResult
     func selectContext(
         area: Area?,
@@ -258,6 +353,8 @@ final class ActiveFlowStore: ObservableObject {
         guard let area else { return false }
         let previousAreaID = selectedAreaID
         let previousTodoID = selectedTodoID
+        let journal = EditorMutationJournal(modelContext: modelContext)
+        if let session = activeSession { journal.capture(session) }
 
         if let state = timerState,
            state.phase == .focusing || state.phase == .paused || state.phase == .awaitingExtensionDecision,
@@ -298,6 +395,7 @@ final class ActiveFlowStore: ObservableObject {
 
         configure(area: area, todo: todo)
         guard modelContext.saveReporting(.flowUpdate) else {
+            journal.restore(modelContext: modelContext)
             selectedAreaID = previousAreaID
             selectedTodoID = previousTodoID
             persistConfiguration()
@@ -448,9 +546,16 @@ final class ActiveFlowStore: ObservableObject {
     }
 
     @discardableResult
-    func completeResult(_ result: String?, taskTitle: String? = nil, modelContext: ModelContext, now: Date = .now) -> Bool {
+    func completeResult(_ result: String?, taskTitle: String? = nil, taskProject: Project? = nil, modelContext: ModelContext, now: Date = .now) -> Bool {
         guard let timerState, activeSession != nil, timerState.phase == .awaitingResult else { return false }
         let completedSessionID = activeSession?.id
+        guard validateMemoProject(taskProject) else { return false }
+        let memoJournal = EditorMutationJournal(modelContext: modelContext)
+        if let session = activeSession { memoJournal.capture(session) }
+        if let taskProject, activeSession?.todo?.project == nil {
+            activeSession?.todo?.project = taskProject
+            activeSession?.todo?.updatedAt = now
+        }
         updateMemoTaskTitle(taskTitle, now: now)
         let normalizedResult = normalizedResult(result)
         activeSession?.result = normalizedResult
@@ -463,7 +568,10 @@ final class ActiveFlowStore: ObservableObject {
             engine.completeResult(timerState, now: now),
             modelContext: modelContext,
             now: now
-        ) else { return false }
+        ) else {
+            memoJournal.restore(modelContext: modelContext)
+            return false
+        }
 
         activeSession = nil
         self.timerState = nil
@@ -539,7 +647,7 @@ final class ActiveFlowStore: ObservableObject {
     }
 
     @discardableResult
-    func completeBreakMemo(_ result: String?, taskTitle: String? = nil, modelContext: ModelContext, now: Date = .now) -> Bool {
+    func completeBreakMemo(_ result: String?, taskTitle: String? = nil, taskProject: Project? = nil, modelContext: ModelContext, now: Date = .now) -> Bool {
         guard let timerState else { return false }
         guard isAwaitingBreakMemo else { return false }
         guard timerState.phase == .focusing || timerState.phase == .awaitingExtensionDecision else {
@@ -548,15 +656,35 @@ final class ActiveFlowStore: ObservableObject {
         }
 
         guard !discardShortFlowIfNeeded(timerState, modelContext: modelContext, now: now) else { return false }
+        guard validateMemoProject(taskProject) else { return false }
+        let memoJournal = EditorMutationJournal(modelContext: modelContext)
+        if let session = activeSession { memoJournal.capture(session) }
+        if let taskProject, activeSession?.todo?.project == nil {
+            activeSession?.todo?.project = taskProject
+            activeSession?.todo?.updatedAt = now
+        }
         updateMemoTaskTitle(taskTitle, now: now)
         let normalizedResult = normalizedResult(result)
         activeSession?.result = normalizedResult
         if let normalizedResult {
             activeSession?.todo?.setMemo(normalizedResult, now: now)
         }
-        guard beginBreak(from: timerState, modelContext: modelContext, now: now) else { return false }
+        guard beginBreak(from: timerState, modelContext: modelContext, now: now) else {
+            memoJournal.restore(modelContext: modelContext)
+            return false
+        }
         isAwaitingBreakMemo = false
         return true
+    }
+
+    private func validateMemoProject(_ project: Project?) -> Bool {
+        do {
+            try FlowMemoProjectPolicy.validate(project, for: activeSession?.todo)
+            return true
+        } catch {
+            PersistenceIssueCenter.shared.report(error, operation: .flowUpdate)
+            return false
+        }
     }
 
     private func updateMemoTaskTitle(_ title: String?, now: Date) {
@@ -1147,9 +1275,9 @@ final class ActiveFlowStore: ObservableObject {
         return FlowLiveActivityContent(
             sessionID: activeSession.id,
             taskEmoji: area?.symbolName ?? "📝",
-            taskTitle: trimmedTitle.isEmpty ? areaName : trimmedTitle,
+            taskTitle: trimmedTitle.isEmpty ? (TodoDisplay.flowProjectName(for: todo) ?? areaName) : trimmedTitle,
             areaEmoji: area?.symbolName ?? "📝",
-            areaName: areaName,
+            areaName: TodoDisplay.flowContextName(for: todo, area: area),
             areaColorHex: area?.colorHex ?? "#007AFF",
             modeRawValue: state.mode.rawValue,
             modeName: state.mode.displayName,

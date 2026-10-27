@@ -9,20 +9,34 @@ Release candidate: version **1.4.0**, build **13** across all Xcode targets.
 
 ### Added
 
-- Optional Task times and opt-in reminders on Mac, iPhone/iPad and Watch, with `HH:mm` quick capture on Mac and iOS.
+- One optional Habit per Project, with an independent goal and schedule; Project editors no longer show memo or ordinary Task creation.
+- Task creation hides Project selection when the Area has no Projects.
+- Habit completion statistics with partial progress, overall and per-Habit rates for saved scheduled occurrences.
+
+- Optional Task times with reminders enabled by default when assigning a time, native dropdown controls and `9:00` quick capture on Mac and iOS.
 
 - Optional Projects within Areas, with task assignment, completion and reopening across Apple clients.
 
 - Simplified Chinese and Traditional Chinese localizations across Mac, iPhone/iPad, Watch, widgets, and permission prompts, with distinct language choices in Settings.
 - Selecting an Area in the Flow timer creates an unnamed Task for today, with title editing and visibility in Tasks.
-- Flow completion and rest forms now accept the Task name above the result memo on Mac, iPhone/iPad, and Watch.
+- Flow completion, rest and Task-switch forms accept the Task name, eligible Project and result memo on Mac, iPhone/iPad, and Watch. Switching waits for form submission while the timer continues on the current Task.
 - Focus timer rings on Mac, iPhone/iPad, and Watch retain each recorded Area color when switching Tasks, with boundaries based on focused time.
 
 ### Changed
 
+- Removed redundant Completed/Incomplete subtitles beneath checkbox Tasks across clients; numeric progress remains visible.
+
+- Horizontal onboarding and iPad-style expanded iPhone Duo layouts, with adaptive navigation and task drafts preserved while changing display size. Expanded Tasks shows an input panel immediately and restores `+` when folded. Expanded Areas shows three groups together; the mobile timer keeps its dial beside the controls.
+
+- Area trees use colored Project tiles and connecting lines from the Area emoji; Projects remain optional and are managed inside the Area editor.
+
+- Unnamed Tasks display their Project name with an Area emoji; Flow rows also show Area/Project subtitles, and Statistics adds a Project breakdown.
+
 - Rest now accounts for skipped and partial breaks: Sprint retains 3 minutes, two uninterrupted Blocks earn 10, and long rest grows from 20 to 30 minutes after four to six Blocks. Only actual long rest resets the cycle.
 
 ### Fixed
+
+- Incomplete weekly Habits no longer carry yesterday’s progress into today: each eligible new day starts a fresh occurrence while preserving history.
 
 - Archived Areas can be restored on Mac and iPhone/iPad without losing Tasks or Flow history.
 - Failed Task/Area saves now restore the values held by the interface on macOS 26, including Habit schedule changes, without discarding unrelated pending edits.

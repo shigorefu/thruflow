@@ -81,7 +81,7 @@ struct AreaFormView: View {
 
                     colorCard
                     if case .edit(let area) = mode {
-                        AreaSectionCard {
+                        EditorSectionCard {
                             ProjectManagementSection(area: area) { todo, project in
                                 TodoFormView(
                                     mode: todo.map(TodoFormView.Mode.edit) ?? .create,
@@ -144,7 +144,7 @@ struct AreaFormView: View {
     }
 
     private var headerCard: some View {
-        AreaSectionCard {
+        EditorSectionCard {
             HStack(alignment: .firstTextBaseline, spacing: 18) {
                 Button {
                     isShowingEmojiPicker = true
@@ -170,7 +170,7 @@ struct AreaFormView: View {
     }
 
     private var typeCard: some View {
-        AreaSectionCard(title: String(localized: "種類")) {
+        EditorSectionCard(title: String(localized: "種類")) {
             Picker(String(localized: "種類"), selection: $draft.type) {
                 ForEach(typeOptions) { type in
                     Text(type.displayName).tag(type)
@@ -186,7 +186,7 @@ struct AreaFormView: View {
     }
 
     private var goalCard: some View {
-        AreaSectionCard(title: String(localized: "目標")) {
+        EditorSectionCard(title: String(localized: "目標")) {
             HStack(spacing: 10) {
                 TextField("1", value: goalTargetBinding, format: .number)
                     .textFieldStyle(.roundedBorder)
@@ -218,7 +218,7 @@ struct AreaFormView: View {
     }
 
     private var colorCard: some View {
-        AreaSectionCard(title: String(localized: "カラー")) {
+        EditorSectionCard(title: String(localized: "カラー")) {
             LazyVGrid(columns: colorColumns, alignment: .leading, spacing: 10) {
                 ForEach(colorOptions, id: \.hex) { option in
                     Button {
@@ -247,7 +247,7 @@ struct AreaFormView: View {
     private func habitPauseCard(_ area: Area) -> some View {
         let period = activePausePeriod(for: area)
 
-        return AreaSectionCard(title: String(localized: "習慣の状態")) {
+        return EditorSectionCard(title: String(localized: "習慣の状態")) {
             HStack(spacing: 12) {
                 Image(systemName: period == nil ? "checkmark.circle.fill" : "pause.circle.fill")
                     .font(.title2)
@@ -350,7 +350,7 @@ struct AreaFormView: View {
     @ViewBuilder
     private var validationCard: some View {
         if !validationErrors.isEmpty || saveErrorMessage != nil {
-            AreaSectionCard {
+            EditorSectionCard {
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(validationErrors, id: \.self) { error in
                         Label(error.localizedDescription, systemImage: "exclamationmark.triangle")
@@ -369,7 +369,7 @@ struct AreaFormView: View {
     @ViewBuilder
     private var deleteCard: some View {
         if case .edit(let area) = mode {
-            AreaSectionCard {
+            EditorSectionCard {
                 if area.isArchived {
                     Button(String(localized: "分野を復元"), systemImage: "arrow.uturn.backward", action: restoreArea)
                         .frame(maxWidth: .infinity)
@@ -568,31 +568,6 @@ struct AreaFormView: View {
         } catch {
             PersistenceIssueCenter.shared.report(error, operation: .dataLoad)
         }
-    }
-}
-
-private struct AreaSectionCard<Content: View>: View {
-    var title: String?
-    @ViewBuilder let content: Content
-
-    init(title: String? = nil, @ViewBuilder content: () -> Content) {
-        self.title = title
-        self.content = content()
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            if let title {
-                Text(title)
-                    .font(.headline)
-            }
-
-            content
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.secondary.opacity(0.07))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 }
 

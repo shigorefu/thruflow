@@ -1,4 +1,6 @@
 import Charts
+import Combine
+import CoreData
 import SwiftData
 import SwiftUI
 
@@ -27,6 +29,7 @@ struct IOSStatisticsView: View {
     @State private var trendMode: StatisticsMode = .flow
     @State private var dotsMode: StatisticsMode = .flow
     @State private var distributionDimension: IOSStatisticsDistributionDimension = .task
+    @State private var persistenceRevision = 0
     @State private var snapshotCache: [StatisticsPeriodFilter: StatisticsPeriodSnapshot] = [:]
     @State private var snapshotCacheOrder: [StatisticsPeriodFilter] = []
     @State private var loadingFilter: StatisticsPeriodFilter?
@@ -145,6 +148,7 @@ struct IOSStatisticsView: View {
                         summary: currentSnapshot.summary,
                         previousSummary: currentSnapshot.previousSummary
                     )
+                    HabitCompletionCard(summary: currentSnapshot.habitCompletion)
                     IOSStatisticsTrendCard(
                         mode: $trendMode,
                         period: currentSnapshot.trendPeriod,
@@ -172,6 +176,8 @@ struct IOSStatisticsView: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
+            .frame(maxWidth: 1_000)
+            .frame(maxWidth: .infinity)
             .animation(.snappy(duration: 0.32, extraBounce: 0), value: presentationPeriod)
         }
         .background(Color.primary.opacity(0.025).ignoresSafeArea())
@@ -222,6 +228,12 @@ struct IOSStatisticsView: View {
         }
         .task(id: refreshID) {
             await refreshStatisticsWhileVisible()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: ModelContext.didSave).receive(on: RunLoop.main)) { _ in
+            if isVisible { persistenceRevision &+= 1 }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .NSPersistentStoreRemoteChange).receive(on: RunLoop.main)) { _ in
+            if isVisible { persistenceRevision &+= 1 }
         }
     }
 
@@ -411,6 +423,8 @@ struct IOSStatisticsView: View {
             snapshot.taskDistribution
         case .area:
             snapshot.areaDistribution
+        case .project:
+            snapshot.projectDistribution
         }
     }
 
@@ -465,6 +479,7 @@ struct IOSStatisticsView: View {
             query: searchText,
             areaCount: areas.count,
             latestAreaUpdate: areas.map(\.updatedAt).max(),
+            persistenceRevision: persistenceRevision,
             calendar: calendar,
             dayBoundaryHour: dayBoundary.hour
         )
@@ -864,9 +879,8 @@ private struct IOSStatisticsDistributionCard: View {
                         Text(dimension.displayName).tag(dimension)
                     }
                 }
-                .pickerStyle(.segmented)
+                .pickerStyle(.menu)
                 .labelsHidden()
-                .frame(width: 154)
             }
         ) {
             if items.isEmpty {
@@ -1518,6 +1532,7 @@ private struct IOSStatisticsEmptyState: View {
 private enum IOSStatisticsDistributionDimension: String, CaseIterable, Identifiable {
     case task
     case area
+    case project
 
     var id: String { rawValue }
 
@@ -1527,6 +1542,8 @@ private enum IOSStatisticsDistributionDimension: String, CaseIterable, Identifia
             String(localized: "タスク別")
         case .area:
             String(localized: "方向別")
+        case .project:
+            String(localized: "プロジェクト別")
         }
     }
 }
@@ -1607,6 +1624,7 @@ private struct IOSStatisticsPeriodRefreshID: Hashable {
     let query: String
     let areaCount: Int
     let latestAreaUpdate: Date?
+    let persistenceRevision: Int
     let calendar: Calendar
     let dayBoundaryHour: Int
 }

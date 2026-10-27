@@ -97,13 +97,15 @@ private struct InboxTodoRow: View {
                     }
 
                     Text(todo.priority.displayName)
-                    Text("·")
-                    Text(TodoProgressCalculator().summary(
-                        measurement: todo.measurement,
-                        plannedAmount: todo.plannedAmount,
-                        actualProgress: todo.actualProgress,
-                        focusDurationSeconds: todo.focusDurationSeconds
-                    ))
+                    if todo.measurement != .checkbox {
+                        Text("·")
+                        Text(TodoProgressCalculator().summary(
+                            measurement: todo.measurement,
+                            plannedAmount: todo.plannedAmount,
+                            actualProgress: todo.actualProgress,
+                            focusDurationSeconds: todo.focusDurationSeconds
+                        ))
+                    }
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)

@@ -29,6 +29,7 @@ struct FlowDashboardView: View {
     @Query private var todos: [Todo]
     @Query private var sessions: [FlowSession]
     @Query private var flowBreaks: [FlowBreak]
+    @Query(sort: \Project.createdAt) private var projects: [Project]
 
     @State private var inspectedSegment: FlowDashboardSegment?
     @State private var hoveredTimelineItem: TimelineItem?
@@ -185,6 +186,12 @@ struct FlowDashboardView: View {
             latestAreaUpdate: areas.first?.updatedAt,
             todoCount: todos.count,
             latestTodoUpdate: todos.first?.updatedAt,
+            projectRevisions: projects.map {
+                FlowDashboardProjectHabitRevision(
+                    id: $0.id, updatedAt: $0.updatedAt, completedAt: $0.completedAt,
+                    areaUpdatedAt: $0.area?.updatedAt, areaArchivedAt: $0.area?.archivedAt
+                )
+            }.sorted { $0.id.uuidString < $1.id.uuidString },
             revision: habitPreparationRevision
         )
     }
@@ -1695,22 +1702,29 @@ private struct DashboardTodoColumn: View {
                     Text(todo.area?.symbolName ?? "📥")
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(TodoDisplay.title(for: todo))
+                        Text(TodoDisplay.taskTitle(for: todo))
                             .font(todoTitleFont(todo))
                             .foregroundStyle(todoTitleColor(todo))
                             .strikethrough(todo.isCompleted)
                             .lineLimit(1)
 
-                        if let minutes = todo.scheduledTimeMinutes {
-                            TaskTimeLabel(minutes: minutes, reminderEnabled: todo.reminderEnabled)
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                        }
+                        HStack(spacing: 10) {
+                            Text(TodoDisplay.flowContextName(for: todo))
+                                .foregroundStyle(todo.area.map { Color(hex: $0.colorHex) } ?? .accentColor)
+                                .layoutPriority(1)
 
-                        Text(todoDetail(todo))
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
+                            if let minutes = todo.scheduledTimeMinutes {
+                                TaskTimeLabel(minutes: minutes, reminderEnabled: todo.reminderEnabled)
+                            }
+
+                            let detail = todoDetail(todo)
+                            if !detail.isEmpty {
+                                Text(detail)
+                            }
+                        }
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
                     }
 
                     Spacer(minLength: 0)
@@ -1741,10 +1755,14 @@ private struct DashboardTodoColumn: View {
 
     private func todoDetail(_ todo: Todo) -> String {
         let tags = todo.hashtags.map { "#\($0)" }.joined(separator: " ")
-        let detail = showsPriority
-            ? String(localized: "\(priorityLabel(todo)) · \(progressText(todo))")
-            : progressText(todo)
-        return tags.isEmpty ? detail : String(localized: "\(detail) · \(tags)")
+        var details: [String] = []
+        if showsPriority { details.append(priorityLabel(todo)) }
+        if todo.measurement != .checkbox { details.append(progressText(todo)) }
+        if !tags.isEmpty { details.append(tags) }
+        guard let first = details.first else { return "" }
+        return details.dropFirst().reduce(first) { accumulated, next in
+            String(localized: "\(accumulated) · \(next)")
+        }
     }
 
     private func priorityLabel(_ todo: Todo) -> String {
@@ -1793,11 +1811,20 @@ private struct FlowDashboardTodoRefreshID: Hashable {
     let latestTodoUpdate: Date?
 }
 
+private struct FlowDashboardProjectHabitRevision: Hashable {
+    let id: UUID
+    let updatedAt: Date
+    let completedAt: Date?
+    let areaUpdatedAt: Date?
+    let areaArchivedAt: Date?
+}
+
 private struct FlowDashboardHabitPreparationID: Hashable {
     let isVisible: Bool
     let areaCount: Int
     let latestAreaUpdate: Date?
     let todoCount: Int
     let latestTodoUpdate: Date?
+    let projectRevisions: [FlowDashboardProjectHabitRevision]
     let revision: Int
 }

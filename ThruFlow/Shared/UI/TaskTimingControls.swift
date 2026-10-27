@@ -1,16 +1,14 @@
 import SwiftUI
 import UserNotifications
 
-/// Draft-only controls. Permission is requested only after an explicit user opt-in.
+/// Draft-only controls; the owning form applies taskTimingDefaults.
 struct TaskTimingControls: View {
     @Environment(\.calendar) private var calendar
     let scheduledDate: Date?
     @Binding var timeMinutes: Int?
     @Binding var reminderEnabled: Bool
-    @State private var isRequestingPermission = false
     @State private var permissionDenied = false
     @State private var needsDevicePermission = false
-    @State private var permissionRequest: Task<Void, Never>?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -21,11 +19,11 @@ struct TaskTimingControls: View {
                     .font(.caption).foregroundStyle(.secondary)
             } else if timeMinutes != nil {
                 DatePicker(String(localized: "時刻"), selection: time, displayedComponents: .hourAndMinute)
-                Toggle(String(localized: "この時刻に通知"), isOn: reminder)
-                    .disabled(isRequestingPermission)
+                Toggle(String(localized: "この時刻に通知"), isOn: $reminderEnabled)
                 if needsDevicePermission {
-                    Button(String(localized: "この端末で通知を許可")) { requestPermission() }
-                        .disabled(isRequestingPermission)
+                    Button(String(localized: "この端末で通知を許可")) {
+                        TaskReminderAuthorization.requestForUserAction()
+                    }
                 }
                 if permissionDenied {
                     Text(String(localized: "通知が許可されていません。システム設定で通知を許可してください。"))
@@ -34,21 +32,23 @@ struct TaskTimingControls: View {
             }
         }
         .onChange(of: scheduledDate) { _, date in
-            if date == nil { cancelPermissionRequest(); timeMinutes = nil; reminderEnabled = false }
+            if date == nil { timeMinutes = nil; reminderEnabled = false }
         }
-        .onDisappear { cancelPermissionRequest() }
-        .task {
-            guard reminderEnabled else { return }
-            let status = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
-            permissionDenied = status == .denied
-            needsDevicePermission = status == .notDetermined
+        .task(id: reminderEnabled) { await refreshAuthorization() }
+        .onReceive(NotificationCenter.default.publisher(for: TaskReminderAuthorization.didChange)) { _ in
+            Task { await refreshAuthorization() }
         }
     }
 
-    private func cancelPermissionRequest() {
-        permissionRequest?.cancel()
-        permissionRequest = nil
-        isRequestingPermission = false
+    private func refreshAuthorization() async {
+        guard reminderEnabled else {
+            permissionDenied = false
+            needsDevicePermission = false
+            return
+        }
+        let status = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
+        permissionDenied = status == .denied
+        needsDevicePermission = status == .notDetermined
     }
 
     private var hasTime: Binding<Bool> {
@@ -57,7 +57,6 @@ struct TaskTimingControls: View {
                 let parts = calendar.dateComponents([.hour, .minute], from: .now)
                 timeMinutes = (parts.hour ?? 9) * 60 + (parts.minute ?? 0)
             } else {
-                cancelPermissionRequest()
                 timeMinutes = nil
                 reminderEnabled = false
                 permissionDenied = false
@@ -76,34 +75,29 @@ struct TaskTimingControls: View {
         })
     }
 
-    private var reminder: Binding<Bool> {
-        Binding(get: { reminderEnabled }, set: { enabled in
-            guard enabled else {
-                cancelPermissionRequest()
-                reminderEnabled = false
-                needsDevicePermission = false
-                return
+}
+
+private struct TaskTimingDefaultsModifier: ViewModifier {
+    @Binding var timeMinutes: Int?
+    @Binding var reminderEnabled: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: timeMinutes) { old, new in
+                reminderEnabled = TaskTimingDefaults.reminderEnabled(
+                    previousMinutes: old, newMinutes: new, current: reminderEnabled
+                )
             }
-            requestPermission()
-        })
+            .onChange(of: reminderEnabled) { _, enabled in
+                if enabled && timeMinutes != nil { TaskReminderAuthorization.requestForUserAction() }
+            }
     }
+}
 
-    private func requestPermission() {
-        guard !isRequestingPermission else { return }
-        let wasEnabled = reminderEnabled
-        isRequestingPermission = true
-        permissionRequest = Task { @MainActor in
-            let granted = (try? await UNUserNotificationCenter.current()
-                .requestAuthorization(options: [.alert, .sound])) == true
-            guard !Task.isCancelled else { return }
-            isRequestingPermission = false
-            permissionDenied = !granted
-            needsDevicePermission = false
-            // Denial on another device must not turn off an already-synced reminder.
-            reminderEnabled = (wasEnabled || granted) && scheduledDate != nil && timeMinutes != nil
-        }
+extension View {
+    func taskTimingDefaults(timeMinutes: Binding<Int?>, reminderEnabled: Binding<Bool>) -> some View {
+        modifier(TaskTimingDefaultsModifier(timeMinutes: timeMinutes, reminderEnabled: reminderEnabled))
     }
-
 }
 
 struct TaskTimeLabel: View {

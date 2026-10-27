@@ -39,7 +39,7 @@ struct MacOSFlowMenuBarLabel: View {
 
     private func taskName(for session: FlowSession?) -> String {
         if let todo = session?.todo {
-            return TodoDisplay.title(for: todo)
+            return TodoDisplay.flowTitle(for: todo)
         }
 
         if let areaName = session?.area?.name.trimmingCharacters(in: .whitespacesAndNewlines),

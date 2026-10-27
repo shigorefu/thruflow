@@ -5,9 +5,11 @@ struct IOSTasksView: View {
     @Environment(\.calendar) private var calendar
     @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     @Query(sort: \Todo.sortIndex) private var todos: [Todo]
     @Query(sort: \Area.sortIndex) private var areas: [Area]
+    @Query(sort: \Project.createdAt) private var projects: [Project]
 
     @State private var selectedDate = Calendar.current.startOfDay(for: .now)
     @State private var range = TaskCalendarRange.oneDay
@@ -19,6 +21,7 @@ struct IOSTasksView: View {
     @State private var searchText = ""
     @State private var isSearchPresented = false
     @State private var showsComposer = false
+    @State private var composerID = UUID()
     @State private var backlogMoveError: String?
     @State private var hasPerformedInitialMaterialization = false
     @State private var calendarDayRevision = 0
@@ -28,6 +31,10 @@ struct IOSTasksView: View {
         TaskRescheduleService(calendar: calendar, dayBoundary: dayBoundary)
     }
     private var searchBuilder: DatabaseSearchBuilder { DatabaseSearchBuilder(calendar: calendar) }
+
+    private var usesPersistentComposer: Bool { horizontalSizeClass == .regular }
+
+    private var isComposerVisible: Bool { usesPersistentComposer || showsComposer }
 
     private var isSearching: Bool {
         DatabaseSearchQuery(text: searchText).isActive
@@ -112,16 +119,18 @@ struct IOSTasksView: View {
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            if showsComposer {
-                IOSTaskComposer(
-                    areas: activeAreas,
-                    onClose: dismissComposer
-                )
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
+            taskComposer
+                .id(composerID)
+                .frame(maxWidth: 640)
+                .frame(maxWidth: .infinity)
+                .background(.background)
+                .frame(height: isComposerVisible ? nil : 0)
+                .opacity(isComposerVisible ? 1 : 0)
+                .allowsHitTesting(isComposerVisible)
+                .accessibilityHidden(!isComposerVisible)
         }
         .overlay(alignment: .bottomTrailing) {
-            if !showsComposer {
+            if !isComposerVisible {
                 addTaskButton
             }
         }
@@ -174,12 +183,27 @@ struct IOSTasksView: View {
             guard !Task.isCancelled else { return }
             ensureRequiredTodos(reconcilesDuplicates: false)
         }
-        .onDisappear {
+        .onChange(of: horizontalSizeClass) { _, _ in
+            // Folding restores + without discarding the mounted draft.
             showsComposer = false
         }
         .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) { _ in
             calendarDayRevision += 1
         }
+    }
+
+    private var taskComposer: some View {
+        IOSTaskComposer(
+            areas: activeAreas,
+            autofocusOnAppear: !usesPersistentComposer,
+            isPresented: isComposerVisible,
+            onClose: composerCloseAction
+        )
+    }
+
+    private var composerCloseAction: (() -> Void)? {
+        guard !usesPersistentComposer else { return nil }
+        return { dismissComposer() }
     }
 
     private var addTaskButton: some View {
@@ -207,6 +231,7 @@ struct IOSTasksView: View {
     private func dismissComposer() {
         withAnimation(.snappy(duration: 0.24)) {
             showsComposer = false
+            composerID = UUID()
         }
     }
 
@@ -620,6 +645,12 @@ struct IOSTasksView: View {
                         isArchived: $0.isArchived
                     )
                 },
+            projectRevisions: projects.map {
+                IOSProjectMaterializationRevision(
+                    id: $0.id, updatedAt: $0.updatedAt, completedAt: $0.completedAt,
+                    areaUpdatedAt: $0.area?.updatedAt, areaArchivedAt: $0.area?.archivedAt
+                )
+            }.sorted { $0.id.uuidString < $1.id.uuidString },
             calendarDayRevision: calendarDayRevision
         )
     }
@@ -920,6 +951,7 @@ private struct IOSRequiredTodoMaterializationID: Hashable {
     let rangeRawValue: String
     let visibleDates: [Date]
     let habitRevisions: [IOSHabitMaterializationRevision]
+    let projectRevisions: [IOSProjectMaterializationRevision]
     let calendarDayRevision: Int
 }
 
@@ -927,6 +959,14 @@ private struct IOSHabitMaterializationRevision: Hashable {
     let id: UUID
     let updatedAt: Date
     let isArchived: Bool
+}
+
+private struct IOSProjectMaterializationRevision: Hashable {
+    let id: UUID
+    let updatedAt: Date
+    let completedAt: Date?
+    let areaUpdatedAt: Date?
+    let areaArchivedAt: Date?
 }
 
 private struct IOSGroupedTodos {
@@ -983,6 +1023,7 @@ struct IOSTaskRow: View {
     @Environment(\.modelContext) private var modelContext
 
     let todo: Todo
+    var showsContextSubtitle = false
     let edit: () -> Void
 
     var body: some View {
@@ -995,35 +1036,35 @@ struct IOSTaskRow: View {
 
             Text(todo.area?.symbolName ?? DefaultAreas.taskInboxSymbol)
                 .font(.title3)
+                .accessibilityLabel(todo.area?.name ?? String(localized: "その他"))
 
             VStack(alignment: .leading, spacing: 3) {
-                Text(TodoDisplay.title(for: todo))
+                Text(TodoDisplay.taskTitle(for: todo))
                     .font(.body.weight(.medium))
                     .strikethrough(todo.isCompleted)
                     .foregroundStyle(todo.isCompleted ? .secondary : .primary)
 
-                if let minutes = todo.scheduledTimeMinutes {
-                    TaskTimeLabel(minutes: minutes, reminderEnabled: todo.reminderEnabled)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                if let project = todo.project {
-                    Label(project.name, systemImage: "folder")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
-
-                HStack(spacing: 5) {
-                    if let area = todo.area, !DefaultAreas.isTaskInbox(area) {
-                        Text(area.name)
-                            .foregroundStyle(Color(hex: area.colorHex))
+                HStack(spacing: 10) {
+                    if showsContextSubtitle {
+                        Text(TodoDisplay.flowContextName(for: todo))
+                            .foregroundStyle(todo.area.map { Color(hex: $0.colorHex) } ?? .accentColor)
+                            .layoutPriority(1)
+                    } else if let project = todo.project,
+                              !todo.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        Label(project.name, systemImage: "folder")
                     }
-                    Text(todo.priority.displayName)
-                    Text(progressText)
-                    if let firstTag = todo.hashtags.first {
-                        Text("#\(firstTag)")
+
+                    HStack(spacing: 5) {
+                        Text(todo.priority.displayName)
+                        if todo.measurement != .checkbox {
+                            Text(progressText)
+                        }
+                        if let minutes = todo.scheduledTimeMinutes {
+                            TaskTimeLabel(minutes: minutes, reminderEnabled: todo.reminderEnabled)
+                        }
+                        if let firstTag = todo.hashtags.first {
+                            Text("#\(firstTag)")
+                        }
                     }
                 }
                 .font(.caption)

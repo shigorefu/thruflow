@@ -94,6 +94,7 @@ struct WatchTaskCreationForm: View {
                         .foregroundStyle(.red)
                 }
             }
+            .taskTimingDefaults(timeMinutes: $scheduledTimeMinutes, reminderEnabled: $reminderEnabled)
             .navigationTitle(String(localized: "タスクを追加"))
             .onChange(of: areaID) { _, newValue in
                 if project?.area?.id != newValue { project = nil }
@@ -142,6 +143,9 @@ struct WatchTaskCreationForm: View {
         )
         do {
             _ = try TaskEditingService().save(draft: draft, modelContext: modelContext)
+            if draft.scheduledTimeMinutes != nil && draft.reminderEnabled {
+                TaskReminderAuthorization.requestForUserAction()
+            }
             dismiss()
         } catch TaskEditingError.validation(let errors) {
             saveErrorMessage = errors.map(\.localizedDescription).joined(separator: "\n")

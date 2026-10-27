@@ -138,6 +138,7 @@ struct TodoFormView: View {
             selectInitialAreaIfNeeded()
             isTitleFocused = true
         }
+        .taskTimingDefaults(timeMinutes: $draft.scheduledTimeMinutes, reminderEnabled: $draft.reminderEnabled)
         .onChange(of: usesScheduledDate) { _, hasDate in
             if hasDate {
                 draft.scheduledDate = draft.scheduledDate ?? .now
@@ -202,8 +203,12 @@ struct TodoFormView: View {
             }
 
             if !isHabitTodoEdit {
-                Divider()
-                TaskProjectPicker(area: selectedArea, selection: $draft.project, currentProject: editedTodo?.project)
+                TaskProjectPicker(
+                    area: selectedArea,
+                    selection: $draft.project,
+                    currentProject: editedTodo?.project,
+                    showsDivider: true
+                )
             }
 
             Divider()
@@ -296,7 +301,7 @@ struct TodoFormView: View {
             )
         } else if isHabitTodoEdit, let area = editedTodo?.area {
             readOnlyValue(
-                "\(area.symbolName) \(area.name)",
+                "\(area.symbolName) \(TodoDisplay.flowContextName(for: editedTodo, area: area))",
                 tint: Color(hex: area.colorHex)
             )
         } else {

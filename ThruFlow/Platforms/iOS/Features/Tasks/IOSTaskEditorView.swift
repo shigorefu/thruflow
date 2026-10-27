@@ -142,6 +142,7 @@ struct IOSTaskEditorView: View {
                 }
             }
         }
+        .taskTimingDefaults(timeMinutes: $draft.scheduledTimeMinutes, reminderEnabled: $draft.reminderEnabled)
         .safeAreaInset(edge: .top, spacing: 0) {
             if !titleSuggestions.isEmpty {
                 titleSuggestionPanel
@@ -285,7 +286,7 @@ struct IOSTaskEditorView: View {
         if let todo = editedTodo {
             Section {
                 LabeledContent(String(localized: "分野")) {
-                    Text("\(todo.area?.symbolName ?? "📝") \(todo.area?.name ?? String(localized: "分野"))")
+                    Text("\(todo.area?.symbolName ?? "📝") \(TodoDisplay.flowContextName(for: todo))")
                 }
 
                 LabeledContent(String(localized: "種類"), value: todo.measurement.displayName)

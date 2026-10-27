@@ -1,6 +1,6 @@
 import Foundation
 
-struct HabitPausePeriod: Codable, Equatable, Identifiable, Sendable {
+nonisolated struct HabitPausePeriod: Codable, Equatable, Identifiable, Sendable {
     let id: UUID
     let startsOn: Date
     var endsBefore: Date?
@@ -18,7 +18,7 @@ struct HabitPausePeriod: Codable, Equatable, Identifiable, Sendable {
         self.createdAt = createdAt
     }
 
-    func contains(_ day: Date) -> Bool {
+    nonisolated func contains(_ day: Date) -> Bool {
         guard day >= startsOn else { return false }
         return endsBefore.map { day < $0 } ?? true
     }
@@ -49,7 +49,7 @@ struct HabitPauseService {
     var calendar: Calendar = .current
     var dayBoundary: AppDayBoundary = .midnight
 
-    func isPaused(_ area: Area, on day: Date) -> Bool {
+    nonisolated func isPaused(_ area: Area, on day: Date) -> Bool {
         guard area.type == .habit else { return false }
         let normalizedDay = calendar.startOfDay(for: day)
         return normalizedPeriods(for: area).contains { $0.contains(normalizedDay) }
@@ -165,8 +165,8 @@ struct HabitPauseService {
         now: Date
     ) {
         for todo in todos {
-            guard todo.isHabitOccurrence,
-                  todo.area?.id == area.id,
+            guard let owner = HabitDefinition(todo: todo),
+                  owner.area.id == area.id, owner.project == nil,
                   todo.externalTaskLinkRawValue == nil,
                   !todo.isArchived,
                   !todo.isDeleted,
@@ -182,11 +182,11 @@ struct HabitPauseService {
         }
     }
 
-    private func normalizedPeriods(for area: Area) -> [HabitPausePeriod] {
+    nonisolated private func normalizedPeriods(for area: Area) -> [HabitPausePeriod] {
         normalized(area.habitPausePeriods)
     }
 
-    private func normalized(_ periods: [HabitPausePeriod]) -> [HabitPausePeriod] {
+    nonisolated private func normalized(_ periods: [HabitPausePeriod]) -> [HabitPausePeriod] {
         let sorted = periods.sorted {
             if $0.startsOn == $1.startsOn {
                 return ($0.endsBefore ?? .distantFuture) < ($1.endsBefore ?? .distantFuture)

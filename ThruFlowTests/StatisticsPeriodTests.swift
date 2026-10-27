@@ -427,6 +427,10 @@ struct StatisticsPeriodTests {
         let work = Area(name: "仕事", type: .neutral, symbolName: "💻", colorHex: "#3366FF")
         let dune = Todo(title: "Dune", hashtags: ["books"], area: reading)
         let release = Todo(title: "Release", area: work)
+        let project = Project(name: "Dune trilogy", area: reading)
+        project.completedAt = date(2026, 8, 6)
+        dune.project = project
+        context.insert(project)
         let start = date(2026, 8, 5, 9)
         let session = FlowSession(
             area: reading,
@@ -478,6 +482,14 @@ struct StatisticsPeriodTests {
         #expect(snapshot.summary.totalFocusSeconds == 12 * 60)
         #expect(snapshot.summary.flowCount == 1)
         #expect(snapshot.taskDistribution.first?.name == "Dune")
+        #expect(snapshot.projectDistribution.first?.id == "project:\(project.id)")
+        #expect(snapshot.projectDistribution.first?.focusSeconds == 12 * 60)
+        let all = try await StatisticsProjectionActor(modelContainer: container).load(
+            filter: StatisticsPeriodFilter(period: .week, anchorDate: start),
+            calendar: calendar, dayBoundary: .midnight
+        )
+        #expect(all.projectDistribution.first { $0.id == "project:unassigned" }?.focusSeconds == 13 * 60)
+        #expect(all.projectDistribution.reduce(0) { $0 + $1.focusSeconds } == 25 * 60)
     }
 
     @Test func distributionDetailsGroupLogicalDaysAndAreaTasksWithinFilters() throws {
@@ -520,6 +532,73 @@ struct StatisticsPeriodTests {
         #expect(taskRemainder.details.first?.focusSeconds == 360)
         #expect(snapshot.areaDistribution.last?.details.count == 3)
         for item in snapshot.taskDistribution + snapshot.areaDistribution {
+            #expect(item.details.reduce(0) { $0 + $1.focusSeconds } == item.focusSeconds)
+        }
+    }
+
+    @Test func projectDistributionKeepsIdentityFiltersAndUngroupedTime() throws {
+        let area = UUID()
+        let firstProject = UUID()
+        let secondProject = UUID()
+        var records = [
+            flowRecord(sessionID: UUID(), date: date(2026, 9, 8), seconds: 600, areaID: area, area: "Cloud", task: ""),
+            flowRecord(sessionID: UUID(), date: date(2026, 9, 8), seconds: 300, areaID: area, area: "Cloud", task: ""),
+            flowRecord(sessionID: UUID(), date: date(2026, 9, 8), seconds: 120, areaID: area, area: "Cloud", task: "Same title"),
+            flowRecord(sessionID: UUID(), date: date(2026, 9, 8), seconds: 60, areaID: area, area: "Cloud", task: "Unassigned"),
+            flowRecord(sessionID: UUID(), date: date(2026, 9, 8), seconds: 900, areaID: UUID(), area: "Other", task: "Filtered out"),
+            flowRecord(sessionID: UUID(), date: date(2026, 8, 8), seconds: 900, areaID: area, area: "Cloud", task: "Earlier")
+        ]
+        for index in [0, 1, 4, 5] { records[index].projectID = firstProject; records[index].projectName = "AWS" }
+        records[2].projectID = secondProject
+        records[2].projectName = "AWS" // Same name must never merge two Projects.
+        let snapshot = StatisticsPeriodBuilder(calendar: calendar).build(
+            flowRecords: records, achievementRecords: [],
+            filter: StatisticsPeriodFilter(period: .month, anchorDate: date(2026, 9, 8), areaIDs: [area])
+        )
+        #expect(snapshot.summary.totalFocusSeconds == 1080)
+        #expect(snapshot.projectDistribution.count == 3)
+        let first = try #require(snapshot.projectDistribution.first { $0.id == "project:\(firstProject)" })
+        #expect(first.focusSeconds == 900)
+        #expect(first.details.count == 2) // Separate unnamed Tasks keep separate identities.
+        #expect(first.details.allSatisfy { $0.name == "AWS" })
+        #expect(snapshot.projectDistribution.first { $0.id == "project:unassigned" }?.focusSeconds == 60)
+        #expect(snapshot.projectDistribution.reduce(0) { $0 + $1.focusSeconds } == snapshot.summary.totalFocusSeconds)
+        for item in snapshot.projectDistribution {
+            #expect(item.details.reduce(0) { $0 + $1.focusSeconds } == item.focusSeconds)
+        }
+    }
+
+    @Test func sameNamedEqualDurationProjectsHaveStableOrdering() {
+        let records = (0..<8).map { _ in
+            var record = flowRecord(sessionID: UUID(), date: date(2026, 9, 8), seconds: 60,
+                                    areaID: UUID(), area: "Cloud", task: "Read")
+            record.projectID = UUID()
+            record.projectName = "AWS"
+            return record
+        }
+        let builder = StatisticsPeriodBuilder(calendar: calendar)
+        let filter = StatisticsPeriodFilter(period: .month, anchorDate: date(2026, 9, 8))
+        let forward = builder.build(flowRecords: records, achievementRecords: [], filter: filter)
+        let reversed = builder.build(flowRecords: records.reversed(), achievementRecords: [], filter: filter)
+        #expect(forward.projectDistribution.map(\.id) == reversed.projectDistribution.map(\.id))
+    }
+
+    @Test func projectRemainderPreservesAllFocusTime() {
+        let records = (0..<9).map { index in
+            var record = flowRecord(sessionID: UUID(), date: date(2026, 9, 8), seconds: (index + 1) * 60,
+                                    areaID: UUID(), area: "Cloud", task: "Read")
+            record.projectID = UUID()
+            record.projectName = "Project \(index)"
+            return record
+        }
+        let snapshot = StatisticsPeriodBuilder(calendar: calendar).build(
+            flowRecords: records, achievementRecords: [],
+            filter: StatisticsPeriodFilter(period: .month, anchorDate: date(2026, 9, 8))
+        )
+        #expect(snapshot.projectDistribution.count == 6)
+        #expect(snapshot.projectDistribution.last?.id == "distribution:other")
+        #expect(snapshot.projectDistribution.reduce(0) { $0 + $1.focusSeconds } == snapshot.summary.totalFocusSeconds)
+        for item in snapshot.projectDistribution {
             #expect(item.details.reduce(0) { $0 + $1.focusSeconds } == item.focusSeconds)
         }
     }
