@@ -115,32 +115,6 @@ struct LocalisationTests {
         #expect(missing.isEmpty, "Source keys missing from catalog: \(missing.sorted())")
     }
 
-    @Test func catalogMatchesUnambiguousGlossaryTerms() throws {
-        let data = try Data(contentsOf: catalogURL)
-        let root = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
-        let strings = try #require(root["strings"] as? [String: Any])
-        let glossary = try parseCSV(
-            String(contentsOf: glossaryURL, encoding: .utf8)
-        )
-        let groupedRows = Dictionary(grouping: glossary.dropFirst()) { $0[2] }
-        var mismatches: [String] = []
-
-        for (japanese, rows) in groupedRows {
-            guard let rawEntry = strings[japanese] else { continue }
-            let entry = try #require(rawEntry as? [String: Any])
-            let localisations = try #require(entry["localizations"] as? [String: Any])
-            for (offset, language) in ["en", "ru", "zh-Hans", "zh-Hant"].enumerated() {
-                let approved = Set(rows.map { $0[offset + 3] })
-                guard approved.count == 1 else { continue }
-                if let value = localisedValue(language: language, from: localisations),
-                   approved.contains(value) { continue }
-                mismatches.append("\(language):\(japanese)")
-            }
-        }
-
-        #expect(mismatches.isEmpty, "Glossary mismatches: \(mismatches.joined(separator: ", "))")
-    }
-
     @Test func japaneseCopyUsesNativeProductLanguage() throws {
         let data = try Data(contentsOf: catalogURL)
         let root = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
@@ -301,10 +275,6 @@ struct LocalisationTests {
         repositoryRoot.appending(path: "ThruFlow/Localisation/Localizable.xcstrings")
     }
 
-    private var glossaryURL: URL {
-        repositoryRoot.appending(path: "Localisation/TERMS.csv")
-    }
-
     private func localisedValue(language: String, from localisations: [String: Any]) -> String? {
         guard
             let localisation = localisations[language] as? [String: Any],
@@ -333,47 +303,6 @@ struct LocalisationTests {
             return value[swiftRange]
                 .replacingOccurrences(of: #"%\d+\$"#, with: "%", options: .regularExpression)
         }
-    }
-
-    private func parseCSV(_ source: String) throws -> [[String]] {
-        var rows: [[String]] = []
-        var row: [String] = []
-        var field = ""
-        var isQuoted = false
-        var index = source.startIndex
-
-        while index < source.endIndex {
-            let character = source[index]
-            if character == "\"" {
-                let next = source.index(after: index)
-                if isQuoted, next < source.endIndex, source[next] == "\"" {
-                    field.append("\"")
-                    index = next
-                } else {
-                    isQuoted.toggle()
-                }
-            } else if character == ",", !isQuoted {
-                row.append(field)
-                field = ""
-            } else if character == "\n", !isQuoted {
-                row.append(field)
-                if !row.allSatisfy(\.isEmpty) { rows.append(row) }
-                row = []
-                field = ""
-            } else if character != "\r" {
-                field.append(character)
-            }
-            index = source.index(after: index)
-        }
-
-        if !field.isEmpty || !row.isEmpty {
-            row.append(field)
-            rows.append(row)
-        }
-        guard rows.allSatisfy({ $0.count == 7 }) else {
-            throw CocoaError(.fileReadCorruptFile)
-        }
-        return rows
     }
 
     private func containsJapaneseStringLiteral(_ line: String) -> Bool {

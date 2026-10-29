@@ -27,7 +27,6 @@ Mac and iPhone/iPad Settings show a small AI translation notice and a support
 link below the language picker. The notice follows the selection immediately;
 the interface language itself still requires a restart.
 
-Approved Chinese terminology is recorded in `Localisation/TERMS.csv`.
 User-authored data and quick-input syntax are unchanged.
 
 ## Code Rules
@@ -53,10 +52,10 @@ reviewed like an API rename.
 
 ## Product terminology
 
-Use [Vocabulary](VOCABULARY.md) for English product concepts and
-[TERMS.csv](../Localisation/TERMS.csv) for exact source keys and approved
-translations. Context matters: the Flow workspace, a saved Flow record, a focus
-action and a session count are different meanings. Use collection plurals in
+Use [Vocabulary](VOCABULARY.md) for English product concepts and the shared
+String Catalogs for source keys and approved translations. Context matters: the
+Flow workspace, a saved Flow record, a focus action and a session count are
+different meanings. Use collection plurals in
 navigation and singular entity names in editors.
 
 Translation changes never rename stored identifiers, user content or enum values.
@@ -67,10 +66,27 @@ for data handling.
 
 ## Contributor Workflow
 
-The non-programmer workflow is documented in `Localisation/README.md`. A new
-language is added in Xcode's String Catalog editor, the project localizations,
-the glossary, and the localization tests. It requires no SwiftData changes.
-Local SwiftData remains independent of the selected locale.
+Edit translations directly in Xcode's String Catalog editor. The catalogs are
+the only maintained translation source; there is no separate CSV glossary.
+
+To add a language:
+
+1. Create a branch and add the full locale code to the Xcode project's
+   localizations and both String Catalogs. Preserve script subtags such as
+   `zh-Hans` and `zh-Hant`.
+2. Translate the catalog values, including permission text in
+   `InfoPlist.xcstrings`. Preserve source keys, format arguments such as `%@`,
+   `%lld` and `%1$@`, and plural variants. Add translator comments for ambiguity.
+3. Update the app language selection and localization test coverage. Do not
+   translate persisted enum raw values, SwiftData identifiers, SF Symbol names,
+   notification identifiers or accessibility identifiers.
+4. Run `LocalisationTests`, build the affected clients, and review the new locale
+   on Mac and iPhone/iPad, plus Watch/widgets where applicable.
+5. Open a pull request stating the locale, regional variant and checks performed.
+
+Language changes require no SwiftData changes. Local SwiftData remains
+independent of the selected locale. Prefer locale-aware date and measurement
+formatting over adding format patterns to the catalog.
 
 Xcode may update the catalog automatically while extracting SwiftUI and
 accessibility strings. Review those diffs against the originating Swift code:
@@ -78,16 +94,11 @@ empty keys indicate an extraction bug, obsolete `stale` entries should be
 removed when no source still references them, and dynamic placeholders must use
 translator-readable source keys with complete values for every supported locale.
 
-`Localisation/TERMS.csv` is the contributor-facing terminology glossary. Its
-first two columns are English metadata, its third column contains the actual
-Japanese String Catalog source key, and its final columns contain approved
-English, Russian, Simplified Chinese, and Traditional Chinese UI translations.
-A source key can intentionally have a
-different Japanese catalog override; translators must not expose technical or
-legacy source-key wording to users. The CSV is not loaded at runtime and
-therefore cannot diverge application behavior from the validated String
-Catalog. Unambiguous glossary terms are checked against the catalog by unit
-tests.
+`LocalisationTests` checks translation completeness, format placeholders,
+source-key coverage and selected product terminology directly in the catalogs.
+A Japanese catalog override may differ from its stable source key; translators
+must preserve the key while presenting natural wording to users. Automated
+checks do not establish translation naturalness; that needs contextual review.
 
 Task quick-input aliases are domain syntax rather than translated UI strings.
 English forms (`b`, `m`, `high`, `today`, weekday names, and related short forms)
@@ -109,7 +120,7 @@ The orchestrator assigns a dedicated localization agent when app copy changes,
 as required by [AGENTS.md](../AGENTS.md#localization-agent). It reviews affected
 copy in Japanese, English, Russian, Simplified Chinese and Traditional Chinese
 for natural, context-appropriate wording and can correct translations directly.
-All catalog/glossary writes have a single assigned owner. Preserve source keys,
+All catalog writes have a single assigned owner. Preserve source keys,
 format arguments, plural forms and product terminology; check short labels and
 accessibility text as well as explanations. Report actual language coverage and
 separate linguistic source review from visual checks on each device.
