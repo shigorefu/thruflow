@@ -7,7 +7,7 @@ source and fallback language.
 
 The app supports Japanese (`ja`), English (`en`), Russian (`ru`), Simplified
 Chinese (`zh-Hans`), and Traditional Chinese (`zh-Hant`). The Chinese locales
-are included in the upcoming 1.4.0 release. Unit tests require complete
+are included in 1.4.0. Unit tests require complete
 translations for every supported locale in both catalogs, preserve format
 placeholders, and verify unambiguous glossary terms against `TERMS.csv`.
 

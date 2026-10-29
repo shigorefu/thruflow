@@ -6,13 +6,13 @@
 
 Stable type raw values:
 
-- `neutral` -> `通常`;
-- `habit` -> `習慣`;
-- `nice` -> `ナイス`.
+- `neutral` -> Anytime;
+- `habit` -> Habit;
+- `nice` -> Optional.
 
 Legacy raw values `must` and `bonus` are normalized to `habit` and `nice`.
 
-`その他` is represented as a system `Area` so Tasks and Flow always have a stable Area relationship. It is hidden from the Area management screen to prevent editing. It can still appear in task context and statistics.
+Other is represented as a system `Area` so Tasks and Flow always have a stable Area relationship. It is hidden from the Area management screen to prevent editing. It can still appear in task context and statistics.
 
 Habit Areas may have:
 
@@ -57,7 +57,7 @@ Only unstarted current/future occurrences retire; started and past work survives
 
 ## Todo
 
-`Todo` is the task model used by the daily `タスク` screen.
+`Todo` is the task model used by the daily Tasks screen.
 
 Important fields:
 
@@ -69,7 +69,7 @@ Important fields:
 - `measurement`: checkbox, focus blocks, or minutes;
 - `priority`: high, medium, low;
 - `isRoomIfPossible`: only meaningful for low priority;
-- `scheduledDate`: optional task date; nil places an active normal Task in the `日付なし` projection;
+- `scheduledDate`: optional task date; nil places an active normal Task in the No Date projection;
 - `plannedAmount` and `actualProgress`;
 - `focusDurationSeconds`: exact accumulated focused seconds.
 - `completedAt`: optional exact completion timestamp; nil on active and legacy completed records.
@@ -77,8 +77,8 @@ Important fields:
 Display rule:
 
 - non-empty title displays as title;
-- empty title displays as `(Area name)`;
-- no visible Area fallback displays as `(その他)`.
+- empty title displays the assigned Project name, otherwise `(Area name)`;
+- no visible Area fallback displays as `Other`.
 - an empty-title fallback is rendered as translucent italic text.
 
 Completion:
@@ -109,11 +109,11 @@ reconciliation of unchanged measured Todo progress does not update its timestamp
 is not inferred again from elapsed time. Changing mode replaces the total
 planned focus duration without resetting elapsed focus. The two seek operations
 adjust remaining focus by `-5` or `+5` minutes and preserve both elapsed focus
-and mode; subtraction is clamped to one minute remaining and seek is unavailable
-during rest. Actual focused seconds remain canonical for history, progress, and
-rest calculation. Rest is 3 minutes below 24 focused minutes, 5 minutes from 24
-through 48:59, and 10 minutes from 49 minutes onward. Boundary credit normalizes
-24 to 25 and 49 to 50 focused minutes; longer actual durations remain exact.
+and mode; subtraction is clamped to one minute remaining and also applies during rest. Actual focused seconds remain canonical for
+history, progress and rest calculation. Rest recommendations use the cumulative
+focus and actual recovery rules in FlowBreak below, rather than a per-session
+fixed cap. Boundary credit normalizes 24 to 25 and 49 to 50 focused minutes;
+longer actual durations remain exact.
 
 `FlowSession.result` stores the result/memo of that exact Flow recording. This
 keeps Area-only Flow editable and descriptive without inventing a Todo.
@@ -126,7 +126,7 @@ mirrors the text to `Todo.notes` for the Task-level memo.
 
 ## FlowBreak
 
-`FlowBreak` persists explicit rest between Flow sessions using stable session UUID references. It stores the series ID, previous/next session IDs, rest start, timer-stop, connection, optional adjusted-end timestamps, planned duration, and `長休憩` state. Sessions started within planned rest × 1.5 share the same series ID. The shared rest projection replays focused seconds and actual rest intervals in series order. Four accumulated Blocks earn a 20-minute `長休憩`, five earn 25, and six or more earn 30. Only rest actually taken after reaching the long-rest threshold pays this balance; completing it resets the cycle from that point. Short rest before that threshold does not reduce the long-rest balance. Skipped rest pays nothing. Ordinary rest is 3 minutes for Sprint, 5 for one Block, 10 for two uninterrupted Blocks, and 15 for three; partial ordinary rest is credited within the uninterrupted-focus group. Existing Block rounding is preserved. Recommendations and balances are derived from existing records with no new persisted fields. Actual rest uses the resolved historical end, bounded by the next focus start. Long-rest identity is explicit even when its remaining balance is less than 20 minutes. `FlowBreakEditor` applies manual start and duration corrections and pushes only overlapping downstream records from the same series. Deletion is a soft delete so the removal synchronizes safely through CloudKit.
+`FlowBreak` persists explicit rest between Flow sessions using stable session UUID references. It stores the series ID, previous/next session IDs, rest start, timer-stop, connection, optional adjusted-end timestamps, planned duration, and Long Break state. Sessions started within planned rest × 1.5 share the same series ID. The shared rest projection replays focused seconds and actual rest intervals in series order. Four accumulated Blocks earn a 20-minute Long Break, five earn 25, and six or more earn 30. Only rest actually taken after reaching the long-rest threshold pays this balance; completing it resets the cycle from that point. Short rest before that threshold does not reduce the long-rest balance. Skipped rest pays nothing. Ordinary rest is 3 minutes for Sprint, 5 for one Block, 10 for two uninterrupted Blocks, and 15 for three; partial ordinary rest is credited within the uninterrupted-focus group. Existing Block rounding is preserved. Recommendations and balances are derived from existing records with no new persisted fields. Actual rest uses the resolved historical end, bounded by the next focus start. Long-rest identity is explicit even when its remaining balance is less than 20 minutes. `FlowBreakEditor` applies manual start and duration corrections and pushes only overlapping downstream records from the same series. Deletion is a soft delete so the removal synchronizes safely through CloudKit.
 
 The Flow dashboard is a projection, not a persisted model. `FlowDashboardBuilder` derives today's totals, Area color palette, timeline segments, breaks, and connected series spans from `FlowSession` and `FlowBreak`; the active session contributes a live overlay only after the one-minute credit threshold. See `DATA_MODEL.md` for the complete persistence inventory.
 
@@ -154,7 +154,7 @@ Area is missing. Flow history wins when it identifies one Area;
 otherwise a generated occurrence may be restored only when one fixed-schedule
 Habit template matches its date and unit exactly. Ambiguous records are not
 guessed and are excluded from Today, calendar, widget, and backlog projections
-instead of being mislabeled as `その他`.
+instead of being mislabeled as Other.
 
 `HabitPauseService` owns pause/resume behavior outside SwiftUI. Pause intervals
 use the configured logical-day boundary at their command edge and persist as
@@ -176,19 +176,19 @@ Flow statistics and day history are derived from FlowSession actual focus second
 
 `StatisticsPeriodSnapshot` is an immutable projection for one anchored Week,
 Month, or Year. It combines filtered summary totals, previous-period totals,
-daily, seven-day, or monthly trend points, Task/Area focused-time distribution,
+daily or monthly trend points, Task/Area/Project focused-time distribution,
 contribution days, and CSV rows. `StatisticsPeriodBuilder` consumes Sendable
 Flow-segment and completion records, and applies Area and text filters
 before aggregation. A session count is distinct by stable session UUID; a
 context-switched Flow contributes only the seconds of each matching segment.
-This projection adds no Project or other persistent entity.
+The projection is derived and adds no persistent records.
 
 Paused Habit days do not contribute a planned Todo, so they are excluded from
 the completion-rate denominator and never count as missed. Previously completed
 Todos and actual Flow recorded for that Habit remain visible in history and
 focused-time statistics.
 
-`DayHistoryBuilder` produces daily Task/Area aggregates. Its Task summaries require positive recorded focused time, so scheduled or completed Todos with `0分` never appear as worked History on either platform. Habit occurrences remain separate Task summaries keyed by Todo identity even when they share one Area; changing the title or completion of one occurrence cannot replace another day's representative Task. `HistoryTaskRecordEditor` separately resolves eligible Todo occurrences for one exact day, including zero-Flow occurrences, and owns cross-platform retrospective recording. It can materialize a missing historical Habit occurrence directly from an eligible Habit Area without disturbing the planner's current pending occurrence. Task context preserves unit semantics: Check updates manual completion at an optional historical timestamp without creating Flow, while Block or Minute delegates to `FlowHistoryEditor` and reconciliation. Flow context always creates a completed independent Flow and treats the selected Todo as an optional link, so linking a checkbox Todo never completes it. Area context creates Flow without a Todo. `HistoryCalendarBuilder` projects actual FlowSession, FlowSegment, and FlowBreak records into separate date-range calendar items without persistence; Todo completion remains aggregate data rather than a calendar item. `FlowDashboardBuilder` derives connected `seriesSpans` from `seriesID` for the dashboard's continuous line without changing calendar records. `DashboardStatisticsBuilder` derives Task/Area time distribution, seven-day Flow values, previous-day deltas, completion status, and Area growth without persistence. The current day History view orders saved records chronologically; `HistoryTimelineGapBuilder` derives long internal gaps and `HistoryTimelineChainPolicy` connects only continuous records in the same series. `HistoryOverlapLayout` independently assigns lanes to colliding intervals in calendar grids. `HistoryDayTimelineWindowBuilder` remains a tested legacy hour-range projection but does not drive the chronological day view. `FlowHistoryEditor` creates independent manual Flow records and corrects Area and measured Todo totals when a historical Flow is changed or deleted. Its platform editors may also rename the selected canonical Todo; titles are trimmed and an empty draft does not replace the stored title. When a timeline item represents a persisted `FlowSegment`, its editor must update that exact segment. Session-level editing is reserved for legacy history without segments, so changing one Task interval never rewrites sibling intervals from the same Flow.
+`DayHistoryBuilder` produces daily Task/Area aggregates. Its Task summaries require positive recorded focused time, so scheduled or completed Todos with zero focused minutes never appear as worked History on either platform. Habit occurrences remain separate Task summaries keyed by Todo identity even when they share one Area; changing the title or completion of one occurrence cannot replace another day's representative Task. `HistoryTaskRecordEditor` separately resolves eligible Todo occurrences for one exact day, including zero-Flow occurrences, and owns cross-platform retrospective recording. It can materialize a missing historical Habit occurrence directly from an eligible Habit Area without disturbing the planner's current pending occurrence. Task context preserves unit semantics: Check updates manual completion at an optional historical timestamp without creating Flow, while Block or Minute delegates to `FlowHistoryEditor` and reconciliation. Flow context always creates a completed independent Flow and treats the selected Todo as an optional link, so linking a checkbox Todo never completes it. Area context creates Flow without a Todo. `HistoryCalendarBuilder` projects actual FlowSession, FlowSegment, and FlowBreak records into separate date-range calendar items without persistence; Todo completion remains aggregate data rather than a calendar item. `FlowDashboardBuilder` derives connected `seriesSpans` from `seriesID` for the dashboard's continuous line without changing calendar records. `DashboardStatisticsBuilder` derives Task/Area time distribution, seven-day Flow values, previous-day deltas, completion status, and Area growth without persistence. The current day History view orders saved records chronologically; `HistoryTimelineGapBuilder` derives long internal gaps and `HistoryTimelineChainPolicy` connects only continuous records in the same series. `HistoryOverlapLayout` independently assigns lanes to colliding intervals in calendar grids. `HistoryDayTimelineWindowBuilder` remains a tested legacy hour-range projection but does not drive the chronological day view. `FlowHistoryEditor` creates independent manual Flow records and corrects Area and measured Todo totals when a historical Flow is changed or deleted. Its platform editors may also rename the selected canonical Todo; titles are trimmed and an empty draft does not replace the stored title. When a timeline item represents a persisted `FlowSegment`, its editor must update that exact segment. Session-level editing is reserved for legacy history without segments, so changing one Task interval never rewrites sibling intervals from the same Flow.
 
 ### Independent Tasks in Habit Areas
 

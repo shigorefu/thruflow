@@ -22,6 +22,10 @@ distinct rules, and read applicable nested instructions before editing there.
 
 ## Working agreements
 
+- Maintain technical documentation in English. The public root README has English
+  and Japanese editions; translation catalogs and stable source keys retain their
+  original language. Use `docs/README.md` to find each specification owner.
+
 - Make small, verifiable changes. Preserve unrelated work and keep the project
   buildable; do not include unsolicited refactors, features, or visual polish.
 - Do not invent product rules. Resolve routine implementation details from the
@@ -56,7 +60,7 @@ historical. Update the owning document and decision record when behavior changes
 | Signing, archives, TestFlight, or App Store | [Release](docs/RELEASE.md), [CloudKit](docs/CLOUDKIT.md) |
 | Contributions, dependencies, and licenses | [Contributing](CONTRIBUTING.md), [Licensing](LICENSING.md) |
 
-[Original MVP](docs/MVP.md) describes version 1.0 scope, not the current roadmap.
+Historical 1.0 scope remains available in Git history.
 Read the documents relevant to the task rather than loading all documentation.
 
 ## Implementation boundaries

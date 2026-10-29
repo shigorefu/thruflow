@@ -1,5 +1,9 @@
 # Decisions
 
+Historical rationale and accepted changes. Later entries supersede earlier
+behavior; use the [documentation index](README.md) to find current specifications.
+Repeated release checklists live in Git history, not in the current roadmap.
+
 ## D-001: Product Documentation Is Split By Responsibility
 
 `docs/PRODUCT.md` defines the product overview, while the domain, data,
@@ -36,7 +40,8 @@ choose one every time.
 
 ## D-004: Empty Todo Title Is Valid
 
-Todo title may be empty. UI displays `(Area name)` when title is empty.
+Todo title may be empty. The original Area placeholder was extended in 1.4.0:
+use the assigned Project name first, then `(Area name)`.
 
 Reason: generated Habit tasks should start as lightweight templates, and the same display rule remains available if automatic Flow Task creation is defined later.
 

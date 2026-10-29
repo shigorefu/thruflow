@@ -27,11 +27,7 @@ Mac and iPhone/iPad Settings show a small AI translation notice and a support
 link below the language picker. The notice follows the selection immediately;
 the interface language itself still requires a restart.
 
-Chinese terminology uses 领域 / 領域 for Area, 任务 / 任務 for Task,
-习惯 / 習慣 for Habit, 专注记录 / 專注記錄 for saved Flow, and
-专注块 / 專注區塊 for the 25-minute Block. Main Flow navigation and ThruFlow
-retain their names. Traditional Chinese copy uses familiar terms such as
-提醒事項, 鑰匙圈, API 權杖, 專案, and 清單.
+Approved Chinese terminology is recorded in `Localisation/TERMS.csv`.
 User-authored data and quick-input syntax are unchanged.
 
 ## Code Rules
@@ -55,70 +51,19 @@ Xcode preserves placeholder type information and generates compile-time string
 symbols. Renaming a source key is a product-copy migration and should be
 reviewed like an API rename.
 
-## Product Terminology and Context
+## Product terminology
 
-Product terminology is translated by UI meaning, not by replacing an English
-domain word everywhere. The Japanese source key may also differ from the text
-shown in Japanese when a catalog override exists. In particular, `Flow` has no
-single canonical rendering across all contexts. The workspace and stream use
-`フロー`, including onboarding and accessibility copy:
+Use [Vocabulary](VOCABULARY.md) for English product concepts and
+[TERMS.csv](../Localisation/TERMS.csv) for exact source keys and approved
+translations. Context matters: the Flow workspace, a saved Flow record, a focus
+action and a session count are different meanings. Use collection plurals in
+navigation and singular entity names in editors.
 
-| UI context | Source key | Japanese UI | English UI | Russian UI |
-| --- | --- | --- | --- | --- |
-| Main Flow navigation and workspace | `Flow` | `フロー` | Flow | Flow |
-| Persisted Flow session or History record | `集中記録` | `集中記録` | Flow | Flow |
-| Start, continue, or switch focused work | `集中` | `集中` | Focus | Фокус |
-| Number of recorded Flow sessions | `集中回数` | `集中回数` | Flows | Сессии Flow |
-| Statistics focus / Task switch | `集中` / `タスク` | `集中` / `タスク` | Focus / Tasks | Фокус / Задачи |
-| Flow mode selector | `Flowタイプ` or `集中モード` | `集中モード` | Flow Mode | Режим Flow |
-| Short / Standard / Deep / Auto mode | `Sprint` / `Focus` / `Deep` / `オート` | `短め` / `標準` / `じっくり` / `自動` | Short / Standard / Deep / Auto | Короткий / Обычный / Глубокий / Авто |
-| Focus Block name / goal unit | `集中ブロック` / `フローブロック` | `集中ブロック` | Focus Blocks | Блоки фокуса |
-| Focus Calendar visualization | `Dots` | `集中カレンダー` | Focus Calendar | Календарь фокуса |
-
-For example, an action should read `集中を始める`, not a mechanical
-`フローを開始`. A History row should use `集中記録`, while the main workspace may
-use `フロー`. Translators must inspect the originating screen and choose the
-contextual term recorded in `Localisation/TERMS.csv`.
-
-The persistent activity-area entity is `分野` in Japanese UI, `Area` in English,
-and `Сфера` in Russian. Collection navigation uses `Areas` and `Сферы`. Its
-visible types are `いつでも` / Anytime / Обычное,
-`習慣` / Habit / Привычка, and `できたら` / Optional / Если получится. The
-corresponding source keys remain `通常`, `習慣`, and `ナイス`. Other
-context-sensitive terms include `日付なし` for the Inbox projection, `週に数回`
-for the weekly-count Habit schedule, and `集中カレンダー` / Focus Calendar /
-Календарь фокуса for the calendar-style focus visualization.
-
-Version 1.0.0 onboarding has ten semantic steps: Welcome, Area, Task, Flow
-overview, timer guidance, the transient Flow demo, History, Statistics, workflow
-summary, and a final card for data storage and free core features.
-The preview shows the complete Flow player in a short scripted sequence: Task
-selection, Play, accelerated Short focus from `12:00` to `00:00`, and the
-demonstrated regular break at `03:00`. Copy should explain naturally that this is
-only a demonstration and does not change History or Statistics. It must also
-distinguish the shortened demo transition from real use, where focus continues
-until the user confirms the note and only then begins the break. Translations
-must not imply that displayed demo time becomes real progress or a persisted
-record, and should describe the loop naturally rather than mirror Japanese
-sentence structure. The privacy step may say that records are stored on the
-device and, when iCloud is enabled, synchronize through the user's private
-CloudKit database. It may also say that
-ThruFlow does not send Tasks or History to a developer-operated server. It must
-not claim end-to-end encryption, anonymity, that Apple never processes the
-records, or that iCloud is required.
-
-Onboarding and product copy may promise that Tasks, the Flow focus timer,
-History, and Statistics are free and ad-free and require no payment. It must not
-expand that statement into a promise that every current or future feature will
-always be free: possible future optional integrations or services may have
-separate terms or costs. The first App Store release exposes no in-app purchases.
-
-These copy choices never rename implementation or persisted identifiers.
-Swift types and properties such as `Area`, `FlowSession`, and `FlowMode`,
-enum cases, raw values, storage keys, and stable code references remain in
-English. The persistence-only `Direction` entity and `direction` relationship
-names remain unchanged for existing SwiftData/CloudKit data. A terminology
-update must not migrate user data or user-authored content.
+Translation changes never rename stored identifiers, user content or enum values.
+Do not promise automatic break transitions, credit for the onboarding demo,
+end-to-end encryption, required iCloud, or that every future integration is free.
+See [Product](PRODUCT.md) for the actual product scope and [Privacy](../PRIVACY.md)
+for data handling.
 
 ## Contributor Workflow
 
@@ -147,39 +92,8 @@ tests.
 Task quick-input aliases are domain syntax rather than translated UI strings.
 English forms (`b`, `m`, `high`, `today`, weekday names, and related short forms)
 must remain available under every app locale. Japanese and Russian forms are
-additive aliases documented in `docs/UX_FLOWS.md`; translators must not replace
+additive aliases defined by the shared quick-input parser and its tests; translators must not replace
 or remove the universal English forms.
-
-## Context-Specific Labels
-
-Entity names remain singular in prose and editors (`Task`, `Area`), while
-navigation labels name collections and therefore use plurals. `Area` is the
-code and machine-readable CSV identifier as well as visible English product
-copy; persisted compatibility names are documented separately:
-
-| Context | Japanese key | English | Russian |
-| --- | --- | --- | --- |
-| Tasks navigation | `タスク` | Tasks | Задачи |
-| Task field or picker | `対象タスク` | Task | Задача |
-| Areas navigation | `方向` | Areas | Сферы |
-| Area field or picker | `分野` | Area | Сфера |
-| Main Flow navigation | `Flow` | Flow | Flow |
-| Saved Flow session | `集中記録` | Flow | Flow |
-| Flow count | `集中回数` | Flows | Сессии Flow |
-| Flow mode selector | `集中モード` | Flow Mode | Режим Flow |
-| Short / Standard / Deep / Auto modes | `Sprint` / `Focus` / `Deep` / `オート` | Short / Standard / Deep / Auto | Короткий / Обычный / Глубокий / Авто |
-| Statistics focus mode | `集中` | Focus | Фокус |
-| Statistics Task mode | `タスク` | Tasks | Задачи |
-| Statistics completed-task count | `達成` | Tasks | Задачи |
-| Focus Calendar | `Dots` | Focus Calendar | Календарь фокуса |
-| Current year period | `今年` | This Year | Этот год |
-| Current month period | `今月` | This Month | Этот месяц |
-
-Translators must use the UI context from `Localisation/TERMS.csv`; identical
-Japanese wording does not imply that English and Russian should use a singular
-entity label in collection navigation. Likewise, English `Area` and Russian
-`Сфера` are independent idiomatic choices; neither should be translated
-mechanically from the other language.
 
 Literal `String(localized:)` keys are also checked against the catalog by
 `LocalisationTests`, so a source key cannot silently fall back to Japanese

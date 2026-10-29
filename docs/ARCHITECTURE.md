@@ -171,7 +171,7 @@ Each platform owns its composition root:
   The Watch does not compile onboarding, review-presentation, or support-store
   UI; those surfaces are owned by the companion iPhone/iPad/macOS application.
 
-## Connector Boundaries — Upcoming 1.3.0
+## Connector Boundaries
 
 `ConnectorStore` owns per-device connection metadata, selected list/project IDs,
 Area mapping, success timestamps, and sanitized failures. It uses injectable
@@ -300,7 +300,7 @@ Activity extension declares only its App Group snapshot access. No target
 declares tracking or developer-accessible collected data. Private CloudKit
 records remain owned by the user and are not visible in the developer portal;
 the App Store privacy answers and public privacy policy must still explain the
-private iCloud synchronization accurately. Upcoming connector builds must also
+private iCloud synchronization accurately. Connector builds must also
 describe the user's explicit access to selected external services and local
 credential storage; external provider traffic is not an analytics feature.
 
@@ -487,7 +487,7 @@ transition while the app is suspended requires an ActivityKit push update
 through APNs; `staleDate`, widget timelines, background tasks, and local
 notifications are not reliable substitutes. Version 1.x explicitly accepts
 this presentation limitation and does not require an APNs provider. Remote
-ActivityKit transport remains deferred and optional. Upcoming 1.3.0 local
+ActivityKit transport remains deferred and optional. The local
 connectors are independent of that transport under D-042, and neither may
 replace SwiftData/CloudKit as the source of truth.
 Do not apply `fixedSize()` to the dynamic interval text: ActivityKit supplies a
