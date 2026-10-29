@@ -117,7 +117,7 @@ metadata. Provider + account + task ID form the deduplication key; source ID is
 metadata because a task can move between projects/lists. Corrupt identity data
 fails explicitly rather than creating an unlinked duplicate. No separate
 SwiftData entity is introduced; see [Data model](DATA_MODEL.md) and the
-[CloudKit migration gate](CLOUDKIT.md#connector-link-migration--upcoming-20).
+[CloudKit migration gate](CLOUDKIT.md#connector-link-migration--released-in-130).
 
 Concurrent imports before CloudKit convergence may temporarily create two Todos.
 The importer retains the oldest record, with UUID as the tie-breaker, reconnects
@@ -264,7 +264,7 @@ Run macOS tests sequentially, including `ConnectorTaskImporterTests`,
 `ConnectorStoreTests`, provider and OAuth tests, plus the full existing suite
 because the shared persistence schema changes. Use
 `-parallel-testing-enabled NO -maximum-parallel-testing-workers 1` as in the
-[README build instructions](../README.md#build-locally). Build macOS, iOS, and
+[README build instructions](../README.md#building-from-source). Build macOS, iOS, and
 watchOS; watchOS must still compile the shared DTO/link/reconciliation path.
 Native navigation tests should open both provider screens without accessing
 real accounts or triggering an OS permission prompt.

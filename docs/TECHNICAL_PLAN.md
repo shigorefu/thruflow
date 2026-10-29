@@ -1,233 +1,35 @@
-# Technical Plan
+# Development and QA
 
-## Architecture
+Architecture and current behavior are specified in [Architecture](ARCHITECTURE.md),
+[Domain model](DOMAIN_MODEL.md) and [Data model](DATA_MODEL.md). This guide owns
+local QA setup, not a second implementation roadmap.
 
-The canonical source layout and dependency rules are documented in
-`docs/ARCHITECTURE.md`. Keep separation between:
+## Verification
 
-- domain models: Area, Todo, FlowSession, FlowSegment, FlowBreak;
-- domain logic: validation, filtering, planning, progress, timer, statistics;
-- services: notifications and platform bridges;
-- SwiftUI features.
+Follow [Contributing](../CONTRIBUTING.md) for unit-test commands,
+[Release](RELEASE.md) for Release builds and device checks, and
+[AGENTS.md](../AGENTS.md) for agent review requirements. Cover changed validation,
+state transitions, save rollback and cross-client command wiring. Persistence
+changes require the full unit suite and the live Production schema gate.
 
-SwiftUI views should call domain logic instead of owning product rules directly.
-
-The macOS application shell and desktop feature screens live under
-`Platforms/macOS`. The universal `ThruFlow iOS` target owns adaptive iPhone and
-iPad presentation under `Platforms/iOS` and never imports the macOS folder.
-Both targets depend on the models, logic, application state, services, and
-small controls in `Shared`.
-
-Normal app composition uses the private CloudKit database in
-`iCloud.com.shigorefu.thruflow`. Tests explicitly use an in-memory local store.
-The iOS deployment target is 17.0 even when building with Xcode 26 and the iOS
-26 SDK; iOS 26-only APIs require availability guards and an explicit product need.
-The macOS deployment target is 14.0, the oldest supported release with the
-SwiftData foundation used by the shared persistence layer. The watchOS companion
-targets watchOS 10.0 to match the iOS 17 generation.
-
-## Current Data Rules
-
-- `DefaultAreas` identifies system `その他` by the stable `taskInbox` role,
-  with a reserved-signature fallback for legacy stores.
-- `DefaultAreaReconciler` enforces one active system Area, reconnects
-  Todo/Flow relationships, and soft-archives duplicates. It runs through the
-  existing active persistence synchronization cycle so late CloudKit imports
-  converge without adding another timer.
-- `TodayTodoFilter` includes only scheduled tasks for the selected day.
-- `TaskCalendarBuilder` creates deterministic visible date ranges and month grids.
-- `TaskCalendarSnapshot` creates the render-scoped day/UUID/backlog index shared by Tasks day, week, month, and mini-calendar projections. SwiftData remains the only source of truth; this is not an app-lifetime cache.
-- `TaskRescheduleService` validates kanban and month-grid drag-and-drop.
-- `TaskBacklogBuilder` derives overdue and undated active normal Tasks for the Today section and Tasks inspector without adding persistence state.
-- `RequiredTodoPlanner` decides whether a scheduled Habit Task is eligible.
-- `HabitTodoMaterializer` is the only macOS/iOS persistence entry point for automatic Habit generation. Its full path fetches fresh SwiftData state, normalizes dates, runs `HabitTodoReconciler`, and invokes the planner. Tasks surfaces run that path after their initial frame. Date navigation uses a cancellable, debounced lightweight path with the current Todo snapshot; it skips Flow-history reconciliation and persists only when a Habit occurrence must actually be created or moved.
-- `HabitTodoReconciler` repairs duplicate active Habit occurrences for the same Area/day, preserves related Flow history and progress, and soft-deletes redundant rows.
-- `OrphanTodoReconciler` runs with the existing persistence synchronization cycle, restores a missing Todo-to-Area relationship only from unambiguous Flow history or a matching fixed-schedule Habit template, and leaves ambiguous records hidden rather than relabeling them as `その他`.
-- `FlowProgressCalculator` defines focused-time conversion for isolated calculations.
-- `FlowProgressReconciler` rebuilds measured Todo progress/completion and Area focus totals from credited Flow history after every history mutation and once at app launch.
-- `FlowSession.result` stores the memo for one Flow; linked writes mirror to
-  `Todo.notes` for Task-level continuity.
-- `FlowSession` stores timing/history.
-- `FlowSegment` stores Task/Area intervals and cumulative focused-second boundaries within a FlowSession.
-- `FlowBreak` stores explicit rest and UUID links between adjacent sessions in a Flow series; `FlowSeriesPolicy` owns continuation windows and `長休憩` thresholds.
-- `Todo.completedAt` stores the exact completion time for new completions.
-- `DayHistoryBuilder` creates daily Task/Area aggregates and legacy day projections.
-- `HistoryCalendarBuilder` creates day/week/month calendar projections from actual Flow and break records; Todo completion never creates a calendar item. `FlowHistoryEditor` moves a completed FlowSession and all of its segments by one shared time offset for calendar drag-and-drop.
-- `FlowDashboardBuilder` groups connected records by `seriesID` into continuous dashboard series spans without mutating calendar history.
-- `HistoryTimelineGapBuilder` derives long internal gaps for the macOS chronological day timeline independently from SwiftUI, while `HistoryTimelineChainPolicy` connects its rail only across continuous persisted records of the same Flow series.
-- `HistoryCalendarSeriesProjector` groups connected Flow/rest records into week-only composite presentation blocks while preserving the underlying records for editing.
-- `HistoryOverlapLayout` assigns deterministic side-by-side lanes using actual and minimum visual duration so short records cannot overlap in rendering.
-- `FlowHistoryEditor` creates independent completed manual Flow records and delegates affected progress rebuilding to `FlowProgressReconciler` when history changes.
-- `AppDataResetService` atomically deletes every Area, Todo, FlowSession,
-  FlowSegment, and FlowBreak only when no active Flow exists.
-- `AppDataResetActor` runs that reset away from the main UI for macOS, iPhone,
-  and iPad Settings. After success, the platform clears the persisted timer
-  selection and restarts first-run onboarding while preserving AppSettings.
-- `FlowDashboardBuilder` derives today's totals, Area palette, and timeline segments from `FlowSession`, with a live overlay for the active creditable Flow.
-- `DashboardStatisticsBuilder` derives seven-day bars, previous-day deltas, and the most-grown Area outside SwiftUI.
-- `FlowVisualState` converts 0...6 daily Blocks into clamped speed, volume, detail, depth, glow, and mode-specific wave character without placing those rules in SwiftUI. Its separate `identityReveal` reaches 1 during the first Block. The complete idle and active phase-speed curves use one testable `1.25` multiplier; frame cadence is unchanged. `FlowAnimationClock` consumes the complete visual state through its production API, and an idle-only shader current makes the low end of that curve visually legible without applying a second speed multiplier.
-- `DailyFlowAppearance` derives a stable cross-device topology from the local date and oldest synced Area UUID. It has no time-of-day input. `FlowStreamShader.metal` renders the neutral six-ribbon baseline at zero progress, then continuously blends it into the seven-ribbon daily topology during the first Block. Before rendering, the shared palette layout gives every active Area color, up to the seven available ribbons, at least one visible ribbon; remaining ribbons are distributed by actual focused-time weight. Ribbon cores and broad colored halos are accumulated independently so progress can increase diffusion without flattening the stream into solid bands or white highlights. The SwiftUI host supplies only accumulated phase and visual-state uniforms, targets 30 FPS while idle and 60 FPS while active, and pauses when its window is not key, the scene is inactive, or Reduce Motion is enabled. `FlowAnimationClock` preserves phase when speed changes or rendering pauses, so starting Flow and returning to the window never replace the current stream frame. Dark and light themes use separate compositing paths, including the baseline-to-daily transition. `FlowBreakInteraction` is a sequenced, non-persisted presentation cue: a request triggers an acknowledgement wave, while confirmed regular and long rests trigger distinct transitions. The long-rest style remains derivable from canonical timer state after restoration, and watchOS reproduces the same effect parameters in Canvas.
-- The dashboard reuses `FlowMiniPlayerView` behavior through its dedicated dashboard layout instead of creating a second timer controller. `ActiveFlowStore.phaseProgress` provides the circular timer progress.
-- The dashboard and Tasks surfaces project Todo groups and use the shared `HabitTodoMaterializer` to ensure Habit instances exist without creating duplicates across views or platforms.
-- `TodoProgressControl` is the shared Check/Block/Minute control used by Tasks and the dashboard.
-- `TaskCompletionFeedbackPlayer` deduplicates completion feedback by Task or
-  Flow identifier. On iOS it emits the system success haptic for an actual
-  incomplete-to-complete Task transition and for a successfully finalized Flow;
-  on other platforms haptics are a no-op. It optionally plays
-  `task-complete.caf` for Task completion, and absence of that resource is
-  supported. The shared progress control owns the completion drawing/pulse and
-  respects Reduce Motion.
-- `LiveActivityService` is the platform-neutral output port owned by
-  `ActiveFlowStore`. `IOSFlowLiveActivityService` is the ActivityKit adapter;
-  the Widget Extension receives only shared `FlowActivityAttributes` and never
-  accesses SwiftData. Date-backed timer ranges provide system-driven Lock Screen
-  and Dynamic Island updates while the app is suspended. Shared Live Activity
-  intents delegate expanded-Island `-5 minutes`, pause/resume, and `+5 minutes`
-  actions to the existing `ActiveFlowStore` operations; the extension contains
-  no timer mutations.
-- `IOSFlowLiveActivityService` also converts the same immutable content into a
-  `FlowTimerWidgetSnapshot`, stores it in App Group
-  `group.com.shigorefu.thruflow`, and reloads only `FlowTimerWidget`. The Widget
-  Extension reads that Codable snapshot and uses system date-backed timer and
-  progress views. The Home Screen widget never opens SwiftData, schedules a
-  per-second timeline, or owns transport behavior.
-- `ProductWidgetSnapshotSyncView` observes Todo, Area, and FlowSession
-  changes in the iOS and macOS applications. `ProductWidgetSnapshotBuilder`
-  produces the canonical Today Tasks and 180-day Flow Dots projections, then stores Codable
-  snapshots in the same App Group and reloads `TasksWidget` and
-  `FlowDotsWidget`. The Widget Extension renders the latest 30, 60, or 90 days
-  from that single snapshot according to Widget family and schedules a
-  next-day refresh.
-- iOS day/week paging uses a bounded, recentering `IOSScrollablePeriodStrip`
-  window instead of constructing years of SwiftUI cells. Day and week activity
-  dots are indexed once per data snapshot rather than filtering complete Todo
-  or Flow collections for every visible cell. Scrolling must not synchronously
-  fetch complete Flow history, reconcile duplicates, save SwiftData, or trigger
-  CloudKit export work. Month views advance one calendar month per horizontal
-  swipe without retaining a separate long-running month strip.
-
-## Local Connectors — Upcoming 1.3.0
-
-`ConnectorStore` orchestrates direct EventKit/URLSession reads on macOS and iOS,
-with per-device source/Area preferences and Keychain credentials. Native
-AuthenticationServices delegates Todoist login to the provider. Public client
-metadata plus PKCE avoid an embedded client secret; the existing static website
-hosts only the client document, callback, and associated-domain declaration.
-`ConnectorTaskImporter` receives shared DTOs, saves on a separate ModelContext,
-and keeps every imported Task in the existing schema. The optional
-`externalTaskLinkRawValue` field requires an additive migration and CloudKit
-Production deployment before release.
-
-Imports and refreshes are read-only toward providers. Source/account identity,
-local completion/memo/planning/history preservation, rollback, duplicate Flow
-relationship repair, and generated-Habit exclusion belong to domain tests.
-Provider network and authorization tests use injected transports; store tests
-use fake credentials, client, and browser. Production Keychain, EventKit
-permission dialogs, real accounts, private CloudKit, and Associated Domains are
-separate device checks, not a substitute for deterministic tests.
-
-See [Connectors](CONNECTORS.md) for exact OAuth endpoints, identity limitations,
-sequential verification commands, and release gates. APNs, webhooks, reverse
-completion synchronization, and new recurring occurrence generation remain
-outside this implementation.
-
-## Test Expectations
-
-Cover:
-
-- Connector provider authorization errors, selected-source validation,
-  pagination, empty responses, rate limits, and sanitized transport failures.
-- PKCE challenge, unpredictable state/verifier generation, callback origin/state
-  validation, read-only scope, token refresh, and cancellation.
-- Connector imports: account/provider identity, repeated imports and source
-  moves, local memo/completion/planning/history preservation, missing remote
-  tasks, save rollback, additive schema, and concurrent/late CloudKit duplicates.
-- Device-local credential/configuration separation, failed reconnect preserving
-  an existing account, account-switch mapping reset, unchanged success timestamp
-  after failure, editor-draft isolation, and disconnect preserving history.
-- Native connector entry placement, provider navigation, setup validation,
-  source labels, cancellation and permission-denied presentation. Real consent
-  and signed callbacks remain release checks.
-- Area validation and legacy raw value normalization.
-- Todo validation and daily Task filtering.
-- Calendar range, filtering, and rescheduling tests.
-- Habit task generation.
-- Block conversion and progress.
-- Flow timer transitions, five-minute focus/rest remaining-time adjustments,
-  one-minute lower bound, paused-timer adjustment, preserved long-rest identity,
-  mode changes without elapsed-time reset, and actual-time rest thresholds.
-- Flow-stream phase speed, bounded rest-reaction timing, pure reaction-state
-  consumption, unique cues for repeated rest requests, stale-cue cleanup, and
-  distinct confirmed regular/long-break starts.
-- Statistics range construction and filters.
-- Anchored and inclusive custom macOS Statistics period boundaries, segment-aware search,
-  current/previous Flow and Task comparisons, daily Month trend buckets,
-  distribution grouping, and deterministic CSV.
-- Day-history grouping, legacy untimed completions, deterministic Flow progress reconciliation after create/edit/delete, and duration-preserving Flow moves.
-- Manual Flow creation, linked Task progress without implicit completion, and fixed-Area Task creation.
-- Flow series continuation, `長休憩` thresholds, rest correction, and same-series downstream shifting.
-- Active Task/Area switching transfers sub-minute context mistakes to the new context, merges an immediate return, and never creates another FlowSession.
-- Remote active-runtime completion cancels local Flow notifications when a
-  persistence-change event arrives after foreground polling has stopped.
-- Flow dashboard totals, palette ordering, day filtering, live minimum-credit behavior, and timeline normalization.
-- Dashboard statistics distribution, seven-day trend comparisons, and completion projection.
-- Live Activity content projection for focus, break, and paused phases, plus
-  deterministic shared formatting.
-- Home Screen timer-widget snapshot mapping, App Group persistence round-trip,
-  and clear behavior.
-- Today Tasks widget filtering, priority ordering, measurement progress, and
-  Tasks/Dots snapshot persistence.
-- Flow Dots reuse of the canonical 180-day statistics projection and mixed
-  Area color.
-- First-run onboarding persistence, workspace-content detection, guided versus
-  read-only experience selection, real-screen navigation, and the exact
-  ten-step `ようこそ → 分野 → タスク → フロー → 集中タイマー → フローを体験 → 履歴 → 統計 →
-  使い方のフロー → データ` order on macOS and universal iOS. Coverage must prove that Area
-  and Task records appear only after normal user confirmation, the Flow preview
-  renders the production player shell and deterministically projects Task-card
-  press and selection, Play press, accelerated Short focus from `12:00` to
-  `00:00`, break press, and the `03:00` regular-break state without invoking
-  production actions or creating credited or synchronized data. Coverage must
-  also preserve the real-player rule that a break begins only after note
-  confirmation, prove every step can be skipped, and keep existing-workspace or
-  Settings replay read-only.
-- Review eligibility boundaries: seven-day delay, active-day/completed-Flow
-  thresholds, and one request per application version.
-- The dormant StoreKit support configuration preserves stable Coffee/Ramen
-  product identifiers, consumable product types, JPY 100/500 local test prices,
-  and verified transaction completion without entitlements. It is not injected
-  or presented in the first App Store release.
-
-For interactive first-user QA, select `ThruFlow Onboarding Preview` on macOS or
-`ThruFlow iOS Onboarding Preview` on an iPhone/iPad simulator and Run. Both
-schemes force onboarding and use the existing in-memory UI-testing container,
-so user-confirmed example records cannot reach the real store. The preview
-experience can be selected explicitly to exercise guided creation or read-only
-tour behavior. `OnboardingJourneyUITests` covers real-screen navigation, Back,
-Close, all ten steps, confirmation-gated Area and Task creation, the transient
-Flow preview, and Finish.
-
-## Migration Caution
-
-Avoid removing SwiftData fields such as `FlowSession.result` without a deliberate migration step. It is the per-Flow memo source; linked writes also mirror the value to `Todo.notes` for Task-level continuity.
+Connector tests use injected transport and credentials. Real OAuth, Keychain,
+EventKit permission, CloudKit exchange, notifications, widgets and Watch require
+separate signed-device checks. A successful unsigned build does not verify them.
 
 ## Demo database
 
-Run the `ThruFlow Demo` or `ThruFlow iOS Demo` Xcode scheme for an isolated
-in-memory database with three Japanese test Areas, 21 historical Flows across
-seven dates, and 24 Tasks. `--demo-data` is Debug-only and disables CloudKit.
-Each launch recreates the sample data relative to today; edits are disposable.
-Normal Debug/Release stores and standard unit-test databases are not seeded.
+Run `ThruFlow Demo` or `ThruFlow iOS Demo` for disposable in-memory sample data.
+The Debug-only `--demo-data` argument disables CloudKit and never seeds normal
+stores. Do not rely on fixed fixture counts; the fixture builders are the source
+of truth. For localized App Store assets, use the dedicated screenshot schemes
+and instructions in [Release](RELEASE.md#localized-app-store-screenshots).
 
-History segment edits, attachments, and deletions must preserve reconstructable
-live Flow runtime fields and current context. Only completed-session summaries
-are rebuilt from segment bounds; a recorded segment end is not a timer deadline.
+Onboarding preview schemes use an isolated in-memory container. User-confirmed
+example creation cannot reach the production store. Verify both guided empty
+workspace and read-only existing-workspace experiences.
 
-macOS Statistics keeps its small, fixed set of report cards in a non-lazy stack.
-Its native segmented pickers use explicit matching widths so scrolling does not
-repeatedly rebuild the controls or negotiate their intrinsic dimensions.
+## Build diagnostics
 
-### Build diagnostics
 
 `TodoProgressCalculator` initialization and numeric progress/status calculations
 are nonisolated so synchronous reconciliation can use this stateless calculator.

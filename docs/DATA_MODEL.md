@@ -270,7 +270,7 @@ Pending commands contain UUID, target boolean and timestamp; no tokens or new
 SwiftData fields/entities are introduced. Checkbox and command persist together.
 Local Flow counters and relationships are untouched by incoming completion.
 
-### Additive Toggl recording ownership (upcoming connector branch)
+### Additive Toggl recording ownership
 
 `FlowSession.recordingDeviceID: String?` is an optional, non-secret device identity.
 Its persisted and initializer defaults are nil; only `ActiveFlowStore.start`

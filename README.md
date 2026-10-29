@@ -4,7 +4,7 @@
 
 ThruFlow / スルフロ is a free, open-source app for focused work and building habits on Apple devices. Its flexible Pomodoro timer turns time spent working into visible progress on your tasks.
 
-**[Download on the App Store](https://apps.apple.com/app/id6798609191)** · **Version 1.4.0** · [What's new](docs/releases/1.4.0.md)
+**[Download on the App Store](https://apps.apple.com/app/id6798609191)** · **1.4.0 (14): awaiting App Review** · [What's new](docs/releases/1.4.0.md)
 
 | Device | Minimum OS |
 | --- | --- |
@@ -22,7 +22,7 @@ The Flow screen on Mac and iPhone, version 1.4.0, using demonstration data.
 
 ## Features
 
-- **Flexible Pomodoro.** Short, Standard, and Deep modes set the initial session length, which you can adjust to suit the task and your pace. Switch tasks during a session without resetting the timer. The idea is to spend the allotted time doing something useful while maintaining a rhythm of work and rest.
+- **Flexible Pomodoro.** Short, Standard, and Deep modes set the initial session length, which you can adjust to suit the task and your pace. Switch tasks during a session without resetting the timer.
 - **Tasks, Areas, and Projects.** Areas organize ongoing parts of your life, such as work or study. Projects group related tasks around a finite goal within an Area. Tasks can have a scheduled time and a reminder.
 - **Habits.** Set up a Habit with a schedule and goal for an Area or Project. Tasks are created automatically, and statistics help you track consistency and completion, including partial progress.
 - **Quick task capture.** Write down a new task without a lengthy interruption to your work.
@@ -52,7 +52,7 @@ Available on Mac, iPhone, and iPad:
 - **Todoist** — import unfinished tasks from selected projects.
 - **Toggl Track** — send completed focus time to mapped Toggl projects from the device that recorded it.
 
-For Reminders and Todoist, completing and reopening checkbox tasks syncs both ways. Access tokens are stored in the device's Keychain.
+For Reminders and Todoist, completing and reopening checkbox tasks syncs both ways. Todoist and Toggl credentials are stored in the device's Keychain.
 
 Connectors are in beta. See the [connector guide](docs/CONNECTORS.md) for setup and limitations.
 
@@ -84,6 +84,8 @@ To help with code, translations, or documentation, start with the [contribution 
 Development branches may contain unreleased changes. Back up important data before testing them.
 
 ## Documentation
+
+Technical documentation is maintained in English. Start with the [documentation index](docs/README.md).
 
 - [UX flows](docs/UX_FLOWS.md) — screens and workflows.
 - [Product overview](docs/PRODUCT.md) — features and app behavior.
