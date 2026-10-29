@@ -31,14 +31,15 @@ keywords, app name and subtitle. Replaced screenshots for all five locales:
 in the gitignored `screenshots/1.4.0/` directory. Prior screenshot associations
 were removed from the drafts; original assets remain in the asset library.
 
-Both drafts remain in Prepare for Submission for maintainer review. No build is
-selected and neither draft has been submitted to App Review or published.
+The maintainer subsequently authorized upload and App Review submission. iOS
+1.4.0 (14) was uploaded through GitHub Actions, processed as `VALID`, selected
+and submitted: App Store Connect shows Waiting for Review. macOS delivery is
+still in progress. Neither version is confirmed published. See
+[TestFlight delivery evidence](TESTFLIGHT.md#account-setup-progress--2026-10-29).
 
-Before upload:
+Remaining verification:
 
-- Upload build 14 after completing the remaining gates. On 2026-10-29,
-  TestFlight for both platforms showed 1.3.1 (12) as the latest build and no
-  1.4.0 build; recheck before upload.
+- Complete macOS delivery and verify its processed build before submission.
 - Verify signed Mac/iPhone exchange of Projects, Task assignments and Task times/
   reminder preferences, including delivery and cancellation of local notifications.
   Live Production schema additions were deployed and read back on 2026-10-16
