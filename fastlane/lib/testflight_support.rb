@@ -32,10 +32,15 @@ module TestFlightSupport
     raise "Invalid release build" unless build.match?(/\A[1-9]\d*\z/)
     team = required(env, "APPLE_TEAM_ID")
     raise "Invalid Apple team" unless team.match?(/\A[A-Z0-9]{10}\z/)
-    %w[MATCH_GIT_URL MATCH_GIT_BRANCH MATCH_PASSWORD MATCH_GIT_BASIC_AUTHORIZATION
+    %w[MATCH_GIT_URL MATCH_GIT_BRANCH MATCH_PASSWORD
        ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_CONTENT_BASE64].each { |name| required(env, name) }
     git_url = required(env, "MATCH_GIT_URL")
-    raise "Use a credential-free HTTPS signing repository URL" unless git_url.match?(%r{\Ahttps://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(?:\.git)?\z})
+    https = git_url.match?(%r{\Ahttps://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(?:\.git)?\z})
+    ssh = git_url.match?(%r{\Agit@github\.com:[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(?:\.git)?\z})
+    raise "Use a credential-free GitHub HTTPS or SSH signing repository URL" unless https || ssh
+    required(env, ssh ? "MATCH_GIT_PRIVATE_KEY" : "MATCH_GIT_BASIC_AUTHORIZATION")
+    other = ssh ? "MATCH_GIT_BASIC_AUTHORIZATION" : "MATCH_GIT_PRIVATE_KEY"
+    raise "Configure only the signing repository's selected authentication method" unless env[other].to_s.empty?
     installer = platform == "macos" ? required(env, "MAC_INSTALLER_CERT_NAME") : nil
     if installer && !(installer.start_with?("3rd Party Mac Developer Installer: ") && installer.end_with?("(#{team})"))
       raise "MAC_INSTALLER_CERT_NAME must be this team's Mac App Store installer certificate"

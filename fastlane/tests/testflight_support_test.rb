@@ -38,6 +38,17 @@ class TestFlightSupportTest < Minitest::Test
     assert_raises(RuntimeError) { TestFlightSupport.configuration(environment.merge("RELEASE_BUILD" => "13;echo bad"), "ios") }
   end
 
+  def test_ssh_deploy_key_requires_matching_authentication
+    env = environment.merge("MATCH_GIT_URL" => "git@github.com:example/signing.git",
+                            "MATCH_GIT_BASIC_AUTHORIZATION" => nil,
+                            "MATCH_GIT_PRIVATE_KEY" => "fixture")
+    assert_equal "ios", TestFlightSupport.configuration(env, "ios")[:platform]
+    assert_raises(RuntimeError) { TestFlightSupport.configuration(env.merge("MATCH_GIT_PRIVATE_KEY" => nil), "ios") }
+    assert_raises(RuntimeError) { TestFlightSupport.configuration(env.merge("MATCH_GIT_BASIC_AUTHORIZATION" => "fixture"), "ios") }
+    assert_raises(RuntimeError) { TestFlightSupport.configuration(env.merge("MATCH_GIT_URL" => "git@other.example:example/signing.git"), "ios") }
+    assert_raises(RuntimeError) { TestFlightSupport.configuration(environment.merge("MATCH_GIT_PRIVATE_KEY" => "fixture"), "ios") }
+  end
+
   def test_mac_installer_certificate_is_required_and_team_bound
     assert configuration("macos")[:installer].include?("Installer")
     assert_raises(RuntimeError) { TestFlightSupport.configuration(environment.merge("MAC_INSTALLER_CERT_NAME" => nil), "macos") }

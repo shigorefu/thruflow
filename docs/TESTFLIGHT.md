@@ -9,7 +9,7 @@ external testers automatically. No Apple password is stored in GitHub.
 
 - Ordinary pushes and PRs use [CI](../.github/workflows/ci.yml); they do not upload.
 - Push `testflight/v<version>-<build>` to run both platforms. For the current
-  candidate the tag is `testflight/v1.4.0-13`.
+  candidate the tag is `testflight/v1.4.0-14`.
 - Run **TestFlight** manually from `main` or the matching TestFlight tag. Choose
   `ios`, `macos`, or `both`; selecting one platform allows recovery when the
   other platform already uploaded successfully.
@@ -28,10 +28,13 @@ The platform matrix is sequential and does not cancel the other platform on fail
 ## One-time account setup
 
 1. Configure the GitHub Environment **testflight** before the first delivery.
-   Require maintainer approval, disable self-review where available, and allow
+   Require maintainer approval and allow
    only the `main` branch and `testflight/v*` tags. Protect `main` and the tag
    namespace against unreviewed changes. Workflow checks complement these
    server-side rules; a modified workflow cannot be trusted to protect itself.
+   The current single-maintainer environment allows `shigorefu` to approve their
+   own run, as explicitly authorized; an independent reviewer is preferable when
+   another maintainer is available.
 2. Create an App Store Connect team API key with the least role needed for this
    upload workflow (normally App Manager for uploading and waiting for processing).
    Store its ID, issuer ID and base64-encoded `.p8` content as environment secrets.
@@ -62,7 +65,12 @@ The platform matrix is sequential and does not cancel the other platform on fail
 | `ASC_ISSUER_ID` | Team API key issuer ID |
 | `ASC_KEY_CONTENT_BASE64` | Base64 of the entire `.p8` file |
 | `MATCH_PASSWORD` | Encryption passphrase for match storage |
-| `MATCH_GIT_BASIC_AUTHORIZATION` | Base64 of `username:token`, with read-only access to the private signing repository |
+| `MATCH_GIT_PRIVATE_KEY` | Read-only SSH deploy key for the private signing repository (current setup) |
+| `MATCH_GIT_BASIC_AUTHORIZATION` | Alternative for HTTPS storage: base64 of `username:token` with read-only access; leave unset for SSH |
+
+Configure exactly one repository authentication method, matching its URL. SSH
+host keys come from GitHub's authenticated HTTPS metadata endpoint; strict host
+verification stays enabled.
 
 Base64 is encoding, not encryption. These values are secrets. Use a narrowly
 scoped read-only token rather than the public repository's `GITHUB_TOKEN`, which
@@ -75,7 +83,7 @@ credentials through the owning Apple/GitHub account, not by committing them.
 | --- | --- |
 | `TESTFLIGHT_ENABLED` | `true` after setup |
 | `APPLE_TEAM_ID` | Distribution team ID; current project uses `BR727PS795` |
-| `MATCH_GIT_URL` | HTTPS URL of the private match repository, without embedded credentials |
+| `MATCH_GIT_URL` | GitHub SSH or HTTPS URL of the private match repository, without embedded credentials |
 | `MATCH_GIT_BRANCH` | Signing repository branch (typically `main`) |
 | `MAC_INSTALLER_CERT_NAME` | Exact common name of the Mac App Store installer certificate |
 | `CLOUDKIT_VERIFIED_SHA` | Full source commit SHA for which live Production inspection was completed |
@@ -84,7 +92,9 @@ The CloudKit variable is a maintainer attestation, not an automatic schema test.
 Record the inspected environment, fields/indexes, date and evidence in
 [CLOUDKIT.md](CLOUDKIT.md), then set the variable to the final candidate commit.
 Do not set it merely to make the workflow green. Recheck for a new candidate SHA.
-The current release preparation has not completed this gate.
+Live Production was inspected for build 14 on 2026-10-29; see the dated evidence
+in CloudKit. Set the variable only for the final reviewed source commit. Signed
+physical-device checks remain separate from this schema attestation.
 
 ## Per-candidate procedure
 
@@ -142,3 +152,24 @@ changes are separate setup actions.
 - [App Store Connect API authentication](https://docs.fastlane.tools/app-store-connect-api/)
 - [TestFlight upload](https://docs.fastlane.tools/actions/pilot/)
 - [GitHub deployment environments](https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments)
+
+## Account setup progress — 2026-10-29
+
+The maintainer authorized a protected `testflight` environment on
+`shigorefu/thruflow`, limited to the `main` branch and `testflight/v*` tags,
+with `shigorefu` as required reviewer and self-review enabled for the sole
+maintainer. The team is `BR727PS795`. An App Manager team API key was created
+and its three values stored as environment secrets without printing the private
+key. Apple team API keys apply to all apps in the team; this scope was explicitly
+approved. The maintainer accepted Apple's updated Program License Agreement.
+
+The private `shigorefu/thruflow-signing` repository holds encrypted match assets.
+Its dedicated deploy key is read-only; the private deploy key and match
+passphrase are environment secrets. Local bootstrap uses the maintainer's
+authenticated GitHub access for writing; CI never receives that broader access.
+Bootstrap completed for iOS and macOS: Apple Distribution and Mac App Store
+Installer identities plus five App Store profiles were created without revoking
+existing certificates. Profile team, application groups, push and CloudKit
+container permissions were inspected; exported binaries must still pass the
+workflow entitlement checks. Delivery remains disabled until this setup reaches
+reviewed main and the final commit receives its Production attestation.

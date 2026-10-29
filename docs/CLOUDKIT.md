@@ -312,3 +312,20 @@ cannot merge unrelated Area/Project occurrences. The full local suite passed 550
 tests, including disk migration and both relationship arrival orders. Actual
 signed Mac/iPhone exchange of Project settings and generated occurrences remains
 unverified and must be checked before distribution.
+
+
+### Release 1.4.0 build 14 preparation — 2026-10-29
+
+Inspected the live Production field pages in CloudKit Console for
+`iCloud.com.shigorefu.thruflow`, team `BR727PS795`. The six application record
+types contained these field counts including metadata: Direction 25, Project 15,
+Todo 34, FlowSession 34, FlowSegment 16 and FlowBreak 20. Existing field types
+and indexes were read on each page. In particular, Todo task timing fields
+remain INT64/TIMESTAMP with Queryable and Sortable indexes, the Project
+`CD_habitSettingsRawValue` and Todo `CD_habitOwnerKeyRawValue` remain STRING
+without indexes, and Project relationships are present. No schema or user
+records were changed. This build's month-label correction adds no fields.
+
+Production schema inspection passed; actual signed Mac/iPhone exchange and
+notification delivery were not exercised during this preparation. Those
+distribution gates remain open.
