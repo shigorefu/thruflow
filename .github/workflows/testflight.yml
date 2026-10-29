@@ -94,6 +94,24 @@ jobs:
         with:
           ruby-version: '3.3'
           bundler-cache: true
+      - name: Trust GitHub SSH host keys from its HTTPS metadata endpoint
+        run: |
+          python3 - <<'PYTHON'
+          import json, os, pathlib, urllib.request
+          with urllib.request.urlopen('https://api.github.com/meta', timeout=30) as response:
+              keys = json.load(response)['ssh_keys']
+          if not keys:
+              raise SystemExit('GitHub did not return SSH host keys')
+          directory = pathlib.Path.home() / '.ssh'
+          directory.mkdir(mode=0o700, exist_ok=True)
+          path = directory / 'known_hosts'
+          with path.open('a') as output:
+              for key in keys:
+                  if '\n' in key or not key.startswith(('ssh-ed25519 ', 'ecdsa-sha2-nistp256 ', 'ssh-rsa ')):
+                      raise SystemExit('Unexpected GitHub SSH host key')
+                  output.write('github.com ' + key + '\n')
+          os.chmod(path, 0o600)
+          PYTHON
       - name: Archive, validate and upload
         env:
           RELEASE_PLATFORM: ${{ matrix.platform }}
@@ -107,6 +125,8 @@ jobs:
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_KEY_CONTENT_BASE64: ${{ secrets.ASC_KEY_CONTENT_BASE64 }}
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_PRIVATE_KEY: ${{ secrets.MATCH_GIT_PRIVATE_KEY }}
+          GIT_SSH_COMMAND: ssh -o StrictHostKeyChecking=yes
           MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
         run: |
           case "$RELEASE_PLATFORM" in

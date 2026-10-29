@@ -12,14 +12,33 @@ not a published release. See [draft release notes](releases/1.4.0.md).
 Build 14 corrects localized month picker labels and includes isolated screenshot
 schemes. Xcode 27.1 (27A9275) is the local development toolchain; CI retains its
 separately pinned Xcode version. The month-label change does not alter persisted
-models. Production CloudKit and signed-device checks were not repeated for this
-local correction; the upload gates below still apply.
+models. Live Production CloudKit was inspected again on 2026-10-29; see
+[CloudKit evidence](CLOUDKIT.md#release-140-build-14-preparation--2026-10-29).
+Signed-device checks were not repeated; the upload gates below still apply.
+
+### App Store Connect draft — 2026-10-29
+
+[PR #28](https://github.com/shigorefu/thruflow/pull/28) was merged into main
+at `838a44dc6ae75e3a0073d7527ec6cddb2c5d9450`. The
+[main CI run](https://github.com/shigorefu/thruflow/actions/runs/40814805364)
+passed macOS tests and both Release builds, including embedded Watch.
+
+Created iOS and macOS 1.4.0 drafts, with release notes in Japanese, English,
+Russian, Simplified Chinese and Traditional Chinese. Added Chinese descriptions,
+keywords, app name and subtitle. Replaced screenshots for all five locales:
+6 iPhone, 6 iPad, 6 Mac and 10 Duo images per locale (140 total). Duo uses
+5 closed and 5 open screenshots to fit its ten-image limit. Source assets remain
+in the gitignored `screenshots/1.4.0/` directory. Prior screenshot associations
+were removed from the drafts; original assets remain in the asset library.
+
+Both drafts remain in Prepare for Submission for maintainer review. No build is
+selected and neither draft has been submitted to App Review or published.
 
 Before upload:
 
-- Confirm build 14 has not already been uploaded in App Store Connect; local
-  metadata advances the previous candidate build 13 but does not inspect
-  the account's upload history.
+- Upload build 14 after completing the remaining gates. On 2026-10-29,
+  TestFlight for both platforms showed 1.3.1 (12) as the latest build and no
+  1.4.0 build; recheck before upload.
 - Verify signed Mac/iPhone exchange of Projects, Task assignments and Task times/
   reminder preferences, including delivery and cancellation of local notifications.
   Live Production schema additions were deployed and read back on 2026-10-16
