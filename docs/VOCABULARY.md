@@ -18,5 +18,5 @@ Translate each UI context rather than substituting one term globally.
 
 [Domain model](DOMAIN_MODEL.md) owns behavior. [Data model](DATA_MODEL.md) owns
 storage compatibility, including the legacy `Direction` entity and `direction`
-relationship behind `Area` APIs. The multilingual translation glossary lives only
-in [TERMS.csv](../Localisation/TERMS.csv); do not duplicate it in prose documents.
+relationship behind `Area` APIs. Approved translations live in the shared String
+Catalogs; see [Localization](LOCALISATION.md) for the contributor workflow.

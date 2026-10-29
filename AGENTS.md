@@ -141,9 +141,9 @@ client reviewers. This is standing authorization for that bounded review.
   (自然な表現), grammar, tone, brevity and terminology in the actual UI context,
   not just literal translation or whether a key exists.
 - The localization agent may fix awkward, incorrect or missing translations
-  directly within its assigned files. Assign one writer for catalogs/glossary;
+  directly within its assigned files. Assign one writer for catalogs;
   client agents coordinate copy changes through that owner to avoid conflicts.
-- Follow [Localization](docs/LOCALISATION.md) and `Localisation/TERMS.csv`.
+- Follow [Localization](docs/LOCALISATION.md) and [Vocabulary](docs/VOCABULARY.md).
   Preserve meaning, stable source keys, placeholders, plural rules, shortcuts
   and accessibility intent. For shared keys with different UI meanings, agree
   on context-specific wording/keys with the orchestrator before changing them.
