@@ -17,6 +17,7 @@ struct IOSStatisticsView: View {
     let onOpenHistoryDate: (Date) -> Void
 
     @State private var selectedPeriod: StatisticsPeriod = .week
+    @State private var didScrollToScreenshotDots = false
     @State private var selectedAreaIDs: Set<UUID> = []
     @State private var anchorDate = Date.now
     @State private var anchorDateDraft = Date.now
@@ -54,6 +55,10 @@ struct IOSStatisticsView: View {
         self.isVisible = isVisible
         _cachedSnapshot = cachedSnapshot
         self.onOpenHistoryDate = onOpenHistoryDate
+        if ScreenshotMode.isEnabled() {
+            _selectedPeriod = State(initialValue: .month)
+            _anchorDate = State(initialValue: ScreenshotMode.referenceDate)
+        }
     }
 
     private var activeAreas: [Area] {
@@ -138,47 +143,16 @@ struct IOSStatisticsView: View {
     }
 
     var body: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 16) {
-                periodNavigationCard
-
-                if let currentSnapshot {
-                    IOSStatisticsSummaryCard(
-                        title: periodTitle,
-                        summary: currentSnapshot.summary,
-                        previousSummary: currentSnapshot.previousSummary
-                    )
-                    HabitCompletionCard(summary: currentSnapshot.habitCompletion)
-                    IOSStatisticsTrendCard(
-                        mode: $trendMode,
-                        period: currentSnapshot.trendPeriod,
-                        points: currentSnapshot.trend,
-                        today: today
-                    )
-                    IOSStatisticsDistributionCard(
-                        dimension: $distributionDimension,
-                        items: distributionItems(in: currentSnapshot),
-                        totalFocusSeconds: currentSnapshot.summary.totalFocusSeconds
-                    )
-                    IOSStatisticsDotsCard(
-                        mode: $dotsMode,
-                        period: presentationPeriod,
-                        marksOutsideMonth: selectedPeriod == .month && !usesCustomRange,
-                        usesCustomRange: usesCustomRange,
-                        flowDays: currentSnapshot.flowDays,
-                        achievementDays: currentSnapshot.achievementDays,
-                        maximumInteractiveDate: today,
-                        onSelectDay: { selectedContributionDay = $0 }
-                    )
-                } else {
-                    IOSStatisticsLoadingCards()
+        ScrollViewReader { proxy in
+            statisticsContent
+                .task(id: currentSnapshot?.filter) {
+                    guard ScreenshotMode.initialScreen() == .statisticsDots,
+                          currentSnapshot != nil, !didScrollToScreenshotDots else { return }
+                    await Task.yield()
+                    guard !Task.isCancelled else { return }
+                    proxy.scrollTo("screenshot-statistics-dots", anchor: .top)
+                    didScrollToScreenshotDots = true
                 }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .frame(maxWidth: 1_000)
-            .frame(maxWidth: .infinity)
-            .animation(.snappy(duration: 0.32, extraBounce: 0), value: presentationPeriod)
         }
         .background(Color.primary.opacity(0.025).ignoresSafeArea())
         .iosCenteredNavigationTitle(String(localized: "統計"))
@@ -234,6 +208,52 @@ struct IOSStatisticsView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .NSPersistentStoreRemoteChange).receive(on: RunLoop.main)) { _ in
             if isVisible { persistenceRevision &+= 1 }
+        }
+    }
+
+    private var statisticsContent: some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 16) {
+                periodNavigationCard
+
+                if let currentSnapshot {
+                    IOSStatisticsSummaryCard(
+                        title: periodTitle,
+                        summary: currentSnapshot.summary,
+                        previousSummary: currentSnapshot.previousSummary
+                    )
+                    HabitCompletionCard(summary: currentSnapshot.habitCompletion)
+                    IOSStatisticsTrendCard(
+                        mode: $trendMode,
+                        period: currentSnapshot.trendPeriod,
+                        points: currentSnapshot.trend,
+                        today: today
+                    )
+                    IOSStatisticsDistributionCard(
+                        dimension: $distributionDimension,
+                        items: distributionItems(in: currentSnapshot),
+                        totalFocusSeconds: currentSnapshot.summary.totalFocusSeconds
+                    )
+                    IOSStatisticsDotsCard(
+                        mode: $dotsMode,
+                        period: presentationPeriod,
+                        marksOutsideMonth: selectedPeriod == .month && !usesCustomRange,
+                        usesCustomRange: usesCustomRange,
+                        flowDays: currentSnapshot.flowDays,
+                        achievementDays: currentSnapshot.achievementDays,
+                        maximumInteractiveDate: today,
+                        onSelectDay: { selectedContributionDay = $0 }
+                    )
+                    .id("screenshot-statistics-dots")
+                } else {
+                    IOSStatisticsLoadingCards()
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .frame(maxWidth: 1_000)
+            .frame(maxWidth: .infinity)
+            .animation(.snappy(duration: 0.32, extraBounce: 0), value: presentationPeriod)
         }
     }
 

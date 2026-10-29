@@ -21,7 +21,8 @@ struct StatisticsView: View {
     let isVisible: Bool
     let onSelectHistoryDate: (Date) -> Void
 
-    @State private var selectedPeriod: StatisticsPeriod = .week
+    @State private var selectedPeriod: StatisticsPeriod
+    @State private var didScrollToScreenshotDots = false
     @State private var selectedAreaIDs: Set<UUID> = []
     @State private var anchorDate = Date.now
     @State private var customStartDate: Date?
@@ -58,6 +59,7 @@ struct StatisticsView: View {
         self.areas = areas
         _cachedSnapshot = cachedSnapshot
         self.onSelectHistoryDate = onSelectHistoryDate
+        _selectedPeriod = State(initialValue: ScreenshotMode.isEnabled() ? .month : .week)
     }
 
     private var activeAreas: [Area] {
@@ -158,24 +160,34 @@ struct StatisticsView: View {
     private var workspace: some View {
         GeometryReader { geometry in
             HStack(spacing: 0) {
-                ScrollView {
-                    // Four report cards stay mounted during scrolling. Native
-                    // segmented controls should not churn with lazy row reuse.
-                    VStack(alignment: .leading, spacing: 16) {
-                        if let currentSnapshot {
-                            statisticsCards(snapshot: currentSnapshot)
-                        } else {
-                            StatisticsLoadingCards(period: presentationPeriod)
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        // Four report cards stay mounted during scrolling. Native
+                        // segmented controls should not churn with lazy row reuse.
+                        VStack(alignment: .leading, spacing: 16) {
+                            if let currentSnapshot {
+                                statisticsCards(snapshot: currentSnapshot)
+                            } else {
+                                StatisticsLoadingCards(period: presentationPeriod)
+                            }
+                        }
+                        .padding(20)
+                        .animation(.snappy(duration: 0.34, extraBounce: 0), value: selectedPeriod)
+                    }
+                    .overlay(alignment: .topTrailing) {
+                        if isLoadingCurrentFilter, currentSnapshot != nil {
+                            ProgressView()
+                                .controlSize(.small)
+                                .padding(26)
                         }
                     }
-                    .padding(20)
-                    .animation(.snappy(duration: 0.34, extraBounce: 0), value: selectedPeriod)
-                }
-                .overlay(alignment: .topTrailing) {
-                    if isLoadingCurrentFilter, currentSnapshot != nil {
-                        ProgressView()
-                            .controlSize(.small)
-                            .padding(26)
+                    .task(id: currentSnapshot?.filter) {
+                        guard ScreenshotMode.initialScreen() == .statisticsDots,
+                              currentSnapshot != nil, !didScrollToScreenshotDots else { return }
+                        await Task.yield()
+                        guard !Task.isCancelled else { return }
+                        proxy.scrollTo("screenshot-statistics-dots", anchor: .top)
+                        didScrollToScreenshotDots = true
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -311,6 +323,7 @@ struct StatisticsView: View {
             }
         }
         .id(presentationPeriod)
+        .id("screenshot-statistics-dots")
         .transition(
             .asymmetric(
                 insertion: .opacity.combined(with: .scale(scale: 0.985, anchor: .top)),

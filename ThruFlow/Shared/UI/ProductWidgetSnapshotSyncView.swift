@@ -55,7 +55,7 @@ private struct TasksWidgetSnapshotSyncView: View {
                 // Let the checkmark render first and coalesce rapid edits.
                 do { try await Task.sleep(for: .milliseconds(350)) }
                 catch { return }
-                guard !Task.isCancelled else { return }
+                guard !Task.isCancelled, !ScreenshotMode.isEnabled() else { return }
                 let snapshot = ProductWidgetSnapshotBuilder(
                     calendar: calendar, dayBoundary: dayBoundary
                 ).tasksSnapshot(todos: todos)
@@ -94,7 +94,7 @@ private struct DotsWidgetSnapshotSyncView: View {
             .task(id: contentVersion) {
                 do { try await Task.sleep(for: .milliseconds(350)) }
                 catch { return }
-                guard !Task.isCancelled else { return }
+                guard !Task.isCancelled, !ScreenshotMode.isEnabled() else { return }
                 let snapshot = ProductWidgetSnapshotBuilder(
                     calendar: calendar, dayBoundary: dayBoundary
                 ).dotsSnapshot(sessions: sessions)

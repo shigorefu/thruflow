@@ -62,6 +62,18 @@ struct IOSRootView: View {
     @State private var statisticsSnapshotCache: StatisticsPeriodSnapshot?
 
     init() {
+        let initialRoute: IOSAppRoute = switch ScreenshotMode.initialScreen() {
+        case .flow: .flow
+        case .tasks: .tasks
+        case .history: .history
+        case .directions: .areas
+        case .statistics, .statisticsDots: .statistics
+        }
+        _selection = State(initialValue: initialRoute)
+        if ScreenshotMode.isEnabled() {
+            _selectedHistoryDate = State(initialValue: ScreenshotMode.referenceDate)
+        }
+
         var todoDescriptor = FetchDescriptor<Todo>(
             predicate: #Predicate { $0.deletedAt == nil },
             sortBy: [SortDescriptor(\Todo.createdAt)]
@@ -161,7 +173,7 @@ struct IOSRootView: View {
         // tabs and sidebar, so feature drafts and presented editors survive.
         adaptiveTabContent
             .tabViewStyle(.sidebarAdaptable)
-            .defaultAdaptableTabBarPlacement(.sidebar)
+            .defaultAdaptableTabBarPlacement(ScreenshotMode.isEnabled() ? .tabBar : .sidebar)
             .tabViewSidebarFooter { sidebarActions }
             .tint(.accentColor)
     }

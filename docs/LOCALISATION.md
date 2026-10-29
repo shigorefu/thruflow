@@ -44,6 +44,10 @@ User-authored data and quick-input syntax are unchanged.
 - Dynamic sentences are localized as one interpolation-aware resource. Do not
   concatenate translated sentence fragments.
 - Dates and times use locale-aware Foundation format styles where possible.
+- Month pickers use Foundation standalone month names with the UI locale and
+  calendar (for example, `January` or Russian `январь`), not translated numeric
+  month templates. Accessibility labels format the month and year together with
+  the same locale, calendar and time zone.
 
 The catalog currently uses source-text keys, matching Apple's extraction model.
 This keeps existing Japanese product terminology visible to translators while

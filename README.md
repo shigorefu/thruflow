@@ -6,7 +6,7 @@ ThruFlow / スルフロ is an Apple-first productivity app that turns focused wo
 Area -> Task -> Flow -> focused time -> progress -> statistics
 ```
 
-Release candidate: **1.4.0 (13)**. See the [draft release notes](docs/releases/1.4.0.md) and [release gates](docs/RELEASE.md).
+Release candidate: **1.4.0 (14)**. See the [draft release notes](docs/releases/1.4.0.md) and [release gates](docs/RELEASE.md).
 
 The latest released version is [1.3.1](https://github.com/shigorefu/thruflow/releases/tag/v1.3.1)
 (build `12`), available on the [App Store](https://apps.apple.com/app/id6798609191).
@@ -57,7 +57,7 @@ See [connector behavior and release checks](docs/CONNECTORS.md#toggl-track-outgo
 | iPhone and iPad app | iOS/iPadOS 17.0 |
 | Apple Watch app | watchOS 10.0 |
 
-Development currently uses Xcode 26.6 and Apple system frameworks only. The app has no third-party runtime dependencies.
+Development currently uses Xcode 27.1 and Apple system frameworks only. The app has no third-party runtime dependencies.
 
 ## Build locally
 

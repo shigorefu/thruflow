@@ -69,7 +69,7 @@ final class ConnectorStore: ObservableObject {
         clientFactory: ((ConnectorProviderID, String?) -> any ConnectorClient)? = nil
     ) {
         let process = ProcessInfo.processInfo
-        let isolated = process.arguments.contains("--uitesting") ||
+        let isolated = ScreenshotMode.isEnabled() || process.arguments.contains("--uitesting") ||
             process.arguments.contains("--onboarding-preview") ||
             process.environment["XCTestConfigurationFilePath"] != nil ||
             process.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"

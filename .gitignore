@@ -50,3 +50,7 @@ fastlane/README.md
 *.keychain-db
 __pycache__/
 *.pyc
+
+# Local App Store screenshots (visible folder, never committed)
+/screenshots/
+/.screenshots/

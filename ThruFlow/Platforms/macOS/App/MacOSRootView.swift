@@ -19,7 +19,7 @@ struct MacOSRootView: View {
     @Query private var onboardingTodos: [Todo]
     @Query private var onboardingFlowSessions: [FlowSession]
     @Query private var onboardingFlowBreaks: [FlowBreak]
-    @State private var selection: AppSection? = .flow
+    @State private var selection: AppSection?
     @State private var showsConnectors = false
     @State private var tasksInitialFilter: TaskCalendarFilter = .all
     @State private var historyDate = Calendar.current.startOfDay(for: .now)
@@ -29,6 +29,15 @@ struct MacOSRootView: View {
     @State private var statisticsPeriodCache: StatisticsPeriodSnapshot?
 
     init() {
+        let initialSelection: AppSection = switch ScreenshotMode.initialScreen() {
+        case .flow: .flow
+        case .tasks: .tasks
+        case .history: .history
+        case .directions: .areas
+        case .statistics, .statisticsDots: .statistics
+        }
+        _selection = State(initialValue: initialSelection)
+
         var todoDescriptor = FetchDescriptor<Todo>(
             predicate: #Predicate { $0.deletedAt == nil },
             sortBy: [SortDescriptor(\Todo.createdAt)]

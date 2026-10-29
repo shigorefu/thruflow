@@ -29,7 +29,7 @@ import SwiftData
          deviceID: @autoclosure @escaping () -> String? = FlowRecordingDevice.id,
          authorizeDeviceID: @escaping () -> String? = { FlowRecordingDevice.resolve(allowInteraction: true) }, factory: ((String) -> any TogglTrackClientProtocol)? = nil) {
         let process = ProcessInfo.processInfo
-        let isolated = process.arguments.contains("--uitesting") || process.arguments.contains("--demo-data") ||
+        let isolated = ScreenshotMode.isEnabled() || process.arguments.contains("--uitesting") || process.arguments.contains("--demo-data") ||
             process.arguments.contains("--onboarding-preview") || process.environment["XCTestConfigurationFilePath"] != nil ||
             process.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
         self.credentials = credentials ?? (isolated ? InMemoryConnectorCredentials() : ConnectorKeychain())

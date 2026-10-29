@@ -10,7 +10,7 @@ enum TaskReminderAuthorization {
     static func requestForUserAction() {
         guard !AppModelContainerFactory.usesDemoData,
               ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil,
-              !ProcessInfo.processInfo.arguments.contains("--uitesting"), request == nil else { return }
+              !ScreenshotMode.isEnabled(), !ProcessInfo.processInfo.arguments.contains("--uitesting"), request == nil else { return }
         request = Task {
             let center = UNUserNotificationCenter.current()
             if await center.notificationSettings().authorizationStatus == .notDetermined {
