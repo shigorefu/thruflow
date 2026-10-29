@@ -95,10 +95,17 @@ jobs:
           ruby-version: '3.3'
           bundler-cache: true
       - name: Trust GitHub SSH host keys from its HTTPS metadata endpoint
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           python3 - <<'PYTHON'
           import json, os, pathlib, urllib.request
-          with urllib.request.urlopen('https://api.github.com/meta', timeout=30) as response:
+          request = urllib.request.Request('https://api.github.com/meta', headers={
+              'Authorization': 'Bearer ' + os.environ['GH_TOKEN'],
+              'Accept': 'application/vnd.github+json',
+              'User-Agent': 'ThruFlow-TestFlight'
+          })
+          with urllib.request.urlopen(request, timeout=30) as response:
               keys = json.load(response)['ssh_keys']
           if not keys:
               raise SystemExit('GitHub did not return SSH host keys')
