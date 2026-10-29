@@ -1,127 +1,96 @@
 # ThruFlow
 
-ThruFlow / スルフロ is an Apple-first productivity app that turns focused work into visible task progress.
+**English** · [日本語](README.ja.md)
+
+ThruFlow / スルフロ is a free, open-source app for focused work and building habits on Apple devices. Its flexible Pomodoro timer turns time spent working into visible progress on your tasks.
+
+**[Download on the App Store](https://apps.apple.com/app/id6798609191)** · **Version 1.4.0** · [What's new](docs/releases/1.4.0.md)
+
+| Device | Minimum OS |
+| --- | --- |
+| Mac | macOS 14.0 |
+| iPhone and iPad | iOS/iPadOS 17.0 |
+| Apple Watch | watchOS 10.0 |
+
+## Screenshots
+
+The Flow screen on Mac and iPhone, version 1.4.0, using demonstration data.
+
+| Mac | iPhone |
+| --- | --- |
+| <img src="https://d3cwdiba8hmqn5.cloudfront.net/screenshots/1.4.0/en/Mac/01-flow.jpg" alt="ThruFlow 1.4.0 on Mac: focus timer, work timeline, tasks, and statistics" width="680"> | <img src="https://d3cwdiba8hmqn5.cloudfront.net/screenshots/1.4.0/en/iPhone/01-flow.jpg" alt="ThruFlow 1.4.0 on iPhone: the Flow screen with a selected task and timer" width="240"> |
+
+## Features
+
+- **Flexible Pomodoro.** Short, Standard, and Deep modes set the initial session length, which you can adjust to suit the task and your pace. Switch tasks during a session without resetting the timer. The idea is to spend the allotted time doing something useful while maintaining a rhythm of work and rest.
+- **Tasks, Areas, and Projects.** Areas organize ongoing parts of your life, such as work or study. Projects group related tasks around a finite goal within an Area. Tasks can have a scheduled time and a reminder.
+- **Habits.** Set up a Habit with a schedule and goal for an Area or Project. Tasks are created automatically, and statistics help you track consistency and completion, including partial progress.
+- **Quick task capture.** Write down a new task without a lengthy interruption to your work.
+- **History and Statistics.** A timeline of Flow sessions and breaks shows how your day went. Daily, weekly, monthly, and yearly statistics reveal where your time goes across Tasks, Areas, and Projects.
+- **iCloud sync.** Data is stored locally and syncs through your private iCloud database. No ThruFlow account is needed.
+- **Apple device features.** Widgets for iPhone and Mac, Live Activity, Dynamic Island, and an Apple Watch companion app.
+
+## Getting started
+
+1. Install ThruFlow from the App Store.
+2. Create an Area, such as Work or Study, and add your first task. You can create a Project later when you need to group tasks around a shared goal.
+3. Select a task on the Flow screen and start the timer. Adjust the duration and switch tasks as you work.
+4. When you decide to take a break, record your result or continue without a note, then start the break.
+5. Check History and Statistics to review your progress. For regular activities, set up a Habit with a schedule and goal.
+
+The basic workflow:
 
 ```text
-Area -> Task -> Flow -> focused time -> progress -> statistics
+Area -> Task -> Flow session -> focused time -> progress -> statistics
 ```
-
-Release candidate: **1.4.0 (14)**. See the [draft release notes](docs/releases/1.4.0.md) and [release gates](docs/RELEASE.md).
-
-The latest released version is [1.3.1](https://github.com/shigorefu/thruflow/releases/tag/v1.3.1)
-(build `12`), available on the [App Store](https://apps.apple.com/app/id6798609191).
-See the [changelog](CHANGELOG.md) for released versions. Development branches
-may contain upcoming features; back up important data before testing them and
-report reproducible problems through the
-[GitHub issue templates](https://github.com/shigorefu/thruflow/issues/new/choose).
-
-## What ThruFlow does
-
-- Records focused work with Sprint, Focus, and Deep timers.
-- Connects actual focused time to Tasks and long-lived Areas.
-- Preserves a detailed Flow/rest timeline and recalculates progress from history.
-- Shows daily, weekly, monthly, yearly, Task, and Area statistics.
-- Syncs through the user's private iCloud database while retaining a local-only development mode.
-- Provides iPhone and macOS widgets, Live Activity and Dynamic Island, plus an Apple Watch companion.
-- Uses Japanese by default and includes English, Russian, Simplified Chinese, and Traditional Chinese localizations.
-
-`1 Block` is always 25 focused minutes. Breaks are not counted.
 
 ## Connectors
 
-Version 1.3.0 adds Apple Reminders and Todoist task imports on
-macOS, iPhone, and iPad. Open Connectors above Settings in the Mac sidebar,
-in the iPhone Flow More menu, or in the iPad sidebar footer. Choose lists or
-projects for each destination Area, then import their unfinished tasks.
-Version 1.3.1 adds per-Area mappings and improves Toggl project loading and
-Keychain access prompts. Connectors remain in beta.
+Available on Mac, iPhone, and iPad:
 
-Reminders uses the system permission prompt; Todoist opens its own sign-in and
-consent screen. No ThruFlow account or custom backend is required. Access tokens
-stay in the device Keychain, and imported tasks use the existing local and
-private-iCloud storage. Refresh updates external titles and deadlines while
-preserving ThruFlow notes, planning, and Flow history. Check-task completion
-and reopening synchronize both ways.
+- **Apple Reminders** — import unfinished tasks from selected lists.
+- **Todoist** — import unfinished tasks from selected projects.
+- **Toggl Track** — send completed focus time to mapped Toggl projects from the device that recorded it.
 
-See [Connectors](docs/CONNECTORS.md) for behavior, limitations, and setup.
+For Reminders and Todoist, completing and reopening checkbox tasks syncs both ways. Access tokens are stored in the device's Keychain.
 
-Version 1.3.0 also includes Toggl Track: API-token connection,
-Area/project mapping, and outgoing completed focus time from the recording device.
-See [connector behavior and release checks](docs/CONNECTORS.md#toggl-track-outgoing-focus-time).
+Connectors are in beta. See the [connector guide](docs/CONNECTORS.md) for setup and limitations.
 
-## Platforms and requirements
+## About the project
 
-| Target | Minimum OS |
-| --- | --- |
-| macOS app | macOS 14.0 |
-| iPhone and iPad app | iOS/iPadOS 17.0 |
-| Apple Watch app | watchOS 10.0 |
+This is a personal side project I am building for myself and my Apple devices. Existing Pomodoro apps either did not offer the experience I wanted or required payment. So I decided to build my own free, open-source tool for working at a comfortable pace, taking breaks, and maintaining habits.
 
-Development currently uses Xcode 27.1 and Apple system frameworks only. The app has no third-party runtime dependencies.
+The project was built from scratch, without basing it on another project or using reverse engineering. I define the idea, interface, and direction of development. Coding, localization, and testing are automated with AI agents.
 
-## Build locally
+## Building from source
+
+Local development uses Xcode 27.1. The app uses Apple system frameworks, with no third-party runtime dependencies.
 
 1. Clone the repository and open `ThruFlow.xcodeproj` in Xcode.
-2. Select `ThruFlow`, `ThruFlow iOS`, or `ThruFlow Watch`.
-3. For a signed iCloud build, replace the development team, bundle identifiers, App Group, and CloudKit container with values owned by your Apple Developer account.
-4. For deterministic local development, add the `--local-store` launch argument or set `THRUFLOW_DISABLE_CLOUDKIT=1`.
+2. Select the `ThruFlow`, `ThruFlow iOS`, or `ThruFlow Watch` scheme.
+3. To run locally without CloudKit, add the `--local-store` launch argument or set `THRUFLOW_DISABLE_CLOUDKIT=1`.
+4. For a signed iCloud build, configure your own Development Team, bundle identifiers, App Group, and CloudKit container using your Apple Developer account.
 
-Unsigned local verification:
+Test commands are in the [contribution guide](CONTRIBUTING.md), and Release build commands are in the [release guide](docs/RELEASE.md). See the [CloudKit guide](docs/CLOUDKIT.md) for synchronization checks.
 
-```sh
-THRUFLOW_DISABLE_CLOUDKIT=1 xcodebuild test \
-  -project ThruFlow.xcodeproj \
-  -scheme ThruFlow \
-  -destination 'platform=macOS' \
-  -only-testing:ThruFlowTests \
-  -parallel-testing-enabled NO \
-  -maximum-parallel-testing-workers 1 \
-  -derivedDataPath DerivedData/Tests \
-  CODE_SIGNING_ALLOWED=NO
+Changes go through CI, and the `main` branch is protected. [Automated TestFlight delivery](docs/TESTFLIGHT.md) uploads builds to App Store Connect; publication requires separate verification and Apple review.
 
-xcodebuild build \
-  -project ThruFlow.xcodeproj \
-  -scheme 'ThruFlow iOS' \
-  -configuration Release \
-  -destination 'generic/platform=iOS' \
-  -derivedDataPath DerivedData/iOS \
-  CODE_SIGNING_ALLOWED=NO
-```
+## Support and contributions
 
-CloudKit synchronization cannot be validated in the simulator. Use signed builds on a real iPhone, Apple Watch, and Mac, and follow [the CloudKit guide](docs/CLOUDKIT.md).
+Report reproducible bugs and suggestions through [GitHub Issues](https://github.com/shigorefu/thruflow/issues/new/choose). See [Support](SUPPORT.md) for other ways to get help and the [security policy](SECURITY.md) for reporting vulnerabilities.
+
+To help with code, translations, or documentation, start with the [contribution guide](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md). Discuss substantial changes in a GitHub issue first. Contributors and attribution are listed in [CONTRIBUTORS.md](CONTRIBUTORS.md).
+
+Development branches may contain unreleased changes. Back up important data before testing them.
 
 ## Documentation
 
-- [Product overview](docs/PRODUCT.md)
-- [Architecture](docs/ARCHITECTURE.md)
-- [Domain model](docs/DOMAIN_MODEL.md)
-- [Data model](docs/DATA_MODEL.md)
-- [UX flows](docs/UX_FLOWS.md)
-- [CloudKit setup](docs/CLOUDKIT.md)
-- [Connectors and native OAuth setup](docs/CONNECTORS.md)
-- [Localization](docs/LOCALISATION.md)
-- [Release process](docs/RELEASE.md)
-- [Roadmap](docs/ROADMAP.md)
-
-## Project policies
-
-- [AI agent instructions](AGENTS.md)
-- [Contributing](CONTRIBUTING.md)
-- [Contributors and attribution](CONTRIBUTORS.md)
-- [Licensing model](LICENSING.md)
-- [Security](SECURITY.md)
-- [Privacy](PRIVACY.md)
-- [Support](SUPPORT.md)
-- [Code of Conduct](CODE_OF_CONDUCT.md)
-
-## Release status
-
-Passing CI is necessary but not sufficient for a TestFlight or App Store release. Device, CloudKit Production, StoreKit, privacy metadata, signing, archive validation, and TestFlight smoke checks remain manual release gates; see [Release process](docs/RELEASE.md).
+- [UX flows](docs/UX_FLOWS.md) — screens and workflows.
+- [Product overview](docs/PRODUCT.md) — features and app behavior.
+- [Architecture](docs/ARCHITECTURE.md) — project structure for developers.
+- [Roadmap](docs/ROADMAP.md) and [changelog](CHANGELOG.md).
+- [Privacy policy](PRIVACY.md).
 
 ## License
 
-Unless otherwise noted, all original repository content is available under
-[`AGPL-3.0-or-later`](LICENSE). Official TestFlight and App Store binaries are
-separately distributed under Apple's applicable terms, and incoming
-contributions are accepted under `BSD-3-Clause`. See
-[`LICENSING.md`](LICENSING.md) for the complete policy.
+Unless otherwise noted, original repository content is available under [AGPL-3.0-or-later](LICENSE). Official TestFlight and App Store binaries are distributed separately under Apple's applicable terms, and incoming contributions are accepted under BSD-3-Clause. See the [licensing policy](LICENSING.md) for details.
