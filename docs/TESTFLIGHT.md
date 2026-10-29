@@ -171,5 +171,18 @@ Bootstrap completed for iOS and macOS: Apple Distribution and Mac App Store
 Installer identities plus five App Store profiles were created without revoking
 existing certificates. Profile team, application groups, push and CloudKit
 container permissions were inspected; exported binaries must still pass the
-workflow entitlement checks. Delivery remains disabled until this setup reaches
-reviewed main and the final commit receives its Production attestation.
+workflow entitlement checks. Delivery was enabled after PRs #29 and #30 passed
+CI and were merged. The approved source is
+`6493617dba8b6a244952dc78374d6396b97bca60`.
+
+The first tagged attempt (`testflight/v1.4.0-14`, commit `9ce310a`) stopped before
+signing because the unauthenticated GitHub metadata request hit a rate limit.
+PR #30 authenticated that request using the workflow token. The original tag
+was preserved; the retry used manual dispatch from reviewed main.
+
+[Delivery run #40820767787](https://github.com/shigorefu/thruflow/actions/runs/40820767787)
+completed the iOS archive, export checks, upload and Apple processing for
+1.4.0 (14). Apple returned `VALID`; the version was separately submitted to App
+Review with maintainer authorization. macOS delivery is still in progress.
+The workflow itself does not submit App Review. Do not rerun an already accepted
+platform with the same build number.
