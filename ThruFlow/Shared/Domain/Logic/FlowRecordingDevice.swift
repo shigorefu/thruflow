@@ -8,6 +8,9 @@ nonisolated enum FlowRecordingDevice {
 
     static func resolve(allowInteraction: Bool) -> String? {
         let process = ProcessInfo.processInfo
+        #if DEBUG
+        if process.arguments.contains("--screenshot-mode") { return "isolated-preview" }
+        #endif
         if process.environment["XCTestConfigurationFilePath"] != nil ||
             process.arguments.contains("--uitesting") || process.arguments.contains("--demo-data") ||
             process.arguments.contains("--onboarding-preview") ||

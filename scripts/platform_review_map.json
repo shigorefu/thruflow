@@ -211,6 +211,26 @@
         "ThruFlowTests/OnboardingWorkspaceInspectorTests.swift",
         "ThruFlowTests/LocalisationTests.swift"
       ]
+    },
+    {
+      "id": "screenshot-demo",
+      "name": "Isolated App Store screenshot demo",
+      "triggers": [
+        "ThruFlow/Shared/Application/ScreenshotMode.swift",
+        "ThruFlow/Shared/Application/ScreenshotDataSeeder.swift",
+        "ThruFlow/Shared/Application/ScreenshotDemoCopy.swift"
+      ],
+      "review": [
+        "ThruFlow/Platforms/macOS/App",
+        "ThruFlow/Platforms/iOS/App",
+        "ThruFlow/Platforms/watchOS/App",
+        "ThruFlow/Shared/Application/AppModelContainerFactory.swift",
+        "docs/RELEASE.md"
+      ],
+      "tests": [
+        "ThruFlowTests/ScreenshotDataSeederTests.swift",
+        "ThruFlowTests/LocalisationTests.swift"
+      ]
     }
   ]
 }

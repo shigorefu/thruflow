@@ -6,18 +6,26 @@ import SwiftUI
 struct ThruFlowiOSApp: App {
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var activeFlowStore: ActiveFlowStore
-    @StateObject private var settings = AppSettings()
+    @StateObject private var settings: AppSettings
     @StateObject private var taskReminders = TaskReminderScheduler()
-    @StateObject private var onboarding = OnboardingStore()
+    @StateObject private var onboarding: OnboardingStore
     @StateObject private var connectors = ConnectorStore()
 
     private let modelContainer: ModelContainer
     private let liveActivityControl: FlowLiveActivityControl
+    private let appDefaults: UserDefaults
+    private let isScreenshotMode: Bool
 
     init() {
+        let isScreenshotMode = ScreenshotMode.isEnabled()
+        let defaults = ScreenshotMode.configuredDefaults()
         let modelContainer = AppModelContainerFactory.make()
+        let liveActivities: any LiveActivityService = isScreenshotMode
+            ? NoopLiveActivityService() : IOSFlowLiveActivityService()
         let activeFlowStore = ActiveFlowStore(
-            liveActivities: IOSFlowLiveActivityService()
+            defaults: defaults,
+            notifications: isScreenshotMode ? ScreenshotFlowNotificationService() : nil,
+            liveActivities: liveActivities
         )
         let liveActivityControl = FlowLiveActivityControl(
             seekBackward: { [weak activeFlowStore] in
@@ -54,13 +62,20 @@ struct ThruFlowiOSApp: App {
 
         self.modelContainer = modelContainer
         self.liveActivityControl = liveActivityControl
+        self.appDefaults = defaults
+        self.isScreenshotMode = isScreenshotMode
         _activeFlowStore = StateObject(wrappedValue: activeFlowStore)
-        AppDependencyManager.shared.add(dependency: liveActivityControl)
+        _settings = StateObject(wrappedValue: AppSettings(defaults: defaults))
+        _onboarding = StateObject(wrappedValue: OnboardingStore(defaults: defaults))
+        if !isScreenshotMode {
+            AppDependencyManager.shared.add(dependency: liveActivityControl)
+        }
     }
 
     var body: some Scene {
         WindowGroup {
             IOSRootView()
+                .defaultAppStorage(appDefaults)
                 .onboardingJourney(store: onboarding)
                 .persistenceIssuePresenter()
                 .environmentObject(activeFlowStore)
@@ -72,10 +87,12 @@ struct ThruFlowiOSApp: App {
                 .environment(\.locale, settings.effectiveLocale)
                 .preferredColorScheme(settings.preferredColorScheme)
                 .onAppear {
-                    taskReminders.start(
-                        modelContext: modelContainer.mainContext,
-                        calendar: settings.effectiveCalendar
-                    )
+                    if !isScreenshotMode {
+                        taskReminders.start(
+                            modelContext: modelContainer.mainContext,
+                            calendar: settings.effectiveCalendar
+                        )
+                    }
                     activeFlowStore.clearNotificationBadge()
                     activeFlowStore.beginSynchronization(
                         modelContext: modelContainer.mainContext
@@ -88,15 +105,17 @@ struct ThruFlowiOSApp: App {
                     )
                 }
                 .task(id: scenePhase) {
-                    guard scenePhase == .active else { return }
+                    guard scenePhase == .active, !isScreenshotMode else { return }
                     await connectors.runForegroundSync(modelContext: modelContainer.mainContext)
                 }
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active {
-                        taskReminders.start(
-                            modelContext: modelContainer.mainContext,
-                            calendar: settings.effectiveCalendar
-                        )
+                        if !isScreenshotMode {
+                            taskReminders.start(
+                                modelContext: modelContainer.mainContext,
+                                calendar: settings.effectiveCalendar
+                            )
+                        }
                         activeFlowStore.clearNotificationBadge()
                         activeFlowStore.beginSynchronization(
                             modelContext: modelContainer.mainContext
@@ -106,7 +125,7 @@ struct ThruFlowiOSApp: App {
                     }
                 }
                 .background {
-                    if !onboarding.isPresented {
+                    if !onboarding.isPresented, !isScreenshotMode {
                         ProductWidgetSnapshotSyncView()
                         ReviewRequestGate()
                     }

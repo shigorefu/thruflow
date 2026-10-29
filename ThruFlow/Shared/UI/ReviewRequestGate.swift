@@ -70,6 +70,6 @@ struct ReviewRequestGate: View {
 
     private var isDisabledForTesting: Bool {
         let arguments = ProcessInfo.processInfo.arguments
-        return arguments.contains("--uitesting") || arguments.contains("--onboarding-preview")
+        return ScreenshotMode.isEnabled() || arguments.contains("--uitesting") || arguments.contains("--onboarding-preview")
     }
 }

@@ -2,17 +2,23 @@
 
 This document is the operational checklist for ThruFlow releases. Product scope remains in [`ROADMAP.md`](ROADMAP.md), and CloudKit details remain in [`CLOUDKIT.md`](CLOUDKIT.md).
 
-## Release candidate 1.4.0 build 13
+## Release candidate 1.4.0 build 14
 
-Prepared on 2026-10-16 from the merged 1.4.0 development scope. All Debug and
+Updated on 2026-10-29 from the merged 1.4.0 development scope. All Debug and
 Release configurations for macOS, iOS, Watch, the widget/Live Activity extension
-and test bundles use marketing version `1.4.0`, build `13`. This is preparation,
+and test bundles use marketing version `1.4.0`, build `14`. This is preparation,
 not a published release. See [draft release notes](releases/1.4.0.md).
+
+Build 14 corrects localized month picker labels and includes isolated screenshot
+schemes. Xcode 27.1 (27A9275) is the local development toolchain; CI retains its
+separately pinned Xcode version. The month-label change does not alter persisted
+models. Production CloudKit and signed-device checks were not repeated for this
+local correction; the upload gates below still apply.
 
 Before upload:
 
-- Confirm build 13 has not already been uploaded in App Store Connect; local
-  metadata advances the last documented shipped build 12 but does not inspect
+- Confirm build 14 has not already been uploaded in App Store Connect; local
+  metadata advances the previous candidate build 13 but does not inspect
   the account's upload history.
 - Verify signed Mac/iPhone exchange of Projects, Task assignments and Task times/
   reminder preferences, including delivery and cancellation of local notifications.
@@ -130,6 +136,71 @@ THRUFLOW_DISABLE_CLOUDKIT=1 xcodebuild test \
 ```
 
 Also build the iOS and Watch Release schemes without signing. CI performs the same categories of checks on pull requests and pushes to `main`.
+
+## Localized App Store screenshots
+
+Use the screenshot schemes in **Debug** to capture the current native UI with
+localized sample data. These are separate from the smaller `ThruFlow Demo` QA
+fixtures; they seed approximately 180 days of history, Tasks, Areas and Projects.
+Fixtures are fictional and neutral: reports, correspondence, language practice,
+reading and everyday activities. Historical durations are tied to the activity
+identity, not randomly chosen timer modes (for example, email takes 10 minutes).
+Project relationships follow the activity: correspondence and planning do not
+belong to the report project. No production database is copied.
+The sample reference time is 18:30 on the launch date, so captures from different
+calendar dates are not byte-for-byte identical.
+
+| Language | macOS scheme | iPhone/iPad scheme | Language argument |
+| --- | --- | --- | --- |
+| Japanese | `ThruFlow Screenshots JA` | `ThruFlow iOS Screenshots JA` | `ja` |
+| English | `ThruFlow Screenshots EN` | `ThruFlow iOS Screenshots EN` | `en` |
+| Russian | `ThruFlow Screenshots RU` | `ThruFlow iOS Screenshots RU` | `ru` |
+| Simplified Chinese | `ThruFlow Screenshots ZH-HANS` | `ThruFlow iOS Screenshots ZH-HANS` | `zh-Hans` |
+| Traditional Chinese | `ThruFlow Screenshots ZH-HANT` | `ThruFlow iOS Screenshots ZH-HANT` | `zh-Hant` |
+
+1. Choose the scheme and a Mac or iOS Simulator destination in Xcode.
+2. In **Edit Scheme > Run > Arguments**, keep `--screenshot-mode` and the scheme's
+   `--screenshot-language=<language>` enabled. The matching `-AppleLanguages` and
+   `-AppleLocale` arguments localize system controls too.
+3. Enable exactly one `--screenshot-screen=<route>` argument. All six are supplied
+   by each scheme; `flow` is enabled by default.
+4. Run, wait for the real screen to finish laying out, and capture it at the
+   intended App Store device/window size. Build/run does not itself capture or
+   upload an image. Check text wrapping, selected dates and chart loading in each
+   language before using the image.
+5. Save images under the visible local `screenshots/1.4.0/` directory, organized
+   by platform and language. `/screenshots/` is ignored by Git; do not commit
+   generated captures or private user screenshots. Stop temporary QA apps after
+   capture.
+
+| Route | Native screen |
+| --- | --- |
+| `flow` | Flow dashboard |
+| `tasks` | Tasks |
+| `history` | History |
+| `directions` | Areas, including Project children |
+| `statistics` | Statistics, initially Month |
+| `statistics-dots` | Statistics, initially Month and scrolled to Dots |
+
+Watch has no dedicated screenshot schemes. A Debug Watch launch with the same
+arguments supports its native Flow, Tasks and Statistics pages; History and
+Areas routes fall back to Flow because Watch has no corresponding screens.
+
+Isolation is enforced by `ScreenshotMode`, not by a different production bundle
+or a copied user database. `--screenshot-mode` is disabled in Release. In Debug,
+SwiftData uses an **in-memory** container with CloudKit disabled, and seeded data
+is discarded when the process exits. This path never opens the user's persistent
+store or accesses Development/Production CloudKit. Preferences use a separate,
+uniquely named **persistent UserDefaults suite** per process; they are not
+memory-only, but never write screenshot settings into the normal app preference
+domain. Failure to create that suite stops the screenshot launch instead of
+falling back to standard preferences.
+
+Screenshot launches use isolated connector state and recording identity, skip
+credential access and connector synchronization, and disable notification
+permission/scheduling, Live Activities, widget snapshot publication and review
+prompts. They do not verify signing, notifications, widgets or cross-device sync.
+The live Production schema and signed-device gates below still apply to releases.
 
 ## App Store Connect prerequisites
 

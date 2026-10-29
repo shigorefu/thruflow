@@ -217,7 +217,7 @@ The unreleased work previously scoped as 1.3.2 is consolidated under 1.4.0.
 - Archiving a Habit Area retires unused preplanned Tasks while preserving progress and history; the Mac editor explicitly saves archival.
 - Task and Area editors share validation and save commands across clients, preserving undated/unnamed Tasks and consistent Habit schedule rules.
 - Repository AI instructions are consolidated in `AGENTS.md`, with required orchestrator/macOS/iOS agreement for logic changes.
-- All Xcode target configurations now use version `1.4.0`, build `13`.
+- All Xcode target configurations now use version `1.4.0`, build `14`.
 - Production schema additions were deployed and verified on 2026-10-16 (Projects), 2026-10-18 (Task timing) and 2026-10-23 (Project Habits and owner keys). Publication is pending signed archives, App Store Connect processing and device sync/notification/smoke tests; see [Release](RELEASE.md).
 
 ## 1.3.1 — Connector mappings and synchronization fixes (released)

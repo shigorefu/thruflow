@@ -5,7 +5,10 @@ Release dates below record GitHub publication in Asia/Tokyo (JST).
 
 ## [1.4.0] - Unreleased
 
-Release candidate: version **1.4.0**, build **13** across all Xcode targets.
+Release candidate: version **1.4.0**, build **14** across all Xcode targets.
+
+- Fixed localized month names in the macOS Statistics, Tasks and History month picker.
+- Restored isolated, localized demo data and screenshot schemes for App Store assets.
 
 ### Added
 

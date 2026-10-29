@@ -16,16 +16,35 @@ enum MacOSWindowID {
 @main
 struct ThruFlowApp: App {
     @Environment(\.scenePhase) private var scenePhase
-    @StateObject private var activeFlowStore = ActiveFlowStore(
-        liveActivities: MacOSFlowWidgetService()
-    )
-    @StateObject private var settings = AppSettings()
-    @StateObject private var onboarding = OnboardingStore()
-    @StateObject private var connectors = ConnectorStore()
+    @StateObject private var activeFlowStore: ActiveFlowStore
+    @StateObject private var settings: AppSettings
+    @StateObject private var onboarding: OnboardingStore
+    @StateObject private var connectors: ConnectorStore
     @StateObject private var taskReminders = TaskReminderScheduler()
     @NSApplicationDelegateAdaptor(MacOSAppDelegate.self) private var appDelegate
 
-    private let sharedModelContainer = AppModelContainerFactory.make()
+    private let sharedModelContainer: ModelContainer
+    private let appDefaults: UserDefaults
+
+    init() {
+        let arguments = ProcessInfo.processInfo.arguments
+        let isScreenshotMode = ScreenshotMode.isEnabled(arguments: arguments)
+        let defaults = ScreenshotMode.configuredDefaults(arguments: arguments)
+        let liveActivities: any LiveActivityService = isScreenshotMode
+            ? NoopLiveActivityService()
+            : MacOSFlowWidgetService()
+
+        appDefaults = defaults
+        sharedModelContainer = AppModelContainerFactory.make()
+        _activeFlowStore = StateObject(wrappedValue: ActiveFlowStore(
+            defaults: defaults,
+            notifications: isScreenshotMode ? ScreenshotFlowNotificationService() : nil,
+            liveActivities: liveActivities
+        ))
+        _settings = StateObject(wrappedValue: AppSettings(defaults: defaults))
+        _onboarding = StateObject(wrappedValue: OnboardingStore(defaults: defaults, arguments: arguments))
+        _connectors = StateObject(wrappedValue: ConnectorStore(defaults: defaults))
+    }
 
     var body: some Scene {
         WindowGroup("ThruFlow", id: MacOSWindowID.main) {
@@ -36,7 +55,9 @@ struct ThruFlowApp: App {
                 .environmentObject(onboarding)
                 .environmentObject(connectors)
                 .appSettingsEnvironment(settings)
+                .defaultAppStorage(appDefaults)
                 .onAppear {
+                    guard !ScreenshotMode.isEnabled() else { return }
                     taskReminders.start(
                         modelContext: sharedModelContainer.mainContext,
                         calendar: settings.effectiveCalendar
@@ -53,7 +74,7 @@ struct ThruFlowApp: App {
                     )
                 }
                 .task(id: scenePhase) {
-                    guard scenePhase == .active else { return }
+                    guard scenePhase == .active, !ScreenshotMode.isEnabled() else { return }
                     taskReminders.start(
                         modelContext: sharedModelContainer.mainContext,
                         calendar: settings.effectiveCalendar
@@ -61,6 +82,7 @@ struct ThruFlowApp: App {
                     await connectors.runForegroundSync(modelContext: sharedModelContainer.mainContext)
                 }
                 .onChange(of: scenePhase) { _, phase in
+                    guard !ScreenshotMode.isEnabled() else { return }
                     if phase == .active {
                         activeFlowStore.clearNotificationBadge()
                         activeFlowStore.beginSynchronization(
@@ -71,7 +93,12 @@ struct ThruFlowApp: App {
                     }
                 }
                 .background {
-                    if !onboarding.isPresented {
+                    if ScreenshotMode.isEnabled() {
+                        ScreenshotWindowActivationAnchor()
+                            .allowsHitTesting(false)
+                            .accessibilityHidden(true)
+                    }
+                    if !onboarding.isPresented, !ScreenshotMode.isEnabled() {
                         ProductWidgetSnapshotSyncView()
                         ReviewRequestGate()
                     }
@@ -84,9 +111,11 @@ struct ThruFlowApp: App {
             FlowMiniPlayerView(style: .dashboard, taskSuggestionsBelow: true)
                 .environmentObject(activeFlowStore)
                 .appSettingsEnvironment(settings)
+                .defaultAppStorage(appDefaults)
                 .frame(width: 310, height: 410)
                 .padding(16)
                 .onAppear {
+                    guard !ScreenshotMode.isEnabled() else { return }
                     taskReminders.start(
                         modelContext: sharedModelContainer.mainContext,
                         calendar: settings.effectiveCalendar
@@ -104,8 +133,33 @@ struct ThruFlowApp: App {
                 .environmentObject(activeFlowStore)
                 .environmentObject(onboarding)
                 .appSettingsEnvironment(settings)
+                .defaultAppStorage(appDefaults)
         }
         .modelContainer(sharedModelContainer)
+    }
+}
+
+/// Activate only the screenshot window after AppKit attaches its native host.
+private struct ScreenshotWindowActivationAnchor: NSViewRepresentable {
+    func makeNSView(context: Context) -> ScreenshotWindowActivationView {
+        ScreenshotWindowActivationView()
+    }
+
+    func updateNSView(_ nsView: ScreenshotWindowActivationView, context: Context) {}
+}
+
+private final class ScreenshotWindowActivationView: NSView {
+    private weak var activatedWindow: NSWindow?
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        guard ScreenshotMode.isEnabled(), let window, activatedWindow !== window else { return }
+        activatedWindow = window
+        DispatchQueue.main.async { [weak self, weak window] in
+            guard let self, let window, self.window === window, ScreenshotMode.isEnabled() else { return }
+            NSApplication.shared.activate()
+            window.makeKeyAndOrderFront(nil)
+        }
     }
 }
 

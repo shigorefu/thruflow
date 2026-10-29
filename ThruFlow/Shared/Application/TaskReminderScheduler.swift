@@ -169,7 +169,7 @@ final class TaskReminderScheduler: ObservableObject {
         let process = ProcessInfo.processInfo
         guard !AppModelContainerFactory.usesDemoData,
               process.environment["XCTestConfigurationFilePath"] == nil,
-              !process.arguments.contains("--uitesting") else { return }
+              !ScreenshotMode.isEnabled(), !process.arguments.contains("--uitesting") else { return }
         self.container = modelContext.container
         self.calendar = calendar
         if delivery == nil {

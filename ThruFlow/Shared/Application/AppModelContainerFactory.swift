@@ -39,7 +39,9 @@ enum AppModelContainerFactory {
         do {
             let container = try ModelContainer(for: schema, configurations: [configuration])
 #if DEBUG
-            if usesDemoData {
+            if ScreenshotMode.isEnabled() {
+                try ScreenshotDataSeeder.seedIfNeeded(in: container, now: ScreenshotMode.referenceDate, language: ScreenshotMode.language())
+            } else if usesDemoData {
                 try StatisticsDemoData.seed(modelContext: container.mainContext)
             }
 #endif
@@ -68,7 +70,7 @@ enum AppModelContainerFactory {
 
     private static var isRunningTests: Bool {
         let processInfo = ProcessInfo.processInfo
-        return usesDemoData || processInfo.environment["XCTestConfigurationFilePath"] != nil ||
+        return ScreenshotMode.isEnabled() || usesDemoData || processInfo.environment["XCTestConfigurationFilePath"] != nil ||
             processInfo.arguments.contains("--uitesting")
     }
 

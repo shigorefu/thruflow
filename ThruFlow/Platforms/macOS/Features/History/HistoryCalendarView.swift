@@ -898,7 +898,9 @@ struct HistoryTimeGrid: View {
             }
         }
         let targetDate: Date
-        if days.contains(where: calendar.isDateInToday) {
+        if ScreenshotMode.isEnabled(), let earliest = timed.map(\.startedAt).min() {
+            targetDate = earliest
+        } else if days.contains(where: calendar.isDateInToday) {
             targetDate = .now
         } else {
             targetDate = timed.map(\.startedAt).min() ?? selectedDate.addingTimeInterval(8 * 3600)

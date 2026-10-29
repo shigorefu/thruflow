@@ -380,6 +380,7 @@ enum HistoryMiniCalendarSelectionMode {
 
 struct HistoryYearMonthPicker: View {
     @Environment(\.calendar) private var calendar
+    @Environment(\.locale) private var locale
 
     @Binding var selectedDate: Date
     var maximumDate: Date?
@@ -393,7 +394,7 @@ struct HistoryYearMonthPicker: View {
                     Button {
                         select(month: month)
                     } label: {
-                        Text(String(localized: "\(month)月"))
+                        Text(verbatim: CalendarMonthLabels.title(for: month, calendar: calendar, locale: locale))
                             .font(.callout.weight(month == selectedMonth ? .semibold : .regular))
                             .frame(maxWidth: .infinity, minHeight: 34)
                             .foregroundStyle(month == selectedMonth ? Color.white : Color.primary)
@@ -403,7 +404,9 @@ struct HistoryYearMonthPicker: View {
                     .buttonStyle(.plain)
                     .disabled(!canSelect(month: month))
                     .opacity(canSelect(month: month) ? 1 : 0.45)
-                    .accessibilityLabel(Text(verbatim: String(localized: "\(selectedYear)年\(month)月")))
+                    .accessibilityLabel(Text(verbatim: CalendarMonthLabels.accessibilityLabel(
+                        for: month, year: selectedYear, calendar: calendar, locale: locale
+                    )))
                     .accessibilityAddTraits(month == selectedMonth ? .isSelected : [])
                 }
             }

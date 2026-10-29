@@ -15,6 +15,15 @@ struct WatchFlowDashboardView: View {
     private let todoSorter = FlowDashboardTodoSorter()
     @State private var selectedPage = WatchDashboardPage.timer
 
+    init() {
+        let page: WatchDashboardPage = switch ScreenshotMode.initialScreen() {
+        case .tasks: .tasks
+        case .statistics, .statisticsDots: .statistics
+        case .flow, .history, .directions: .timer
+        }
+        _selectedPage = State(initialValue: page)
+    }
+
     var body: some View {
         NavigationStack {
             TabView(selection: $selectedPage) {
