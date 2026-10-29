@@ -31,21 +31,23 @@ keywords, app name and subtitle. Replaced screenshots for all five locales:
 in the gitignored `screenshots/1.4.0/` directory. Prior screenshot associations
 were removed from the drafts; original assets remain in the asset library.
 
-The maintainer subsequently authorized upload and App Review submission. iOS
-1.4.0 (14) was uploaded through GitHub Actions, processed as `VALID`, selected
-and submitted: App Store Connect shows Waiting for Review. macOS delivery is
-still in progress. Neither version is confirmed published. See
+The maintainer subsequently authorized upload and App Review submission. Both
+iOS and macOS 1.4.0 (14) were uploaded through GitHub Actions, processed as
+`VALID`, selected and submitted. App Store Connect shows Waiting for Review
+for both platforms (iOS at 14:24 JST; macOS at 14:42 JST on 2026-10-29).
+The existing automatic release after approval setting was preserved. Neither
+version is confirmed published. See
 [TestFlight delivery evidence](TESTFLIGHT.md#account-setup-progress--2026-10-29).
 
 Remaining verification:
 
-- Complete macOS delivery and verify its processed build before submission.
 - Verify signed Mac/iPhone exchange of Projects, Task assignments and Task times/
   reminder preferences, including delivery and cancellation of local notifications.
   Live Production schema additions were deployed and read back on 2026-10-16
   (Projects) and 2026-10-18 (Task timing); see [CloudKit evidence](CLOUDKIT.md#task-times-and-reminders--2026-10-18).
-- Produce and validate signed distribution archives, then verify the exact
-  processed TestFlight builds on Mac, iPhone/iPad and Watch.
+- Signed archives and exported bundle checks passed in the delivery workflow.
+  Runtime testing of the exact processed TestFlight builds on Mac, iPhone/iPad
+  and Watch remains unverified.
 - Keep 1.3.1 marked as the latest stable release until publication is confirmed.
 
 Local Projects/Area-restoration validation on 2026-10-16: 499 tests passed,

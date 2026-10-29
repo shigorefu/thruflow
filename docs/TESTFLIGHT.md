@@ -181,8 +181,12 @@ PR #30 authenticated that request using the workflow token. The original tag
 was preserved; the retry used manual dispatch from reviewed main.
 
 [Delivery run #40820767787](https://github.com/shigorefu/thruflow/actions/runs/40820767787)
-completed the iOS archive, export checks, upload and Apple processing for
-1.4.0 (14). Apple returned `VALID`; the version was separately submitted to App
-Review with maintainer authorization. macOS delivery is still in progress.
+completed both platform archives, export checks, uploads and Apple processing
+for 1.4.0 (14). Apple returned `VALID` for iOS and macOS. The source passed
+560 tests in 54 suites, 14 Python automation tests, and 11 Ruby helper tests
+with 31 assertions. The main CI run also passed both Release builds.
+Both versions were separately submitted to App Review with maintainer
+authorization and reached Waiting for Review. The existing automatic release
+after approval setting was preserved.
 The workflow itself does not submit App Review. Do not rerun an already accepted
 platform with the same build number.
