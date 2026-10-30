@@ -66,17 +66,31 @@ final class ActiveFlowStore: ObservableObject {
     private var lastPublishedLiveActivityWasOvertime: Bool?
     private var lastPersistenceReconciliationAt: Date?
     private var nextFlowBreakInteractionSequence: UInt64 = 0
+    private let saveModeChange: @MainActor (ModelContext) throws -> Void
+    private var pendingModeChange: PendingModeChange?
+    private var modeCommitTask: Task<Void, Never>?
+
+    private struct PendingModeChange {
+        let originalMode: FlowMode
+        let originalState: FlowTimerState?
+        let sessionID: UUID?
+        let runtimeVersion: FlowRuntimeVersion?
+        let modelContext: ModelContext
+        var changedAt: Date
+    }
 
     init(
         defaults: UserDefaults = .standard,
         notifications: FlowNotificationService? = nil,
         liveActivities: (any LiveActivityService)? = nil,
-        persistenceNotificationCenter: NotificationCenter = .default
+        persistenceNotificationCenter: NotificationCenter = .default,
+        saveModeChange: @escaping @MainActor (ModelContext) throws -> Void = { try $0.save() }
     ) {
         self.defaults = defaults
         self.notifications = notifications ?? LocalFlowNotificationService()
         self.liveActivities = liveActivities ?? NoopLiveActivityService()
         self.persistenceNotificationCenter = persistenceNotificationCenter
+        self.saveModeChange = saveModeChange
         selectedAreaID = defaults.uuid(forKey: "flow.selectedDirectionID")
         selectedTodoID = defaults.uuid(forKey: "flow.selectedTodoID")
         selectedMode = defaults.flowMode(forKey: "flow.selectedMode") ?? .twentyFiveFive
@@ -113,6 +127,7 @@ final class ActiveFlowStore: ObservableObject {
     }
 
     func configure(area: Area?, todo: Todo?, intent: String? = nil, mode: FlowMode? = nil) {
+        guard flushPendingModeChange() else { return }
         selectedAreaID = area?.id
         selectedTodoID = todo?.id
 
@@ -161,6 +176,7 @@ final class ActiveFlowStore: ObservableObject {
 
     func resetAfterApplicationDataReset() {
         guard timerState == nil else { return }
+        cancelPendingModeChange()
 
         notifications.cancelPendingFlowNotifications()
         notifications.clearBadge()
@@ -179,6 +195,7 @@ final class ActiveFlowStore: ObservableObject {
     }
 
     func start(area: Area, todo: Todo?, modelContext: ModelContext, now: Date = .now) {
+        guard flushPendingModeChange() else { return }
         stateBeforeResultPrompt = nil
         let state = engine.start(mode: selectedMode, now: now)
         let sessionID = UUID()
@@ -246,6 +263,7 @@ final class ActiveFlowStore: ObservableObject {
         calendar: Calendar = .current,
         dayBoundary: AppDayBoundary = .midnight
     ) -> Bool {
+        guard flushPendingModeChange() else { return false }
         guard let area, !area.isArchived else { return false }
         guard pendingTaskSwitch == nil else { return false }
         if let session = activeSession, let oldTodo = session.todo,
@@ -297,6 +315,7 @@ final class ActiveFlowStore: ObservableObject {
         _ result: String?, taskTitle: String? = nil, taskProject: Project? = nil,
         modelContext: ModelContext, now: Date = .now
     ) -> Bool {
+        guard flushPendingModeChange() else { return false }
         invalidateTaskSwitchIfNeeded()
         guard let request = pendingTaskSwitch, let session = activeSession,
               !request.todo.isDeleted, !request.todo.isArchived,
@@ -350,6 +369,7 @@ final class ActiveFlowStore: ObservableObject {
         modelContext: ModelContext,
         now: Date = .now
     ) -> Bool {
+        guard flushPendingModeChange() else { return false }
         guard let area else { return false }
         let previousAreaID = selectedAreaID
         let previousTodoID = selectedTodoID
@@ -419,6 +439,7 @@ final class ActiveFlowStore: ObservableObject {
     }
 
     func endSynchronization() {
+        _ = flushPendingModeChange()
         synchronizationClock?.cancel()
         synchronizationClock = nil
     }
@@ -448,6 +469,9 @@ final class ActiveFlowStore: ObservableObject {
     }
 
     func synchronizeFromPersistence(modelContext: ModelContext, now: Date = .now) {
+        // Do not let periodic/import reconciliation interrupt the ring animation
+        // or adopt the durable state while the new mode is still optimistic.
+        guard pendingModeChange == nil else { return }
         reconcilePersistenceIfNeeded(modelContext: modelContext, now: now)
         let resolution: ActiveFlowSyncResolution
         do {
@@ -516,24 +540,29 @@ final class ActiveFlowStore: ObservableObject {
     }
 
     func refresh(modelContext: ModelContext, now: Date = .now) {
-        guard let timerState else { return }
-        let next = engine.advanceIfNeeded(timerState, now: now)
-        guard next != timerState else { return }
+        guard let state = timerState,
+              engine.advanceIfNeeded(state, now: now) != state else { return }
+        guard flushPendingModeChange(), let current = timerState else { return }
+        let next = engine.advanceIfNeeded(current, now: now)
+        guard next != current else { return }
         _ = apply(next, modelContext: modelContext, now: now)
     }
 
     func pause(modelContext: ModelContext, now: Date = .now) {
+        guard flushPendingModeChange() else { return }
         guard let timerState else { return }
         _ = apply(engine.pause(timerState, now: now), modelContext: modelContext, now: now)
     }
 
     func resume(modelContext: ModelContext, now: Date = .now) {
+        guard flushPendingModeChange() else { return }
         guard let timerState else { return }
         let next = engine.resume(timerState, now: now)
         _ = apply(next, modelContext: modelContext, now: now)
     }
 
     func finish(modelContext: ModelContext, now: Date = .now) {
+        guard flushPendingModeChange() else { return }
         guard let timerState else { return }
         if timerState.phase == .breakTime {
             _ = completeBreak(modelContext: modelContext, now: now)
@@ -547,6 +576,7 @@ final class ActiveFlowStore: ObservableObject {
 
     @discardableResult
     func completeResult(_ result: String?, taskTitle: String? = nil, taskProject: Project? = nil, modelContext: ModelContext, now: Date = .now) -> Bool {
+        guard flushPendingModeChange() else { return false }
         guard let timerState, activeSession != nil, timerState.phase == .awaitingResult else { return false }
         let completedSessionID = activeSession?.id
         guard validateMemoProject(taskProject) else { return false }
@@ -589,6 +619,7 @@ final class ActiveFlowStore: ObservableObject {
     }
 
     func cancelResultMemo(modelContext: ModelContext, now: Date = .now) {
+        guard flushPendingModeChange() else { return }
         guard timerState?.phase == .awaitingResult,
               let restoredState = stateBeforeResultPrompt,
               let activeSession else {
@@ -627,18 +658,21 @@ final class ActiveFlowStore: ObservableObject {
     }
 
     func extendAdaptive(modelContext: ModelContext, now: Date = .now) {
+        guard flushPendingModeChange() else { return }
         guard let timerState else { return }
         let next = engine.extendAdaptive(timerState, now: now)
         _ = apply(next, modelContext: modelContext, now: now)
     }
 
     func startBreak(modelContext: ModelContext, now: Date = .now) {
+        guard flushPendingModeChange() else { return }
         guard let timerState else { return }
         guard !discardShortFlowIfNeeded(timerState, modelContext: modelContext, now: now) else { return }
         _ = beginBreak(from: timerState, modelContext: modelContext, now: now)
     }
 
     func requestBreakMemo(modelContext: ModelContext, now: Date = .now) {
+        guard flushPendingModeChange() else { return }
         guard let timerState else { return }
         guard canRequestBreak else { return }
         publishFlowBreakInteraction(.requested, at: now)
@@ -648,6 +682,7 @@ final class ActiveFlowStore: ObservableObject {
 
     @discardableResult
     func completeBreakMemo(_ result: String?, taskTitle: String? = nil, taskProject: Project? = nil, modelContext: ModelContext, now: Date = .now) -> Bool {
+        guard flushPendingModeChange() else { return false }
         guard let timerState else { return false }
         guard isAwaitingBreakMemo else { return false }
         guard timerState.phase == .focusing || timerState.phase == .awaitingExtensionDecision else {
@@ -705,6 +740,7 @@ final class ActiveFlowStore: ObservableObject {
     }
 
     func seekForward(modelContext: ModelContext, now: Date = .now) {
+        guard flushPendingModeChange() else { return }
         guard let timerState else { return }
         let next = engine.seekForward(timerState, now: now)
         guard next != timerState else { return }
@@ -712,6 +748,7 @@ final class ActiveFlowStore: ObservableObject {
     }
 
     func seekBackward(modelContext: ModelContext, now: Date = .now) {
+        guard flushPendingModeChange() else { return }
         guard let timerState else { return }
         let next = engine.seekBackward(timerState, now: now)
         guard next != timerState else { return }
@@ -719,24 +756,102 @@ final class ActiveFlowStore: ObservableObject {
     }
 
     func selectMode(_ mode: FlowMode, modelContext: ModelContext, now: Date = .now) {
-        guard mode != selectedMode else { return }
-
-        let previousMode = selectedMode
+        guard mode != selectedMode, canChangeMode else { return }
+        if pendingModeChange == nil {
+            pendingModeChange = PendingModeChange(
+                originalMode: selectedMode,
+                originalState: timerState,
+                sessionID: activeSession?.id,
+                runtimeVersion: activeSession?.runtimeVersion,
+                modelContext: modelContext,
+                changedAt: now
+            )
+        } else {
+            pendingModeChange?.changedAt = now
+        }
         selectedMode = mode
-        persistConfiguration()
+        if let state = timerState {
+            timerState = engine.changeMode(mode, for: state)
+        }
 
-        guard let timerState else { return }
-        let next = engine.changeMode(mode, for: timerState)
-        guard next != timerState else { return }
-
-        guard apply(next, modelContext: modelContext, now: now) else {
-            selectedMode = previousMode
-            persistConfiguration()
-            return
+        // Keep disk work out of the 380 ms ring transition. SwiftData remains on
+        // its owning MainActor; this is deferred persistence, not background IO.
+        modeCommitTask?.cancel()
+        modeCommitTask = Task { @MainActor [weak self] in
+            do { try await Task.sleep(for: .milliseconds(450)) }
+            catch { return }
+            guard !Task.isCancelled else { return }
+            _ = self?.flushPendingModeChange()
         }
     }
 
+    /// Commits the latest coalesced mode before another timer command or teardown.
+    @discardableResult
+    func flushPendingModeChange() -> Bool {
+        guard let pending = pendingModeChange else { return true }
+        modeCommitTask?.cancel()
+        modeCommitTask = nil
+        pendingModeChange = nil
+
+        if let sessionID = pending.sessionID {
+            guard let session = activeSession, session.id == sessionID,
+                  !session.isDeleted, session.runtimeVersion == pending.runtimeVersion,
+                  let state = timerState else {
+                // A remote/runtime change won the race. Never overwrite it with
+                // the optimistic mode, or revive a removed/completed session.
+                if let session = activeSession, !session.isDeleted,
+                   let state = session.reconstructableTimerState {
+                    adopt(session: session, timerState: state, now: pending.changedAt)
+                } else {
+                    selectedMode = pending.originalMode
+                    clearSynchronizedRuntimeIfNeeded()
+                    persistConfiguration()
+                }
+                return false
+            }
+            let originalMode = session.mode
+            let originalEnd = session.plannedEndAt
+            let originalFocusDuration = session.plannedFocusDurationSeconds
+            let originalBreakDuration = session.plannedBreakDurationSeconds
+            let originalVersion = session.runtimeVersion
+            session.mode = state.mode
+            session.plannedEndAt = state.plannedEndAt
+            session.plannedFocusDurationSeconds = state.plannedFocusDurationSeconds
+            session.plannedBreakDurationSeconds = state.plannedBreakDurationSeconds
+            session.recordRuntimeMutation(now: pending.changedAt)
+            do {
+                try saveModeChange(pending.modelContext)
+            } catch {
+                // Restore only our fields; another editor may have unsaved work
+                // in this same context. A whole-context rollback would lose it.
+                session.mode = originalMode
+                session.plannedEndAt = originalEnd
+                session.plannedFocusDurationSeconds = originalFocusDuration
+                session.plannedBreakDurationSeconds = originalBreakDuration
+                session.runtimeRevision = originalVersion.revision
+                session.runtimeMutationID = originalVersion.mutationID
+                session.updatedAt = originalVersion.updatedAt
+                selectedMode = pending.originalMode
+                timerState = pending.originalState
+                PersistenceIssueCenter.shared.report(error, operation: .flowUpdate)
+                return false
+            }
+            lastAppliedRuntimeVersion = session.runtimeVersion
+            replaceNotifications(for: state)
+            synchronizeLiveActivity(now: pending.changedAt)
+        }
+        persistConfiguration()
+        return true
+    }
+
+    private func cancelPendingModeChange() {
+        modeCommitTask?.cancel()
+        modeCommitTask = nil
+        pendingModeChange = nil
+    }
+
     func stop(modelContext: ModelContext, now: Date = .now) {
+        guard flushPendingModeChange() else { return }
         guard let timerState else { return }
         if timerState.phase == .breakTime {
             _ = completeBreak(modelContext: modelContext, now: now)
@@ -749,6 +864,7 @@ final class ActiveFlowStore: ObservableObject {
     }
 
     func destroy(modelContext: ModelContext, now: Date = .now) {
+        guard flushPendingModeChange() else { return }
         if isBreakPhase {
             if let activeSession {
                 do {
@@ -789,6 +905,7 @@ final class ActiveFlowStore: ObservableObject {
     }
 
     func skipBreak(modelContext: ModelContext, now: Date = .now) {
+        guard flushPendingModeChange() else { return }
         guard let timerState else { return }
         guard timerState.phase == .breakTime else { return }
         _ = completeBreak(modelContext: modelContext, now: now)
@@ -800,6 +917,7 @@ final class ActiveFlowStore: ObservableObject {
         modelContext: ModelContext,
         now: Date = .now
     ) {
+        guard flushPendingModeChange() else { return }
         guard timerState?.phase == .breakTime else { return }
 
         guard completeBreak(modelContext: modelContext, now: now) else { return }

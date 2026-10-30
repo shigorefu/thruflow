@@ -3,6 +3,13 @@
 All notable user-facing changes to ThruFlow are documented in this file.
 Release dates below record GitHub publication in Asia/Tokyo (JST).
 
+## [1.4.1] - Unreleased
+
+Version **1.4.1**, build **15**.
+
+- Keep timer ring color boundaries aligned with the filling arc when changing focus modes after switching Tasks.
+- Defer and coalesce mode-setting persistence until after the ring transition, with ordered flushes before subsequent timer commands.
+
 ## [1.4.0] - 2026-10-29
 
 Version **1.4.0**, build **14** across all Xcode targets. App Store publication confirmed by the maintainer on 2026-10-30.

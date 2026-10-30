@@ -1263,3 +1263,27 @@ Existing Task notes hold the memo; FlowSession.result and persisted models do no
 change. The existing under-one-minute transfer policy remains in force.
 Both client agents agreed before implementation; native presentation waits for
 the picker to dismiss.
+
+### 2026-10-30 — Mode-switch ring geometry and deferred persistence (1.4.1)
+
+The timer ring interpolates one progress scalar and derives both the arc and
+all color boundaries from it. Projection retains off-arc segments when a shorter
+mode is selected; clipping happens while drawing, preserving gradient topology.
+
+Mode selection updates display state immediately and coalesces configuration and
+runtime persistence for 450 ms, after the 380 ms ring transition. This is deferred
+MainActor persistence, not background SwiftData I/O. Other timer commands and
+lifecycle teardown flush first; failures restore only mode-related fields and
+abort the dependent command. Deleted or externally changed sessions are not
+overwritten. Mac, iOS and Watch share this behavior; Mac also flushes on normal
+application termination. Forced process termination can still lose a pending
+selection. No persisted fields or schema are changed.
+
+Verification: 568 macOS unit tests passed (56 suites), and unsigned macOS and
+iOS Release builds passed, including embedded Watch. Both client agents agreed
+on the shared contract and final source diff. The lead exercised multiple Task
+contexts and Short/Deep selection in an isolated Mac demo. A baseline Instruments
+recording contained frame hitches; full SwiftUI analysis was stopped at about
+2 GB RSS, and the after-change recording stalled during finalization. No numeric
+performance improvement or signed cross-device/notification verification is
+claimed from these checks.

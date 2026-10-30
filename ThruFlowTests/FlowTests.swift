@@ -1174,7 +1174,7 @@ struct FlowTests {
             FlowTimerRingSlice(start: 0.4, end: 0.5, colorHex: green.colorHex),
             FlowTimerRingSlice(start: 0.5, end: 2.0 / 3, colorHex: orange.colorHex)
         ])
-        #expect(store.timerRingSlices(now: start.addingTimeInterval(5_000)).last?.end == 1)
+        #expect(store.timerRingSlices(now: start.addingTimeInterval(5_000)).last?.end == 4_400.0 / 1_800)
         let state = try #require(store.timerState)
         store.timerState = FlowTimerEngine().startBreak(state, now: now)
         #expect(store.timerRingSlices(now: now).isEmpty)
@@ -1182,7 +1182,7 @@ struct FlowTests {
         #expect(store.timerRingSlices(now: now.addingTimeInterval(60)).isEmpty)
     }
 
-    @Test func timerRingClipsOvertimeAndIgnoresZeroLengthSegments() {
+    @Test func timerRingRetainsOvertimeCoordinatesAndIgnoresZeroLengthSegments() {
         let start = Date(timeIntervalSince1970: 8_000)
         let area = Area(name: "Area", type: .neutral)
         let session = FlowSession(
@@ -1197,7 +1197,8 @@ struct FlowTests {
         let overtime = FlowSegment(session: session, area: area, todo: nil, startedAt: start, startFocusSeconds: 1_600)
         session.resolvedSegments = [overtime, first]
         #expect(projection.slices(session: session, plannedSeconds: 1_500, focusedSeconds: 1_700) == [
-            FlowTimerRingSlice(start: 0, end: 1, colorHex: area.colorHex)
+            FlowTimerRingSlice(start: 0, end: 1_600.0 / 1_500, colorHex: area.colorHex),
+            FlowTimerRingSlice(start: 1_600.0 / 1_500, end: 1_700.0 / 1_500, colorHex: area.colorHex)
         ])
         #expect(projection.slices(session: session, plannedSeconds: 0, focusedSeconds: 100).isEmpty)
         #expect(projection.slices(session: session, plannedSeconds: 1_500, focusedSeconds: -1).isEmpty)
