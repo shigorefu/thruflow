@@ -1287,3 +1287,13 @@ recording contained frame hitches; full SwiftUI analysis was stopped at about
 2 GB RSS, and the after-change recording stalled during finalization. No numeric
 performance improvement or signed cross-device/notification verification is
 claimed from these checks.
+
+### 2026-10-30 — Three-line Flow Task rows (1.4.1)
+
+Flow Task rows on Mac and iPhone/iPad separate title, Area/Project context in
+the Area color, and remaining properties with literal `・` separators. Omit
+an empty property line. Keep existing property availability, time/reminder
+labels and completion controls; do not restore redundant completion subtitles.
+Standard Tasks screens retain their existing presentation. This supersedes
+the previous two-line Flow row layout. Visual verification is left to the
+maintainer at their explicit request.

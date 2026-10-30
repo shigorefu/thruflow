@@ -1,6 +1,6 @@
 # UX flows
 
-This document describes the current 1.4.0 presentation. Business rules belong in
+This document describes the current presentation. Business rules belong in
 [Domain model](DOMAIN_MODEL.md); persistence contracts in [Data model](DATA_MODEL.md).
 
 ## Areas and Projects
@@ -31,8 +31,9 @@ parser and its tests for supported aliases; English aliases work in every locale
 Hide the Project picker when the Area has no eligible Projects and there is no
 existing selection to clear. Changing Area clears an incompatible Project.
 Unnamed Tasks display their Project name when assigned, otherwise the Area
-placeholder. Flow rows have two lines: title, then colored Area or Area/Project
-context followed by other Task attributes. Checkbox Tasks have no redundant
+placeholder. Flow rows have three lines: title, colored Area or Area/Project context,
+then available Task attributes separated by `・`. Omit the third line when
+there are no attributes. Checkbox Tasks have no redundant
 Completed/Incomplete subtitle; numeric progress remains visible.
 
 Tasks offers day, week and month views, overdue work and an undated inspector.

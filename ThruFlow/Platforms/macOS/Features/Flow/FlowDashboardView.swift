@@ -1708,23 +1708,24 @@ private struct DashboardTodoColumn: View {
                             .strikethrough(todo.isCompleted)
                             .lineLimit(1)
 
-                        HStack(spacing: 10) {
-                            Text(TodoDisplay.flowContextName(for: todo))
-                                .foregroundStyle(todo.area.map { Color(hex: $0.colorHex) } ?? .accentColor)
-                                .layoutPriority(1)
+                        Text(TodoDisplay.flowContextName(for: todo))
+                            .font(.caption2)
+                            .foregroundStyle(todo.area.map { Color(hex: $0.colorHex) } ?? .accentColor)
+                            .lineLimit(1)
 
-                            if let minutes = todo.scheduledTimeMinutes {
-                                TaskTimeLabel(minutes: minutes, reminderEnabled: todo.reminderEnabled)
+                        let detail = todoDetail(todo)
+                        if todo.scheduledTimeMinutes != nil || !detail.isEmpty {
+                            HStack(spacing: 4) {
+                                if let minutes = todo.scheduledTimeMinutes {
+                                    TaskTimeLabel(minutes: minutes, reminderEnabled: todo.reminderEnabled)
+                                    if !detail.isEmpty { Text(verbatim: "・") }
+                                }
+                                if !detail.isEmpty { Text(verbatim: detail) }
                             }
-
-                            let detail = todoDetail(todo)
-                            if !detail.isEmpty {
-                                Text(detail)
-                            }
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
                         }
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
                     }
 
                     Spacer(minLength: 0)
@@ -1759,10 +1760,7 @@ private struct DashboardTodoColumn: View {
         if showsPriority { details.append(priorityLabel(todo)) }
         if todo.measurement != .checkbox { details.append(progressText(todo)) }
         if !tags.isEmpty { details.append(tags) }
-        guard let first = details.first else { return "" }
-        return details.dropFirst().reduce(first) { accumulated, next in
-            String(localized: "\(accumulated) · \(next)")
-        }
+        return details.joined(separator: "・")
     }
 
     private func priorityLabel(_ todo: Todo) -> String {
