@@ -99,6 +99,36 @@ This is standing authorization to delegate the bounded reviews below; an explici
 user restriction on delegation or scope takes precedence. Documentation-only
 changes do not require platform agents.
 
+### Model selection and escalation
+
+- Use **GPT-6.1 Sol** (`gpt-6.1-sol`) for ordinary implementation and
+  orchestration, and for reviews of application logic. Start at medium reasoning
+  for implementation and high reasoning for logic reviews.
+- Use **GPT-6.1 Terra** (`gpt-6.1-terra`) at medium reasoning for simple UI
+  checks that do not change business rules, validation, state transitions,
+  persistence, or UI-to-command behavior. If a check reveals a logic issue,
+  escalate it to the agent responsible for logic rather than expanding Terra's
+  scope silently.
+- Use **GPT-6 Luna** (`gpt-6-luna`) at medium reasoning for the localization
+  agent. Preserve all localization review requirements below. Give it the
+  affected strings, UI context, relevant guidelines, and explicit file ownership.
+- For a large refactor or a change to application logic, replace Sol with
+  **GPT-6 Astra** (`gpt-6-astra`) for the lead and logic-review roles. This
+  includes changes to business rules, validation, state transitions, persistence,
+  or UI-to-command behavior. Terra and Luna retain their bounded roles.
+- **Astra requires the user's explicit permission for the current task.**
+  Recognizing an escalation condition is not permission to launch Astra. First
+  explain the affected scope and why Astra is required, then obtain permission
+  before the refactor or logic work begins. Do not silently continue that work
+  on Sol or substitute another model. Permission to edit these rules does not
+  authorize future Astra runs.
+- Select subagent models explicitly. With the current `spawn_agent` interface,
+  use `fork_turns="none"` when setting `model` or `reasoning_effort`, and supply
+  a self-contained task. If a required model is unavailable, disclose the blocker
+  instead of silently substituting it. If the lead cannot switch its own model,
+  ask the user to select the required model before the affected work begins;
+  never claim that a model switch occurred without confirmation.
+
 ### Required agreement for logic changes
 
 For changes to business rules, validation, state transitions, persistence, or
