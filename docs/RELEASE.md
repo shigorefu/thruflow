@@ -2,12 +2,12 @@
 
 This document is the operational checklist for ThruFlow releases. Product scope remains in [`ROADMAP.md`](ROADMAP.md), and CloudKit details remain in [`CLOUDKIT.md`](CLOUDKIT.md).
 
-## Release candidate 1.4.0 build 14
+## Released 1.4.0 build 14
 
-Updated on 2026-10-29 from the merged 1.4.0 development scope. All Debug and
+Updated on 2026-10-30 from the merged 1.4.0 development scope. All Debug and
 Release configurations for macOS, iOS, Watch, the widget/Live Activity extension
-and test bundles use marketing version `1.4.0`, build `14`. This is preparation,
-not a published release. See [draft release notes](releases/1.4.0.md).
+and test bundles use marketing version `1.4.0`, build `14`. App Store publication was confirmed by the maintainer on 2026-10-30.
+See [release notes](releases/1.4.0.md).
 
 Build 14 corrects localized month picker labels and includes isolated screenshot
 schemes. Xcode 27.1 (27A9275) is the local development toolchain; CI retains its
@@ -33,10 +33,9 @@ were removed from the drafts; original assets remain in the asset library.
 
 The maintainer subsequently authorized upload and App Review submission. Both
 iOS and macOS 1.4.0 (14) were uploaded through GitHub Actions, processed as
-`VALID`, selected and submitted. App Store Connect shows Waiting for Review
+`VALID`, selected and submitted. App Store Connect showed Waiting for Review
 for both platforms (iOS at 14:24 JST; macOS at 14:42 JST on 2026-10-29).
-The existing automatic release after approval setting was preserved. Neither
-version is confirmed published. See
+The existing automatic release after approval setting was preserved. The maintainer confirmed App Store publication on 2026-10-30. See
 [TestFlight delivery evidence](TESTFLIGHT.md#account-setup-progress--2026-10-29).
 
 Remaining verification:
@@ -48,7 +47,7 @@ Remaining verification:
 - Signed archives and exported bundle checks passed in the delivery workflow.
   Runtime testing of the exact processed TestFlight builds on Mac, iPhone/iPad
   and Watch remains unverified.
-- Keep 1.3.1 marked as the latest stable release until publication is confirmed.
+
 
 Historical release notes are in [Changelog](../CHANGELOG.md) and `releases/`.
 Earlier preparation logs remain available in Git history.

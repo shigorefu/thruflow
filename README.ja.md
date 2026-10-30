@@ -4,7 +4,7 @@
 
 ThruFlow / スルフロは、Appleデバイスでの集中作業と習慣づくりを支える、無料のオープンソースアプリです。柔軟に調整できるポモドーロタイマーで、作業に使った時間をタスクの進捗として可視化します。
 
-**[App Storeで入手](https://apps.apple.com/app/id6798609191)** · **1.4.0（14）：App Reviewの審査待ち** · [更新内容](docs/releases/1.4.0.md)
+**[App Storeで入手](https://apps.apple.com/app/id6798609191)** · **1.4.0（14）：App Storeで配信中** · [更新内容](docs/releases/1.4.0.md)
 
 | デバイス | 対応OS |
 | --- | --- |

@@ -4,7 +4,7 @@
 
 ThruFlow / スルフロ is a free, open-source app for focused work and building habits on Apple devices. Its flexible Pomodoro timer turns time spent working into visible progress on your tasks.
 
-**[Download on the App Store](https://apps.apple.com/app/id6798609191)** · **1.4.0 (14): awaiting App Review** · [What's new](docs/releases/1.4.0.md)
+**[Download on the App Store](https://apps.apple.com/app/id6798609191)** · **1.4.0 (14): available on the App Store** · [What's new](docs/releases/1.4.0.md)
 
 | Device | Minimum OS |
 | --- | --- |

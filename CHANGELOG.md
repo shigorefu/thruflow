@@ -3,9 +3,9 @@
 All notable user-facing changes to ThruFlow are documented in this file.
 Release dates below record GitHub publication in Asia/Tokyo (JST).
 
-## [1.4.0] - Unreleased
+## [1.4.0] - 2026-10-29
 
-Release candidate: version **1.4.0**, build **14** across all Xcode targets.
+Version **1.4.0**, build **14** across all Xcode targets. App Store publication confirmed by the maintainer on 2026-10-30.
 
 - Fixed localized month names in the macOS Statistics, Tasks and History month picker.
 - Restored isolated, localized demo data and screenshot schemes for App Store assets.

@@ -1,9 +1,8 @@
 # Roadmap
 
-## 1.4.0 (14) — awaiting App Review
+## 1.4.0 (14) — released
 
-Both platforms were uploaded and submitted on 2026-10-29. Publication is not yet
-confirmed. This version includes the work previously planned as 1.3.2.
+App Store publication was confirmed by the maintainer on 2026-10-30. This version includes the work previously planned as 1.3.2.
 
 - Optional Projects within Areas, including one Habit per Project.
 - Task times and reminders, with quick capture and native timing controls.
@@ -20,8 +19,8 @@ See [release notes](releases/1.4.0.md) for user-facing changes and
 
 ## Released versions
 
-[Changelog](../CHANGELOG.md) is the canonical release history. Version 1.3.1
-remains the latest confirmed published version; earlier release checklists are
+[Changelog](../CHANGELOG.md) is the canonical release history. Version 1.4.0
+is the latest confirmed published version; earlier release checklists are
 available in Git history rather than repeated here.
 
 ## Deferred — no committed release date
