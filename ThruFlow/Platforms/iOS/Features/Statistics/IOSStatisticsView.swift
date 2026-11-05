@@ -879,6 +879,8 @@ private struct IOSStatisticsTrendCard: View {
 }
 
 private struct IOSStatisticsDistributionCard: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     @Binding var dimension: IOSStatisticsDistributionDimension
     let items: [StatisticsDistributionItem]
     let totalFocusSeconds: Int
@@ -960,35 +962,40 @@ private struct IOSStatisticsDistributionCard: View {
                         .frame(maxWidth: 98)
                     }
 
-                    if let selectedItem {
-                        StatisticsDistributionDetailView(item: selectedItem)
-                    } else {
-                        VStack(alignment: .leading, spacing: 10) {
-                            ForEach(items) { item in
-                                Button {
-                                    selectedItemID = item.id
-                                } label: {
-                                    HStack(spacing: 8) {
-                                        Circle()
-                                            .fill(Color(hex: item.colorHex ?? "#8E8E93"))
-                                            .frame(width: 9, height: 9)
-                                        Text([item.symbol, item.name].compactMap { $0 }.joined(separator: " "))
-                                            .lineLimit(1)
-                                        Spacer(minLength: 8)
-                                        Text(IOSStatisticsFormatting.duration(item.focusSeconds))
-                                            .monospacedDigit()
-                                            .foregroundStyle(.secondary)
+                    ZStack {
+                        if let selectedItem {
+                            StatisticsDistributionDetailView(item: selectedItem)
+                            .id(selectedItem.id)
+                            .transition(.opacity)
+                        } else {
+                            VStack(alignment: .leading, spacing: 10) {
+                                ForEach(items) { item in
+                                    Button {
+                                        selectedItemID = item.id
+                                    } label: {
+                                        HStack(spacing: 8) {
+                                            Circle()
+                                                .fill(Color(hex: item.colorHex ?? "#8E8E93"))
+                                                .frame(width: 9, height: 9)
+                                            Text([item.symbol, item.name].compactMap { $0 }.joined(separator: " "))
+                                                .lineLimit(1)
+                                            Spacer(minLength: 8)
+                                            Text(IOSStatisticsFormatting.duration(item.focusSeconds))
+                                                .monospacedDigit()
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        .font(.callout)
+                                        .contentShape(Rectangle())
                                     }
-                                    .font(.callout)
-                                    .contentShape(Rectangle())
+                                    .buttonStyle(.plain)
                                 }
-                                .buttonStyle(.plain)
                             }
+                            .frame(maxWidth: .infinity)
+                            .transition(.opacity)
                         }
-                        .frame(maxWidth: .infinity)
                     }
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.18), value: selectedItemID)
                 }
-                .animation(.easeInOut(duration: 0.18), value: selectedItemID)
             }
         }
         .onChange(of: dimension) { _, _ in

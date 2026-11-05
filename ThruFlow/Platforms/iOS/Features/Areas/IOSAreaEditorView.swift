@@ -6,6 +6,7 @@ struct IOSAreaEditorView: View {
     @Environment(\.calendar) private var calendar
     @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Query(sort: \Area.sortIndex) private var areas: [Area]
 
     let mode: IOSAreaEditorMode
@@ -197,6 +198,8 @@ struct IOSAreaEditorView: View {
                 }
             }
         }
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: type == .habit)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: goalSchedule)
         .iosCenteredNavigationTitle(
             isEditing ? String(localized: "方向を編集") : String(localized: "方向を作成")
         )

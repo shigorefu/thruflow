@@ -101,6 +101,14 @@ presentation, support, onboarding replay and confirmed data-reset actions.
 Mac theme and language controls use dropdowns. Chinese selections show an
 AI-translation notice and support link. Changing language requires a restart.
 
+## Motion
+
+Task and Habit editors use short transitions when optional fields appear or
+disappear. The Flow result form fades in on Mac and uses the system sheet on
+iPhone and iPad. Connector feedback and the empty and selected-detail states
+in Statistics transition locally. These animations follow Reduce Motion.
+Timer ticks and existing field edits do not trigger these transitions.
+
 ## Onboarding and companion surfaces
 
 Onboarding uses a horizontal sequence, with guided creation only for an empty

@@ -26,6 +26,7 @@ struct AreaFormView: View {
     @Environment(\.calendar) private var calendar
     @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     let mode: Mode
     let onSaved: ((Area) -> Void)?
@@ -73,9 +74,11 @@ struct AreaFormView: View {
 
                     if draft.type == .habit {
                         goalCard
+                            .transition(.opacity)
 
                         if case .edit(let area) = mode {
                             habitPauseCard(area)
+                                .transition(.opacity)
                         }
                     }
 
@@ -94,6 +97,7 @@ struct AreaFormView: View {
                     validationCard
                     deleteCard
                 }
+                .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: draft.type == .habit)
                 .padding(24)
                 .frame(maxWidth: 760, alignment: .leading)
                 .frame(maxWidth: .infinity)
@@ -215,6 +219,7 @@ struct AreaFormView: View {
 
             goalScheduleDetails
         }
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: draft.goalSchedule ?? .everyDay)
     }
 
     private var colorCard: some View {

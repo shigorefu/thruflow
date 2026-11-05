@@ -4,10 +4,12 @@ import SwiftUI
 /// Optional project selection is shared by the native Task creation/editing surfaces.
 struct TaskProjectPicker: View {
     @Query(sort: \Project.createdAt) private var projects: [Project]
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let area: Area?
     @Binding var selection: Project?
     var currentProject: Project? = nil
     var showsDivider = false
+    var animatesVisibility = false
 
     private var choices: [Project] {
         var result = projects.filter {
@@ -23,15 +25,23 @@ struct TaskProjectPicker: View {
     }
 
     var body: some View {
-        if !choices.isEmpty {
-            if showsDivider { Divider() }
-            Picker(String(localized: "対象プロジェクト"), selection: selectedID) {
-                Text(String(localized: "プロジェクトなし")).tag(UUID?.none)
-                ForEach(choices) { project in
-                    Text(project.name).tag(Optional(project.id))
+        let availableProjects = choices
+        Group {
+            if !availableProjects.isEmpty {
+                if showsDivider { Divider().transition(.opacity) }
+                Picker(String(localized: "対象プロジェクト"), selection: selectedID) {
+                    Text(String(localized: "プロジェクトなし")).tag(UUID?.none)
+                    ForEach(availableProjects) { project in
+                        Text(project.name).tag(Optional(project.id))
+                    }
                 }
+                .transition(.opacity)
             }
         }
+        .animation(
+            reduceMotion ? nil : .easeInOut(duration: 0.18),
+            value: animatesVisibility && !availableProjects.isEmpty
+        )
     }
 
     private var selectedID: Binding<UUID?> {

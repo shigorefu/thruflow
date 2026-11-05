@@ -1053,6 +1053,8 @@ private struct StatisticsTrendCard: View {
 }
 
 private struct StatisticsDistributionCard: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     @Binding var dimension: StatisticsDistributionDimension
     let items: [StatisticsDistributionItem]
     let totalFocusSeconds: Int
@@ -1154,35 +1156,40 @@ private struct StatisticsDistributionCard: View {
                             }
                             .frame(maxWidth: chartSize * 0.52)
                         }
-                        if let selectedItem {
-                            StatisticsDistributionDetailView(item: selectedItem)
-                        } else {
-                            VStack(alignment: .leading, spacing: 10) {
-                                ForEach(items) { item in
-                                    Button {
-                                        selectedItemID = item.id
-                                    } label: {
-                                        HStack(spacing: 8) {
-                                            Circle()
-                                                .fill(Color(hex: item.colorHex ?? "#8E8E93"))
-                                                .frame(width: 9, height: 9)
-                                            Text([item.symbol, item.name].compactMap { $0 }.joined(separator: " "))
-                                                .lineLimit(1)
-                                            Spacer(minLength: 8)
-                                            Text(StatisticsFormatting.duration(item.focusSeconds))
-                                                .monospacedDigit()
-                                                .foregroundStyle(.secondary)
+                        ZStack {
+                            if let selectedItem {
+                                StatisticsDistributionDetailView(item: selectedItem)
+                                .id(selectedItem.id)
+                                .transition(.opacity)
+                            } else {
+                                VStack(alignment: .leading, spacing: 10) {
+                                    ForEach(items) { item in
+                                        Button {
+                                            selectedItemID = item.id
+                                        } label: {
+                                            HStack(spacing: 8) {
+                                                Circle()
+                                                    .fill(Color(hex: item.colorHex ?? "#8E8E93"))
+                                                    .frame(width: 9, height: 9)
+                                                Text([item.symbol, item.name].compactMap { $0 }.joined(separator: " "))
+                                                    .lineLimit(1)
+                                                Spacer(minLength: 8)
+                                                Text(StatisticsFormatting.duration(item.focusSeconds))
+                                                    .monospacedDigit()
+                                                    .foregroundStyle(.secondary)
+                                            }
+                                            .font(isCompact ? .caption : .callout)
+                                            .contentShape(Rectangle())
                                         }
-                                        .font(isCompact ? .caption : .callout)
-                                        .contentShape(Rectangle())
+                                        .buttonStyle(.plain)
                                     }
-                                    .buttonStyle(.plain)
                                 }
+                                .frame(maxWidth: .infinity)
+                                .transition(.opacity)
                             }
-                            .frame(maxWidth: .infinity)
                         }
+                        .animation(reduceMotion ? nil : .easeInOut(duration: 0.18), value: selectedItemID)
                     }
-                    .animation(.easeInOut(duration: 0.18), value: selectedItemID)
                 }
             }
         }

@@ -158,6 +158,7 @@ struct ProjectEditorView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.calendar) private var calendar
     @Environment(\.appDayBoundary) private var dayBoundary
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let area: Area
     let project: Project?
     @State private var name: String
@@ -205,6 +206,8 @@ struct ProjectEditorView: View {
                     EditorSectionCard { Text(saveError).foregroundStyle(.red) }
                 }
             }
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: habit.isEnabled)
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: habit.goalSchedule)
             .padding(24)
             .frame(maxWidth: 760, alignment: .leading)
             .frame(maxWidth: .infinity)
@@ -216,6 +219,8 @@ struct ProjectEditorView: View {
             ProjectHabitFormSection(settings: $habit)
             if let saveError { Section { Text(saveError).foregroundStyle(.red) } }
         }
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: habit.isEnabled)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: habit.goalSchedule)
 #endif
     }
 

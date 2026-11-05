@@ -14,6 +14,7 @@ struct FlowMiniPlayerView: View {
         case dashboard
     }
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.calendar) private var calendar
     @Environment(\.modelContext) private var modelContext
@@ -123,13 +124,21 @@ struct FlowMiniPlayerView: View {
 
     @ViewBuilder
     private func content(now: Date) -> some View {
-        VStack(spacing: 8) {
+        let memoTransition: AnyTransition = reduceMotion
+            ? .identity
+            : .opacity.animation(.easeInOut(duration: 0.18))
+
+        ZStack(alignment: .top) {
             if activeFlowStore.pendingTaskSwitch != nil {
                 resultBar
+                    .transition(memoTransition)
+                    .zIndex(1)
             } else if activeFlowStore.phase == .awaitingExtensionDecision {
                 adaptiveDecisionBar
             } else if activeFlowStore.phase == .awaitingResult || activeFlowStore.isAwaitingBreakMemo {
                 resultBar
+                    .transition(memoTransition)
+                    .zIndex(1)
             } else {
                 if style == .dashboard {
                     dashboardPlayer(now: now)

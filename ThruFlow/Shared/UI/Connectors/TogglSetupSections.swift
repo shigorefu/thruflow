@@ -3,11 +3,26 @@ import SwiftData
 import SwiftUI
 
 struct TogglConnectorRow: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ObservedObject var store: TogglExportStore
+
     var body: some View {
-        ConnectorProviderRow(provider: .toggl, connection: store.configuration.map {
-            ConnectorConnection(provider: .toggl, account: $0.account)
-        })
+        let message = store.errorMessage
+
+        VStack(alignment: .leading, spacing: 4) {
+            ConnectorProviderRow(provider: .toggl, connection: store.configuration.map {
+                ConnectorConnection(provider: .toggl, account: $0.account)
+            })
+            if let message {
+                Text(verbatim: message)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("connectors.toggl.error")
+                    .transition(.opacity)
+            }
+        }
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.18), value: message != nil)
     }
 }
 
@@ -44,6 +59,7 @@ struct TogglKeychainExplanation: ViewModifier {
 }
 
 struct TogglSetupSections: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.modelContext) private var modelContext
     @ObservedObject var store: TogglExportStore
     let areas: [Area]
@@ -69,6 +85,8 @@ struct TogglSetupSections: View {
     }
 
     var body: some View {
+        let result = hasUnsavedChanges ? nil : store.lastSyncResult
+
         Group {
             Section {
                 TogglConnectorRow(store: store)
@@ -147,15 +165,21 @@ struct TogglSetupSections: View {
 
                 Section {
                     Text(String(localized: "送信待ち：\(store.pendingJobs.count)件"))
-                    if let result = store.lastSyncResult, !hasUnsavedChanges {
-                        Text(result.localizedDescription)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
+                    Group {
+                        if let result {
+                            Text(result.localizedDescription)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .transition(.opacity)
+                        }
+                        if let date = configuration.lastSyncedAt {
+                            LabeledContent(String(localized: "最終送信"), value: date.formatted(date: .abbreviated, time: .shortened))
+                                .transition(.opacity)
+                        }
                     }
-                    if let date = configuration.lastSyncedAt {
-                        LabeledContent(String(localized: "最終送信"), value: date.formatted(date: .abbreviated, time: .shortened))
-                    }
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.18), value: result != nil)
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.18), value: configuration.lastSyncedAt != nil)
                     Button(String(localized: "今すぐ送信")) {
                         Task { await store.synchronize(modelContext: modelContext) }
                     }
