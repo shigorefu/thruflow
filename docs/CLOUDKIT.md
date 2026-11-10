@@ -337,3 +337,16 @@ Production for `iCloud.com.shigorefu.thruflow`; CloudKit Console redirected to
 Apple Account sign-in. Live schema inspection and signed Mac/iPhone exchange
 remain unverified for this change. The previous inspection is not treated as
 a fresh verification. No cloud records or schema were modified.
+
+### Release 1.4.1 build 15 preparation — 2026-11-10
+
+Inspected the live Production field pages for
+`iCloud.com.shigorefu.thruflow` (team `BR727PS795`). Counts including metadata:
+Direction 25, Project 15, Todo 34, FlowSession 34, FlowSegment 16 and FlowBreak 20.
+Direction goal and weekday mask, FlowSegment focus offsets, and FlowBreak
+planned duration remain INT64 with Queryable and Sortable indexes. Todo's
+scheduled time and reminder fields remain INT64 with Queryable and Sortable
+indexes. Project Habit settings and the Todo Habit owner key remain STRING
+without indexes. The release changes no persisted models or entitlements.
+No schema deployment or data edits were made. Signed device exchange for this
+build remains pending.
