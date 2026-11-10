@@ -3,56 +3,70 @@ import SwiftData
 import SwiftUI
 
 struct TogglConnectorRow: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ObservedObject var store: TogglExportStore
+
     var body: some View {
-        ConnectorProviderRow(provider: .toggl, connection: store.configuration.map {
-            ConnectorConnection(provider: .toggl, account: $0.account)
-        })
+        let message = store.errorMessage ?? store.syncErrorMessage
+
+        VStack(alignment: .leading, spacing: 4) {
+            ConnectorProviderRow(provider: .toggl, connection: store.configuration.map {
+                ConnectorConnection(provider: .toggl, account: $0.account)
+            })
+            if let message {
+                Text(verbatim: message)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("connectors.toggl.error")
+                    .transition(.opacity)
+            }
+        }
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.18), value: message != nil)
     }
 }
 
-/// Explains credential access before the destination creates its setup sections.
-/// Keep this on the platform Form, outside its individual/lazy sections.
-struct TogglKeychainExplanation: ViewModifier {
-    @Environment(\.dismiss) private var dismiss
-    let isRequired: Bool
-    @Binding var hasContinued: Bool
-    @State private var showsExplanation = false
+struct TogglActivationToggle: View {
+    @ObservedObject var store: TogglExportStore
 
-    private var message: String {
-#if os(macOS)
-        String(localized: "Toggl Trackへの接続には、APIトークン（接続用のキー）を使います。プロジェクトの取得と集中時間の送信に必要です。\n\nトークンは、このMacのKeychain（Appleの安全な保管場所）に保存します。読み取りや保存の際、macOSが許可やMacのログインパスワードを求めることがあります。他のアプリのパスワードへのアクセスを求めるものではありません。")
-#else
-        String(localized: "Toggl Trackへの接続には、APIトークン（接続用のキー）を使います。プロジェクトの取得と集中時間の送信に必要です。\n\nトークンは、この端末のKeychain（Appleの安全な保管場所）に保存します。iCloudには同期せず、Togglとの通信に使います。")
-#endif
-    }
-
-    func body(content: Content) -> some View {
-        content
-            .onAppear {
-                if isRequired && !hasContinued { showsExplanation = true }
+    var body: some View {
+        Toggle(isOn: Binding(
+            get: { store.configuration?.isEnabled == true },
+            set: { enabled in
+                do {
+                    try store.setEnabled(enabled)
+                    if enabled { Task { await store.loadOptions() } }
+                } catch {
+                    store.errorMessage = error.localizedDescription
+                }
             }
-            .alert(String(localized: "Toggl Trackとの接続について"), isPresented: $showsExplanation) {
-                Button(String(localized: "続ける")) { hasContinued = true }
-                    .accessibilityIdentifier("connectors.toggl.explanation.continue")
-                Button(String(localized: "キャンセル"), role: .cancel) { dismiss() }
-                    .accessibilityIdentifier("connectors.toggl.explanation.cancel")
-            } message: {
-                Text(message)
-            }
+        )) {
+            Text(String(localized: "集中時間を自動送信"))
+        }
+        .toggleStyle(.switch)
+        .disabled(store.isBusy || store.configuration?.workspaceID == nil || store.configuration?.areaProjects.isEmpty != false)
+        .accessibilityIdentifier("connectors.enabled.toggl")
     }
 }
 
 struct TogglSetupSections: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.modelContext) private var modelContext
     @ObservedObject var store: TogglExportStore
     let areas: [Area]
     @State private var token = ""
     @State private var workspaceID: Int64 = 0
     @State private var mappings: [String: Int64] = [:]
-    @State private var enabled = true
     @State private var retryJob: TogglExportJob?
     @State private var showsDisconnect = false
+
+    private var keychainExplanation: String {
+#if os(macOS)
+        String(localized: "Toggl Trackへの接続には、APIトークン（接続用のキー）を使います。プロジェクトの取得と集中時間の送信に必要です。\n\nトークンは、このMacのKeychain（Appleの安全な保管場所）に保存します。読み取りや保存の際、macOSが許可やMacのログインパスワードを求めることがあります。他のアプリのパスワードへのアクセスを求めるものではありません。")
+#else
+        String(localized: "Toggl Trackへの接続には、APIトークン（接続用のキー）を使います。プロジェクトの取得と集中時間の送信に必要です。\n\nトークンは、この端末のKeychain（Appleの安全な保管場所）に保存します。iCloudには同期せず、Togglとの通信に使います。")
+#endif
+    }
 
     private var projects: [TogglProject] { store.projects.filter { $0.workspace_id == workspaceID } }
     private var activeAreas: [Area] { areas.filter { !$0.isArchived } }
@@ -65,10 +79,12 @@ struct TogglSetupSections: View {
         let activeIDs = Set(activeAreas.map { $0.id.uuidString })
         let savedMappings = configuration.areaProjects.filter { activeIDs.contains($0.key) }
         return workspaceID != (configuration.workspaceID ?? 0)
-            || activeMappings != savedMappings || enabled != configuration.isEnabled
+            || activeMappings != savedMappings
     }
 
     var body: some View {
+        let result = hasUnsavedChanges ? nil : store.lastSyncResult
+
         Group {
             Section {
                 TogglConnectorRow(store: store)
@@ -84,8 +100,11 @@ struct TogglSetupSections: View {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                 }
-                Text(String(localized: "Toggl TrackのAPIトークンは、この端末のKeychainに保存されます。"))
-                    .font(.subheadline).foregroundStyle(.secondary)
+                if store.configuration == nil {
+                    Text(keychainExplanation)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
                 SecureField(String(localized: "APIトークン"), text: $token)
                     .autocorrectionDisabled()
                     .accessibilityIdentifier("connectors.toggl.token")
@@ -123,8 +142,8 @@ struct TogglSetupSections: View {
                             .disabled(store.isBusy)
                         }
                     }
-                    Toggle(String(localized: "集中時間を自動送信"), isOn: $enabled)
-                        .disabled(store.isBusy)
+                    TogglActivationToggle(store: store)
+                        .disabled(hasUnsavedChanges)
                     if hasUnsavedChanges {
                         Text(String(localized: "変更はまだ保存されていません。「設定を保存」を押すと反映されます。"))
                             .font(.caption)
@@ -133,7 +152,7 @@ struct TogglSetupSections: View {
                     }
                     Button(String(localized: "設定を保存")) {
                         do {
-                            try store.configure(workspaceID: workspaceID, areaProjects: activeMappings, enabled: enabled)
+                            try store.configure(workspaceID: workspaceID, areaProjects: activeMappings, enabled: configuration.isEnabled)
                             Task { await store.synchronize(modelContext: modelContext) }
                         } catch { store.errorMessage = error.localizedDescription }
                     }
@@ -146,16 +165,24 @@ struct TogglSetupSections: View {
                 }
 
                 Section {
-                    Text(String(localized: "送信待ち：\(store.pendingJobs.count)件"))
-                    if let result = store.lastSyncResult, !hasUnsavedChanges {
-                        Text(result.localizedDescription)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
+                    if configuration.isEnabled {
+                        Text(String(localized: "送信待ち：\(store.pendingJobs.count)件"))
                     }
-                    if let date = configuration.lastSyncedAt {
-                        LabeledContent(String(localized: "最終送信"), value: date.formatted(date: .abbreviated, time: .shortened))
+                    Group {
+                        if let result {
+                            Text(result.localizedDescription)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .transition(.opacity)
+                        }
+                        if let date = configuration.lastSyncedAt {
+                            LabeledContent(String(localized: "最終送信"), value: date.formatted(date: .abbreviated, time: .shortened))
+                                .transition(.opacity)
+                        }
                     }
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.18), value: result != nil)
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.18), value: configuration.lastSyncedAt != nil)
                     Button(String(localized: "今すぐ送信")) {
                         Task { await store.synchronize(modelContext: modelContext) }
                     }
@@ -181,9 +208,6 @@ struct TogglSetupSections: View {
             }
 
             if store.isBusy { Section { ProgressView().accessibilityLabel(String(localized: "接続を更新しています…")) } }
-            if let message = store.errorMessage {
-                Section { Text(message).foregroundStyle(.red).fixedSize(horizontal: false, vertical: true) }
-            }
         }
         .task {
             restore()
@@ -215,7 +239,6 @@ struct TogglSetupSections: View {
     private func restore() {
         workspaceID = store.configuration?.workspaceID ?? 0
         mappings = store.configuration?.areaProjects ?? [:]
-        enabled = store.configuration?.isEnabled ?? true
     }
 }
 #endif

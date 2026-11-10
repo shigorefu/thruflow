@@ -76,7 +76,12 @@ struct IOSTaskEditorView: View {
                     }
                     .disabled(fixedArea != nil)
 
-                    TaskProjectPicker(area: draft.area, selection: $draft.project, currentProject: editedTodo?.project)
+                    TaskProjectPicker(
+                        area: draft.area,
+                        selection: $draft.project,
+                        currentProject: editedTodo?.project,
+                        animatesVisibility: true
+                    )
 
                     Picker(String(localized: "種類"), selection: $draft.measurement) {
                         ForEach(TodoMeasurement.allCases) { measurement in
@@ -88,6 +93,7 @@ struct IOSTaskEditorView: View {
                         Stepper(value: plannedAmountBinding, in: 1...999) {
                             Text(targetText)
                         }
+                        .transition(.opacity)
                     }
 
                     Picker(String(localized: "優先度"), selection: $draft.priority) {
@@ -98,6 +104,7 @@ struct IOSTaskEditorView: View {
 
                     if draft.priority == .low {
                         Toggle(String(localized: "余裕があれば"), isOn: $draft.isRoomIfPossible)
+                            .transition(.opacity)
                     }
 
                     Toggle(
@@ -123,15 +130,20 @@ struct IOSTaskEditorView: View {
                         .onChange(of: datePickerValue) { _, newValue in
                             draft.scheduledDate = newValue
                         }
+                        .transition(.opacity)
                     }
                 }
+                .animation(fieldVisibilityAnimation, value: draft.measurement != .checkbox)
+                .animation(fieldVisibilityAnimation, value: draft.priority == .low)
+                .animation(fieldVisibilityAnimation, value: draft.scheduledDate != nil)
             }
 
             Section {
                 TaskTimingControls(
                     scheduledDate: draft.scheduledDate,
                     timeMinutes: $draft.scheduledTimeMinutes,
-                    reminderEnabled: $draft.reminderEnabled
+                    reminderEnabled: $draft.reminderEnabled,
+                    animatesVisibility: true
                 )
             }
 
@@ -170,6 +182,10 @@ struct IOSTaskEditorView: View {
                     .disabled(!canSave)
             }
         }
+    }
+
+    private var fieldVisibilityAnimation: Animation? {
+        reduceMotion ? nil : .easeInOut(duration: 0.18)
     }
 
     private var titleSuggestions: [TaskTitleSuggestion] {

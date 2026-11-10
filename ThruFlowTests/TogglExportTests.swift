@@ -64,7 +64,7 @@ import Testing
         #expect(storage.state.jobs.isEmpty)
     }
 
-    @Test func explicitSetupCanAuthorizeMissingRecordingIdentity() async throws {
+    @Test func onlyExplicitEnableCanAuthorizeMissingRecordingIdentity() async throws {
         let (container, area, _) = try setup()
         defer { withExtendedLifetime(container) {} }
         let storage = TogglMemoryStorage()
@@ -85,16 +85,20 @@ import Testing
         )
 
         await store.loadOptions()
-
-        #expect(authorizationCalls == 1)
+        #expect(authorizationCalls == 0)
         #expect(client.accountCalls == 1)
+        try store.setEnabled(false)
+        try store.setEnabled(true, now: start)
+        #expect(authorizationCalls == 1)
+        #expect(store.configuration?.enabledAt == start)
+        #expect(store.configuration?.areaProjects == config(area).areaProjects)
         #expect(store.errorMessage == nil)
         #expect(store.workspaces.map(\.id) == [10])
         #expect(store.lastSyncResult == nil)
         #expect(client.created.isEmpty)
     }
 
-    @Test func failedExplicitIdentityAuthorizationDoesNotLoadProviderOptions() async throws {
+    @Test func failedExplicitEnableLeavesExportPaused() async throws {
         let (container, area, _) = try setup()
         defer { withExtendedLifetime(container) {} }
         let storage = TogglMemoryStorage()
@@ -109,11 +113,12 @@ import Testing
             factory: { _ in client }
         )
 
-        await store.loadOptions()
+        try store.setEnabled(false)
+        #expect(throws: (any Error).self) { try store.setEnabled(true) }
 
         #expect(authorizationCalls == 1)
+        #expect(store.configuration?.isEnabled == false)
         #expect(client.accountCalls == 0)
-        #expect(store.errorMessage == TogglError.recordingIdentity.localizedDescription)
         #expect(store.workspaces.isEmpty)
         #expect(client.created.isEmpty)
     }

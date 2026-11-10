@@ -30,6 +30,8 @@ distinct rules, and read applicable nested instructions before editing there.
   buildable; do not include unsolicited refactors, features, or visual polish.
 - Do not invent product rules. Resolve routine implementation details from the
   repository; ask when an unresolved product decision materially affects behavior.
+- Use impersonal phrasing for Russian release notes wherever they appear.
+  Prefer “Улучшено” and “Исправлено” over first-person plural wording.
 - Communicate briefly in the user's language. Japanese is the default **app UI**
   language; identifiers, stable enum raw values, and technical docs use English.
 - Apply shared behavior across macOS, iOS/iPadOS, and watchOS unless the user
@@ -98,6 +100,26 @@ the lead agent must check the corresponding behavior on both macOS and iOS/iPadO
 This is standing authorization to delegate the bounded reviews below; an explicit
 user restriction on delegation or scope takes precedence. Documentation-only
 changes do not require platform agents.
+
+### Model selection
+
+- Use **GPT-6.1 Sol** (`gpt-6.1-sol`) for implementation, orchestration,
+  and logic reviews, including large refactors and changes to application logic. Start at medium reasoning
+  for implementation and high reasoning for logic reviews.
+- Use **GPT-6.1 Terra** (`gpt-6.1-terra`) at medium reasoning for simple UI
+  checks that do not change business rules, validation, state transitions,
+  persistence, or UI-to-command behavior. If a check reveals a logic issue,
+  escalate it to the agent responsible for logic rather than expanding Terra's
+  scope silently.
+- Use **GPT-6 Luna** (`gpt-6-luna`) at medium reasoning for the localization
+  agent. Preserve all localization review requirements below. Give it the
+  affected strings, UI context, relevant guidelines, and explicit file ownership.
+- Select subagent models explicitly. With the current `spawn_agent` interface,
+  use `fork_turns="none"` when setting `model` or `reasoning_effort`, and supply
+  a self-contained task. If a required model is unavailable, disclose the blocker
+  instead of silently substituting it. If the lead cannot switch its own model,
+  ask the user to select the required model before the affected work begins;
+  never claim that a model switch occurred without confirmation.
 
 ### Required agreement for logic changes
 
@@ -211,6 +233,7 @@ THRUFLOW_DISABLE_CLOUDKIT=1 xcodebuild test \
   -scheme ThruFlow \
   -destination 'platform=macOS' \
   -only-testing:ThruFlowTests \
+  -skip-testing:ThruFlowTests/ScreenshotReleaseFixtureTests \
   -parallel-testing-enabled NO \
   -maximum-parallel-testing-workers 1 \
   -derivedDataPath DerivedData/Tests \
@@ -220,6 +243,7 @@ THRUFLOW_DISABLE_CLOUDKIT=1 xcodebuild test \
 
 For a focused run, replace the test selector with
 `-only-testing:ThruFlowTests/<SuiteName>`.
+For screenshot fixture checks, follow [Release](docs/RELEASE.md#automated-checks).
 Run macOS unit and UI tests sequentially with the parallel-testing flags above.
 Unit tests use Swift Testing; UI tests use XCTest.
 

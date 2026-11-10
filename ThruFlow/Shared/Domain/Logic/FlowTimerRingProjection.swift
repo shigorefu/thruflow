@@ -14,7 +14,9 @@ struct FlowTimerRingProjection {
         focusedSeconds: Int
     ) -> [FlowTimerRingSlice] {
         guard plannedSeconds > 0, focusedSeconds > 0 else { return [] }
-        let visibleSeconds = min(focusedSeconds, plannedSeconds)
+        // Preserve segment topology when modes shorten the visible arc.
+        // The renderer clips after interpolating all boundaries together.
+        let visibleSeconds = focusedSeconds
         let segments = session.resolvedSegments.sorted {
             if $0.startFocusSeconds != $1.startFocusSeconds {
                 return $0.startFocusSeconds < $1.startFocusSeconds

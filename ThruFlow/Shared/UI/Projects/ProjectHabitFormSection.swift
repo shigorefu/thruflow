@@ -24,6 +24,7 @@ struct ProjectHabitFormSection: View {
                 schedulePicker.pickerStyle(.segmented)
                 scheduleDetails
             }
+            .transition(.opacity)
         }
 #else
         Section {

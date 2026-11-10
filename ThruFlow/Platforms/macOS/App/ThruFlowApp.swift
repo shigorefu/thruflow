@@ -81,6 +81,9 @@ struct ThruFlowApp: App {
                     )
                     await connectors.runForegroundSync(modelContext: sharedModelContainer.mainContext)
                 }
+                .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
+                    activeFlowStore.flushPendingModeChange()
+                }
                 .onChange(of: scenePhase) { _, phase in
                     guard !ScreenshotMode.isEnabled() else { return }
                     if phase == .active {

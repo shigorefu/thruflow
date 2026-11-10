@@ -162,13 +162,13 @@ struct StatisticsView: View {
             HStack(spacing: 0) {
                 ScrollViewReader { proxy in
                     ScrollView {
-                        // Four report cards stay mounted during scrolling. Native
+                        // Report cards stay mounted during scrolling. Native
                         // segmented controls should not churn with lazy row reuse.
                         VStack(alignment: .leading, spacing: 16) {
                             if let currentSnapshot {
                                 statisticsCards(snapshot: currentSnapshot)
                             } else {
-                                StatisticsLoadingCards(period: presentationPeriod)
+                                StatisticsLoadingCards()
                             }
                         }
                         .padding(20)
@@ -216,7 +216,32 @@ struct StatisticsView: View {
             previousSummary: snapshot.previousSummary
         )
 
-        HabitCompletionCard(summary: snapshot.habitCompletion)
+        let habits = HabitCompletionCard(summary: snapshot.habitCompletion)
+        let items = distributionItems(in: snapshot)
+
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .top, spacing: 16) {
+                habits.frame(minWidth: 230, idealWidth: 250, maxWidth: 280)
+
+                StatisticsDistributionCard(
+                    dimension: $distributionDimension,
+                    items: items,
+                    totalFocusSeconds: snapshot.summary.totalFocusSeconds,
+                    isCompact: true
+                )
+                .frame(minWidth: 350, maxWidth: .infinity, alignment: .top)
+            }
+
+            VStack(alignment: .leading, spacing: 16) {
+                habits
+
+                StatisticsDistributionCard(
+                    dimension: $distributionDimension,
+                    items: items,
+                    totalFocusSeconds: snapshot.summary.totalFocusSeconds
+                )
+            }
+        }
 
         StatisticsTrendCard(
             mode: $trendMode,
@@ -225,103 +250,17 @@ struct StatisticsView: View {
             today: today
         )
 
-        Group {
-            switch presentationPeriod {
-            case .week:
-                StatisticsDistributionCard(
-                    dimension: $distributionDimension,
-                    items: distributionItems(in: snapshot),
-                    totalFocusSeconds: snapshot.summary.totalFocusSeconds
-                )
-
-                StatisticsDotsCard(
-                    mode: $dotsMode,
-                    period: presentationPeriod,
-                    usesCompactCustomGrid: usesCustomRange && displayedDayCount > 7,
-                    usesCustomRange: usesCustomRange,
-                    marksOutsideMonth: selectedPeriod == .month && !usesCustomRange,
-                    flowDays: snapshot.flowDays,
-                    achievementDays: snapshot.achievementDays,
-                    maximumInteractiveDate: today,
-                    onSelectDate: onSelectHistoryDate
-                )
-            case .month:
-                ViewThatFits(in: .horizontal) {
-                    HStack(alignment: .top, spacing: 16) {
-                        StatisticsDistributionCard(
-                            dimension: $distributionDimension,
-                            items: distributionItems(in: snapshot),
-                            totalFocusSeconds: snapshot.summary.totalFocusSeconds,
-                            isCompact: true
-                        )
-                        .frame(
-                            minWidth: 350,
-                            maxWidth: .infinity,
-                            minHeight: 320,
-                            maxHeight: 320,
-                            alignment: .top
-                        )
-
-                        StatisticsDotsCard(
-                            mode: $dotsMode,
-                            period: presentationPeriod,
-                            usesCompactCustomGrid: usesCustomRange && displayedDayCount > 7,
-                            usesCustomRange: usesCustomRange,
-                            marksOutsideMonth: selectedPeriod == .month && !usesCustomRange,
-                            flowDays: snapshot.flowDays,
-                            achievementDays: snapshot.achievementDays,
-                            maximumInteractiveDate: today,
-                            onSelectDate: onSelectHistoryDate
-                        )
-                        .frame(
-                            minWidth: 300,
-                            maxWidth: .infinity,
-                            minHeight: 320,
-                            maxHeight: 320,
-                            alignment: .top
-                        )
-                    }
-
-                    VStack(spacing: 16) {
-                        StatisticsDistributionCard(
-                            dimension: $distributionDimension,
-                            items: distributionItems(in: snapshot),
-                            totalFocusSeconds: snapshot.summary.totalFocusSeconds
-                        )
-
-                        StatisticsDotsCard(
-                            mode: $dotsMode,
-                            period: presentationPeriod,
-                            usesCompactCustomGrid: usesCustomRange && displayedDayCount > 7,
-                            usesCustomRange: usesCustomRange,
-                            marksOutsideMonth: selectedPeriod == .month && !usesCustomRange,
-                            flowDays: snapshot.flowDays,
-                            achievementDays: snapshot.achievementDays,
-                            maximumInteractiveDate: today,
-                            onSelectDate: onSelectHistoryDate
-                        )
-                    }
-                }
-            case .year:
-                StatisticsDistributionCard(
-                    dimension: $distributionDimension,
-                    items: distributionItems(in: snapshot),
-                    totalFocusSeconds: snapshot.summary.totalFocusSeconds
-                )
-
-                StatisticsDotsCard(
-                    mode: $dotsMode,
-                    period: presentationPeriod,
-                    usesCompactCustomGrid: usesCustomRange && displayedDayCount > 7,
-                    usesCustomRange: usesCustomRange,
-                    marksOutsideMonth: selectedPeriod == .month && !usesCustomRange,
-                    flowDays: snapshot.flowDays,
-                    achievementDays: snapshot.achievementDays,
-                    maximumInteractiveDate: today,
-                    onSelectDate: onSelectHistoryDate
-                )
-            }
-        }
+        StatisticsDotsCard(
+            mode: $dotsMode,
+            period: presentationPeriod,
+            usesCompactCustomGrid: usesCustomRange && displayedDayCount > 7,
+            usesCustomRange: usesCustomRange,
+            marksOutsideMonth: selectedPeriod == .month && !usesCustomRange,
+            flowDays: snapshot.flowDays,
+            achievementDays: snapshot.achievementDays,
+            maximumInteractiveDate: today,
+            onSelectDate: onSelectHistoryDate
+        )
         .id(presentationPeriod)
         .id("screenshot-statistics-dots")
         .transition(
@@ -1053,6 +992,8 @@ private struct StatisticsTrendCard: View {
 }
 
 private struct StatisticsDistributionCard: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     @Binding var dimension: StatisticsDistributionDimension
     let items: [StatisticsDistributionItem]
     let totalFocusSeconds: Int
@@ -1154,35 +1095,40 @@ private struct StatisticsDistributionCard: View {
                             }
                             .frame(maxWidth: chartSize * 0.52)
                         }
-                        if let selectedItem {
-                            StatisticsDistributionDetailView(item: selectedItem)
-                        } else {
-                            VStack(alignment: .leading, spacing: 10) {
-                                ForEach(items) { item in
-                                    Button {
-                                        selectedItemID = item.id
-                                    } label: {
-                                        HStack(spacing: 8) {
-                                            Circle()
-                                                .fill(Color(hex: item.colorHex ?? "#8E8E93"))
-                                                .frame(width: 9, height: 9)
-                                            Text([item.symbol, item.name].compactMap { $0 }.joined(separator: " "))
-                                                .lineLimit(1)
-                                            Spacer(minLength: 8)
-                                            Text(StatisticsFormatting.duration(item.focusSeconds))
-                                                .monospacedDigit()
-                                                .foregroundStyle(.secondary)
+                        ZStack {
+                            if let selectedItem {
+                                StatisticsDistributionDetailView(item: selectedItem)
+                                .id(selectedItem.id)
+                                .transition(.opacity)
+                            } else {
+                                VStack(alignment: .leading, spacing: 10) {
+                                    ForEach(items) { item in
+                                        Button {
+                                            selectedItemID = item.id
+                                        } label: {
+                                            HStack(spacing: 8) {
+                                                Circle()
+                                                    .fill(Color(hex: item.colorHex ?? "#8E8E93"))
+                                                    .frame(width: 9, height: 9)
+                                                Text([item.symbol, item.name].compactMap { $0 }.joined(separator: " "))
+                                                    .lineLimit(1)
+                                                Spacer(minLength: 8)
+                                                Text(StatisticsFormatting.duration(item.focusSeconds))
+                                                    .monospacedDigit()
+                                                    .foregroundStyle(.secondary)
+                                            }
+                                            .font(isCompact ? .caption : .callout)
+                                            .contentShape(Rectangle())
                                         }
-                                        .font(isCompact ? .caption : .callout)
-                                        .contentShape(Rectangle())
+                                        .buttonStyle(.plain)
                                     }
-                                    .buttonStyle(.plain)
                                 }
+                                .frame(maxWidth: .infinity)
+                                .transition(.opacity)
                             }
-                            .frame(maxWidth: .infinity)
                         }
+                        .animation(reduceMotion ? nil : .easeInOut(duration: 0.18), value: selectedItemID)
                     }
-                    .animation(.easeInOut(duration: 0.18), value: selectedItemID)
                 }
             }
         }
@@ -1696,8 +1642,6 @@ private struct StatisticsYearPicker: View {
 }
 
 private struct StatisticsLoadingCards: View {
-    let period: StatisticsPeriod
-
     private let summaryColumns = [
         GridItem(.adaptive(minimum: 128, maximum: 220), spacing: 10)
     ]
@@ -1711,6 +1655,8 @@ private struct StatisticsLoadingCards: View {
             }
         }
 
+        loadingLowerCard(title: String(localized: "集中時間の内訳"))
+
         StatisticsCard(
             title: String(localized: "傾向"),
             subtitle: String(localized: "集中時間")
@@ -1722,25 +1668,7 @@ private struct StatisticsLoadingCards: View {
             }
         }
 
-        switch period {
-        case .week, .year:
-            loadingLowerCard(title: String(localized: "集中時間の内訳"))
-            loadingLowerCard(title: String(localized: "Dots"))
-        case .month:
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: 16) {
-                    loadingLowerCard(title: String(localized: "集中時間の内訳"))
-                        .frame(minWidth: 350, maxWidth: .infinity, minHeight: 320, maxHeight: 320)
-                    loadingLowerCard(title: String(localized: "Dots"))
-                        .frame(minWidth: 300, maxWidth: .infinity, minHeight: 320, maxHeight: 320)
-                }
-
-                VStack(spacing: 16) {
-                    loadingLowerCard(title: String(localized: "集中時間の内訳"))
-                    loadingLowerCard(title: String(localized: "Dots"))
-                }
-            }
-        }
+        loadingLowerCard(title: String(localized: "Dots"))
     }
 
     private func loadingLowerCard(title: String) -> some View {

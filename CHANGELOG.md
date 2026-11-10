@@ -3,6 +3,20 @@
 All notable user-facing changes to ThruFlow are documented in this file.
 Release dates below record GitHub publication in Asia/Tokyo (JST).
 
+## [1.4.1] - Unreleased
+
+Version **1.4.1**, build **15**.
+
+- Save the current Habit goal on Mac directly from the edited field.
+- Switch Tasks without a memo when the current segment is under one focused minute.
+- Animate conditional fields and feedback, and render long statistics breakdowns on demand.
+
+- Place Habit completion next to focused-time distribution below the Mac overview.
+- Add connector switches and show Toggl sync failures without repeated Keychain prompts.
+- Count fully met Habit goals immediately and include partial or zero progress only after the configured day ends.
+- Keep timer ring color boundaries aligned with the filling arc when changing focus modes after switching Tasks.
+- Defer and coalesce mode-setting persistence until after the ring transition, with ordered flushes before subsequent timer commands.
+
 ## [1.4.0] - 2026-10-29
 
 Version **1.4.0**, build **14** across all Xcode targets. App Store publication confirmed by the maintainer on 2026-10-30.

@@ -1044,32 +1044,54 @@ struct IOSTaskRow: View {
                     .strikethrough(todo.isCompleted)
                     .foregroundStyle(todo.isCompleted ? .secondary : .primary)
 
-                HStack(spacing: 10) {
-                    if showsContextSubtitle {
-                        Text(TodoDisplay.flowContextName(for: todo))
-                            .foregroundStyle(todo.area.map { Color(hex: $0.colorHex) } ?? .accentColor)
-                            .layoutPriority(1)
-                    } else if let project = todo.project,
-                              !todo.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        Label(project.name, systemImage: "folder")
-                    }
+                if showsContextSubtitle {
+                    Text(TodoDisplay.flowContextName(for: todo))
+                        .font(.caption)
+                        .foregroundStyle(todo.area.map { Color(hex: $0.colorHex) } ?? .accentColor)
+                        .lineLimit(1)
 
-                    HStack(spacing: 5) {
+                    HStack(spacing: 4) {
                         Text(todo.priority.displayName)
                         if todo.measurement != .checkbox {
+                            Text(verbatim: "・")
                             Text(progressText)
                         }
                         if let minutes = todo.scheduledTimeMinutes {
+                            Text(verbatim: "・")
                             TaskTimeLabel(minutes: minutes, reminderEnabled: todo.reminderEnabled)
                         }
                         if let firstTag = todo.hashtags.first {
-                            Text("#\(firstTag)")
+                            Text(verbatim: "・")
+                            Text(verbatim: "#\(firstTag)")
                         }
                     }
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                } else {
+                    HStack(spacing: 10) {
+                        if let project = todo.project,
+                                  !todo.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            Label(project.name, systemImage: "folder")
+                        }
+
+                        HStack(spacing: 5) {
+                            Text(todo.priority.displayName)
+                            if todo.measurement != .checkbox {
+                                Text(progressText)
+                            }
+                            if let minutes = todo.scheduledTimeMinutes {
+                                TaskTimeLabel(minutes: minutes, reminderEnabled: todo.reminderEnabled)
+                            }
+                            if let firstTag = todo.hashtags.first {
+                                Text("#\(firstTag)")
+                            }
+                        }
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
                 }
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
             }
 
             Spacer(minLength: 0)

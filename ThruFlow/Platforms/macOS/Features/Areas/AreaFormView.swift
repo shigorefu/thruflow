@@ -24,13 +24,16 @@ struct AreaFormView: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.calendar) private var calendar
+    @Environment(\.locale) private var locale
     @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     let mode: Mode
     let onSaved: ((Area) -> Void)?
 
     @State private var draft: AreaDraft
+    @State private var editedGoalTarget: String?
     @State private var validationErrors: [AreaValidationError] = []
     @State private var saveErrorMessage: String?
     @State private var isShowingEmojiPicker = false
@@ -73,9 +76,11 @@ struct AreaFormView: View {
 
                     if draft.type == .habit {
                         goalCard
+                            .transition(.opacity)
 
                         if case .edit(let area) = mode {
                             habitPauseCard(area)
+                                .transition(.opacity)
                         }
                     }
 
@@ -94,6 +99,7 @@ struct AreaFormView: View {
                     validationCard
                     deleteCard
                 }
+                .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: draft.type == .habit)
                 .padding(24)
                 .frame(maxWidth: 760, alignment: .leading)
                 .frame(maxWidth: .infinity)
@@ -120,6 +126,7 @@ struct AreaFormView: View {
             draft = draft.normalizedForEditing
         }
         .onChange(of: draft.type) { _, _ in
+            editedGoalTarget = nil
             draft = draft.normalizedForEditing
         }
         .onChange(of: draft.goalSchedule) { _, _ in
@@ -188,7 +195,7 @@ struct AreaFormView: View {
     private var goalCard: some View {
         EditorSectionCard(title: String(localized: "目標")) {
             HStack(spacing: 10) {
-                TextField("1", value: goalTargetBinding, format: .number)
+                TextField("1", text: goalTargetText)
                     .textFieldStyle(.roundedBorder)
                     .frame(width: 82)
                     .accessibilityLabel(String(localized: "目標値"))
@@ -215,6 +222,7 @@ struct AreaFormView: View {
 
             goalScheduleDetails
         }
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: draft.goalSchedule ?? .everyDay)
     }
 
     private var colorCard: some View {
@@ -387,11 +395,29 @@ struct AreaFormView: View {
         }
     }
 
-    private var goalTargetBinding: Binding<Int> {
+    private var goalTargetText: Binding<String> {
         Binding(
-            get: { draft.goalTarget ?? 1 },
-            set: { draft.goalTarget = $0 }
+            get: { editedGoalTarget ?? (draft.goalTarget ?? 1).formatted(.number.locale(locale)) },
+            set: { editedGoalTarget = $0 }
         )
+    }
+
+    private func parseGoalTarget(_ input: String) -> Int? {
+        let text = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        let formatter = NumberFormatter()
+        formatter.locale = locale
+        formatter.numberStyle = .decimal
+        formatter.allowsFloats = false
+        let fullRange = NSRange(text.startIndex..<text.endIndex, in: text)
+        var parsedRange = fullRange
+        var value: AnyObject?
+        do {
+            try formatter.getObjectValue(&value, for: text, range: &parsedRange)
+        } catch {
+            return nil
+        }
+        guard parsedRange == fullRange, let number = value as? NSNumber else { return nil }
+        return Int(number.stringValue)
     }
 
     private var goalUnitBinding: Binding<GoalUnit> {
@@ -448,6 +474,9 @@ struct AreaFormView: View {
     private func save() {
         saveErrorMessage = nil
         draft = draft.normalizedForEditing
+        if draft.type == .habit, let editedGoalTarget {
+            draft.goalTarget = parseGoalTarget(editedGoalTarget) ?? 0
+        }
         let service = AreaEditingService(calendar: calendar, dayBoundary: dayBoundary)
         validationErrors = service.validationErrors(for: draft)
         guard validationErrors.isEmpty else { return }

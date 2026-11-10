@@ -66,6 +66,10 @@ struct ScreenshotDataSeederTests {
         #expect(before == after)
     }
 
+}
+
+@MainActor
+struct ScreenshotReleaseFixtureTests {
     @Test func screenshotSeedCreatesLargeIsolatedLocalizedWorkspaces() throws {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "Asia/Tokyo")!

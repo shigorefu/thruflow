@@ -2,6 +2,7 @@ import SwiftData
 import SwiftUI
 
 struct IOSFlowView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.calendar) private var calendar
     @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -137,6 +138,11 @@ struct IOSFlowView: View {
             )
             .presentationDetents([.medium, .large])
             .interactiveDismissDisabled(presentedTaskSwitchID != nil)
+        }
+        .transaction(value: showsMemo) { transaction in
+            if reduceMotion {
+                transaction.disablesAnimations = true
+            }
         }
         .sheet(item: $editorMode) { mode in
             NavigationStack {

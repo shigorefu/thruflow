@@ -34,8 +34,10 @@ archive and ownership rules belong in [Domain model](DOMAIN_MODEL.md).
 Short, Standard and Deep modes start at 12, 25 and 50 focused minutes. Focus
 continues beyond the planned end until the user acts. Task switches keep one
 running timer and preserve earlier Area-colored segments. The task-switch form
-accepts the previous Task's name, Project and result before switching; elapsed
-time continues to belong to that Task until submission.
+accepts the previous Task's name, Project and result before switching when the
+current segment has at least 60 focused seconds; elapsed time continues to belong
+to that Task until submission. Shorter segments switch immediately and transfer
+their elapsed focus to the selected Task.
 
 Rest is explicitly started and reflects actual focused work and recovery.
 One Focus Block always means 25 focused minutes; breaks do not count. History
@@ -54,7 +56,7 @@ for calculations and date boundaries.
 - Widgets and Live Activities project app-owned state rather than running another
   timer or opening another SwiftData store.
 - Data is local first, with optional private CloudKit synchronization.
-- Beta connectors import Reminders/Todoist Tasks and synchronize checkbox
+- Connectors import Reminders/Todoist Tasks and synchronize checkbox
   completion both ways. Toggl exports eligible completed focus time from its
   recording device. See [Connectors](CONNECTORS.md) for exact limitations.
 - The interface supports Japanese, English, Russian, Simplified Chinese and

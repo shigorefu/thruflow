@@ -24,6 +24,7 @@ struct TodoFormView: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @Query(sort: \Area.name, order: .forward) private var areas: [Area]
 
@@ -41,6 +42,7 @@ struct TodoFormView: View {
     @FocusState private var isTitleFocused: Bool
 
     private let editingService = TaskEditingService()
+    private let controlColumnWidth: CGFloat = 290
 
     private var activeAreas: [Area] {
         areas.filter { !$0.isArchived }
@@ -102,19 +104,18 @@ struct TodoFormView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    taskContentCard
+                VStack(alignment: .leading, spacing: 12) {
+                    taskTitleRow
                     if let todo = editedTodo, todo.externalTaskLinkRawValue != nil {
                         ExternalTaskSourceLink(todo: todo)
                     }
                     classificationCard
-
                     scheduleCard
-
+                    notesCard
                     validationCard
                 }
-                .padding(24)
-                .frame(maxWidth: 680)
+                .padding(16)
+                .frame(maxWidth: 640)
                 .frame(maxWidth: .infinity)
             }
             .background(Color(nsColor: .windowBackgroundColor))
@@ -133,7 +134,7 @@ struct TodoFormView: View {
                 }
             }
         }
-        .frame(minWidth: 620, idealWidth: 680, minHeight: 620, idealHeight: 700)
+        .frame(minWidth: 580, idealWidth: 620, minHeight: 520, idealHeight: 650)
         .onAppear {
             selectInitialAreaIfNeeded()
             isTitleFocused = true
@@ -154,24 +155,26 @@ struct TodoFormView: View {
         }
     }
 
-    private var taskContentCard: some View {
+    private var taskTitleRow: some View {
+        HStack(spacing: 12) {
+            Text(selectedArea?.symbolName ?? "📝")
+                .font(.system(size: 24))
+                .frame(width: 40, height: 40)
+                .background(editorTint.opacity(0.14), in: RoundedRectangle(cornerRadius: 8))
+                .accessibilityHidden(true)
+
+            TextField(String(localized: "タスク名"), text: $draft.title)
+                .font(.title3.weight(.semibold))
+                .textFieldStyle(.roundedBorder)
+                .focused($isTitleFocused)
+                .accessibilityLabel(String(localized: "タスク名"))
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 2)
+    }
+
+    private var notesCard: some View {
         TodoEditorCard {
-            HStack(alignment: .center, spacing: 14) {
-                Text(selectedArea?.symbolName ?? "📝")
-                    .font(.system(size: 30))
-                    .frame(width: 52, height: 52)
-                    .background(editorTint.opacity(0.14))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-
-                TextField(String(localized: "タスク名"), text: $draft.title)
-                    .font(.title2.weight(.semibold))
-                    .textFieldStyle(.plain)
-                    .focused($isTitleFocused)
-                    .accessibilityLabel(String(localized: "タスク名"))
-            }
-
-            Divider()
-
             VStack(alignment: .leading, spacing: 7) {
                 Label(String(localized: "メモ"), systemImage: "note.text")
                     .font(.caption.weight(.semibold))
@@ -179,7 +182,7 @@ struct TodoFormView: View {
 
                 TextField(String(localized: "メモ"), text: $draft.notes, axis: .vertical)
                     .textFieldStyle(.roundedBorder)
-                    .lineLimit(3...6)
+                    .lineLimit(2...5)
             }
 
             VStack(alignment: .leading, spacing: 7) {
@@ -207,7 +210,8 @@ struct TodoFormView: View {
                     area: selectedArea,
                     selection: $draft.project,
                     currentProject: editedTodo?.project,
-                    showsDivider: true
+                    showsDivider: true,
+                    animatesVisibility: true
                 )
             }
 
@@ -216,10 +220,7 @@ struct TodoFormView: View {
             if isHabitTodoEdit {
                 readOnlyMeasurementRow
             } else {
-                VStack(alignment: .leading, spacing: 10) {
-                    Label(String(localized: "種類"), systemImage: "square.stack.3d.up")
-                        .font(.subheadline.weight(.medium))
-
+                editorRow(title: String(localized: "種類"), systemImage: "square.stack.3d.up") {
                     Picker(String(localized: "種類"), selection: $draft.measurement) {
                         ForEach(TodoMeasurement.allCases) { measurement in
                             Label(measurement.displayName, systemImage: measurement.editorSymbolName)
@@ -233,8 +234,11 @@ struct TodoFormView: View {
             }
 
             if draft.measurement != .checkbox {
-                Divider()
-                progressControls
+                Group {
+                    Divider()
+                    progressControls
+                }
+                .transition(.opacity)
             }
 
             if !isHabitTodoEdit {
@@ -242,6 +246,7 @@ struct TodoFormView: View {
                 priorityControls
             }
         }
+        .animation(fieldVisibilityAnimation, value: draft.measurement != .checkbox)
     }
 
     private var scheduleCard: some View {
@@ -260,7 +265,9 @@ struct TodoFormView: View {
             TaskTimingControls(
                 scheduledDate: usesScheduledDate ? draft.scheduledDate : nil,
                 timeMinutes: $draft.scheduledTimeMinutes,
-                reminderEnabled: $draft.reminderEnabled
+                reminderEnabled: $draft.reminderEnabled,
+                showsTrailingTimeSwitch: true,
+                animatesVisibility: true
             )
 
             if !isHabitTodoEdit {
@@ -314,7 +321,6 @@ struct TodoFormView: View {
                 }
             }
             .labelsHidden()
-            .frame(width: 240)
             .accessibilityLabel(String(localized: "分野"))
         }
     }
@@ -362,12 +368,7 @@ struct TodoFormView: View {
 
     private var priorityControls: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 14) {
-                Label(String(localized: "優先度"), systemImage: "flag")
-                    .font(.subheadline.weight(.medium))
-
-                Spacer(minLength: 0)
-
+            editorRow(title: String(localized: "優先度"), systemImage: "flag") {
                 Picker(String(localized: "優先度"), selection: $draft.priority) {
                     ForEach(TodoPriority.allCases) { priority in
                         Text(priority.displayName).tag(priority)
@@ -375,15 +376,20 @@ struct TodoFormView: View {
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
-                .frame(width: 220)
                 .accessibilityLabel(String(localized: "優先度"))
             }
 
             if draft.priority == .low {
                 Toggle(String(localized: "余裕があれば"), isOn: $draft.isRoomIfPossible)
                     .toggleStyle(.switch)
+                    .transition(.opacity)
             }
         }
+        .animation(fieldVisibilityAnimation, value: draft.priority == .low)
+    }
+
+    private var fieldVisibilityAnimation: Animation? {
+        reduceMotion ? nil : .easeInOut(duration: 0.18)
     }
 
     private var selectedArea: Area? {
@@ -417,6 +423,7 @@ struct TodoFormView: View {
 
             Spacer(minLength: 20)
             content()
+                .frame(width: controlColumnWidth, alignment: .trailing)
         }
     }
 
@@ -426,19 +433,22 @@ struct TodoFormView: View {
         isEnabled: Binding<Bool>,
         selection: Binding<Date>
     ) -> some View {
-        HStack(spacing: 14) {
-            Toggle(isOn: isEnabled) {
-                Label(title, systemImage: systemImage)
-                    .font(.subheadline.weight(.medium))
+        editorRow(title: title, systemImage: systemImage) {
+            HStack(spacing: 10) {
+                if isEnabled.wrappedValue {
+                    DatePicker(title, selection: selection, displayedComponents: .date)
+                        .datePickerStyle(.field)
+                        .labelsHidden()
+                        .fixedSize()
+                        .transition(.opacity)
+                }
+
+                Toggle(title, isOn: isEnabled)
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+                    .controlSize(.small)
             }
-            .toggleStyle(.switch)
-
-            Spacer(minLength: 20)
-
-            DatePicker(title, selection: selection, displayedComponents: .date)
-                .labelsHidden()
-                .disabled(!isEnabled.wrappedValue)
-                .opacity(isEnabled.wrappedValue ? 1 : 0.45)
+            .animation(fieldVisibilityAnimation, value: isEnabled.wrappedValue)
         }
     }
 
@@ -580,7 +590,7 @@ private struct TodoEditorCard<Content: View>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 9) {
             if let title {
                 Text(title)
                     .font(.headline)
@@ -588,7 +598,7 @@ private struct TodoEditorCard<Content: View>: View {
 
             content
         }
-        .padding(16)
+        .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.secondary.opacity(0.07))
         .clipShape(RoundedRectangle(cornerRadius: 8))

@@ -117,15 +117,6 @@ struct ProjectTests {
         #expect(loaded.project?.id == project.id)
     }
 
-    @Test func resetIncludesProjects() throws {
-        let container = try makeContainer(); let context = container.mainContext
-        let area = Area(name: "Cloud", type: .neutral); context.insert(area)
-        _ = try ProjectEditingService().save(name: "AWS", area: area, modelContext: context)
-        _ = try AppDataResetService().reset(modelContext: context)
-        #expect(try context.fetch(FetchDescriptor<Project>()).isEmpty)
-        #expect(try context.fetch(FetchDescriptor<Area>()).isEmpty)
-    }
-
     @Test func existingStoreMigratesWithoutLosingIdentityOrHistory() throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)

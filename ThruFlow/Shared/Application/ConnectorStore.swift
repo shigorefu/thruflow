@@ -26,6 +26,9 @@ nonisolated struct ConnectorConnection: Codable, Equatable, Identifiable {
         guard let areaID else { return [:] }
         return Dictionary(uniqueKeysWithValues: selectedSourceIDs.map { ($0, areaID) })
     }
+    /// Older connections have no switch setting and remain active.
+    var isPaused: Bool?
+    var isEnabled: Bool { isPaused != true }
     var lastSyncedAt: Date?
     var lastImportedCount: Int = 0
     var id: ConnectorProviderID { provider }
@@ -152,6 +155,16 @@ final class ConnectorStore: ObservableObject {
         try replace(connection)
     }
 
+    func setEnabled(_ enabled: Bool, for provider: ConnectorProviderID) throws {
+        guard busyProvider == nil else { throw ConnectorStoreError.busy }
+        guard var connection = connection(for: provider) else { throw ConnectorStoreError.missingConnection }
+        guard enabled != connection.isEnabled else { return }
+        connection.isPaused = !enabled
+        try replace(connection)
+        lastAutomaticSync = nil
+        errorMessage = nil
+    }
+
     func disconnect(provider: ConnectorProviderID) throws {
         guard busyProvider == nil else { throw ConnectorStoreError.busy }
         try credentials.remove(for: provider)
@@ -161,7 +174,7 @@ final class ConnectorStore: ObservableObject {
     }
 
     func synchronize(provider: ConnectorProviderID, modelContext: ModelContext) async {
-        guard begin(provider) else { return }
+        guard connection(for: provider)?.isEnabled != false, begin(provider) else { return }
         defer { busyProvider = nil }
         do {
             guard var connection = connection(for: provider) else { throw ConnectorStoreError.missingConnection }
@@ -238,7 +251,7 @@ final class ConnectorStore: ObservableObject {
                 (lastAutomaticSync.map({ Date.now.timeIntervalSince($0) >= 60 }) ?? true) else { return }
         lastAutomaticSync = .now
         lastAutomaticOutbox = outbox
-        let configured = connections.filter { !$0.resolvedSourceAreaIDs.isEmpty }
+        let configured = connections.filter { $0.isEnabled && !$0.resolvedSourceAreaIDs.isEmpty }
         // Foreground refresh keeps failures on the connection screen rather than interrupting Flow.
         var firstError: String?
         for connection in configured {

@@ -84,6 +84,8 @@ nonisolated struct HabitCompletionBuilder: Sendable {
         for record in records where bounds.containsCurrent(record.scheduledDay) && record.scheduledDay <= today {
             guard (filter.areaIDs.isEmpty || filter.areaIDs.contains(record.areaID)),
                   term.isEmpty || record.searchText.localizedCaseInsensitiveContains(term) else { continue }
+            // An open logical day contributes only fully met goals.
+            guard record.scheduledDay < today || record.fraction == 1 else { continue }
             let key = OccurrenceKey(ownerKey: record.ownerKey, day: record.scheduledDay)
             // A sync collision is one obligation, not two. Never sum duplicated progress.
             if let existing = occurrences[key],

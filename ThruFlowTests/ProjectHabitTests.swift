@@ -71,7 +71,7 @@ struct ProjectHabitTests {
         #expect(try active(c).contains { $0.project?.id == b.id })
         let summary = StatisticsPeriodBuilder(calendar: calendar).build(flowRecords: [], achievementRecords: [],
             filter: StatisticsPeriodFilter(period: .month, anchorDate: day(19)),
-            habitRecords: try active(c).compactMap { HabitCompletionRecord(todo: $0, calendar: calendar) }, now: day(19)).habitCompletion
+            habitRecords: try active(c).compactMap { HabitCompletionRecord(todo: $0, calendar: calendar) }, now: day(20)).habitCompletion
         #expect(summary.occurrenceCount == 3)
         #expect(summary.areas.count == 3)
         #expect(summary.completedFraction == 0.5)

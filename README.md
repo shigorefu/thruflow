@@ -54,7 +54,7 @@ Available on Mac, iPhone, and iPad:
 
 For Reminders and Todoist, completing and reopening checkbox tasks syncs both ways. Todoist and Toggl credentials are stored in the device's Keychain.
 
-Connectors are in beta. See the [connector guide](docs/CONNECTORS.md) for setup and limitations.
+See the [connector guide](docs/CONNECTORS.md) for setup and limitations.
 
 ## About the project
 

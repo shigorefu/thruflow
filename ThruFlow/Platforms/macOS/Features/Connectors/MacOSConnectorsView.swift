@@ -15,19 +15,28 @@ struct MacOSConnectorsView: View {
                 }
                 Section {
                     ForEach([ConnectorProviderID.reminders, .todoist, .toggl], id: \.self) { provider in
-                        NavigationLink {
-                            MacOSConnectorDetailView(provider: provider)
-                        } label: {
+                        HStack(spacing: 12) {
+                            NavigationLink {
+                                MacOSConnectorDetailView(provider: provider)
+                            } label: {
+                                if provider == .toggl {
+                                    TogglConnectorRow(store: connectors.toggl)
+                                } else {
+                                    ConnectorProviderRow(
+                                        provider: provider,
+                                        connection: connectors.connection(for: provider)
+                                    )
+                                }
+                            }
+                            .accessibilityIdentifier("connectors.provider.\(provider.rawValue)")
                             if provider == .toggl {
-                                TogglConnectorRow(store: connectors.toggl)
+                                TogglActivationToggle(store: connectors.toggl)
+                                    .labelsHidden()
                             } else {
-                                ConnectorProviderRow(
-                                    provider: provider,
-                                    connection: connectors.connection(for: provider)
-                                )
+                                ConnectorActivationToggle(provider: provider)
+                                    .labelsHidden()
                             }
                         }
-                        .accessibilityIdentifier("connectors.provider.\(provider.rawValue)")
                     }
                 } footer: {
                     Text(String(localized: "サービスごとに接続を設定できます。"))
@@ -51,26 +60,17 @@ private struct MacOSConnectorDetailView: View {
     let provider: ConnectorProviderID
     @EnvironmentObject private var connectors: ConnectorStore
     @Query(sort: \Area.sortIndex) private var areas: [Area]
-    @State private var hasContinuedToToggl = false
 
     var body: some View {
         Form {
             if provider == .toggl {
-                if hasContinuedToToggl {
-                    TogglSetupSections(store: connectors.toggl, areas: areas)
-                } else {
-                    Section { TogglConnectorRow(store: connectors.toggl) }
-                }
+                TogglSetupSections(store: connectors.toggl, areas: areas)
             } else {
                 ConnectorSetupSections(provider: provider, areas: areas)
             }
         }
         .formStyle(.grouped)
         .navigationTitle(provider.connectorTitle)
-        .modifier(TogglKeychainExplanation(
-            isRequired: provider == .toggl,
-            hasContinued: $hasContinuedToToggl
-        ))
     }
 }
 #endif

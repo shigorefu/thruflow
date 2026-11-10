@@ -1263,3 +1263,72 @@ Existing Task notes hold the memo; FlowSession.result and persisted models do no
 change. The existing under-one-minute transfer policy remains in force.
 Both client agents agreed before implementation; native presentation waits for
 the picker to dismiss.
+
+### 2026-10-30 — Mode-switch ring geometry and deferred persistence (1.4.1)
+
+The timer ring interpolates one progress scalar and derives both the arc and
+all color boundaries from it. Projection retains off-arc segments when a shorter
+mode is selected; clipping happens while drawing, preserving gradient topology.
+
+Mode selection updates display state immediately and coalesces configuration and
+runtime persistence for 450 ms, after the 380 ms ring transition. This is deferred
+MainActor persistence, not background SwiftData I/O. Other timer commands and
+lifecycle teardown flush first; failures restore only mode-related fields and
+abort the dependent command. Deleted or externally changed sessions are not
+overwritten. Mac, iOS and Watch share this behavior; Mac also flushes on normal
+application termination. Forced process termination can still lose a pending
+selection. No persisted fields or schema are changed.
+
+Verification: 568 macOS unit tests passed (56 suites), and unsigned macOS and
+iOS Release builds passed, including embedded Watch. Both client agents agreed
+on the shared contract and final source diff. The lead exercised multiple Task
+contexts and Short/Deep selection in an isolated Mac demo. A baseline Instruments
+recording contained frame hitches; full SwiftUI analysis was stopped at about
+2 GB RSS, and the after-change recording stalled during finalization. No numeric
+performance improvement or signed cross-device/notification verification is
+claimed from these checks.
+
+### 2026-10-30 — Three-line Flow Task rows (1.4.1)
+
+Flow Task rows on Mac and iPhone/iPad separate title, Area/Project context in
+the Area color, and remaining properties with literal `・` separators. Omit
+an empty property line. Keep existing property availability, time/reminder
+labels and completion controls; do not restore redundant completion subtitles.
+Standard Tasks screens retain their existing presentation. This supersedes
+the previous two-line Flow row layout. Visual verification is left to the
+maintainer at their explicit request.
+
+### 2026-11-04 — Habit completion during the current day (1.4.1)
+
+The shared statistics calculation includes current-day occurrences only when
+their completion fraction is 1. Partial and zero progress enter the average
+when the configured logical day ends. Mac and iOS/iPadOS use the same builder
+and their existing statistics refresh.
+
+### 2026-11-04 — Mac Statistics arrangement and connector switches (1.4.1)
+
+Mac keeps the overview full width, followed by Habit completion on the left and
+focus-time distribution on the right, with a stacked layout when space is tight.
+Trend and Dots follow. This supersedes the monthly Pie and Dots pairing in D-030.
+
+Connected providers can be paused without disconnecting. Toggl opens settings
+silently, allows Keychain prompts during explicit connection or enable only,
+and surfaces failures beneath its name. Mac preserves legacy Keychain items
+and suppresses their UI during noninteractive access. See [Connectors](CONNECTORS.md).
+
+### 2026-11-06 — Skip the switch memo for sub-minute segments (1.4.1)
+
+The shared picker command uses the existing segment transfer policy before
+requesting a switch memo. Below 60 focused seconds in the current open segment,
+switch immediately and transfer that segment to the destination Task, including
+a newly created unnamed Task for an Area selection. At 60 seconds or more,
+retain the memo-before-switch workflow. Paused wall time is excluded. Earlier
+segments and the running timer are preserved. Missing segment data retains the
+memo fallback. This refines the earlier memo-before-switch decision without
+changing persisted fields.
+
+Verification: 88 Flow tests passed, including eight boundary/pause/current-segment
+cases and an Area-only destination case. Unsigned macOS and iOS Release builds
+passed, including the embedded Watch app. Mac/Watch and iOS/iPadOS reviewers
+agreed on the shared contract and final source changes. Native interaction
+review was source-only; signed device behavior was not exercised.

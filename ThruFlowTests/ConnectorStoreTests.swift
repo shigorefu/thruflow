@@ -15,8 +15,33 @@ struct ConnectorStoreTests {
         ]
         let connection = try JSONDecoder().decode(ConnectorConnection.self,
             from: JSONSerialization.data(withJSONObject: legacy))
+        #expect(connection.isEnabled)
         #expect(connection.sourceAreaIDs == nil)
         #expect(connection.resolvedSourceAreaIDs == ["work": areaID, "home": areaID])
+    }
+
+    @Test func disabledConnectorKeepsItsMappingAndSkipsManualSync() async throws {
+        let fixture = try makeFixture()
+        defer { fixture.cleanUp() }
+        await fixture.store.connectTodoist(apiToken: "token")
+        let container = try makeContainer()
+        let area = Area(name: "Work", type: .neutral)
+        container.mainContext.insert(area)
+        try container.mainContext.save()
+        let mappings = ["list-a": area.id]
+        try fixture.store.configure(provider: .todoist, sourceAreaIDs: mappings)
+        try fixture.store.setEnabled(false, for: .todoist)
+
+        let restored = restoredStore(from: fixture, authorization: MockAuthorization())
+        #expect(restored.connection(for: .todoist)?.isEnabled == false)
+        #expect(restored.connection(for: .todoist)?.resolvedSourceAreaIDs == mappings)
+        fixture.client.currentTasks = [ConnectorTask(id: "a", sourceID: "list-a", title: "Work task")]
+        await restored.synchronize(provider: .todoist, modelContext: container.mainContext)
+        #expect(try container.mainContext.fetchCount(FetchDescriptor<Todo>()) == 0)
+
+        try restored.setEnabled(true, for: .todoist)
+        await restored.synchronize(provider: .todoist, modelContext: container.mainContext)
+        #expect(try container.mainContext.fetchCount(FetchDescriptor<Todo>()) == 1)
     }
 
     @Test func mappedSourcesRouteNewTasksAndPreserveExistingLocalArea() async throws {

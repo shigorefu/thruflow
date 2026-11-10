@@ -9,25 +9,32 @@ import SwiftData
     @Published private(set) var projects: [TogglProject] = []
     @Published private(set) var isBusy = false
     @Published var errorMessage: String?
+    @Published private(set) var syncErrorMessage: String?
     @Published private(set) var lastSyncResult: TogglSyncResult?
     private let credentials: any ConnectorCredentialStorage
     private let storage: any TogglExportStorage
     private let factory: (String) -> any TogglTrackClientProtocol
-    private let resolveDeviceID: () -> String?
-    private let authorizeDeviceID: () -> String?
+    private let resolveDeviceID: @MainActor () -> String?
+    private let authorizeDeviceID: @MainActor () -> String?
     private var deviceID: String? { resolveDeviceID() }
     private let automaticDisabled: Bool
+    private var sessionToken: String?
     private var storageFailed = false
     private var nextAutomaticSync = Date.distantPast
 
     var configuration: TogglConfiguration? { state.configuration }
     var pendingJobs: [TogglExportJob] {
+        guard configuration?.isEnabled == true, let deviceID else { return [] }
+        return pendingJobs(for: deviceID)
+    }
+
+    private func pendingJobs(for deviceID: String) -> [TogglExportJob] {
         state.jobs.filter { $0.accountID == configuration?.account.id && $0.deviceID == deviceID && $0.remoteID == nil && !$0.isCancelled }
     }
 
     init(credentials: (any ConnectorCredentialStorage)? = nil, storage: (any TogglExportStorage)? = nil,
-         deviceID: @autoclosure @escaping () -> String? = FlowRecordingDevice.id,
-         authorizeDeviceID: @escaping () -> String? = { FlowRecordingDevice.resolve(allowInteraction: true) }, factory: ((String) -> any TogglTrackClientProtocol)? = nil) {
+         deviceID: @autoclosure @escaping @MainActor () -> String? = FlowRecordingDevice.id,
+         authorizeDeviceID: @escaping @MainActor () -> String? = { FlowRecordingDevice.resolve(allowInteraction: true) }, factory: ((String) -> any TogglTrackClientProtocol)? = nil) {
         let process = ProcessInfo.processInfo
         let isolated = ScreenshotMode.isEnabled() || process.arguments.contains("--uitesting") || process.arguments.contains("--demo-data") ||
             process.arguments.contains("--onboarding-preview") || process.environment["XCTestConfigurationFilePath"] != nil ||
@@ -67,6 +74,8 @@ import SwiftData
                 else { try? credentials.remove(for: .toggl) }
                 throw error
             }
+            sessionToken = token
+            syncErrorMessage = nil
             workspaces = spaces
             self.projects = projects
         } catch { present(error) }
@@ -76,8 +85,6 @@ import SwiftData
         guard begin() else { return }
         defer { isBusy = false }
         do {
-            // Called only after the explicit connector access explanation.
-            try prepareRecordingIdentity()
             let client = try client()
             try await checkAccount(client)
             workspaces = try await client.workspaces()
@@ -87,37 +94,72 @@ import SwiftData
 
     func configure(workspaceID: Int64, areaProjects: [String: Int64], enabled: Bool, now: Date = .now) throws {
         guard !isBusy, !storageFailed, var config = configuration else { throw TogglError.configuration }
-        guard deviceID != nil else { throw TogglError.recordingIdentity }
         guard workspaces.contains(where: { $0.id == workspaceID }), !areaProjects.isEmpty,
               areaProjects.values.allSatisfy({ id in projects.contains { $0.id == id && $0.workspace_id == workspaceID && $0.active } }) else {
             throw TogglError.configuration
         }
-        if enabled && !config.isEnabled { config.enabledAt = now }
+        let authorizedToken = try updateEnabled(enabled, configuration: &config, now: now)
         config.workspaceID = workspaceID
         config.areaProjects = areaProjects
-        config.isEnabled = enabled
         var updated = state
         updated.configuration = config
         try persist(updated)
+        if !enabled || authorizedToken != nil { sessionToken = authorizedToken }
         lastSyncResult = nil
         nextAutomaticSync = .distantPast
     }
 
+    func setEnabled(_ enabled: Bool, now: Date = .now) throws {
+        guard !isBusy, !storageFailed, var config = configuration else { throw TogglError.configuration }
+        guard enabled != config.isEnabled else { return }
+        if enabled {
+            guard config.workspaceID != nil, !config.areaProjects.isEmpty else { throw TogglError.configuration }
+        }
+        let authorizedToken = try updateEnabled(enabled, configuration: &config, now: now)
+        var updated = state
+        updated.configuration = config
+        try persist(updated)
+        sessionToken = authorizedToken
+        errorMessage = nil
+        syncErrorMessage = nil
+        lastSyncResult = nil
+        nextAutomaticSync = .distantPast
+    }
+
+    private func updateEnabled(_ enabled: Bool, configuration: inout TogglConfiguration, now: Date) throws -> String? {
+        var token: String?
+        if enabled && !configuration.isEnabled {
+            token = try ConnectorKeychainInteraction.$allowed.withValue(true) {
+                guard let token = try credentials.read(for: .toggl)?.accessToken else { throw TogglError.credentials }
+                try prepareRecordingIdentity()
+                return token
+            }
+            configuration.enabledAt = now
+        }
+        configuration.isEnabled = enabled
+        return token
+    }
+
     func disconnect() throws {
         guard !isBusy, !storageFailed else { throw ConnectorStoreError.busy }
-        // Disable export durably before removing the token. Keep pending receipts for a same-account reconnect.
+        // Keep a disabled configuration if silent credential removal fails.
+        if configuration?.isEnabled == true { try setEnabled(false) }
+        try ConnectorKeychainInteraction.$allowed.withValue(false) {
+            try credentials.remove(for: .toggl)
+        }
         var updated = state
         updated.configuration = nil
         try persist(updated)
-        try credentials.remove(for: .toggl)
+        sessionToken = nil
         workspaces = []
         projects = []
         errorMessage = nil
+        syncErrorMessage = nil
         lastSyncResult = nil
     }
 
     func allowRetry(jobID: String) throws {
-        guard !isBusy, !storageFailed,
+        guard !isBusy, !storageFailed, configuration?.isEnabled == true,
               let index = state.jobs.firstIndex(where: { $0.id == jobID && $0.accountID == configuration?.account.id && $0.deviceID == deviceID && $0.remoteID == nil && !$0.isCancelled }) else { return }
         var updated = state
         updated.jobs[index].uncertain = false
@@ -149,11 +191,16 @@ import SwiftData
             let capturedSessions = Set(updated.jobs.filter { $0.accountID == config.account.id }.map(\.sessionID))
             updated.jobs += candidates.filter { !capturedSessions.contains($0.sessionID) }
             try persist(updated) // Durable outbox is written before any network operation.
-            guard !pendingJobs.isEmpty else { lastSyncResult = .noNewEntries; return }
+            let jobs = pendingJobs(for: deviceID)
+            guard !jobs.isEmpty else {
+                syncErrorMessage = nil
+                lastSyncResult = .noNewEntries
+                return
+            }
             var deliveredCount = 0
             let client = try client()
             try await checkAccount(client)
-            for job in pendingJobs {
+            for job in jobs {
                 try Task.checkCancellation()
                 guard let index = state.jobs.firstIndex(where: { $0.id == job.id }) else { continue }
                 if job.uncertain {
@@ -194,9 +241,13 @@ import SwiftData
                 try persist(finished)
                 lastSyncResult = .delivered(deliveredCount)
             } else {
-                lastSyncResult = pendingJobs.isEmpty ? .noNewEntries : .waitingForCompletion
+                lastSyncResult = pendingJobs(for: deviceID).isEmpty ? .noNewEntries : .waitingForCompletion
             }
-        } catch { present(error) }
+            syncErrorMessage = nil
+        } catch {
+            present(error)
+            if !(error is CancellationError) { syncErrorMessage = error.localizedDescription }
+        }
     }
 
     private func savedStatus(sessionID: UUID, container: ModelContainer) throws -> FlowSessionStatus? {
@@ -218,8 +269,11 @@ import SwiftData
     }
 
     private func client() throws -> any TogglTrackClientProtocol {
-        guard let token = try credentials.read(for: .toggl)?.accessToken else { throw TogglError.credentials }
-        return factory(token)
+        if let sessionToken { return factory(sessionToken) }
+        return try ConnectorKeychainInteraction.$allowed.withValue(false) {
+            guard let token = try credentials.read(for: .toggl)?.accessToken else { throw TogglError.credentials }
+            return factory(token)
+        }
     }
 
     private func checkAccount(_ client: any TogglTrackClientProtocol) async throws {

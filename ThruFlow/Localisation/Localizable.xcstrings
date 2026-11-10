@@ -1,347 +1,6 @@
 {
   "sourceLanguage" : "ja",
   "strings" : {
-    "タスクを切り替える前にメモを残せます。入力中も現在のタスクの時間を記録します。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You can add a note before switching tasks. Time continues to be recorded for the current task while you write."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "タスクを切り替える前にメモを残せます。入力中も現在のタスクの時間を記録します。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Перед переключением задачи можно оставить заметку. Пока вы пишете, время продолжает учитываться для текущей задачи."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "切换任务前可以添加笔记。输入期间，仍会记录当前任务的时间。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "切換任務前可以新增筆記。輸入期間，仍會記錄目前任務的時間。"
-          }
-        }
-      }
-    },
-    "プロジェクトの習慣" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Project Habit"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "プロジェクトの習慣"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Привычка проекта"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "项目习惯"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "專案習慣"
-          }
-        }
-      }
-    },
-    "習慣を設定" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enable Habit"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "習慣を設定"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Включить привычку"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用习惯"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟用習慣"
-          }
-        }
-      }
-    },
-    "設定したスケジュールに合わせて、このプロジェクトの習慣タスクを自動で作成します。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Habit tasks are automatically created for this project according to the schedule you set."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定したスケジュールに合わせて、このプロジェクトの習慣タスクを自動で作成します。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Задачи привычки автоматически создаются в этом проекте по заданному расписанию."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "根据设定的时间安排，自动为此项目创建习惯任务。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "依照設定的時間安排，自動為此專案建立習慣任務。"
-          }
-        }
-      }
-    },
-    "習慣の達成率" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Habit Completion"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "習慣の達成率"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Выполнение привычек"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "习惯完成率"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "習慣完成率"
-          }
-        }
-      }
-    },
-    "対象の習慣はありません" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No Habits to Include"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "対象の習慣はありません"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Нет привычек для расчёта"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "没有可计入的习惯"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "沒有可計入的習慣"
-          }
-        }
-      }
-    },
-    "記録された習慣の予定を対象に、途中までの進捗も含めて集計します。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Calculated from saved scheduled habit entries, including partial progress."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "記録された習慣の予定を対象に、途中までの進捗も含めて集計します。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Расчёт учитывает сохранённые задачи привычек по расписанию, включая частичный прогресс."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "根据已保存的习惯计划记录计算，包括部分完成的进度。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "根據已儲存的習慣計畫紀錄計算，包括部分完成的進度。"
-          }
-        }
-      }
-    },
-    "予定 %lld 件" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Scheduled: %lld"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "予定 %lld 件"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Запланировано: %lld"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "计划次数：%lld"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "計畫次數：%lld"
-          }
-        }
-      }
-    },
-    "プロジェクト別" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "By Project"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "プロジェクト別"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "По проектам"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "按项目"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "按專案"
-          }
-        }
-      }
-    },
-    "プロジェクト完了済み" : {
-      "comment" : "Completed status for a Project. Separate from the Task status to preserve grammatical agreement in Russian.",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Completed"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "完了済み"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Завершён"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已完成"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已完成"
-          }
-        }
-      }
-    },
     "–" : {
       "localizations" : {
         "en" : {
@@ -4909,74 +4568,6 @@
         }
       }
     },
-    "Toggl Trackとの接続について" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Connecting to Toggl Track"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Toggl Trackとの接続について"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Подключение к Toggl Track"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "连接 Toggl Track"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "連接 Toggl Track"
-          }
-        }
-      }
-    },
-    "Toggl TrackのAPIトークンは、この端末のKeychainに保存されます。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your Toggl Track API token is stored in this device’s Keychain."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Toggl TrackのAPIトークンは、この端末のKeychainに保存されます。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "API-токен Toggl Track хранится в Keychain этого устройства."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Toggl Track 的 API 令牌保存在此设备的钥匙串中。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Toggl Track 的 API 權杖儲存在此裝置的鑰匙圈中。"
-          }
-        }
-      }
-    },
     "Toggl TrackのAPIトークンを確認してください。" : {
       "localizations" : {
         "en" : {
@@ -7115,31 +6706,31 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cannot read this device’s recording identity. Reopen Toggl connection settings and allow Keychain access. Past records will not be exported automatically."
+            "value" : "Can’t read this device’s recording identity. In Toggl connection settings, turn automatic export off, then on again, and allow Keychain access. Past records won’t be exported automatically."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "この端末の識別情報を読み取れません。Togglの接続画面を開き直し、Keychainへのアクセスを許可してください。過去の記録は自動送信されません。"
+            "value" : "この端末の識別情報を読み取れません。Togglの接続設定で自動送信をいったんオフにしてから、もう一度オンにし、Keychainへのアクセスを許可してください。過去の記録は自動送信されません。"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Не удалось прочитать идентификатор устройства. Откройте настройки подключения Toggl заново и разрешите доступ к Keychain. Прошлые записи автоматически не отправляются."
+            "value" : "Не удалось прочитать идентификатор записей на этом устройстве. В настройках подключения Toggl выключите автоматическую отправку, затем включите её снова и разрешите доступ к Keychain. Прошлые записи не будут отправлены автоматически."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "无法读取此设备的记录标识。请重新打开 Toggl 连接设置并允许访问钥匙串。历史记录不会自动发送。"
+            "value" : "无法读取此设备的记录标识。请在 Toggl 连接设置中先关闭自动发送，再重新开启，并允许访问钥匙串。历史记录不会自动发送。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "無法讀取此裝置的記錄識別資訊。請重新開啟 Toggl 連線設定並允許存取鑰匙圈。歷史記錄不會自動傳送。"
+            "value" : "無法讀取此裝置的記錄識別資訊。請在 Toggl 連線設定中先關閉自動傳送，再重新開啟，並允許存取鑰匙圈。歷史記錄不會自動傳送。"
           }
         }
       }
@@ -8520,6 +8111,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "輸入任務"
+          }
+        }
+      }
+    },
+    "タスクを切り替える前にメモを残せます。入力中も現在のタスクの時間を記録します。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can add a note before switching tasks. Time continues to be recorded for the current task while you write."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タスクを切り替える前にメモを残せます。入力中も現在のタスクの時間を記録します。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Перед переключением задачи можно оставить заметку. Пока вы пишете, время продолжает учитываться для текущей задачи."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切换任务前可以添加笔记。输入期间，仍会记录当前任务的时间。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切換任務前可以新增筆記。輸入期間，仍會記錄目前任務的時間。"
           }
         }
       }
@@ -9988,6 +9613,40 @@
         }
       }
     },
+    "プロジェクトの習慣" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Project Habit"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プロジェクトの習慣"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Привычка проекта"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "项目习惯"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "專案習慣"
+          }
+        }
+      }
+    },
     "プロジェクトはありません" : {
       "localizations" : {
         "en" : {
@@ -10158,6 +9817,40 @@
         }
       }
     },
+    "プロジェクト別" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "By Project"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プロジェクト別"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "По проектам"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按项目"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按專案"
+          }
+        }
+      }
+    },
     "プロジェクト名" : {
       "localizations" : {
         "en" : {
@@ -10222,6 +9915,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "請輸入專案名稱。"
+          }
+        }
+      }
+    },
+    "プロジェクト完了済み" : {
+      "comment" : "Completed status for a Project. Separate from the Task status to preserve grammatical agreement in Russian.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Completed"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完了済み"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Завершён"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已完成"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已完成"
           }
         }
       }
@@ -11312,6 +11040,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "適合需要長時間不受打擾的深入工作"
+          }
+        }
+      }
+    },
+    "予定 %lld 件" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scheduled: %lld"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "予定 %lld 件"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запланировано: %lld"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "计划次数：%lld"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "計畫次數：%lld"
           }
         }
       }
@@ -15476,6 +15238,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "任務"
+          }
+        }
+      }
+    },
+    "対象の習慣はありません" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Habits to Include"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "対象の習慣はありません"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет привычек для расчёта"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有可计入的习惯"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有可計入的習慣"
           }
         }
       }
@@ -20219,40 +20015,6 @@
         }
       }
     },
-    "続ける" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Continue"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "続ける"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Продолжить"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "继续"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "繼續"
-          }
-        }
-      }
-    },
     "編集" : {
       "localizations" : {
         "en" : {
@@ -20395,6 +20157,74 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "習慣狀態"
+          }
+        }
+      }
+    },
+    "習慣の達成率" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Habit Completion"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "習慣の達成率"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выполнение привычек"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "习惯完成率"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "習慣完成率"
+          }
+        }
+      }
+    },
+    "習慣を設定" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enable Habit"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "習慣を設定"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Включить привычку"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用习惯"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用習慣"
           }
         }
       }
@@ -20897,6 +20727,40 @@
         }
       }
     },
+    "記録された習慣の予定を対象に、途中までの進捗も含めて集計します。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calculated from saved scheduled habit entries, including partial progress."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "記録された習慣の予定を対象に、途中までの進捗も含めて集計します。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Расчёт учитывает сохранённые задачи привычек по расписанию, включая частичный прогресс."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "根据已保存的习惯计划记录计算，包括部分完成的进度。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "根據已儲存的習慣計畫紀錄計算，包括部分完成的進度。"
+          }
+        }
+      }
+    },
     "記録なし" : {
       "localizations" : {
         "en" : {
@@ -21101,6 +20965,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "設定"
+          }
+        }
+      }
+    },
+    "設定したスケジュールに合わせて、このプロジェクトの習慣タスクを自動で作成します。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Habit tasks are automatically created for this project according to the schedule you set."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定したスケジュールに合わせて、このプロジェクトの習慣タスクを自動で作成します。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Задачи привычки автоматически создаются в этом проекте по заданному расписанию."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "根据设定的时间安排，自动为此项目创建习惯任务。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "依照設定的時間安排，自動為此專案建立習慣任務。"
           }
         }
       }

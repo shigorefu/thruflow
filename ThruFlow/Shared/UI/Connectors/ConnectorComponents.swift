@@ -59,12 +59,9 @@ struct ConnectorProviderRow: View {
         HStack(alignment: .center, spacing: 12) {
             ConnectorProviderLogo(provider: provider)
             VStack(alignment: .leading, spacing: 4) {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(provider.connectorTitle)
-                        .font(.headline)
-                        .fixedSize(horizontal: false, vertical: true)
-                    ConnectorBetaBadge()
-                }
+                Text(provider.connectorTitle)
+                    .font(.headline)
+                    .fixedSize(horizontal: false, vertical: true)
                 if connection != nil {
                     Label(String(localized: "接続済み"), systemImage: "checkmark.circle.fill")
                         .font(.caption)
@@ -78,8 +75,29 @@ struct ConnectorProviderRow: View {
     }
 }
 
+struct ConnectorActivationToggle: View {
+    @EnvironmentObject private var connectors: ConnectorStore
+    let provider: ConnectorProviderID
+
+    var body: some View {
+        Toggle(isOn: Binding(
+            get: { connectors.connection(for: provider)?.isEnabled == true },
+            set: { enabled in
+                do { try connectors.setEnabled(enabled, for: provider) }
+                catch { connectors.errorMessage = error.localizedDescription }
+            }
+        )) {
+            Text(provider.connectorTitle)
+        }
+        .toggleStyle(.switch)
+        .disabled(connectors.connection(for: provider) == nil || connectors.busyProvider != nil)
+        .accessibilityIdentifier("connectors.enabled.\(provider.rawValue)")
+    }
+}
+
 /// Shared form fields; each platform owns its Form and navigation presentation.
 struct ConnectorSetupSections: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var connectors: ConnectorStore
 
@@ -130,6 +148,9 @@ struct ConnectorSetupSections: View {
                     }
 
 
+                if connection != nil {
+                    ConnectorActivationToggle(provider: provider)
+                }
                 if connection == nil {
                     authorization
                 } else if provider == .todoist {
@@ -162,14 +183,18 @@ struct ConnectorSetupSections: View {
                 }
             }
 
-            if let message = connectors.errorMessage {
-                Section {
-                    Label(message, systemImage: "exclamationmark.triangle")
-                        .foregroundStyle(.red)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .accessibilityIdentifier("connectors.error")
+            Group {
+                if let message = connectors.errorMessage {
+                    Section {
+                        Label(message, systemImage: "exclamationmark.triangle")
+                            .foregroundStyle(.red)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier("connectors.error")
+                            .transition(.opacity)
+                    }
                 }
             }
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.18), value: connectors.errorMessage != nil)
         }
     }
 
@@ -285,17 +310,22 @@ struct ConnectorSetupSections: View {
                 )
             }
             .buttonStyle(.borderedProminent)
-            .disabled(isBusy || !hasValidSelection)
+            .disabled(isBusy || !hasValidSelection || !connection.isEnabled)
             .disabled(sourceAreaIDs.isEmpty)
             .accessibilityIdentifier("connectors.import")
 
-            if let lastSyncedAt = connection.lastSyncedAt {
-                LabeledContent(String(localized: "前回の更新")) {
-                    Text(lastSyncedAt, format: .dateTime.year().month().day().hour().minute())
+            Group {
+                if let lastSyncedAt = connection.lastSyncedAt {
+                    LabeledContent(String(localized: "前回の更新")) {
+                        Text(lastSyncedAt, format: .dateTime.year().month().day().hour().minute())
+                    }
+                    .transition(.opacity)
+                    Text(String(localized: "前回の新規取り込み：\(connection.lastImportedCount)件"))
+                        .foregroundStyle(.secondary)
+                        .transition(.opacity)
                 }
-                Text(String(localized: "前回の新規取り込み：\(connection.lastImportedCount)件"))
-                    .foregroundStyle(.secondary)
             }
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.18), value: connection.lastSyncedAt != nil)
         } footer: {
             Text(String(localized: "チェック形式のタスクは完了・未完了を相互に同期します。タイトルと期限は接続先から更新します。通信できない変更は次回の更新で再送します。"))
         }

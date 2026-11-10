@@ -39,7 +39,7 @@ final class ConnectorKeychain: ConnectorCredentialStorage {
         query[kSecReturnData as String] = true
         query[kSecMatchLimit as String] = kSecMatchLimitOne
         var result: CFTypeRef?
-        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        let status = perform { SecItemCopyMatching(query as CFDictionary, &result) }
         if status == errSecItemNotFound { return nil }
         guard status == errSecSuccess, let data = result as? Data else {
             throw ConnectorStoreError.keychain
@@ -52,12 +52,12 @@ final class ConnectorKeychain: ConnectorCredentialStorage {
         let data = try JSONEncoder().encode(credentials)
         let attributes: [String: Any] = [kSecValueData as String: data]
         let query = query(for: provider)
-        let status = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
+        let status = perform { SecItemUpdate(query as CFDictionary, attributes as CFDictionary) }
         if status == errSecItemNotFound {
             var item = query
             item[kSecValueData as String] = data
             item[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
-            guard SecItemAdd(item as CFDictionary, nil) == errSecSuccess else {
+            guard perform({ SecItemAdd(item as CFDictionary, nil) }) == errSecSuccess else {
                 throw ConnectorStoreError.keychain
             }
         } else if status != errSecSuccess {
@@ -66,10 +66,14 @@ final class ConnectorKeychain: ConnectorCredentialStorage {
     }
 
     func remove(for provider: ConnectorProviderID) throws {
-        let status = SecItemDelete(query(for: provider) as CFDictionary)
+        let status = perform { SecItemDelete(query(for: provider) as CFDictionary) }
         guard status == errSecSuccess || status == errSecItemNotFound else {
             throw ConnectorStoreError.keychain
         }
+    }
+
+    private func perform(_ operation: () -> OSStatus) -> OSStatus {
+        KeychainPromptPolicy.perform(allowInteraction: ConnectorKeychainInteraction.allowed, operation)
     }
 
     private func query(for provider: ConnectorProviderID) -> [String: Any] {

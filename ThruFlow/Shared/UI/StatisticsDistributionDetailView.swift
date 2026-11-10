@@ -6,7 +6,7 @@ struct StatisticsDistributionDetailView: View {
     @Environment(\.locale) private var locale
 
     private var maximumSeconds: Int {
-        max(1, item.details.map(\.focusSeconds).max() ?? 0)
+        item.details.reduce(1) { max($0, $1.focusSeconds) }
     }
 
     var body: some View {
@@ -25,7 +25,8 @@ struct StatisticsDistributionDetailView: View {
     }
 
     private var detailRows: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        let total = Double(maximumSeconds)
+        return LazyVStack(alignment: .leading, spacing: 12) {
             ForEach(item.details) { detail in
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(alignment: .firstTextBaseline, spacing: 12) {
@@ -44,7 +45,7 @@ struct StatisticsDistributionDetailView: View {
                         .fixedSize()
                     }
                     .font(.callout)
-                    ProgressView(value: Double(detail.focusSeconds), total: Double(maximumSeconds))
+                    ProgressView(value: Double(detail.focusSeconds), total: total)
                         .tint(Color(hex: item.colorHex ?? "#8E8E93"))
                         .accessibilityHidden(true)
                 }

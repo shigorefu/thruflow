@@ -1,6 +1,6 @@
 # UX flows
 
-This document describes the current 1.4.0 presentation. Business rules belong in
+This document describes the current presentation. Business rules belong in
 [Domain model](DOMAIN_MODEL.md); persistence contracts in [Data model](DATA_MODEL.md).
 
 ## Areas and Projects
@@ -14,6 +14,9 @@ is no folder icon or plus button on each Area row. Create Projects in the saved
 Area editor; Areas without Projects retain the simple layout. The Project editor
 follows the Area editor design and optionally configures one Habit. It does not
 create ordinary Tasks or expose the old Project memo field.
+
+On Mac, Save validates the current Habit goal text, including an active edit.
+Invalid goal text keeps the editor open with the goal validation message.
 
 ## Tasks and quick capture
 
@@ -31,8 +34,9 @@ parser and its tests for supported aliases; English aliases work in every locale
 Hide the Project picker when the Area has no eligible Projects and there is no
 existing selection to clear. Changing Area clears an incompatible Project.
 Unnamed Tasks display their Project name when assigned, otherwise the Area
-placeholder. Flow rows have two lines: title, then colored Area or Area/Project
-context followed by other Task attributes. Checkbox Tasks have no redundant
+placeholder. Flow rows have three lines: title, colored Area or Area/Project context,
+then available Task attributes separated by `・`. Omit the third line when
+there are no attributes. Checkbox Tasks have no redundant
 Completed/Incomplete subtitle; numeric progress remains visible.
 
 Tasks offers day, week and month views, overdue work and an undated inspector.
@@ -40,10 +44,14 @@ Search covers the Task database rather than just the selected date. Compact
 period strips use native snapping; dragging does not mutate dates until the
 selection settles. Task moves still obey Habit scheduling rules.
 
+On Mac, the Task editor places classification and scheduling above the notes and
+tags. The sheet keeps Save and Cancel accessible while its content scrolls.
+
 ## Flow player
 
 The dashboard combines the stream, today's timeline, Tasks, the player and a
-compact Statistics carousel. Desktop context menus reuse Task actions; Task and
+compact Statistics carousel. Mac Task context menus show Start Focus first,
+then Edit and Move when available, with Delete in its own final group. Task and
 Habit headings navigate to their corresponding Tasks groups. On mobile, the
 player places its dial beside the controls, including expanded Duo.
 
@@ -52,11 +60,14 @@ with a Project shows Area/Project context. Earlier focus ring colors remain when
 context changes; pauses add no colored time. The planned-end setting applies to
 focus only; rest displays elapsed time on the dashboard timeline.
 
-Finishing focus, starting rest or switching Tasks opens a form with Task name,
-eligible Project and result memo. Switching waits for submission; the current
+Finishing focus and starting rest open a form with Task name, eligible Project
+and result memo. Switching Tasks opens the same form only after at least 60
+focused seconds in the current segment. Switching waits for submission; the current
 Task keeps receiving elapsed time while the form is open. The new Task begins
 receiving time only after the switch. See [Decisions](DECISIONS.md) for the
-accepted memo-before-switch contract.
+accepted memo-before-switch contract. A shorter segment switches immediately
+without a form, transferring its focused time to the selected Task. Pauses do
+not count toward this threshold.
 
 Focus does not automatically stop or start rest. Five-minute adjustments preserve
 elapsed time and at least one remaining minute. The rest ring is neutral and
@@ -83,22 +94,35 @@ Totals, trends, distributions and calendar indicators use the same filters.
 Distribution supports Tasks, Areas and Projects. Selecting a Task shows daily
 minute bars; selecting an Area or Project shows Task/time bars. A day cell opens
 a summary with a History action. CSV export offers its own configurable scope.
-Habit completion includes partial progress, with overall and per-Habit values.
+On Mac, the overview spans the report width. Below it, Habit completion sits
+to the left of focused-time distribution when space permits. In narrow windows,
+Habit completion appears above the distribution. Trend and Dots follow.
+
+Habit completion shows overall and per-Habit values. Fully met goals count
+immediately. Partial and zero progress count after the configured day ends.
 
 Mac has a persistent calendar column; mobile uses native sheets and a vertical
 report. Widgets retain their separate compact snapshots.
 
 ## Connectors and Settings
 
-Each provider has a Beta badge; the Connectors navigation item does not.
+Provider switches pause or resume synchronization after setup.
 After connection, mapping rows pair local Areas with provider lists/projects.
-Toggl explains API credentials and Keychain access before opening setup.
+Toggl explains Keychain access in setup and shows failures in red below its name.
 See [Connectors](CONNECTORS.md) for authentication and synchronization behavior.
 
 Settings owns appearance, language, calendar/day-boundary preferences, timeline
 presentation, support, onboarding replay and confirmed data-reset actions.
 Mac theme and language controls use dropdowns. Chinese selections show an
 AI-translation notice and support link. Changing language requires a restart.
+
+## Motion
+
+Task and Habit editors use short transitions when optional fields appear or
+disappear. The Flow result form fades in on Mac and uses the system sheet on
+iPhone and iPad. Connector feedback and the empty and selected-detail states
+in Statistics transition locally. These animations follow Reduce Motion.
+Timer ticks and existing field edits do not trigger these transitions.
 
 ## Onboarding and companion surfaces
 
