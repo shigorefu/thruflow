@@ -76,6 +76,7 @@ THRUFLOW_DISABLE_CLOUDKIT=1 xcodebuild test \
   -scheme ThruFlow \
   -destination 'platform=macOS' \
   -only-testing:ThruFlowTests \
+  -skip-testing:ThruFlowTests/ScreenshotReleaseFixtureTests \
   -parallel-testing-enabled NO \
   -maximum-parallel-testing-workers 1 \
   -derivedDataPath DerivedData/Tests \

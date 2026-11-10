@@ -302,7 +302,7 @@ Toggl Track is a separate time-export connector, not a task importer and not
 Toggl Focus / Toggl 2.0. macOS and iOS offer it in the same connector list.
 The user enters a Track API token from <https://track.toggl.com/profile>, selects
 one workspace, maps any active Areas (including Habits) to existing active
-projects, and explicitly saves with automatic export enabled. Unmapped Areas
+projects, saves those mappings, then enables automatic export with the switch. Unmapped Areas
 are excluded. Tokens remain in the existing per-device Keychain; no backend,
 client secret, OAuth callback, or website change is needed for this connector.
 
@@ -380,37 +380,33 @@ API references:
 
 ### Keychain interaction
 
-Automatic connector synchronization never allows Keychain authentication UI.
-If access needs approval, synchronization keeps its pending work and reports
-the error on the connector screen. Explicit connector operations may request
-access for that provider. The Toggl recording identity is resolved lazily and
-without UI during normal app/Flow use; explicit Toggl connection or opening
-its setup screen after Continue can authorize access. An inaccessible identity is not replaced or cached as a permanent failure.
+Toggl may request Keychain access when the user connects or explicitly switches
+automatic export on. Opening setup, loading projects, synchronization, retry and
+disconnect all use noninteractive access. A sync failure stays visible in red
+under Toggl. The Mac login keychain requires a scoped legacy interaction guard
+in addition to the authentication context used by the data protection keychain.
+The guard covers synchronous operations only and restores the previous setting.
+Existing Keychain records are retained. An authorized Toggl token and recording
+identity can be reused in memory during the app session.
 
-Opening Toggl settings on macOS or iOS first presents a native explanation of
-its API token and this device's Keychain storage. On macOS it also explains
-that reading or saving the key may trigger a system permission/login-password
-prompt for ThruFlow's credentials, not access to other apps' passwords. The
-setup sections (including their project-loading task) are created only after
-Continue. Cancel returns to the connector list without an interactive credential
-read. This acknowledgement lasts only for that visit; it does not change system
-permissions or disable an existing connection's noninteractive automatic export.
-
+The three provider switches preserve credentials and mappings when turned off.
+Reminders and Todoist skip automatic and manual sync while paused. Existing
+import connections default to enabled. Toggl preserves its pending outbox and
+receipts. Re-enabling sets a new export cutoff for new work.
 
 ### Export feedback (1.4.0)
 
 Authentication and automatic export are separate states. A connected token does
-not enable delivery: choose the Area/project mapping, enable automatic export,
-and save. The setup header now shows the saved export state. Unsaved changes
-show a Save hint and disable Send now until applied, so a send cannot silently
-use an older mapping. Turning export on keeps the existing activation boundary;
-records made before activation are not backfilled.
+not enable delivery. Choose and save the Area/project mapping, then switch on
+automatic export. The setup header shows the saved export state. Unsaved changes
+disable the export switch and Send now until applied. Turning export on sets a
+new activation boundary and does not backfill records made while paused.
 
 A synchronization attempt reports no new eligible records, a count of confirmed
 deliveries (including recovered receipts), or waiting for queued Flows to finish.
 No eligible records means no API request and does not advance Last sent. A
 missing recording identity now reports an actionable error instead of silently
-returning. Explicit setup can recover Keychain access; automatic synchronization
+returning. Explicit enable or reconnect can recover Keychain access; automatic synchronization
 never authorizes it and old records are never assigned a new recording identity.
 
 On 2026-10-16, live inspection of the installed 1.3.1 (12) confirmed a saved

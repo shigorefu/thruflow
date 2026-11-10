@@ -352,8 +352,9 @@ private struct TaskBoardCard: View {
         .opacity(todo.isCompleted ? 0.55 : 1)
         .contentShape(Rectangle())
         .contextMenu {
-            Button(String(localized: "編集"), systemImage: "pencil", action: onEdit)
             Button(String(localized: "Flowを開始"), systemImage: "play.fill", action: onStartFlow)
+            Divider()
+            Button(String(localized: "編集"), systemImage: "pencil", action: onEdit)
             Divider()
             Button(String(localized: "削除"), systemImage: "trash", role: .destructive, action: onDelete)
         }

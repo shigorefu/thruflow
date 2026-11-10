@@ -29,6 +29,8 @@ struct AppDataResetTests {
         )
         context.insert(area)
         context.insert(archivedArea)
+        let project = try ProjectEditingService().save(name: "Report", area: area, modelContext: context)
+        todo.project = project
         context.insert(todo)
         context.insert(deletedTodo)
 
@@ -57,6 +59,7 @@ struct AppDataResetTests {
             deletedFlowCount: 1,
             deletedBreakCount: 1
         ))
+        #expect(try context.fetch(FetchDescriptor<Project>()).isEmpty)
         #expect(try context.fetch(FetchDescriptor<Area>()).isEmpty)
         #expect(try context.fetch(FetchDescriptor<Todo>()).isEmpty)
         #expect(try context.fetch(FetchDescriptor<FlowSession>()).isEmpty)
@@ -115,6 +118,7 @@ struct AppDataResetTests {
     private func makeContainer() throws -> ModelContainer {
         let schema = Schema([
             Area.self,
+            Project.self,
             Todo.self,
             FlowSession.self,
             FlowSegment.self,

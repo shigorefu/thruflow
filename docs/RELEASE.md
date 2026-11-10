@@ -63,7 +63,10 @@ on 2026-09-20; see [the incident record](CLOUDKIT.md#production-schema-repair--2
 
 ## Automated checks
 
-Run unit tests sequentially to avoid excessive simulator and test-runner memory use:
+Run the complete unit suite sequentially to avoid excessive simulator and
+test-runner memory use. This includes the five-language screenshot fixture test.
+Regular CI skips that one test. The TestFlight verification job runs it as part
+of the complete suite before upload.
 
 ```sh
 THRUFLOW_DISABLE_CLOUDKIT=1 xcodebuild test \

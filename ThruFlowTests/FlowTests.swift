@@ -336,7 +336,7 @@ struct FlowTests {
         store.start(area: area, todo: old, modelContext: context, now: now)
         #expect(store.selectPickerContext(area: area, todo: old, modelContext: context, now: now))
         #expect(store.pendingTaskSwitch == nil)
-        #expect(store.selectPickerContext(area: otherArea, todo: nil, modelContext: context, now: now))
+        #expect(store.selectPickerContext(area: otherArea, todo: nil, modelContext: context, now: now.addingTimeInterval(120)))
         #expect(!store.completeTaskSwitchMemo("Wrong", taskTitle: "Changed", taskProject: invalidProject,
                                             modelContext: context, now: now.addingTimeInterval(120)))
         #expect(store.pendingTaskSwitch != nil)
@@ -347,7 +347,7 @@ struct FlowTests {
         #expect(store.selectedTodoID == old.id)
         #expect(store.phase == .focusing)
         #expect(try context.fetchCount(FetchDescriptor<Todo>()) == 1)
-        #expect(store.selectPickerContext(area: otherArea, todo: nil, modelContext: context, now: now))
+        #expect(store.selectPickerContext(area: otherArea, todo: nil, modelContext: context, now: now.addingTimeInterval(120)))
         store.stop(modelContext: context, now: now.addingTimeInterval(120))
         #expect(store.pendingTaskSwitch == nil)
         #expect(!store.completeTaskSwitchMemo("Stale", modelContext: context))
@@ -1282,6 +1282,88 @@ struct FlowTests {
 
         #expect(firstTodo.recordedFocusSeconds == 0)
         #expect(secondTodo.recordedFocusSeconds == 2 * 60)
+    }
+
+    @Test(arguments: [(59, false, 0), (60, false, 0), (59, true, 0), (60, true, 0),
+                      (59, false, 120), (60, false, 120), (59, true, 120), (60, true, 120)])
+    func pickerMemoUsesCurrentSegmentFocusedTime(
+        seconds: Int, paused: Bool, priorSeconds: Int
+    ) throws {
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let container = try ModelContainer(for: schema, configurations: [
+            ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
+        ])
+        let context = container.mainContext
+        let area = Area(name: "Work", type: .neutral)
+        let first = Todo(title: "First", area: area)
+        let current = Todo(title: "Current", area: area)
+        let next = Todo(title: "Next", area: area)
+        context.insert(area)
+        for todo in [first, current, next] { context.insert(todo) }
+        let store = ActiveFlowStore(
+            defaults: UserDefaults(suiteName: "FlowTests.\(UUID())")!,
+            notifications: TestFlowNotificationService()
+        )
+        let start = Date(timeIntervalSince1970: 400_000)
+        store.configure(area: area, todo: priorSeconds == 0 ? current : first)
+        store.start(area: area, todo: priorSeconds == 0 ? current : first,
+                    modelContext: context, now: start)
+        let session = try #require(store.activeSession)
+        let deadline = store.timerState?.plannedEndAt
+        if priorSeconds > 0 {
+            #expect(store.selectPickerContext(area: area, todo: current, modelContext: context,
+                                             now: start.addingTimeInterval(Double(priorSeconds))))
+            #expect(store.completeTaskSwitchMemo(nil, modelContext: context,
+                                                now: start.addingTimeInterval(Double(priorSeconds))))
+        }
+        let boundary = start.addingTimeInterval(Double(priorSeconds + seconds))
+        if paused { store.pause(modelContext: context, now: boundary) }
+        let switchDate = paused ? boundary.addingTimeInterval(300) : boundary
+        #expect(store.selectPickerContext(area: area, todo: next, modelContext: context, now: switchDate))
+        #expect(store.activeSession?.id == session.id)
+        #expect(store.timerState?.plannedEndAt == deadline)
+        #expect(store.phase == (paused ? .paused : .focusing))
+        if seconds < 60 {
+            #expect(store.pendingTaskSwitch == nil)
+            #expect(store.selectedTodoID == next.id)
+            let segment = try #require(session.resolvedSegments.last(where: { $0.endedAt == nil }))
+            #expect(segment.todo?.id == next.id)
+            #expect(segment.startFocusSeconds == priorSeconds)
+            #expect(segment.startedAt == start.addingTimeInterval(Double(priorSeconds)))
+            #expect(!session.resolvedSegments.contains { $0.todo?.id == current.id })
+        } else {
+            #expect(store.pendingTaskSwitch?.todo.id == current.id)
+            #expect(store.selectedTodoID == current.id)
+        }
+    }
+
+    @Test func subMinuteAreaSelectionCreatesTaskWithoutMemo() throws {
+        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let container = try ModelContainer(for: schema, configurations: [
+            ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
+        ])
+        let context = container.mainContext
+        let area = Area(name: "Work", type: .neutral)
+        let destination = Area(name: "Study", type: .neutral)
+        let old = Todo(title: "Old", area: area)
+        context.insert(area)
+        context.insert(destination)
+        context.insert(old)
+        let store = ActiveFlowStore(
+            defaults: UserDefaults(suiteName: "FlowTests.\(UUID())")!,
+            notifications: TestFlowNotificationService()
+        )
+        let start = Date(timeIntervalSince1970: 400_000)
+        store.start(area: area, todo: old, modelContext: context, now: start)
+        #expect(store.selectPickerContext(area: destination, todo: nil, modelContext: context,
+                                         now: start.addingTimeInterval(59)))
+        #expect(store.pendingTaskSwitch == nil)
+        let task = try #require(store.activeSession?.todo)
+        #expect(task.id != old.id)
+        #expect(task.title.isEmpty)
+        #expect(task.area?.id == destination.id)
+        #expect(store.activeSession?.resolvedSegments.count == 1)
+        #expect(store.activeSession?.resolvedSegments.first?.todo?.id == task.id)
     }
 
     @Test func contextSwitchTransfersOnlyWhenSegmentIsStrictlyUnderOneMinute() {

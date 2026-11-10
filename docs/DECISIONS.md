@@ -1297,3 +1297,38 @@ labels and completion controls; do not restore redundant completion subtitles.
 Standard Tasks screens retain their existing presentation. This supersedes
 the previous two-line Flow row layout. Visual verification is left to the
 maintainer at their explicit request.
+
+### 2026-11-04 — Habit completion during the current day (1.4.1)
+
+The shared statistics calculation includes current-day occurrences only when
+their completion fraction is 1. Partial and zero progress enter the average
+when the configured logical day ends. Mac and iOS/iPadOS use the same builder
+and their existing statistics refresh.
+
+### 2026-11-04 — Mac Statistics arrangement and connector switches (1.4.1)
+
+Mac keeps the overview full width, followed by Habit completion on the left and
+focus-time distribution on the right, with a stacked layout when space is tight.
+Trend and Dots follow. This supersedes the monthly Pie and Dots pairing in D-030.
+
+Connected providers can be paused without disconnecting. Toggl opens settings
+silently, allows Keychain prompts during explicit connection or enable only,
+and surfaces failures beneath its name. Mac preserves legacy Keychain items
+and suppresses their UI during noninteractive access. See [Connectors](CONNECTORS.md).
+
+### 2026-11-06 — Skip the switch memo for sub-minute segments (1.4.1)
+
+The shared picker command uses the existing segment transfer policy before
+requesting a switch memo. Below 60 focused seconds in the current open segment,
+switch immediately and transfer that segment to the destination Task, including
+a newly created unnamed Task for an Area selection. At 60 seconds or more,
+retain the memo-before-switch workflow. Paused wall time is excluded. Earlier
+segments and the running timer are preserved. Missing segment data retains the
+memo fallback. This refines the earlier memo-before-switch decision without
+changing persisted fields.
+
+Verification: 88 Flow tests passed, including eight boundary/pause/current-segment
+cases and an Area-only destination case. Unsigned macOS and iOS Release builds
+passed, including the embedded Watch app. Mac/Watch and iOS/iPadOS reviewers
+agreed on the shared contract and final source changes. Native interaction
+review was source-only; signed device behavior was not exercised.

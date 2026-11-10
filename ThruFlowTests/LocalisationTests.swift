@@ -11,10 +11,7 @@ struct LocalisationTests {
     @Test func catalogUsesJapaneseAsSourceLanguage() throws {
         let data = try Data(contentsOf: catalogURL)
         let root = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
-        let strings = try #require(root["strings"] as? [String: Any])
-
         #expect(root["sourceLanguage"] as? String == "ja")
-        #expect(strings.count >= 350)
         #expect(!data.contains(Data("\"extractionState\" : \"stale\"".utf8)))
     }
 

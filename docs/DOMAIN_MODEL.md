@@ -122,7 +122,7 @@ mirrors the text to `Todo.notes` for the Task-level memo.
 
 ## FlowSegment
 
-`FlowSegment` records a Task/Area interval inside one `FlowSession`. It stores wall-clock start/end dates and cumulative focused-second offsets at both boundaries, so pauses are excluded deterministically. Switching Task while focusing or paused closes the current segment and opens another without resetting the timer. Progress is credited from segment durations; legacy FlowSession records without segments keep the previous session-level fallback.
+`FlowSegment` records a Task/Area interval inside one `FlowSession`. It stores wall-clock start/end dates and cumulative focused-second offsets at both boundaries, so pauses are excluded deterministically. Switching Task while focusing or paused closes the current segment and opens another without resetting the timer. Segments under 60 focused seconds transfer to the destination Task immediately without a switch memo; segments at or above 60 focused seconds require the memo before switching. Pauses are excluded from this threshold. Progress is credited from segment durations; legacy FlowSession records without segments keep the previous session-level fallback.
 
 ## FlowBreak
 
@@ -244,7 +244,9 @@ repeated times use the first occurrence. No next-day rollover occurs.
 `StatisticsProjectionActor`; `HabitCompletionBuilder` derives the selected-period
 summary without writes or schema changes. The actor separately fetches scheduled
 Todos so incomplete records contribute to the denominator. Scheduled dates are
-logical dates; only the current-day cutoff uses `AppDayBoundary`.
+logical dates. The current day is determined by `AppDayBoundary`. Only fully
+met goals count on the current day. Partial and zero progress enter the average
+after that logical day ends.
 
 Each Habit owner/day pair counts once (Area UUID or Project UUID with a type prefix) (highest fraction wins a duplicate collision).
 Completed occurrences contribute 1, unchecked occurrences 0. Minutes use exact

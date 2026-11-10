@@ -30,6 +30,8 @@ distinct rules, and read applicable nested instructions before editing there.
   buildable; do not include unsolicited refactors, features, or visual polish.
 - Do not invent product rules. Resolve routine implementation details from the
   repository; ask when an unresolved product decision materially affects behavior.
+- Use impersonal phrasing for Russian release notes wherever they appear.
+  Prefer “Улучшено” and “Исправлено” over first-person plural wording.
 - Communicate briefly in the user's language. Japanese is the default **app UI**
   language; identifiers, stable enum raw values, and technical docs use English.
 - Apply shared behavior across macOS, iOS/iPadOS, and watchOS unless the user
@@ -99,10 +101,10 @@ This is standing authorization to delegate the bounded reviews below; an explici
 user restriction on delegation or scope takes precedence. Documentation-only
 changes do not require platform agents.
 
-### Model selection and escalation
+### Model selection
 
-- Use **GPT-6.1 Sol** (`gpt-6.1-sol`) for ordinary implementation and
-  orchestration, and for reviews of application logic. Start at medium reasoning
+- Use **GPT-6.1 Sol** (`gpt-6.1-sol`) for implementation, orchestration,
+  and logic reviews, including large refactors and changes to application logic. Start at medium reasoning
   for implementation and high reasoning for logic reviews.
 - Use **GPT-6.1 Terra** (`gpt-6.1-terra`) at medium reasoning for simple UI
   checks that do not change business rules, validation, state transitions,
@@ -112,16 +114,6 @@ changes do not require platform agents.
 - Use **GPT-6 Luna** (`gpt-6-luna`) at medium reasoning for the localization
   agent. Preserve all localization review requirements below. Give it the
   affected strings, UI context, relevant guidelines, and explicit file ownership.
-- For a large refactor or a change to application logic, replace Sol with
-  **GPT-6 Astra** (`gpt-6-astra`) for the lead and logic-review roles. This
-  includes changes to business rules, validation, state transitions, persistence,
-  or UI-to-command behavior. Terra and Luna retain their bounded roles.
-- **Astra requires the user's explicit permission for the current task.**
-  Recognizing an escalation condition is not permission to launch Astra. First
-  explain the affected scope and why Astra is required, then obtain permission
-  before the refactor or logic work begins. Do not silently continue that work
-  on Sol or substitute another model. Permission to edit these rules does not
-  authorize future Astra runs.
 - Select subagent models explicitly. With the current `spawn_agent` interface,
   use `fork_turns="none"` when setting `model` or `reasoning_effort`, and supply
   a self-contained task. If a required model is unavailable, disclose the blocker
@@ -241,6 +233,7 @@ THRUFLOW_DISABLE_CLOUDKIT=1 xcodebuild test \
   -scheme ThruFlow \
   -destination 'platform=macOS' \
   -only-testing:ThruFlowTests \
+  -skip-testing:ThruFlowTests/ScreenshotReleaseFixtureTests \
   -parallel-testing-enabled NO \
   -maximum-parallel-testing-workers 1 \
   -derivedDataPath DerivedData/Tests \
@@ -250,6 +243,7 @@ THRUFLOW_DISABLE_CLOUDKIT=1 xcodebuild test \
 
 For a focused run, replace the test selector with
 `-only-testing:ThruFlowTests/<SuiteName>`.
+For screenshot fixture checks, follow [Release](docs/RELEASE.md#automated-checks).
 Run macOS unit and UI tests sequentially with the parallel-testing flags above.
 Unit tests use Swift Testing; UI tests use XCTest.
 

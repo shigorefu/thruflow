@@ -268,6 +268,7 @@ final class ActiveFlowStore: ObservableObject {
         guard pendingTaskSwitch == nil else { return false }
         if let session = activeSession, let oldTodo = session.todo,
            canSwitchActiveTask, !isAwaitingBreakMemo,
+           shouldRequestTaskSwitchMemo(session: session, now: now),
            oldTodo.id != todo?.id || session.area?.id != area.id {
             pendingTaskSwitch = FlowTaskSwitchRequest(
                 sessionID: session.id, todo: oldTodo, area: area,
@@ -290,6 +291,17 @@ final class ActiveFlowStore: ObservableObject {
             modelContext.insert(selectedTask)
         }
         return selectContext(area: area, todo: selectedTask, modelContext: modelContext, now: now)
+    }
+
+    private func shouldRequestTaskSwitchMemo(session: FlowSession, now: Date) -> Bool {
+        guard let state = timerState,
+              let segment = session.resolvedSegments.last(where: { $0.endedAt == nil }) else {
+            return true
+        }
+        return !contextSwitchPolicy.shouldTransferCurrentSegment(
+            totalFocusSeconds: engine.actualFocusDuration(for: state, now: now),
+            segmentStartFocusSeconds: segment.startFocusSeconds
+        )
     }
 
     private var canSwitchActiveTask: Bool {

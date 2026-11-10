@@ -15,6 +15,9 @@ Area editor; Areas without Projects retain the simple layout. The Project editor
 follows the Area editor design and optionally configures one Habit. It does not
 create ordinary Tasks or expose the old Project memo field.
 
+On Mac, Save validates the current Habit goal text, including an active edit.
+Invalid goal text keeps the editor open with the goal validation message.
+
 ## Tasks and quick capture
 
 Create ordinary Tasks in Tasks or Flow. Expanded Tasks has a persistent input
@@ -41,10 +44,14 @@ Search covers the Task database rather than just the selected date. Compact
 period strips use native snapping; dragging does not mutate dates until the
 selection settles. Task moves still obey Habit scheduling rules.
 
+On Mac, the Task editor places classification and scheduling above the notes and
+tags. The sheet keeps Save and Cancel accessible while its content scrolls.
+
 ## Flow player
 
 The dashboard combines the stream, today's timeline, Tasks, the player and a
-compact Statistics carousel. Desktop context menus reuse Task actions; Task and
+compact Statistics carousel. Mac Task context menus show Start Focus first,
+then Edit and Move when available, with Delete in its own final group. Task and
 Habit headings navigate to their corresponding Tasks groups. On mobile, the
 player places its dial beside the controls, including expanded Duo.
 
@@ -53,11 +60,14 @@ with a Project shows Area/Project context. Earlier focus ring colors remain when
 context changes; pauses add no colored time. The planned-end setting applies to
 focus only; rest displays elapsed time on the dashboard timeline.
 
-Finishing focus, starting rest or switching Tasks opens a form with Task name,
-eligible Project and result memo. Switching waits for submission; the current
+Finishing focus and starting rest open a form with Task name, eligible Project
+and result memo. Switching Tasks opens the same form only after at least 60
+focused seconds in the current segment. Switching waits for submission; the current
 Task keeps receiving elapsed time while the form is open. The new Task begins
 receiving time only after the switch. See [Decisions](DECISIONS.md) for the
-accepted memo-before-switch contract.
+accepted memo-before-switch contract. A shorter segment switches immediately
+without a form, transferring its focused time to the selected Task. Pauses do
+not count toward this threshold.
 
 Focus does not automatically stop or start rest. Five-minute adjustments preserve
 elapsed time and at least one remaining minute. The rest ring is neutral and
@@ -84,16 +94,21 @@ Totals, trends, distributions and calendar indicators use the same filters.
 Distribution supports Tasks, Areas and Projects. Selecting a Task shows daily
 minute bars; selecting an Area or Project shows Task/time bars. A day cell opens
 a summary with a History action. CSV export offers its own configurable scope.
-Habit completion includes partial progress, with overall and per-Habit values.
+On Mac, the overview spans the report width. Below it, Habit completion sits
+to the left of focused-time distribution when space permits. In narrow windows,
+Habit completion appears above the distribution. Trend and Dots follow.
+
+Habit completion shows overall and per-Habit values. Fully met goals count
+immediately. Partial and zero progress count after the configured day ends.
 
 Mac has a persistent calendar column; mobile uses native sheets and a vertical
 report. Widgets retain their separate compact snapshots.
 
 ## Connectors and Settings
 
-Each provider has a Beta badge; the Connectors navigation item does not.
+Provider switches pause or resume synchronization after setup.
 After connection, mapping rows pair local Areas with provider lists/projects.
-Toggl explains API credentials and Keychain access before opening setup.
+Toggl explains Keychain access in setup and shows failures in red below its name.
 See [Connectors](CONNECTORS.md) for authentication and synchronization behavior.
 
 Settings owns appearance, language, calendar/day-boundary preferences, timeline

@@ -88,12 +88,36 @@ struct HabitCompletionTests {
                                             customStartDate: day(8), customEndDate: day(9))
         let todos = [previous, current, future, manual, deleted, connector]
         let result = summary(todos, filter: filter, now: day(9, hour: 1), boundary: AppDayBoundary(hour: 2))
-        #expect(result.occurrenceCount == 1)
-        #expect(result.rate == 0)
+        #expect(result.occurrenceCount == 0)
+        #expect(result.rate == nil)
+        let afterBoundary = summary(todos, filter: filter, now: day(9, hour: 2), boundary: AppDayBoundary(hour: 2))
+        #expect(afterBoundary.occurrenceCount == 1)
+        #expect(afterBoundary.rate == 0)
         let empty = summary([future, manual, deleted, connector], filter: filter,
                             now: day(9, hour: 1), boundary: AppDayBoundary(hour: 2))
         #expect(empty.rate == nil)
         #expect(empty.areas.isEmpty)
+    }
+
+    @Test func todayCountsOnlyFullGoalsUntilConfiguredDayBoundary() {
+        let area = Area(name: "Exercise", type: .habit)
+        let complete = Todo(title: "", area: area, scheduledDate: day(8))
+        complete.setCompleted(true, now: day(8, hour: 3))
+        let partial = Todo(title: "", area: Area(name: "Study", type: .habit),
+                           measurement: .minutes, plannedAmount: 20,
+                           focusDurationSeconds: 600, scheduledDate: day(8))
+        let zero = Todo(title: "", area: Area(name: "Read", type: .habit), scheduledDate: day(8))
+        let boundary = AppDayBoundary(hour: 2)
+
+        let open = summary([complete, partial, zero], now: day(9, hour: 1), boundary: boundary)
+        #expect(open.occurrenceCount == 1)
+        #expect(open.rate == 1)
+        #expect(open.areas.map(\.id) == ["area:\(area.id)"])
+
+        let closed = summary([complete, partial, zero], now: day(9, hour: 2), boundary: boundary)
+        #expect(closed.occurrenceCount == 3)
+        #expect(closed.rate == 0.5)
+        #expect(closed.areas.first { $0.name == "Study" }?.rate == 0.5)
     }
 
     @Test func pausedOrArchivedUnstartedOccurrencesAreExcludedButHistoryRemains() {
@@ -119,7 +143,7 @@ struct HabitCompletionTests {
                            focusDurationSeconds: 20 * 60, scheduledDate: day(9))
         // At 01:00 with a 02:00 boundary, the archive belongs to September 8.
         area.archivedAt = day(9, hour: 1)
-        let result = summary([past, archiveDay, partial], boundary: AppDayBoundary(hour: 2))
+        let result = summary([past, archiveDay, partial], now: day(10, hour: 2), boundary: AppDayBoundary(hour: 2))
         #expect(result.occurrenceCount == 2)
         #expect(result.rate == 0.25)
     }

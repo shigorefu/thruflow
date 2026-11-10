@@ -16,6 +16,10 @@ struct MacTaskContextMenu: View {
     let onError: (String) -> Void
 
     var body: some View {
+        Button(String(localized: "Flowを開始"), systemImage: "play.fill") {
+            activeFlowStore.configure(area: todo.area, todo: todo)
+        }
+        Divider()
         Button(String(localized: "編集"), systemImage: "pencil", action: onEdit)
         if !todo.isCompleted {
             if todo.taskType == .habit {
@@ -35,10 +39,6 @@ struct MacTaskContextMenu: View {
                     Button(String(localized: "日付なし")) { move(to: nil) }
                 }
             }
-        }
-        Divider()
-        Button(String(localized: "Flowを開始"), systemImage: "play.fill") {
-            activeFlowStore.configure(area: todo.area, todo: todo)
         }
         Divider()
         Button(String(localized: "削除"), systemImage: "trash", role: .destructive) {

@@ -59,12 +59,9 @@ struct ConnectorProviderRow: View {
         HStack(alignment: .center, spacing: 12) {
             ConnectorProviderLogo(provider: provider)
             VStack(alignment: .leading, spacing: 4) {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(provider.connectorTitle)
-                        .font(.headline)
-                        .fixedSize(horizontal: false, vertical: true)
-                    ConnectorBetaBadge()
-                }
+                Text(provider.connectorTitle)
+                    .font(.headline)
+                    .fixedSize(horizontal: false, vertical: true)
                 if connection != nil {
                     Label(String(localized: "接続済み"), systemImage: "checkmark.circle.fill")
                         .font(.caption)
@@ -75,6 +72,26 @@ struct ConnectorProviderRow: View {
         }
         .padding(.vertical, 6)
         .accessibilityElement(children: .combine)
+    }
+}
+
+struct ConnectorActivationToggle: View {
+    @EnvironmentObject private var connectors: ConnectorStore
+    let provider: ConnectorProviderID
+
+    var body: some View {
+        Toggle(isOn: Binding(
+            get: { connectors.connection(for: provider)?.isEnabled == true },
+            set: { enabled in
+                do { try connectors.setEnabled(enabled, for: provider) }
+                catch { connectors.errorMessage = error.localizedDescription }
+            }
+        )) {
+            Text(provider.connectorTitle)
+        }
+        .toggleStyle(.switch)
+        .disabled(connectors.connection(for: provider) == nil || connectors.busyProvider != nil)
+        .accessibilityIdentifier("connectors.enabled.\(provider.rawValue)")
     }
 }
 
@@ -131,6 +148,9 @@ struct ConnectorSetupSections: View {
                     }
 
 
+                if connection != nil {
+                    ConnectorActivationToggle(provider: provider)
+                }
                 if connection == nil {
                     authorization
                 } else if provider == .todoist {
@@ -290,7 +310,7 @@ struct ConnectorSetupSections: View {
                 )
             }
             .buttonStyle(.borderedProminent)
-            .disabled(isBusy || !hasValidSelection)
+            .disabled(isBusy || !hasValidSelection || !connection.isEnabled)
             .disabled(sourceAreaIDs.isEmpty)
             .accessibilityIdentifier("connectors.import")
 

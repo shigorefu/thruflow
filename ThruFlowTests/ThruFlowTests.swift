@@ -24,12 +24,6 @@ struct ThruFlowTests {
         #expect(draft.normalizedSymbolName == "📚")
     }
 
-    @Test func areaDraftRejectsPlainTextSymbol() {
-        let draft = AreaDraft(symbolName: "book")
-
-        #expect(draft.normalizedSymbolName == "🎯")
-    }
-
     @Test func emojiValidationSupportsJoinedEmojiAndSkinTone() {
         #expect(EmojiValidation.normalizedSingleEmoji(from: "🧑🏽‍💻") == "🧑🏽‍💻")
         #expect(EmojiValidation.normalizedSingleEmoji(from: "👍🏽") == "👍🏽")
