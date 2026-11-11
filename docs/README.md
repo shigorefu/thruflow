@@ -1,8 +1,8 @@
 # Documentation
 
-Documentation describes the 1.4.0 implementation. Both 1.4.0 (14) builds were
-submitted to App Review on 2026-10-29; publication is not yet confirmed.
-See [Release](RELEASE.md) for evidence and outstanding device checks.
+Documentation describes the 1.4.1 implementation. The maintainer confirmed
+App Store publication on 2026-11-12. See [Release](RELEASE.md) for verification
+and the [Changelog](../CHANGELOG.md#141---2026-11-12) for changes.
 
 The root [English](../README.md) and [Japanese](../README.ja.md) READMEs are
 public introductions. All other documentation is maintained in English.

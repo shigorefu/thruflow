@@ -271,9 +271,8 @@ struct FlowDashboardView: View {
                     }
 
                     HStack(alignment: .top, spacing: Self.panelSpacing) {
-                        taskColumns
-                            .frame(width: leftColumnWidth)
-                            .frame(height: lowerPanelHeight)
+                        taskColumns(scrollsRows: true)
+                            .frame(width: leftColumnWidth, height: lowerPanelHeight, alignment: .top)
                         statisticsPanel(snapshot: snapshot)
                             .frame(
                                 width: Self.widePlayerWidth,
@@ -291,7 +290,7 @@ struct FlowDashboardView: View {
                     flowStage(snapshot: snapshot)
                         .frame(height: 340)
 
-                    taskColumns
+                    taskColumns()
                     statisticsPanel(snapshot: snapshot)
                         .frame(height: 340)
                 }
@@ -665,12 +664,13 @@ struct FlowDashboardView: View {
         [range.start, range.end] + (activeTimerEndAt.map { [$0] } ?? [])
     }
 
-    private var taskColumns: some View {
+    private func taskColumns(scrollsRows: Bool = false) -> some View {
         HStack(alignment: .top, spacing: 14) {
             DashboardTodoColumn(
                 title: String(localized: "タスク"),
                 systemImage: "checklist",
                 todos: standardTodos,
+                scrollsRows: scrollsRows,
                 showsPriority: true,
                 progressText: progressText,
                 onToggle: toggleTodo,
@@ -682,6 +682,7 @@ struct FlowDashboardView: View {
                 title: String(localized: "習慣一覧"),
                 systemImage: "repeat",
                 todos: habitTodos,
+                scrollsRows: scrollsRows,
                 progressText: progressText,
                 onToggle: toggleTodo,
                 onOpen: { editingTodo = $0 },
@@ -693,6 +694,7 @@ struct FlowDashboardView: View {
                     title: String(localized: "ナイス"),
                     systemImage: "sparkles",
                     todos: niceTodos,
+                    scrollsRows: scrollsRows,
                     progressText: progressText,
                     onToggle: toggleTodo,
                     onOpen: { editingTodo = $0 }
@@ -724,23 +726,27 @@ struct FlowDashboardView: View {
                 }
             }
             .buttonStyle(.plain)
+            .frame(minHeight: 22)
 
             Text(statisticsPage.title)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
 
-            Group {
-                switch statisticsPage {
-                case .distribution:
-                    statisticsDistributionPage(snapshot: snapshot)
-                case .trend:
-                    statisticsTrendPage(snapshot: snapshot)
-                case .achievement:
-                    statisticsAchievementPage
+            ScrollView {
+                Group {
+                    switch statisticsPage {
+                    case .distribution:
+                        statisticsDistributionPage(snapshot: snapshot)
+                    case .trend:
+                        statisticsTrendPage(snapshot: snapshot)
+                    case .achievement:
+                        statisticsAchievementPage
+                    }
                 }
+                .id(statisticsPage)
+                .transition(.opacity.combined(with: .scale(scale: 0.98)))
+                .frame(maxWidth: .infinity, alignment: .topLeading)
             }
-            .id(statisticsPage)
-            .transition(.opacity.combined(with: .scale(scale: 0.98)))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(16)
@@ -1620,6 +1626,7 @@ private struct DashboardTodoColumn: View {
     let title: String
     let systemImage: String
     let todos: [Todo]
+    let scrollsRows: Bool
     var showsPriority = false
     let progressText: (Todo) -> String
     let onToggle: (Todo) -> Void
@@ -1650,27 +1657,15 @@ private struct DashboardTodoColumn: View {
                     addControl
                 }
             }
+            .frame(minHeight: 22)
 
-            if todos.isEmpty {
-                Text(String(localized: "今日の項目はありません"))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, minHeight: 70, alignment: .center)
-            } else {
-                VStack(spacing: 0) {
-                    ForEach(todos.prefix(6)) { todo in
-                        todoRow(todo)
-                            .contextMenu {
-                                MacTaskContextMenu(todo: todo, onEdit: { onOpen(todo) }, onError: { moveError = $0 })
-                            }
-
-                        if todo.id != todos.prefix(6).last?.id {
-                            Divider().opacity(0.5)
-                        }
-                    }
+            if scrollsRows && !todos.isEmpty {
+                ScrollView {
+                    todoList
                 }
+            } else {
+                todoList
             }
-
         }
         .alert(String(localized: "移動できません"), isPresented: Binding(
             get: { moveError != nil }, set: { if !$0 { moveError = nil } }
@@ -1686,6 +1681,29 @@ private struct DashboardTodoColumn: View {
         .overlay {
             RoundedRectangle(cornerRadius: 8)
                 .strokeBorder(Color.primary.opacity(0.08))
+        }
+    }
+
+    @ViewBuilder
+    private var todoList: some View {
+        if todos.isEmpty {
+            Text(String(localized: "今日の項目はありません"))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, minHeight: 70, alignment: .center)
+        } else {
+            VStack(spacing: 0) {
+                ForEach(todos.prefix(6)) { todo in
+                    todoRow(todo)
+                        .contextMenu {
+                            MacTaskContextMenu(todo: todo, onEdit: { onOpen(todo) }, onError: { moveError = $0 })
+                        }
+
+                    if todo.id != todos.prefix(6).last?.id {
+                        Divider().opacity(0.5)
+                    }
+                }
+            }
         }
     }
 

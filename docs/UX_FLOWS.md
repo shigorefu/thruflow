@@ -39,6 +39,7 @@ then available Task attributes separated by `・`. Omit the third line when
 there are no attributes. Checkbox Tasks have no redundant
 Completed/Incomplete subtitle; numeric progress remains visible.
 
+Task rows show the Area name or Area/Project context alongside the Area emoji.
 Tasks offers day, week and month views, overdue work and an undated inspector.
 Search covers the Task database rather than just the selected date. Compact
 period strips use native snapping; dragging does not mutate dates until the
@@ -52,6 +53,9 @@ Classification and progress, then scheduling and reminders, follow in separate
 sections. Save and Cancel stay in the sheet toolbar.
 
 ## Flow player
+
+On wide Mac windows, the Flow dashboard aligns Tasks, Habits, and Statistics
+in one row. Card content scrolls when space is limited.
 
 The dashboard combines the stream, today's timeline, Tasks, the player and a
 compact Statistics carousel. Mac Task context menus show Start Focus first,
