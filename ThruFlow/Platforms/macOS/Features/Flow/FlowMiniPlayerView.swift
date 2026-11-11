@@ -1307,34 +1307,17 @@ struct FlowTaskPickerView: View {
     }
 
     private var areaTab: some View {
-        LazyVGrid(
-            columns: [GridItem(.adaptive(minimum: 120, maximum: 170), spacing: 10)],
-            alignment: .leading,
-            spacing: 10
-        ) {
-            areaGridItem(
-                iconText: otherArea?.symbolName ?? DefaultAreas.taskInboxSymbol,
-                title: otherArea?.name ?? String(localized: "その他"),
-                color: .secondary,
-                isSelected: selectedTodoID == nil && (selectedAreaID == otherArea?.id || selectedAreaID == nil)
-            ) {
-                onSelect(otherArea, nil)
-                dismiss()
-            }
-
-            ForEach(userAreas) { area in
-                areaGridItem(
-                    iconText: area.symbolName,
-                    title: area.name,
-                    color: Color(hex: area.colorHex),
-                    isSelected: selectedTodoID == nil && selectedAreaID == area.id
-                ) {
-                    onSelect(area, nil)
-                    dismiss()
-                }
-            }
+        MacAreaPickerGrid(
+            areas: userAreas,
+            defaultArea: otherArea,
+            defaultTitle: String(localized: "その他"),
+            defaultSymbol: DefaultAreas.taskInboxSymbol,
+            selectedAreaID: selectedAreaID,
+            showsSelection: selectedTodoID == nil
+        ) { area in
+            onSelect(area, nil)
+            dismiss()
         }
-        .padding(.top, 2)
     }
 
     private func taskRow(_ todo: Todo) -> some View {
@@ -1350,48 +1333,6 @@ struct FlowTaskPickerView: View {
                 isSelected: selectedTodoID == todo.id,
                 isPlaceholder: todo.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             )
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func areaGridItem(
-        iconText: String,
-        title: String,
-        color: Color,
-        isSelected: Bool,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            VStack(spacing: 8) {
-                Text(iconText)
-                    .font(.system(size: 28))
-                    .frame(width: 46, height: 46)
-                    .background(color.opacity(0.14))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-
-                Text(title)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.primary)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
-                    .frame(height: 32, alignment: .top)
-            }
-            .frame(maxWidth: .infinity, minHeight: 92)
-            .padding(8)
-            .background(isSelected ? color.opacity(0.14) : Color.primary.opacity(0.05))
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-            .overlay(alignment: .topTrailing) {
-                if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.caption)
-                        .foregroundStyle(color)
-                        .padding(7)
-                }
-            }
-            .overlay {
-                RoundedRectangle(cornerRadius: 8)
-                    .strokeBorder(isSelected ? color.opacity(0.65) : Color.clear, lineWidth: 1)
-            }
         }
         .buttonStyle(.plain)
     }
@@ -1479,6 +1420,87 @@ struct FlowTaskPickerView: View {
             .font(.subheadline)
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, minHeight: 240, alignment: .center)
+    }
+}
+
+struct MacAreaPickerGrid: View {
+    let areas: [Area]
+    let defaultArea: Area?
+    let defaultTitle: String
+    let defaultSymbol: String
+    let selectedAreaID: UUID?
+    var showsSelection = true
+    let onSelect: (Area?) -> Void
+
+    var body: some View {
+        LazyVGrid(
+            columns: [GridItem(.adaptive(minimum: 120, maximum: 170), spacing: 10)],
+            alignment: .leading,
+            spacing: 10
+        ) {
+            areaGridItem(
+                iconText: defaultArea?.symbolName ?? defaultSymbol,
+                title: defaultArea?.name ?? defaultTitle,
+                color: .secondary,
+                isSelected: showsSelection && (selectedAreaID == defaultArea?.id || selectedAreaID == nil)
+            ) {
+                onSelect(defaultArea)
+            }
+
+            ForEach(areas) { area in
+                areaGridItem(
+                    iconText: area.symbolName,
+                    title: area.name,
+                    color: Color(hex: area.colorHex),
+                    isSelected: showsSelection && selectedAreaID == area.id
+                ) {
+                    onSelect(area)
+                }
+            }
+        }
+        .padding(.top, 2)
+    }
+
+    private func areaGridItem(
+        iconText: String,
+        title: String,
+        color: Color,
+        isSelected: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            VStack(spacing: 8) {
+                Text(iconText)
+                    .font(.system(size: 28))
+                    .frame(width: 46, height: 46)
+                    .background(color.opacity(0.14))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                Text(title)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .frame(height: 32, alignment: .top)
+            }
+            .frame(maxWidth: .infinity, minHeight: 92)
+            .padding(8)
+            .background(isSelected ? color.opacity(0.14) : Color.primary.opacity(0.05))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .overlay(alignment: .topTrailing) {
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(color)
+                        .padding(7)
+                }
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: 8)
+                    .strokeBorder(isSelected ? color.opacity(0.65) : Color.clear, lineWidth: 1)
+            }
+        }
+        .buttonStyle(.plain)
     }
 }
 

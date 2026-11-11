@@ -44,8 +44,12 @@ Search covers the Task database rather than just the selected date. Compact
 period strips use native snapping; dragging does not mutate dates until the
 selection settles. Task moves still obey Habit scheduling rules.
 
-On Mac, the Task editor places classification and scheduling above the notes and
-tags. The sheet keeps Save and Cancel accessible while its content scrolls.
+On Mac, the Task editor opens in a native sheet. The title and Area icon stay
+above the scrolling grouped form. When the Task allows changing Area, select it
+in the form row or click the icon to open the same Area grid used by the Flow
+picker. The first section also contains notes, tags, and any source link.
+Classification and progress, then scheduling and reminders, follow in separate
+sections. Save and Cancel stay in the sheet toolbar.
 
 ## Flow player
 

@@ -35,6 +35,7 @@ struct TodoFormView: View {
     @State private var draft: TodoDraft
     @State private var hashtagsText: String
     @State private var selectedAreaID: UUID?
+    @State private var showsAreaPicker = false
     @State private var usesScheduledDate: Bool
     @State private var usesDeadline: Bool
     @State private var validationErrors: [TodoValidationError] = []
@@ -42,7 +43,6 @@ struct TodoFormView: View {
     @FocusState private var isTitleFocused: Bool
 
     private let editingService = TaskEditingService()
-    private let controlColumnWidth: CGFloat = 290
 
     private var activeAreas: [Area] {
         areas.filter { !$0.isArchived }
@@ -103,22 +103,28 @@ struct TodoFormView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
-                    taskTitleRow
-                    if let todo = editedTodo, todo.externalTaskLinkRawValue != nil {
-                        ExternalTaskSourceLink(todo: todo)
+            VStack(spacing: 0) {
+                taskTitleRow
+                    .padding(.horizontal, 20)
+                    .padding(.top, 16)
+
+                Form {
+                    Section {
+                        areaControl
+                        TextField(String(localized: "メモ"), text: $draft.notes, axis: .vertical)
+                            .lineLimit(2...5)
+                        TextField(String(localized: "ハッシュタグ"), text: $hashtagsText)
+                        if let todo = editedTodo, todo.externalTaskLinkRawValue != nil {
+                            ExternalTaskSourceLink(todo: todo)
+                        }
                     }
-                    classificationCard
-                    scheduleCard
-                    notesCard
-                    validationCard
+
+                    classificationSection
+                    scheduleSection
+                    validationSection
                 }
-                .padding(16)
-                .frame(maxWidth: 640)
-                .frame(maxWidth: .infinity)
+                .formStyle(.grouped)
             }
-            .background(Color(nsColor: .windowBackgroundColor))
             .navigationTitle(mode.title)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -156,101 +162,153 @@ struct TodoFormView: View {
     }
 
     private var taskTitleRow: some View {
-        HStack(spacing: 12) {
-            Text(selectedArea?.symbolName ?? "📝")
-                .font(.system(size: 24))
-                .frame(width: 40, height: 40)
-                .background(editorTint.opacity(0.14), in: RoundedRectangle(cornerRadius: 8))
-                .accessibilityHidden(true)
+        HStack(spacing: 14) {
+            areaBadgeControl
 
             TextField(String(localized: "タスク名"), text: $draft.title)
-                .font(.title3.weight(.semibold))
-                .textFieldStyle(.roundedBorder)
+                .font(.title2.weight(.semibold))
+                .textFieldStyle(.plain)
                 .focused($isTitleFocused)
                 .accessibilityLabel(String(localized: "タスク名"))
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 2)
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.secondary.opacity(0.07), in: RoundedRectangle(cornerRadius: 8))
     }
 
-    private var notesCard: some View {
-        TodoEditorCard {
-            VStack(alignment: .leading, spacing: 7) {
-                Label(String(localized: "メモ"), systemImage: "note.text")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-
-                TextField(String(localized: "メモ"), text: $draft.notes, axis: .vertical)
-                    .textFieldStyle(.roundedBorder)
-                    .lineLimit(2...5)
+    @ViewBuilder
+    private var areaBadgeControl: some View {
+        if fixedArea != nil || (isHabitTodoEdit && editedTodo?.area != nil) {
+            areaBadge.accessibilityHidden(true)
+        } else {
+            Button {
+                showsAreaPicker = true
+            } label: {
+                areaBadge
             }
-
-            VStack(alignment: .leading, spacing: 7) {
-                Label(String(localized: "ハッシュタグ"), systemImage: "number")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-
-                TextField(String(localized: "ハッシュタグ"), text: $hashtagsText)
-                    .textFieldStyle(.roundedBorder)
+            .buttonStyle(.plain)
+            .help(selectedArea?.name ?? String(localized: "未選択"))
+            .accessibilityLabel(String(localized: "分野"))
+            .accessibilityValue(selectedArea?.name ?? String(localized: "未選択"))
+            .popover(isPresented: $showsAreaPicker, arrowEdge: .bottom) {
+                areaPickerPopover
             }
         }
     }
 
-    private var classificationCard: some View {
-        TodoEditorCard(title: String(localized: "基本")) {
-            editorRow(
-                title: String(localized: "分野"),
-                systemImage: ProductSymbol.area
-            ) {
-                areaControl
+    @ViewBuilder
+    private var areaControl: some View {
+        if let fixedArea {
+            LabeledContent(String(localized: "分野"), value: "\(fixedArea.symbolName) \(fixedArea.name)")
+        } else if isHabitTodoEdit, let area = editedTodo?.area {
+            LabeledContent(
+                String(localized: "分野"),
+                value: "\(area.symbolName) \(TodoDisplay.flowContextName(for: editedTodo, area: area))"
+            )
+        } else {
+            Picker(String(localized: "分野"), selection: selectedAreaBinding) {
+                Text(String(localized: "未選択")).tag(UUID?.none)
+
+                ForEach(visibleAreas) { area in
+                    Text("\(area.symbolName) \(area.name)").tag(Optional(area.id))
+                }
+            }
+        }
+    }
+
+    private var areaPickerPopover: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text(String(localized: "分野"))
+                    .font(.headline.weight(.semibold))
+
+                Spacer(minLength: 0)
+
+                Button {
+                    showsAreaPicker = false
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.caption.weight(.bold))
+                        .frame(width: 26, height: 26)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                .accessibilityLabel(String(localized: "閉じる"))
             }
 
-            if !isHabitTodoEdit {
+            ScrollView {
+                MacAreaPickerGrid(
+                    areas: visibleAreas,
+                    defaultArea: nil,
+                    defaultTitle: String(localized: "未選択"),
+                    defaultSymbol: "📝",
+                    selectedAreaID: selectedAreaID
+                ) { area in
+                    selectedAreaBinding.wrappedValue = area?.id
+                    showsAreaPicker = false
+                }
+            }
+            .scrollIndicators(.hidden)
+        }
+        .padding(14)
+        .frame(width: 420, height: 340)
+        .background(.bar)
+    }
+
+    private var areaBadge: some View {
+        Text(selectedArea?.symbolName ?? "📝")
+            .font(.system(size: 30))
+            .frame(width: 52, height: 52)
+            .background(editorTint.opacity(0.14), in: RoundedRectangle(cornerRadius: 8))
+            .contentShape(Rectangle())
+    }
+
+    private var classificationSection: some View {
+        Section(String(localized: "基本")) {
+            if isHabitTodoEdit {
+                LabeledContent(String(localized: "種類"), value: draft.measurement.displayName)
+            } else {
                 TaskProjectPicker(
                     area: selectedArea,
                     selection: $draft.project,
                     currentProject: editedTodo?.project,
-                    showsDivider: true,
                     animatesVisibility: true
                 )
-            }
 
-            Divider()
-
-            if isHabitTodoEdit {
-                readOnlyMeasurementRow
-            } else {
-                editorRow(title: String(localized: "種類"), systemImage: "square.stack.3d.up") {
-                    Picker(String(localized: "種類"), selection: $draft.measurement) {
-                        ForEach(TodoMeasurement.allCases) { measurement in
-                            Label(measurement.displayName, systemImage: measurement.editorSymbolName)
-                                .tag(measurement)
-                        }
+                Picker(String(localized: "種類"), selection: $draft.measurement) {
+                    ForEach(TodoMeasurement.allCases) { measurement in
+                        Label(measurement.displayName, systemImage: measurement.editorSymbolName)
+                            .tag(measurement)
                     }
-                    .pickerStyle(.segmented)
-                    .labelsHidden()
-                    .accessibilityLabel(String(localized: "種類"))
                 }
+                .pickerStyle(.segmented)
             }
 
             if draft.measurement != .checkbox {
-                Group {
-                    Divider()
-                    progressControls
-                }
-                .transition(.opacity)
+                progressRows
             }
 
             if !isHabitTodoEdit {
-                Divider()
-                priorityControls
+                Picker(String(localized: "優先度"), selection: $draft.priority) {
+                    ForEach(TodoPriority.allCases) { priority in
+                        Text(priority.displayName).tag(priority)
+                    }
+                }
+                .pickerStyle(.segmented)
+
+                if draft.priority == .low {
+                    Toggle(String(localized: "余裕があれば"), isOn: $draft.isRoomIfPossible)
+                        .toggleStyle(.switch)
+                        .transition(.opacity)
+                }
             }
         }
         .animation(fieldVisibilityAnimation, value: draft.measurement != .checkbox)
+        .animation(fieldVisibilityAnimation, value: draft.priority == .low)
     }
 
-    private var scheduleCard: some View {
-        TodoEditorCard(title: isHabitTodoEdit ? String(localized: "時刻") : String(localized: "日付")) {
+    private var scheduleSection: some View {
+        Section(isHabitTodoEdit ? String(localized: "時刻") : String(localized: "日付")) {
             if !isHabitTodoEdit {
                 dateControlRow(
                     title: String(localized: "予定日"),
@@ -258,8 +316,6 @@ struct TodoFormView: View {
                     isEnabled: $usesScheduledDate,
                     selection: scheduledDateBinding
                 )
-
-                Divider()
             }
 
             TaskTimingControls(
@@ -271,8 +327,6 @@ struct TodoFormView: View {
             )
 
             if !isHabitTodoEdit {
-                Divider()
-
                 dateControlRow(
                     title: String(localized: "期限"),
                     systemImage: "calendar.badge.exclamationmark",
@@ -284,9 +338,9 @@ struct TodoFormView: View {
     }
 
     @ViewBuilder
-    private var validationCard: some View {
+    private var validationSection: some View {
         if !validationErrors.isEmpty || saveErrorMessage != nil {
-            TodoEditorCard {
+            Section {
                 ForEach(validationErrors, id: \.self) { error in
                     Label(error.localizedDescription, systemImage: "exclamationmark.triangle.fill")
                         .foregroundStyle(.red)
@@ -300,92 +354,20 @@ struct TodoFormView: View {
     }
 
     @ViewBuilder
-    private var areaControl: some View {
-        if let fixedArea {
-            readOnlyValue(
-                "\(fixedArea.symbolName) \(fixedArea.name)",
-                tint: Color(hex: fixedArea.colorHex)
+    private var progressRows: some View {
+        if isHabitTodoEdit {
+            LabeledContent(
+                String(localized: "目標"),
+                value: "\((draft.plannedAmount ?? 1).formatted()) \(measurementUnit)"
             )
-        } else if isHabitTodoEdit, let area = editedTodo?.area {
-            readOnlyValue(
-                "\(area.symbolName) \(TodoDisplay.flowContextName(for: editedTodo, area: area))",
-                tint: Color(hex: area.colorHex)
-            )
+            .transition(.opacity)
         } else {
-            Picker(String(localized: "分野"), selection: selectedAreaBinding) {
-                Text(String(localized: "未選択")).tag(UUID?.none)
-
-                ForEach(visibleAreas) { area in
-                    Text("\(area.symbolName) \(area.name)")
-                        .tag(Optional(area.id))
-                }
-            }
-            .labelsHidden()
-            .accessibilityLabel(String(localized: "分野"))
+            metricRow(title: String(localized: "目標"), binding: plannedAmountBinding, range: 1...999)
+                .transition(.opacity)
         }
-    }
 
-    private var readOnlyMeasurementRow: some View {
-        editorRow(
-            title: String(localized: "種類"),
-            systemImage: draft.measurement.editorSymbolName
-        ) {
-            readOnlyValue(draft.measurement.displayName, tint: editorTint)
-        }
-    }
-
-    private var progressControls: some View {
-        HStack(alignment: .center, spacing: 28) {
-            if isHabitTodoEdit {
-                metricControl(
-                    title: String(localized: "目標"),
-                    value: draft.plannedAmount ?? 1,
-                    range: 1...999,
-                    isEditable: false,
-                    binding: plannedAmountBinding
-                )
-            } else {
-                metricControl(
-                    title: String(localized: "目標"),
-                    value: draft.plannedAmount ?? 1,
-                    range: 1...999,
-                    isEditable: true,
-                    binding: plannedAmountBinding
-                )
-            }
-
-            metricControl(
-                title: String(localized: "進捗"),
-                value: draft.actualProgress,
-                range: 0...999,
-                isEditable: true,
-                binding: actualProgressBinding
-            )
-
-            Spacer(minLength: 0)
-        }
-    }
-
-    private var priorityControls: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            editorRow(title: String(localized: "優先度"), systemImage: "flag") {
-                Picker(String(localized: "優先度"), selection: $draft.priority) {
-                    ForEach(TodoPriority.allCases) { priority in
-                        Text(priority.displayName).tag(priority)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .accessibilityLabel(String(localized: "優先度"))
-            }
-
-            if draft.priority == .low {
-                Toggle(String(localized: "余裕があれば"), isOn: $draft.isRoomIfPossible)
-                    .toggleStyle(.switch)
-                    .transition(.opacity)
-            }
-        }
-        .animation(fieldVisibilityAnimation, value: draft.priority == .low)
+        metricRow(title: String(localized: "進捗"), binding: actualProgressBinding, range: 0...999)
+            .transition(.opacity)
     }
 
     private var fieldVisibilityAnimation: Animation? {
@@ -393,7 +375,7 @@ struct TodoFormView: View {
     }
 
     private var selectedArea: Area? {
-        fixedArea ?? area(for: selectedAreaID) ?? editedTodo?.area
+        fixedArea ?? area(for: selectedAreaID)
     }
 
     private var editorTint: Color {
@@ -412,28 +394,13 @@ struct TodoFormView: View {
         }
     }
 
-    private func editorRow<Content: View>(
-        title: String,
-        systemImage: String,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        HStack(spacing: 14) {
-            Label(title, systemImage: systemImage)
-                .font(.subheadline.weight(.medium))
-
-            Spacer(minLength: 20)
-            content()
-                .frame(width: controlColumnWidth, alignment: .trailing)
-        }
-    }
-
     private func dateControlRow(
         title: String,
         systemImage: String,
         isEnabled: Binding<Bool>,
         selection: Binding<Date>
     ) -> some View {
-        editorRow(title: title, systemImage: systemImage) {
+        LabeledContent {
             HStack(spacing: 10) {
                 if isEnabled.wrappedValue {
                     DatePicker(title, selection: selection, displayedComponents: .date)
@@ -449,50 +416,27 @@ struct TodoFormView: View {
                     .controlSize(.small)
             }
             .animation(fieldVisibilityAnimation, value: isEnabled.wrappedValue)
+        } label: {
+            Label(title, systemImage: systemImage)
         }
     }
 
-    private func metricControl(
-        title: String,
-        value: Int,
-        range: ClosedRange<Int>,
-        isEditable: Bool,
-        binding: Binding<Int>
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 7) {
-            Text(title)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-
+    private func metricRow(title: String, binding: Binding<Int>, range: ClosedRange<Int>) -> some View {
+        LabeledContent(title) {
             HStack(spacing: 7) {
-                if isEditable {
-                    TextField(title, value: binding, format: .number)
-                        .textFieldStyle(.roundedBorder)
-                        .multilineTextAlignment(.trailing)
-                        .frame(width: 58)
+                TextField(title, value: binding, format: .number)
+                    .labelsHidden()
+                    .multilineTextAlignment(.trailing)
+                    .frame(width: 58)
 
-                    Stepper(title, value: binding, in: range)
-                        .labelsHidden()
-                        .fixedSize()
-                } else {
-                    Text(value.formatted())
-                        .font(.body.monospacedDigit().weight(.semibold))
-                }
+                Stepper(title, value: binding, in: range)
+                    .labelsHidden()
+                    .fixedSize()
 
                 Text(measurementUnit)
                     .foregroundStyle(.secondary)
             }
         }
-    }
-
-    private func readOnlyValue(_ value: String, tint: Color) -> some View {
-        Text(value)
-            .font(.subheadline.weight(.medium))
-            .foregroundStyle(tint)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(tint.opacity(0.10))
-            .clipShape(RoundedRectangle(cornerRadius: 6))
     }
 
     private var selectedAreaBinding: Binding<UUID?> {
@@ -575,33 +519,6 @@ struct TodoFormView: View {
         } catch {
             saveErrorMessage = String(localized: "記録を保存できませんでした。")
         }
-    }
-
-
-}
-
-private struct TodoEditorCard<Content: View>: View {
-    let title: String?
-    private let content: Content
-
-    init(title: String? = nil, @ViewBuilder content: () -> Content) {
-        self.title = title
-        self.content = content()
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 9) {
-            if let title {
-                Text(title)
-                    .font(.headline)
-            }
-
-            content
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.secondary.opacity(0.07))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 }
 
