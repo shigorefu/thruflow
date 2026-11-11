@@ -2477,18 +2477,10 @@ private struct TodoRow: View {
                 titleEditor
 
                 HStack(spacing: 6) {
-                    if let area = todo.area, !DefaultAreas.isTaskInbox(area) {
-                        Text(area.symbolName)
-                            .foregroundStyle(checkboxTint)
-                            .help(area.name)
-                            .accessibilityLabel(area.name)
-                        Text("·")
-                    }
-
-                    if let project = todo.project, !titleIsPlaceholder {
-                        Label(project.name, systemImage: "folder")
-                        Text("·")
-                    }
+                    Text(verbatim: "\(todo.area?.symbolName ?? DefaultAreas.taskInboxSymbol) \(TodoDisplay.flowContextName(for: todo))")
+                        .foregroundStyle(checkboxTint)
+                        .lineLimit(1)
+                    Text("·")
 
                     if let minutes = todo.scheduledTimeMinutes {
                         TaskTimeLabel(minutes: minutes, reminderEnabled: todo.reminderEnabled)

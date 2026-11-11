@@ -1070,10 +1070,8 @@ struct IOSTaskRow: View {
                     .lineLimit(1)
                 } else {
                     HStack(spacing: 10) {
-                        if let project = todo.project,
-                                  !todo.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                            Label(project.name, systemImage: "folder")
-                        }
+                        Text(TodoDisplay.flowContextName(for: todo))
+                            .foregroundStyle(todo.area.map { Color(hex: $0.colorHex) } ?? .secondary)
 
                         HStack(spacing: 5) {
                             Text(todo.priority.displayName)

@@ -327,10 +327,8 @@ private struct TaskBoardCard: View {
                     .lineLimit(3)
 
                 HStack(spacing: 5) {
-                    if let area = todo.area, !DefaultAreas.isTaskInbox(area) {
-                        Text("\(area.symbolName) \(area.name)")
-                            .foregroundStyle(tint)
-                    }
+                    Text(verbatim: "\(todo.area?.symbolName ?? DefaultAreas.taskInboxSymbol) \(TodoDisplay.flowContextName(for: todo))")
+                        .foregroundStyle(tint)
 
                     Spacer(minLength: 0)
 
