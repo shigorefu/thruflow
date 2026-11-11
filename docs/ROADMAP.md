@@ -19,9 +19,9 @@ See [release notes](releases/1.4.0.md) for user-facing changes and
 
 ## Released versions
 
-[Changelog](../CHANGELOG.md) is the canonical release history. Version 1.4.0
-is the latest confirmed published version; earlier release checklists are
-available in Git history rather than repeated here.
+[Changelog](../CHANGELOG.md) is the canonical release history. Version 1.4.1
+(15) is the latest published version, confirmed by the maintainer on
+2026-11-12. Earlier release checklists are available in Git history.
 
 ## Deferred — no committed release date
 
