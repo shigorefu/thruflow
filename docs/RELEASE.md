@@ -2,6 +2,13 @@
 
 This document is the operational checklist for ThruFlow releases. Product scope remains in [`ROADMAP.md`](ROADMAP.md), and CloudKit details remain in [`CLOUDKIT.md`](CLOUDKIT.md).
 
+## Released 1.4.1 build 15
+
+The maintainer confirmed App Store publication on 2026-11-12. The [TestFlight
+workflow](https://github.com/shigorefu/thruflow/actions/runs/42777913607) delivered
+this build from commit `96b7ba6`. See the [Changelog](../CHANGELOG.md#141---2026-11-12)
+and the [CloudKit Production record](CLOUDKIT.md#release-141-build-15-preparation--2026-11-10).
+
 ## Released 1.4.0 build 14
 
 Updated on 2026-10-30 from the merged 1.4.0 development scope. All Debug and
