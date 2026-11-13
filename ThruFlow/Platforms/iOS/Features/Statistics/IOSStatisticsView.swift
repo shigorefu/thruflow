@@ -20,7 +20,7 @@ struct IOSStatisticsView: View {
     @State private var anchorDateDraft = Date.now
     @State private var customStartDraft = Date.now
     @State private var customEndDraft = Date.now
-    @State private var isSearchPresented = false
+    @State private var searchText: String
     @State private var searchDebounceDeadline: ContinuousClock.Instant?
     @State private var trendMode: StatisticsMode = .flow
     @State private var dotsMode: StatisticsMode = .flow
@@ -54,6 +54,7 @@ struct IOSStatisticsView: View {
         self.isVisible = isVisible
         _cache = cache
         _filter = selection
+        _searchText = State(initialValue: selection.wrappedValue.query)
         self.onOpenHistoryDate = onOpenHistoryDate
     }
 
@@ -66,17 +67,6 @@ struct IOSStatisticsView: View {
                 }
                 return $0.name.localizedStandardCompare($1.name) == .orderedAscending
             }
-    }
-
-    private var searchText: Binding<String> {
-        Binding(
-            get: { filter.query },
-            set: { query in
-                guard query != filter.query else { return }
-                searchDebounceDeadline = ContinuousClock().now + .milliseconds(250)
-                filter.query = query
-            }
-        )
     }
 
     private var selectedPeriod: StatisticsPeriod { filter.period }
@@ -137,6 +127,14 @@ struct IOSStatisticsView: View {
     }
 
     var body: some View {
+        if #available(iOS 26.0, *) {
+            statisticsScreen.searchToolbarBehavior(.minimize)
+        } else {
+            statisticsScreen
+        }
+    }
+
+    private var statisticsScreen: some View {
         let request = refreshID
         let report = currentSnapshot
         let visibleReport = stagedReportRequest == request ? nil : report
@@ -161,11 +159,12 @@ struct IOSStatisticsView: View {
         }
         .background(Color.primary.opacity(0.025).ignoresSafeArea())
         .iosCenteredNavigationTitle(String(localized: "統計"))
-        .iosToolbarSearch(
-            text: searchText,
-            isPresented: $isSearchPresented,
-            prompt: String(localized: "検索")
-        )
+        .searchable(text: $searchText, placement: .toolbar, prompt: Text("検索"))
+        .onChange(of: searchText) { _, query in
+            guard query != filter.query else { return }
+            searchDebounceDeadline = ContinuousClock().now + .milliseconds(250)
+            filter.query = query
+        }
         .toolbar { statisticsToolbar }
         .sheet(isPresented: $isAnchorPickerPresented) {
             IOSStatisticsAnchorSheet(
