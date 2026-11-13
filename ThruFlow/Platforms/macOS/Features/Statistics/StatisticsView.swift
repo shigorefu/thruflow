@@ -18,27 +18,21 @@ struct StatisticsView: View {
     @Environment(\.modelContext) private var modelContext
 
     let areas: [Area]
-    @Binding private var cachedSnapshot: StatisticsPeriodSnapshot?
-    let isVisible: Bool
+    @Binding private var cache: StatisticsPresentationCache
+    @Binding private var filter: StatisticsPeriodFilter
     let onSelectHistoryDate: (Date) -> Void
 
-    @State private var selectedPeriod: StatisticsPeriod
     @State private var didScrollToScreenshotDots = false
-    @State private var selectedAreaIDs: Set<UUID> = []
-    @State private var anchorDate = Date.now
-    @State private var customStartDate: Date?
-    @State private var customEndDate: Date?
     @State private var customStartDraft = Date.now
     @State private var customEndDraft = Date.now
     @State private var isCustomRangePresented = false
-    @State private var searchText = ""
     @State private var isSearchPresented = false
     @State private var distributionDimension: StatisticsDistributionDimension = .task
     @State private var trendMode: StatisticsMode = .flow
     @State private var dotsMode: StatisticsMode = .flow
-    @State private var snapshotCache: [StatisticsPeriodFilter: StatisticsPeriodSnapshot] = [:]
-    @State private var snapshotCacheOrder: [StatisticsPeriodFilter] = []
-    @State private var loadingFilter: StatisticsPeriodFilter?
+    @State private var searchDeadline: ContinuousClock.Instant?
+    @State private var failedRequest: StatisticsPeriodRefreshID?
+    @State private var reportReveal = 0
     @State private var persistenceRevision = 0
     @State private var isExportPresented = false
     @State private var exportContent: StatisticsCSVContent = .all
@@ -51,33 +45,21 @@ struct StatisticsView: View {
     @State private var isPreparingExport = false
 
     init(
-        isVisible: Bool = true,
         areas: [Area],
-        cachedSnapshot: Binding<StatisticsPeriodSnapshot?>,
+        cache: Binding<StatisticsPresentationCache>,
+        selection: Binding<StatisticsPeriodFilter>,
         onSelectHistoryDate: @escaping (Date) -> Void = { _ in }
     ) {
-        self.isVisible = isVisible
         self.areas = areas
-        _cachedSnapshot = cachedSnapshot
+        _cache = cache
+        _filter = selection
         self.onSelectHistoryDate = onSelectHistoryDate
-        _selectedPeriod = State(initialValue: ScreenshotMode.isEnabled() ? .month : .week)
     }
 
     private var activeAreas: [Area] {
         areas
             .filter { !$0.isArchived }
             .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
-    }
-
-    private var filter: StatisticsPeriodFilter {
-        StatisticsPeriodFilter(
-            period: selectedPeriod,
-            anchorDate: anchorDate,
-            customStartDate: customStartDate,
-            customEndDate: customEndDate,
-            areaIDs: selectedAreaIDs,
-            query: searchText
-        )
     }
 
     private var exportFilter: StatisticsPeriodFilter {
@@ -95,15 +77,8 @@ struct StatisticsView: View {
         StatisticsExportConfiguration(content: exportContent, filter: exportFilter)
     }
 
-    @State private var cachedCalendar: Calendar?
-    @State private var cachedBoundaryHour: Int?
-
     private var currentSnapshot: StatisticsPeriodSnapshot? {
-        guard cachedCalendar == calendar, cachedBoundaryHour == dayBoundary.hour else { return nil }
-        if let cachedSnapshot, cachedSnapshot.filter == filter {
-            return cachedSnapshot
-        }
-        return snapshotCache[filter]
+        cache.snapshot(for: filter, calendar: calendar, dayBoundary: dayBoundary)
     }
 
     private var periodBounds: StatisticsPeriodBounds {
@@ -113,12 +88,8 @@ struct StatisticsView: View {
         ).bounds(for: filter)
     }
 
-    private var isLoadingCurrentFilter: Bool {
-        loadingFilter == filter
-    }
-
     private var usesCustomRange: Bool {
-        customStartDate != nil && customEndDate != nil
+        filter.usesCustomRange
     }
 
     private var displayedDayCount: Int {
@@ -133,7 +104,7 @@ struct StatisticsView: View {
     }
 
     private var presentationPeriod: StatisticsPeriod {
-        guard usesCustomRange else { return selectedPeriod }
+        guard usesCustomRange else { return filter.period }
         if displayedDayCount <= 7 { return .week }
         if displayedDayCount <= 62 { return .month }
         return .year
@@ -144,21 +115,22 @@ struct StatisticsView: View {
     }
 
     var body: some View {
-        workspace
-            .navigationTitle(isVisible ? String(localized: "統計") : "")
+        let request = refreshID
+        return workspace(failedToLoad: failedRequest == request)
+            .navigationTitle(String(localized: "統計"))
             .toolbar { statisticsToolbar }
             .onReceive(NotificationCenter.default.publisher(for: ModelContext.didSave).receive(on: RunLoop.main)) { _ in
-                if isVisible { persistenceRevision &+= 1 }
+                persistenceRevision &+= 1
             }
             .onReceive(NotificationCenter.default.publisher(for: .NSPersistentStoreRemoteChange).receive(on: RunLoop.main)) { _ in
-                if isVisible { persistenceRevision &+= 1 }
+                persistenceRevision &+= 1
             }
-            .task(id: refreshID) {
-                await refreshStatisticsWhileVisible()
+            .task(id: request) {
+                await refreshStatisticsWhileVisible(request)
             }
     }
 
-    private var workspace: some View {
+    private func workspace(failedToLoad: Bool) -> some View {
         GeometryReader { geometry in
             HStack(spacing: 0) {
                 ScrollViewReader { proxy in
@@ -167,25 +139,22 @@ struct StatisticsView: View {
                         // segmented controls should not churn with lazy row reuse.
                         VStack(alignment: .leading, spacing: 16) {
                             if let currentSnapshot {
-                                statisticsCards(snapshot: currentSnapshot)
+                                Group {
+                                    statisticsCards(snapshot: currentSnapshot)
+                                }
+                                .transition(reduceMotion ? .identity : .asymmetric(insertion: .opacity, removal: .identity))
+                            } else if failedToLoad {
+                                ContentUnavailableView(
+                                    String(localized: "データを読み込めませんでした。"),
+                                    systemImage: "exclamationmark.circle"
+                                )
                             } else {
                                 StatisticsLoadingCards()
+                                    .transition(reduceMotion ? .identity : .opacity)
                             }
                         }
                         .padding(20)
-                        .productContentFade(on: currentSnapshot?.filter)
-                    }
-                    .overlay(alignment: .topTrailing) {
-                        ZStack {
-                            if isLoadingCurrentFilter && currentSnapshot != nil {
-                                ProgressView()
-                                    .controlSize(.small)
-                                    .padding(26)
-                                    .transition(.opacity)
-                            }
-                        }
-                        .allowsHitTesting(false)
-                        .animation(reduceMotion ? nil : .smooth(duration: 0.18), value: isLoadingCurrentFilter && currentSnapshot != nil)
+                        .animation(reduceMotion ? nil : .easeOut(duration: 0.14), value: reportReveal)
                     }
                     .task(id: currentSnapshot?.filter) {
                         guard ScreenshotMode.initialScreen() == .statisticsDots,
@@ -261,7 +230,7 @@ struct StatisticsView: View {
             period: presentationPeriod,
             usesCompactCustomGrid: usesCustomRange && displayedDayCount > 7,
             usesCustomRange: usesCustomRange,
-            marksOutsideMonth: selectedPeriod == .month && !usesCustomRange,
+            marksOutsideMonth: filter.period == .month && !usesCustomRange,
             flowDays: snapshot.flowDays,
             achievementDays: snapshot.achievementDays,
             maximumInteractiveDate: today,
@@ -269,12 +238,6 @@ struct StatisticsView: View {
         )
         .id(presentationPeriod)
         .id("screenshot-statistics-dots")
-        .transition(
-            .asymmetric(
-                insertion: .opacity.combined(with: .scale(scale: 0.985, anchor: .top)),
-                removal: .opacity.combined(with: .scale(scale: 0.975, anchor: .top))
-            )
-        )
     }
 
     @ToolbarContentBuilder
@@ -295,17 +258,28 @@ struct StatisticsView: View {
 
         ToolbarItem(placement: .primaryAction) {
             StatisticsAreaSelectionMenu(
-                selectedAreaIDs: $selectedAreaIDs,
+                selectedAreaIDs: $filter.areaIDs,
                 areas: activeAreas
             )
         }
 
         ToolbarItem(placement: .primaryAction) {
             MacToolbarSearchControl(
-                text: $searchText,
+                text: searchTextBinding,
                 isPresented: $isSearchPresented
             )
         }
+    }
+
+    private var searchTextBinding: Binding<String> {
+        Binding(
+            get: { filter.query },
+            set: { query in
+                guard query != filter.query else { return }
+                searchDeadline = ContinuousClock.now.advanced(by: .milliseconds(250))
+                filter.query = query
+            }
+        )
     }
 
     private var statisticsExportPopover: some View {
@@ -404,7 +378,7 @@ struct StatisticsView: View {
 
             ScrollView {
                 Group {
-                    switch selectedPeriod {
+                    switch filter.period {
                     case .week:
                         HistoryMiniCalendar(
                             selectedDate: anchorDateBinding,
@@ -466,7 +440,7 @@ struct StatisticsView: View {
 
     private var selectedPeriodBinding: Binding<StatisticsPeriod?> {
         Binding(
-            get: { usesCustomRange ? nil : selectedPeriod },
+            get: { usesCustomRange ? nil : filter.period },
             set: { period in
                 guard let period else { return }
                 selectPeriod(period)
@@ -476,14 +450,16 @@ struct StatisticsView: View {
 
     private var anchorDateBinding: Binding<Date> {
         Binding(
-            get: { anchorDate },
+            get: { filter.anchorDate },
             set: {
-                customStartDate = nil
-                customEndDate = nil
-                anchorDate = StatisticsPeriodBuilder(
+                var updatedFilter = filter
+                updatedFilter.customStartDate = nil
+                updatedFilter.customEndDate = nil
+                updatedFilter.anchorDate = StatisticsPeriodBuilder(
                     calendar: calendar,
                     dayBoundary: dayBoundary
                 ).anchorDate(forCalendarSelection: $0, maximumDate: today)
+                filter = updatedFilter
             }
         )
     }
@@ -532,7 +508,7 @@ struct StatisticsView: View {
             return start == end ? start : "\(start) – \(end)"
         }
 
-        switch selectedPeriod {
+        switch filter.period {
         case .week:
             let periodFinalDay = calendar.date(
                 byAdding: .day,
@@ -587,13 +563,7 @@ struct StatisticsView: View {
 
     private var refreshID: StatisticsPeriodRefreshID {
         StatisticsPeriodRefreshID(
-            isVisible: isVisible,
-            period: selectedPeriod,
-            anchorDate: anchorDate,
-            customStartDate: customStartDate,
-            customEndDate: customEndDate,
-            areaIDs: selectedAreaIDs,
-            query: searchText,
+            filter: filter,
             areaCount: areas.count,
             latestAreaUpdate: areas.map(\.updatedAt).max(),
             persistenceRevision: persistenceRevision,
@@ -603,9 +573,18 @@ struct StatisticsView: View {
     }
 
     @MainActor
-    private func refreshStatisticsWhileVisible() async {
-        while isVisible, !Task.isCancelled {
-            await refreshStatisticsCache()
+    private func refreshStatisticsWhileVisible(_ request: StatisticsPeriodRefreshID) async {
+        if let searchDeadline, searchDeadline > ContinuousClock.now {
+            do {
+                try await Task.sleep(until: searchDeadline, clock: .continuous)
+            } catch {
+                return
+            }
+        }
+        guard !Task.isCancelled, request == refreshID else { return }
+
+        while !Task.isCancelled {
+            await refreshStatisticsCache(request)
             do {
                 try await Task.sleep(for: .seconds(30))
             } catch {
@@ -615,53 +594,31 @@ struct StatisticsView: View {
     }
 
     @MainActor
-    private func refreshStatisticsCache() async {
-        guard isVisible else { return }
-        let requestedFilter = filter
-        let requestedCalendar = calendar
-        let requestedBoundary = dayBoundary
-        let needsPlaceholder = currentSnapshot == nil
-        if needsPlaceholder {
-            loadingFilter = requestedFilter
-        }
-        defer {
-            if loadingFilter == requestedFilter {
-                loadingFilter = nil
-            }
-        }
-
+    private func refreshStatisticsCache(_ request: StatisticsPeriodRefreshID) async {
+        let requestedBoundary = AppDayBoundary(hour: request.dayBoundaryHour)
         do {
-            try await Task.sleep(for: .milliseconds(needsPlaceholder ? 90 : 0))
-        } catch {
-            return
-        }
-        guard !Task.isCancelled, isVisible else {
-            return
-        }
-
-        let loader = StatisticsProjectionActor(modelContainer: modelContext.container)
-        do {
-            let projection = try await loader.load(
-                filter: requestedFilter,
-                calendar: requestedCalendar,
+            let projection = try await StatisticsProjectionActor.loadForPresentation(
+                modelContainer: modelContext.container,
+                filter: request.filter,
+                calendar: request.calendar,
                 dayBoundary: requestedBoundary
             )
-            guard !Task.isCancelled, requestedFilter == filter, requestedCalendar == calendar,
-                  requestedBoundary == dayBoundary, isVisible else {
-                return
+            guard !Task.isCancelled, request == refreshID else { return }
+            if currentSnapshot == nil {
+                reportReveal &+= 1
             }
-            cache(projection)
-            if loadingFilter == requestedFilter {
-                loadingFilter = nil
-            }
+            cache.store(projection, calendar: request.calendar, dayBoundary: requestedBoundary)
+            failedRequest = nil
         } catch {
+            guard !Task.isCancelled, !(error is CancellationError), request == refreshID else { return }
+            failedRequest = request
             PersistenceIssueCenter.shared.log(error, operation: .dataLoad)
         }
     }
 
     private func movePeriod(by value: Int) {
         guard value <= 0 || canMoveToNextPeriod else { return }
-        if let customStartDate, let customEndDate {
+        if let customStartDate = filter.customStartDate, let customEndDate = filter.customEndDate {
             let start = calendar.startOfDay(for: min(customStartDate, customEndDate))
             let end = calendar.startOfDay(for: max(customStartDate, customEndDate))
             let dayCount = max(
@@ -669,42 +626,44 @@ struct StatisticsView: View {
                 (calendar.dateComponents([.day], from: start, to: end).day ?? 0) + 1
             )
             let offset = value * dayCount
-            self.customStartDate = calendar.date(byAdding: .day, value: offset, to: start) ?? start
-            self.customEndDate = calendar.date(byAdding: .day, value: offset, to: end) ?? end
-            anchorDate = self.customStartDate ?? anchorDate
+            let nextStart = calendar.date(byAdding: .day, value: offset, to: start) ?? start
+            var updatedFilter = filter
+            updatedFilter.customStartDate = nextStart
+            updatedFilter.customEndDate = calendar.date(byAdding: .day, value: offset, to: end) ?? end
+            updatedFilter.anchorDate = nextStart
+            filter = updatedFilter
             return
         }
-        anchorDate = selectedPeriod.offset(anchorDate, by: value, calendar: calendar)
+        filter.anchorDate = filter.period.offset(filter.anchorDate, by: value, calendar: calendar)
     }
 
     private func moveToToday() {
-        withAnimation(reduceMotion ? nil : .smooth(duration: 0.22)) {
-            let today = dayBoundary.day(containing: .now, calendar: calendar)
-            if let customStartDate, let customEndDate {
-                let start = calendar.startOfDay(for: min(customStartDate, customEndDate))
-                let end = calendar.startOfDay(for: max(customStartDate, customEndDate))
-                let distance = calendar.dateComponents([.day], from: start, to: end).day ?? 0
-                self.customEndDate = today
-                self.customStartDate = calendar.date(byAdding: .day, value: -distance, to: today) ?? today
-            }
-            anchorDate = today
+        var updatedFilter = filter
+        if let customStartDate = filter.customStartDate, let customEndDate = filter.customEndDate {
+            let start = calendar.startOfDay(for: min(customStartDate, customEndDate))
+            let end = calendar.startOfDay(for: max(customStartDate, customEndDate))
+            let distance = calendar.dateComponents([.day], from: start, to: end).day ?? 0
+            updatedFilter.customEndDate = today
+            updatedFilter.customStartDate = calendar.date(byAdding: .day, value: -distance, to: today) ?? today
         }
+        updatedFilter.anchorDate = today
+        filter = updatedFilter
     }
 
     private func selectPeriod(_ period: StatisticsPeriod) {
-        withAnimation(reduceMotion ? nil : .smooth(duration: 0.22)) {
-            if period == .year,
-               calendar.component(.year, from: anchorDate) > calendar.component(.year, from: .now) {
-                anchorDate = dayBoundary.day(containing: .now, calendar: calendar)
-            }
-            customStartDate = nil
-            customEndDate = nil
-            selectedPeriod = period
+        var updatedFilter = filter
+        if period == .year,
+           calendar.component(.year, from: filter.anchorDate) > calendar.component(.year, from: .now) {
+            updatedFilter.anchorDate = today
         }
+        updatedFilter.customStartDate = nil
+        updatedFilter.customEndDate = nil
+        updatedFilter.period = period
+        filter = updatedFilter
     }
 
     private var canMoveToNextPeriod: Bool {
-        if let customStartDate, let customEndDate {
+        if let customStartDate = filter.customStartDate, let customEndDate = filter.customEndDate {
             let start = calendar.startOfDay(for: min(customStartDate, customEndDate))
             let end = calendar.startOfDay(for: max(customStartDate, customEndDate))
             let dayCount = max(
@@ -714,7 +673,7 @@ struct StatisticsView: View {
             let nextEnd = calendar.date(byAdding: .day, value: dayCount, to: end) ?? end
             return nextEnd <= today
         }
-        let nextStart = selectedPeriod.offset(
+        let nextStart = filter.period.offset(
             periodBounds.currentStart,
             by: 1,
             calendar: calendar
@@ -723,7 +682,7 @@ struct StatisticsView: View {
     }
 
     private func prepareCustomRangeDraft() {
-        if let customStartDate, let customEndDate {
+        if let customStartDate = filter.customStartDate, let customEndDate = filter.customEndDate {
             customStartDraft = min(customStartDate, today)
             customEndDraft = min(customEndDate, today)
             return
@@ -743,12 +702,12 @@ struct StatisticsView: View {
             calendar.startOfDay(for: min(customStartDraft, customEndDraft)),
             end
         )
-        withAnimation(reduceMotion ? nil : .smooth(duration: 0.22)) {
-            customStartDate = start
-            customEndDate = end
-            anchorDate = start
-            isCustomRangePresented = false
-        }
+        var updatedFilter = filter
+        updatedFilter.customStartDate = start
+        updatedFilter.customEndDate = end
+        updatedFilter.anchorDate = start
+        filter = updatedFilter
+        isCustomRangePresented = false
     }
 
     private func prepareExportDraft() {
@@ -759,29 +718,11 @@ struct StatisticsView: View {
             value: -1,
             to: periodBounds.currentEnd
         ) ?? periodBounds.currentStart, today)
-        exportAreaIDs = selectedAreaIDs
-        exportQuery = searchText
+        exportAreaIDs = filter.areaIDs
+        exportQuery = filter.query
         exportShareURL = nil
         preparedExportConfiguration = nil
         isPreparingExport = false
-    }
-
-    private func cache(_ projection: StatisticsPeriodSnapshot) {
-        if cachedCalendar != calendar || cachedBoundaryHour != dayBoundary.hour {
-            snapshotCache.removeAll()
-            snapshotCacheOrder.removeAll()
-        }
-        cachedCalendar = calendar
-        cachedBoundaryHour = dayBoundary.hour
-        cachedSnapshot = projection
-        snapshotCache[projection.filter] = projection
-        snapshotCacheOrder.removeAll { $0 == projection.filter }
-        snapshotCacheOrder.append(projection.filter)
-
-        while snapshotCacheOrder.count > 4 {
-            let expiredFilter = snapshotCacheOrder.removeFirst()
-            snapshotCache[expiredFilter] = nil
-        }
     }
 
     @MainActor
@@ -1654,10 +1595,13 @@ private struct StatisticsLoadingCards: View {
 
     var body: some View {
         StatisticsCard(title: String(localized: "概要")) {
-            LazyVGrid(columns: summaryColumns, spacing: 10) {
-                ForEach(0..<5, id: \.self) { _ in
-                    loadingBlock(height: 106)
+            ZStack {
+                LazyVGrid(columns: summaryColumns, spacing: 10) {
+                    ForEach(0..<5, id: \.self) { _ in
+                        loadingBlock(height: 106)
+                    }
                 }
+                ProgressView()
             }
         }
 
@@ -1667,11 +1611,7 @@ private struct StatisticsLoadingCards: View {
             title: String(localized: "傾向"),
             subtitle: String(localized: "集中時間")
         ) {
-            ZStack {
-                loadingBlock(height: 220)
-                ProgressView()
-                    .controlSize(.regular)
-            }
+            loadingBlock(height: 220)
         }
 
         loadingLowerCard(title: String(localized: "Dots"))
@@ -1817,13 +1757,7 @@ private struct StatisticsCSVTemporaryFileWriter {
 }
 
 private struct StatisticsPeriodRefreshID: Hashable {
-    let isVisible: Bool
-    let period: StatisticsPeriod
-    let anchorDate: Date
-    let customStartDate: Date?
-    let customEndDate: Date?
-    let areaIDs: Set<UUID>
-    let query: String
+    let filter: StatisticsPeriodFilter
     let areaCount: Int
     let latestAreaUpdate: Date?
     let persistenceRevision: Int
@@ -1836,13 +1770,15 @@ private struct StatisticsPeriodRefreshID: Hashable {
 }
 
 private struct StatisticsPreviewHost: View {
-    @State private var snapshot: StatisticsPeriodSnapshot?
+    @State private var cache = StatisticsPresentationCache()
+    @State private var selection = StatisticsPeriodFilter()
 
     var body: some View {
         NavigationStack {
             StatisticsView(
                 areas: [],
-                cachedSnapshot: $snapshot
+                cache: $cache,
+                selection: $selection
             )
         }
         .frame(width: 1180, height: 820)

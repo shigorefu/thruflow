@@ -511,28 +511,25 @@ sessions, segments, breaks, or Statistics input. Materializing those persistent
 model graphs is main-actor work and can block the first frame even when the
 visible calculation itself is deferred.
 
-Flow and Statistics use a two-stage feature mount. Navigation selection and
-the destination title commit first; the heavy feature tree is constructed on a
-later run-loop turn. This prevents eager SwiftData query initialization and
-cached chart construction from delaying the selection response. On iOS the
-same boundary unmounts the heavy contents of retained, hidden `TabView` roots
-while preserving their projections in root-owned cache state.
+Flow and Statistics show their controls on selection. The system handles tab
+selection on iOS, and the Mac sidebar updates its detail directly. Cold data
+has a loading indicator and a short local reveal when it becomes ready.
+Returning to a screen can show its cached data in the first render. Hidden
+tabs stop their periodic work without discarding the root-owned caches.
 
 The Flow dashboard owns bounded rolling queries for the recent 16-day session,
 break, and scheduled-task window needed by its daily presentation and weekly
 habit planning. Habit materialization receives that bounded task set and does
-not repeat the all-history duplicate reconciliation during navigation. It keeps
-the derived dashboard projection in root-owned cache state, so returning to
-Flow paints the previous projection immediately and refreshes it after the
-navigation transaction.
+not repeat the all-history duplicate reconciliation during navigation. The
+dashboard retains its last projection while visible queries refresh it.
 
 Statistics uses `StatisticsProjectionActor`, a dedicated SwiftData
-`@ModelActor`. It fetches only the selected range, converts persistent models to
-Sendable value records inside the actor, and returns a ready heatmap projection
-to the UI. No `PersistentModel` crosses that actor boundary. Statistics paints
-its cached or empty shell first and starts the actor request after a short
-navigation grace period. This keeps navigation responsive without changing
-persisted data semantics or duplicating calculation rules.
+`@ModelActor` whose presentation context is created away from the main actor.
+It fetches only the selected range and returns a value snapshot. The app root
+keeps the selected filter and up to four snapshots with their calendar and
+day boundary, so reopening Statistics can use the matching snapshot right
+away. New requests start as soon as the screen needs them. Typed searches
+keep a debounce and canceled requests cannot replace the visible report.
 
 The macOS and iOS card workspaces request the selected Week/Month/Year or exact custom
 date range together with its immediately preceding equal-length comparison

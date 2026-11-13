@@ -42,7 +42,6 @@ enum IOSAppRoute: Hashable, CaseIterable, Identifiable {
 }
 
 struct IOSRootView: View {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.calendar) private var calendar
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -60,7 +59,8 @@ struct IOSRootView: View {
     @State private var selectedHistoryDate = Date.now
     @State private var flowSnapshotCache: FlowDashboardSnapshot?
     @State private var flowTodoGroupsCache: FlowDashboardTodoGroups?
-    @State private var statisticsSnapshotCache: StatisticsPeriodSnapshot?
+    @State private var statisticsCache = StatisticsPresentationCache()
+    @State private var statisticsSelection = StatisticsPeriodFilter()
 
     init() {
         let initialRoute: IOSAppRoute = switch ScreenshotMode.initialScreen() {
@@ -73,6 +73,10 @@ struct IOSRootView: View {
         _selection = State(initialValue: initialRoute)
         if ScreenshotMode.isEnabled() {
             _selectedHistoryDate = State(initialValue: ScreenshotMode.referenceDate)
+            _statisticsSelection = State(initialValue: StatisticsPeriodFilter(
+                period: .month,
+                anchorDate: ScreenshotMode.referenceDate
+            ))
         }
 
         var todoDescriptor = FetchDescriptor<Todo>(
@@ -137,7 +141,6 @@ struct IOSRootView: View {
                 break
             }
         }
-
         .onAppear {
             showOnboardingScreenIfNeeded()
         }
@@ -244,7 +247,6 @@ struct IOSRootView: View {
         } detail: {
             NavigationStack {
                 destination(for: selection)
-                    .productContentFade(on: selection)
             }
         }
         .navigationSplitViewStyle(.balanced)
@@ -278,13 +280,7 @@ struct IOSRootView: View {
 
     @ViewBuilder
     private func tabContent(for route: IOSAppRoute) -> some View {
-        // Keep each tab's state and native selection. Fade only the
-        // destination content; do not animate the bar or re-key its stack.
-        let isSelected = selection == route
         let content = destination(for: route)
-            .animation(reduceMotion ? nil : .smooth(duration: 0.20)) { view in
-                view.opacity(isSelected || reduceMotion ? 1 : 0)
-            }
         if #available(iOS 26.0, *) {
             content
                 .toolbarBackgroundVisibility(.hidden, for: .tabBar)
@@ -313,17 +309,12 @@ struct IOSRootView: View {
     private func destination(for route: IOSAppRoute) -> some View {
         switch route {
         case .flow:
-            DeferredFeatureMount(
-                isActive: selection == .flow,
-                title: IOSAppRoute.flow.title
-            ) {
-                IOSFlowView(
-                    isVisible: !onboarding.isPresented,
-                    cachedSnapshot: $flowSnapshotCache,
-                    cachedTodoGroups: $flowTodoGroupsCache,
-                    open: open
-                )
-            }
+            IOSFlowView(
+                isVisible: selection == .flow && !onboarding.isPresented,
+                cachedSnapshot: $flowSnapshotCache,
+                cachedTodoGroups: $flowTodoGroupsCache,
+                open: open
+            )
         case .tasks:
             IOSTasksView()
         case .history:
@@ -331,17 +322,13 @@ struct IOSRootView: View {
         case .areas:
             IOSAreasView()
         case .statistics:
-            DeferredFeatureMount(
-                isActive: selection == .statistics,
-                title: IOSAppRoute.statistics.title
-            ) {
-                IOSStatisticsView(
-                    isVisible: true,
-                    cachedSnapshot: $statisticsSnapshotCache
-                ) { date in
-                    selectedHistoryDate = date
-                    selectionBinding.wrappedValue = .history
-                }
+            IOSStatisticsView(
+                isVisible: selection == .statistics,
+                cache: $statisticsCache,
+                selection: $statisticsSelection
+            ) { date in
+                selectedHistoryDate = date
+                selectionBinding.wrappedValue = .history
             }
         case .connectors:
             IOSConnectorsView()

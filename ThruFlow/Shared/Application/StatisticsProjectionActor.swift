@@ -14,11 +14,33 @@ struct StatisticsProjection: Sendable {
 
 @ModelActor
 actor StatisticsProjectionActor {
+    /// Create the actor's SwiftData context away from the UI executor.
+    static nonisolated func loadForPresentation(
+        modelContainer: ModelContainer,
+        filter: StatisticsPeriodFilter,
+        calendar: Calendar,
+        dayBoundary: AppDayBoundary
+    ) async throws -> StatisticsPeriodSnapshot {
+        let request = Task.detached(priority: .userInitiated) {
+            try Task.checkCancellation()
+            let loader = StatisticsProjectionActor(modelContainer: modelContainer)
+            return try await loader.load(filter: filter, calendar: calendar, dayBoundary: dayBoundary)
+        }
+        return try await withTaskCancellationHandler {
+            let snapshot = try await request.value
+            try Task.checkCancellation()
+            return snapshot
+        } onCancel: {
+            request.cancel()
+        }
+    }
+
     func load(
         filter: StatisticsPeriodFilter,
         calendar: Calendar,
         dayBoundary: AppDayBoundary
     ) throws -> StatisticsPeriodSnapshot {
+        try Task.checkCancellation()
         let builder = StatisticsPeriodBuilder(
             calendar: calendar,
             dayBoundary: dayBoundary
@@ -69,6 +91,7 @@ actor StatisticsProjectionActor {
             }
         ))
 
+        try Task.checkCancellation()
         return builder.build(
             flowRecords: sessions.flatMap(makePeriodFlowRecords),
             achievementRecords: (completedTodos + legacyCompletedTodos).compactMap(makePeriodAchievementRecord),

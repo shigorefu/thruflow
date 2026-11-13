@@ -27,7 +27,10 @@ struct MacOSRootView: View {
     @State private var didReconcileFlowProgress = false
     @State private var flowSnapshotCache: FlowDashboardSnapshot?
     @State private var flowTodoGroupsCache: FlowDashboardTodoGroups?
-    @State private var statisticsPeriodCache: StatisticsPeriodSnapshot?
+    @State private var statisticsCache = StatisticsPresentationCache()
+    @State private var statisticsSelection = StatisticsPeriodFilter(
+        period: ScreenshotMode.isEnabled() ? .month : .week
+    )
 
     init() {
         let initialSelection: AppSection = switch ScreenshotMode.initialScreen() {
@@ -113,10 +116,8 @@ struct MacOSRootView: View {
         } detail: {
             ZStack {
                 detailContent
-                    .id(selection ?? .flow)
-                    .transition(reduceMotion ? .identity : .opacity)
             }
-            .animation(reduceMotion ? nil : .smooth(duration: 0.20), value: selection ?? .flow)
+            .animation(animateDetailChange ? .smooth(duration: 0.20) : nil, value: selection ?? .flow)
         }
         .task {
             historyDate = dayBoundary.day(containing: .now, calendar: calendar)
@@ -132,7 +133,6 @@ struct MacOSRootView: View {
                 PersistenceIssueCenter.shared.log(error, operation: .flowSynchronization)
             }
         }
-
         .onAppear {
             showOnboardingScreenIfNeeded()
         }
@@ -158,46 +158,45 @@ struct MacOSRootView: View {
         }
     }
 
+    private var animateDetailChange: Bool {
+        !reduceMotion && selection != nil && selection != .flow && selection != .statistics
+    }
+
     @ViewBuilder
     private var detailContent: some View {
         switch selection ?? .flow {
         case .flow:
-            DeferredFeatureMount(
-                isActive: (selection ?? .flow) == .flow,
-                title: String(localized: "Flow")
-            ) {
-                FlowDashboardView(
-                    isVisible: !onboarding.isPresented,
-                    areas: areas,
-                    cachedSnapshot: $flowSnapshotCache,
-                    cachedTodoGroups: $flowTodoGroupsCache,
-                    onOpenTasks: { filter in
-                        tasksInitialFilter = filter
-                        selection = .tasks
-                    }
-                )
-            }
+            FlowDashboardView(
+                isVisible: !onboarding.isPresented,
+                areas: areas,
+                cachedSnapshot: $flowSnapshotCache,
+                cachedTodoGroups: $flowTodoGroupsCache,
+                onOpenTasks: { filter in
+                    tasksInitialFilter = filter
+                    selection = .tasks
+                }
+            )
+            .transition(.identity)
         case .tasks:
             TasksView(initialFilter: tasksInitialFilter)
+                .transition(reduceMotion ? .identity : .opacity)
         case .history:
             DayHistoryView(initialDate: historyDate)
                 .id(historyDate)
+                .transition(reduceMotion ? .identity : .opacity)
         case .areas:
             AreaListView()
+                .transition(reduceMotion ? .identity : .opacity)
         case .statistics:
-            DeferredFeatureMount(
-                isActive: selection == .statistics,
-                title: String(localized: "統計")
-            ) {
-                StatisticsView(
-                    isVisible: true,
-                    areas: areas,
-                    cachedSnapshot: $statisticsPeriodCache
-                ) { date in
-                    historyDate = calendar.startOfDay(for: date)
-                    selection = .history
-                }
+            StatisticsView(
+                areas: areas,
+                cache: $statisticsCache,
+                selection: $statisticsSelection
+            ) { date in
+                historyDate = calendar.startOfDay(for: date)
+                selection = .history
             }
+            .transition(.identity)
         }
     }
 

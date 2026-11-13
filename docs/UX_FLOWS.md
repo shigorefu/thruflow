@@ -132,9 +132,10 @@ disappear. The Flow result form fades in on Mac and uses the system sheet on
 iPhone and iPad. The Flow primary button crossfades its symbol on state changes.
 The iPhone and iPad quick composer fades with a short vertical transition.
 Primary app destinations and the content in Tasks, History, Areas, and
-Statistics use short fades for discrete changes. Flow's task cards and Statistics
-show loading indicators or skeletons until the first data is ready, then fade in
-the result. These transitions follow Reduce Motion and do not animate timer ticks.
+Statistics use short fades for discrete changes. Flow and Statistics show their
+controls immediately, reuse matching data on return, and show loading
+indicators where data is pending. New content fades in once when ready.
+These transitions follow Reduce Motion and do not animate timer ticks.
 In the compact Flow Statistics card, time-allocation bars share a right-hand
 zero edge and a scale based on today's total focused time.
 

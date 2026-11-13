@@ -15,8 +15,6 @@ struct IOSFlowView: View {
     @Query(sort: \Area.updatedAt, order: .reverse) private var areas: [Area]
     @Query(sort: \Project.createdAt) private var projects: [Project]
     @Query private var todos: [Todo]
-    @Query private var sessions: [FlowSession]
-    @Query private var flowBreaks: [FlowBreak]
 
     @Binding private var cachedSnapshot: FlowDashboardSnapshot?
     @Binding private var cachedTodoGroups: FlowDashboardTodoGroups?
@@ -33,6 +31,8 @@ struct IOSFlowView: View {
     @State private var selectedHistoryItem: HistoryCalendarItem?
     @State private var preparationRevision = 0
     @State private var taskFilter = IOSDashboardTaskFilter.task
+    @State private var loadsRecentRecords = false
+    @State private var recentRecords: IOSFlowRecentRecords?
 
     private var dashboardBuilder: FlowDashboardBuilder {
         FlowDashboardBuilder(calendar: calendar, dayBoundary: dayBoundary)
@@ -56,16 +56,6 @@ struct IOSFlowView: View {
             sort: \Todo.updatedAt,
             order: .reverse
         )
-        _sessions = Query(
-            filter: #Predicate<FlowSession> { $0.startedAt >= cutoff },
-            sort: \FlowSession.updatedAt,
-            order: .reverse
-        )
-        _flowBreaks = Query(
-            filter: #Predicate<FlowBreak> { $0.startedAt >= cutoff },
-            sort: \FlowBreak.updatedAt,
-            order: .reverse
-        )
         _cachedSnapshot = cachedSnapshot
         _cachedTodoGroups = cachedTodoGroups
         self.open = open
@@ -73,6 +63,13 @@ struct IOSFlowView: View {
 
     var body: some View {
         dashboardContent
+        .background {
+            if isVisible, loadsRecentRecords {
+                IOSFlowRecentRecordsQuery { records in
+                    recentRecords = records
+                }
+            }
+        }
         .iosCenteredNavigationTitle(String(localized: "Flow"))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -157,17 +154,28 @@ struct IOSFlowView: View {
                 .presentationDetents(item.kind == .flow ? [.large] : [.medium])
         }
         .onChange(of: scenePhase) { _, phase in
-            guard phase == .active else { return }
+            guard isVisible, phase == .active else { return }
             wallClockRevision = .now
             reconcileSelectedTodo()
         }
         .onReceive(NotificationCenter.default.publisher(for: .NSSystemClockDidChange)
             .merge(with: NotificationCenter.default.publisher(for: .NSSystemTimeZoneDidChange))) { _ in
+            guard isVisible else { return }
             wallClockRevision = .now
             reconcileSelectedTodo()
         }
         .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) { _ in
             preparationRevision += 1
+        }
+        .task(id: isVisible) {
+            guard isVisible else {
+                loadsRecentRecords = false
+                return
+            }
+            await Task.yield()
+            guard !Task.isCancelled, isVisible else { return }
+            loadsRecentRecords = true
+            presentMemoIfNeeded()
         }
         .task(id: preparationTaskID) {
             await prepareTodayAfterPresentation()
@@ -194,8 +202,8 @@ struct IOSFlowView: View {
             presentMemoIfNeeded()
         }
         .onChange(of: activeFlowStore.phase) { _, _ in
-            if isVisible {
-                cachedSnapshot = makeSnapshot(at: .now)
+            if isVisible, let recentRecords {
+                cachedSnapshot = makeSnapshot(at: .now, records: recentRecords)
             }
             presentMemoIfNeeded()
         }
@@ -205,6 +213,7 @@ struct IOSFlowView: View {
         }
         .onChange(of: isVisible) { _, newValue in
             guard !newValue else { return }
+            loadsRecentRecords = false
             selectedHistoryItem = nil
         }
     }
@@ -217,14 +226,12 @@ struct IOSFlowView: View {
     }
 
     private var dashboardContent: some View {
-        let snapshot = cachedSnapshot ?? .empty()
-
-        return ScrollView {
+        ScrollView {
             IOSFlowDashboardLayout(allowsColumns: horizontalSizeClass == .regular && !dynamicTypeSize.isAccessibilitySize) {
-                flowCard(snapshot: snapshot)
+                flowCard(snapshot: cachedSnapshot)
                 playerCard()
                 dashboardTasks()
-                statisticsCard(snapshot: snapshot)
+                statisticsCard()
             }
             .frame(maxWidth: 1_200)
             .padding(.horizontal, 16)
@@ -234,15 +241,12 @@ struct IOSFlowView: View {
         .background(backgroundColor.ignoresSafeArea())
     }
 
-    private func statisticsCard(snapshot: FlowDashboardSnapshot) -> some View {
+    private func statisticsCard() -> some View {
         IOSDashboardStatisticsView(
-            snapshot: snapshot,
-            sessions: sessions,
-            flowBreaks: flowBreaks,
+            snapshot: cachedSnapshot,
+            recentRecords: recentRecords,
             todos: todos,
-            standardTodos: cachedTodoGroups?.standard ?? [],
-            habitTodos: cachedTodoGroups?.habits ?? [],
-            niceTodos: cachedTodoGroups?.nice ?? [],
+            todoGroups: cachedTodoGroups,
             calendar: calendar,
             dayBoundary: dayBoundary
         )
@@ -308,16 +312,21 @@ struct IOSFlowView: View {
         } mode: {
             modePicker
         } controls: {
-            TimelineView(FlowPlayerSchedule.overtime(for: activeFlowStore.timerState, revision: wallClockRevision)) { tick in
+            TimelineView(FlowPlayerSchedule.overtime(
+                for: isVisible ? activeFlowStore.timerState : nil,
+                revision: wallClockRevision
+            )) { tick in
                 controls(now: tick.date)
             }
         }
         .background {
-            TimelineView(FlowPlayerSchedule.appDay(dayBoundary, calendar, revision: wallClockRevision)) { tick in
-                Color.clear
-                    .task(id: dayBoundary.day(containing: tick.date, calendar: calendar)) {
-                        reconcileSelectedTodo(now: tick.date)
-                    }
+            if isVisible {
+                TimelineView(FlowPlayerSchedule.appDay(dayBoundary, calendar, revision: wallClockRevision)) { tick in
+                    Color.clear
+                        .task(id: dayBoundary.day(containing: tick.date, calendar: calendar)) {
+                            reconcileSelectedTodo(now: tick.date)
+                        }
+                }
             }
         }
     }
@@ -424,45 +433,52 @@ struct IOSFlowView: View {
         }
     }
 
-    private func flowCard(
-        snapshot: FlowDashboardSnapshot,
-        minHeight: CGFloat? = nil
-    ) -> some View {
+    private func flowCard(snapshot: FlowDashboardSnapshot?, minHeight: CGFloat? = nil) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(String(localized: "今日のFlow"))
                         .font(.headline)
-                    Text(snapshot.date, format: .dateTime.month().day().weekday())
+                    Text(snapshot?.date ?? .now, format: .dateTime.month().day().weekday())
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
 
                 Spacer()
-                metric(value: focusText(snapshot.totalFocusSeconds), label: String(localized: "集中時間"))
-                metric(value: blockText(snapshot.blocks), label: String(localized: "ブロック"))
+                if let snapshot {
+                    metric(value: focusText(snapshot.totalFocusSeconds), label: String(localized: "集中時間"))
+                    metric(value: blockText(snapshot.blocks), label: String(localized: "ブロック"))
+                }
             }
 
-            IOSFlowStreamView(
-                snapshot: snapshot,
-                isActive: activeFlowStore.phase == .focusing,
-                mode: activeFlowStore.selectedMode,
-                breakStyle: activeFlowStore.flowStreamBreakStyle,
-                breakInteraction: activeFlowStore.flowBreakInteraction,
-                isRenderingEnabled: isVisible
-            )
-            .frame(height: 142)
-            .background {
-                modeSurfaceTint
-                    .animation(reduceMotion ? nil : .smooth(duration: 0.28), value: activeFlowStore.selectedMode)
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            VStack(spacing: 12) {
+                if let snapshot {
+                    IOSFlowStreamView(
+                        snapshot: snapshot,
+                        isActive: activeFlowStore.phase == .focusing,
+                        mode: activeFlowStore.selectedMode,
+                        breakStyle: activeFlowStore.flowStreamBreakStyle,
+                        breakInteraction: activeFlowStore.flowBreakInteraction,
+                        isRenderingEnabled: isVisible
+                    )
+                    .frame(height: 142)
+                    .background {
+                        modeSurfaceTint
+                            .animation(reduceMotion ? nil : .smooth(duration: 0.28), value: activeFlowStore.selectedMode)
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
 
-            IOSFlowTimelineView(
-                snapshot: snapshot,
-                isVisible: isVisible,
-                onOpenHistory: inspectTimelineSelection
-            )
+                    IOSFlowTimelineView(
+                        snapshot: snapshot,
+                        isVisible: isVisible,
+                        onOpenHistory: inspectTimelineSelection
+                    )
+                } else {
+                    ProgressView()
+                        .frame(maxWidth: .infinity, minHeight: 190)
+                }
+            }
+            .productContentFade(on: snapshot != nil)
         }
         .padding(14)
         .frame(minHeight: minHeight, alignment: .topLeading)
@@ -508,31 +524,32 @@ struct IOSFlowView: View {
             .pickerStyle(.segmented)
             .labelsHidden()
 
-            if cachedTodoGroups == nil {
-                ProgressView()
-                    .controlSize(.small)
-                    .frame(maxWidth: .infinity, minHeight: 90)
-            } else if filteredDashboardTodos.isEmpty {
-                ContentUnavailableView(
-                    String(localized: "今日の項目はありません"),
-                    systemImage: "checkmark.circle"
-                )
-            } else {
-                ForEach(filteredDashboardTodos) { todo in
-                    IOSTaskRow(todo: todo, showsContextSubtitle: true) {
-                        editorMode = .edit(todo)
-                    }
-                    if todo.id != filteredDashboardTodos.last?.id {
-                        Divider()
+            VStack(alignment: .leading, spacing: 10) {
+                if cachedTodoGroups == nil {
+                    ProgressView()
+                        .controlSize(.small)
+                        .frame(maxWidth: .infinity, minHeight: 90)
+                } else if filteredDashboardTodos.isEmpty {
+                    ContentUnavailableView(
+                        String(localized: "今日の項目はありません"),
+                        systemImage: "checkmark.circle"
+                    )
+                } else {
+                    ForEach(filteredDashboardTodos) { todo in
+                        IOSTaskRow(todo: todo, showsContextSubtitle: true) {
+                            editorMode = .edit(todo)
+                        }
+                        if todo.id != filteredDashboardTodos.last?.id {
+                            Divider()
+                        }
                     }
                 }
             }
+            .productContentFade(on: cachedTodoGroups != nil)
             Spacer(minLength: 0)
         }
         .padding(16)
         .frame(maxWidth: .infinity, minHeight: minHeight, alignment: .topLeading)
-        .productContentFade(on: cachedTodoGroups != nil)
-        .productContentFade(on: taskFilter)
         .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 16))
     }
 
@@ -620,11 +637,11 @@ struct IOSFlowView: View {
         return activeFlowStore.actualFocusSeconds(now: date)
     }
 
-    private func makeSnapshot(at date: Date) -> FlowDashboardSnapshot {
+    private func makeSnapshot(at date: Date, records: IOSFlowRecentRecords) -> FlowDashboardSnapshot {
         let day = dayBoundary.day(containing: date, calendar: calendar)
         let interval = dayBoundary.interval(for: day, calendar: calendar)
-        let daySessions = sessions.filter { interval.contains($0.startedAt) }
-        let dayBreaks = flowBreaks.filter { interval.contains($0.startedAt) }
+        let daySessions = records.sessions.filter { interval.contains($0.startedAt) }
+        let dayBreaks = records.breaks.filter { interval.contains($0.startedAt) }
 
         return dashboardBuilder.build(
             date: date,
@@ -639,10 +656,7 @@ struct IOSFlowView: View {
     private var dashboardSnapshotRefreshID: IOSFlowDashboardRefreshID {
         IOSFlowDashboardRefreshID(
             isVisible: isVisible,
-            sessionCount: sessions.count,
-            latestSessionUpdate: sessions.first?.updatedAt,
-            breakCount: flowBreaks.count,
-            latestBreakUpdate: flowBreaks.first?.updatedAt,
+            recordsRevision: recentRecords?.revision,
             areaCount: areas.count,
             latestAreaUpdate: areas.first?.updatedAt,
             activeSessionID: activeFlowStore.activeSession?.id,
@@ -678,7 +692,7 @@ struct IOSFlowView: View {
     @MainActor
     private func prepareTodayAfterPresentation() async {
         guard isVisible else { return }
-        try? await Task.sleep(for: .milliseconds(220))
+        await Task.yield()
         guard !Task.isCancelled, isVisible else { return }
         prepareToday()
         reconcileSelectedTodo()
@@ -687,21 +701,13 @@ struct IOSFlowView: View {
 
     @MainActor
     private func refreshDashboardCache() async {
-        guard isVisible else { return }
-
-        // Defer only the initial load. Playback changes must not wait behind
-        // the navigation delay while the timeline already shows the new end.
-        if cachedSnapshot == nil {
-            try? await Task.sleep(for: .milliseconds(220))
-        }
-        guard !Task.isCancelled, isVisible else { return }
-
-        cachedSnapshot = makeSnapshot(at: .now)
+        guard isVisible, !Task.isCancelled, let recentRecords else { return }
+        cachedSnapshot = makeSnapshot(at: .now, records: recentRecords)
 
         while !Task.isCancelled, isVisible, activeFlowStore.timerState != nil {
             try? await Task.sleep(for: .seconds(5))
             guard !Task.isCancelled, isVisible else { return }
-            cachedSnapshot = makeSnapshot(at: .now)
+            cachedSnapshot = makeSnapshot(at: .now, records: recentRecords)
         }
     }
 
@@ -709,7 +715,7 @@ struct IOSFlowView: View {
     private func refreshTodoGroupsCache() async {
         guard isVisible else { return }
 
-        try? await Task.sleep(for: .milliseconds(cachedTodoGroups == nil ? 160 : 280))
+        if cachedTodoGroups == nil { await Task.yield() }
         guard !Task.isCancelled, isVisible else { return }
 
         cachedTodoGroups = FlowDashboardTodoGroupBuilder(
@@ -726,13 +732,14 @@ struct IOSFlowView: View {
     }
 
     private func inspectTimelineSelection(_ selection: IOSFlowTimelineSelection) {
+        guard let recentRecords else { return }
         let today = dayBoundary.day(containing: .now, calendar: calendar)
         let interval = dayBoundary.interval(for: today, calendar: calendar)
         let items = HistoryCalendarBuilder(calendar: calendar)
             .build(
                 interval: interval,
-                sessions: sessions,
-                breaks: flowBreaks,
+                sessions: recentRecords.sessions,
+                breaks: recentRecords.breaks,
                 referenceDate: .now
             )
             .items
@@ -802,7 +809,11 @@ struct IOSFlowView: View {
 
     private func configureInitialContextIfNeeded() {
         guard activeFlowStore.selectedAreaID == nil else { return }
-        if let todo = todayTodos.first(where: { !$0.isCompleted }), let area = todo.area {
+        let groups = cachedTodoGroups ?? FlowDashboardTodoGroupBuilder(
+            calendar: calendar,
+            dayBoundary: dayBoundary
+        ).build(from: todos)
+        if let todo = groups.all.first(where: { !$0.isCompleted }), let area = todo.area {
             activeFlowStore.configure(area: area, todo: todo)
         } else if let area = activeAreas.first {
             activeFlowStore.configure(area: area, todo: nil)
@@ -810,6 +821,7 @@ struct IOSFlowView: View {
     }
 
     private func reconcileSelectedTodo(now: Date = .now) {
+        guard isVisible else { return }
         activeFlowStore.reconcileSelectedTodoForCurrentDay(
             todos: todos,
             areas: areas,
@@ -820,7 +832,7 @@ struct IOSFlowView: View {
     }
 
     private func presentMemoIfNeeded() {
-        guard !showsContextPicker, !isMemoDismissing else { return }
+        guard isVisible, !showsContextPicker, !isMemoDismissing else { return }
         if showsMemo, let requestID = presentedTaskSwitchID {
             if activeFlowStore.pendingTaskSwitch?.id != requestID { dismissMemo() }
             return
@@ -903,14 +915,61 @@ private struct FlowRefreshTaskID: Hashable {
 
 private struct IOSFlowDashboardRefreshID: Hashable {
     let isVisible: Bool
-    let sessionCount: Int
-    let latestSessionUpdate: Date?
-    let breakCount: Int
-    let latestBreakUpdate: Date?
+    let recordsRevision: IOSFlowRecentRecordsRevision?
     let areaCount: Int
     let latestAreaUpdate: Date?
     let activeSessionID: UUID?
     let phase: String?
+}
+
+private struct IOSFlowRecentRecords {
+    let sessions: [FlowSession]
+    let breaks: [FlowBreak]
+    let revision: IOSFlowRecentRecordsRevision
+}
+
+private struct IOSFlowRecentRecordsRevision: Hashable {
+    let sessionCount: Int
+    let latestSessionUpdate: Date?
+    let breakCount: Int
+    let latestBreakUpdate: Date?
+}
+
+private struct IOSFlowRecentRecordsQuery: View {
+    @Query private var sessions: [FlowSession]
+    @Query private var breaks: [FlowBreak]
+
+    let onUpdate: (IOSFlowRecentRecords) -> Void
+
+    init(onUpdate: @escaping (IOSFlowRecentRecords) -> Void) {
+        let cutoff = Calendar.current.date(byAdding: .day, value: -16, to: .now) ?? .distantPast
+        _sessions = Query(
+            filter: #Predicate<FlowSession> { $0.startedAt >= cutoff },
+            sort: \FlowSession.updatedAt,
+            order: .reverse
+        )
+        _breaks = Query(
+            filter: #Predicate<FlowBreak> { $0.startedAt >= cutoff },
+            sort: \FlowBreak.updatedAt,
+            order: .reverse
+        )
+        self.onUpdate = onUpdate
+    }
+
+    var body: some View {
+        let revision = IOSFlowRecentRecordsRevision(
+            sessionCount: sessions.count,
+            latestSessionUpdate: sessions.first?.updatedAt,
+            breakCount: breaks.count,
+            latestBreakUpdate: breaks.first?.updatedAt
+        )
+        Color.clear
+            .allowsHitTesting(false)
+            .task(id: revision) {
+                guard !Task.isCancelled else { return }
+                onUpdate(IOSFlowRecentRecords(sessions: sessions, breaks: breaks, revision: revision))
+            }
+    }
 }
 
 private struct IOSFlowTodoRefreshID: Hashable {
@@ -1002,13 +1061,10 @@ private nonisolated struct IOSFlowDashboardLayout: Layout {
 
 private struct IOSDashboardStatisticsView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    let snapshot: FlowDashboardSnapshot
-    let sessions: [FlowSession]
-    let flowBreaks: [FlowBreak]
+    let snapshot: FlowDashboardSnapshot?
+    let recentRecords: IOSFlowRecentRecords?
     let todos: [Todo]
-    let standardTodos: [Todo]
-    let habitTodos: [Todo]
-    let niceTodos: [Todo]
+    let todoGroups: FlowDashboardTodoGroups?
     let calendar: Calendar
     let dayBoundary: AppDayBoundary
 
@@ -1041,11 +1097,23 @@ private struct IOSDashboardStatisticsView: View {
             Group {
                 switch page {
                 case .distribution:
-                    distributionPage
+                    if let snapshot {
+                        distributionPage(snapshot)
+                    } else {
+                        loadingPage
+                    }
                 case .trend:
-                    trendPage
+                    if let snapshot, let recentRecords {
+                        trendPage(snapshot, records: recentRecords)
+                    } else {
+                        loadingPage
+                    }
                 case .achievement:
-                    achievementPage
+                    if let todoGroups {
+                        achievementPage(todoGroups)
+                    } else {
+                        loadingPage
+                    }
                 }
             }
             .id(page)
@@ -1059,8 +1127,13 @@ private struct IOSDashboardStatisticsView: View {
         }
     }
 
-    private var distributionPage: some View {
-        let rows = distributionRows
+    private var loadingPage: some View {
+        ProgressView()
+            .frame(maxWidth: .infinity, minHeight: 220)
+    }
+
+    private func distributionPage(_ snapshot: FlowDashboardSnapshot) -> some View {
+        let rows = distributionRows(in: snapshot)
         return VStack(spacing: 12) {
             Picker(String(localized: "集計単位"), selection: $distributionMode) {
                 ForEach(IOSDashboardDistributionMode.allCases) { mode in
@@ -1070,7 +1143,7 @@ private struct IOSDashboardStatisticsView: View {
             .pickerStyle(.segmented)
             .labelsHidden()
 
-            distributionDonut(rows: rows)
+            distributionDonut(rows: rows, snapshot: snapshot)
                 .productContentFade(on: distributionMode)
 
             VStack(alignment: .leading, spacing: 9) {
@@ -1107,11 +1180,14 @@ private struct IOSDashboardStatisticsView: View {
         }
     }
 
-    private func distributionDonut(rows: [IOSDashboardDistributionRow]) -> some View {
+    private func distributionDonut(
+        rows: [IOSDashboardDistributionRow],
+        snapshot: FlowDashboardSnapshot
+    ) -> some View {
         ZStack {
             Circle()
                 .stroke(Color.primary.opacity(0.08), lineWidth: 12)
-            ForEach(distributionSlices(rows: rows)) { slice in
+            ForEach(distributionSlices(rows: rows, snapshot: snapshot)) { slice in
                 Circle()
                     .trim(from: slice.start, to: slice.end)
                     .stroke(
@@ -1135,17 +1211,17 @@ private struct IOSDashboardStatisticsView: View {
         .animation(reduceMotion ? nil : .smooth(duration: 0.24), value: snapshot.totalFocusSeconds)
     }
 
-    private var trendPage: some View {
+    private func trendPage(_ snapshot: FlowDashboardSnapshot, records: IOSFlowRecentRecords) -> some View {
         let days = statisticsBuilder.days(
             count: 7,
             endingOn: snapshot.date,
-            sessions: sessions,
-            breaks: flowBreaks
+            sessions: records.sessions,
+            breaks: records.breaks
         )
         let comparison = statisticsBuilder.comparison(
             on: snapshot.date,
-            sessions: sessions,
-            breaks: flowBreaks,
+            sessions: records.sessions,
+            breaks: records.breaks,
             todos: todos
         )
 
@@ -1182,7 +1258,10 @@ private struct IOSDashboardStatisticsView: View {
         }
     }
 
-    private var achievementPage: some View {
+    private func achievementPage(_ todoGroups: FlowDashboardTodoGroups) -> some View {
+        let standardTodos = todoGroups.standard
+        let habitTodos = todoGroups.habits
+        let niceTodos = todoGroups.nice
         let required = standardTodos + habitTodos
         let completed = required.filter(\.isCompleted).count
         let ratio = required.isEmpty ? 0 : Double(completed) / Double(required.count)
@@ -1230,7 +1309,7 @@ private struct IOSDashboardStatisticsView: View {
         .frame(maxWidth: .infinity)
     }
 
-    private var distributionRows: [IOSDashboardDistributionRow] {
+    private func distributionRows(in snapshot: FlowDashboardSnapshot) -> [IOSDashboardDistributionRow] {
         switch distributionMode {
         case .task:
             snapshot.taskSummaries.map {
@@ -1255,7 +1334,10 @@ private struct IOSDashboardStatisticsView: View {
         }
     }
 
-    private func distributionSlices(rows: [IOSDashboardDistributionRow]) -> [IOSDashboardFlowSlice] {
+    private func distributionSlices(
+        rows: [IOSDashboardDistributionRow],
+        snapshot: FlowDashboardSnapshot
+    ) -> [IOSDashboardFlowSlice] {
         guard snapshot.totalFocusSeconds > 0 else { return [] }
 
         var cursor = 0.0
