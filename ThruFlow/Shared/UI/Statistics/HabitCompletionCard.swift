@@ -5,24 +5,33 @@ struct HabitCompletionCard: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     let summary: HabitCompletionSummary
+    var compact = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text(String(localized: "習慣の達成率"))
-                .font(.headline)
-            VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: compact ? 8 : 16) {
+            Label {
+                Text(String(localized: "習慣の達成率"))
+            } icon: {
+                Image(systemName: "checkmark.circle")
+                    .foregroundStyle(.green)
+                    .accessibilityHidden(true)
+            }
+            .font(.headline)
+            .accessibilityAddTraits(.isHeader)
+            VStack(alignment: .leading, spacing: compact ? 8 : 16) {
                 if let rate = summary.rate {
-                    VStack(alignment: .leading, spacing: 16) {
-                        HStack(alignment: .firstTextBaseline, spacing: 12) {
+                    VStack(alignment: .leading, spacing: compact ? 8 : 16) {
+                        HStack(alignment: .firstTextBaseline, spacing: compact ? 7 : 12) {
                             Text(rate, format: .percent.precision(.fractionLength(0)))
-                                .font(.largeTitle.bold())
+                                .font(compact ? .title2.bold() : .largeTitle.bold())
                                 .monospacedDigit()
+                                .foregroundStyle(.green)
                             Text(String(localized: "予定 \(summary.occurrenceCount) 件"))
-                                .font(.callout)
+                                .font(compact ? .caption : .callout)
                                 .foregroundStyle(.secondary)
                         }
                         ForEach(summary.areas) { area in
-                            VStack(alignment: .leading, spacing: 6) {
+                            VStack(alignment: .leading, spacing: compact ? 3 : 6) {
                                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                                     Text(area.symbol).accessibilityHidden(true)
                                     Text(area.name)
@@ -32,7 +41,7 @@ struct HabitCompletionCard: View {
                                         .monospacedDigit()
                                         .fixedSize()
                                 }
-                                .font(.callout)
+                                .font(compact ? .caption : .callout)
                                 ProgressView(value: area.rate)
                                     .tint(Color(hex: area.colorHex))
                                     .accessibilityHidden(true)
@@ -53,9 +62,14 @@ struct HabitCompletionCard: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
+        .padding(compact ? 12 : 16)
+        .frame(maxWidth: .infinity, maxHeight: compact ? .infinity : nil, alignment: .leading)
         .background(Color.secondary.opacity(0.055), in: RoundedRectangle(cornerRadius: 16))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16)
+                .strokeBorder(Color.primary.opacity(0.08))
+                .allowsHitTesting(false)
+        }
     }
 }
 #endif

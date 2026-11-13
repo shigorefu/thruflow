@@ -6,6 +6,8 @@ enum ScreenshotScreen: String, CaseIterable {
     case history
     case directions
     case statistics
+    case statisticsTrend = "statistics-trend"
+    case statisticsBreakdown = "statistics-breakdown"
     case statisticsDots = "statistics-dots"
 }
 

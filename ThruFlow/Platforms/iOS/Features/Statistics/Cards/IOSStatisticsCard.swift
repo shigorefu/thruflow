@@ -6,14 +6,17 @@ struct IOSStatisticsCard<Content: View>: View {
     let subtitle: String?
     let headerAccessory: AnyView?
     let content: Content
+    let compact: Bool
 
     init(
         title: String? = nil,
         subtitle: String? = nil,
+        compact: Bool = false,
         @ViewBuilder content: () -> Content
     ) {
         self.title = title
         self.subtitle = subtitle
+        self.compact = compact
         headerAccessory = nil
         self.content = content()
     }
@@ -21,17 +24,19 @@ struct IOSStatisticsCard<Content: View>: View {
     init<HeaderAccessory: View>(
         title: String,
         subtitle: String? = nil,
+        compact: Bool = false,
         @ViewBuilder headerAccessory: () -> HeaderAccessory,
         @ViewBuilder content: () -> Content
     ) {
         self.title = title
         self.subtitle = subtitle
+        self.compact = compact
         self.headerAccessory = AnyView(headerAccessory())
         self.content = content()
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: compact ? 8 : 14) {
             if title != nil || headerAccessory != nil {
                 HStack(spacing: 8) {
                     if let title {
@@ -53,7 +58,7 @@ struct IOSStatisticsCard<Content: View>: View {
             content
         }
         .frame(maxWidth: .infinity, alignment: .topLeading)
-        .padding(16)
+        .padding(compact ? 10 : 16)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 20, style: .continuous)

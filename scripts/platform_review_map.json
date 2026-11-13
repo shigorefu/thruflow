@@ -155,7 +155,7 @@
         "ThruFlow/Platforms/macOS/Features/Statistics",
         "ThruFlow/Platforms/iOS/Features/Statistics",
         "ThruFlow/Shared/Domain/Logic/Statistics/HabitCompletionBuilder.swift",
-        "ThruFlow/Shared/UI/Statistics/HabitCompletionCard.swift",
+        "ThruFlow/Shared/UI/Statistics",
         "ThruFlow/Shared/Application/Statistics/StatisticsProjectionActor.swift",
         "ThruFlow/Platforms/watchOS/Features/Statistics"
       ],

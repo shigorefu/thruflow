@@ -4,18 +4,19 @@ import SwiftData
 import SwiftUI
 
 struct IOSStatisticsView: View {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.calendar) private var calendar
     @Environment(\.locale) private var locale
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     @Binding private var cache: StatisticsPresentationCache
     @Binding private var filter: StatisticsPeriodFilter
     let isVisible: Bool
     let onOpenHistoryDate: (Date) -> Void
 
-    @State private var didScrollToScreenshotDots = false
+    @State private var didScrollToScreenshotCard = false
+    @State private var reportWidth: CGFloat = 0
     @State private var anchorDateDraft = Date.now
     @State private var customStartDraft = Date.now
     @State private var customEndDraft = Date.now
@@ -26,9 +27,7 @@ struct IOSStatisticsView: View {
     @State private var distributionDimension: IOSStatisticsDistributionDimension = .task
     @State private var persistenceRevision = 0
     @State private var failedRequest: IOSStatisticsPeriodRefreshID?
-    @State private var reportReveal = 0
-    @State private var stagedReportRequest: IOSStatisticsPeriodRefreshID?
-    @State private var partialSummary: IOSStatisticsPartialSummary?
+    @State private var partialCards: IOSStatisticsPartialCards?
     @State private var loadsAreas = false
     @State private var areas: [Area] = []
     @State private var selectedContributionDay: IOSStatisticsContributionDay?
@@ -135,20 +134,27 @@ struct IOSStatisticsView: View {
 
     private var statisticsScreen: some View {
         let request = refreshID
-        let report = currentSnapshot
-        let visibleReport = stagedReportRequest == request ? nil : report
-        let summary = report.map {
-            StatisticsPresentationSummary(summary: $0.summary, previousSummary: $0.previousSummary)
-        } ?? (partialSummary?.request == request ? partialSummary?.value : nil)
+        let cards = currentSnapshot.map { StatisticsPresentationCards(snapshot: $0) }
+            ?? (partialCards?.request == request ? partialCards?.value : nil)
+            ?? StatisticsPresentationCards()
+        let screenshotAnchor: String? = switch ScreenshotMode.initialScreen() {
+        case .statisticsTrend: "screenshot-statistics-trend"
+        case .statisticsDots: "screenshot-statistics-dots"
+        case .statisticsBreakdown: "screenshot-statistics-breakdown"
+        default: nil
+        }
+        let canScrollToScreenshotCard = isVisible && screenshotAnchor != nil
+            && cards.days != nil && cards.summary != nil
+            && cards.trend != nil && cards.distribution != nil && cards.habits != nil
+            && cards.estimateAccuracy != nil && cards.dailyFocus != nil
         return ScrollViewReader { proxy in
-            statisticsContent(summary: summary, report: visibleReport, request: request)
-                .task(id: visibleReport?.filter) {
-                    guard isVisible, ScreenshotMode.initialScreen() == .statisticsDots,
-                          visibleReport != nil, !didScrollToScreenshotDots else { return }
+            statisticsContent(cards: cards, request: request)
+                .task(id: canScrollToScreenshotCard) {
+                    guard canScrollToScreenshotCard, let screenshotAnchor, !didScrollToScreenshotCard else { return }
                     await Task.yield()
                     guard !Task.isCancelled else { return }
-                    proxy.scrollTo("screenshot-statistics-dots", anchor: .top)
-                    didScrollToScreenshotDots = true
+                    proxy.scrollTo(screenshotAnchor, anchor: .top)
+                    didScrollToScreenshotCard = true
                 }
         }
         .background {
@@ -217,19 +223,11 @@ struct IOSStatisticsView: View {
             guard !Task.isCancelled else { return }
             loadsAreas = true
         }
-        .task(id: isVisible ? stagedReportRequest : nil) {
-            guard isVisible, stagedReportRequest == request else { return }
-            await Task.yield()
-            guard !Task.isCancelled else { return }
-            stagedReportRequest = nil
-            reportReveal &+= 1
-        }
         .onChange(of: isVisible) { _, visible in
             if !visible {
                 searchDebounceDeadline = nil
                 failedRequest = nil
-                partialSummary = nil
-                stagedReportRequest = nil
+                partialCards = nil
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: ModelContext.didSave).receive(on: RunLoop.main)) { _ in
@@ -241,17 +239,25 @@ struct IOSStatisticsView: View {
     }
 
     private func statisticsContent(
-        summary: StatisticsPresentationSummary?,
-        report: StatisticsPeriodSnapshot?,
+        cards: StatisticsPresentationCards,
         request: IOSStatisticsPeriodRefreshID
     ) -> some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 16) {
+        let cardID = StatisticsCardPresentationID(
+            filter: filter,
+            calendar: calendar,
+            dayBoundary: dayBoundary,
+            isVisible: isVisible
+        )
+        let failed = failedRequest == request
+        let compact = reportWidth >= 650 && dynamicTypeSize <= .large
+        return ScrollView {
+            LazyVStack(alignment: .leading, spacing: compact ? 6 : 16) {
                 IOSStatisticsPeriodNavigationCard(
                     selection: selectedPeriodBinding,
                     usesCustomRange: usesCustomRange,
                     periodTitle: periodTitle,
                     canMoveToNextPeriod: canMoveToNextPeriod,
+                    compact: compact,
                     onCustomRange: {
                         prepareCustomRangeDraft()
                         isCustomRangePresented = true
@@ -264,63 +270,36 @@ struct IOSStatisticsView: View {
                     onMovePeriod: movePeriod
                 )
 
-                if let summary {
-                    summaryCard(summary)
-                }
-                if let report {
-                    chartCards(report)
-                } else if failedRequest == request {
+                IOSStatisticsAnalysisCards(
+                    cards: cards,
+                    id: cardID,
+                    showsLoading: !failed,
+                    periodTitle: periodTitle,
+                    today: today,
+                    presentationPeriod: presentationPeriod,
+                    marksOutsideMonth: selectedPeriod == .month && !usesCustomRange,
+                    usesCustomRange: usesCustomRange,
+                    compact: compact,
+                    trendMode: $trendMode,
+                    distributionDimension: $distributionDimension,
+                    dotsMode: $dotsMode,
+                    onSelectDay: { selectedContributionDay = $0 }
+                )
+
+                if failed && currentSnapshot == nil {
                     ContentUnavailableView(
                         String(localized: "データを読み込めませんでした。"),
                         systemImage: "exclamationmark.triangle"
                     )
                     .frame(maxWidth: .infinity)
-                } else {
-                    FeatureLoadingIndicator()
-                        .frame(minHeight: summary == nil ? 210 : 120)
                 }
             }
-            .animation(reduceMotion ? nil : .easeOut(duration: 0.14), value: reportReveal)
+            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { reportWidth = $0 }
             .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .padding(.vertical, compact ? 4 : 12)
             .frame(maxWidth: 1_000)
             .frame(maxWidth: .infinity)
         }
-    }
-
-    private func summaryCard(_ value: StatisticsPresentationSummary) -> some View {
-        IOSStatisticsSummaryCard(
-            title: periodTitle,
-            summary: value.summary,
-            previousSummary: value.previousSummary
-        )
-    }
-
-    @ViewBuilder
-    private func chartCards(_ currentSnapshot: StatisticsPeriodSnapshot) -> some View {
-        HabitCompletionCard(summary: currentSnapshot.habitCompletion)
-        IOSStatisticsTrendCard(
-            mode: $trendMode,
-            period: currentSnapshot.trendPeriod,
-            points: currentSnapshot.trend,
-            today: today
-        )
-        IOSStatisticsDistributionCard(
-            dimension: $distributionDimension,
-            items: distributionItems(in: currentSnapshot),
-            totalFocusSeconds: currentSnapshot.summary.totalFocusSeconds
-        )
-        IOSStatisticsDotsCard(
-            mode: $dotsMode,
-            period: presentationPeriod,
-            marksOutsideMonth: selectedPeriod == .month && !usesCustomRange,
-            usesCustomRange: usesCustomRange,
-            flowDays: currentSnapshot.flowDays,
-            achievementDays: currentSnapshot.achievementDays,
-            maximumInteractiveDate: today,
-            onSelectDay: { selectedContributionDay = $0 }
-        )
-        .id("screenshot-statistics-dots")
     }
 
     @ToolbarContentBuilder
@@ -352,19 +331,6 @@ struct IOSStatisticsView: View {
                 selectPeriod(period)
             }
         )
-    }
-
-    private func distributionItems(
-        in snapshot: StatisticsPeriodSnapshot
-    ) -> [StatisticsDistributionItem] {
-        switch distributionDimension {
-        case .task:
-            snapshot.taskDistribution
-        case .area:
-            snapshot.areaDistribution
-        case .project:
-            snapshot.projectDistribution
-        }
     }
 
     private var periodTitle: String {
@@ -456,15 +422,19 @@ struct IOSStatisticsView: View {
             for try await update in updates {
                 guard !Task.isCancelled, request == refreshID else { return }
                 switch update {
-                case .summary(let summary):
-                    if currentSnapshot == nil {
-                        partialSummary = IOSStatisticsPartialSummary(request: request, value: summary)
-                    }
                 case .report(let projection):
-                    if currentSnapshot == nil { stagedReportRequest = request }
                     cache.store(projection, calendar: requestedCalendar, dayBoundary: requestedBoundary)
-                    partialSummary = nil
+                    partialCards = nil
                     failedRequest = nil
+                default:
+                    if currentSnapshot == nil {
+                        var cards = partialCards?.request == request
+                            ? partialCards?.value ?? StatisticsPresentationCards()
+                            : StatisticsPresentationCards()
+                        cards.apply(update)
+                        partialCards = IOSStatisticsPartialCards(request: request, value: cards)
+                        failedRequest = nil
+                    }
                 }
             }
         } catch is CancellationError {
@@ -472,7 +442,6 @@ struct IOSStatisticsView: View {
         } catch {
             guard !Task.isCancelled, request == refreshID else { return }
             failedRequest = request
-            partialSummary = nil
             PersistenceIssueCenter.shared.log(error, operation: .dataLoad)
         }
     }
@@ -677,9 +646,9 @@ struct IOSStatisticsView: View {
     }
 }
 
-private struct IOSStatisticsPartialSummary {
+private struct IOSStatisticsPartialCards {
     let request: IOSStatisticsPeriodRefreshID
-    let value: StatisticsPresentationSummary
+    let value: StatisticsPresentationCards
 }
 
 private struct IOSStatisticsPeriodRefreshID: Hashable {

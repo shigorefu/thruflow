@@ -6,14 +6,20 @@ struct StatisticsTrendCard: View {
     let period: StatisticsPeriod
     let points: [StatisticsTrendPoint]
     let today: Date
+    let compact: Bool
 
     var body: some View {
-        StatisticsCard(
-            title: String(localized: "傾向"),
+        StatisticsAnalysisCard(
+            title: String(localized: "集中の質"),
             subtitle: mode == .flow ? String(localized: "集中時間") : String(localized: "完了タスク"),
-            headerAccessory: { StatisticsModePicker(selection: $mode) }
+            systemImage: "chart.xyaxis.line",
+            compact: compact
         ) {
-            StatisticsTrendPlot(mode: mode, period: period, points: points, today: today, height: 220)
+            StatisticsModePicker(selection: $mode, width: compact ? 108 : 180)
+        } content: {
+            StatisticsTrendPlot(
+                mode: mode, period: period, points: points, today: today, height: compact ? 94 : 220, compact: compact
+            )
         }
     }
 }

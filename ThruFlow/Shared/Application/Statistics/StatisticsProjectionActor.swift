@@ -12,15 +12,10 @@ struct StatisticsProjection: Sendable {
     let achievement: AchievementHeatmapResult
 }
 
-enum StatisticsPresentationUpdate: Sendable {
-    case summary(StatisticsPresentationSummary)
-    case report(StatisticsPeriodSnapshot)
-}
-
 @ModelActor
 actor StatisticsProjectionActor {
-    /// Create the SwiftData context off the UI executor and publish the summary
-    /// as soon as it is available from the same records as the final report.
+    /// Read the range once on the model actor. Only immutable value records
+    /// leave that actor, so card calculations can run independently.
     static nonisolated func presentationUpdates(
         modelContainer: ModelContainer,
         filter: StatisticsPeriodFilter,
@@ -32,15 +27,45 @@ actor StatisticsProjectionActor {
             do {
                 try Task.checkCancellation()
                 let loader = StatisticsProjectionActor(modelContainer: modelContainer)
-                let report = try await loader.load(
-                    filter: filter,
-                    calendar: calendar,
-                    dayBoundary: dayBoundary
-                ) { summary in
-                    continuation.yield(.summary(summary))
+                let builder = StatisticsPeriodBuilder(calendar: calendar, dayBoundary: dayBoundary)
+                let input = try await loader.periodInput(
+                    filter: filter, calendar: calendar, dayBoundary: dayBoundary, builder: builder
+                )
+                try Task.checkCancellation()
+                let cards = await withTaskGroup(of: StatisticsPresentationUpdate.self) { group in
+                    group.addTask { .summary(builder.summary(for: input)) }
+                    group.addTask { .trend(builder.trend(for: input)) }
+                    group.addTask { .dailyFocus(builder.dailyFocus(for: input)) }
+                    group.addTask { .estimateAccuracy(builder.estimateAccuracy(for: input)) }
+                    group.addTask { .distribution(builder.distribution(for: input)) }
+                    group.addTask { .habits(builder.habits(for: input)) }
+                    group.addTask { .days(builder.days(for: input)) }
+
+                    var cards = StatisticsPresentationCards()
+                    for await update in group {
+                        guard !Task.isCancelled else {
+                            group.cancelAll()
+                            break
+                        }
+                        cards.apply(update)
+                        continuation.yield(update)
+                    }
+                    return cards
                 }
                 try Task.checkCancellation()
-                continuation.yield(.report(report))
+                guard let summary = cards.summary, let trend = cards.trend,
+                      let distribution = cards.distribution, let habits = cards.habits,
+                      let days = cards.days, let dailyFocus = cards.dailyFocus,
+                      let estimateAccuracy = cards.estimateAccuracy else {
+                    preconditionFailure("The report requires all card results.")
+                }
+                let rows = builder.csvRows(for: input)
+                try Task.checkCancellation()
+                continuation.yield(.report(builder.makeSnapshot(
+                    for: input, summary: summary, trend: trend, distribution: distribution,
+                    habits: habits, days: days, dailyFocus: dailyFocus,
+                    estimateAccuracy: estimateAccuracy, csvRows: rows
+                )))
                 continuation.finish()
             } catch {
                 continuation.finish(throwing: error)
@@ -53,14 +78,27 @@ actor StatisticsProjectionActor {
     func load(
         filter: StatisticsPeriodFilter,
         calendar: Calendar,
-        dayBoundary: AppDayBoundary,
-        onSummary: (@Sendable (StatisticsPresentationSummary) -> Void)? = nil
+        dayBoundary: AppDayBoundary
     ) throws -> StatisticsPeriodSnapshot {
-        try Task.checkCancellation()
-        let builder = StatisticsPeriodBuilder(
-            calendar: calendar,
-            dayBoundary: dayBoundary
+        let builder = StatisticsPeriodBuilder(calendar: calendar, dayBoundary: dayBoundary)
+        let input = try periodInput(
+            filter: filter, calendar: calendar, dayBoundary: dayBoundary, builder: builder
         )
+        return builder.makeSnapshot(
+            for: input, summary: builder.summary(for: input), trend: builder.trend(for: input),
+            distribution: builder.distribution(for: input), habits: builder.habits(for: input),
+            days: builder.days(for: input), dailyFocus: builder.dailyFocus(for: input),
+            estimateAccuracy: builder.estimateAccuracy(for: input), csvRows: builder.csvRows(for: input)
+        )
+    }
+
+    private func periodInput(
+        filter: StatisticsPeriodFilter,
+        calendar: Calendar,
+        dayBoundary: AppDayBoundary,
+        builder: StatisticsPeriodBuilder
+    ) throws -> StatisticsPeriodBuilder.ReportInput {
+        try Task.checkCancellation()
         let bounds = builder.bounds(for: filter)
         let interval = bounds.fetchInterval
         let lowerBound = interval.start
@@ -108,12 +146,13 @@ actor StatisticsProjectionActor {
         ))
 
         try Task.checkCancellation()
-        return builder.build(
+        return builder.prepare(
             flowRecords: sessions.flatMap(makePeriodFlowRecords),
             achievementRecords: (completedTodos + legacyCompletedTodos).compactMap(makePeriodAchievementRecord),
             filter: filter,
-            habitRecords: scheduledTodos.compactMap { HabitCompletionRecord(todo: $0, calendar: calendar, dayBoundary: dayBoundary) },
-            onSummary: onSummary
+            habitRecords: scheduledTodos.compactMap {
+                HabitCompletionRecord(todo: $0, calendar: calendar, dayBoundary: dayBoundary)
+            }
         )
     }
 
@@ -280,7 +319,22 @@ actor StatisticsProjectionActor {
             areaID: todo.area?.id,
             areaName: todo.area?.name ?? "",
             areaSymbol: todo.area?.symbolName ?? "",
-            areaColorHex: todo.area?.colorHex
+            areaColorHex: todo.area?.colorHex,
+            timeEstimate: makeTaskTimeEstimate(todo)
+        )
+    }
+
+    private func makeTaskTimeEstimate(_ todo: Todo) -> StatisticsTaskTimeEstimate? {
+        guard let amount = todo.plannedAmount, amount > 0, todo.recordedFocusSeconds > 0 else { return nil }
+        let secondsPerUnit: Int
+        switch todo.measurement {
+        case .checkbox: return nil
+        case .focusBlocks: secondsPerUnit = BlockUnit.secondsPerBlock
+        case .minutes: secondsPerUnit = 60
+        }
+        return StatisticsTaskTimeEstimate(
+            plannedSeconds: Double(amount) * Double(secondsPerUnit),
+            actualSeconds: Double(todo.recordedFocusSeconds)
         )
     }
 

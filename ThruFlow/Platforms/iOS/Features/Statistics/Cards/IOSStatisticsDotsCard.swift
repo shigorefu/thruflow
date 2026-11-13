@@ -11,6 +11,7 @@ struct IOSStatisticsDotsCard: View {
     let flowDays: [StatisticsDay]
     let achievementDays: [AchievementDay]
     let maximumInteractiveDate: Date
+    var compact = false
     let onSelectDay: (IOSStatisticsContributionDay) -> Void
 
     private var days: [IOSStatisticsContributionDay] {
@@ -52,15 +53,16 @@ struct IOSStatisticsDotsCard: View {
         IOSStatisticsCard(
             title: String(localized: "Dots"),
             subtitle: mode == .flow ? String(localized: "集中時間") : String(localized: "完了タスク"),
+            compact: compact,
             headerAccessory: {
                 IOSStatisticsModePicker(selection: $mode)
             }
         ) {
             if days.isEmpty {
                 IOSStatisticsEmptyState()
-                    .frame(maxWidth: .infinity, minHeight: 120)
+                    .frame(maxWidth: .infinity, minHeight: compact ? 80 : 120)
             } else {
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: compact ? 6 : 12) {
                     if usesCustomRange {
                         customGrid
                     } else {
@@ -85,7 +87,7 @@ struct IOSStatisticsDotsCard: View {
                                     .fill(level == 0
                                         ? Color.secondary.opacity(0.12)
                                         : Color.accentColor.opacity(0.24 + Double(level) * 0.17))
-                                    .frame(width: 12, height: 12)
+                                    .frame(width: compact ? 9 : 12, height: compact ? 9 : 12)
                             }
                             Text(String(localized: "多い"))
                         }
@@ -110,9 +112,9 @@ struct IOSStatisticsDotsCard: View {
     }
 
     private var weekGrid: some View {
-        HStack(alignment: .top, spacing: 6) {
+        HStack(alignment: .top, spacing: compact ? 4 : 6) {
             ForEach(days) { day in
-                VStack(spacing: 6) {
+                VStack(spacing: compact ? 3 : 6) {
                     Text(day.date.formatted(.dateTime.weekday(.narrow)))
                         .font(.caption2.weight(.medium))
                         .foregroundStyle(.secondary)
@@ -122,6 +124,7 @@ struct IOSStatisticsDotsCard: View {
                         onSelectDay: onSelectDay
                     )
                     .aspectRatio(1, contentMode: .fit)
+                    .frame(maxWidth: compact ? 24 : .infinity)
                 }
                 .frame(maxWidth: .infinity)
             }
@@ -129,8 +132,9 @@ struct IOSStatisticsDotsCard: View {
     }
 
     private var monthGrid: some View {
-        let columns = Array(repeating: GridItem(.flexible(), spacing: 6), count: 7)
-        return LazyVGrid(columns: columns, spacing: 6) {
+        let spacing: CGFloat = compact ? 3 : 6
+        let columns = Array(repeating: GridItem(.flexible(), spacing: spacing), count: 7)
+        return LazyVGrid(columns: columns, spacing: spacing) {
             ForEach(CalendarWeekdaySymbols.orderedAbbreviated(calendar: calendar), id: \.self) { weekday in
                 Text(weekday)
                     .font(.caption2.weight(.medium))
@@ -145,8 +149,10 @@ struct IOSStatisticsDotsCard: View {
                     onSelectDay: onSelectDay
                 )
                 .aspectRatio(1, contentMode: .fit)
+                .frame(maxWidth: compact ? 14 : .infinity)
             }
         }
+        .frame(maxWidth: compact ? 7 * 24 + 6 * spacing : .infinity)
     }
 }
 

@@ -19,7 +19,7 @@ struct WatchFlowDashboardView: View {
     init() {
         let page: WatchDashboardPage = switch ScreenshotMode.initialScreen() {
         case .tasks: .tasks
-        case .statistics, .statisticsDots: .statistics
+        case .statistics, .statisticsTrend, .statisticsBreakdown, .statisticsDots: .statistics
         case .flow, .history, .directions: .timer
         }
         _selectedPage = State(initialValue: page)

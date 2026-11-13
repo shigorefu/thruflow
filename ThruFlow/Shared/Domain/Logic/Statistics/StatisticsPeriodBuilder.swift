@@ -82,60 +82,166 @@ struct StatisticsPeriodBuilder: Sendable {
         achievementRecords: [StatisticsPeriodAchievementRecord],
         filter: StatisticsPeriodFilter,
         habitRecords: [HabitCompletionRecord] = [],
-        now: Date = .now,
-        onSummary: (@Sendable (StatisticsPresentationSummary) -> Void)? = nil
+        now: Date = .now
     ) -> StatisticsPeriodSnapshot {
+        let input = prepare(
+            flowRecords: flowRecords, achievementRecords: achievementRecords,
+            filter: filter, habitRecords: habitRecords, now: now
+        )
+        return makeSnapshot(
+            for: input, summary: summary(for: input), trend: trend(for: input),
+            distribution: distribution(for: input), habits: habits(for: input),
+            days: days(for: input), dailyFocus: dailyFocus(for: input),
+            estimateAccuracy: estimateAccuracy(for: input), csvRows: csvRows(for: input)
+        )
+    }
+
+    nonisolated struct ReportInput: Sendable {
+        let filter: StatisticsPeriodFilter
+        let bounds: StatisticsPeriodBounds
+        let currentFlows: [StatisticsPeriodFlowRecord]
+        let previousFlows: [StatisticsPeriodFlowRecord]
+        let currentAchievements: [StatisticsPeriodAchievementRecord]
+        let previousAchievements: [StatisticsPeriodAchievementRecord]
+        let habitRecords: [HabitCompletionRecord]
+        let today: Date
+    }
+
+    nonisolated func prepare(
+        flowRecords: [StatisticsPeriodFlowRecord],
+        achievementRecords: [StatisticsPeriodAchievementRecord],
+        filter: StatisticsPeriodFilter,
+        habitRecords: [HabitCompletionRecord],
+        now: Date = .now
+    ) -> ReportInput {
         let periodBounds = bounds(for: filter)
-        let filteredFlows = flowRecords.filter {
-            matchesArea($0.areaID, filter: filter) && matchesQuery($0, query: filter.query)
+        var currentFlows: [StatisticsPeriodFlowRecord] = []
+        var previousFlows: [StatisticsPeriodFlowRecord] = []
+        var currentAchievements: [StatisticsPeriodAchievementRecord] = []
+        var previousAchievements: [StatisticsPeriodAchievementRecord] = []
+        for record in flowRecords where matchesArea(record.areaID, filter: filter) && matchesQuery(record, query: filter.query) {
+            let day = dayBoundary.day(containing: record.startedAt, calendar: calendar)
+            if periodBounds.containsCurrent(day) {
+                currentFlows.append(record)
+            } else if periodBounds.containsPrevious(day) {
+                previousFlows.append(record)
+            }
         }
-        let filteredAchievements = achievementRecords.filter {
-            matchesArea($0.areaID, filter: filter) && matchesQuery($0, query: filter.query)
+        for record in achievementRecords where matchesArea(record.areaID, filter: filter) && matchesQuery(record, query: filter.query) {
+            let day = dayBoundary.day(containing: record.completedAt, calendar: calendar)
+            if periodBounds.containsCurrent(day) {
+                currentAchievements.append(record)
+            } else if periodBounds.containsPrevious(day) {
+                previousAchievements.append(record)
+            }
         }
+        return ReportInput(
+            filter: filter, bounds: periodBounds,
+            currentFlows: currentFlows, previousFlows: previousFlows,
+            currentAchievements: currentAchievements, previousAchievements: previousAchievements,
+            habitRecords: habitRecords, today: dayBoundary.day(containing: now, calendar: calendar)
+        )
+    }
 
-        let currentFlows = filteredFlows.filter {
-            periodBounds.containsCurrent(dayBoundary.day(containing: $0.startedAt, calendar: calendar))
-        }
-        let previousFlows = filteredFlows.filter {
-            periodBounds.containsPrevious(dayBoundary.day(containing: $0.startedAt, calendar: calendar))
-        }
-        let currentAchievements = filteredAchievements.filter {
-            periodBounds.containsCurrent(dayBoundary.day(containing: $0.completedAt, calendar: calendar))
-        }
-        let previousAchievements = filteredAchievements.filter {
-            periodBounds.containsPrevious(dayBoundary.day(containing: $0.completedAt, calendar: calendar))
-        }
+    nonisolated func summary(for input: ReportInput) -> StatisticsPresentationSummary {
+        StatisticsPresentationSummary(
+            summary: makeSummary(flows: input.currentFlows, achievements: input.currentAchievements),
+            previousSummary: makeSummary(flows: input.previousFlows, achievements: input.previousAchievements)
+        )
+    }
 
-        let summary = makeSummary(flows: currentFlows, achievements: currentAchievements)
-        let previousSummary = makeSummary(flows: previousFlows, achievements: previousAchievements)
-        onSummary?(StatisticsPresentationSummary(summary: summary, previousSummary: previousSummary))
+    nonisolated func trend(for input: ReportInput) -> StatisticsPresentationTrend {
+        let period = trendPeriod(for: input.filter, bounds: input.bounds)
+        return StatisticsPresentationTrend(
+            period: period,
+            points: makeTrend(
+                period: period, bounds: input.bounds,
+                currentFlows: input.currentFlows, previousFlows: input.previousFlows,
+                currentAchievements: input.currentAchievements, previousAchievements: input.previousAchievements
+            )
+        )
+    }
 
-        let days = dates(from: periodBounds.currentStart, to: periodBounds.currentEnd)
-        let trendPeriod = trendPeriod(for: filter, bounds: periodBounds)
-        return StatisticsPeriodSnapshot(
-            filter: filter,
-            bounds: periodBounds,
-            summary: summary,
-            previousSummary: previousSummary,
-            trend: makeTrend(
-                period: trendPeriod,
-                bounds: periodBounds,
-                currentFlows: currentFlows,
-                previousFlows: previousFlows,
-                currentAchievements: currentAchievements,
-                previousAchievements: previousAchievements
-            ),
-            trendPeriod: trendPeriod,
-            taskDistribution: makeDistribution(flows: currentFlows, dimension: .task),
-            areaDistribution: makeDistribution(flows: currentFlows, dimension: .area),
-            projectDistribution: makeDistribution(flows: currentFlows, dimension: .project),
-            habitCompletion: HabitCompletionBuilder().build(
-                records: habitRecords, filter: filter, bounds: periodBounds,
-                today: dayBoundary.day(containing: now, calendar: calendar)
-            ),
-            flowDays: makeFlowDays(days: days, flows: currentFlows),
-            achievementDays: makeAchievementDays(days: days, achievements: currentAchievements),
-            csvRows: makeCSVRows(flows: currentFlows, achievements: currentAchievements)
+    nonisolated func distribution(for input: ReportInput) -> StatisticsPresentationDistribution {
+        StatisticsPresentationDistribution(
+            task: makeDistribution(flows: input.currentFlows, dimension: .task),
+            area: makeDistribution(flows: input.currentFlows, dimension: .area),
+            project: makeDistribution(flows: input.currentFlows, dimension: .project),
+            totalFocusSeconds: input.currentFlows.reduce(0) { $0 + max(0, $1.focusSeconds) }
+        )
+    }
+
+    nonisolated func habits(for input: ReportInput) -> HabitCompletionSummary {
+        HabitCompletionBuilder().build(
+            records: input.habitRecords, filter: input.filter, bounds: input.bounds, today: input.today
+        )
+    }
+
+    nonisolated func days(for input: ReportInput) -> StatisticsPresentationDays {
+        let dates = dates(from: input.bounds.currentStart, to: input.bounds.currentEnd)
+        return StatisticsPresentationDays(
+            flow: makeFlowDays(days: dates, flows: input.currentFlows),
+            achievement: makeAchievementDays(days: dates, achievements: input.currentAchievements)
+        )
+    }
+
+    nonisolated func dailyFocus(for input: ReportInput) -> [StatisticsDailyFocusPoint] {
+        var secondsByDay: [Date: Int] = [:]
+        for flow in input.currentFlows {
+            let day = dayBoundary.day(containing: flow.startedAt, calendar: calendar)
+            secondsByDay[day, default: 0] += max(0, flow.focusSeconds)
+        }
+        let tomorrow = calendar.date(byAdding: .day, value: 1, to: input.today) ?? input.today
+        let end = min(input.bounds.currentEnd, tomorrow)
+        return dates(from: input.bounds.currentStart, to: end).map { day in
+            StatisticsDailyFocusPoint(date: day, focusSeconds: secondsByDay[day, default: 0])
+        }
+    }
+
+    nonisolated func estimateAccuracy(for input: ReportInput) -> StatisticsEstimateAccuracy {
+        var planned = 0.0
+        var actual = 0.0
+        var matched = 0.0
+        var compared = 0.0
+        var countedTasks: Set<UUID> = []
+        for task in input.currentAchievements {
+            guard let estimate = task.timeEstimate,
+                  estimate.plannedSeconds > 0, estimate.actualSeconds > 0,
+                  countedTasks.insert(task.todoID).inserted else { continue }
+            planned += estimate.plannedSeconds
+            actual += estimate.actualSeconds
+            matched += min(estimate.plannedSeconds, estimate.actualSeconds)
+            compared += max(estimate.plannedSeconds, estimate.actualSeconds)
+        }
+        return StatisticsEstimateAccuracy(
+            plannedSeconds: planned, actualSeconds: actual,
+            rate: compared > 0 ? matched / compared : nil
+        )
+    }
+
+    nonisolated func csvRows(for input: ReportInput) -> [StatisticsCSVRow] {
+        makeCSVRows(flows: input.currentFlows, achievements: input.currentAchievements)
+    }
+
+    nonisolated func makeSnapshot(
+        for input: ReportInput,
+        summary: StatisticsPresentationSummary,
+        trend: StatisticsPresentationTrend,
+        distribution: StatisticsPresentationDistribution,
+        habits: HabitCompletionSummary,
+        days: StatisticsPresentationDays,
+        dailyFocus: [StatisticsDailyFocusPoint],
+        estimateAccuracy: StatisticsEstimateAccuracy,
+        csvRows: [StatisticsCSVRow]
+    ) -> StatisticsPeriodSnapshot {
+        StatisticsPeriodSnapshot(
+            filter: input.filter, bounds: input.bounds,
+            summary: summary.summary, previousSummary: summary.previousSummary,
+            trend: trend.points, trendPeriod: trend.period,
+            dailyFocus: dailyFocus, estimateAccuracy: estimateAccuracy,
+            taskDistribution: distribution.task, areaDistribution: distribution.area,
+            projectDistribution: distribution.project, habitCompletion: habits,
+            flowDays: days.flow, achievementDays: days.achievement, csvRows: csvRows
         )
     }
 

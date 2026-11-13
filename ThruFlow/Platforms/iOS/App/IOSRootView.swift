@@ -28,7 +28,7 @@ struct IOSRootView: View {
         case .tasks: .tasks
         case .history: .history
         case .directions: .areas
-        case .statistics, .statisticsDots: .statistics
+        case .statistics, .statisticsTrend, .statisticsBreakdown, .statisticsDots: .statistics
         }
         _selection = State(initialValue: initialRoute)
         if ScreenshotMode.isEnabled() {

@@ -10,7 +10,6 @@ import SwiftData
 import SwiftUI
 
 struct StatisticsView: View {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.calendar) private var calendar
     @Environment(\.locale) private var locale
@@ -22,7 +21,7 @@ struct StatisticsView: View {
     let onSelectHistoryDate: (Date) -> Void
     private let isVisible: Bool
 
-    @State private var didScrollToScreenshotDots = false
+    @State private var didScrollToScreenshotCard = false
     @State private var customStartDraft = Date.now
     @State private var customEndDraft = Date.now
     @State private var isCustomRangePresented = false
@@ -32,11 +31,7 @@ struct StatisticsView: View {
     @State private var dotsMode: StatisticsMode = .flow
     @State private var searchDeadline: ContinuousClock.Instant?
     @State private var failedRequest: StatisticsPeriodRefreshID?
-    @State private var reportReveal = 0
-    @State private var pendingSummary: StatisticsPresentationSummary?
-    @State private var pendingSummaryRequest: StatisticsPeriodRefreshID?
-    @State private var stagedReportRequest: StatisticsPeriodRefreshID?
-    @State private var revealedReportRequest: StatisticsPeriodRefreshID?
+    @State private var partialReport: StatisticsPartialPresentation?
     @State private var persistenceRevision = 0
     @State private var isExportPresented = false
     @State private var exportContent: StatisticsCSVContent = .all
@@ -138,9 +133,7 @@ struct StatisticsView: View {
             }
             .task(id: isVisible ? request : nil) {
                 guard isVisible else {
-                    stagedReportRequest = nil
-                    pendingSummaryRequest = nil
-                    pendingSummary = nil
+                    partialReport = nil
                     return
                 }
                 await refreshStatisticsWhileVisible(request)
@@ -149,82 +142,77 @@ struct StatisticsView: View {
 
     private func workspace(request: StatisticsPeriodRefreshID) -> some View {
         let snapshot = currentSnapshot
-        let summary = snapshot.map {
-            StatisticsPresentationSummary(summary: $0.summary, previousSummary: $0.previousSummary)
-        } ?? (pendingSummaryRequest == request ? pendingSummary : nil)
-        let reportIsReady = snapshot != nil && (
-            stagedReportRequest != request || revealedReportRequest == request
+        let cards = snapshot.map { StatisticsPresentationCards(snapshot: $0) }
+            ?? (partialReport?.request == request ? partialReport?.cards : nil)
+            ?? StatisticsPresentationCards()
+        let presentationID = StatisticsCardPresentationID(
+            filter: filter,
+            calendar: calendar,
+            dayBoundary: dayBoundary,
+            isVisible: isVisible
         )
+        let didFail = snapshot == nil && failedRequest == request
+        let reportPadding: CGFloat = 12
+        // Screenshot scrolling needs the final heights of the preceding cards.
+        let screenshotAnchor: String? = switch (snapshot != nil, ScreenshotMode.initialScreen()) {
+        case (true, .statisticsDots): "screenshot-statistics-dots"
+        case (true, .statisticsTrend): "screenshot-statistics-trend"
+        case (true, .statisticsBreakdown): "screenshot-statistics-breakdown"
+        default: nil
+        }
 
         return GeometryReader { geometry in
+            let calendarWidth = MacCalendarSidebarLayout.width(
+                for: periodTitle,
+                in: geometry.size.width,
+                preferredFraction: 0.27,
+                minimum: 330,
+                maximum: 430
+            )
             HStack(spacing: 0) {
                 ScrollViewReader { proxy in
                     ScrollView {
                         LazyVStack(alignment: .leading, spacing: 16) {
-                            if let summary {
-                                StatisticsSummaryCard(
-                                    title: periodTitle,
-                                    summary: summary.summary,
-                                    previousSummary: summary.previousSummary
-                                )
-                            }
-                            if let snapshot, reportIsReady {
-                                StatisticsReportCards(
-                                    snapshot: snapshot,
-                                    today: today,
-                                    presentationPeriod: presentationPeriod,
-                                    usesCustomRange: usesCustomRange,
-                                    usesCompactCustomGrid: usesCustomRange && displayedDayCount > 7,
-                                    marksOutsideMonth: filter.period == .month && !usesCustomRange,
-                                    distributionDimension: $distributionDimension,
-                                    trendMode: $trendMode,
-                                    dotsMode: $dotsMode,
-                                    onSelectHistoryDate: onSelectHistoryDate
-                                )
-                            } else if failedRequest == request {
+                            StatisticsReportCards(
+                                cards: cards,
+                                presentationID: presentationID,
+                                showsLoading: !didFail,
+                                reportWidth: max(0, geometry.size.width - calendarWidth - 2 * reportPadding - 1),
+                                periodTitle: periodTitle,
+                                today: today,
+                                presentationPeriod: presentationPeriod,
+                                usesCustomRange: usesCustomRange,
+                                usesCompactCustomGrid: usesCustomRange && displayedDayCount > 7,
+                                marksOutsideMonth: filter.period == .month && !usesCustomRange,
+                                distributionDimension: $distributionDimension,
+                                trendMode: $trendMode,
+                                dotsMode: $dotsMode,
+                                onSelectHistoryDate: onSelectHistoryDate
+                            )
+                            if didFail {
                                 ContentUnavailableView(
                                     String(localized: "データを読み込めませんでした。"),
                                     systemImage: "exclamationmark.circle"
                                 )
                                 .frame(maxWidth: .infinity)
-                            } else if !reportIsReady {
-                                FeatureLoadingIndicator()
-                                    .frame(minHeight: summary == nil ? 210 : 120)
                             }
                         }
-                        .padding(20)
-                        .animation(reduceMotion ? nil : .easeOut(duration: 0.14), value: reportReveal)
+                        .padding(reportPadding)
                     }
-                    .task(id: isVisible ? stagedReportRequest : nil) {
-                        guard isVisible, let stagedReportRequest, stagedReportRequest == request else { return }
+                    .task(id: screenshotAnchor) {
+                        guard let screenshotAnchor, !didScrollToScreenshotCard else { return }
                         await Task.yield()
                         guard !Task.isCancelled else { return }
-                        revealedReportRequest = request
-                        reportReveal &+= 1
-                    }
-                    .task(id: reportIsReady) {
-                        guard ScreenshotMode.initialScreen() == .statisticsDots,
-                              reportIsReady, !didScrollToScreenshotDots else { return }
-                        await Task.yield()
-                        guard !Task.isCancelled else { return }
-                        proxy.scrollTo("screenshot-statistics-dots", anchor: .top)
-                        didScrollToScreenshotDots = true
+                        proxy.scrollTo(screenshotAnchor, anchor: .top)
+                        didScrollToScreenshotCard = true
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                 Divider()
 
-                statisticsCalendarSidebar
-                    .frame(
-                        width: MacCalendarSidebarLayout.width(
-                            for: periodTitle,
-                            in: geometry.size.width,
-                            preferredFraction: 0.27,
-                            minimum: 330,
-                            maximum: 430
-                        )
-                    )
+                statisticsCalendarSidebar(days: cards.days)
+                    .frame(width: calendarWidth)
             }
         }
     }
@@ -284,7 +272,7 @@ struct StatisticsView: View {
         )
     }
 
-    private var statisticsCalendarSidebar: some View {
+    private func statisticsCalendarSidebar(days: StatisticsPresentationDays?) -> some View {
         VStack(spacing: 0) {
             MacCalendarNavigationHeader(
                 title: periodTitle,
@@ -314,7 +302,7 @@ struct StatisticsView: View {
                         HistoryMiniCalendar(
                             selectedDate: anchorDateBinding,
                             selectionMode: .week,
-                            indicatorSource: .statistics(calendarIndicators),
+                            indicatorSource: .statistics(calendarIndicators(from: days)),
                             maximumDate: today
                         )
                     case .month:
@@ -395,12 +383,12 @@ struct StatisticsView: View {
         )
     }
 
-    private var calendarIndicators: [StatisticsCalendarIndicator] {
-        guard let currentSnapshot else { return [] }
+    private func calendarIndicators(from days: StatisticsPresentationDays?) -> [StatisticsCalendarIndicator] {
+        guard let days else { return [] }
         let achievements = Dictionary(
-            uniqueKeysWithValues: currentSnapshot.achievementDays.map { ($0.date, $0) }
+            uniqueKeysWithValues: days.achievement.map { ($0.date, $0) }
         )
-        return currentSnapshot.flowDays.compactMap { day in
+        return days.flow.compactMap { day in
             let achievement = achievements[day.date]
             guard !day.isEmpty || achievement?.isEmpty == false else { return nil }
             return StatisticsCalendarIndicator(
@@ -524,26 +512,23 @@ struct StatisticsView: View {
             for try await update in updates {
                 guard !Task.isCancelled, request == refreshID else { return }
                 switch update {
-                case .summary(let summary):
-                    if currentSnapshot == nil {
-                        pendingSummaryRequest = request
-                        pendingSummary = summary
-                    }
                 case .report(let projection):
-                    if currentSnapshot == nil {
-                        stagedReportRequest = request
-                        revealedReportRequest = nil
-                    }
                     cache.store(projection, calendar: request.calendar, dayBoundary: requestedBoundary)
-                    pendingSummaryRequest = nil
-                    pendingSummary = nil
+                    partialReport = nil
                     failedRequest = nil
+                default:
+                    if currentSnapshot == nil {
+                        var cards = partialReport?.request == request
+                            ? partialReport?.cards ?? StatisticsPresentationCards()
+                            : StatisticsPresentationCards()
+                        cards.apply(update)
+                        partialReport = StatisticsPartialPresentation(request: request, cards: cards)
+                        failedRequest = nil
+                    }
                 }
             }
         } catch {
             guard !Task.isCancelled, !(error is CancellationError), request == refreshID else { return }
-            pendingSummaryRequest = nil
-            pendingSummary = nil
             failedRequest = request
             PersistenceIssueCenter.shared.log(error, operation: .dataLoad)
         }
@@ -711,6 +696,11 @@ struct StatisticsView: View {
         isPreparingExport = false
     }
 
+}
+
+private struct StatisticsPartialPresentation {
+    let request: StatisticsPeriodRefreshID
+    let cards: StatisticsPresentationCards
 }
 
 private struct StatisticsPeriodRefreshID: Hashable {

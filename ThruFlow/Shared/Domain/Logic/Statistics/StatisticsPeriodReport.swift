@@ -28,6 +28,12 @@ struct StatisticsPeriodAchievementRecord: Equatable, Sendable {
     let areaName: String
     let areaSymbol: String
     let areaColorHex: String?
+    var timeEstimate: StatisticsTaskTimeEstimate? = nil
+}
+
+struct StatisticsTaskTimeEstimate: Equatable, Sendable {
+    let plannedSeconds: Double
+    let actualSeconds: Double
 }
 
 struct StatisticsPeriodSummary: Equatable, Sendable {
@@ -44,6 +50,36 @@ struct StatisticsPeriodSummary: Equatable, Sendable {
 struct StatisticsPresentationSummary: Equatable, Sendable {
     let summary: StatisticsPeriodSummary
     let previousSummary: StatisticsPeriodSummary
+}
+
+struct StatisticsPresentationTrend: Equatable, Sendable {
+    let period: StatisticsPeriod
+    let points: [StatisticsTrendPoint]
+}
+
+struct StatisticsPresentationDistribution: Equatable, Sendable {
+    let task: [StatisticsDistributionItem]
+    let area: [StatisticsDistributionItem]
+    let project: [StatisticsDistributionItem]
+    let totalFocusSeconds: Int
+}
+
+struct StatisticsPresentationDays: Equatable, Sendable {
+    let flow: [StatisticsDay]
+    let achievement: [AchievementDay]
+}
+
+struct StatisticsDailyFocusPoint: Identifiable, Equatable, Sendable {
+    let date: Date
+    let focusSeconds: Int
+
+    var id: Date { date }
+}
+
+struct StatisticsEstimateAccuracy: Equatable, Sendable {
+    let plannedSeconds: Double
+    let actualSeconds: Double
+    let rate: Double?
 }
 
 struct StatisticsTrendPoint: Identifiable, Equatable, Sendable {
@@ -100,6 +136,8 @@ struct StatisticsPeriodSnapshot: Equatable, Sendable {
     let previousSummary: StatisticsPeriodSummary
     let trend: [StatisticsTrendPoint]
     let trendPeriod: StatisticsPeriod
+    let dailyFocus: [StatisticsDailyFocusPoint]
+    let estimateAccuracy: StatisticsEstimateAccuracy
     let taskDistribution: [StatisticsDistributionItem]
     let areaDistribution: [StatisticsDistributionItem]
     let projectDistribution: [StatisticsDistributionItem]

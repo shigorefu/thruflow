@@ -6,14 +6,20 @@ struct IOSStatisticsTrendCard: View {
     let period: StatisticsPeriod
     let points: [StatisticsTrendPoint]
     let today: Date
+    var compact = false
 
     var body: some View {
-        IOSStatisticsCard(
-            title: String(localized: "傾向"),
+        IOSStatisticsAnalysisCard(
+            title: String(localized: "集中の質"),
             subtitle: mode == .flow ? String(localized: "集中時間") : String(localized: "完了タスク"),
-            headerAccessory: { IOSStatisticsModePicker(selection: $mode) }
+            systemImage: "chart.xyaxis.line",
+            compact: compact,
+            accessory: { IOSStatisticsModePicker(selection: $mode) }
         ) {
-            StatisticsTrendPlot(mode: mode, period: period, points: points, today: today, height: 210)
+            StatisticsTrendPlot(
+                mode: mode, period: period, points: points, today: today,
+                height: compact ? 83 : 220, compact: compact
+            )
         }
     }
 }

@@ -32,7 +32,7 @@ struct StatisticsPresentationCacheTests {
         #expect(cache.snapshot(for: filteredWeek, calendar: calendar, dayBoundary: boundary) == nil)
     }
 
-    @Test func presentationPublishesTheMatchingSummaryBeforeTheReport() async throws {
+    @Test func presentationPublishesEachCardBeforeTheMatchingCompleteReport() async throws {
         let schema = AppModelContainerFactory.schema
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
@@ -58,17 +58,93 @@ struct StatisticsPresentationCacheTests {
             calendar: calendar,
             dayBoundary: .midnight
         )
-        var iterator = updates.makeAsyncIterator()
-        guard case let .summary(first)? = try await iterator.next(),
-              case let .report(report)? = try await iterator.next() else {
-            Issue.record("Expected a summary followed by the complete report")
-            return
+        var partialCards = StatisticsPresentationCards()
+        var sectionCount = 0
+        var snapshot: StatisticsPeriodSnapshot?
+        for try await update in updates {
+            #expect(snapshot == nil, "The complete report must be the last update")
+            if case .report(let report) = update {
+                snapshot = report
+            } else {
+                partialCards.apply(update)
+                sectionCount += 1
+            }
         }
-        #expect(first.summary.totalFocusSeconds == 1_500)
-        #expect(first.summary == report.summary)
-        #expect(first.previousSummary == report.previousSummary)
+
+        let report = try #require(snapshot)
+        #expect(sectionCount == 7)
+        let cachedCards = StatisticsPresentationCards(snapshot: report)
+        #expect(partialCards.summary == cachedCards.summary)
+        #expect(partialCards.trend == cachedCards.trend)
+        #expect(partialCards.dailyFocus == cachedCards.dailyFocus)
+        #expect(partialCards.estimateAccuracy == cachedCards.estimateAccuracy)
+        #expect(report.dailyFocus.first { $0.date == calendar.startOfDay(for: anchor) }?.focusSeconds == 1_500)
+        #expect(partialCards.distribution == cachedCards.distribution)
+        #expect(partialCards.habits == cachedCards.habits)
+        #expect(partialCards.days == cachedCards.days)
+        #expect(partialCards.summary?.summary.totalFocusSeconds == 1_500)
+        #expect(partialCards.distribution?.totalFocusSeconds == 1_500)
         #expect(report.filter == filter)
-        let end = try await iterator.next()
-        #expect(end == nil)
+    }
+
+    @Test func estimateUsesCompletedTimedTasksAndTheirFullRecordedDuration() async throws {
+        let schema = AppModelContainerFactory.schema
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let anchor = try #require(calendar.date(from: DateComponents(year: 2026, month: 7, day: 15)))
+        let area = Area(name: "Writing", type: .neutral, symbolName: "✍️", colorHex: "#34C759")
+        let other = Area(name: "Other", type: .neutral, symbolName: "📚", colorHex: "#34C759")
+        container.mainContext.insert(area)
+        container.mainContext.insert(other)
+
+        func add(
+            _ title: String, area: Area, unit: TodoMeasurement, plan: Int?, actual: Int,
+            status: TodoStatus = .completed, completedAt: Date? = nil
+        ) {
+            container.mainContext.insert(Todo(
+                title: title, area: area, measurement: unit, plannedAmount: plan,
+                focusDurationSeconds: actual, status: status, completedAt: completedAt,
+                updatedAt: anchor
+            ))
+        }
+        // These plans and actual durations have equal totals but differ per task.
+        // No Flow falls in the selected period: the stored actual is lifetime time.
+        add("Report one", area: area, unit: .focusBlocks, plan: 2, actual: 1_500, completedAt: anchor)
+        add("Report two", area: area, unit: .minutes, plan: 25, actual: 3_000)
+        add("Report checkbox", area: area, unit: .checkbox, plan: 30, actual: 1_800)
+        add("Report no time", area: area, unit: .minutes, plan: 20, actual: 0)
+        add("Report no estimate", area: area, unit: .minutes, plan: nil, actual: 1_200)
+        add("Report active", area: area, unit: .minutes, plan: 20, actual: 1_200, status: .active)
+        add("Report other area", area: other, unit: .minutes, plan: 30, actual: 1_800)
+        add("Lecture", area: area, unit: .minutes, plan: 30, actual: 1_800)
+        add("Report previous period", area: area, unit: .minutes, plan: 20, actual: 1_200,
+            completedAt: calendar.date(byAdding: .month, value: -1, to: anchor))
+        try container.mainContext.save()
+
+        let filter = StatisticsPeriodFilter(period: .month, anchorDate: anchor, areaIDs: [area.id], query: "report")
+        let snapshot = try await StatisticsProjectionActor(modelContainer: container).load(
+            filter: filter, calendar: calendar, dayBoundary: .midnight
+        )
+        #expect(snapshot.estimateAccuracy.plannedSeconds == 4_500)
+        #expect(snapshot.estimateAccuracy.actualSeconds == 4_500)
+        #expect(snapshot.estimateAccuracy.rate == 0.5)
+    }
+
+    @Test func dailyFocusUsesLogicalDaysAndLeavesOutFutureDays() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let now = try #require(calendar.date(from: DateComponents(year: 2026, month: 7, day: 3, hour: 2)))
+        let builder = StatisticsPeriodBuilder(calendar: calendar, dayBoundary: AppDayBoundary(hour: 4))
+        let filter = StatisticsPeriodFilter(period: .month, anchorDate: now)
+        let flow = StatisticsPeriodFlowRecord(
+            sessionID: UUID(), startedAt: now, focusSeconds: 600, areaID: nil,
+            areaName: "", areaSymbol: "", areaColorHex: nil, todoID: nil, todoTitle: "",
+            todoHashtags: [], todoNotes: "", intent: "", result: ""
+        )
+        let snapshot = builder.build(flowRecords: [flow], achievementRecords: [], filter: filter, now: now)
+        #expect(snapshot.dailyFocus.map(\.focusSeconds) == [0, 600])
+        #expect(snapshot.dailyFocus.map { calendar.component(.day, from: $0.date) } == [1, 2])
     }
 }

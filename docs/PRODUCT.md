@@ -44,7 +44,8 @@ One Focus Block always means 25 focused minutes; breaks do not count. History
 preserves sessions, context segments and breaks, and edits rebuild derived progress.
 
 Statistics reports selected periods, multiple Area filters, search, Task/Area/
-Project distributions, trends, a focus calendar, Habit completion and CSV export.
+Project distributions, daily focus time, trends, a focus calendar, task estimate
+accuracy, Habit completion and CSV export.
 See [UX flows](UX_FLOWS.md) for presentation and [Domain model](DOMAIN_MODEL.md)
 for calculations and date boundaries.
 

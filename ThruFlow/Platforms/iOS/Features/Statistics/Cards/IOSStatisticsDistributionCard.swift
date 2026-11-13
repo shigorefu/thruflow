@@ -8,8 +8,11 @@ struct IOSStatisticsDistributionCard: View {
     @Binding var dimension: IOSStatisticsDistributionDimension
     let items: [StatisticsDistributionItem]
     let totalFocusSeconds: Int
+    var compact = false
 
     @State private var selectedItemID: String?
+
+    private var chartSize: CGFloat { compact ? 106 : 182 }
 
     private var selectedItem: StatisticsDistributionItem? {
         guard let selectedItemID else { return nil }
@@ -17,9 +20,11 @@ struct IOSStatisticsDistributionCard: View {
     }
 
     var body: some View {
-        IOSStatisticsCard(
+        IOSStatisticsAnalysisCard(
             title: String(localized: "集中時間の内訳"),
-            headerAccessory: {
+            systemImage: "chart.pie",
+            compact: compact,
+            accessory: {
                 Picker(String(localized: "内訳"), selection: $dimension) {
                     ForEach(IOSStatisticsDistributionDimension.allCases) { dimension in
                         Text(dimension.displayName).tag(dimension)
@@ -31,94 +36,14 @@ struct IOSStatisticsDistributionCard: View {
         ) {
             if items.isEmpty {
                 IOSStatisticsEmptyState()
-                    .frame(maxWidth: .infinity, minHeight: 190)
+                    .frame(maxWidth: .infinity, minHeight: compact ? 105 : 190)
             } else {
-                VStack(spacing: 18) {
-                    Chart(items) { item in
-                        SectorMark(
-                            angle: .value(String(localized: "集中時間"), item.focusSeconds),
-                            innerRadius: .ratio(0.60),
-                            outerRadius: .ratio(
-                                selectedItemID == nil || selectedItemID == item.id ? 1 : 0.96
-                            ),
-                            angularInset: 1.5
-                        )
-                        .cornerRadius(3)
-                        .foregroundStyle(Color(hex: item.colorHex ?? "#8E8E93"))
-                        .opacity(selectedItemID == nil || selectedItemID == item.id ? 1 : 0.16)
-                    }
-                    .chartLegend(.hidden)
-                    .chartOverlay { _ in
-                        GeometryReader { geometry in
-                            Rectangle()
-                                .fill(.clear)
-                                .contentShape(Rectangle())
-                                .gesture(
-                                    SpatialTapGesture()
-                                        .onEnded { value in
-                                            selectItem(at: value.location, in: geometry.size)
-                                        }
-                                )
-                        }
-                    }
-                    .frame(width: 190, height: 190)
-                    .overlay {
-                        VStack(spacing: 3) {
-                            Text(IOSStatisticsFormatting.duration(
-                                selectedItem?.focusSeconds ?? totalFocusSeconds
-                            ))
-                            .font(.headline.monospacedDigit())
-                            Text(selectedItem?.name ?? String(localized: "集中時間"))
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                            if selectedItem != nil {
-                                Button {
-                                    selectedItemID = nil
-                                } label: {
-                                    Image(systemName: "xmark.circle.fill")
-                                }
-                                .buttonStyle(.plain)
-                                .foregroundStyle(.secondary)
-                                .accessibilityLabel(String(localized: "すべて"))
-                            }
-                        }
-                        .frame(maxWidth: 98)
-                    }
-
-                    ZStack {
-                        if let selectedItem {
-                            StatisticsDistributionDetailView(item: selectedItem)
-                            .id(selectedItem.id)
-                            .transition(.opacity)
-                        } else {
-                            VStack(alignment: .leading, spacing: 10) {
-                                ForEach(items) { item in
-                                    Button {
-                                        selectedItemID = item.id
-                                    } label: {
-                                        HStack(spacing: 8) {
-                                            Circle()
-                                                .fill(Color(hex: item.colorHex ?? "#8E8E93"))
-                                                .frame(width: 9, height: 9)
-                                            Text([item.symbol, item.name].compactMap { $0 }.joined(separator: " "))
-                                                .lineLimit(1)
-                                            Spacer(minLength: 8)
-                                            Text(IOSStatisticsFormatting.duration(item.focusSeconds))
-                                                .monospacedDigit()
-                                                .foregroundStyle(.secondary)
-                                        }
-                                        .font(.callout)
-                                        .contentShape(Rectangle())
-                                    }
-                                    .buttonStyle(.plain)
-                                }
-                            }
-                            .frame(maxWidth: .infinity)
-                            .transition(.opacity)
-                        }
-                    }
-                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.18), value: selectedItemID)
+                let layout = compact
+                    ? AnyLayout(HStackLayout(alignment: .center, spacing: 10))
+                    : AnyLayout(VStackLayout(spacing: 16))
+                layout {
+                    donut
+                    details
                 }
             }
         }
@@ -130,6 +55,113 @@ struct IOSStatisticsDistributionCard: View {
                 self.selectedItemID = nil
             }
         }
+    }
+
+    private var donut: some View {
+        Chart(items) { item in
+            SectorMark(
+                angle: .value(String(localized: "集中時間"), item.focusSeconds),
+                innerRadius: .ratio(0.60),
+                outerRadius: .ratio(selectedItemID == nil || selectedItemID == item.id ? 1 : 0.96),
+                angularInset: 1.5
+            )
+            .cornerRadius(3)
+            .foregroundStyle(color(for: item))
+            .opacity(selectedItemID == nil || selectedItemID == item.id ? 1 : 0.16)
+        }
+        .chartLegend(.hidden)
+        .chartOverlay { _ in
+            GeometryReader { geometry in
+                Rectangle()
+                    .fill(.clear)
+                    .contentShape(Rectangle())
+                    .gesture(
+                        SpatialTapGesture().onEnded { value in
+                            selectItem(at: value.location, in: geometry.size)
+                        }
+                    )
+            }
+        }
+        .frame(width: chartSize, height: chartSize)
+        .overlay {
+            VStack(spacing: 3) {
+                Text(IOSStatisticsFormatting.duration(selectedItem?.focusSeconds ?? totalFocusSeconds))
+                    .font((compact ? Font.caption : Font.title3).weight(.semibold).monospacedDigit())
+                    .minimumScaleFactor(0.65)
+                    .lineLimit(1)
+                Text(selectedItem?.name ?? String(localized: "集中時間"))
+                    .font(compact ? .caption2 : .caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                if selectedItem != nil {
+                    Button {
+                        selectedItemID = nil
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .frame(minWidth: 36, minHeight: 28)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.secondary)
+                    .accessibilityLabel(String(localized: "すべて"))
+                }
+            }
+            .frame(maxWidth: chartSize * 0.55)
+        }
+        .frame(maxWidth: compact ? chartSize + 12 : .infinity)
+        .padding(.vertical, compact ? 3 : 12)
+        .background(Color.primary.opacity(0.025), in: RoundedRectangle(cornerRadius: 14))
+    }
+
+    private var details: some View {
+        ZStack {
+            if let selectedItem {
+                StatisticsDistributionDetailView(item: selectedItem)
+                    .id(selectedItem.id)
+                    .transition(.opacity)
+            } else {
+                VStack(alignment: .leading, spacing: compact ? 0 : 8) {
+                    ForEach(items) { item in
+                        legendRow(item)
+                    }
+                }
+                .transition(.opacity)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.18), value: selectedItemID)
+    }
+
+    private func legendRow(_ item: StatisticsDistributionItem) -> some View {
+        Button {
+            selectedItemID = item.id
+        } label: {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Image(systemName: compact ? "square.fill" : "circle.fill")
+                    .font(.system(size: compact ? 7 : 8))
+                    .foregroundStyle(color(for: item))
+                    .accessibilityHidden(true)
+                Text([item.symbol, item.name].compactMap { $0 }.joined(separator: " "))
+                    .lineLimit(compact ? 1 : nil)
+                    .fixedSize(horizontal: false, vertical: !compact)
+                Spacer(minLength: 4)
+                Text(IOSStatisticsFormatting.duration(item.focusSeconds))
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.trailing)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .font(compact ? .caption : .callout)
+            .padding(.horizontal, 10)
+            .frame(minHeight: compact ? 20 : 44)
+            .background(compact ? Color.clear : Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 10))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func color(for item: StatisticsDistributionItem) -> Color {
+        Color(hex: item.colorHex ?? "#8E8E93")
     }
 
     private func selectItem(at location: CGPoint, in size: CGSize) {

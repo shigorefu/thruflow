@@ -103,9 +103,17 @@ Totals, trends, distributions and calendar indicators use the same filters.
 Distribution supports Tasks, Areas and Projects. Selecting a Task shows daily
 minute bars; selecting an Area or Project shows Task/time bars. A day cell opens
 a summary with a History action. CSV export offers its own configurable scope.
-On Mac, the overview spans the report width. Below it, Habit completion sits
-to the left of focused-time distribution when space permits. In narrow windows,
-Habit completion appears above the distribution. Trend and Dots follow.
+The overview spans the report width. Wide layouts pair Daily Focus Time with
+Distribution, Focus Quality with Dots, and Habit Completion with Time Estimate
+Accuracy at the bottom. The bottom pair and the metric tiles within each
+overview row share the height of the tallest card in that row. Narrow
+layouts stack the report cards in the same reading order. Daily Focus Time
+shows actual focus per elapsed logical day; users can scroll horizontally
+through long ranges. Focus Quality is the existing trend chart with Flow and
+Task modes, current and previous periods, and a rolling average. The estimate
+card compares planned and recorded time for completed timed tasks.
+The wide Dots grid retains short cells. Reports scroll to fit longer lists
+and date ranges.
 
 Habit completion shows overall and per-Habit values. Fully met goals count
 immediately. Partial and zero progress count after the configured day ends.
@@ -135,10 +143,11 @@ The selected destination shows its controls while loading its content.
 Tasks uses a system loading indicator for the initial list and a short
 top-to-bottom reveal for up to five visible rows. History reveals the selected
 period's records inside its calendar. Areas reveals its groups with their
-Projects. Statistics can show its overview while the rest of the report is
-being prepared. Cached content appears immediately when it matches the current
-selection. Loading indicators remain local to the pending content. Reveal
-animations follow Reduce Motion and leave the controls interactive.
+Projects. Statistics shows a loading indicator in each pending card. Cards
+fade in and animate to their content height individually when data is ready, including after a period
+change. An exact cached result can begin its reveal immediately. Background
+refreshes update displayed values in place. Reveal animations follow Reduce
+Motion and leave the controls interactive.
 In the compact Flow Statistics card, time-allocation bars share a right-hand
 zero edge and a scale based on today's total focused time.
 

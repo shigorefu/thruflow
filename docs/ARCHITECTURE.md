@@ -546,12 +546,13 @@ dashboard retains its last projection while visible queries refresh it.
 
 Statistics uses `StatisticsProjectionActor`, a dedicated SwiftData
 `@ModelActor` whose presentation context is created away from the main actor.
-It fetches the selected range and emits the overview before the complete value
-snapshot, using the same input records for both. SwiftUI builds the individual
-report cards as needed. The app root keeps the selected filter and up to four snapshots with their calendar and
-day boundary, so reopening Statistics can use the matching snapshot right
-away. New requests start as soon as the screen needs them. Typed searches
-keep a debounce and canceled requests cannot replace the visible report.
+It fetches the selected range once and passes immutable input to concurrent
+calculations for the overview, daily focus, trend, distribution, estimate
+accuracy, Habit completion, and Dots. Each card receives its result as soon as it is ready. A complete snapshot
+also contains CSV rows and is eligible for the app root's four-entry cache.
+Entries match the filter, calendar, and day boundary. Reopening Statistics can
+reuse the matching snapshot while it refreshes. Typed searches keep a debounce
+and canceled requests cannot replace the visible report.
 
 The macOS and iOS card workspaces request the selected Week/Month/Year or exact custom
 date range together with its immediately preceding equal-length comparison
@@ -561,11 +562,10 @@ search, filtering, summaries, trends, distributions, Dots, and export rows.
 `StatisticsCSVExporter` serializes those rows outside SwiftUI. Each platform UI
 only owns toolbar state, navigation, a bounded four-snapshot presentation
 cache, loading placeholders, independent Trend/Dots display modes, responsive
-card layout, non-interactive Year Dots, date bounds through today, chart
-presentation, and the system export/share surface. Switching
-Flow/Task presentation reuses the same snapshot. Month trend input is reduced
-to seven-day buckets in the pure builder and is rendered as two distinct chart
-series. Export options create an independent period/filter projection only while
+card layout, interactive Dots, date bounds through today, chart presentation,
+and the system export/share surface. Switching Flow/Task presentation reuses the
+same data. Month trends use daily buckets and render separate current and
+comparison series. Export options create an independent period/filter projection only while
 the Share popover is open; its period is always an exact inclusive start/end
 range. Pie selection remains local presentation state. CSV serialization and temporary-file creation run
 away from the main actor. iOS renders the same report as one touch-native

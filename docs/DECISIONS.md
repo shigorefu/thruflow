@@ -1348,3 +1348,24 @@ report and displays an exact cached report immediately on return. The native
 navigation and editing state remain platform-owned. Reveal animations follow
 Reduce Motion, and existing Flow timer and connector operations keep their
 separate loading lifecycle.
+
+### 2026-11-13 — Load Statistics cards independently (1.4.2)
+
+Statistics keeps its five cards on Mac and iOS. Wide layouts use one overview
+row and pair distribution with Habit completion. Wide iPad and unfolded iPhone
+Duo also pair Trend with Dots. Narrow layouts stack the cards. A compact Dots
+grid bounds the height of its cells without changing date selection or padding
+rules. Wide iOS places the same period controls in one horizontal row.
+Each card calculation runs independently on the same fetched data and can
+reveal its result without waiting for the others. Cached data may reveal
+immediately. Routine refreshes update already visible cards in place.
+This supersedes the earlier arrangement and overview-first loading sequence.
+
+### 2026-11-13 — Add daily focus and task estimate accuracy to Statistics
+
+On macOS and iOS, the report ends with habit completion followed by task
+estimate accuracy. Wide layouts pair those two cards, the daily focus bar
+chart with distribution, and the existing trend (titled Focus Quality) with
+Dots. The trend retains its existing measures. Each loaded card animates from
+its placeholder height to its natural height unless Reduce Motion is enabled.
+See the domain model for the task-estimate calculation.

@@ -3,9 +3,12 @@ import SwiftUI
 
 struct StatisticsDotsCard: View {
     @Environment(\.calendar) private var calendar
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @Binding var mode: StatisticsMode
     let period: StatisticsPeriod
+    let compact: Bool
+    let availableWidth: CGFloat
     let usesCompactCustomGrid: Bool
     let usesCustomRange: Bool
     let marksOutsideMonth: Bool
@@ -34,28 +37,32 @@ struct StatisticsDotsCard: View {
         StatisticsCard(
             title: String(localized: "Dots"),
             subtitle: mode == .flow ? String(localized: "集中時間") : String(localized: "完了タスク"),
-            minimumHeight: period == .month && !usesCustomRange ? 288 : nil,
+            minimumHeight: period == .month && !usesCustomRange && !compact ? 288 : nil,
+            compact: compact,
             headerAccessory: {
-                StatisticsModePicker(selection: $mode)
+                StatisticsModePicker(selection: $mode, width: compact ? 108 : 180)
             }
         ) {
             StatisticsContributionGrid(
                 days: contributionDays,
                 period: period,
+                compact: compact,
+                availableWidth: max(0, availableWidth - (compact ? 20 : 32)),
                 usesCompactCustomGrid: usesCompactCustomGrid,
                 usesCustomRange: usesCustomRange,
                 marksOutsideMonth: marksOutsideMonth,
                 onSelectDate: onSelectDate
             )
             .id(mode)
-            .transition(.opacity.combined(with: .scale(scale: 0.99, anchor: .top)))
-            .animation(.easeInOut(duration: 0.2), value: mode)
+            .transition(reduceMotion ? .identity : .opacity.combined(with: .scale(scale: 0.99, anchor: .top)))
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: mode)
         }
     }
 }
 
 struct StatisticsModePicker: View {
     @Binding var selection: StatisticsMode
+    var width: CGFloat = 180
 
     var body: some View {
         Picker(String(localized: "統計表示"), selection: $selection) {
@@ -65,7 +72,7 @@ struct StatisticsModePicker: View {
         .pickerStyle(.segmented)
         .labelsHidden()
         .controlSize(.small)
-        .frame(width: 180)
+        .frame(width: width)
         .accessibilityLabel(String(localized: "統計表示"))
     }
 }
@@ -88,6 +95,8 @@ private struct StatisticsContributionGrid: View {
 
     let days: [StatisticsContributionDay]
     let period: StatisticsPeriod
+    let compact: Bool
+    let availableWidth: CGFloat
     let usesCompactCustomGrid: Bool
     let usesCustomRange: Bool
     let marksOutsideMonth: Bool
@@ -113,9 +122,9 @@ private struct StatisticsContributionGrid: View {
     var body: some View {
         if days.isEmpty {
             StatisticsEmptyState(label: String(localized: "この期間のデータはありません"))
-                .frame(maxWidth: .infinity, minHeight: 120)
+                .frame(maxWidth: .infinity, minHeight: compact ? 56 : 120)
         } else {
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: compact ? 5 : 10) {
                 if usesCustomRange {
                     customGrid
                 } else {
@@ -135,7 +144,7 @@ private struct StatisticsContributionGrid: View {
                                 .fill(level == 0
                                     ? Color.secondary.opacity(0.12)
                                     : Color.accentColor.opacity(0.24 + Double(level) * 0.17))
-                                .frame(width: 12, height: 12)
+                            .frame(width: compact ? 9 : 12, height: compact ? 9 : 12)
                         }
                         Text(String(localized: "多い"))
                     }
@@ -147,17 +156,23 @@ private struct StatisticsContributionGrid: View {
     }
 
     private var customGrid: some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 18, maximum: 18), spacing: 5)], alignment: .leading, spacing: 5) {
+        let size: CGFloat = compact ? 14 : 18
+        let spacing: CGFloat = compact ? 4 : 5
+        return LazyVGrid(
+            columns: [GridItem(.adaptive(minimum: size, maximum: size), spacing: spacing)],
+            alignment: .leading,
+            spacing: spacing
+        ) {
             ForEach(days) { day in
                 StatisticsContributionCell(day: day, maxValue: maxValue,
                     isInteractive: day.isSelectable, onSelectDate: onSelectDate)
-                    .frame(width: 18, height: 18)
+                    .frame(width: size, height: size)
             }
         }
     }
 
     private var weekGrid: some View {
-        let spacing: CGFloat = 7
+        let spacing: CGFloat = compact ? 4 : 7
         return HStack(alignment: .top, spacing: spacing) {
             ForEach(days) { day in
                 VStack(spacing: spacing) {
@@ -173,7 +188,7 @@ private struct StatisticsContributionGrid: View {
                         onSelectDate: onSelectDate
                     )
                     .frame(maxWidth: .infinity)
-                    .frame(height: 42)
+                    .frame(height: compact ? 22 : 42)
                 }
                 .frame(maxWidth: .infinity)
             }
@@ -181,8 +196,9 @@ private struct StatisticsContributionGrid: View {
     }
 
     private var monthGrid: some View {
-        let spacing: CGFloat = usesCompactCustomGrid ? 5 : 6
-        let cellSize: CGFloat = usesCompactCustomGrid ? 18 : 24
+        let spacing: CGFloat = compact ? 4 : (usesCompactCustomGrid ? 5 : 6)
+        let cellSize: CGFloat = compact ? 16 : (usesCompactCustomGrid ? 18 : 24)
+        let cellHeight: CGFloat = compact ? 16 : (usesCompactCustomGrid ? cellSize : 32)
         let column = usesCompactCustomGrid
             ? GridItem(.fixed(cellSize), spacing: spacing)
             : GridItem(.flexible(minimum: cellSize), spacing: spacing)
@@ -209,8 +225,8 @@ private struct StatisticsContributionGrid: View {
                 .frame(
                     minWidth: usesCompactCustomGrid ? cellSize : nil,
                     maxWidth: usesCompactCustomGrid ? cellSize : .infinity,
-                    minHeight: usesCompactCustomGrid ? cellSize : 32,
-                    maxHeight: usesCompactCustomGrid ? cellSize : 32
+                    minHeight: cellHeight,
+                    maxHeight: cellHeight
                 )
             }
         }
@@ -218,39 +234,65 @@ private struct StatisticsContributionGrid: View {
     }
 
     private var yearGrid: some View {
+        let yearDays = paddedDays
+        let weekCount = max(1, (yearDays.count + 6) / 7)
+        let spacing: CGFloat = compact ? 1 : 2
+        let weekdayWidth: CGFloat = 18
+        let minimumCellSize: CGFloat = 5
+        let maximumCellSize: CGFloat = compact ? 12 : 16
+        let minimumWidth = weekdayWidth + CGFloat(weekCount) * (minimumCellSize + spacing)
+        let fittedSize = (availableWidth - weekdayWidth) / CGFloat(weekCount) - spacing
+        let grid = yearGrid(
+            days: yearDays,
+            weekCount: weekCount,
+            cellSize: min(maximumCellSize, max(minimumCellSize, fittedSize)),
+            weekdayWidth: weekdayWidth,
+            spacing: spacing
+        )
+        return Group {
+            if availableWidth < minimumWidth {
+                ScrollView(.horizontal) { grid }
+            } else {
+                grid
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func yearGrid(
+        days: [StatisticsContributionDay?],
+        weekCount: Int,
+        cellSize: CGFloat,
+        weekdayWidth: CGFloat,
+        spacing: CGFloat
+    ) -> some View {
         let weekdays = CalendarWeekdaySymbols.orderedAbbreviated(calendar: calendar)
-        return Grid(horizontalSpacing: 2, verticalSpacing: 2) {
+        let maximum = maxValue
+        return Grid(horizontalSpacing: spacing, verticalSpacing: spacing) {
             ForEach(Array(weekdays.enumerated()), id: \.offset) { weekdayIndex, weekday in
                 GridRow {
                     Text(weekday)
                         .font(.caption2)
                         .foregroundStyle(.secondary)
-                        .frame(width: 18)
+                        .frame(width: weekdayWidth)
 
-                    ForEach(0..<yearWeekCount, id: \.self) { weekIndex in
+                    ForEach(0..<weekCount, id: \.self) { weekIndex in
+                        let index = weekIndex * 7 + weekdayIndex
+                        let day = days.indices.contains(index) ? days[index] : nil
                         StatisticsContributionCell(
-                            day: contributionDay(week: weekIndex, weekday: weekdayIndex),
-                            maxValue: maxValue,
-                            isInteractive: contributionDay(week: weekIndex, weekday: weekdayIndex)?.isSelectable == true,
+                            day: day,
+                            maxValue: maximum,
+                            isInteractive: day?.isSelectable == true,
                             hidesPlaceholder: usesCompactCustomGrid,
                             onSelectDate: onSelectDate
                         )
-                        .aspectRatio(1, contentMode: .fit)
+                        .frame(width: cellSize, height: cellSize)
                     }
                 }
             }
         }
     }
 
-    private var yearWeekCount: Int {
-        max(1, Int(ceil(Double(paddedDays.count) / 7)))
-    }
-
-    private func contributionDay(week: Int, weekday: Int) -> StatisticsContributionDay? {
-        let index = week * 7 + weekday
-        guard paddedDays.indices.contains(index) else { return nil }
-        return paddedDays[index]
-    }
 }
 
 private struct StatisticsContributionCell: View {

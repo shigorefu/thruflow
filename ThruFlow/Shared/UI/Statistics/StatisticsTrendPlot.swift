@@ -10,6 +10,7 @@ struct StatisticsTrendPlot: View {
     let points: [StatisticsTrendPoint]
     let today: Date
     let height: CGFloat
+    var compact = false
     @State private var selectedIndex: Int?
 
     private var selectedPoint: StatisticsTrendPoint? {
@@ -17,7 +18,7 @@ struct StatisticsTrendPlot: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: compact ? 5 : 12) {
             ViewThatFits(in: .horizontal) {
                 legend
                 legend.font(.caption2)
@@ -27,7 +28,7 @@ struct StatisticsTrendPlot: View {
                     Label(String(localized: "前の期間"), systemImage: "ellipsis").foregroundStyle(.secondary)
                 }
             }
-            .font(.caption)
+            .font(compact ? .caption2 : .caption)
             Chart {
                 ForEach(points) { point in
                     if point.hasComparison && point.comparisonDate <= today {
@@ -116,9 +117,13 @@ struct StatisticsTrendPlot: View {
                         ? .dateTime.locale(locale).year().month()
                         : .dateTime.locale(locale).year().month().day()))
                         .font(.caption.weight(.semibold))
-                    HStack(spacing: 16) {
-                        Text(String(localized: "集中時間") + ": " + String(localized: "\(selectedPoint.focusSeconds / 60)分"))
-                        Text(String(localized: "完了タスク") + ": \(selectedPoint.completedTaskCount)")
+                    ViewThatFits(in: .horizontal) {
+                        HStack(spacing: 12) {
+                            selectionMetrics(selectedPoint)
+                        }
+                        VStack(alignment: .leading, spacing: 2) {
+                            selectionMetrics(selectedPoint)
+                        }
                     }
                     .font(.caption)
                 } else {
@@ -131,9 +136,16 @@ struct StatisticsTrendPlot: View {
                     #endif
                 }
             }
-            .frame(height: 42, alignment: .topLeading)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(minHeight: compact ? 26 : 42, alignment: .topLeading)
         }
         .onChange(of: points) { _, _ in selectedIndex = nil }
+    }
+
+    @ViewBuilder
+    private func selectionMetrics(_ point: StatisticsTrendPoint) -> some View {
+        Text(String(localized: "集中時間") + ": " + String(localized: "\(point.focusSeconds / 60)分"))
+        Text(String(localized: "完了タスク") + ": \(point.completedTaskCount)")
     }
 
     private var averageLabel: String {
@@ -141,7 +153,7 @@ struct StatisticsTrendPlot: View {
     }
 
     private var legend: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: compact ? 7 : 12) {
             Label(String(localized: "選択した期間"), systemImage: "minus").foregroundStyle(Color.accentColor)
             Label(averageLabel, systemImage: "waveform.path").foregroundStyle(Color.orange)
             Label(String(localized: "前の期間"), systemImage: "ellipsis").foregroundStyle(.secondary)
@@ -151,9 +163,9 @@ struct StatisticsTrendPlot: View {
     private var axisIndexes: [Int] {
         guard !points.isEmpty else { return [] }
         #if os(macOS)
-        let maximumLabels = 7
+        let maximumLabels = compact ? 5 : 7
         #else
-        let maximumLabels = 5
+        let maximumLabels = compact ? 4 : 5
         #endif
         let step = max(1, Int(ceil(Double(points.count - 1) / Double(maximumLabels - 1))))
         var values = Array(stride(from: 0, to: points.count, by: step))

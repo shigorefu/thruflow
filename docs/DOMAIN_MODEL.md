@@ -181,6 +181,13 @@ contribution days, and CSV rows. `StatisticsPeriodBuilder` consumes Sendable
 Flow-segment and completion records, and applies Area and text filters
 before aggregation. A session count is distinct by stable session UUID; a
 context-switched Flow contributes only the seconds of each matching segment.
+Daily focus sums the same filtered Flow segments by logical day. It includes
+elapsed days with zero focus and omits future days. Estimate accuracy includes
+completed tasks in the selected period and filters that have a positive
+minute or block estimate and recorded focus duration. A task's recorded
+duration covers all its work. Planned and actual totals are shown separately;
+accuracy divides the sum of each task's smaller value by the sum of its
+larger value. A period with no comparable tasks has no accuracy percentage.
 The projection is derived and adds no persistent records.
 
 Paused Habit days do not contribute a planned Todo, so they are excluded from
