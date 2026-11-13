@@ -1082,7 +1082,9 @@ separate bucket; Project details group Tasks by UUID. Segment-based attribution,
 filters and total focused time are preserved. The existing top-five-plus-Other
 rule applies above six groups; equal name/duration ties use stable identity.
 This is a read projection and does not add a persisted Project snapshot to Flow.
-Compact Flow dashboard statistics retain their existing Task/Area modes.
+Full Statistics orders the modes Area, Project, Task. It hides Project only
+when the store contains no Projects and falls back to Area if Project was
+selected. Compact Flow dashboard statistics retain their existing Task/Area modes.
 
 Orchestrator, macOS and iOS/Watch agents explicitly agreed before implementation.
 Native presentation: iOS uses a menu for the three grouping modes; Mac uses a

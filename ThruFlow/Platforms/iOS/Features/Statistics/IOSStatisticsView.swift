@@ -24,7 +24,7 @@ struct IOSStatisticsView: View {
     @State private var searchDebounceDeadline: ContinuousClock.Instant?
     @State private var trendMode: StatisticsMode = .flow
     @State private var dotsMode: StatisticsMode = .flow
-    @State private var distributionDimension: IOSStatisticsDistributionDimension = .task
+    @State private var distributionDimension: StatisticsDistributionDimension = .task
     @State private var persistenceRevision = 0
     @State private var failedRequest: IOSStatisticsPeriodRefreshID?
     @State private var partialCards: IOSStatisticsPartialCards?

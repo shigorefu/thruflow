@@ -2,29 +2,11 @@
 import Charts
 import SwiftUI
 
-enum StatisticsDistributionDimension: String, CaseIterable, Identifiable {
-    case task
-    case area
-    case project
-
-    var id: String { rawValue }
-
-    var displayName: String {
-        switch self {
-        case .task:
-            String(localized: "タスク別")
-        case .area:
-            String(localized: "方向別")
-        case .project:
-            String(localized: "プロジェクト別")
-        }
-    }
-}
-
 struct StatisticsDistributionCard: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @Binding var dimension: StatisticsDistributionDimension
+    let options: [StatisticsDistributionDimension]
     let items: [StatisticsDistributionItem]
     let totalFocusSeconds: Int
     let availableWidth: CGFloat
@@ -79,7 +61,7 @@ struct StatisticsDistributionCard: View {
 
     private var dimensionPicker: some View {
         Picker(String(localized: "内訳"), selection: $dimension) {
-            ForEach(StatisticsDistributionDimension.allCases) { dimension in
+            ForEach(options) { dimension in
                 Text(dimension.displayName).tag(dimension)
             }
         }

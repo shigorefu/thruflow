@@ -5,7 +5,8 @@ import SwiftUI
 struct IOSStatisticsDistributionCard: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    @Binding var dimension: IOSStatisticsDistributionDimension
+    @Binding var dimension: StatisticsDistributionDimension
+    let options: [StatisticsDistributionDimension]
     let items: [StatisticsDistributionItem]
     let totalFocusSeconds: Int
     var compact = false
@@ -26,7 +27,7 @@ struct IOSStatisticsDistributionCard: View {
             compact: compact,
             accessory: {
                 Picker(String(localized: "内訳"), selection: $dimension) {
-                    ForEach(IOSStatisticsDistributionDimension.allCases) { dimension in
+                    ForEach(options) { dimension in
                         Text(dimension.displayName).tag(dimension)
                     }
                 }
@@ -190,22 +191,4 @@ struct IOSStatisticsDistributionCard: View {
     }
 }
 
-enum IOSStatisticsDistributionDimension: String, CaseIterable, Identifiable {
-    case task
-    case area
-    case project
-
-    var id: String { rawValue }
-
-    var displayName: String {
-        switch self {
-        case .task:
-            String(localized: "タスク別")
-        case .area:
-            String(localized: "方向別")
-        case .project:
-            String(localized: "プロジェクト別")
-        }
-    }
-}
 #endif

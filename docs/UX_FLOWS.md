@@ -100,7 +100,10 @@ months. Native month names follow the selected locale.
 
 Multiple Area selections combine with OR; search intersects that selection.
 Totals, trends, distributions and calendar indicators use the same filters.
-Distribution supports Tasks, Areas and Projects. Selecting a Task shows daily
+The distribution menu lists Area, Project and Task in that order. Project is
+available whenever at least one Project exists, even if none has focus time
+in the selected period. If the selected Project mode becomes unavailable,
+the chart switches to Area. Selecting a Task shows daily
 minute bars; selecting an Area or Project shows Task/time bars. A day cell opens
 a summary with a History action. CSV export offers its own configurable scope.
 The overview spans the report width. Wide layouts pair Daily Focus Time with

@@ -81,13 +81,16 @@ struct StatisticsReportCards: View {
             value: cards.distribution, id: presentationID, placeholderHeight: isCompact ? 170 : 270,
             showsLoading: showsLoading
         ) { distribution in
-            StatisticsDistributionCard(
-                dimension: $distributionDimension,
-                items: distributionItems(distribution),
-                totalFocusSeconds: distribution.totalFocusSeconds,
-                availableWidth: distributionWidth,
-                compact: isCompact
-            )
+            StatisticsDistributionOptions(selection: $distributionDimension) { selection, options in
+                StatisticsDistributionCard(
+                    dimension: selection,
+                    options: options,
+                    items: selection.wrappedValue.items(in: distribution),
+                    totalFocusSeconds: distribution.totalFocusSeconds,
+                    availableWidth: distributionWidth,
+                    compact: isCompact
+                )
+            }
         }
         .frame(width: isCompact ? distributionWidth : nil)
         .id("screenshot-statistics-breakdown")
@@ -127,14 +130,6 @@ struct StatisticsReportCards: View {
         }
         .frame(width: isCompact ? equalCardWidth : nil)
         .id("screenshot-statistics-dots")
-    }
-
-    private func distributionItems(_ distribution: StatisticsPresentationDistribution) -> [StatisticsDistributionItem] {
-        switch distributionDimension {
-        case .task: distribution.task
-        case .area: distribution.area
-        case .project: distribution.project
-        }
     }
 }
 #endif

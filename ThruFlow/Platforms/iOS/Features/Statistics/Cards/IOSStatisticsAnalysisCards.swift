@@ -12,7 +12,7 @@ struct IOSStatisticsAnalysisCards: View {
     let usesCustomRange: Bool
     let compact: Bool
     @Binding var trendMode: StatisticsMode
-    @Binding var distributionDimension: IOSStatisticsDistributionDimension
+    @Binding var distributionDimension: StatisticsDistributionDimension
     @Binding var dotsMode: StatisticsMode
     let onSelectDay: (IOSStatisticsContributionDay) -> Void
 
@@ -85,12 +85,15 @@ struct IOSStatisticsAnalysisCards: View {
             placeholderHeight: compact ? 180 : 280,
             showsLoading: showsLoading
         ) { distribution in
-            IOSStatisticsDistributionCard(
-                dimension: $distributionDimension,
-                items: items(in: distribution),
-                totalFocusSeconds: distribution.totalFocusSeconds,
-                compact: compact
-            )
+            StatisticsDistributionOptions(selection: $distributionDimension) { selection, options in
+                IOSStatisticsDistributionCard(
+                    dimension: selection,
+                    options: options,
+                    items: selection.wrappedValue.items(in: distribution),
+                    totalFocusSeconds: distribution.totalFocusSeconds,
+                    compact: compact
+                )
+            }
         }
         .id("screenshot-statistics-breakdown")
     }
@@ -115,14 +118,6 @@ struct IOSStatisticsAnalysisCards: View {
             )
         }
         .id("screenshot-statistics-dots")
-    }
-
-    private func items(in distribution: StatisticsPresentationDistribution) -> [StatisticsDistributionItem] {
-        switch distributionDimension {
-        case .task: distribution.task
-        case .area: distribution.area
-        case .project: distribution.project
-        }
     }
 }
 
