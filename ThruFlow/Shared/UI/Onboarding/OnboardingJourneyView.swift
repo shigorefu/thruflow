@@ -36,7 +36,11 @@ private struct OnboardingJourneyOverlay: View {
                 .contentShape(Rectangle())
 
             OnboardingJourneyCard(store: store)
+#if os(macOS)
+                .frame(maxWidth: 520)
+#else
                 .frame(maxWidth: 1_040, maxHeight: 680)
+#endif
                 .padding(16)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -48,28 +52,19 @@ private struct OnboardingJourneyOverlay: View {
 
 private struct OnboardingJourneyCard: View {
     @ObservedObject var store: OnboardingStore
+#if os(macOS)
+    @State private var stepContentHeight: CGFloat?
+#else
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @ScaledMetric(relativeTo: .body) private var minimumColumnWidth = 320.0
+#endif
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             header
 
-            ScrollView {
-                // A single Layout preserves the demo subtree while folding or
-                // resizing; replacing HStack/VStack branches would cancel it.
-                OnboardingStepLayout(
-                    allowsColumns: allowsColumns,
-                    minimumColumnWidth: minimumColumnWidth
-                ) {
-                    introduction
-                    VStack(alignment: .leading, spacing: 14) { stepContent }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .padding(.vertical, 4)
-            }
-            .scrollBounceBehavior(.basedOnSize)
+            stepScrollView
 
             navigationControls
         }
@@ -84,12 +79,53 @@ private struct OnboardingJourneyCard: View {
         .accessibilityIdentifier("onboarding.card.step.\(store.step.rawValue)")
     }
 
-    private var allowsColumns: Bool {
+    private var stepScrollView: some View {
 #if os(macOS)
-        !dynamicTypeSize.isAccessibilitySize
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    introduction
+                    details
+                }
+                .padding(.vertical, 4)
+                .id(ScrollAnchor.top)
+                .onGeometryChange(for: CGFloat.self, of: { ceil($0.size.height) }) { height in
+                    stepContentHeight = height
+                }
+            }
+            // Use the natural content height when it fits. Keep the same scroll
+            // view mounted when it doesn't so resizing won't reset the demo.
+            .frame(maxHeight: stepContentHeight)
+            .scrollBounceBehavior(.basedOnSize)
+            .onChange(of: store.step) {
+                proxy.scrollTo(ScrollAnchor.top, anchor: .top)
+            }
+        }
 #else
-        horizontalSizeClass == .regular && !dynamicTypeSize.isAccessibilitySize
+        ScrollView {
+            // A single Layout preserves the demo subtree while folding or resizing.
+            OnboardingStepLayout(
+                allowsColumns: horizontalSizeClass == .regular && !dynamicTypeSize.isAccessibilitySize,
+                minimumColumnWidth: minimumColumnWidth
+            ) {
+                introduction
+                details
+            }
+            .padding(.vertical, 4)
+        }
+        .scrollBounceBehavior(.basedOnSize)
 #endif
+    }
+
+#if os(macOS)
+    private enum ScrollAnchor: Hashable {
+        case top
+    }
+#endif
+
+    private var details: some View {
+        VStack(alignment: .leading, spacing: 14) { stepContent }
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var introduction: some View {

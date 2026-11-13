@@ -147,7 +147,9 @@ zero edge and a scale based on today's total focused time.
 Onboarding uses a horizontal sequence, with guided creation only for an empty
 workspace. Example records require explicit confirmation; the timer preview is
 transient and adds no history. Existing-workspace tours and Settings replay are
-read-only. Steps can be skipped or closed.
+read-only. Steps can be skipped or closed. On macOS, the centered card fits the
+current step. If the content is taller than the available space, the body
+scrolls while the header and navigation remain visible.
 
 Watch keeps a native compact player and Tasks experience backed by shared rules.
 Widgets and Live Activities show app-generated snapshots and system-driven time
