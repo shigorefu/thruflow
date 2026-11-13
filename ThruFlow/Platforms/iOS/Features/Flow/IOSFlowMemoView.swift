@@ -1,9 +1,16 @@
+import SwiftData
 import SwiftUI
 
 struct IOSFlowMemoView: View {
+    @Query(filter: #Predicate<Todo> { $0.deletedAt == nil }, sort: \Todo.updatedAt, order: .reverse)
+    private var suggestionTodos: [Todo]
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var memo = ""
     @State private var taskTitle: String
     @State private var selectedProject: Project?
+    @State private var isEditingTaskTitle = false
+    @FocusState private var isTaskTitleFocused: Bool
     private let todo: Todo?
 
     // Intentional one-time draft: cancel never edits the persisted Task.
@@ -36,12 +43,21 @@ struct IOSFlowMemoView: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
 
-                    if todo != nil {
+                    if let todo {
                         VStack(alignment: .leading, spacing: 6) {
                             Text(String(localized: "タスク名"))
                                 .font(.subheadline.weight(.medium))
-                            TextField(String(localized: "タスク名"), text: $taskTitle)
+                            TextField(String(localized: "タスク名"), text: taskTitleInput)
                                 .textFieldStyle(.roundedBorder)
+                                .focused($isTaskTitleFocused)
+                                .onChange(of: isTaskTitleFocused) { _, isFocused in
+                                    if !isFocused { isEditingTaskTitle = false }
+                                }
+
+                            VStack(spacing: 0) {
+                                taskTitleSuggestions(excluding: todo.id)
+                            }
+                            .animation(reduceMotion ? nil : .smooth(duration: 0.16), value: isTaskTitleFocused && isEditingTaskTitle)
                         }
                     }
                     FlowMemoProjectPicker(todo: todo, selection: $selectedProject)
@@ -69,6 +85,50 @@ struct IOSFlowMemoView: View {
                 isTaskSwitchMemo ? String(localized: "メモ")
                     : isBreakMemo ? String(localized: "休憩") : String(localized: "Flow完了")
             )
+        }
+    }
+
+    private var taskTitleInput: Binding<String> {
+        Binding(
+            get: { taskTitle },
+            set: { newTitle in
+                guard newTitle != taskTitle else { return }
+                taskTitle = newTitle
+                isEditingTaskTitle = true
+            }
+        )
+    }
+
+    @ViewBuilder
+    private func taskTitleSuggestions(excluding todoID: UUID) -> some View {
+        if isTaskTitleFocused && isEditingTaskTitle {
+            let suggestions = TaskTitleSuggestionBuilder().suggestions(
+                query: taskTitle,
+                todos: suggestionTodos,
+                excludingTodoID: todoID,
+                limit: 3
+            )
+            if !suggestions.isEmpty {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(suggestions) { suggestion in
+                        Button {
+                            taskTitle = suggestion.title
+                            isEditingTaskTitle = false
+                            isTaskTitleFocused = true
+                        } label: {
+                            Label(suggestion.title, systemImage: "clock.arrow.circlepath")
+                                .font(.subheadline)
+                                .lineLimit(2)
+                                .padding(.horizontal, 12)
+                                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
+                .transition(.opacity)
+            }
         }
     }
 

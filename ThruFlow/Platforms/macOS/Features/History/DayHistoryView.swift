@@ -82,6 +82,7 @@ struct DayHistoryView: View {
     var body: some View {
         VStack(spacing: 0) {
             modeContent
+                .productContentFade(on: selectedMode)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .navigationTitle(String(localized: "履歴"))
@@ -250,6 +251,7 @@ struct DayHistoryView: View {
                         : nil,
                     onAddRecord: presentHistoryRecord
                 )
+                .productContentFade(on: selectedRange)
             case .tasks:
                 aggregateWorkspace { tasksContent }
             case .areas:

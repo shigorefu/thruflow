@@ -5,6 +5,7 @@ import SwiftData
 import SwiftUI
 
 struct IOSStatisticsView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.calendar) private var calendar
     @Environment(\.locale) private var locale
@@ -163,12 +164,17 @@ struct IOSStatisticsView: View {
         )
         .toolbar { statisticsToolbar }
         .overlay(alignment: .topTrailing) {
-            if loadingFilter == filter, currentSnapshot != nil {
-                ProgressView()
-                    .controlSize(.small)
-                    .padding(.trailing, 20)
-                    .padding(.top, 8)
+            ZStack {
+                if loadingFilter == filter && currentSnapshot != nil {
+                    ProgressView()
+                        .controlSize(.small)
+                        .padding(.trailing, 20)
+                        .padding(.top, 8)
+                        .transition(.opacity)
+                }
             }
+            .allowsHitTesting(false)
+            .animation(reduceMotion ? nil : .smooth(duration: 0.18), value: loadingFilter == filter && currentSnapshot != nil)
         }
         .sheet(isPresented: $isAnchorPickerPresented) {
             IOSStatisticsAnchorSheet(
@@ -253,7 +259,7 @@ struct IOSStatisticsView: View {
             .padding(.vertical, 12)
             .frame(maxWidth: 1_000)
             .frame(maxWidth: .infinity)
-            .animation(.snappy(duration: 0.32, extraBounce: 0), value: presentationPeriod)
+            .productContentFade(on: currentSnapshot?.filter)
         }
     }
 
@@ -576,7 +582,7 @@ struct IOSStatisticsView: View {
 
     private func movePeriod(by value: Int) {
         guard value <= 0 || canMoveToNextPeriod else { return }
-        withAnimation(.snappy(duration: 0.32, extraBounce: 0)) {
+        withAnimation(reduceMotion ? nil : .smooth(duration: 0.22)) {
             if let customStartDate, let customEndDate {
                 let start = calendar.startOfDay(for: min(customStartDate, customEndDate))
                 let end = calendar.startOfDay(for: max(customStartDate, customEndDate))
@@ -603,7 +609,7 @@ struct IOSStatisticsView: View {
     }
 
     private func moveToToday() {
-        withAnimation(.snappy(duration: 0.32, extraBounce: 0)) {
+        withAnimation(reduceMotion ? nil : .smooth(duration: 0.22)) {
             let today = dayBoundary.day(containing: .now, calendar: calendar)
             if let customStartDate, let customEndDate {
                 let start = calendar.startOfDay(for: min(customStartDate, customEndDate))
@@ -621,7 +627,7 @@ struct IOSStatisticsView: View {
     }
 
     private func selectPeriod(_ period: StatisticsPeriod) {
-        withAnimation(.snappy(duration: 0.32, extraBounce: 0)) {
+        withAnimation(reduceMotion ? nil : .smooth(duration: 0.22)) {
             if period == .year,
                calendar.component(.year, from: anchorDate) > calendar.component(.year, from: .now) {
                 anchorDate = dayBoundary.day(containing: .now, calendar: calendar)
@@ -652,7 +658,7 @@ struct IOSStatisticsView: View {
     }
 
     private func applyAnchorDate() {
-        withAnimation(.snappy(duration: 0.32, extraBounce: 0)) {
+        withAnimation(reduceMotion ? nil : .smooth(duration: 0.22)) {
             customStartDate = nil
             customEndDate = nil
             anchorDate = StatisticsPeriodBuilder(
@@ -684,7 +690,7 @@ struct IOSStatisticsView: View {
             calendar.startOfDay(for: min(customStartDraft, customEndDraft)),
             end
         )
-        withAnimation(.snappy(duration: 0.32, extraBounce: 0)) {
+        withAnimation(reduceMotion ? nil : .smooth(duration: 0.22)) {
             customStartDate = start
             customEndDate = end
             anchorDate = start

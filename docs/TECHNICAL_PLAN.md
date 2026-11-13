@@ -42,3 +42,21 @@ The macOS suggestion panel keeps its AppKit anchor class outside the generic
 SwiftUI representable. Content is already erased to AnyView; a generic nested
 NSView subclass triggered a Swift 6.3 Release deinitializer optimization crash.
 This structure retains normal Release optimization and the existing panel lifecycle.
+
+## Flow synchronization and rendering cadence
+
+The active-session query filters persisted phases and statuses before loading
+models. Foreground entry resolves immediately in the owning context. The
+two-second fallback and store/import notifications share a coalesced background
+read of active-session IDs and runtime versions. When they differ from the
+applied state, or multiple sessions need reconciliation, the owning context
+re-reads before applying the existing conflict rules. Notifications can still
+trigger reconciliation after foreground polling stops.
+
+The day timeline follows snapshot changes on Mac and iPhone/iPad. Its clock
+updates once per minute until a shown focus endpoint starts moving in overtime,
+then once per second. The Flow shader and the player display have independent
+clocks. The player's one-second presentation updates are scoped to the dial and
+live Task progress. Controls observe the focus deadline and player state, and
+Task selection follows the configured app-day boundary. The clock for checking
+timer phase transitions remains separate from rendering.

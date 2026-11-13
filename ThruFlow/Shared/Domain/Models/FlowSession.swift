@@ -382,7 +382,7 @@ final class FlowSession {
     }
 }
 
-struct FlowRuntimeVersion: Equatable, Comparable {
+struct FlowRuntimeVersion: Equatable, Comparable, Sendable {
     var updatedAt: Date
     var revision: Int
     var mutationID: UUID

@@ -1,9 +1,11 @@
+import Combine
 import SwiftData
 import SwiftUI
 
 struct IOSFlowView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.calendar) private var calendar
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -25,6 +27,7 @@ struct IOSFlowView: View {
     @State private var showsMemo = false
     @State private var presentedTaskSwitchID: UUID?
     @State private var isMemoDismissing = false
+    @State private var wallClockRevision = Date.now
     @State private var showsTaskComposer = false
     @State private var editorMode: IOSTaskEditorMode?
     @State private var selectedHistoryItem: HistoryCalendarItem?
@@ -102,7 +105,7 @@ struct IOSFlowView: View {
                 taskComposer
                     .frame(maxWidth: 640)
                     .frame(maxWidth: .infinity)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .transition(reduceMotion ? .identity : .offset(y: 12).combined(with: .opacity))
                     .background {
                         Rectangle()
                             .fill(.background)
@@ -152,6 +155,16 @@ struct IOSFlowView: View {
         .sheet(item: $selectedHistoryItem) { item in
             IOSHistoryItemDetail(item: item)
                 .presentationDetents(item.kind == .flow ? [.large] : [.medium])
+        }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            wallClockRevision = .now
+            reconcileSelectedTodo()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .NSSystemClockDidChange)
+            .merge(with: NotificationCenter.default.publisher(for: .NSSystemTimeZoneDidChange))) { _ in
+            wallClockRevision = .now
+            reconcileSelectedTodo()
         }
         .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) { _ in
             preparationRevision += 1
@@ -277,45 +290,55 @@ struct IOSFlowView: View {
     }
 
     private func playerCard(minHeight: CGFloat? = nil) -> some View {
-        TimelineView(.periodic(from: .now, by: 1)) { timeline in
-            let activeDay = dayBoundary.day(containing: timeline.date, calendar: calendar)
-
-            playerCardContent(minHeight: minHeight, now: timeline.date)
-                .task(id: activeDay) {
-                    reconcileSelectedTodo(now: timeline.date)
-                }
-        }
-    }
-
-    private func playerCardContent(minHeight: CGFloat?, now: Date) -> some View {
-        FlowTimerPanelShell(
-            style: .mobile,
-            minHeight: minHeight,
-            timer: FlowTimerPresentation(
-                progress: activeFlowStore.phaseProgress(now: now),
-                tint: timerTint(at: now),
-                eyebrow: activeFlowStore.phase.displayName,
-                timeText: timerText(at: now),
-                footer: activeFlowStore.selectedMode.displayName,
-                slices: activeFlowStore.timerRingSlices(now: now)
-            )
-        ) {
-            contextButton(now: now)
+        FlowTimerPanelShell(style: .mobile, minHeight: minHeight) {
+            TimelineView(displaySchedule) { tick in
+                let now = tick.date
+                FlowTimerPresentation(
+                    progress: activeFlowStore.phaseProgress(now: now),
+                    tint: timerTint(at: now),
+                    eyebrow: activeFlowStore.phase.displayName,
+                    timeText: timerText(at: now),
+                    footer: activeFlowStore.selectedMode.displayName,
+                    slices: activeFlowStore.timerRingSlices(now: now)
+                )
+                .dial(style: .mobile)
+            }
+        } context: {
+            contextButton
         } mode: {
             modePicker
         } controls: {
-            controls(now: now)
+            TimelineView(FlowPlayerSchedule.overtime(for: activeFlowStore.timerState, revision: wallClockRevision)) { tick in
+                controls(now: tick.date)
+            }
+        }
+        .background {
+            TimelineView(FlowPlayerSchedule.appDay(dayBoundary, calendar, revision: wallClockRevision)) { tick in
+                Color.clear
+                    .task(id: dayBoundary.day(containing: tick.date, calendar: calendar)) {
+                        reconcileSelectedTodo(now: tick.date)
+                    }
+            }
         }
     }
 
-    private func contextButton(now: Date) -> some View {
+    private var displaySchedule: FlowPlayerSchedule {
+        .display(for: isVisible ? activeFlowStore.timerState : nil)
+    }
+
+    private func taskProgressSchedule(for todo: Todo) -> FlowPlayerSchedule {
+        guard todo.measurement != .checkbox, activeFlowStore.timerState?.actualFocusDurationSeconds == nil
+        else { return .seconds(active: false) }
+        return displaySchedule
+    }
+
+    private var contextButton: some View {
         FlowTimerContextButton(
             style: .mobile,
             presentation: FlowTimerContextPresentation(
                 symbol: selectedArea?.symbolName ?? "🎯",
                 areaTitle: selectedArea == nil ? String(localized: "分野") : TodoDisplay.flowContextName(for: selectedTodo, area: selectedArea),
                 tint: tint,
-                detail: nil,
                 isPlaceholder: selectedArea == nil,
                 showsProgress: selectedTodo != nil
             ),
@@ -340,12 +363,14 @@ struct IOSFlowView: View {
         } progress: {
             Group {
                 if let todo = selectedTodo {
-                    TodoProgressControl(
-                        todo: todo,
-                        additionalFocusSeconds: activeTodoFocusSeconds(at: now)
-                    ) {
-                        if todo.setManuallyCompleted(!todo.isCompleted) {
-                            _ = modelContext.saveReporting(.flowUpdate)
+                    TimelineView(taskProgressSchedule(for: todo)) { tick in
+                        TodoProgressControl(
+                            todo: todo,
+                            additionalFocusSeconds: activeTodoFocusSeconds(at: tick.date)
+                        ) {
+                            if todo.setManuallyCompleted(!todo.isCompleted) {
+                                _ = modelContext.saveReporting(.flowUpdate)
+                            }
                         }
                     }
                 }
@@ -377,7 +402,8 @@ struct IOSFlowView: View {
                     ? String(localized: "休憩を削除")
                     : String(localized: "Flowを破壊"),
                 visuallyPressedAction: nil
-            )
+            ),
+            animatesPrimarySymbol: true
         ) { action in
             switch action {
             case .seekBackward:
@@ -426,24 +452,17 @@ struct IOSFlowView: View {
                 isRenderingEnabled: isVisible
             )
             .frame(height: 142)
-            .background(modeSurfaceTint)
+            .background {
+                modeSurfaceTint
+                    .animation(reduceMotion ? nil : .smooth(duration: 0.28), value: activeFlowStore.selectedMode)
+            }
             .clipShape(RoundedRectangle(cornerRadius: 12))
 
-            if isVisible {
-                TimelineView(.periodic(from: .now, by: 1)) { timeline in
-                    IOSFlowTimelineView(
-                        snapshot: snapshot,
-                        now: timeline.date,
-                        onOpenHistory: inspectTimelineSelection
-                    )
-                }
-            } else {
-                IOSFlowTimelineView(
-                    snapshot: snapshot,
-                    now: .now,
-                    onOpenHistory: inspectTimelineSelection
-                )
-            }
+            IOSFlowTimelineView(
+                snapshot: snapshot,
+                isVisible: isVisible,
+                onOpenHistory: inspectTimelineSelection
+            )
         }
         .padding(14)
         .frame(minHeight: minHeight, alignment: .topLeading)
@@ -489,7 +508,11 @@ struct IOSFlowView: View {
             .pickerStyle(.segmented)
             .labelsHidden()
 
-            if filteredDashboardTodos.isEmpty {
+            if cachedTodoGroups == nil {
+                ProgressView()
+                    .controlSize(.small)
+                    .frame(maxWidth: .infinity, minHeight: 90)
+            } else if filteredDashboardTodos.isEmpty {
                 ContentUnavailableView(
                     String(localized: "今日の項目はありません"),
                     systemImage: "checkmark.circle"
@@ -508,17 +531,15 @@ struct IOSFlowView: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, minHeight: minHeight, alignment: .topLeading)
+        .productContentFade(on: cachedTodoGroups != nil)
+        .productContentFade(on: taskFilter)
         .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 16))
     }
 
     private var modeBinding: Binding<FlowMode> {
         Binding(
             get: { activeFlowStore.selectedMode },
-            set: { mode in
-                withAnimation(.easeInOut(duration: 0.8)) {
-                    activeFlowStore.selectMode(mode, modelContext: modelContext)
-                }
-            }
+            set: { activeFlowStore.selectMode($0, modelContext: modelContext) }
         )
     }
 
@@ -847,13 +868,13 @@ struct IOSFlowView: View {
     }
 
     private func presentTaskComposer() {
-        withAnimation(.snappy(duration: 0.28)) {
+        withAnimation(reduceMotion ? nil : .smooth(duration: 0.25)) {
             showsTaskComposer = true
         }
     }
 
     private func dismissTaskComposer() {
-        withAnimation(.snappy(duration: 0.24)) {
+        withAnimation(reduceMotion ? nil : .smooth(duration: 0.20)) {
             showsTaskComposer = false
         }
     }
@@ -980,6 +1001,7 @@ private nonisolated struct IOSFlowDashboardLayout: Layout {
 }
 
 private struct IOSDashboardStatisticsView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let snapshot: FlowDashboardSnapshot
     let sessions: [FlowSession]
     let flowBreaks: [FlowBreak]
@@ -1027,7 +1049,7 @@ private struct IOSDashboardStatisticsView: View {
                 }
             }
             .id(page)
-            .transition(.opacity.combined(with: .scale(scale: 0.98)))
+            .transition(reduceMotion ? .identity : .opacity)
         }
         .padding(16)
         .frame(maxWidth: .infinity, minHeight: 330, alignment: .topLeading)
@@ -1048,7 +1070,8 @@ private struct IOSDashboardStatisticsView: View {
             .pickerStyle(.segmented)
             .labelsHidden()
 
-            distributionDonut
+            distributionDonut(rows: rows)
+                .productContentFade(on: distributionMode)
 
             VStack(alignment: .leading, spacing: 9) {
                 ForEach(rows.prefix(4)) { row in
@@ -1065,15 +1088,17 @@ private struct IOSDashboardStatisticsView: View {
                         }
                         DashboardDistributionBar(
                             fraction: snapshot.focusShare(for: row.focusSeconds),
-                            precedingFraction: snapshot.focusShare(for: rows.prefix { $0.id != row.id }
-                                .reduce(0) { $0 + $1.focusSeconds }),
                             color: Color(hex: row.colorHex)
                         )
                     }
                 }
+                if !rows.isEmpty {
+                    DashboardDistributionScale(total: focusText(snapshot.totalFocusSeconds))
+                }
             }
+            .productContentFade(on: distributionMode)
 
-            if distributionRows.isEmpty {
+            if rows.isEmpty {
                 Text(String(localized: "Flowを記録すると時間配分が表示されます"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -1082,11 +1107,11 @@ private struct IOSDashboardStatisticsView: View {
         }
     }
 
-    private var distributionDonut: some View {
+    private func distributionDonut(rows: [IOSDashboardDistributionRow]) -> some View {
         ZStack {
             Circle()
                 .stroke(Color.primary.opacity(0.08), lineWidth: 12)
-            ForEach(distributionSlices) { slice in
+            ForEach(distributionSlices(rows: rows)) { slice in
                 Circle()
                     .trim(from: slice.start, to: slice.end)
                     .stroke(
@@ -1107,7 +1132,7 @@ private struct IOSDashboardStatisticsView: View {
         }
         .frame(width: 112, height: 112)
         .frame(maxWidth: .infinity)
-        .animation(.easeInOut(duration: 0.25), value: snapshot.totalFocusSeconds)
+        .animation(reduceMotion ? nil : .smooth(duration: 0.24), value: snapshot.totalFocusSeconds)
     }
 
     private var trendPage: some View {
@@ -1230,13 +1255,13 @@ private struct IOSDashboardStatisticsView: View {
         }
     }
 
-    private var distributionSlices: [IOSDashboardFlowSlice] {
+    private func distributionSlices(rows: [IOSDashboardDistributionRow]) -> [IOSDashboardFlowSlice] {
         guard snapshot.totalFocusSeconds > 0 else { return [] }
 
         var cursor = 0.0
-        return distributionRows.map { row in
+        return rows.map { row in
             let fraction = Double(row.focusSeconds) / Double(snapshot.totalFocusSeconds)
-            let gap = distributionRows.count > 1 ? min(0.004, fraction * 0.18) : 0
+            let gap = rows.count > 1 ? min(0.004, fraction * 0.18) : 0
             let slice = IOSDashboardFlowSlice(
                 id: row.id,
                 start: cursor + (gap / 2),
@@ -1252,7 +1277,7 @@ private struct IOSDashboardStatisticsView: View {
         let pages = IOSDashboardStatisticsPage.allCases
         guard let current = pages.firstIndex(of: page) else { return }
         let next = (current + offset + pages.count) % pages.count
-        withAnimation(.easeInOut(duration: 0.2)) {
+        withAnimation(reduceMotion ? nil : .smooth(duration: 0.22)) {
             page = pages[next]
         }
     }

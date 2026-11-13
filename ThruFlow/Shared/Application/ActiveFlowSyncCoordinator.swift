@@ -6,10 +6,39 @@ struct ActiveFlowSyncResolution {
     var supersededSessions: [FlowSession]
 }
 
+struct ActiveFlowSyncCandidate: Sendable {
+    let id: UUID
+    let version: FlowRuntimeVersion
+}
+
+@ModelActor
+actor ActiveFlowSyncReader {
+    func candidates() throws -> [ActiveFlowSyncCandidate] {
+        try ActiveFlowSyncCoordinator.fetchCandidates(modelContext: modelContext).map {
+            ActiveFlowSyncCandidate(id: $0.id, version: $0.runtimeVersion)
+        }
+    }
+}
+
 struct ActiveFlowSyncCoordinator {
+    nonisolated static func fetchCandidates(modelContext: ModelContext) throws -> [FlowSession] {
+        let focusing = FlowPhase.focusing.rawValue
+        let paused = FlowPhase.paused.rawValue
+        let breakTime = FlowPhase.breakTime.rawValue
+        let awaitingExtension = FlowPhase.awaitingExtensionDecision.rawValue
+        let completed = FlowSessionStatus.completed.rawValue
+        let interrupted = FlowSessionStatus.interrupted.rawValue
+
+        // Match reconstructableTimerState, including unknown legacy status values.
+        return try modelContext.fetch(FetchDescriptor<FlowSession>(predicate: #Predicate {
+            ($0.phaseRawValue == focusing || $0.phaseRawValue == paused ||
+                $0.phaseRawValue == breakTime || $0.phaseRawValue == awaitingExtension) &&
+                $0.statusRawValue != completed && $0.statusRawValue != interrupted
+        }))
+    }
+
     func resolve(modelContext: ModelContext) throws -> ActiveFlowSyncResolution {
-        let sessions = try modelContext.fetch(FetchDescriptor<FlowSession>())
-        return resolve(sessions: sessions)
+        try resolve(sessions: Self.fetchCandidates(modelContext: modelContext))
     }
 
     func resolve(sessions: [FlowSession]) -> ActiveFlowSyncResolution {

@@ -285,10 +285,12 @@ struct FlowDashboardView: View {
                 VStack(spacing: Self.panelSpacing) {
                     FlowMiniPlayerView(style: .dashboard)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 360)
+                        .frame(minHeight: 360)
+                        .fixedSize(horizontal: false, vertical: true)
 
                     flowStage(snapshot: snapshot)
-                        .frame(height: 340)
+                        .frame(minHeight: 340)
+                        .fixedSize(horizontal: false, vertical: true)
 
                     taskColumns()
                     statisticsPanel(snapshot: snapshot)
@@ -317,12 +319,12 @@ struct FlowDashboardView: View {
             }
 
             streamSurface(snapshot: snapshot)
-            if isVisible {
-                TimelineView(.periodic(from: .now, by: 1)) { timeline in
-                    timelineSurface(snapshot: snapshot, now: timeline.date)
-                }
-            } else {
-                timelineSurface(snapshot: snapshot, now: .now)
+            TimelineView(FlowDashboardTimelineSchedule(
+                isVisible: isVisible,
+                showsPlannedEnd: settings.showsTimelinePlannedEnd,
+                timerState: activeFlowStore.timerState
+            )) { timeline in
+                timelineSurface(snapshot: snapshot, now: isVisible ? timeline.date : .now)
             }
         }
         .padding(18)
@@ -671,6 +673,7 @@ struct FlowDashboardView: View {
                 systemImage: "checklist",
                 todos: standardTodos,
                 scrollsRows: scrollsRows,
+                isLoading: cachedTodoGroups == nil,
                 showsPriority: true,
                 progressText: progressText,
                 onToggle: toggleTodo,
@@ -683,6 +686,7 @@ struct FlowDashboardView: View {
                 systemImage: "repeat",
                 todos: habitTodos,
                 scrollsRows: scrollsRows,
+                isLoading: cachedTodoGroups == nil,
                 progressText: progressText,
                 onToggle: toggleTodo,
                 onOpen: { editingTodo = $0 },
@@ -702,6 +706,7 @@ struct FlowDashboardView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .productContentFade(on: cachedTodoGroups != nil)
     }
 
     private func statisticsPanel(snapshot: FlowDashboardSnapshot) -> some View {
@@ -744,7 +749,7 @@ struct FlowDashboardView: View {
                     }
                 }
                 .id(statisticsPage)
-                .transition(.opacity.combined(with: .scale(scale: 0.98)))
+                .transition(reduceMotion ? .identity : .opacity)
                 .frame(maxWidth: .infinity, alignment: .topLeading)
             }
         }
@@ -769,7 +774,8 @@ struct FlowDashboardView: View {
             .pickerStyle(.segmented)
             .labelsHidden()
 
-            statisticsDonut(snapshot: snapshot)
+            statisticsDonut(snapshot: snapshot, rows: rows)
+                .productContentFade(on: distributionMode)
 
             VStack(alignment: .leading, spacing: 9) {
                 ForEach(rows.prefix(4)) { row in
@@ -786,15 +792,17 @@ struct FlowDashboardView: View {
                         }
                         DashboardDistributionBar(
                             fraction: snapshot.focusShare(for: row.focusSeconds),
-                            precedingFraction: snapshot.focusShare(for: rows.prefix { $0.id != row.id }
-                                .reduce(0) { $0 + $1.focusSeconds }),
                             color: Color(hex: row.colorHex)
                         )
                     }
                 }
+                if !rows.isEmpty {
+                    DashboardDistributionScale(total: focusText(snapshot.totalFocusSeconds))
+                }
             }
+            .productContentFade(on: distributionMode)
 
-            if distributionRows(snapshot: snapshot).isEmpty {
+            if rows.isEmpty {
                 Text(String(localized: "Flowを記録すると時間配分が表示されます"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -803,11 +811,11 @@ struct FlowDashboardView: View {
         }
     }
 
-    private func statisticsDonut(snapshot: FlowDashboardSnapshot) -> some View {
+    private func statisticsDonut(snapshot: FlowDashboardSnapshot, rows: [DashboardDistributionRow]) -> some View {
         ZStack {
             Circle()
                 .stroke(Color.primary.opacity(0.08), lineWidth: 12)
-            ForEach(distributionSlices(snapshot: snapshot)) { slice in
+            ForEach(distributionSlices(snapshot: snapshot, rows: rows)) { slice in
                 Circle()
                     .trim(from: slice.start, to: slice.end)
                     .stroke(Color(hex: slice.colorHex), style: StrokeStyle(lineWidth: 12, lineCap: .butt))
@@ -825,7 +833,7 @@ struct FlowDashboardView: View {
         }
         .frame(width: 108, height: 108)
         .frame(maxWidth: .infinity)
-        .animation(.easeInOut(duration: 0.25), value: snapshot.totalFocusSeconds)
+        .animation(reduceMotion ? nil : .smooth(duration: 0.24), value: snapshot.totalFocusSeconds)
     }
 
     private func statisticsTrendPage(snapshot: FlowDashboardSnapshot) -> some View {
@@ -939,7 +947,7 @@ struct FlowDashboardView: View {
         let pages = DashboardStatisticsPage.allCases
         guard let current = pages.firstIndex(of: statisticsPage) else { return }
         let next = (current + offset + pages.count) % pages.count
-        withAnimation(.easeInOut(duration: 0.2)) {
+        withAnimation(reduceMotion ? nil : .smooth(duration: 0.22)) {
             statisticsPage = pages[next]
         }
     }
@@ -969,11 +977,10 @@ struct FlowDashboardView: View {
         }
     }
 
-    private func distributionSlices(snapshot: FlowDashboardSnapshot) -> [DashboardFlowTaskSlice] {
+    private func distributionSlices(snapshot: FlowDashboardSnapshot, rows: [DashboardDistributionRow]) -> [DashboardFlowTaskSlice] {
         guard snapshot.totalFocusSeconds > 0 else { return [] }
 
         var cursor = 0.0
-        let rows = distributionRows(snapshot: snapshot)
         return rows.map { row in
             let fraction = Double(row.focusSeconds) / Double(snapshot.totalFocusSeconds)
             let gap = rows.count > 1 ? min(0.004, fraction * 0.18) : 0
@@ -1627,6 +1634,7 @@ private struct DashboardTodoColumn: View {
     let systemImage: String
     let todos: [Todo]
     let scrollsRows: Bool
+    var isLoading = false
     var showsPriority = false
     let progressText: (Todo) -> String
     let onToggle: (Todo) -> Void
@@ -1648,10 +1656,12 @@ private struct DashboardTodoColumn: View {
                     Label(title, systemImage: systemImage).font(.headline)
                 }
                 Spacer()
-                Text("\(todos.filter { !$0.isCompleted }.count)")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .monospacedDigit()
+                if !isLoading {
+                    Text("\(todos.filter { !$0.isCompleted }.count)")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                }
 
                 if let addControl {
                     addControl
@@ -1659,7 +1669,11 @@ private struct DashboardTodoColumn: View {
             }
             .frame(minHeight: 22)
 
-            if scrollsRows && !todos.isEmpty {
+            if isLoading {
+                ProgressView()
+                    .controlSize(.small)
+                    .frame(maxWidth: .infinity, minHeight: 70)
+            } else if scrollsRows && !todos.isEmpty {
                 ScrollView {
                     todoList
                 }

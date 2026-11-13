@@ -19,15 +19,53 @@ struct FlowTimerPresentation {
     let timeText: String
     let footer: String
     var slices: [FlowTimerRingSlice] = []
+
+    func dial(style: FlowTimerPanelStyle) -> FlowTimerDial {
+        FlowTimerDial(progress: progress, tint: tint, eyebrow: eyebrow, timeText: timeText,
+                      footer: footer, style: style.timerStyle, slices: slices)
+    }
+}
+
+/// Keep clock updates inside the smallest view that needs the date.
+nonisolated enum FlowPlayerSchedule: TimelineSchedule {
+    case seconds(active: Bool)
+    case boundary(Date?, revision: Date)
+    case appDay(AppDayBoundary, Calendar, revision: Date)
+
+    func entries(from startDate: Date, mode: Mode) -> some Sequence<Date> {
+        sequence(first: startDate) { date in
+            switch self {
+            case .seconds(let active):
+                return active ? date.addingTimeInterval(1) : nil
+            case .boundary(let deadline, _):
+                return deadline.flatMap { $0 > date ? $0 : nil }
+            case .appDay(let boundary, let calendar, _):
+                let day = boundary.day(containing: date, calendar: calendar)
+                let next = boundary.interval(for: day, calendar: calendar).end
+                return next > date ? next : nil
+            }
+        }
+    }
+
+    @MainActor static func display(for state: FlowTimerState?) -> Self {
+        guard let state else { return .seconds(active: false) }
+        let changesWithTime = state.phase == .focusing || state.phase == .breakTime ||
+            (state.phase == .paused && state.pausedAt == nil)
+        return .seconds(active: changesWithTime)
+    }
+
+    @MainActor static func overtime(for state: FlowTimerState?, revision: Date) -> Self {
+        .boundary(state?.phase == .focusing ? state?.plannedEndAt : nil, revision: revision)
+    }
 }
 
 /// Production Flow player chrome shared by the real player and onboarding.
 /// The shell owns layout only; its callers own application state and actions.
-struct FlowTimerPanelShell<Context: View, Mode: View, Controls: View>: View {
+struct FlowTimerPanelShell<Dial: View, Context: View, Mode: View, Controls: View>: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let style: FlowTimerPanelStyle
     let minHeight: CGFloat?
-    let timer: FlowTimerPresentation
+    private let dial: Dial
     let timerAccessibilityLabel: String?
     private let context: Context
     private let mode: Mode
@@ -36,15 +74,15 @@ struct FlowTimerPanelShell<Context: View, Mode: View, Controls: View>: View {
     init(
         style: FlowTimerPanelStyle,
         minHeight: CGFloat? = nil,
-        timer: FlowTimerPresentation,
         timerAccessibilityLabel: String? = nil,
+        @ViewBuilder dial: () -> Dial,
         @ViewBuilder context: () -> Context,
         @ViewBuilder mode: () -> Mode,
         @ViewBuilder controls: () -> Controls
     ) {
         self.style = style
         self.minHeight = minHeight
-        self.timer = timer
+        self.dial = dial()
         self.timerAccessibilityLabel = timerAccessibilityLabel
         self.context = context()
         self.mode = mode()
@@ -89,16 +127,6 @@ struct FlowTimerPanelShell<Context: View, Mode: View, Controls: View>: View {
 
     @ViewBuilder
     private var timerDial: some View {
-        let dial = FlowTimerDial(
-            progress: timer.progress,
-            tint: timer.tint,
-            eyebrow: timer.eyebrow,
-            timeText: timer.timeText,
-            footer: timer.footer,
-            style: style.timerStyle,
-            slices: timer.slices
-        )
-
         if let timerAccessibilityLabel {
             dial
                 .accessibilityElement(children: .combine)
@@ -163,12 +191,11 @@ struct FlowTimerContextPresentation {
     let symbol: String
     let areaTitle: String
     let tint: Color
-    let detail: String?
     let isPlaceholder: Bool
     let showsProgress: Bool
 }
 
-struct FlowTimerContextButton<Title: View, Progress: View>: View {
+struct FlowTimerContextButton<Title: View, Progress: View, Detail: View>: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     let style: FlowTimerPanelStyle
@@ -179,6 +206,7 @@ struct FlowTimerContextButton<Title: View, Progress: View>: View {
     let action: () -> Void
     private let title: Title
     private let progress: Progress
+    private let detail: Detail
 
     init(
         style: FlowTimerPanelStyle,
@@ -188,7 +216,8 @@ struct FlowTimerContextButton<Title: View, Progress: View>: View {
         accessibilityLabel: String,
         action: @escaping () -> Void,
         @ViewBuilder title: () -> Title,
-        @ViewBuilder progress: () -> Progress
+        @ViewBuilder progress: () -> Progress,
+        @ViewBuilder detail: () -> Detail = { EmptyView() }
     ) {
         self.style = style
         self.presentation = presentation
@@ -198,6 +227,7 @@ struct FlowTimerContextButton<Title: View, Progress: View>: View {
         self.action = action
         self.title = title()
         self.progress = progress()
+        self.detail = detail()
     }
 
     @ViewBuilder
@@ -244,9 +274,10 @@ struct FlowTimerContextButton<Title: View, Progress: View>: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .scaleEffect(isVisuallyPressed ? 0.985 : 1)
-            .opacity(isVisuallyPressed ? 0.82 : 1)
-            .transaction(configurePressTransaction)
+            .animation(pressAnimation) { card in
+                card.scaleEffect(isVisuallyPressed ? 0.985 : 1)
+                    .opacity(isVisuallyPressed ? 0.82 : 1)
+            }
             .accessibilityLabel(accessibilityLabel)
 
         case .dashboard:
@@ -269,12 +300,10 @@ struct FlowTimerContextButton<Title: View, Progress: View>: View {
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
 
-                        if let detail = presentation.detail {
-                            Text(detail)
-                                .font(.caption2.weight(.medium))
-                                .foregroundStyle(presentation.tint)
-                                .lineLimit(1)
-                        }
+                        detail
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(presentation.tint)
+                            .lineLimit(1)
                     }
 
                     Spacer(minLength: 0)
@@ -284,9 +313,10 @@ struct FlowTimerContextButton<Title: View, Progress: View>: View {
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
                 .contentShape(Rectangle())
-                .scaleEffect(isVisuallyPressed ? 0.985 : 1)
-                .opacity(isVisuallyPressed ? 0.82 : 1)
-                .transaction(configurePressTransaction)
+                .animation(pressAnimation) { card in
+                    card.scaleEffect(isVisuallyPressed ? 0.985 : 1)
+                        .opacity(isVisuallyPressed ? 0.82 : 1)
+                }
                 .onTapGesture(perform: action)
             }
             .padding(.leading, presentation.showsProgress ? 6 : 0)
@@ -320,9 +350,8 @@ struct FlowTimerContextButton<Title: View, Progress: View>: View {
             .accessibilityHidden(true)
     }
 
-    private func configurePressTransaction(_ transaction: inout Transaction) {
-        guard animatesVisualPress, !reduceMotion else { return }
-        transaction.animation = .easeOut(duration: 0.1)
+    private var pressAnimation: Animation? {
+        animatesVisualPress && !reduceMotion ? .smooth(duration: 0.16) : nil
     }
 
     private var chevron: some View {
@@ -378,6 +407,7 @@ struct FlowTimerTransportControls: View {
     let style: FlowTimerPanelStyle
     let presentation: FlowTimerTransportPresentation
     var animatesVisualPress = false
+    var animatesPrimarySymbol = false
     let action: (FlowTimerPanelAction) -> Void
 
     @ViewBuilder
@@ -456,6 +486,9 @@ struct FlowTimerTransportControls: View {
         } label: {
             Image(systemName: presentation.primarySymbol)
                 .font(font)
+                .contentTransition(reduceMotion || !animatesPrimarySymbol ? .identity : .opacity)
+                .animation(reduceMotion || !animatesPrimarySymbol ? nil : .smooth(duration: 0.20),
+                           value: presentation.primarySymbol)
                 .foregroundStyle(.white)
                 .frame(width: size, height: size)
                 .background(presentation.primaryTint, in: Circle())

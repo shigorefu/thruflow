@@ -602,15 +602,17 @@ private struct OnboardingFlowDemo: View {
 
             VStack(spacing: 12) {
                 FlowTimerPanelShell(
-                    style: demoPanelStyle,
-                    timer: FlowTimerPresentation(
+                    style: demoPanelStyle
+                ) {
+                    FlowTimerPresentation(
                         progress: projection.timerProgress,
                         tint: timerTint(for: projection, taskTint: tint),
                         eyebrow: timerEyebrow(for: projection),
                         timeText: timerText(for: projection),
                         footer: FlowMode.sprint.displayName
                     )
-                ) {
+                    .dial(style: demoPanelStyle)
+                } context: {
                     demoContextButton(projection: projection, task: task, tint: tint)
                 } mode: {
                     FlowModeSelector(
@@ -739,7 +741,6 @@ private struct OnboardingFlowDemo: View {
                 symbol: symbol,
                 areaTitle: area,
                 tint: isSelected ? tint : .accentColor,
-                detail: nil,
                 isPlaceholder: !isSelected,
                 showsProgress: isSelected
             ),

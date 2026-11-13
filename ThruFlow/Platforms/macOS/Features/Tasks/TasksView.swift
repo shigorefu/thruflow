@@ -222,6 +222,7 @@ struct TasksView: View {
         GeometryReader { geometry in
             HStack(spacing: 0) {
                 boardContent(snapshot: snapshot)
+                    .productContentFade(on: calendarRange)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                 Divider()

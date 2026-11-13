@@ -651,7 +651,10 @@ progress, Area, measurement, or date. In the macOS Flow timer's existing inline
 rename field, the same history source supplies up to three suggestions. The
 iPhone Task editor presents its suggestions above the edit form rather than
 inside the form. In either editing surface, a selection renames only the current
-Todo rather than switching Flow context.
+Todo rather than switching Flow context. The Flow memo offers up to three
+suggestions from the same history, excluding the Todo being edited. Selecting
+a suggestion changes the draft title only; the existing memo submission remains
+the sole commit point.
 
 Reason: recurring work should be quick to type without reviving a completed
 Todo or recreating the cross-day identity confusion fixed for Habit history.

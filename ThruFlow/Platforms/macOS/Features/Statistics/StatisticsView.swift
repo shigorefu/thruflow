@@ -11,6 +11,7 @@ import SwiftData
 import SwiftUI
 
 struct StatisticsView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.calendar) private var calendar
     @Environment(\.locale) private var locale
@@ -172,14 +173,19 @@ struct StatisticsView: View {
                             }
                         }
                         .padding(20)
-                        .animation(.snappy(duration: 0.34, extraBounce: 0), value: selectedPeriod)
+                        .productContentFade(on: currentSnapshot?.filter)
                     }
                     .overlay(alignment: .topTrailing) {
-                        if isLoadingCurrentFilter, currentSnapshot != nil {
-                            ProgressView()
-                                .controlSize(.small)
-                                .padding(26)
+                        ZStack {
+                            if isLoadingCurrentFilter && currentSnapshot != nil {
+                                ProgressView()
+                                    .controlSize(.small)
+                                    .padding(26)
+                                    .transition(.opacity)
+                            }
                         }
+                        .allowsHitTesting(false)
+                        .animation(reduceMotion ? nil : .smooth(duration: 0.18), value: isLoadingCurrentFilter && currentSnapshot != nil)
                     }
                     .task(id: currentSnapshot?.filter) {
                         guard ScreenshotMode.initialScreen() == .statisticsDots,
@@ -672,7 +678,7 @@ struct StatisticsView: View {
     }
 
     private func moveToToday() {
-        withAnimation(.snappy(duration: 0.34, extraBounce: 0)) {
+        withAnimation(reduceMotion ? nil : .smooth(duration: 0.22)) {
             let today = dayBoundary.day(containing: .now, calendar: calendar)
             if let customStartDate, let customEndDate {
                 let start = calendar.startOfDay(for: min(customStartDate, customEndDate))
@@ -686,7 +692,7 @@ struct StatisticsView: View {
     }
 
     private func selectPeriod(_ period: StatisticsPeriod) {
-        withAnimation(.snappy(duration: 0.34, extraBounce: 0)) {
+        withAnimation(reduceMotion ? nil : .smooth(duration: 0.22)) {
             if period == .year,
                calendar.component(.year, from: anchorDate) > calendar.component(.year, from: .now) {
                 anchorDate = dayBoundary.day(containing: .now, calendar: calendar)
@@ -737,7 +743,7 @@ struct StatisticsView: View {
             calendar.startOfDay(for: min(customStartDraft, customEndDraft)),
             end
         )
-        withAnimation(.snappy(duration: 0.34, extraBounce: 0)) {
+        withAnimation(reduceMotion ? nil : .smooth(duration: 0.22)) {
             customStartDate = start
             customEndDate = end
             anchorDate = start

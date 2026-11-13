@@ -27,7 +27,7 @@ struct IOSFlowStreamView: View {
 
 struct IOSFlowTimelineView: View {
     let snapshot: FlowDashboardSnapshot
-    let now: Date
+    let isVisible: Bool
     let onOpenHistory: (IOSFlowTimelineSelection) -> Void
 
     @Environment(\.calendar) private var calendar
@@ -38,6 +38,19 @@ struct IOSFlowTimelineView: View {
     @State private var selectedAnchorX: CGFloat = 0.5
 
     var body: some View {
+        TimelineView(FlowDashboardTimelineSchedule(
+            isVisible: isVisible,
+            showsPlannedEnd: settings.showsTimelinePlannedEnd,
+            timerState: activeFlowStore.timerState
+        )) { timeline in
+            timelineContent(now: isVisible ? timeline.date : .now)
+        }
+        .onChange(of: isVisible) { _, visible in
+            if !visible { selectedTimelineItem = nil }
+        }
+    }
+
+    private func timelineContent(now: Date) -> some View {
         let activeTimerEndAt = settings.showsTimelinePlannedEnd
             ? activeFlowStore.activeTimerTimelineEndAt(now: now)
             : nil
@@ -51,7 +64,7 @@ struct IOSFlowTimelineView: View {
         let activeSeriesID = snapshot.breaks.first(where: \.isActive)?.seriesID
             ?? snapshot.sessionGroups.first(where: \.isActive)?.segments.first?.seriesID
 
-        VStack(alignment: .leading, spacing: 7) {
+        return VStack(alignment: .leading, spacing: 7) {
             Text(String(localized: "今日のタイムライン"))
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)

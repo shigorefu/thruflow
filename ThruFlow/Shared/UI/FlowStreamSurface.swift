@@ -1,5 +1,35 @@
 import SwiftUI
 
+nonisolated struct FlowDashboardTimelineSchedule: TimelineSchedule {
+    private let isVisible: Bool
+    private let overtimeStartsAt: Date?
+
+    @MainActor init(isVisible: Bool, showsPlannedEnd: Bool, timerState: FlowTimerState?) {
+        self.isVisible = isVisible
+        // Preserve the timer engine's wall-clock fallback for legacy paused focus.
+        if showsPlannedEnd, let timerState,
+           timerState.phase == .focusing ||
+            (timerState.phase == .paused && timerState.phaseBeforePause == .focusing && timerState.pausedAt == nil) {
+            overtimeStartsAt = timerState.plannedEndAt
+        } else {
+            overtimeStartsAt = nil
+        }
+    }
+
+    func entries(from startDate: Date, mode: Mode) -> some Sequence<Date> {
+        let overtimeStartsAt = mode == .lowFrequency ? nil : self.overtimeStartsAt
+        return sequence(first: startDate) { date in
+            guard isVisible else { return nil }
+            if let overtimeStartsAt, date >= overtimeStartsAt {
+                return date.addingTimeInterval(1)
+            }
+            let minute = (date.timeIntervalSinceReferenceDate / 60).rounded(.down)
+            let nextMinute = Date(timeIntervalSinceReferenceDate: (minute + 1) * 60)
+            return overtimeStartsAt.map { min(nextMinute, $0) } ?? nextMinute
+        }
+    }
+}
+
 struct FlowStreamSurface: View, Equatable {
     let blocks: Double
     let flowCount: Int

@@ -9,6 +9,7 @@ import SwiftUI
 import SwiftData
 
 struct MacOSRootView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.calendar) private var calendar
     @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.modelContext) private var modelContext
@@ -110,7 +111,12 @@ struct MacOSRootView: View {
             .navigationTitle(String(localized: "スルフロ"))
             .navigationSplitViewColumnWidth(min: 175, ideal: 190, max: 240)
         } detail: {
-            detailContent
+            ZStack {
+                detailContent
+                    .id(selection ?? .flow)
+                    .transition(reduceMotion ? .identity : .opacity)
+            }
+            .animation(reduceMotion ? nil : .smooth(duration: 0.20), value: selection ?? .flow)
         }
         .task {
             historyDate = dayBoundary.day(containing: .now, calendar: calendar)
@@ -126,6 +132,7 @@ struct MacOSRootView: View {
                 PersistenceIssueCenter.shared.log(error, operation: .flowSynchronization)
             }
         }
+
         .onAppear {
             showOnboardingScreenIfNeeded()
         }

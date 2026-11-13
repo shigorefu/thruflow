@@ -42,6 +42,7 @@ enum IOSAppRoute: Hashable, CaseIterable, Identifiable {
 }
 
 struct IOSRootView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.calendar) private var calendar
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -98,20 +99,7 @@ struct IOSRootView: View {
     private var selectionBinding: Binding<IOSAppRoute> {
         Binding(
             get: { selection },
-            set: { route in
-                if route == .flow {
-                    var transaction = Transaction()
-                    transaction.disablesAnimations = true
-                    withTransaction(transaction) {
-                        selection = route
-                    }
-                    return
-                }
-
-                withAnimation(.snappy(duration: 0.28)) {
-                    selection = route
-                }
-            }
+            set: { selection = $0 }
         )
     }
 
@@ -149,6 +137,7 @@ struct IOSRootView: View {
                 break
             }
         }
+
         .onAppear {
             showOnboardingScreenIfNeeded()
         }
@@ -255,6 +244,7 @@ struct IOSRootView: View {
         } detail: {
             NavigationStack {
                 destination(for: selection)
+                    .productContentFade(on: selection)
             }
         }
         .navigationSplitViewStyle(.balanced)
@@ -288,18 +278,21 @@ struct IOSRootView: View {
 
     @ViewBuilder
     private func tabContent(for route: IOSAppRoute) -> some View {
-        // Tab-bar preferences belong to each tab's content, not the TabView.
-        // The bottom scroll-edge effect is separate from the bar background.
+        // Keep each tab's state and native selection. Fade only the
+        // destination content; do not animate the bar or re-key its stack.
+        let isSelected = selection == route
+        let content = destination(for: route)
+            .animation(reduceMotion ? nil : .smooth(duration: 0.20)) { view in
+                view.opacity(isSelected || reduceMotion ? 1 : 0)
+            }
         if #available(iOS 26.0, *) {
-            destination(for: route)
+            content
                 .toolbarBackgroundVisibility(.hidden, for: .tabBar)
                 .scrollEdgeEffectHidden(true, for: .bottom)
         } else if #available(iOS 18.0, *) {
-            destination(for: route)
-                .toolbarBackgroundVisibility(.hidden, for: .tabBar)
+            content.toolbarBackgroundVisibility(.hidden, for: .tabBar)
         } else {
-            destination(for: route)
-                .toolbarBackground(.hidden, for: .tabBar)
+            content.toolbarBackground(.hidden, for: .tabBar)
         }
     }
 

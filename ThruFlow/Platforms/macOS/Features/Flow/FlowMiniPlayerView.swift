@@ -5,6 +5,7 @@
 //
 
 import AppKit
+import Combine
 import SwiftData
 import SwiftUI
 
@@ -17,6 +18,7 @@ struct FlowMiniPlayerView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.calendar) private var calendar
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(\.modelContext) private var modelContext
     @Environment(\.locale) private var locale
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
@@ -24,12 +26,15 @@ struct FlowMiniPlayerView: View {
     @Query(sort: \Area.name, order: .forward) private var areas: [Area]
     @Query(sort: \Todo.createdAt, order: .forward) private var todos: [Todo]
 
+    @State private var wallClockRevision = Date.now
     @State private var showsTaskPicker = false
     @State private var showsTaskComposer = false
     @State private var presentsTaskComposerAfterPicker = false
     @State private var taskComposerPresentationTask: Task<Void, Never>?
     @State private var resultText = ""
     @State private var resultTaskTitle = ""
+    @State private var didEditResultTitle = false
+    @State private var highlightedResultTitleSuggestionID: String?
     @State private var resultProject: Project?
     @State private var resultTaskSwitchID: UUID?
     @FocusState private var isResultTitleFocused: Bool
@@ -62,8 +67,8 @@ struct FlowMiniPlayerView: View {
         todos.filter { !$0.isArchived && !$0.isDeleted }
     }
 
-    private var todayTodos: [Todo] {
-        activeTodos.filter { todayFilter.includes($0) }
+    private func todayTodos(at date: Date) -> [Todo] {
+        activeTodos.filter { todayFilter.includes($0, now: date) }
     }
 
     private var selectedArea: Area? {
@@ -77,19 +82,33 @@ struct FlowMiniPlayerView: View {
     }
 
     var body: some View {
-        TimelineView(.periodic(from: .now, by: 1)) { context in
-            let activeDay = dayBoundary.day(containing: context.date, calendar: calendar)
-
-            content(now: context.date)
-                .onChange(of: context.date) { _, date in
-                    activeFlowStore.refresh(modelContext: modelContext, now: date)
-                }
-                .onChange(of: activeDay) { _, _ in
-                    reconcileSelectedTodo(now: context.date)
-                }
+        content
+        .background {
+            TimelineView(FlowPlayerSchedule.seconds(active: activeFlowStore.timerState != nil)) { tick in
+                Color.clear
+                    .onChange(of: tick.date) { _, date in
+                        activeFlowStore.refresh(modelContext: modelContext, now: date)
+                    }
+            }
+            TimelineView(FlowPlayerSchedule.appDay(dayBoundary, calendar, revision: wallClockRevision)) { tick in
+                Color.clear
+                    .onChange(of: dayBoundary.day(containing: tick.date, calendar: calendar)) { _, _ in
+                        reconcileSelectedTodo(now: tick.date)
+                    }
+            }
         }
         .background {
             MacWindowPresentationAnchor(onHidden: dismissTaskPopovers)
+        }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            wallClockRevision = .now
+            reconcileSelectedTodo()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .NSSystemClockDidChange)
+            .merge(with: NotificationCenter.default.publisher(for: .NSSystemTimeZoneDidChange))) { _ in
+            wallClockRevision = .now
+            reconcileSelectedTodo()
         }
         .onDisappear(perform: dismissTaskPopovers)
         .onAppear {
@@ -123,10 +142,10 @@ struct FlowMiniPlayerView: View {
     }
 
     @ViewBuilder
-    private func content(now: Date) -> some View {
+    private var content: some View {
         let memoTransition: AnyTransition = reduceMotion
             ? .identity
-            : .opacity.animation(.easeInOut(duration: 0.18))
+            : .opacity.animation(.smooth(duration: 0.22))
 
         ZStack(alignment: .top) {
             if activeFlowStore.pendingTaskSwitch != nil {
@@ -141,9 +160,9 @@ struct FlowMiniPlayerView: View {
                     .zIndex(1)
             } else {
                 if style == .dashboard {
-                    dashboardPlayer(now: now)
+                    dashboardPlayer
                 } else {
-                    headerPlayer(now: now)
+                    headerPlayer
                 }
             }
         }
@@ -159,7 +178,8 @@ struct FlowMiniPlayerView: View {
         }
         .overlayPreferenceValue(TaskTitleEditorBoundsPreferenceKey.self) { anchor in
             GeometryReader { proxy in
-                if let anchor, !taskTitleSuggestions.isEmpty {
+                let suggestions = taskTitleSuggestions
+                if let anchor, !suggestions.isEmpty {
                     let fieldBounds = proxy[anchor]
                     let panelWidth = max(fieldBounds.width, 180)
 
@@ -169,9 +189,12 @@ struct FlowMiniPlayerView: View {
                             height: 0
                         )
                         .overlay(alignment: .topLeading) {
-                            taskTitleSuggestionPanel
-                                .frame(width: panelWidth)
-                                .fixedSize(horizontal: false, vertical: true)
+                            taskTitleSuggestionPanel(suggestions) { suggestion in
+                                taskTitleDraft = suggestion.title
+                                commitTaskTitle()
+                            }
+                            .frame(width: panelWidth)
+                            .fixedSize(horizontal: false, vertical: true)
                         }
                         .offset(
                             x: fieldBounds.minX,
@@ -182,14 +205,18 @@ struct FlowMiniPlayerView: View {
         }
     }
 
-    private func headerPlayer(now: Date) -> some View {
+    private var headerPlayer: some View {
         HStack(spacing: 12) {
-            taskPickerButton(now: now)
+            taskPickerButton
                 .frame(minWidth: style == .dashboard ? 360 : 280, maxWidth: .infinity, alignment: .leading)
 
             modePickerButton
-            timerCluster(now: now)
-            transportControls
+            TimelineView(displaySchedule) { tick in
+                timerCluster(now: tick.date)
+            }
+            TimelineView(overtimeSchedule) { tick in
+                transportControls(now: tick.date)
+            }
         }
         .padding(.horizontal, style == .dashboard ? 18 : 14)
         .padding(.vertical, style == .dashboard ? 14 : 10)
@@ -202,30 +229,39 @@ struct FlowMiniPlayerView: View {
         .shadow(color: .black.opacity(0.10), radius: 14, y: 5)
     }
 
-    private func dashboardPlayer(now: Date) -> some View {
+    private var dashboardPlayer: some View {
         FlowTimerPanelShell(
             style: .dashboard,
-            timer: FlowTimerPresentation(
-                progress: dashboardTimerProgress(now: now),
-                tint: timerRingColor,
-                eyebrow: timerEyebrow,
-                timeText: dashboardTimerText(now: now),
-                footer: timerPhaseName,
-                slices: activeFlowStore.timerRingSlices(now: now)
-            ),
             timerAccessibilityLabel: String(localized: "Flowタイマー")
         ) {
-            taskPickerButton(now: now)
+            TimelineView(displaySchedule) { tick in
+                FlowTimerPresentation(
+                    progress: activeFlowStore.phaseProgress(now: tick.date),
+                    tint: timerRingColor,
+                    eyebrow: timerEyebrow,
+                    timeText: dashboardTimerText(now: tick.date),
+                    footer: timerPhaseName,
+                    slices: activeFlowStore.timerRingSlices(now: tick.date)
+                )
+                .dial(style: .dashboard)
+            }
+        } context: {
+            taskPickerButton
         } mode: {
             modePickerButton
         } controls: {
-            dashboardTransportControls
+            TimelineView(overtimeSchedule) { tick in
+                dashboardTransportControls(now: tick.date)
+            }
         }
     }
 
-    private func dashboardTimerProgress(now: Date) -> Double {
-        guard activeFlowStore.timerState != nil else { return 0 }
-        return activeFlowStore.phaseProgress(now: now)
+    private var displaySchedule: FlowPlayerSchedule {
+        .display(for: activeFlowStore.timerState)
+    }
+
+    private var overtimeSchedule: FlowPlayerSchedule {
+        .overtime(for: activeFlowStore.timerState, revision: wallClockRevision)
     }
 
     private func dashboardTimerText(now: Date) -> String {
@@ -234,60 +270,61 @@ struct FlowMiniPlayerView: View {
             : activeFlowStore.remainingText(now: now)
     }
 
-    private func taskPickerButton(now: Date) -> some View {
+    private var taskPickerButton: some View {
         FlowTimerContextButton(
             style: .dashboard,
             presentation: FlowTimerContextPresentation(
                 symbol: flowArea?.symbolName ?? "▶",
                 areaTitle: flowAreaName,
                 tint: artworkColor,
-                detail: selectedTodo.flatMap { todo in
-                    todo.measurement == .checkbox
-                        ? nil
-                        : todoRemainingText(
-                            todo,
-                            additionalFocusSeconds: liveSelectedTaskFocusSeconds(now: now)
-                        )
-                },
                 isPlaceholder: flowTaskTitleIsPlaceholder,
                 showsProgress: selectedTodo != nil
             ),
-            isVisuallyPressed: taskCardIsPressed,
+            isVisuallyPressed: !reduceMotion && taskCardIsPressed,
+            animatesVisualPress: true,
             accessibilityLabel: String(localized: "Flowタスクを選択"),
             action: openTaskPicker
         ) {
             taskTitleEditor
         } progress: {
-            Group {
-                if let selectedTodo {
+            if let todo = selectedTodo {
+                TimelineView(taskProgressSchedule(for: todo)) { tick in
                     TodoProgressControl(
-                        todo: selectedTodo,
-                        additionalFocusSeconds: liveSelectedTaskFocusSeconds(now: now)
+                        todo: todo,
+                        additionalFocusSeconds: liveSelectedTaskFocusSeconds(now: tick.date)
                     ) {
-                        if selectedTodo.setManuallyCompleted(!selectedTodo.isCompleted) {
+                        if todo.setManuallyCompleted(!todo.isCompleted) {
                             _ = modelContext.saveReporting(.flowUpdate)
                         }
                     }
                 }
             }
+        } detail: {
+            if let todo = selectedTodo, todo.measurement != .checkbox {
+                TimelineView(taskProgressSchedule(for: todo)) { tick in
+                    Text(todoRemainingText(todo, additionalFocusSeconds: liveSelectedTaskFocusSeconds(now: tick.date)))
+                }
+            }
         }
         .popover(isPresented: $showsTaskPicker, arrowEdge: .bottom) {
-            FlowTaskPickerView(
-                areas: activeAreas,
-                todos: todayTodos,
-                selectedAreaID: activeFlowStore.selectedAreaID,
-                selectedTodoID: activeFlowStore.selectedTodoID,
-                onCreateTask: presentTaskComposer
-            ) { area, todo in
-                activeFlowStore.selectPickerContext(
-                    area: area,
-                    todo: todo,
-                    modelContext: modelContext,
-                    calendar: calendar,
-                    dayBoundary: dayBoundary
-                )
+            TimelineView(FlowPlayerSchedule.appDay(dayBoundary, calendar, revision: wallClockRevision)) { tick in
+                FlowTaskPickerView(
+                    areas: activeAreas,
+                    todos: todayTodos(at: tick.date),
+                    selectedAreaID: activeFlowStore.selectedAreaID,
+                    selectedTodoID: activeFlowStore.selectedTodoID,
+                    onCreateTask: presentTaskComposer
+                ) { area, todo in
+                    activeFlowStore.selectPickerContext(
+                        area: area,
+                        todo: todo,
+                        modelContext: modelContext,
+                        calendar: calendar,
+                        dayBoundary: dayBoundary
+                    )
+                }
+                .frame(width: 520, height: 460)
             }
-            .frame(width: 520, height: 460)
         }
         .popover(isPresented: $showsTaskComposer, arrowEdge: .trailing) {
             QuickTodoCreationPopover(
@@ -488,16 +525,12 @@ struct FlowMiniPlayerView: View {
             commitTaskTitle()
         }
 
-        withAnimation(.easeOut(duration: 0.08)) {
-            taskCardIsPressed = true
-        }
+        if !reduceMotion { taskCardIsPressed = true }
         showsTaskPicker = true
 
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(90))
-            withAnimation(.easeOut(duration: 0.12)) {
-                taskCardIsPressed = false
-            }
+            taskCardIsPressed = false
         }
     }
 
@@ -524,12 +557,15 @@ struct FlowMiniPlayerView: View {
         )
     }
 
-    private var taskTitleSuggestionPanel: some View {
+    private func taskTitleSuggestionPanel(
+        _ suggestions: [TaskTitleSuggestion],
+        highlightedID: String? = nil,
+        onSelect: @escaping (TaskTitleSuggestion) -> Void
+    ) -> some View {
         VStack(alignment: .leading, spacing: 1) {
-            ForEach(taskTitleSuggestions) { suggestion in
+            ForEach(suggestions) { suggestion in
                 Button {
-                    taskTitleDraft = suggestion.title
-                    commitTaskTitle()
+                    onSelect(suggestion)
                 } label: {
                     HStack(spacing: 7) {
                         Image(systemName: "clock.arrow.circlepath")
@@ -541,6 +577,10 @@ struct FlowMiniPlayerView: View {
                     }
                     .padding(.horizontal, 8)
                     .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
+                    .background(
+                        suggestion.id == highlightedID ? Color.accentColor.opacity(0.18) : Color.clear,
+                        in: RoundedRectangle(cornerRadius: 6)
+                    )
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -647,18 +687,26 @@ struct FlowMiniPlayerView: View {
         }
     }
 
-    private func liveSelectedTaskFocusSeconds(now: Date) -> Int {
-        guard activeFlowStore.phase == .focusing || activeFlowStore.phase == .paused,
-              let selectedTodo,
-              let segment = activeFlowStore.activeSession?.resolvedSegments.last(where: { $0.endedAt == nil }),
-              segment.todo?.id == selectedTodo.id else {
-            return 0
-        }
+    private func taskProgressSchedule(for todo: Todo) -> FlowPlayerSchedule {
+        guard todo.measurement != .checkbox,
+              let state = activeFlowStore.timerState, state.actualFocusDurationSeconds == nil,
+              currentSegment(for: todo) != nil else { return .seconds(active: false) }
+        return displaySchedule
+    }
 
+    private func currentSegment(for todo: Todo) -> FlowSegment? {
+        guard activeFlowStore.phase == .focusing || activeFlowStore.phase == .paused,
+              let segment = activeFlowStore.activeSession?.resolvedSegments.last(where: { $0.endedAt == nil }),
+              segment.todo?.id == todo.id else { return nil }
+        return segment
+    }
+
+    private func liveSelectedTaskFocusSeconds(now: Date) -> Int {
+        guard let selectedTodo, let segment = currentSegment(for: selectedTodo) else { return 0 }
         return max(0, activeFlowStore.actualFocusSeconds(now: now) - segment.startFocusSeconds)
     }
 
-    private var transportControls: some View {
+    private func transportControls(now: Date) -> some View {
         HStack(spacing: 6) {
             if style == .dashboard {
                 compactControlSlot(isEnabled: activeFlowStore.timerState != nil) {
@@ -677,7 +725,7 @@ struct FlowMiniPlayerView: View {
                     seekBackwardButton
                 }
 
-                primaryButton
+                primaryButton(now: now)
 
                 compactControlSlot(isEnabled: canSeek) {
                     seekForwardButton
@@ -696,7 +744,7 @@ struct FlowMiniPlayerView: View {
                     seekBackwardButton
                 }
 
-                primaryButton
+                primaryButton(now: now)
 
                 if canSeek {
                     seekForwardButton
@@ -708,13 +756,13 @@ struct FlowMiniPlayerView: View {
         .clipShape(Capsule())
     }
 
-    private var dashboardTransportControls: some View {
+    private func dashboardTransportControls(now: Date) -> some View {
         FlowTimerTransportControls(
             style: .dashboard,
             presentation: FlowTimerTransportPresentation(
-                primarySymbol: primaryButtonImage,
-                primaryLabel: primaryButtonTitle,
-                primaryTint: primaryButtonColor,
+                primarySymbol: primaryButtonImage(now: now),
+                primaryLabel: primaryButtonTitle(now: now),
+                primaryTint: primaryButtonColor(now: now),
                 isPrimaryEnabled: true,
                 canSeek: canSeek,
                 canDestroy: activeFlowStore.timerState != nil,
@@ -724,7 +772,8 @@ struct FlowMiniPlayerView: View {
                     ? String(localized: "休憩を削除")
                     : String(localized: "Flowを破壊"),
                 visuallyPressedAction: nil
-            )
+            ),
+            animatesPrimarySymbol: true
         ) { action in
             switch action {
             case .seekBackward:
@@ -825,36 +874,36 @@ struct FlowMiniPlayerView: View {
         .accessibilityLabel(activeFlowStore.isBreakPhase ? String(localized: "休憩を削除") : String(localized: "Flowを破壊"))
     }
 
-    private var primaryButton: some View {
+    private func primaryButton(now: Date) -> some View {
         Button {
             handlePrimaryAction()
         } label: {
             if style == .dashboard {
-                Image(systemName: primaryButtonImage)
+                Image(systemName: primaryButtonImage(now: now))
                     .font(.title3.weight(.semibold))
                     .frame(width: primaryControlButtonSize, height: primaryControlButtonSize)
-                    .background(primaryButtonColor)
+                    .background(primaryButtonColor(now: now))
                     .foregroundStyle(.white)
                     .clipShape(Circle())
             } else {
-                Label(primaryButtonTitle, systemImage: primaryButtonImage)
+                Label(primaryButtonTitle(now: now), systemImage: primaryButtonImage(now: now))
                     .font(.headline.weight(.semibold))
                     .frame(width: 142, height: 44)
-                    .background(primaryButtonColor)
+                    .background(primaryButtonColor(now: now))
                     .foregroundStyle(.white)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
             }
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(primaryButtonTitle)
+        .accessibilityLabel(primaryButtonTitle(now: now))
     }
 
-    private var primaryButtonTitle: String {
+    private func primaryButtonTitle(now: Date) -> String {
         switch activeFlowStore.phase {
         case .idle, .configured:
             String(localized: "Flowを開始")
         case .focusing:
-            activeFlowStore.isFocusOvertime(now: activeFlowStore.displayDate) ? String(localized: "休憩") : String(localized: "一時停止")
+            activeFlowStore.isFocusOvertime(now: now) ? String(localized: "休憩") : String(localized: "一時停止")
         case .paused:
             String(localized: "再開")
         case .breakTime:
@@ -868,10 +917,10 @@ struct FlowMiniPlayerView: View {
         }
     }
 
-    private var primaryButtonImage: String {
+    private func primaryButtonImage(now: Date) -> String {
         switch activeFlowStore.phase {
         case .focusing:
-            activeFlowStore.isFocusOvertime(now: activeFlowStore.displayDate) ? "cup.and.saucer.fill" : "pause.fill"
+            activeFlowStore.isFocusOvertime(now: now) ? "cup.and.saucer.fill" : "pause.fill"
         case .awaitingResult:
             "checkmark"
         default:
@@ -879,10 +928,10 @@ struct FlowMiniPlayerView: View {
         }
     }
 
-    private var primaryButtonColor: Color {
+    private func primaryButtonColor(now: Date) -> Color {
         switch FlowTimerPrimaryTintRole(
             phase: activeFlowStore.phase,
-            isFocusOvertime: activeFlowStore.isFocusOvertime(now: activeFlowStore.displayDate)
+            isFocusOvertime: activeFlowStore.isFocusOvertime(now: now)
         ) {
         case .area:
             artworkColor
@@ -892,7 +941,7 @@ struct FlowMiniPlayerView: View {
     }
 
     private var timerRingColor: Color {
-        if activeFlowStore.phase == .paused { return primaryButtonColor }
+        if activeFlowStore.phase == .paused { return .blue }
         if activeFlowStore.isBreakPhase { return Color.secondary.opacity(0.72) }
         return artworkColor
     }
@@ -941,14 +990,11 @@ struct FlowMiniPlayerView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            if activeFlowStore.memoTodo != nil {
+            if let todo = activeFlowStore.memoTodo {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(String(localized: "タスク名"))
                         .font(.subheadline.weight(.medium))
-                    TextField(String(localized: "タスク名"), text: $resultTaskTitle)
-                        .textFieldStyle(.roundedBorder)
-                        .focused($isResultTitleFocused)
-                        .onSubmit { isMemoFocused = true }
+                    resultTitleField(for: todo.id)
                 }
             }
             FlowMemoProjectPicker(todo: activeFlowStore.memoTodo, selection: $resultProject)
@@ -1016,6 +1062,8 @@ struct FlowMiniPlayerView: View {
         .onAppear {
             resultTaskSwitchID = activeFlowStore.pendingTaskSwitch?.id
             resultTaskTitle = activeFlowStore.memoTodo?.title ?? ""
+            didEditResultTitle = false
+            highlightedResultTitleSuggestionID = nil
             resultProject = nil
             Task { @MainActor in
                 if activeFlowStore.memoTodo != nil && resultTaskTitle.isEmpty {
@@ -1026,6 +1074,80 @@ struct FlowMiniPlayerView: View {
             }
         }
         .id(activeFlowStore.pendingTaskSwitch?.id)
+    }
+
+    private func resultTitleField(for todoID: UUID) -> some View {
+        let sessionID = activeFlowStore.activeSession?.id
+        let taskSwitchID = activeFlowStore.pendingTaskSwitch?.id
+        let query = resultTaskTitle
+        let suggestions = isResultTitleFocused && didEditResultTitle
+            ? TaskTitleSuggestionBuilder().suggestions(query: query, todos: todos, excludingTodoID: todoID, limit: 3)
+            : []
+
+        let selectSuggestion: (TaskTitleSuggestion) -> Void = { suggestion in
+            guard isResultTitleFocused, didEditResultTitle, resultTaskTitle == query,
+                  activeFlowStore.activeSession?.id == sessionID,
+                  activeFlowStore.pendingTaskSwitch?.id == taskSwitchID,
+                  activeFlowStore.memoTodo?.id == todoID,
+                  taskSwitchID != nil || activeFlowStore.isAwaitingBreakMemo || activeFlowStore.phase == .awaitingResult
+            else { return }
+
+            resultTaskTitle = suggestion.title
+            didEditResultTitle = false
+            highlightedResultTitleSuggestionID = nil
+        }
+
+        return TextField(String(localized: "タスク名"), text: Binding(
+            get: { resultTaskTitle },
+            set: { title in
+                guard title != resultTaskTitle else { return }
+                resultTaskTitle = title
+                didEditResultTitle = true
+                highlightedResultTitleSuggestionID = nil
+            }
+        ))
+        .textFieldStyle(.roundedBorder)
+        .focused($isResultTitleFocused)
+        .onSubmit {
+            if let suggestion = suggestions.first(where: { $0.id == highlightedResultTitleSuggestionID }) {
+                selectSuggestion(suggestion)
+            } else {
+                isMemoFocused = true
+            }
+        }
+        .onKeyPress(.upArrow) { moveResultTitleSuggestionHighlight(in: suggestions, by: -1) }
+        .onKeyPress(.downArrow) { moveResultTitleSuggestionHighlight(in: suggestions, by: 1) }
+        .onChange(of: isResultTitleFocused) { _, isFocused in
+            if !isFocused {
+                didEditResultTitle = false
+                highlightedResultTitleSuggestionID = nil
+            }
+        }
+        .background {
+            TaskComposerSuggestionPanel(isPresented: !suggestions.isEmpty, showsBelow: taskSuggestionsBelow) {
+                taskTitleSuggestionPanel(
+                    suggestions,
+                    highlightedID: highlightedResultTitleSuggestionID,
+                    onSelect: selectSuggestion
+                )
+                .frame(width: taskSuggestionsBelow ? 270 : 320)
+            }
+        }
+    }
+
+    private func moveResultTitleSuggestionHighlight(
+        in suggestions: [TaskTitleSuggestion],
+        by offset: Int
+    ) -> KeyPress.Result {
+        guard !suggestions.isEmpty else { return .ignored }
+
+        if let index = suggestions.firstIndex(where: { $0.id == highlightedResultTitleSuggestionID }) {
+            let nextIndex = min(max(index + offset, 0), suggestions.count - 1)
+            highlightedResultTitleSuggestionID = suggestions[nextIndex].id
+        } else {
+            highlightedResultTitleSuggestionID = offset < 0 ? suggestions.last?.id : suggestions.first?.id
+        }
+        return .handled
     }
 
     private func memoActionButton(
@@ -1076,7 +1198,7 @@ struct FlowMiniPlayerView: View {
                 modelContext: modelContext
             )
         case .focusing:
-            if activeFlowStore.isFocusOvertime(now: activeFlowStore.displayDate) {
+            if activeFlowStore.isFocusOvertime(now: .now) {
                 activeFlowStore.requestBreakMemo(modelContext: modelContext)
             } else {
                 activeFlowStore.pause(modelContext: modelContext)

@@ -56,6 +56,7 @@ struct IOSAreasView: View {
                     .frame(maxWidth: .infinity)
             }
         }
+        .productContentFade(on: showingArchived)
         .iosCenteredNavigationTitle(String(localized: "方向"))
         .alert(String(localized: "記録を保存できませんでした。"), isPresented: Binding(
             get: { saveErrorMessage != nil },
@@ -153,6 +154,7 @@ struct IOSAreasView: View {
                 }
             }
             .listStyle(.insetGrouped)
+            .productContentFade(on: selectedType)
             .overlay {
                 if visibleAreas.isEmpty {
                     ContentUnavailableView(

@@ -78,6 +78,7 @@ struct IOSTasksView: View {
                 controls(snapshot: snapshot)
                 Divider()
                 taskContent(snapshot: snapshot)
+                    .productContentFade(on: range)
                     .iosPeriodSwipeNavigation(
                         pageID: selectedPeriodPageID
                     ) { offset in

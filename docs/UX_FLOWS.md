@@ -51,7 +51,9 @@ tags. The sheet keeps Save and Cancel accessible while its content scrolls.
 ## Flow player
 
 On wide Mac windows, the Flow dashboard aligns Tasks, Habits, and Statistics
-in one row. Card content scrolls when space is limited.
+in one row. On narrow windows, the timer and stream stack with a fixed gap and
+the dashboard scrolls vertically. In Mac Areas, three columns share the height
+of the tallest column; horizontal scrolling preserves all three at narrow widths.
 
 The dashboard combines the stream, today's timeline, Tasks, the player and a
 compact Statistics carousel. Mac Task context menus show Start Focus first,
@@ -65,7 +67,10 @@ context changes; pauses add no colored time. The planned-end setting applies to
 focus only; rest displays elapsed time on the dashboard timeline.
 
 Finishing focus and starting rest open a form with Task name, eligible Project
-and result memo. Switching Tasks opens the same form only after at least 60
+and result memo. Typing in Task name suggests up to three matching titles from
+local Task history. Selecting one fills the title draft without submitting the
+memo or switching the timer. Watch shows matches after system text entry.
+Switching Tasks opens the same form only after at least 60
 focused seconds in the current segment. Switching waits for submission; the current
 Task keeps receiving elapsed time while the form is open. The new Task begins
 receiving time only after the switch. See [Decisions](DECISIONS.md) for the
@@ -124,9 +129,14 @@ AI-translation notice and support link. Changing language requires a restart.
 
 Task and Habit editors use short transitions when optional fields appear or
 disappear. The Flow result form fades in on Mac and uses the system sheet on
-iPhone and iPad. Connector feedback and the empty and selected-detail states
-in Statistics transition locally. These animations follow Reduce Motion.
-Timer ticks and existing field edits do not trigger these transitions.
+iPhone and iPad. The Flow primary button crossfades its symbol on state changes.
+The iPhone and iPad quick composer fades with a short vertical transition.
+Primary app destinations and the content in Tasks, History, Areas, and
+Statistics use short fades for discrete changes. Flow's task cards and Statistics
+show loading indicators or skeletons until the first data is ready, then fade in
+the result. These transitions follow Reduce Motion and do not animate timer ticks.
+In the compact Flow Statistics card, time-allocation bars share a right-hand
+zero edge and a scale based on today's total focused time.
 
 ## Onboarding and companion surfaces
 

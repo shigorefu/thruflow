@@ -2250,7 +2250,7 @@ struct FlowTests {
     }
 
     @Test @MainActor func remotePersistenceChangeCancelsNotificationsWhilePollingIsStopped() async throws {
-        let schema = Schema([Area.self, Todo.self, FlowSession.self, FlowSegment.self, FlowBreak.self])
+        let schema = AppModelContainerFactory.schema
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [configuration])
         let context = container.mainContext
@@ -2281,15 +2281,30 @@ struct FlowTests {
         )
         store.beginSynchronization(modelContext: context, now: start)
         store.endSynchronization()
+        let remoteContext = ModelContext(container)
+        let remoteSession = try #require(remoteContext.fetch(FetchDescriptor<FlowSession>()).first)
+        let pausedAt = start.addingTimeInterval(120)
+        let pausedState = FlowTimerEngine().pause(
+            try #require(remoteSession.reconstructableTimerState),
+            now: pausedAt
+        )
+        remoteSession.apply(timerState: pausedState, now: pausedAt)
+        try remoteContext.save()
+        persistenceNotificationCenter.post(name: .NSPersistentStoreRemoteChange, object: nil)
+
+        for _ in 0..<100 where store.phase != .paused {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(store.timerState?.pausedAt == pausedAt)
         let cancelCountBeforeRemoteCompletion = notifications.cancelCount
 
-        session.complete(now: completedAt)
-        try context.save()
-        persistenceNotificationCenter.post(
-            name: .NSPersistentStoreRemoteChange,
-            object: nil
-        )
-        try await Task.sleep(for: .milliseconds(50))
+        remoteSession.complete(now: completedAt)
+        try remoteContext.save()
+        persistenceNotificationCenter.post(name: .NSPersistentStoreRemoteChange, object: nil)
+
+        for _ in 0..<100 where store.timerState != nil {
+            try await Task.sleep(for: .milliseconds(10))
+        }
 
         #expect(store.activeSession == nil)
         #expect(store.timerState == nil)
@@ -2328,6 +2343,8 @@ struct FlowTests {
         )
         context.insert(area)
         context.insert(older)
+        // Old records with an unknown status still reconstruct an active timer.
+        newer.statusRawValue = "legacy-active"
         context.insert(newer)
         try context.save()
 

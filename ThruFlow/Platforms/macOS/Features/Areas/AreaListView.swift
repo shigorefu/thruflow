@@ -9,6 +9,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct AreaListView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.calendar) private var calendar
     @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.modelContext) private var modelContext
@@ -42,129 +43,126 @@ struct AreaListView: View {
         AreaGroup.order(from: areaGroupOrderRaw)
     }
 
-    private var areaGridColumns: [GridItem] {
-        [
-            GridItem(
-                .adaptive(minimum: 300),
-                spacing: 14,
-                alignment: .top
-            )
-        ]
-    }
-
     private var editingArea: Area? {
         guard let editingAreaID else { return nil }
         return areas.first { $0.id == editingAreaID }
     }
 
     var body: some View {
-        ScrollView(.vertical) {
-            LazyVGrid(
-                columns: areaGridColumns,
-                alignment: .leading,
-                spacing: 14
-            ) {
-                ForEach(areaGroups) { group in
-                    VStack(alignment: .leading, spacing: 10) {
-                        AreaSectionHeader(group: group)
-                            .contentShape(Rectangle())
-                            .overlay {
-                                if dropTargetGroupType == group.type {
-                                    RoundedRectangle(cornerRadius: 6)
-                                        .strokeBorder(Color.accentColor, lineWidth: 2)
-                                }
-                            }
-                            .onDrag {
-                                draggedGroupType = group.type
-                                return NSItemProvider(
-                                    object: "area-group:\(group.type.rawValue)" as NSString
-                                )
-                            }
+        let projectsByArea = Dictionary(grouping: projects, by: { $0.area?.id })
+        GeometryReader { viewport in
+            let columnWidth = max(220, (viewport.size.width - 32 - 28) / 3)
 
-                        LazyVStack(spacing: 8) {
-                            if group.areas.isEmpty {
-                                ContentUnavailableView(
-                                    String(localized: "方向はありません"),
-                                    systemImage: ProductSymbol.area,
-                                    description: Text(String(localized: "この列に該当する方向はまだありません。"))
-                                )
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 40)
-                            }
-
-                            ForEach(group.areas) { area in
-                                VStack(alignment: .leading, spacing: 4) {
-                                    HStack(spacing: 6) {
-                                        AreaRow(area: area)
-                                            .contentShape(Rectangle())
-                                            .overlay {
-                                                if dropTargetID == area.id {
-                                                    RoundedRectangle(cornerRadius: 8)
-                                                        .strokeBorder(Color.accentColor, lineWidth: 2)
-                                                }
-                                            }
-                                            .onTapGesture {
-                                                editingAreaID = area.id
-                                            }
-                                            .onDrag {
-                                                draggedAreaID = area.id
-                                                return NSItemProvider(object: area.id.uuidString as NSString)
-                                            }
-                                            .onDrop(
-                                                of: [UTType.text],
-                                                delegate: AreaReorderDropDelegate(
-                                                    targetID: area.id,
-                                                    draggedAreaID: $draggedAreaID,
-                                                    dropTargetID: $dropTargetID,
-                                                    move: moveArea
-                                                )
-                                            )
-                                            .contextMenu {
-                                                if area.isArchived {
-                                                    Button(String(localized: "分野を復元"), systemImage: "arrow.uturn.backward") {
-                                                        updateArchiveState(area, restore: true)
-                                                    }
-                                                } else {
-                                                    Button(String(localized: "アーカイブする"), systemImage: "archivebox", role: .destructive) {
-                                                        updateArchiveState(area, restore: false)
-                                                    }
-                                                }
-                                            }
-
+            ScrollView([.horizontal, .vertical]) {
+                Grid(alignment: .topLeading, horizontalSpacing: 14, verticalSpacing: 14) {
+                    GridRow(alignment: .top) {
+                        ForEach(areaGroups) { group in
+                            VStack(alignment: .leading, spacing: 10) {
+                                AreaSectionHeader(group: group)
+                                    .contentShape(Rectangle())
+                                    .overlay {
+                                        if dropTargetGroupType == group.type {
+                                            RoundedRectangle(cornerRadius: 6)
+                                                .strokeBorder(Color.accentColor, lineWidth: 2)
+                                        }
                                     }
-                                    .background {
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .fill(Color(hex: area.colorHex).opacity(area.isArchived ? 0.04 : 0.08))
+                                    .onDrag {
+                                        draggedGroupType = group.type
+                                        return NSItemProvider(
+                                            object: "area-group:\(group.type.rawValue)" as NSString
+                                        )
                                     }
 
-                                    projectRows(for: area)
+                                VStack(spacing: 8) {
+                                    if group.areas.isEmpty {
+                                        ContentUnavailableView(
+                                            String(localized: "方向はありません"),
+                                            systemImage: ProductSymbol.area,
+                                            description: Text(String(localized: "この列に該当する方向はまだありません。"))
+                                        )
+                                        .controlSize(.small)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 12)
+                                    }
+
+                                    ForEach(group.areas) { area in
+                                        let areaProjects = projectsByArea[area.id] ?? []
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            HStack(spacing: 6) {
+                                                AreaRow(area: area)
+                                                    .contentShape(Rectangle())
+                                                    .overlay {
+                                                        if dropTargetID == area.id {
+                                                            RoundedRectangle(cornerRadius: 8)
+                                                                .strokeBorder(Color.accentColor, lineWidth: 2)
+                                                        }
+                                                    }
+                                                    .onTapGesture {
+                                                        editingAreaID = area.id
+                                                    }
+                                                    .onDrag {
+                                                        draggedAreaID = area.id
+                                                        return NSItemProvider(object: area.id.uuidString as NSString)
+                                                    }
+                                                    .onDrop(
+                                                        of: [UTType.text],
+                                                        delegate: AreaReorderDropDelegate(
+                                                            targetID: area.id,
+                                                            draggedAreaID: $draggedAreaID,
+                                                            dropTargetID: $dropTargetID,
+                                                            move: moveArea
+                                                        )
+                                                    )
+                                                    .contextMenu {
+                                                        if area.isArchived {
+                                                            Button(String(localized: "分野を復元"), systemImage: "arrow.uturn.backward") {
+                                                                updateArchiveState(area, restore: true)
+                                                            }
+                                                        } else {
+                                                            Button(String(localized: "アーカイブする"), systemImage: "archivebox", role: .destructive) {
+                                                                updateArchiveState(area, restore: false)
+                                                            }
+                                                        }
+                                                    }
+
+                                            }
+                                            .background {
+                                                RoundedRectangle(cornerRadius: 10)
+                                                    .fill(Color(hex: area.colorHex).opacity(area.isArchived ? 0.04 : 0.08))
+                                            }
+
+                                            projectRows(for: area, projects: areaProjects)
+                                        }
+                                        .backgroundPreferenceValue(AreaProjectTreeAnchors.self) { anchors in
+                                            treeConnections(for: area, projects: areaProjects, anchors: anchors)
+                                        }
+                                    }
                                 }
-                                .backgroundPreferenceValue(AreaProjectTreeAnchors.self) { anchors in
-                                    treeConnections(for: area, anchors: anchors)
-                                }
+                                .padding(.bottom, 8)
                             }
+                            .frame(width: columnWidth - 24, alignment: .topLeading)
+                            .frame(maxHeight: .infinity, alignment: .topLeading)
+                            .padding(12)
+                            .background(Color.primary.opacity(0.035))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .onDrop(
+                                of: [UTType.text],
+                                delegate: AreaGroupReorderDropDelegate(
+                                    targetType: group.type,
+                                    draggedGroupType: $draggedGroupType,
+                                    dropTargetGroupType: $dropTargetGroupType,
+                                    move: moveAreaGroup
+                                )
+                            )
                         }
-                        .padding(.bottom, 8)
                     }
-                    .frame(maxWidth: .infinity, alignment: .topLeading)
-                    .padding(12)
-                    .background(Color.primary.opacity(0.035))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .onDrop(
-                        of: [UTType.text],
-                        delegate: AreaGroupReorderDropDelegate(
-                            targetType: group.type,
-                            draggedGroupType: $draggedGroupType,
-                            dropTargetGroupType: $dropTargetGroupType,
-                            move: moveAreaGroup
-                        )
-                    )
                 }
+                .padding(16)
             }
-            .padding(16)
+            .scrollIndicators(.visible)
         }
-        .scrollIndicators(.visible)
-        .animation(.default, value: visibleAreas.map(\.id))
+        .animation(reduceMotion ? nil : .smooth(duration: 0.22), value: visibleAreas.map(\.id))
+        .productContentFade(on: showingArchived)
         .navigationTitle(String(localized: "方向"))
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -214,9 +212,8 @@ struct AreaListView: View {
         }
     }
 
-    private func projectRows(for area: Area) -> some View {
-        let areaProjects = projects.filter { $0.area?.id == area.id }
-        let orderedProjects = areaProjects.filter { !$0.isCompleted } + areaProjects.filter(\.isCompleted)
+    private func projectRows(for area: Area, projects: [Project]) -> some View {
+        let orderedProjects = projects.filter { !$0.isCompleted } + projects.filter(\.isCompleted)
         return ForEach(orderedProjects) { project in
             Button { selectedProject = project } label: {
                 HStack(spacing: 8) {
@@ -250,13 +247,14 @@ struct AreaListView: View {
 
     private func treeConnections(
         for area: Area,
+        projects: [Project],
         anchors: [AreaProjectTreeNode: Anchor<CGRect>]
     ) -> some View {
         GeometryReader { geometry in
             Path { path in
                 guard let areaAnchor = anchors[.area(area.id)] else { return }
                 let parent = geometry[areaAnchor]
-                let children = projects.filter { $0.area?.id == area.id }.compactMap { project in
+                let children = projects.compactMap { project in
                     anchors[.project(project.id)].map { geometry[$0] }
                 }
                 guard let lastY = children.map(\.midY).max() else { return }

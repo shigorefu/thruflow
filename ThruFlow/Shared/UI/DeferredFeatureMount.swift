@@ -14,6 +14,7 @@ struct DeferredFeatureMount<Content: View>: View {
     let delay: Duration
     private let content: () -> Content
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isMounted = false
 
     init(
@@ -29,14 +30,16 @@ struct DeferredFeatureMount<Content: View>: View {
     }
 
     var body: some View {
-        Group {
+        ZStack {
             if isActive, isMounted {
                 content()
-            } else {
+                    .transition(reduceMotion ? .identity : .opacity)
+            } else if isActive {
                 Color.clear
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
+        .animation(reduceMotion || !isActive ? nil : .smooth(duration: 0.20), value: isMounted)
         .navigationTitle(title)
         .task(id: isActive) {
             guard isActive else {
@@ -48,11 +51,7 @@ struct DeferredFeatureMount<Content: View>: View {
             try? await Task.sleep(for: delay)
             guard !Task.isCancelled, isActive else { return }
 
-            var transaction = Transaction()
-            transaction.disablesAnimations = true
-            withTransaction(transaction) {
-                isMounted = true
-            }
+            isMounted = true
         }
     }
 }

@@ -680,6 +680,8 @@ private struct WatchFlowModePicker: View {
 }
 
 private struct WatchFlowMemoView: View {
+    @Query(filter: #Predicate<Todo> { $0.deletedAt == nil }, sort: \Todo.updatedAt, order: .reverse)
+    private var suggestionTodos: [Todo]
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
@@ -687,6 +689,7 @@ private struct WatchFlowMemoView: View {
     @State private var memo = ""
     @State private var taskTitle: String
     @State private var taskProject: Project?
+    @State private var showsTitleSuggestions = false
     private let todo: Todo?
     private let taskSwitchID: UUID?
     let onComplete: () -> Void
@@ -707,9 +710,20 @@ private struct WatchFlowMemoView: View {
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                if todo != nil {
+                if let todo {
                     Section(String(localized: "タスク名")) {
-                        TextField(String(localized: "タスク名"), text: $taskTitle)
+                        TextField(String(localized: "タスク名"), text: titleInput)
+                        if showsTitleSuggestions {
+                            ForEach(titleSuggestions(excluding: todo.id)) { suggestion in
+                                Button {
+                                    taskTitle = suggestion.title
+                                    showsTitleSuggestions = false
+                                } label: {
+                                    Label(suggestion.title, systemImage: "clock.arrow.circlepath")
+                                        .lineLimit(2)
+                                }
+                            }
+                        }
                     }
                 }
                 FlowMemoProjectPicker(todo: todo, selection: $taskProject)
@@ -731,6 +745,27 @@ private struct WatchFlowMemoView: View {
             }
             .navigationTitle(String(localized: "メモ"))
         }
+    }
+
+    // The system Watch text editor returns the draft when entry ends.
+    private var titleInput: Binding<String> {
+        Binding(
+            get: { taskTitle },
+            set: { title in
+                guard taskTitle != title else { return }
+                taskTitle = title
+                showsTitleSuggestions = true
+            }
+        )
+    }
+
+    private func titleSuggestions(excluding todoID: UUID) -> [TaskTitleSuggestion] {
+        TaskTitleSuggestionBuilder().suggestions(
+            query: taskTitle,
+            todos: suggestionTodos,
+            excludingTodoID: todoID,
+            limit: 3
+        )
     }
 
     private func submit(_ value: String?) {

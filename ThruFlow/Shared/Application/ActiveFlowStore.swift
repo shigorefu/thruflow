@@ -61,6 +61,8 @@ final class ActiveFlowStore: ObservableObject {
     private var stateBeforeResultPrompt: FlowTimerState?
     private var displayClock: AnyCancellable?
     private var synchronizationClock: AnyCancellable?
+    private var synchronizationTask: Task<Void, Never>?
+    private var pendingSynchronizationDate: Date?
     private var persistenceChangeObservers: Set<AnyCancellable> = []
     private var lastAppliedRuntimeVersion: FlowRuntimeVersion?
     private var lastPublishedLiveActivityWasOvertime: Bool?
@@ -446,7 +448,7 @@ final class ActiveFlowStore: ObservableObject {
         synchronizationClock = Timer.publish(every: 2, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] date in
-                self?.synchronizeFromPersistence(modelContext: modelContext, now: date)
+                self?.requestSynchronization(modelContext: modelContext, now: date)
             }
     }
 
@@ -465,19 +467,66 @@ final class ActiveFlowStore: ObservableObject {
         .compactMap(ActiveFlowPersistenceEvent.completedCloudKitImportDate)
         .receive(on: RunLoop.main)
         .sink { [weak self] importedAt in
-            self?.synchronizeFromPersistence(
-                modelContext: modelContext,
-                now: importedAt
-            )
+            self?.requestSynchronization(modelContext: modelContext, now: importedAt)
         }
         .store(in: &persistenceChangeObservers)
 
         persistenceNotificationCenter.publisher(for: .NSPersistentStoreRemoteChange)
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in
-                self?.synchronizeFromPersistence(modelContext: modelContext)
+                self?.requestSynchronization(modelContext: modelContext, now: .now)
             }
             .store(in: &persistenceChangeObservers)
+    }
+
+    private func requestSynchronization(modelContext: ModelContext, now: Date) {
+        pendingSynchronizationDate = max(pendingSynchronizationDate ?? now, now)
+        guard synchronizationTask == nil else { return }
+        synchronizationTask = Task { [weak self] in
+            await self?.drainSynchronizationRequests(modelContext: modelContext)
+        }
+    }
+
+    private func drainSynchronizationRequests(modelContext: ModelContext) async {
+        defer { synchronizationTask = nil }
+        let container = modelContext.container
+
+        while pendingSynchronizationDate != nil {
+            // A CloudKit import and a store notification can report the same change.
+            try? await Task.sleep(for: .milliseconds(25))
+            if let modeCommitTask { await modeCommitTask.value }
+            guard pendingModeChange == nil, let now = pendingSynchronizationDate else { continue }
+            pendingSynchronizationDate = nil
+
+            reconcilePersistenceIfNeeded(modelContext: modelContext, now: now)
+            if modelContext.hasChanges {
+                resolvePersistedRuntime(modelContext: modelContext, now: now)
+                continue
+            }
+
+            let candidates = try? await Task.detached(priority: .utility) {
+                let reader = ActiveFlowSyncReader(modelContainer: container)
+                return try await reader.candidates()
+            }.value
+
+            guard pendingModeChange == nil else {
+                pendingSynchronizationDate = pendingSynchronizationDate ?? now
+                continue
+            }
+
+            if !modelContext.hasChanges, let candidates {
+                if candidates.isEmpty && timerState == nil { continue }
+                if candidates.count == 1, let candidate = candidates.first,
+                   candidate.id == activeSession?.id,
+                   candidate.version == lastAppliedRuntimeVersion {
+                    continue
+                }
+            }
+
+            // Re-read in the owning context before applying anything. The probe
+            // may predate a local command or a newer import.
+            resolvePersistedRuntime(modelContext: modelContext, now: now)
+        }
     }
 
     func synchronizeFromPersistence(modelContext: ModelContext, now: Date = .now) {
@@ -485,6 +534,10 @@ final class ActiveFlowStore: ObservableObject {
         // or adopt the durable state while the new mode is still optimistic.
         guard pendingModeChange == nil else { return }
         reconcilePersistenceIfNeeded(modelContext: modelContext, now: now)
+        resolvePersistedRuntime(modelContext: modelContext, now: now)
+    }
+
+    private func resolvePersistedRuntime(modelContext: ModelContext, now: Date) {
         let resolution: ActiveFlowSyncResolution
         do {
             resolution = try syncCoordinator.resolve(modelContext: modelContext)
@@ -509,6 +562,12 @@ final class ActiveFlowStore: ObservableObject {
             return
         }
 
+        let version = canonicalSession.runtimeVersion
+        guard canonicalSession.id != activeSession?.id ||
+                version != lastAppliedRuntimeVersion else {
+            return
+        }
+
         if synchronizedState.isBreakTimer {
             do {
                 if let flowBreak = try openBreak(
@@ -520,12 +579,6 @@ final class ActiveFlowStore: ObservableObject {
             } catch {
                 PersistenceIssueCenter.shared.log(error, operation: .flowSynchronization)
             }
-        }
-
-        let version = canonicalSession.runtimeVersion
-        guard canonicalSession.id != activeSession?.id ||
-                version != lastAppliedRuntimeVersion else {
-            return
         }
 
         adopt(
@@ -1051,13 +1104,11 @@ final class ActiveFlowStore: ObservableObject {
     }
 
     private func openBreak(for sessionID: UUID, modelContext: ModelContext) throws -> FlowBreak? {
-        try flowBreaks(modelContext: modelContext)
-            .filter {
-                $0.previousSessionID == sessionID &&
-                    $0.timerStoppedAt == nil &&
-                    !$0.isDeleted
-            }
-            .max { $0.startedAt < $1.startedAt }
+        try modelContext.fetch(FetchDescriptor<FlowBreak>(predicate: #Predicate {
+            $0.previousSessionID == sessionID &&
+                $0.timerStoppedAt == nil &&
+                $0.deletedAt == nil
+        })).max { $0.startedAt < $1.startedAt }
     }
 
     private func sessions(modelContext: ModelContext) throws -> [FlowSession] {

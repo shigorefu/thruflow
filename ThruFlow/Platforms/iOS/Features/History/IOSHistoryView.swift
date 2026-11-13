@@ -60,6 +60,7 @@ struct IOSHistoryView: View {
                 calendarToolbar
                 Divider()
                 historyContent
+                    .productContentFade(on: selectedMode.rawValue + ":" + range.rawValue)
                     .iosPeriodSwipeNavigation(
                         pageID: selectedPeriodPageID,
                         isEnabled: allowsContentPeriodSwipe
