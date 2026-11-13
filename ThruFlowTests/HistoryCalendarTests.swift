@@ -5,6 +5,7 @@
 //
 
 import Foundation
+import SwiftData
 import Testing
 @testable import ThruFlow
 
@@ -15,6 +16,69 @@ struct HistoryCalendarTests {
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         calendar.firstWeekday = 2
         return calendar
+    }
+
+    @Test func visiblePeriodFetchIncludesOverlapsAndRestContext() throws {
+        let schema = AppModelContainerFactory.schema
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let day = calendar.startOfDay(for: Date(timeIntervalSince1970: 1_784_000_000))
+        let interval = HistoryCalendarRange.day.interval(containing: day, calendar: calendar, dayBoundary: AppDayBoundary(hour: 3))
+        let start = interval.start
+        let area = Area(name: "Reading", type: .neutral, symbolName: "📚", colorHex: "#34C759")
+        let preceding = FlowSession(
+            area: area, mode: .twentyFiveFive, phase: .completed, status: .completed,
+            startedAt: start.addingTimeInterval(-2400), plannedEndAt: start.addingTimeInterval(-600),
+            endedAt: start.addingTimeInterval(-600), plannedFocusDurationSeconds: 1800,
+            actualFocusDurationSeconds: 1800, plannedBreakDurationSeconds: 300
+        )
+        let linked = Todo(
+            title: "Linked", area: area, scheduledDate: day.addingTimeInterval(-86_400),
+            createdAt: day.addingTimeInterval(-86_400), updatedAt: day.addingTimeInterval(-86_400)
+        )
+        let overlap = FlowSession(
+            area: area, todo: linked, mode: .twentyFiveFive, phase: .completed, status: .completed,
+            startedAt: start.addingTimeInterval(-600), plannedEndAt: start.addingTimeInterval(900),
+            endedAt: start.addingTimeInterval(900), plannedFocusDurationSeconds: 1500,
+            actualFocusDurationSeconds: 1500, plannedBreakDurationSeconds: 300
+        )
+        let rest = FlowBreak(
+            seriesID: preceding.id, previousSessionID: preceding.id,
+            startedAt: start.addingTimeInterval(-600), timerStoppedAt: start.addingTimeInterval(600),
+            plannedDurationSeconds: 1200
+        )
+        let scheduled = Todo(title: "Scheduled", area: area, scheduledDate: day)
+        let outside = Todo(title: "Outside", area: area, scheduledDate: day.addingTimeInterval(-86_400),
+                           createdAt: day.addingTimeInterval(-86_400), updatedAt: day.addingTimeInterval(-86_400))
+        context.insert(area)
+        context.insert(preceding)
+        context.insert(linked)
+        context.insert(overlap)
+        context.insert(rest)
+        context.insert(scheduled)
+        context.insert(outside)
+        try context.save()
+
+        let queries = HistoryPresentationQueries(interval: interval, calendar: calendar)
+        #expect(try context.fetch(queries.sessions).map(\.id) == [overlap.id])
+        #expect(try context.fetch(queries.breaks).map(\.id) == [rest.id])
+        #expect(try context.fetch(queries.todos).map(\.id) == [scheduled.id])
+        #expect(try context.fetch(HistoryPresentationQueries.relatedSessions(for: [preceding.id])).map(\.id) == [preceding.id])
+        let global = HistoryPresentationQueries(interval: nil, calendar: calendar)
+        #expect(try context.fetchCount(global.sessions) == 2)
+        #expect(try context.fetchCount(global.todos) == 3)
+
+        let linkedSession = FlowSession(
+            area: area, todo: linked, mode: .twentyFiveFive, phase: .completed, status: .completed,
+            startedAt: start, plannedEndAt: start.addingTimeInterval(900),
+            endedAt: start.addingTimeInterval(900), plannedFocusDurationSeconds: 900,
+            actualFocusDurationSeconds: 900, plannedBreakDurationSeconds: 300
+        )
+        let restoredTodos = HistoryPresentationQueries.includingLinkedTodos(
+            [scheduled], from: [overlap, linkedSession, linkedSession], interval: interval
+        )
+        #expect(restoredTodos.map(\.id) == [scheduled.id, linked.id])
     }
 
     @Test func rangesUseCalendarDayWeekAndMonthBoundaries() {

@@ -504,18 +504,18 @@ width can collapse it instead of rendering the clock.
 
 ## Navigation And Rendering Lifecycle
 
-The macOS split-view shell mounts only the selected feature. This keeps hidden
-calendar grids, charts, toolbars, sheets, and Metal surfaces out of the render
-tree. Root navigation views must not own an all-history `@Query` for Flow
-sessions, segments, breaks, or Statistics input. Materializing those persistent
-model graphs is main-actor work and can block the first frame even when the
-visible calculation itself is deferred.
+The native Mac sidebar and iOS tabs show the selected feature's controls
+independently of its data. A lightweight feature shell can retain navigation,
+drafts, and cached presentation data between visits. Hidden destinations
+suspend data sources and periodic work. Root navigation views keep all-history
+SwiftData queries out of the initial render.
 
-Flow and Statistics show their controls on selection. The system handles tab
-selection on iOS, and the Mac sidebar updates its detail directly. Cold data
-has a loading indicator and a short local reveal when it becomes ready.
-Returning to a screen can show its cached data in the first render. Hidden
-tabs stop their periodic work without discarding the root-owned caches.
+Tasks prepares its calendar snapshot after the shell appears. It keeps access
+to the complete Task set for global search, backlog and Habit planning.
+History queries the visible period and dates used by calendar indicators.
+Related sessions keep their context on rest and series records. An explicit
+global search can query the entire history. Area and Project data is grouped
+when the visible Area board receives it.
 
 The Flow dashboard owns bounded rolling queries for the recent 16-day session,
 break, and scheduled-task window needed by its daily presentation and weekly
@@ -525,8 +525,9 @@ dashboard retains its last projection while visible queries refresh it.
 
 Statistics uses `StatisticsProjectionActor`, a dedicated SwiftData
 `@ModelActor` whose presentation context is created away from the main actor.
-It fetches only the selected range and returns a value snapshot. The app root
-keeps the selected filter and up to four snapshots with their calendar and
+It fetches the selected range and emits the overview before the complete value
+snapshot, using the same input records for both. SwiftUI builds the individual
+report cards as needed. The app root keeps the selected filter and up to four snapshots with their calendar and
 day boundary, so reopening Statistics can use the matching snapshot right
 away. New requests start as soon as the screen needs them. Typed searches
 keep a debounce and canceled requests cannot replace the visible report.

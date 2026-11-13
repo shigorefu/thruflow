@@ -46,6 +46,7 @@ struct IOSScrollablePeriodStrip<Content: View>: View {
     private let visibleItemCount: Int
     private let spacing: CGFloat
     private let height: CGFloat
+    private let onWindowChange: ((DateInterval) -> Void)?
     private let content: (Date, Bool) -> Content
 
     @State private var anchorDate: Date
@@ -60,6 +61,7 @@ struct IOSScrollablePeriodStrip<Content: View>: View {
         visibleItemCount: Int,
         spacing: CGFloat,
         height: CGFloat,
+        onWindowChange: ((DateInterval) -> Void)? = nil,
         @ViewBuilder content: @escaping (Date, Bool) -> Content
     ) {
         _selectedDate = selectedDate
@@ -67,6 +69,7 @@ struct IOSScrollablePeriodStrip<Content: View>: View {
         self.visibleItemCount = visibleItemCount
         self.spacing = spacing
         self.height = height
+        self.onWindowChange = onWindowChange
         self.content = content
         _anchorDate = State(initialValue: selectedDate.wrappedValue)
         _scrollTarget = State(initialValue: nil)
@@ -86,6 +89,18 @@ struct IOSScrollablePeriodStrip<Content: View>: View {
 
     var body: some View {
         periodStrip
+            .onChange(of: visibleWindow, initial: true) { _, interval in
+                if let interval { onWindowChange?(interval) }
+            }
+    }
+
+    private var visibleWindow: DateInterval? {
+        guard onWindowChange != nil,
+              let first = dates.first, let last = dates.last,
+              let end = calendar.date(byAdding: unit.calendarComponent, value: 1, to: last) else {
+            return nil
+        }
+        return DateInterval(start: first, end: end)
     }
 
     @ViewBuilder

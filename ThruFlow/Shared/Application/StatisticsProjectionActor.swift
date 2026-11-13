@@ -12,33 +12,49 @@ struct StatisticsProjection: Sendable {
     let achievement: AchievementHeatmapResult
 }
 
+enum StatisticsPresentationUpdate: Sendable {
+    case summary(StatisticsPresentationSummary)
+    case report(StatisticsPeriodSnapshot)
+}
+
 @ModelActor
 actor StatisticsProjectionActor {
-    /// Create the actor's SwiftData context away from the UI executor.
-    static nonisolated func loadForPresentation(
+    /// Create the SwiftData context off the UI executor and publish the summary
+    /// as soon as it is available from the same records as the final report.
+    static nonisolated func presentationUpdates(
         modelContainer: ModelContainer,
         filter: StatisticsPeriodFilter,
         calendar: Calendar,
         dayBoundary: AppDayBoundary
-    ) async throws -> StatisticsPeriodSnapshot {
+    ) -> AsyncThrowingStream<StatisticsPresentationUpdate, Error> {
+        let (updates, continuation) = AsyncThrowingStream<StatisticsPresentationUpdate, Error>.makeStream()
         let request = Task.detached(priority: .userInitiated) {
-            try Task.checkCancellation()
-            let loader = StatisticsProjectionActor(modelContainer: modelContainer)
-            return try await loader.load(filter: filter, calendar: calendar, dayBoundary: dayBoundary)
+            do {
+                try Task.checkCancellation()
+                let loader = StatisticsProjectionActor(modelContainer: modelContainer)
+                let report = try await loader.load(
+                    filter: filter,
+                    calendar: calendar,
+                    dayBoundary: dayBoundary
+                ) { summary in
+                    continuation.yield(.summary(summary))
+                }
+                try Task.checkCancellation()
+                continuation.yield(.report(report))
+                continuation.finish()
+            } catch {
+                continuation.finish(throwing: error)
+            }
         }
-        return try await withTaskCancellationHandler {
-            let snapshot = try await request.value
-            try Task.checkCancellation()
-            return snapshot
-        } onCancel: {
-            request.cancel()
-        }
+        continuation.onTermination = { _ in request.cancel() }
+        return updates
     }
 
     func load(
         filter: StatisticsPeriodFilter,
         calendar: Calendar,
-        dayBoundary: AppDayBoundary
+        dayBoundary: AppDayBoundary,
+        onSummary: (@Sendable (StatisticsPresentationSummary) -> Void)? = nil
     ) throws -> StatisticsPeriodSnapshot {
         try Task.checkCancellation()
         let builder = StatisticsPeriodBuilder(
@@ -96,7 +112,8 @@ actor StatisticsProjectionActor {
             flowRecords: sessions.flatMap(makePeriodFlowRecords),
             achievementRecords: (completedTodos + legacyCompletedTodos).compactMap(makePeriodAchievementRecord),
             filter: filter,
-            habitRecords: scheduledTodos.compactMap { HabitCompletionRecord(todo: $0, calendar: calendar, dayBoundary: dayBoundary) }
+            habitRecords: scheduledTodos.compactMap { HabitCompletionRecord(todo: $0, calendar: calendar, dayBoundary: dayBoundary) },
+            onSummary: onSummary
         )
     }
 

@@ -12,10 +12,14 @@ struct DayHistoryView: View {
     @Environment(\.calendar) private var calendar
     @Environment(\.locale) private var locale
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \FlowSession.startedAt, order: .reverse) private var sessions: [FlowSession]
-    @Query(sort: \FlowBreak.startedAt, order: .reverse) private var breaks: [FlowBreak]
-    @Query(sort: \Todo.updatedAt, order: .reverse) private var todos: [Todo]
-    @Query(sort: \Area.sortIndex) private var areas: [Area]
+
+    private let initialDate: Date
+    private let navigationRevision: Int
+    private let isVisible: Bool
+    @State private var startsDataSource = false
+    @State private var dataCache: [MacHistoryCacheEntry] = []
+    @State private var failedRequest: MacHistoryRequest?
+    @State private var reportReveal = 0
 
     @State private var selectedDate: Date
     @State private var selectedMode: DayHistoryMode = .calendar
@@ -46,6 +50,30 @@ struct DayHistoryView: View {
         DatabaseSearchQuery(text: searchText).isActive
     }
 
+    private var periodInterval: DateInterval {
+        selectedRange.interval(containing: selectedDate, calendar: calendar, dayBoundary: dayBoundary)
+    }
+
+    private var request: MacHistoryRequest {
+        let miniCalendar = selectedRange == .month
+            ? nil
+            : HistoryMiniCalendar.displayedInterval(containing: selectedDate, calendar: calendar)
+        return MacHistoryRequest(
+            period: isSearching ? nil : periodInterval,
+            miniCalendar: isSearching ? nil : miniCalendar,
+            calendar: calendar
+        )
+    }
+
+    private var currentData: MacHistoryData? {
+        dataCache.first { $0.request == request }?.data
+    }
+
+    private var sessions: [FlowSession] { currentData?.sessions ?? [] }
+    private var breaks: [FlowBreak] { currentData?.breaks ?? [] }
+    private var todos: [Todo] { currentData?.todos ?? [] }
+    private var areas: [Area] { currentData?.areas ?? [] }
+
     private var globalCalendarSearchItems: [HistoryCalendarItem] {
         searchBuilder.historyCalendarItems(
             query: searchText,
@@ -55,7 +83,15 @@ struct DayHistoryView: View {
         .filter { visibleCalendarKinds.contains($0.kind) }
     }
 
-    init(initialDate: Date = .now, onClose: (() -> Void)? = nil) {
+    init(
+        initialDate: Date = .now,
+        navigationRevision: Int = 0,
+        isVisible: Bool = true,
+        onClose: (() -> Void)? = nil
+    ) {
+        self.initialDate = initialDate
+        self.navigationRevision = navigationRevision
+        self.isVisible = isVisible
         _selectedDate = State(initialValue: Calendar.current.startOfDay(for: initialDate))
         self.onClose = onClose
     }
@@ -69,13 +105,9 @@ struct DayHistoryView: View {
             )
         }
         return builder.build(
-            interval: selectedRange.interval(
-                containing: selectedDate,
-                calendar: calendar,
-                dayBoundary: dayBoundary
-            ),
-            sessions: searchFilteredSessions,
-            todos: searchFilteredTodos
+            interval: periodInterval,
+            sessions: sessions,
+            todos: todos
         )
     }
 
@@ -85,41 +117,86 @@ struct DayHistoryView: View {
                 .productContentFade(on: selectedMode)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .navigationTitle(String(localized: "履歴"))
         .toolbar {
-            ToolbarItem(placement: .navigation) {
-                if let onClose {
-                    Button(action: onClose) {
-                        Image(systemName: "chevron.left")
+            if isVisible {
+                ToolbarItem(placement: .navigation) {
+                    if let onClose {
+                        Button(action: onClose) {
+                            Image(systemName: "chevron.left")
+                        }
+                        .help(String(localized: "統計に戻る"))
+                        .accessibilityLabel(String(localized: "統計に戻る"))
                     }
-                    .help(String(localized: "統計に戻る"))
-                    .accessibilityLabel(String(localized: "統計に戻る"))
                 }
-            }
 
-            ToolbarItem(placement: .principal) {
-                modePicker
-                    .fixedSize(horizontal: true, vertical: false)
-            }
+                ToolbarItem(placement: .principal) {
+                    modePicker
+                        .fixedSize(horizontal: true, vertical: false)
+                }
 
-            ToolbarItem(placement: .primaryAction) {
-                HStack(spacing: 8) {
-                    contextualFilterMenu
-                    MacToolbarSearchControl(
-                        text: $searchText,
-                        isPresented: $isSearchPresented
-                    )
-                    Button {
-                        toggleHistoryRecord()
-                    } label: {
-                        Image(systemName: "plus")
+                ToolbarItem(placement: .primaryAction) {
+                    HStack(spacing: 8) {
+                        contextualFilterMenu
+                        MacToolbarSearchControl(
+                            text: $searchText,
+                            isPresented: $isSearchPresented
+                        )
+                        Button {
+                            toggleHistoryRecord()
+                        } label: {
+                            Image(systemName: "plus")
+                        }
+                        .help(String(localized: "記録を追加"))
+                        .accessibilityLabel(String(localized: "記録を追加"))
                     }
-                    .help(String(localized: "記録を追加"))
-                    .accessibilityLabel(String(localized: "記録を追加"))
                 }
             }
         }
-        .inspector(isPresented: $isAddingTaskRecord) {
+        .background {
+            if isVisible && startsDataSource {
+                let requested = request
+                MacHistoryDataSource(request: requested) { result in
+                    guard requested == request else { return }
+                    switch result {
+                    case .success(let data):
+                        let wasUncached = currentData == nil
+                        if wasUncached { reportReveal &+= 1 }
+                        dataCache.removeAll { $0.request == requested }
+                        dataCache.insert(MacHistoryCacheEntry(request: requested, data: data), at: 0)
+                        if dataCache.count > 4 { dataCache.removeLast() }
+                        failedRequest = nil
+                    case .failure(let error):
+                        failedRequest = requested
+                        PersistenceIssueCenter.shared.log(error, operation: .dataLoad)
+                    }
+                }
+                .id(requested)
+            }
+        }
+        .task(id: isVisible) {
+            guard isVisible else {
+                startsDataSource = false
+                return
+            }
+            await Task.yield()
+            guard !Task.isCancelled else { return }
+            startsDataSource = true
+        }
+        .onChange(of: isSearching) { _, isSearching in
+            if !isSearching {
+                dataCache.removeAll { $0.request.period == nil }
+            }
+        }
+        .onChange(of: navigationRevision) { _, _ in
+            selectedDate = calendar.startOfDay(for: initialDate)
+            selectedMode = .calendar
+            selectedRange = .week
+            searchText = ""
+        }
+        .inspector(isPresented: Binding(
+            get: { isVisible && isAddingTaskRecord },
+            set: { if isVisible { isAddingTaskRecord = $0 } }
+        )) {
             HistoryTaskRecordForm(
                 startedAt: historyRecordStart,
                 context: HistoryRecordContext(selectedMode),
@@ -234,19 +311,26 @@ struct DayHistoryView: View {
     @ViewBuilder
     private var modeContent: some View {
         if isSearching {
-            globalSearchContent
+            if currentData != nil {
+                globalSearchContent
+            } else {
+                loadStatus
+            }
         } else {
             switch selectedMode {
             case .calendar:
                 HistoryCalendarView(
                     selectedDate: $selectedDate,
                     range: $selectedRange,
-                    sessions: searchFilteredSessions,
-                    breaks: searchFilteredBreaks,
+                    sessions: sessions,
+                    breaks: breaks,
+                    hasLoaded: currentData != nil,
+                    loadFailed: failedRequest == request,
+                    reportReveal: reportReveal,
                     visibleKinds: $visibleCalendarKinds,
                     sidebarTitle: dateTitle,
                     sidebarHeader: AnyView(historyToolbar),
-                    sidebarSummary: selectedRange == .day
+                    sidebarSummary: selectedRange == .day && currentData != nil
                         ? AnyView(daySidebarSummary)
                         : nil,
                     onAddRecord: presentHistoryRecord
@@ -257,6 +341,18 @@ struct DayHistoryView: View {
             case .areas:
                 aggregateWorkspace { areasContent }
             }
+        }
+    }
+
+    @ViewBuilder
+    private var loadStatus: some View {
+        if failedRequest == request {
+            ContentUnavailableView(
+                String(localized: "データを読み込めませんでした。"),
+                systemImage: "exclamationmark.circle"
+            )
+        } else {
+            FeatureLoadingIndicator()
         }
     }
 
@@ -323,8 +419,13 @@ struct DayHistoryView: View {
                     VStack(alignment: .leading, spacing: 18) {
                         historyToolbar
                         aggregatePeriodPicker
-                        summary
-                        content()
+                        if currentData != nil {
+                            summary
+                            content()
+                                .productContentFade(on: reportReveal)
+                        } else {
+                            loadStatus.frame(minHeight: 220)
+                        }
                     }
                     .padding(16)
                 }
@@ -334,9 +435,14 @@ struct DayHistoryView: View {
 
     private func aggregateList<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         ScrollView {
-            content()
-                .frame(maxWidth: 920, alignment: .leading)
-                .padding(16)
+            if currentData != nil {
+                content()
+                    .productContentFade(on: reportReveal)
+                    .frame(maxWidth: 920, alignment: .leading)
+                    .padding(16)
+            } else {
+                loadStatus.frame(minHeight: 220)
+            }
         }
     }
 
@@ -352,9 +458,11 @@ struct DayHistoryView: View {
             Divider()
 
             VStack(alignment: .leading, spacing: 12) {
-                Text(periodSummaryTitle)
-                    .font(.headline)
-                summary
+                if currentData != nil {
+                    Text(periodSummaryTitle)
+                        .font(.headline)
+                    summary
+                }
             }
             .padding(16)
 
@@ -372,7 +480,7 @@ struct DayHistoryView: View {
     }
 
     private var tasksContent: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        LazyVStack(alignment: .leading, spacing: 12) {
             Text(String(localized: "タスク別"))
                 .font(.headline)
 
@@ -406,7 +514,7 @@ struct DayHistoryView: View {
     }
 
     private var areasContent: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        LazyVStack(alignment: .leading, spacing: 12) {
             Text(String(localized: "方向別"))
                 .font(.headline)
 
@@ -492,13 +600,15 @@ struct DayHistoryView: View {
         case .day:
             HistoryMiniCalendar(
                 selectedDate: $selectedDate,
-                indicatorSource: indicatorSource
+                indicatorSource: indicatorSource,
+                historySessions: sessions
             )
         case .week:
             HistoryMiniCalendar(
                 selectedDate: $selectedDate,
                 selectionMode: .week,
-                indicatorSource: indicatorSource
+                indicatorSource: indicatorSource,
+                historySessions: sessions
             )
         case .month:
             HistoryYearMonthPicker(selectedDate: $selectedDate)
@@ -524,8 +634,8 @@ struct DayHistoryView: View {
             guard let date = calendar.date(byAdding: .day, value: offset, to: interval.start) else { return nil }
             let daySnapshot = builder.build(
                 date: date,
-                sessions: searchFilteredSessions,
-                todos: searchFilteredTodos
+                sessions: sessions,
+                todos: todos
             )
             guard !filteredTasks(in: daySnapshot).isEmpty else { return nil }
             return HistoryTaskDaySection(date: date, snapshot: daySnapshot)
@@ -544,48 +654,12 @@ struct DayHistoryView: View {
         snapshot.taskSummaries.filter { visibleTaskTypes.contains($0.areaType) }
     }
 
-    private var searchFilteredTodos: [Todo] {
-        todos.filter(matchesSearch)
-    }
-
-    private var searchFilteredSessions: [FlowSession] {
-        sessions.filter(matchesSearch)
-    }
-
-    private var searchFilteredBreaks: [FlowBreak] {
-        let query = normalizedSearchQuery
-        guard !query.isEmpty else { return breaks }
-        if String(localized: "休憩").localizedCaseInsensitiveContains(query) {
-            return breaks
-        }
-
-        let sessionIDs = Set(searchFilteredSessions.map(\.id))
-        let seriesIDs = Set(searchFilteredSessions.compactMap(\.seriesID))
-        return breaks.filter { flowBreak in
-            sessionIDs.contains(flowBreak.previousSessionID)
-                || flowBreak.nextSessionID.map(sessionIDs.contains) == true
-                || seriesIDs.contains(flowBreak.seriesID)
-        }
-    }
-
-    private var normalizedSearchQuery: String {
-        searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
     private func moveHistoryPeriod(by value: Int) {
         selectedDate = selectedRange.moving(selectedDate, by: value, calendar: calendar)
     }
 
     private func moveHistoryToToday() {
         selectedDate = dayBoundary.day(containing: .now, calendar: calendar)
-    }
-
-    private func matchesSearch(_ todo: Todo) -> Bool {
-        DatabaseSearchQuery(text: searchText).matchesHistory(todo)
-    }
-
-    private func matchesSearch(_ session: FlowSession) -> Bool {
-        DatabaseSearchQuery(text: searchText).matchesHistory(session)
     }
 
     private func openGlobalHistoryItem(_ item: HistoryCalendarItem) {
@@ -685,6 +759,104 @@ struct DayHistoryView: View {
             return Date().addingTimeInterval(-25 * 60)
         }
         return calendar.date(bySettingHour: 9, minute: 0, second: 0, of: date) ?? date
+    }
+}
+
+private struct MacHistoryRequest: Hashable {
+    let period: DateInterval?
+    let miniCalendar: DateInterval?
+    let calendar: Calendar
+
+    var sessionInterval: DateInterval? {
+        guard let period else { return nil }
+        guard let miniCalendar else { return period }
+        return DateInterval(start: min(period.start, miniCalendar.start), end: max(period.end, miniCalendar.end))
+    }
+}
+
+private struct MacHistoryCacheEntry {
+    let request: MacHistoryRequest
+    let data: MacHistoryData
+}
+
+private struct MacHistoryData {
+    let sessions: [FlowSession]
+    let breaks: [FlowBreak]
+    let todos: [Todo]
+    let areas: [Area]
+}
+
+private struct MacHistoryDataSource: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query private var sessions: [FlowSession]
+    @Query private var breaks: [FlowBreak]
+    @Query private var todos: [Todo]
+    @Query(sort: \Area.sortIndex) private var areas: [Area]
+
+    let request: MacHistoryRequest
+    let onUpdate: (Result<MacHistoryData, Error>) -> Void
+
+    init(request: MacHistoryRequest, onUpdate: @escaping (Result<MacHistoryData, Error>) -> Void) {
+        self.request = request
+        self.onUpdate = onUpdate
+        let periodQueries = HistoryPresentationQueries(interval: request.period, calendar: request.calendar)
+        let sessionQueries = HistoryPresentationQueries(interval: request.sessionInterval, calendar: request.calendar)
+        _sessions = Query(sessionQueries.sessions)
+        _breaks = Query(periodQueries.breaks)
+        _todos = Query(periodQueries.todos)
+    }
+
+    var body: some View {
+        let revision = Revision(
+            sessions: sessions.map { RecordVersion(id: $0.id, updatedAt: $0.updatedAt) },
+            breaks: breaks.map { RecordVersion(id: $0.id, updatedAt: $0.updatedAt) },
+            todos: todos.map { RecordVersion(id: $0.id, updatedAt: $0.updatedAt) },
+            areas: areas.map { RecordVersion(id: $0.id, updatedAt: $0.updatedAt) },
+            failed: loadError != nil
+        )
+
+        Color.clear
+            .onChange(of: revision, initial: true) { _, _ in
+                onUpdate(Result { try readData() })
+            }
+    }
+
+    private var loadError: Error? {
+        _sessions.fetchError ?? _breaks.fetchError ?? _todos.fetchError ?? _areas.fetchError
+    }
+
+    private func readData() throws -> MacHistoryData {
+        if let loadError { throw loadError }
+
+        let loadedSessionIDs = Set(sessions.map(\.id))
+        let missingSessionIDs = Set(breaks.map(\.previousSessionID)).subtracting(loadedSessionIDs)
+        let relatedSessions = missingSessionIDs.isEmpty
+            ? []
+            : try modelContext.fetch(HistoryPresentationQueries.relatedSessions(for: Array(missingSessionIDs)))
+
+        return MacHistoryData(
+            sessions: sessions + relatedSessions,
+            breaks: breaks,
+            todos: HistoryPresentationQueries.includingLinkedTodos(
+                todos,
+                from: sessions,
+                interval: request.period
+            ),
+            areas: areas
+        )
+    }
+
+    private struct RecordVersion: Equatable {
+        let id: UUID
+        let updatedAt: Date
+    }
+
+    private struct Revision: Equatable {
+        let sessions: [RecordVersion]
+        let breaks: [RecordVersion]
+        let todos: [RecordVersion]
+        let areas: [RecordVersion]
+        let failed: Bool
     }
 }
 

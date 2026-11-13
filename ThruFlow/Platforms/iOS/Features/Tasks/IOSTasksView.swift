@@ -7,10 +7,13 @@ struct IOSTasksView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
-    @Query(sort: \Todo.sortIndex) private var todos: [Todo]
-    @Query(sort: \Area.sortIndex) private var areas: [Area]
-    @Query(sort: \Project.createdAt) private var projects: [Project]
+    var isVisible = true
 
+    @State private var observesRecords = false
+    @State private var records: IOSTaskCalendarRecords?
+    @State private var loadFailed = false
+    @State private var revealsInitialRows = false
+    @State private var hasMountedComposer = false
     @State private var selectedDate = Calendar.current.startOfDay(for: .now)
     @State private var range = TaskCalendarRange.oneDay
     @State private var filter = TaskCalendarFilter.all
@@ -31,6 +34,9 @@ struct IOSTasksView: View {
         TaskRescheduleService(calendar: calendar, dayBoundary: dayBoundary)
     }
     private var searchBuilder: DatabaseSearchBuilder { DatabaseSearchBuilder(calendar: calendar) }
+    private var todos: [Todo] { records?.todos ?? [] }
+    private var areas: [Area] { records?.areas ?? [] }
+    private var projects: [Project] { records?.projects ?? [] }
 
     private var usesPersistentComposer: Bool { horizontalSizeClass == .regular }
 
@@ -61,29 +67,48 @@ struct IOSTasksView: View {
     }
 
     var body: some View {
-        let snapshot = TaskCalendarSnapshot(
-            todos: todos,
-            calendar: calendar,
-            dayBoundary: dayBoundary
-        )
-
-        content(snapshot: snapshot)
+        content(snapshot: records?.snapshot)
     }
 
-    private func content(snapshot: TaskCalendarSnapshot) -> some View {
+    private func content(snapshot: TaskCalendarSnapshot?) -> some View {
         VStack(spacing: 0) {
-            if isSearching {
-                globalSearchContent
-            } else {
+            if !isSearching {
                 controls(snapshot: snapshot)
                 Divider()
-                taskContent(snapshot: snapshot)
-                    .productContentFade(on: range)
-                    .iosPeriodSwipeNavigation(
-                        pageID: selectedPeriodPageID
-                    ) { offset in
-                        navigatePeriod(by: offset)
+            }
+            if let snapshot {
+                if isSearching {
+                    globalSearchContent
+                } else {
+                    taskContent(snapshot: snapshot)
+                        .productContentFade(on: range)
+                        .iosPeriodSwipeNavigation(pageID: selectedPeriodPageID) { offset in
+                            navigatePeriod(by: offset)
+                        }
+                }
+            } else if loadFailed {
+                ContentUnavailableView(
+                    String(localized: "データを読み込めませんでした。"),
+                    systemImage: "exclamationmark.triangle"
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                FeatureLoadingIndicator()
+            }
+        }
+        .background {
+            if isVisible, observesRecords {
+                IOSTaskCalendarQuery(calendarDayRevision: calendarDayRevision) { result in
+                    switch result {
+                    case .success(let records):
+                        if self.records == nil { revealsInitialRows = true }
+                        self.records = records
+                        loadFailed = false
+                    case .failure(let error):
+                        loadFailed = true
+                        PersistenceIssueCenter.shared.log(error, operation: .dataLoad)
                     }
+                }
             }
         }
         .background {
@@ -107,28 +132,33 @@ struct IOSTasksView: View {
                     }
                     .accessibilityLabel(String(localized: "その他"))
                     .accessibilityValue("\(backlogCount(in: snapshot))")
+                    .disabled(snapshot == nil)
 
                     IOSNotificationBadge(count: backlogCount(in: snapshot))
                         .allowsHitTesting(false)
                 }
                 .frame(width: 44, height: 44)
                 .popover(isPresented: $showsBacklogMenu, arrowEdge: .top) {
-                    backlogMenuContent(snapshot: snapshot)
-                        .presentationCompactAdaptation(.popover)
-                        .onDisappear(perform: presentPendingBacklog)
+                    if let snapshot {
+                        backlogMenuContent(snapshot: snapshot)
+                            .presentationCompactAdaptation(.popover)
+                            .onDisappear(perform: presentPendingBacklog)
+                    }
                 }
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            taskComposer
-                .id(composerID)
-                .frame(maxWidth: 640)
-                .frame(maxWidth: .infinity)
-                .background(.background)
-                .frame(height: isComposerVisible ? nil : 0)
-                .opacity(isComposerVisible ? 1 : 0)
-                .allowsHitTesting(isComposerVisible)
-                .accessibilityHidden(!isComposerVisible)
+            if hasMountedComposer || isComposerVisible {
+                taskComposer
+                    .id(composerID)
+                    .frame(maxWidth: 640)
+                    .frame(maxWidth: .infinity)
+                    .background(.background)
+                    .frame(height: isComposerVisible ? nil : 0)
+                    .opacity(isComposerVisible ? 1 : 0)
+                    .allowsHitTesting(isComposerVisible)
+                    .accessibilityHidden(!isComposerVisible)
+            }
         }
         .overlay(alignment: .bottomTrailing) {
             if !isComposerVisible {
@@ -142,16 +172,18 @@ struct IOSTasksView: View {
         }
         .sheet(item: $backlogMode) { mode in
             NavigationStack {
-                IOSBacklogView(
-                    mode: mode,
-                    todos: mode == .overdue
-                        ? snapshot.backlog.overdue
-                        : snapshot.backlog.unscheduled,
-                    edit: { todo in
-                        backlogMode = nil
-                        editorMode = .edit(todo)
-                    }
-                )
+                if let snapshot {
+                    IOSBacklogView(
+                        mode: mode,
+                        todos: mode == .overdue
+                            ? snapshot.backlog.overdue
+                            : snapshot.backlog.unscheduled,
+                        edit: { todo in
+                            backlogMode = nil
+                            editorMode = .edit(todo)
+                        }
+                    )
+                }
             }
         }
         .alert(
@@ -167,15 +199,27 @@ struct IOSTasksView: View {
         } message: {
             Text(backlogMoveError ?? "")
         }
-        .task {
-            guard !hasPerformedInitialMaterialization else { return }
-            alignInitialSelectionWithCurrentAppDay()
+        .task(id: isVisible) {
+            guard isVisible else {
+                revealsInitialRows = false
+                return
+            }
+            if !observesRecords {
+                alignInitialSelectionWithCurrentAppDay()
+            }
             await Task.yield()
-            ensureRequiredTodos(reconcilesDuplicates: true)
-            hasPerformedInitialMaterialization = true
+            guard !Task.isCancelled else { return }
+            observesRecords = true
         }
         .task(id: requiredTodoMaterializationID) {
-            guard hasPerformedInitialMaterialization else { return }
+            guard isVisible, records != nil else { return }
+            if !hasPerformedInitialMaterialization {
+                await Task.yield()
+                guard !Task.isCancelled else { return }
+                ensureRequiredTodos(reconcilesDuplicates: true)
+                hasPerformedInitialMaterialization = true
+                return
+            }
             do {
                 try await Task.sleep(for: .milliseconds(180))
             } catch {
@@ -184,6 +228,13 @@ struct IOSTasksView: View {
             guard !Task.isCancelled else { return }
             ensureRequiredTodos(reconcilesDuplicates: false)
         }
+        .onChange(of: isComposerVisible, initial: true) { _, isPresented in
+            if isPresented { hasMountedComposer = true }
+        }
+        .onChange(of: selectedPeriodPageID) { _, _ in revealsInitialRows = false }
+        .onChange(of: range) { _, _ in revealsInitialRows = false }
+        .onChange(of: filter) { _, _ in revealsInitialRows = false }
+        .onChange(of: isSearching) { _, _ in revealsInitialRows = false }
         .onChange(of: horizontalSizeClass) { _, _ in
             // Folding restores + without discarding the mounted draft.
             showsComposer = false
@@ -196,8 +247,10 @@ struct IOSTasksView: View {
     private var taskComposer: some View {
         IOSTaskComposer(
             areas: activeAreas,
+            suggestionTodos: todos,
             autofocusOnAppear: !usesPersistentComposer,
             isPresented: isComposerVisible,
+            allowsSubmission: records != nil,
             onClose: composerCloseAction
         )
     }
@@ -316,7 +369,7 @@ struct IOSTasksView: View {
         }
     }
 
-    private func controls(snapshot: TaskCalendarSnapshot) -> some View {
+    private func controls(snapshot: TaskCalendarSnapshot?) -> some View {
         VStack(spacing: 10) {
             HStack(spacing: 10) {
                 Menu {
@@ -408,12 +461,15 @@ struct IOSTasksView: View {
     private func weekList(anchorDate: Date, snapshot: TaskCalendarSnapshot) -> some View {
         let dates = calendarBuilder
             .dates(for: .sevenDays, anchoredAt: anchorDate)
-            .filter { !todos(on: $0, in: snapshot).isEmpty }
+            .compactMap { date -> (Date, [Todo])? in
+                let tasks = todos(on: date, in: snapshot)
+                return tasks.isEmpty ? nil : (date, tasks)
+            }
 
         return ScrollView {
             LazyVStack(spacing: 14) {
-                ForEach(dates, id: \.self) { date in
-                    daySection(date: date, todos: todos(on: date, in: snapshot))
+                ForEach(Array(dates.enumerated()), id: \.element.0) { index, entry in
+                    daySection(date: entry.0, todos: entry.1, firstRowIndex: index == 0 ? 0 : 5)
                 }
 
                 if dates.isEmpty {
@@ -441,7 +497,8 @@ struct IOSTasksView: View {
                 daySection(
                     date: date,
                     todos: todos,
-                    suppressesEmptyState: !overdueTodos.isEmpty
+                    suppressesEmptyState: !overdueTodos.isEmpty,
+                    firstRowIndex: overdueTodos.count
                 )
             }
             .padding(12)
@@ -451,18 +508,27 @@ struct IOSTasksView: View {
     private func daySection(
         date: Date,
         todos: [Todo],
-        suppressesEmptyState: Bool = false
+        suppressesEmptyState: Bool = false,
+        firstRowIndex: Int = 0
     ) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        LazyVStack(alignment: .leading, spacing: 10) {
             Text(date, format: .dateTime.month().day().weekday())
                 .font(.headline)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             let grouped = IOSGroupedTodos(todos: todos)
-            taskGroup(title: String(localized: "習慣一覧"), todos: grouped.habits)
-            taskGroup(title: String(localized: "タスク"), todos: grouped.tasks)
+            taskGroup(title: String(localized: "習慣一覧"), todos: grouped.habits, firstRowIndex: firstRowIndex)
+            taskGroup(
+                title: String(localized: "タスク"),
+                todos: grouped.tasks,
+                firstRowIndex: firstRowIndex + grouped.habits.count
+            )
             if !grouped.nice.isEmpty {
-                taskGroup(title: String(localized: "ナイス"), todos: grouped.nice)
+                taskGroup(
+                    title: String(localized: "ナイス"),
+                    todos: grouped.nice,
+                    firstRowIndex: firstRowIndex + grouped.habits.count + grouped.tasks.count
+                )
             }
 
             if todos.isEmpty && !suppressesEmptyState {
@@ -480,7 +546,7 @@ struct IOSTasksView: View {
     @ViewBuilder
     private func overdueTaskCard(_ todos: [Todo]) -> some View {
         if !todos.isEmpty {
-            VStack(alignment: .leading, spacing: 6) {
+            LazyVStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 7) {
                     Circle()
                         .fill(.red)
@@ -505,14 +571,7 @@ struct IOSTasksView: View {
                     .buttonStyle(.borderless)
                 }
 
-                ForEach(todos) { todo in
-                    IOSTaskRow(todo: todo) {
-                        editorMode = .edit(todo)
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 9)
-                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
-                }
+                taskRows(todos, firstRowIndex: 0)
             }
             .padding(14)
             .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 16))
@@ -520,22 +579,25 @@ struct IOSTasksView: View {
     }
 
     @ViewBuilder
-    private func taskGroup(title: String, todos: [Todo]) -> some View {
+    private func taskGroup(title: String, todos: [Todo], firstRowIndex: Int) -> some View {
         if !todos.isEmpty {
-            VStack(alignment: .leading, spacing: 6) {
+            LazyVStack(alignment: .leading, spacing: 6) {
                 Text(title)
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
 
-                ForEach(todos) { todo in
-                    IOSTaskRow(todo: todo) {
-                        editorMode = .edit(todo)
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 9)
-                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
-                }
+                taskRows(todos, firstRowIndex: firstRowIndex)
             }
+        }
+    }
+
+    private func taskRows(_ todos: [Todo], firstRowIndex: Int) -> some View {
+        ForEach(Array(todos.enumerated()), id: \.element.id) { index, todo in
+            IOSTaskRow(todo: todo) { editorMode = .edit(todo) }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 9)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+                .featureRowReveal(index: firstRowIndex + index, enabled: revealsInitialRows)
         }
     }
 
@@ -635,6 +697,8 @@ struct IOSTasksView: View {
 
     private var requiredTodoMaterializationID: IOSRequiredTodoMaterializationID {
         IOSRequiredTodoMaterializationID(
+            isVisible: isVisible,
+            hasRecords: records != nil,
             rangeRawValue: range.rawValue,
             visibleDates: visibleDates.map { calendar.startOfDay(for: $0) },
             habitRevisions: activeAreas
@@ -656,8 +720,9 @@ struct IOSTasksView: View {
         )
     }
 
-    private func backlogCount(in snapshot: TaskCalendarSnapshot) -> Int {
-        snapshot.backlog.overdue.count + snapshot.backlog.unscheduled.count
+    private func backlogCount(in snapshot: TaskCalendarSnapshot?) -> Int {
+        guard let snapshot else { return 0 }
+        return snapshot.backlog.overdue.count + snapshot.backlog.unscheduled.count
     }
 
     private func ensureRequiredTodos(
@@ -713,12 +778,70 @@ struct IOSTasksView: View {
     }
 }
 
+private struct IOSTaskCalendarRecords {
+    let todos: [Todo]
+    let areas: [Area]
+    let projects: [Project]
+    let snapshot: TaskCalendarSnapshot
+}
+
+private struct IOSTaskCalendarQuery: View {
+    @Environment(\.calendar) private var calendar
+    @Environment(\.appDayBoundary) private var dayBoundary
+    @Query(sort: \Todo.sortIndex) private var todos: [Todo]
+    @Query(sort: \Area.sortIndex) private var areas: [Area]
+    @Query(sort: \Project.createdAt) private var projects: [Project]
+
+    let calendarDayRevision: Int
+    let onUpdate: (Result<IOSTaskCalendarRecords, Error>) -> Void
+
+    var body: some View {
+        let revisions = [
+            todos.map { RecordRevision(id: $0.id, updatedAt: $0.updatedAt) },
+            areas.map { RecordRevision(id: $0.id, updatedAt: $0.updatedAt) },
+            projects.map { RecordRevision(id: $0.id, updatedAt: $0.updatedAt) }
+        ]
+        let error = _todos.fetchError ?? _areas.fetchError ?? _projects.fetchError
+        Color.clear
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+            .task(id: QueryRevision(
+                records: revisions,
+                calendar: calendar,
+                dayBoundaryHour: dayBoundary.hour,
+                calendarDayRevision: calendarDayRevision,
+                failed: error != nil
+            )) {
+                guard !Task.isCancelled else { return }
+                if let error {
+                    onUpdate(.failure(error))
+                    return
+                }
+                let snapshot = TaskCalendarSnapshot(todos: todos, calendar: calendar, dayBoundary: dayBoundary)
+                onUpdate(.success(IOSTaskCalendarRecords(todos: todos, areas: areas, projects: projects, snapshot: snapshot)))
+            }
+    }
+
+    private struct RecordRevision: Hashable {
+        let id: UUID
+        let updatedAt: Date
+    }
+
+    private struct QueryRevision: Hashable {
+        let records: [[RecordRevision]]
+        let calendar: Calendar
+        let dayBoundaryHour: Int
+        let calendarDayRevision: Int
+        let failed: Bool
+    }
+}
+
 private struct IOSWeekDateStrip: View {
     @Environment(\.calendar) private var calendar
     @Environment(\.locale) private var locale
 
     @Binding var selectedDate: Date
-    let snapshot: TaskCalendarSnapshot
+    let snapshot: TaskCalendarSnapshot?
     let filter: TaskCalendarFilter
     let searchQuery: DatabaseSearchQuery
 
@@ -741,11 +864,11 @@ private struct IOSWeekDateStrip: View {
                         .monospacedDigit()
                     HStack(spacing: 2) {
                         ForEach(
-                            snapshot.indicatorColors(
+                            snapshot?.indicatorColors(
                                 on: date,
                                 filter: filter,
                                 matching: searchQuery
-                            ),
+                            ) ?? [],
                             id: \.self
                         ) { colorHex in
                             Circle()
@@ -775,7 +898,7 @@ private struct IOSWeekCardStrip: View {
     @Environment(\.locale) private var locale
 
     @Binding var selectedDate: Date
-    let snapshot: TaskCalendarSnapshot
+    let snapshot: TaskCalendarSnapshot?
     let filter: TaskCalendarFilter
     let searchQuery: DatabaseSearchQuery
 
@@ -800,11 +923,11 @@ private struct IOSWeekCardStrip: View {
 
                     HStack(spacing: 2) {
                         ForEach(
-                            snapshot.indicatorColors(
+                            snapshot?.indicatorColors(
                                 inWeekContaining: anchor,
                                 filter: filter,
                                 matching: searchQuery
-                            ),
+                            ) ?? [],
                             id: \.self
                         ) { colorHex in
                             Circle()
@@ -949,6 +1072,8 @@ private struct IOSTaskMonthCalendar: View {
 }
 
 private struct IOSRequiredTodoMaterializationID: Hashable {
+    let isVisible: Bool
+    let hasRecords: Bool
     let rangeRawValue: String
     let visibleDates: [Date]
     let habitRevisions: [IOSHabitMaterializationRevision]

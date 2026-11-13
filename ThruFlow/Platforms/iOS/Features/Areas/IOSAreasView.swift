@@ -10,9 +10,12 @@ struct IOSAreasView: View {
     @ScaledMetric(relativeTo: .body) private var minimumGroupWidth = 240.0
     @AppStorage("directionKanbanColumnOrder") private var groupOrderRaw = AreaGroupOrder.encode(AreaGroupOrder.defaultValue)
 
-    @Query(sort: \Area.sortIndex) private var areas: [Area]
-    @Query(sort: \Project.createdAt) private var projects: [Project]
+    private let isVisible: Bool
 
+    @State private var observesRecords = false
+    @State private var records: IOSAreaRecords?
+    @State private var loadFailed = false
+    @State private var revealsInitialRows = false
     @State private var selectedType: AreaType
     @State private var editorMode: IOSAreaEditorMode?
     @State private var selectedProject: Project?
@@ -21,7 +24,8 @@ struct IOSAreasView: View {
     @State private var showsGroupOrder = false
     @State private var saveErrorMessage: String?
 
-    init() {
+    init(isVisible: Bool = true) {
+        self.isVisible = isVisible
         let first = AreaGroupOrder.defaultValue.first ?? .habit
         _selectedType = State(initialValue: first)
     }
@@ -35,11 +39,8 @@ struct IOSAreasView: View {
     }
 
     private func visibleAreas(for type: AreaType) -> [Area] {
-        areas
-            .filter { !DefaultAreas.isTaskInbox($0) }
-            .filter { showingArchived ? $0.isArchived : !$0.isArchived }
-            .filter { $0.type == type }
-            .sorted(by: areaSort)
+        let groups = showingArchived ? records?.archivedGroups : records?.activeGroups
+        return groups?[type] ?? []
     }
 
     private var showsGroupBoard: Bool {
@@ -54,6 +55,21 @@ struct IOSAreasView: View {
                 selectedGroupList
                     .frame(maxWidth: 800)
                     .frame(maxWidth: .infinity)
+            }
+        }
+        .background {
+            if isVisible, observesRecords {
+                IOSAreasQuery { result in
+                    switch result {
+                    case .success(let records):
+                        if self.records == nil { revealsInitialRows = true }
+                        self.records = records
+                        loadFailed = false
+                    case .failure(let error):
+                        loadFailed = true
+                        PersistenceIssueCenter.shared.log(error, operation: .dataLoad)
+                    }
+                }
             }
         }
         .productContentFade(on: showingArchived)
@@ -76,6 +92,7 @@ struct IOSAreasView: View {
                     Button(isEditingOrder ? String(localized: "完了") : String(localized: "並び替え")) {
                         withAnimation { isEditingOrder.toggle() }
                     }
+                    .disabled(records == nil)
                 } label: {
                     IOSMoreMenuLabel()
                 }
@@ -99,7 +116,7 @@ struct IOSAreasView: View {
                 NavigationStack {
                     IOSTaskEditorView(
                         mode: todo.map(IOSTaskEditorMode.edit) ?? .create,
-                        areas: areas.filter { !$0.isArchived },
+                        areas: records?.areas.filter { !$0.isArchived } ?? [],
                         fixedArea: todo == nil ? selectedProject.area : nil,
                         project: selectedProject
                     )
@@ -117,6 +134,18 @@ struct IOSAreasView: View {
                 selectedType = groupOrder.first ?? .habit
             }
         }
+        .task(id: isVisible) {
+            guard isVisible else {
+                revealsInitialRows = false
+                return
+            }
+            await Task.yield()
+            guard !Task.isCancelled else { return }
+            observesRecords = true
+        }
+        .onChange(of: selectedType) { _, _ in revealsInitialRows = false }
+        .onChange(of: showingArchived) { _, _ in revealsInitialRows = false }
+        .onChange(of: isEditingOrder) { _, _ in revealsInitialRows = false }
     }
 
     private var selectedGroupList: some View {
@@ -147,8 +176,9 @@ struct IOSAreasView: View {
                         }
                         .onMove(perform: moveAreas)
                     } else {
-                        ForEach(visibleAreas) { area in
+                        ForEach(Array(visibleAreas.enumerated()), id: \.element.id) { index, area in
                             areaTree(area)
+                                .featureRowReveal(index: index, enabled: revealsInitialRows)
                         }
                     }
                 }
@@ -156,7 +186,9 @@ struct IOSAreasView: View {
             .listStyle(.insetGrouped)
             .productContentFade(on: selectedType)
             .overlay {
-                if visibleAreas.isEmpty {
+                if records == nil {
+                    loadingContent
+                } else if visibleAreas.isEmpty {
                     ContentUnavailableView(
                         showingArchived ? String(localized: "アーカイブはありません") : String(localized: "方向はありません"),
                         systemImage: showingArchived ? "archivebox" : ProductSymbol.area
@@ -164,6 +196,18 @@ struct IOSAreasView: View {
                 }
             }
             .environment(\.editMode, .constant(isEditingOrder ? .active : .inactive))
+        }
+    }
+
+    @ViewBuilder
+    private var loadingContent: some View {
+        if loadFailed {
+            ContentUnavailableView(
+                String(localized: "データを読み込めませんでした。"),
+                systemImage: "exclamationmark.triangle"
+            )
+        } else {
+            FeatureLoadingIndicator()
         }
     }
 
@@ -179,28 +223,32 @@ struct IOSAreasView: View {
                     alignment: .leading,
                     spacing: spacing
                 ) {
-                    ForEach(groupOrder) { type in
-                        groupColumn(type)
+                    ForEach(Array(groupOrder.enumerated()), id: \.element) { index, type in
+                        groupColumn(type, columnIndex: index)
                     }
                 }
                 .padding(16)
             }
         }
+        .overlay {
+            if records == nil { loadingContent }
+        }
     }
 
-    private func groupColumn(_ type: AreaType) -> some View {
+    private func groupColumn(_ type: AreaType, columnIndex: Int) -> some View {
         let groupAreas = visibleAreas(for: type)
-        return VStack(alignment: .leading, spacing: 12) {
+        return LazyVStack(alignment: .leading, spacing: 12) {
             groupHeader(type)
-            if groupAreas.isEmpty {
+            if records != nil && groupAreas.isEmpty {
                 Text(showingArchived ? String(localized: "アーカイブはありません") : String(localized: "方向はありません"))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, minHeight: 80, alignment: .center)
             }
-            ForEach(groupAreas) { area in
+            ForEach(Array(groupAreas.enumerated()), id: \.element.id) { index, area in
                 areaTree(area)
+                    .featureRowReveal(index: index + columnIndex, enabled: revealsInitialRows)
             }
         }
         .padding(12)
@@ -254,7 +302,7 @@ struct IOSAreasView: View {
     private func areaTree(_ area: Area) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             areaButton(area)
-            ForEach(projectsForArea(area)) { project in
+            ForEach(records?.projectsByArea[area.id] ?? []) { project in
                 projectButton(project)
                     .padding(.leading, 56)
             }
@@ -283,11 +331,6 @@ struct IOSAreasView: View {
         .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
         .listRowBackground(Color.clear)
         .listRowSeparator(.hidden)
-    }
-
-    private func projectsForArea(_ area: Area) -> [Project] {
-        let children = projects.filter { $0.area?.id == area.id }
-        return children.filter { !$0.isCompleted } + children.filter(\.isCompleted)
     }
 
     private func projectButton(_ project: Project) -> some View {
@@ -346,11 +389,8 @@ struct IOSAreasView: View {
         var reordered = visibleAreas
         reordered.move(fromOffsets: offsets, toOffset: destination)
 
-        let remaining = areas
-            .filter { !$0.isArchived && !DefaultAreas.isTaskInbox($0) && $0.type != selectedType }
-            .sorted(by: areaSort)
         let ordered = groupOrder.flatMap { type -> [Area] in
-            type == selectedType ? reordered : remaining.filter { $0.type == type }
+            type == selectedType ? reordered : records?.activeGroups[type] ?? []
         }
         for (index, area) in ordered.enumerated() {
             area.setSortIndex(index)
@@ -371,9 +411,65 @@ struct IOSAreasView: View {
         }
     }
 
-    private func areaSort(_ lhs: Area, _ rhs: Area) -> Bool {
-        if lhs.sortIndex != rhs.sortIndex { return lhs.sortIndex < rhs.sortIndex }
-        return lhs.name.localizedStandardCompare(rhs.name) == .orderedAscending
+}
+
+private struct IOSAreaRecords {
+    let areas: [Area]
+    let activeGroups: [AreaType: [Area]]
+    let archivedGroups: [AreaType: [Area]]
+    let projectsByArea: [UUID: [Project]]
+
+    init(areas: [Area], projects: [Project]) {
+        self.areas = areas
+        let sortedAreas = areas.filter { !DefaultAreas.isTaskInbox($0) }.sorted { lhs, rhs in
+            if lhs.sortIndex != rhs.sortIndex { return lhs.sortIndex < rhs.sortIndex }
+            return lhs.name.localizedStandardCompare(rhs.name) == .orderedAscending
+        }
+        activeGroups = Dictionary(grouping: sortedAreas.filter { !$0.isArchived }, by: \.type)
+        archivedGroups = Dictionary(grouping: sortedAreas.filter(\.isArchived), by: \.type)
+        let projectEntries = projects.compactMap { project in
+            project.area.map { (areaID: $0.id, project: project) }
+        }
+        projectsByArea = Dictionary(grouping: projectEntries, by: \.areaID).mapValues { entries in
+            let children = entries.map(\.project)
+            return children.filter { !$0.isCompleted } + children.filter(\.isCompleted)
+        }
+    }
+}
+
+private struct IOSAreasQuery: View {
+    @Query(sort: \Area.sortIndex) private var areas: [Area]
+    @Query(sort: \Project.createdAt) private var projects: [Project]
+
+    let onUpdate: (Result<IOSAreaRecords, Error>) -> Void
+
+    var body: some View {
+        let revision = [
+            areas.map { RecordRevision(id: $0.id, updatedAt: $0.updatedAt) },
+            projects.map { RecordRevision(id: $0.id, updatedAt: $0.updatedAt) }
+        ]
+        let error = _areas.fetchError ?? _projects.fetchError
+        Color.clear
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+            .task(id: QueryRevision(records: revision, failed: error != nil)) {
+                guard !Task.isCancelled else { return }
+                if let error {
+                    onUpdate(.failure(error))
+                } else {
+                    onUpdate(.success(IOSAreaRecords(areas: areas, projects: projects)))
+                }
+            }
+    }
+
+    private struct RecordRevision: Hashable {
+        let id: UUID
+        let updatedAt: Date
+    }
+
+    private struct QueryRevision: Hashable {
+        let records: [[RecordRevision]]
+        let failed: Bool
     }
 }
 

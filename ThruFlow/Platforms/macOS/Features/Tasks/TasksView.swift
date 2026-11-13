@@ -14,9 +14,15 @@ struct TasksView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
 
-    @Query(sort: \Area.name, order: .forward) private var areas: [Area]
-    @Query(sort: \Todo.sortIndex, order: .forward) private var todos: [Todo]
-    @Query(sort: \Project.createdAt) private var projects: [Project]
+    let initialFilter: TaskCalendarFilter
+    var filterRevision = 0
+    var isVisible = true
+    private let onFirstRows: () -> Bool
+
+    @State private var data: MacTasksData?
+    @State private var startsDataSource = false
+    @State private var rowRevealDeadline: ContinuousClock.Instant?
+    @State private var loadFailed = false
 
     @State private var editingTodo: Todo?
     @State private var newTodoTitle = ""
@@ -42,8 +48,26 @@ struct TasksView: View {
     @State private var calendarDayRevision = 0
     @AppStorage("today.groupOrder") private var groupOrderRaw = TasksTodoGroup.defaultOrderRaw
 
-    init(initialFilter: TaskCalendarFilter = .all) {
+    init(
+        initialFilter: TaskCalendarFilter = .all,
+        filterRevision: Int = 0,
+        isVisible: Bool = true,
+        onFirstRows: @escaping () -> Bool = { true }
+    ) {
+        self.initialFilter = initialFilter
+        self.filterRevision = filterRevision
+        self.isVisible = isVisible
+        self.onFirstRows = onFirstRows
         _taskFilter = State(initialValue: initialFilter)
+    }
+
+    private var areas: [Area] { data?.areas ?? [] }
+    private var todos: [Todo] { data?.todos ?? [] }
+    private var projects: [Project] { data?.projects ?? [] }
+
+    private var revealsRows: Bool {
+        guard isVisible, let rowRevealDeadline else { return false }
+        return ContinuousClock.now < rowRevealDeadline
     }
 
     private var calendarBuilder: TaskCalendarBuilder { TaskCalendarBuilder(calendar: calendar) }
@@ -86,58 +110,54 @@ struct TasksView: View {
     }
 
     var body: some View {
-        let snapshot = TaskCalendarSnapshot(
-            todos: todos,
-            calendar: calendar,
-            dayBoundary: dayBoundary
-        )
-
-        content(snapshot: snapshot)
-    }
-
-    private func content(snapshot: TaskCalendarSnapshot) -> some View {
+        let snapshot = data?.snapshot
         VStack(spacing: 0) {
             if isSearching {
-                globalSearchContent
+                if snapshot != nil {
+                    globalSearchContent
+                } else {
+                    loadStatus
+                }
             } else {
                 tasksWorkspace(snapshot: snapshot)
             }
         }
-        .navigationTitle(String(localized: "タスク"))
         .toolbar {
-            ToolbarItem(placement: .principal) {
-                taskFilterPicker
-                    .fixedSize(horizontal: true, vertical: false)
-            }
+            if isVisible {
+                ToolbarItem(placement: .principal) {
+                    taskFilterPicker
+                        .fixedSize(horizontal: true, vertical: false)
+                }
 
-            ToolbarItem(placement: .primaryAction) {
-                HStack(spacing: 10) {
-                    backlogToolbarButton(
-                        String(localized: "やり残し"),
-                        count: snapshot.backlog.overdue.count,
-                        mode: .overdue
-                    )
+                ToolbarItem(placement: .primaryAction) {
+                    HStack(spacing: 10) {
+                        backlogToolbarButton(
+                            String(localized: "やり残し"),
+                            count: snapshot?.backlog.overdue.count,
+                            mode: .overdue
+                        )
 
-                    Rectangle()
-                        .fill(Color.secondary.opacity(0.3))
-                        .frame(width: 1, height: 16)
+                        Rectangle()
+                            .fill(Color.secondary.opacity(0.3))
+                            .frame(width: 1, height: 16)
 
-                    backlogToolbarButton(
-                        String(localized: "日付なし"),
-                        count: snapshot.backlog.unscheduled.count,
-                        mode: .unscheduled
+                        backlogToolbarButton(
+                            String(localized: "日付なし"),
+                            count: snapshot?.backlog.unscheduled.count,
+                            mode: .unscheduled
+                        )
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .fixedSize(horizontal: true, vertical: true)
+                }
+
+                ToolbarItem(placement: .primaryAction) {
+                    MacToolbarSearchControl(
+                        text: $searchText,
+                        isPresented: $isSearchPresented
                     )
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .fixedSize(horizontal: true, vertical: true)
-            }
-
-            ToolbarItem(placement: .primaryAction) {
-                MacToolbarSearchControl(
-                    text: $searchText,
-                    isPresented: $isSearchPresented
-                )
             }
         }
         .safeAreaInset(edge: .bottom) {
@@ -154,6 +174,8 @@ struct TasksView: View {
                 hashtags: $newTodoHashtags,
                 areas: visibleAreas,
                 validationMessage: newTodoError,
+                suggestionTodos: todos,
+                allowsSubmission: snapshot != nil,
                 onSubmit: createInlineTodo
             )
         }
@@ -161,8 +183,14 @@ struct TasksView: View {
             TodoFormView(mode: .edit(todo))
         }
         .inspector(isPresented: backlogInspectorIsPresented) {
-            backlogInspector(snapshot: snapshot)
-                .inspectorColumnWidth(min: 300, ideal: 340, max: 420)
+            Group {
+                if let snapshot {
+                    backlogInspector(snapshot: snapshot)
+                } else {
+                    loadStatus
+                }
+            }
+            .inspectorColumnWidth(min: 300, ideal: 340, max: 420)
         }
         .alert(String(localized: "移動できません"), isPresented: moveErrorIsPresented) {
             Button(String(localized: "OK"), role: .cancel) {
@@ -171,16 +199,48 @@ struct TasksView: View {
         } message: {
             Text(moveError ?? "")
         }
-        .task {
-            guard !hasPerformedInitialMaterialization else { return }
-            alignInitialSelectionWithCurrentAppDay()
-            selectComposerDate(selectedDate)
+        .background {
+            if isVisible && startsDataSource {
+                MacTasksDataSource(dayRevision: calendarDayRevision) { result in
+                    switch result {
+                    case .success(let newData):
+                        if data == nil, isVisible, !newData.snapshot.activeTodos.isEmpty, onFirstRows() {
+                            rowRevealDeadline = ContinuousClock.now.advanced(by: .milliseconds(350))
+                        }
+                        data = newData
+                        loadFailed = false
+                    case .failure(let error):
+                        loadFailed = true
+                        PersistenceIssueCenter.shared.log(error, operation: .dataLoad)
+                    }
+                }
+            }
+        }
+        .onChange(of: isVisible) { _, visible in
+            if !visible {
+                startsDataSource = false
+                rowRevealDeadline = nil
+            }
+        }
+        .task(id: isVisible) {
+            guard isVisible else { return }
+            if !hasPerformedInitialMaterialization {
+                alignInitialSelectionWithCurrentAppDay()
+                selectComposerDate(selectedDate)
+            }
             await Task.yield()
+            guard !Task.isCancelled else { return }
+            startsDataSource = true
+        }
+        .task(id: isVisible && snapshot != nil) {
+            guard isVisible, snapshot != nil, !hasPerformedInitialMaterialization else { return }
+            await Task.yield()
+            guard !Task.isCancelled else { return }
             ensureRequiredTodosForVisibleDates(reconcilesDuplicates: true)
             hasPerformedInitialMaterialization = true
         }
-        .task(id: requiredTodoMaterializationID) {
-            guard hasPerformedInitialMaterialization else { return }
+        .task(id: isVisible ? requiredTodoMaterializationID : nil) {
+            guard isVisible, hasPerformedInitialMaterialization else { return }
             do {
                 try await Task.sleep(for: .milliseconds(180))
             } catch {
@@ -189,19 +249,38 @@ struct TasksView: View {
             guard !Task.isCancelled else { return }
             ensureRequiredTodosForVisibleDates(reconcilesDuplicates: false)
         }
+        .onChange(of: filterRevision) { _, _ in
+            taskFilter = initialFilter
+        }
         .onChange(of: calendarRange) { _, _ in
+            rowRevealDeadline = nil
             anchorDate = selectedDate
         }
         .onChange(of: selectedDate) { _, newDate in
+            rowRevealDeadline = nil
             selectComposerDate(newDate)
         }
+        .onChange(of: taskFilter) { _, _ in rowRevealDeadline = nil }
+        .onChange(of: isSearching) { _, _ in rowRevealDeadline = nil }
         .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) { _ in
-            calendarDayRevision += 1
+            if isVisible { calendarDayRevision += 1 }
         }
         .onTapGesture {
 #if os(macOS)
             MacOSFocusController.dismissCurrentEditor()
 #endif
+        }
+    }
+
+    @ViewBuilder
+    private var loadStatus: some View {
+        if loadFailed {
+            ContentUnavailableView(
+                String(localized: "データを読み込めませんでした。"),
+                systemImage: "exclamationmark.circle"
+            )
+        } else {
+            FeatureLoadingIndicator()
         }
     }
 
@@ -218,12 +297,18 @@ struct TasksView: View {
     }
 
     @ViewBuilder
-    private func tasksWorkspace(snapshot: TaskCalendarSnapshot) -> some View {
+    private func tasksWorkspace(snapshot: TaskCalendarSnapshot?) -> some View {
         GeometryReader { geometry in
             HStack(spacing: 0) {
-                boardContent(snapshot: snapshot)
-                    .productContentFade(on: calendarRange)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                Group {
+                    if let snapshot {
+                        boardContent(snapshot: snapshot)
+                            .productContentFade(on: calendarRange)
+                    } else {
+                        loadStatus
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                 Divider()
 
@@ -271,7 +356,7 @@ struct TasksView: View {
     }
 
     @ViewBuilder
-    private func taskPeriodPicker(snapshot: TaskCalendarSnapshot) -> some View {
+    private func taskPeriodPicker(snapshot: TaskCalendarSnapshot?) -> some View {
         switch calendarRange {
         case .oneDay:
             HistoryMiniCalendar(
@@ -317,6 +402,8 @@ struct TasksView: View {
                 filter: taskFilter,
                 searchQuery: taskSearchQuery,
                 columnWidth: 238,
+                revealsRows: revealsRows,
+                rowRevealDeadline: rowRevealDeadline,
                 onSelectDate: selectDate,
                 onToggle: toggleTodo,
                 onEdit: { editingTodo = $0 },
@@ -346,11 +433,21 @@ struct TasksView: View {
         let overdueTodos = visibleOverdueTodos(in: snapshot)
         let showsOverdueSection = calendar.isDateInToday(selectedDate) && !overdueTodos.isEmpty
 
+        let visibleRows = (showsOverdueSection ? overdueTodos : []) + selectedGroups.flatMap(\.todos)
+        let revealIndices = Dictionary(uniqueKeysWithValues: visibleRows.prefix(5).enumerated().map {
+            ($0.element.id, $0.offset)
+        })
+
         return List {
             if showsOverdueSection {
                 Section {
                     ForEach(overdueTodos) { todo in
                         draggableTodoRow(todo)
+                            .featureRowReveal(
+                                index: revealIndices[todo.id] ?? 5,
+                                enabled: revealsRows,
+                                eligibleUntil: rowRevealDeadline
+                            )
                     }
                 } header: {
                     TasksOverdueHeader(
@@ -371,6 +468,11 @@ struct TasksView: View {
                     Section {
                         ForEach(group.todos) { todo in
                             draggableTodoRow(todo)
+                                .featureRowReveal(
+                                    index: revealIndices[todo.id] ?? 5,
+                                    enabled: revealsRows,
+                                    eligibleUntil: rowRevealDeadline
+                                )
                         }
                         .onMove { source, destination in
                             moveTodos(
@@ -432,9 +534,9 @@ struct TasksView: View {
 
     private var backlogInspectorIsPresented: Binding<Bool> {
         Binding(
-            get: { backlogInspectorMode != nil },
+            get: { isVisible && backlogInspectorMode != nil },
             set: { isPresented in
-                if !isPresented {
+                if isVisible && !isPresented {
                     backlogInspectorMode = nil
                 }
             }
@@ -443,7 +545,7 @@ struct TasksView: View {
 
     private func backlogToolbarButton(
         _ title: String,
-        count: Int,
+        count: Int?,
         mode: MacTaskBacklogMode
     ) -> some View {
         Button {
@@ -451,17 +553,19 @@ struct TasksView: View {
         } label: {
             HStack(spacing: 6) {
                 Text(title)
-                Text("\(count)")
-                    .font(.caption2.monospacedDigit().weight(.semibold))
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.secondary.opacity(0.16), in: Capsule())
+                if let count {
+                    Text("\(count)")
+                        .font(.caption2.monospacedDigit().weight(.semibold))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.secondary.opacity(0.16), in: Capsule())
+                }
             }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .foregroundStyle(count == 0 ? .secondary : .primary)
-        .accessibilityLabel(String(localized: "項目 \(title)、件数 \(count)"))
+        .foregroundStyle((count ?? 0) == 0 ? .secondary : .primary)
+        .accessibilityLabel(count.map { String(localized: "項目 \(title)、件数 \($0)") } ?? title)
     }
 
     private func backlogInspectorTodos(in snapshot: TaskCalendarSnapshot) -> [Todo] {
@@ -1017,11 +1121,86 @@ enum QuickTodoDate: Hashable {
     }()
 }
 
+private struct MacComposerSuggestionSource: View {
+    @Query(sort: \Todo.updatedAt, order: .reverse) private var suggestions: [Todo]
+    @Binding var todos: [Todo]
+
+    var body: some View {
+        Color.clear
+            .onChange(of: suggestions.map(\.updatedAt), initial: true) { _, _ in
+                todos = suggestions
+            }
+    }
+}
+
+private struct MacTasksData {
+    let areas: [Area]
+    let todos: [Todo]
+    let projects: [Project]
+    let snapshot: TaskCalendarSnapshot
+}
+
+private struct MacTasksDataSource: View {
+    @Environment(\.calendar) private var calendar
+    @Environment(\.appDayBoundary) private var dayBoundary
+    @Query(sort: \Area.name) private var areas: [Area]
+    @Query(sort: \Todo.sortIndex) private var todos: [Todo]
+    @Query(sort: \Project.createdAt) private var projects: [Project]
+
+    let dayRevision: Int
+    let onUpdate: (Result<MacTasksData, Error>) -> Void
+
+    var body: some View {
+        let revision = Revision(
+            areas: areas.map { RecordVersion(id: $0.id, updatedAt: $0.updatedAt) },
+            todos: todos.map { RecordVersion(id: $0.id, updatedAt: $0.updatedAt) },
+            projects: projects.map { RecordVersion(id: $0.id, updatedAt: $0.updatedAt) },
+            calendar: calendar,
+            dayBoundary: dayBoundary,
+            dayRevision: dayRevision,
+            failed: loadError != nil
+        )
+
+        Color.clear
+            .onChange(of: revision, initial: true) { _, _ in
+                if let loadError {
+                    onUpdate(.failure(loadError))
+                    return
+                }
+                onUpdate(.success(MacTasksData(
+                    areas: areas,
+                    todos: todos,
+                    projects: projects,
+                    snapshot: TaskCalendarSnapshot(todos: todos, calendar: calendar, dayBoundary: dayBoundary)
+                )))
+            }
+    }
+
+    private var loadError: Error? {
+        _areas.fetchError ?? _todos.fetchError ?? _projects.fetchError
+    }
+
+    private struct RecordVersion: Equatable {
+        let id: UUID
+        let updatedAt: Date
+    }
+
+    private struct Revision: Equatable {
+        let areas: [RecordVersion]
+        let todos: [RecordVersion]
+        let projects: [RecordVersion]
+        let calendar: Calendar
+        let dayBoundary: AppDayBoundary
+        let dayRevision: Int
+        let failed: Bool
+    }
+}
+
 /// Compact, chip-based quick-add composer pinned to the bottom of Tasks.
 struct MessengerTodoComposer: View {
     @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.calendar) private var calendar
-    @Query(sort: \Todo.updatedAt, order: .reverse) private var suggestionTodos: [Todo]
+    @State private var focusedSuggestionTodos: [Todo] = []
 
     @Binding var title: String
     @Binding var selectedAreaID: UUID?
@@ -1036,6 +1215,8 @@ struct MessengerTodoComposer: View {
 
     let areas: [Area]
     let validationMessage: String?
+    var suggestionTodos: [Todo]?
+    var allowsSubmission = true
     var allowsDateSelection = true
     var showsOuterBackground = true
     var suggestionsBelow = false
@@ -1063,6 +1244,11 @@ struct MessengerTodoComposer: View {
 
     var body: some View {
         composerSurface
+        .background {
+            if suggestionTodos == nil && isFocused {
+                MacComposerSuggestionSource(todos: $focusedSuggestionTodos)
+            }
+        }
         .animation(.snappy(duration: 0.22), value: hasComposerContent)
         .animation(.snappy(duration: 0.18), value: activeAutocompleteSuggestions.map(\.id))
         .padding(.horizontal, showsOuterBackground ? 12 : 0)
@@ -1319,7 +1505,8 @@ struct MessengerTodoComposer: View {
     }
 
     private var canSubmit: Bool {
-        hasComposerContent || hasExplicitArea || hasExplicitPriority || hasExplicitDate
+        guard allowsSubmission else { return false }
+        return hasComposerContent || hasExplicitArea || hasExplicitPriority || hasExplicitDate
             || volume != .unspecified || !hashtags.isEmpty || selectedProject != nil || timeMinutes != nil
     }
 
@@ -1328,13 +1515,17 @@ struct MessengerTodoComposer: View {
         return parser.trailingAutocompleteToken(in: title)
     }
 
+    private var availableSuggestionTodos: [Todo] {
+        suggestionTodos?.sorted { $0.updatedAt > $1.updatedAt } ?? focusedSuggestionTodos
+    }
+
     private var activeAutocompleteSuggestions: [TaskComposerAutocompleteSuggestion] {
         guard isFocused else { return [] }
         if let autocompleteToken {
             return autocompleteSuggestionItems(for: autocompleteToken)
         }
         return TaskTitleSuggestionBuilder()
-            .suggestions(query: title, todos: suggestionTodos)
+            .suggestions(query: title, todos: availableSuggestionTodos)
             .map { suggestion in
                 TaskComposerAutocompleteSuggestion(
                     id: "title:\(suggestion.id)",
@@ -1442,7 +1633,7 @@ struct MessengerTodoComposer: View {
         let query = String(token.dropFirst())
         switch token.first {
         case "@": return areaAutocompleteSuggestions(query: query)
-        case "#": return TaskComposerSuggestionBuilder().tags(query: query, todos: suggestionTodos).map {
+        case "#": return TaskComposerSuggestionBuilder().tags(query: query, todos: availableSuggestionTodos).map {
             TaskComposerAutocompleteSuggestion(id: "tag:\($0)", icon: "number", title: $0, action: .token("#\($0)"))
         }
         case "!", "/", "[":
@@ -1458,7 +1649,7 @@ struct MessengerTodoComposer: View {
 
     private func areaAutocompleteSuggestions(query: String) -> [TaskComposerAutocompleteSuggestion] {
         let matches = TaskComposerSuggestionBuilder().areas(
-            query: query, areas: areas, todos: suggestionTodos
+            query: query, areas: areas, todos: availableSuggestionTodos
         )
         return matches.map { area in
             TaskComposerAutocompleteSuggestion(

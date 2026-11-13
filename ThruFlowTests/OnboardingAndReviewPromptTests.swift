@@ -27,7 +27,9 @@ struct OnboardingAndReviewPromptTests {
         let store = OnboardingStore(defaults: defaults, arguments: [])
         store.complete()
 
+        #expect(store.applicationDataResetRevision == 0)
         store.presentAfterApplicationDataReset()
+        #expect(store.applicationDataResetRevision == 1)
 
         #expect(store.isPresented)
         #expect(store.launchKind == .firstRun)

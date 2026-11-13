@@ -11,8 +11,6 @@ struct IOSStatisticsView: View {
     @Environment(\.locale) private var locale
     @Environment(\.modelContext) private var modelContext
 
-    @Query(sort: \Area.updatedAt, order: .reverse) private var areas: [Area]
-
     @Binding private var cache: StatisticsPresentationCache
     @Binding private var filter: StatisticsPeriodFilter
     let isVisible: Bool
@@ -30,6 +28,10 @@ struct IOSStatisticsView: View {
     @State private var persistenceRevision = 0
     @State private var failedRequest: IOSStatisticsPeriodRefreshID?
     @State private var reportReveal = 0
+    @State private var stagedReportRequest: IOSStatisticsPeriodRefreshID?
+    @State private var partialSummary: IOSStatisticsPartialSummary?
+    @State private var loadsAreas = false
+    @State private var areas: [Area] = []
     @State private var selectedContributionDay: IOSStatisticsContributionDay?
     @State private var isAnchorPickerPresented = false
     @State private var isCustomRangePresented = false
@@ -135,16 +137,27 @@ struct IOSStatisticsView: View {
     }
 
     var body: some View {
+        let request = refreshID
+        let report = currentSnapshot
+        let visibleReport = stagedReportRequest == request ? nil : report
+        let summary = report.map {
+            StatisticsPresentationSummary(summary: $0.summary, previousSummary: $0.previousSummary)
+        } ?? (partialSummary?.request == request ? partialSummary?.value : nil)
         ScrollViewReader { proxy in
-            statisticsContent
-                .task(id: currentSnapshot?.filter) {
+            statisticsContent(summary: summary, report: visibleReport, request: request)
+                .task(id: visibleReport?.filter) {
                     guard isVisible, ScreenshotMode.initialScreen() == .statisticsDots,
-                          currentSnapshot != nil, !didScrollToScreenshotDots else { return }
+                          visibleReport != nil, !didScrollToScreenshotDots else { return }
                     await Task.yield()
                     guard !Task.isCancelled else { return }
                     proxy.scrollTo("screenshot-statistics-dots", anchor: .top)
                     didScrollToScreenshotDots = true
                 }
+        }
+        .background {
+            if isVisible, loadsAreas {
+                IOSStatisticsAreaQuery { areas = $0 }
+            }
         }
         .background(Color.primary.opacity(0.025).ignoresSafeArea())
         .iosCenteredNavigationTitle(String(localized: "統計"))
@@ -184,13 +197,28 @@ struct IOSStatisticsView: View {
             }
             .presentationDetents([.height(260)])
         }
-        .task(id: refreshID) {
+        .task(id: request) {
             await refreshStatisticsWhileVisible()
+        }
+        .task(id: isVisible) {
+            guard isVisible else { return }
+            await Task.yield()
+            guard !Task.isCancelled else { return }
+            loadsAreas = true
+        }
+        .task(id: isVisible ? stagedReportRequest : nil) {
+            guard isVisible, stagedReportRequest == request else { return }
+            await Task.yield()
+            guard !Task.isCancelled else { return }
+            stagedReportRequest = nil
+            reportReveal &+= 1
         }
         .onChange(of: isVisible) { _, visible in
             if !visible {
                 searchDebounceDeadline = nil
                 failedRequest = nil
+                partialSummary = nil
+                stagedReportRequest = nil
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: ModelContext.didSave).receive(on: RunLoop.main)) { _ in
@@ -201,26 +229,32 @@ struct IOSStatisticsView: View {
         }
     }
 
-    private var statisticsContent: some View {
+    private func statisticsContent(
+        summary: StatisticsPresentationSummary?,
+        report: StatisticsPeriodSnapshot?,
+        request: IOSStatisticsPeriodRefreshID
+    ) -> some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 16) {
                 periodNavigationCard
 
-                LazyVStack(alignment: .leading, spacing: 16) {
-                    if let currentSnapshot {
-                        reportCards(currentSnapshot)
-                            .transition(reduceMotion ? .identity : .asymmetric(insertion: .opacity, removal: .identity))
-                    } else if failedRequest == refreshID {
-                        ContentUnavailableView(
-                            String(localized: "データを読み込めませんでした。"),
-                            systemImage: "exclamationmark.triangle"
-                        )
-                    } else {
-                        IOSStatisticsLoadingCards()
-                    }
+                if let summary {
+                    summaryCard(summary)
                 }
-                .animation(reduceMotion ? nil : .easeOut(duration: 0.14), value: reportReveal)
+                if let report {
+                    chartCards(report)
+                } else if failedRequest == request {
+                    ContentUnavailableView(
+                        String(localized: "データを読み込めませんでした。"),
+                        systemImage: "exclamationmark.triangle"
+                    )
+                    .frame(maxWidth: .infinity)
+                } else {
+                    FeatureLoadingIndicator()
+                        .frame(minHeight: summary == nil ? 210 : 120)
+                }
             }
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.14), value: reportReveal)
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
             .frame(maxWidth: 1_000)
@@ -228,13 +262,16 @@ struct IOSStatisticsView: View {
         }
     }
 
-    @ViewBuilder
-    private func reportCards(_ currentSnapshot: StatisticsPeriodSnapshot) -> some View {
+    private func summaryCard(_ value: StatisticsPresentationSummary) -> some View {
         IOSStatisticsSummaryCard(
             title: periodTitle,
-            summary: currentSnapshot.summary,
-            previousSummary: currentSnapshot.previousSummary
+            summary: value.summary,
+            previousSummary: value.previousSummary
         )
+    }
+
+    @ViewBuilder
+    private func chartCards(_ currentSnapshot: StatisticsPeriodSnapshot) -> some View {
         HabitCompletionCard(summary: currentSnapshot.habitCompletion)
         IOSStatisticsTrendCard(
             mode: $trendMode,
@@ -495,8 +532,6 @@ struct IOSStatisticsView: View {
         IOSStatisticsPeriodRefreshID(
             isVisible: isVisible,
             filter: filter,
-            areaCount: areas.count,
-            latestAreaUpdate: areas.map(\.updatedAt).max(),
             persistenceRevision: persistenceRevision,
             calendar: calendar,
             dayBoundaryHour: dayBoundary.hour
@@ -524,26 +559,41 @@ struct IOSStatisticsView: View {
         let requestedBoundary = dayBoundary
 
         do {
+            if currentSnapshot == nil {
+                await Task.yield()
+                guard !Task.isCancelled else { return }
+            }
             if let searchDebounceDeadline {
                 try await Task.sleep(until: searchDebounceDeadline, clock: .continuous)
             }
             guard !Task.isCancelled, request == refreshID else { return }
 
-            let projection = try await StatisticsProjectionActor.loadForPresentation(
+            let updates = StatisticsProjectionActor.presentationUpdates(
                 modelContainer: modelContext.container,
                 filter: requestedFilter,
                 calendar: requestedCalendar,
                 dayBoundary: requestedBoundary
             )
-            guard !Task.isCancelled, request == refreshID else { return }
-            if currentSnapshot == nil { reportReveal &+= 1 }
-            cache.store(projection, calendar: requestedCalendar, dayBoundary: requestedBoundary)
-            failedRequest = nil
+            for try await update in updates {
+                guard !Task.isCancelled, request == refreshID else { return }
+                switch update {
+                case .summary(let summary):
+                    if currentSnapshot == nil {
+                        partialSummary = IOSStatisticsPartialSummary(request: request, value: summary)
+                    }
+                case .report(let projection):
+                    if currentSnapshot == nil { stagedReportRequest = request }
+                    cache.store(projection, calendar: requestedCalendar, dayBoundary: requestedBoundary)
+                    partialSummary = nil
+                    failedRequest = nil
+                }
+            }
         } catch is CancellationError {
             return
         } catch {
             guard !Task.isCancelled, request == refreshID else { return }
             failedRequest = request
+            partialSummary = nil
             PersistenceIssueCenter.shared.log(error, operation: .dataLoad)
         }
     }
@@ -1422,29 +1472,28 @@ private struct IOSStatisticsCustomRangeSheet: View {
     }
 }
 
-private struct IOSStatisticsLoadingCards: View {
+private struct IOSStatisticsPartialSummary {
+    let request: IOSStatisticsPeriodRefreshID
+    let value: StatisticsPresentationSummary
+}
+
+private struct IOSStatisticsAreaQuery: View {
+    @Query(sort: \Area.updatedAt, order: .reverse) private var areas: [Area]
+    let onUpdate: ([Area]) -> Void
+
     var body: some View {
-        ForEach(0..<4, id: \.self) { index in
-            IOSStatisticsCard(
-                title: index == 0
-                    ? String(localized: "概要")
-                    : index == 1
-                        ? String(localized: "傾向")
-                        : index == 2
-                            ? String(localized: "集中時間の内訳")
-                            : String(localized: "Dots")
-            ) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(Color.secondary.opacity(0.075))
-                        .frame(height: index == 0 ? 210 : 230)
-                        .accessibilityHidden(true)
-                    if index == 0 {
-                        ProgressView()
-                    }
-                }
+        Color.clear
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+            .task(id: areas.map { Revision(id: $0.id, updatedAt: $0.updatedAt) }) {
+                guard !Task.isCancelled else { return }
+                onUpdate(areas)
             }
-        }
+    }
+
+    private struct Revision: Hashable {
+        let id: UUID
+        let updatedAt: Date
     }
 }
 
@@ -1608,8 +1657,6 @@ private struct IOSStatisticsCSVTemporaryFileWriter {
 private struct IOSStatisticsPeriodRefreshID: Hashable {
     let isVisible: Bool
     let filter: StatisticsPeriodFilter
-    let areaCount: Int
-    let latestAreaUpdate: Date?
     let persistenceRevision: Int
     let calendar: Calendar
     let dayBoundaryHour: Int

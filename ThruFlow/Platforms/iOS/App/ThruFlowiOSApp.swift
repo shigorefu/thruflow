@@ -75,6 +75,7 @@ struct ThruFlowiOSApp: App {
     var body: some Scene {
         WindowGroup {
             IOSRootView()
+                .id(onboarding.applicationDataResetRevision)
                 .defaultAppStorage(appDefaults)
                 .onboardingJourney(store: onboarding)
                 .persistenceIssuePresenter()

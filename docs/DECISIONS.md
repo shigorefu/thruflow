@@ -1335,3 +1335,16 @@ cases and an Area-only destination case. Unsigned macOS and iOS Release builds
 passed, including the embedded Watch app. Mac/Watch and iOS/iPadOS reviewers
 agreed on the shared contract and final source changes. Native interaction
 review was source-only; signed device behavior was not exercised.
+
+
+### 2026-11-13 — Stage destination data after navigation (1.4.2)
+
+Tasks, History, Areas and Statistics show their controls before loading
+uncached content on macOS and iOS. Tasks reveals up to five visible rows with
+a short stagger and leaves other rows to the scroll container. History
+browsing reads the visible range and calendar indicator dates, with global
+search still available. Statistics sends its overview before the complete
+report and displays an exact cached report immediately on return. The native
+navigation and editing state remain platform-owned. Reveal animations follow
+Reduce Motion, and existing Flow timer and connector operations keep their
+separate loading lifecycle.

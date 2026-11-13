@@ -131,11 +131,14 @@ Task and Habit editors use short transitions when optional fields appear or
 disappear. The Flow result form fades in on Mac and uses the system sheet on
 iPhone and iPad. The Flow primary button crossfades its symbol on state changes.
 The iPhone and iPad quick composer fades with a short vertical transition.
-Primary app destinations and the content in Tasks, History, Areas, and
-Statistics use short fades for discrete changes. Flow and Statistics show their
-controls immediately, reuse matching data on return, and show loading
-indicators where data is pending. New content fades in once when ready.
-These transitions follow Reduce Motion and do not animate timer ticks.
+The selected destination shows its controls while loading its content.
+Tasks uses a system loading indicator for the initial list and a short
+top-to-bottom reveal for up to five visible rows. History reveals the selected
+period's records inside its calendar. Areas reveals its groups with their
+Projects. Statistics can show its overview while the rest of the report is
+being prepared. Cached content appears immediately when it matches the current
+selection. Loading indicators remain local to the pending content. Reveal
+animations follow Reduce Motion and leave the controls interactive.
 In the compact Flow Statistics card, time-allocation bars share a right-hand
 zero edge and a scale based on today's total focused time.
 

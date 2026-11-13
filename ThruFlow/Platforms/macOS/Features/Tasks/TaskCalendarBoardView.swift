@@ -15,6 +15,8 @@ struct TaskMultiDayBoard: View {
     let filter: TaskCalendarFilter
     let searchQuery: DatabaseSearchQuery
     let columnWidth: CGFloat
+    var revealsRows = false
+    var rowRevealDeadline: ContinuousClock.Instant?
     let onSelectDate: (Date) -> Void
     let onToggle: (Todo) -> Void
     let onEdit: (Todo) -> Void
@@ -25,13 +27,15 @@ struct TaskMultiDayBoard: View {
     var body: some View {
         GeometryReader { proxy in
             ScrollView(.horizontal) {
-                HStack(alignment: .top, spacing: 12) {
+                LazyHStack(alignment: .top, spacing: 12) {
                     ForEach(dates, id: \.self) { date in
                         TaskDayColumn(
                             date: date,
                             isSelected: calendar.isDate(date, inSameDayAs: selectedDate),
                             todos: todosForDate(date),
                             width: columnWidth,
+                            revealsRows: revealsRows && date == dates.first,
+                            rowRevealDeadline: rowRevealDeadline,
                             onSelect: { onSelectDate(date) },
                             onToggle: onToggle,
                             onEdit: onEdit,
@@ -66,6 +70,8 @@ private struct TaskDayColumn: View {
     let isSelected: Bool
     let todos: [Todo]
     let width: CGFloat
+    let revealsRows: Bool
+    let rowRevealDeadline: ContinuousClock.Instant?
     let onSelect: () -> Void
     let onToggle: (Todo) -> Void
     let onEdit: (Todo) -> Void
@@ -74,6 +80,11 @@ private struct TaskDayColumn: View {
     let onMove: (UUID) -> Void
 
     var body: some View {
+        let groups = TaskBoardGroup.groups(for: todos)
+        let revealIndices = Dictionary(uniqueKeysWithValues: groups.lazy.flatMap(\.todos).prefix(5).enumerated().map {
+            ($0.element.id, $0.offset)
+        })
+
         VStack(spacing: 0) {
             Button(action: onSelect) {
                 HStack {
@@ -108,11 +119,16 @@ private struct TaskDayColumn: View {
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, minHeight: 100)
                     } else {
-                        ForEach(TaskBoardGroup.groups(for: todos)) { group in
+                        ForEach(groups) { group in
                             TaskBoardGroupHeader(group: group)
 
                             ForEach(group.todos) { todo in
                                 taskCard(todo)
+                                    .featureRowReveal(
+                                        index: revealIndices[todo.id] ?? 5,
+                                        enabled: revealsRows,
+                                        eligibleUntil: rowRevealDeadline
+                                    )
                             }
                         }
                     }

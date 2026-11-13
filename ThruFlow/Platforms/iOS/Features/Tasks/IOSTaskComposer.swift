@@ -6,12 +6,13 @@ struct IOSTaskComposer: View {
     @Environment(\.calendar) private var calendar
     @Environment(\.modelContext) private var modelContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    @Query(sort: \Todo.updatedAt, order: .reverse) private var suggestionTodos: [Todo]
 
     let areas: [Area]
+    let suppliedSuggestionTodos: [Todo]?
     let initialDraft: TodoDraft?
     let isPresented: Bool
     let autofocusOnAppear: Bool
+    let allowsSubmission: Bool
     let onClose: (() -> Void)?
     let onCreated: ((Todo) -> Void)?
 
@@ -38,6 +39,7 @@ struct IOSTaskComposer: View {
     @State private var inlineTokens: [IOSTaskComposerInlineToken] = []
     @State private var hashtags: [String] = []
     @State private var isApplyingParserResult = false
+    @State private var loadedSuggestionTodos: [Todo] = []
     @AppStorage("settings.showsTaskQuickInputLegend") private var showsQuickInputLegend = true
     @FocusState private var isFocused: Bool
 
@@ -45,16 +47,20 @@ struct IOSTaskComposer: View {
 
     init(
         areas: [Area],
+        suggestionTodos: [Todo]? = nil,
         initialDraft: TodoDraft? = nil,
         autofocusOnAppear: Bool = true,
         isPresented: Bool = true,
+        allowsSubmission: Bool = true,
         onClose: (() -> Void)? = nil,
         onCreated: ((Todo) -> Void)? = nil
     ) {
         self.areas = areas
+        suppliedSuggestionTodos = suggestionTodos
         self.initialDraft = initialDraft
         self.autofocusOnAppear = autofocusOnAppear
         self.isPresented = isPresented
+        self.allowsSubmission = allowsSubmission
         self.onClose = onClose
         self.onCreated = onCreated
 
@@ -180,6 +186,11 @@ struct IOSTaskComposer: View {
         .padding(.horizontal, 12)
         .padding(.top, 8)
         .padding(.bottom, 8)
+        .background {
+            if suppliedSuggestionTodos == nil, isPresented, isFocused {
+                IOSTaskComposerSuggestionQuery { loadedSuggestionTodos = $0 }
+            }
+        }
         .taskTimingDefaults(timeMinutes: $scheduledTimeMinutes, reminderEnabled: $reminderEnabled)
         .overlay(alignment: .top) {
             if horizontalSizeClass != .regular {
@@ -598,10 +609,12 @@ struct IOSTaskComposer: View {
     }
 
     private var canSubmit: Bool {
-        !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        allowsSubmission && (
+            !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             || hasExplicitMeasurement || hasExplicitArea || hasExplicitPriority || hasExplicitDate
             || !inlineTokens.isEmpty || !hashtags.isEmpty
             || project != nil || scheduledTimeMinutes != nil
+        )
     }
 
     private var measurementTitle: String {
@@ -642,6 +655,7 @@ struct IOSTaskComposer: View {
 
     private var autocompleteSuggestions: [IOSQuickInputSuggestion] {
         guard isFocused else { return [] }
+        let suggestionTodos = suppliedSuggestionTodos ?? loadedSuggestionTodos
         guard let token = parser.trailingAutocompleteToken(in: title) else {
             return TaskTitleSuggestionBuilder()
                 .suggestions(query: title, todos: suggestionTodos)
@@ -977,6 +991,26 @@ struct IOSTaskComposer: View {
             .replacingOccurrences(of: "@\(name)", with: "")
             .replacingOccurrences(of: "  ", with: " ")
             .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}
+
+private struct IOSTaskComposerSuggestionQuery: View {
+    @Query(sort: \Todo.updatedAt, order: .reverse) private var todos: [Todo]
+    let onUpdate: ([Todo]) -> Void
+
+    var body: some View {
+        Color.clear
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+            .task(id: todos.map { Revision(id: $0.id, updatedAt: $0.updatedAt) }) {
+                guard !Task.isCancelled else { return }
+                onUpdate(todos)
+            }
+    }
+
+    private struct Revision: Hashable {
+        let id: UUID
+        let updatedAt: Date
     }
 }
 

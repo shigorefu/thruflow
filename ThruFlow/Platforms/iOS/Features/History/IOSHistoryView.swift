@@ -3,14 +3,18 @@ import SwiftUI
 import UIKit
 
 struct IOSHistoryView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.calendar) private var calendar
 
-    @Query(sort: \FlowSession.startedAt) private var sessions: [FlowSession]
-    @Query(sort: \FlowBreak.startedAt) private var flowBreaks: [FlowBreak]
-    @Query(sort: \Todo.updatedAt, order: .reverse) private var todos: [Todo]
-
+    private let isVisible: Bool
     @Binding private var selectedDate: Date
+    @State private var observesRecords = false
+    @State private var recordsCache: [IOSHistoryRecords] = []
+    @State private var failedRequest: IOSHistoryRequest?
+    @State private var indicatorWindow: IOSHistoryIndicatorWindow?
+    @State private var indicators: IOSHistoryIndicators?
+    @State private var revealRevision = 0
     @State private var range = HistoryCalendarRange.day
     @State private var selectedMode = DayHistoryMode.calendar
     @State private var visibleKinds = Set(HistoryCalendarItemKind.allCases)
@@ -23,7 +27,8 @@ struct IOSHistoryView: View {
     @State private var searchText = ""
     @State private var isSearchPresented = false
 
-    init(selectedDate: Binding<Date>) {
+    init(isVisible: Bool = true, selectedDate: Binding<Date>) {
+        self.isVisible = isVisible
         _selectedDate = selectedDate
     }
 
@@ -35,38 +40,78 @@ struct IOSHistoryView: View {
         DatabaseSearchQuery(text: searchText).isActive
     }
 
-    private var globalCalendarSearchItems: [HistoryCalendarItem] {
-        searchBuilder.historyCalendarItems(
-            query: searchText,
-            sessions: sessions,
-            breaks: flowBreaks
-        )
-        .filter { visibleKinds.contains($0.kind) }
+    private var selectedInterval: DateInterval {
+        range.interval(containing: selectedDate, calendar: calendar, dayBoundary: dayBoundary)
     }
 
-    private var globalHistorySnapshot: DayHistorySnapshot {
-        searchBuilder.historySnapshot(
-            query: searchText,
-            sessions: sessions,
-            todos: todos
-        )
+    private var request: IOSHistoryRequest {
+        IOSHistoryRequest(interval: isSearching ? nil : selectedInterval, calendar: calendar)
     }
 
     var body: some View {
+        let records = recordsCache.first { $0.request == request }
+        let calendarItems = records.flatMap { records in
+            !isSearching && (selectedMode == .calendar || range == .month)
+                ? visibleCalendarItems(in: records)
+                : nil
+        }
         VStack(spacing: 0) {
-            if isSearching {
-                globalSearchContent
-            } else {
-                calendarToolbar
+            if !isSearching {
+                calendarToolbar(items: calendarItems ?? [])
                 Divider()
-                historyContent
-                    .productContentFade(on: selectedMode.rawValue + ":" + range.rawValue)
-                    .iosPeriodSwipeNavigation(
-                        pageID: selectedPeriodPageID,
-                        isEnabled: allowsContentPeriodSwipe
-                    ) { offset in
-                        navigatePeriod(by: offset)
+            }
+            if let records {
+                Group {
+                    if isSearching {
+                        globalSearchContent(records: records)
+                    } else {
+                        historyContent(records: records, items: calendarItems ?? [])
+                            .productContentFade(on: selectedMode.rawValue + ":" + range.rawValue)
+                            .iosPeriodSwipeNavigation(
+                                pageID: selectedInterval.start,
+                                isEnabled: allowsContentPeriodSwipe
+                            ) { offset in
+                                navigatePeriod(by: offset)
+                            }
                     }
+                }
+                .transition(reduceMotion ? .identity : .asymmetric(insertion: .opacity, removal: .identity))
+            } else if failedRequest == request {
+                ContentUnavailableView(
+                    String(localized: "データを読み込めませんでした。"),
+                    systemImage: "exclamationmark.triangle"
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                FeatureLoadingIndicator()
+                    .transition(.identity)
+            }
+        }
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.16), value: revealRevision)
+        .background {
+            if isVisible, observesRecords {
+                IOSHistoryRecordsQuery(request: request) { result in
+                    switch result {
+                    case .success(let records):
+                        if !recordsCache.contains(where: { $0.request == records.request }) {
+                            revealRevision &+= 1
+                        }
+                        recordsCache.removeAll { $0.request == records.request }
+                        recordsCache.insert(records, at: 0)
+                        if recordsCache.count > 3 { recordsCache.removeLast() }
+                        failedRequest = nil
+                    case .failure(let error):
+                        failedRequest = request
+                        PersistenceIssueCenter.shared.log(error, operation: .dataLoad)
+                    }
+                }
+                .id(request)
+                if !isSearching, let indicatorRequest {
+                    IOSHistoryIndicatorQuery(request: indicatorRequest) { result in
+                        indicators = IOSHistoryIndicators(request: indicatorRequest, sessions: result)
+                    }
+                    .id(indicatorRequest)
+                }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -110,59 +155,50 @@ struct IOSHistoryView: View {
             )
             .id("\(historyRecordStart.timeIntervalSinceReferenceDate)-\(selectedMode.rawValue)")
         }
+        .task(id: isVisible) {
+            guard isVisible else { return }
+            await Task.yield()
+            guard !Task.isCancelled else { return }
+            observesRecords = true
+        }
+        .onChange(of: isSearching) { _, searching in
+            if !searching { recordsCache.removeAll { $0.request.interval == nil } }
+        }
     }
 
-    private var calendarSnapshot: HistoryCalendarSnapshot {
-        calendarSnapshot(for: selectedDate)
-    }
-
-    private func calendarSnapshot(for date: Date) -> HistoryCalendarSnapshot {
-        let interval = range.interval(
-            containing: date,
-            calendar: calendar,
-            dayBoundary: dayBoundary
-        )
-        return HistoryCalendarBuilder(calendar: calendar).build(
-            interval: interval,
-            sessions: sessions,
-            breaks: flowBreaks
-        )
-    }
-
-    private var historySnapshot: DayHistorySnapshot {
-        historySnapshot(for: selectedDate)
-    }
-
-    private func historySnapshot(for date: Date) -> DayHistorySnapshot {
+    private func historySnapshot(in records: IOSHistoryRecords) -> DayHistorySnapshot {
         DayHistoryBuilder(calendar: calendar, dayBoundary: dayBoundary).build(
-            interval: range.interval(
-                containing: date,
-                calendar: calendar,
-                dayBoundary: dayBoundary
-            ),
-            sessions: sessions,
-            todos: todos
+            interval: selectedInterval,
+            sessions: records.sessions,
+            todos: records.todos
         )
     }
 
-    private var visibleCalendarItems: [HistoryCalendarItem] {
-        visibleCalendarItems(for: selectedDate)
+    private var indicatorRequest: IOSHistoryRequest? {
+        guard let indicatorWindow, indicatorWindow.range == range,
+              indicatorWindow.calendar == calendar,
+              indicatorWindow.interval.start <= calendar.startOfDay(for: selectedDate),
+              indicatorWindow.interval.end > calendar.startOfDay(for: selectedDate) else { return nil }
+        return IOSHistoryRequest(interval: indicatorWindow.interval, calendar: calendar)
+    }
+
+    private var indicatorSessions: [FlowSession] {
+        indicators?.request == indicatorRequest ? indicators?.sessions ?? [] : []
+    }
+
+    private func updateIndicatorWindow(_ interval: DateInterval) {
+        indicatorWindow = IOSHistoryIndicatorWindow(interval: interval, range: range, calendar: calendar)
     }
 
     @ViewBuilder
-    private var historyContent: some View {
-        historyPageContent(for: selectedDate)
-    }
-
-    @ViewBuilder
-    private func historyPageContent(for date: Date) -> some View {
+    private func historyContent(records: IOSHistoryRecords, items: [HistoryCalendarItem]) -> some View {
+        let date = selectedDate
         switch selectedMode {
         case .calendar:
-            let snapshot = calendarSnapshot(for: date)
             switch range {
             case .day:
                 IOSHistoryChronologicalTimeline(
-                    items: visibleCalendarItems(for: date),
+                    items: items,
                     gapInterval: HistoryCalendarRange.day.interval(
                         containing: date,
                         calendar: calendar,
@@ -172,21 +208,18 @@ struct IOSHistoryView: View {
                 )
             case .week:
                 IOSHistorySeriesWeekTimeline(
-                    interval: snapshot.interval,
-                    items: visibleCalendarItems(for: date),
+                    interval: selectedInterval,
+                    items: items,
                     onSelectSeries: { selectedSeries = $0 },
                     onAddRecord: presentHistoryRecord
                 )
             case .month:
-                let dayItems = calendarItems(
-                    on: date,
-                    from: visibleCalendarItems(for: date)
-                )
+                let dayItems = calendarItems(on: date, from: items)
                 ScrollView {
                     LazyVStack(spacing: 0) {
                         IOSHistoryMonthGrid(
-                            interval: snapshot.interval,
-                            items: visibleCalendarItems(for: date),
+                            interval: selectedInterval,
+                            items: items,
                             selectedDate: $selectedDate
                         )
                         .padding(.horizontal, 12)
@@ -223,21 +256,25 @@ struct IOSHistoryView: View {
             }
         case .tasks:
             IOSHistoryTaskSummaryList(
-                snapshot: historySnapshot(for: date),
+                snapshot: historySnapshot(in: records),
                 searchText: searchText,
                 visibleTypes: visibleTaskTypes
             )
         case .areas:
             IOSHistoryAreaSummaryList(
-                snapshot: historySnapshot(for: date),
+                snapshot: historySnapshot(in: records),
                 searchText: searchText,
                 visibleTypes: visibleAreaTypes
             )
         }
     }
 
-    private func visibleCalendarItems(for date: Date) -> [HistoryCalendarItem] {
-        calendarSnapshot(for: date).items
+    private func visibleCalendarItems(in records: IOSHistoryRecords) -> [HistoryCalendarItem] {
+        HistoryCalendarBuilder(calendar: calendar).build(
+            interval: selectedInterval,
+            sessions: records.sessions,
+            breaks: records.breaks
+        ).items
             .filter { visibleKinds.contains($0.kind) }
             .filter(matchesSelectedType)
             .filter(matchesSearch)
@@ -258,23 +295,24 @@ struct IOSHistoryView: View {
     }
 
     @ViewBuilder
-    private var globalSearchContent: some View {
+    private func globalSearchContent(records: IOSHistoryRecords) -> some View {
         switch selectedMode {
         case .calendar:
             IOSHistoryGlobalSearchList(
-                items: globalCalendarSearchItems,
+                items: searchBuilder.historyCalendarItems(query: searchText, sessions: records.sessions, breaks: records.breaks)
+                    .filter { visibleKinds.contains($0.kind) },
                 searchText: searchText,
                 selection: $selectedItem
             )
         case .tasks:
             IOSHistoryTaskSummaryList(
-                snapshot: globalHistorySnapshot,
+                snapshot: searchBuilder.historySnapshot(query: searchText, sessions: records.sessions, todos: records.todos),
                 searchText: "",
                 visibleTypes: visibleTaskTypes
             )
         case .areas:
             IOSHistoryAreaSummaryList(
-                snapshot: globalHistorySnapshot,
+                snapshot: searchBuilder.historySnapshot(query: searchText, sessions: records.sessions, todos: records.todos),
                 searchText: "",
                 visibleTypes: visibleAreaTypes
             )
@@ -320,7 +358,7 @@ struct IOSHistoryView: View {
         .accessibilityLabel(String(localized: "履歴表示"))
     }
 
-    private var calendarToolbar: some View {
+    private func calendarToolbar(items: [HistoryCalendarItem]) -> some View {
         VStack(spacing: 10) {
             HStack(spacing: 10) {
                 contextualFilterMenu
@@ -347,20 +385,22 @@ struct IOSHistoryView: View {
             case .day:
                 IOSHistoryDayStrip(
                     selectedDate: $selectedDate,
-                    sessions: sessions,
-                    visibleAreaTypes: selectedIndicatorTypes
+                    sessions: indicatorSessions,
+                    visibleAreaTypes: selectedIndicatorTypes,
+                    onWindowChange: updateIndicatorWindow
                 )
             case .week:
                 IOSHistoryWeekStrip(
                     selectedDate: $selectedDate,
-                    sessions: sessions,
-                    visibleAreaTypes: selectedIndicatorTypes
+                    sessions: indicatorSessions,
+                    visibleAreaTypes: selectedIndicatorTypes,
+                    onWindowChange: updateIndicatorWindow
                 )
             case .month:
                 if selectedMode != .calendar {
                     IOSHistoryMonthGrid(
-                        interval: calendarSnapshot.interval,
-                        items: visibleCalendarItems,
+                        interval: selectedInterval,
+                        items: items,
                         selectedDate: $selectedDate
                     )
                     .iosHorizontalPeriodSwipe { offset in
@@ -481,13 +521,109 @@ struct IOSHistoryView: View {
         selectedDate = calendar.startOfDay(for: date)
     }
 
-    private var selectedPeriodPageID: Date {
-        range.interval(
-            containing: selectedDate,
-            calendar: calendar,
-            dayBoundary: dayBoundary
-        ).start
+}
+
+private struct IOSHistoryRequest: Hashable {
+    let interval: DateInterval?
+    let calendar: Calendar
+}
+
+private struct IOSHistoryRecords {
+    let request: IOSHistoryRequest
+    let sessions: [FlowSession]
+    let breaks: [FlowBreak]
+    let todos: [Todo]
+}
+
+private struct IOSHistoryIndicatorWindow {
+    let interval: DateInterval
+    let range: HistoryCalendarRange
+    let calendar: Calendar
+}
+
+private struct IOSHistoryIndicators {
+    let request: IOSHistoryRequest
+    let sessions: [FlowSession]
+}
+
+private struct IOSHistoryRecordsQuery: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query private var sessions: [FlowSession]
+    @Query private var breaks: [FlowBreak]
+    @Query private var todos: [Todo]
+
+    let request: IOSHistoryRequest
+    let onUpdate: (Result<IOSHistoryRecords, Error>) -> Void
+
+    init(request: IOSHistoryRequest, onUpdate: @escaping (Result<IOSHistoryRecords, Error>) -> Void) {
+        self.request = request
+        self.onUpdate = onUpdate
+        let queries = HistoryPresentationQueries(interval: request.interval, calendar: request.calendar)
+        _sessions = Query(queries.sessions)
+        _breaks = Query(queries.breaks)
+        _todos = Query(queries.todos)
     }
+
+    var body: some View {
+        let revisions = [
+            sessions.map { IOSHistoryRecordRevision(id: $0.id, updatedAt: $0.updatedAt) },
+            breaks.map { IOSHistoryRecordRevision(id: $0.id, updatedAt: $0.updatedAt) },
+            todos.map { IOSHistoryRecordRevision(id: $0.id, updatedAt: $0.updatedAt) }
+        ]
+        let error = _sessions.fetchError ?? _breaks.fetchError ?? _todos.fetchError
+        Color.clear
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+            .task(id: Revision(records: revisions, failed: error != nil)) {
+                guard !Task.isCancelled else { return }
+                do {
+                    if let error { throw error }
+                    let sessionIDs = Set(sessions.map(\.id))
+                    let relatedIDs = Set(breaks.map(\.previousSessionID)).subtracting(sessionIDs)
+                    let relatedSessions = relatedIDs.isEmpty ? [] : try modelContext.fetch(
+                        HistoryPresentationQueries.relatedSessions(for: Array(relatedIDs))
+                    )
+                    onUpdate(.success(IOSHistoryRecords(
+                        request: request,
+                        sessions: sessions + relatedSessions,
+                        breaks: breaks,
+                        todos: HistoryPresentationQueries.includingLinkedTodos(todos, from: sessions, interval: request.interval)
+                    )))
+                } catch {
+                    onUpdate(.failure(error))
+                }
+            }
+    }
+
+    private struct Revision: Hashable {
+        let records: [[IOSHistoryRecordRevision]]
+        let failed: Bool
+    }
+}
+
+private struct IOSHistoryIndicatorQuery: View {
+    @Query private var sessions: [FlowSession]
+    let onUpdate: ([FlowSession]) -> Void
+
+    init(request: IOSHistoryRequest, onUpdate: @escaping ([FlowSession]) -> Void) {
+        _sessions = Query(HistoryPresentationQueries(interval: request.interval, calendar: request.calendar).sessions)
+        self.onUpdate = onUpdate
+    }
+
+    var body: some View {
+        Color.clear
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+            .task(id: sessions.map { IOSHistoryRecordRevision(id: $0.id, updatedAt: $0.updatedAt) }) {
+                guard !Task.isCancelled else { return }
+                onUpdate(sessions)
+            }
+    }
+}
+
+private struct IOSHistoryRecordRevision: Hashable {
+    let id: UUID
+    let updatedAt: Date
 }
 
 private struct IOSHistoryDayStrip: View {
@@ -497,6 +633,7 @@ private struct IOSHistoryDayStrip: View {
     @Binding var selectedDate: Date
     let sessions: [FlowSession]
     let visibleAreaTypes: Set<AreaType>?
+    let onWindowChange: (DateInterval) -> Void
 
     var body: some View {
         let activityIndex = IOSHistoryActivityColorIndex(
@@ -510,7 +647,8 @@ private struct IOSHistoryDayStrip: View {
             unit: .day,
             visibleItemCount: 7,
             spacing: 5,
-            height: 55
+            height: 55,
+            onWindowChange: onWindowChange
         ) { date, isSelected in
             Button {
                 selectedDate = calendar.startOfDay(for: date)
@@ -547,6 +685,7 @@ private struct IOSHistoryWeekStrip: View {
     @Binding var selectedDate: Date
     let sessions: [FlowSession]
     let visibleAreaTypes: Set<AreaType>?
+    let onWindowChange: (DateInterval) -> Void
 
     var body: some View {
         let activityIndex = IOSHistoryActivityColorIndex(
@@ -560,7 +699,8 @@ private struct IOSHistoryWeekStrip: View {
             unit: .week,
             visibleItemCount: 3,
             spacing: 6,
-            height: 58
+            height: 58,
+            onWindowChange: onWindowChange
         ) { anchor, isSelected in
             let interval = HistoryCalendarRange.week.interval(
                 containing: anchor,

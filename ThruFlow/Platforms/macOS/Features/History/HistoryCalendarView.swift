@@ -8,6 +8,7 @@ import SwiftData
 import SwiftUI
 
 struct HistoryCalendarView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.calendar) private var calendar
     @Environment(\.modelContext) private var modelContext
@@ -18,6 +19,9 @@ struct HistoryCalendarView: View {
 
     let sessions: [FlowSession]
     let breaks: [FlowBreak]
+    let hasLoaded: Bool
+    let loadFailed: Bool
+    let reportReveal: Int
     @Binding var visibleKinds: Set<HistoryCalendarItemKind>
     let sidebarTitle: String
     let sidebarHeader: AnyView
@@ -55,11 +59,17 @@ struct HistoryCalendarView: View {
         GeometryReader { geometry in
             if geometry.size.width >= 900 {
                 HStack(spacing: 0) {
-                    widePrimaryContent
-                        .id(range)
-                        .transition(.opacity.combined(with: .scale(scale: 0.995)))
-                        .animation(.easeInOut(duration: 0.22), value: range)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    Group {
+                        if hasLoaded {
+                            widePrimaryContent
+                                .id(range)
+                                .transition(reduceMotion ? .identity : .opacity)
+                        } else {
+                            loadStatus
+                        }
+                    }
+                    .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: reportReveal)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                     Divider()
 
@@ -73,8 +83,16 @@ struct HistoryCalendarView: View {
                         )
                 }
             } else {
-                compactContent
+                if hasLoaded {
+                    compactContent
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    VStack(spacing: 0) {
+                        sidebarHeader
+                        loadStatus
+                    }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
             }
         }
         .sheet(item: $inspectedItem) { item in
@@ -119,6 +137,18 @@ struct HistoryCalendarView: View {
     }
 
     @ViewBuilder
+    private var loadStatus: some View {
+        if loadFailed {
+            ContentUnavailableView(
+                String(localized: "データを読み込めませんでした。"),
+                systemImage: "exclamationmark.circle"
+            )
+        } else {
+            FeatureLoadingIndicator()
+        }
+    }
+
+    @ViewBuilder
     private var widePrimaryContent: some View {
         switch range {
         case .day:
@@ -129,6 +159,7 @@ struct HistoryCalendarView: View {
                 manualFlowDraft: $manualFlowDraft,
                 visibleKinds: $visibleKinds,
                 sidebarHeader: sidebarHeader,
+                historySessions: sessions,
                 showsInspector: false,
                 onEdit: openEditor,
                 onMove: moveHistoryItem,
@@ -166,6 +197,7 @@ struct HistoryCalendarView: View {
             historyPeriodSidebar(summary: sidebarSummary) {
                 HistoryMiniCalendar(
                     selectedDate: $selectedDate,
+                    historySessions: sessions,
                     onDropPayload: moveHistoryPayload
                 )
             }
@@ -174,6 +206,7 @@ struct HistoryCalendarView: View {
                 HistoryMiniCalendar(
                     selectedDate: $selectedDate,
                     selectionMode: .week,
+                    historySessions: sessions,
                     onDropPayload: moveHistoryPayload
                 )
             }
@@ -195,6 +228,7 @@ struct HistoryCalendarView: View {
                 manualFlowDraft: $manualFlowDraft,
                 visibleKinds: $visibleKinds,
                 sidebarHeader: sidebarHeader,
+                historySessions: sessions,
                 onEdit: openEditor,
                 onMove: moveHistoryItem,
                 onDropOnDay: moveHistoryPayload
@@ -218,6 +252,7 @@ struct HistoryCalendarView: View {
                 HistoryMiniCalendar(
                     selectedDate: $selectedDate,
                     selectionMode: .week,
+                    historySessions: sessions,
                     onDropPayload: moveHistoryPayload
                 )
             }

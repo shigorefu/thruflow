@@ -9,7 +9,6 @@ import SwiftUI
 import SwiftData
 
 struct MacOSRootView: View {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.calendar) private var calendar
     @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.modelContext) private var modelContext
@@ -21,9 +20,13 @@ struct MacOSRootView: View {
     @Query private var onboardingFlowSessions: [FlowSession]
     @Query private var onboardingFlowBreaks: [FlowBreak]
     @State private var selection: AppSection?
+    @State private var visitedSections: Set<AppSection> = []
     @State private var showsConnectors = false
     @State private var tasksInitialFilter: TaskCalendarFilter = .all
-    @State private var historyDate = Calendar.current.startOfDay(for: .now)
+    @State private var tasksFilterRevision = 0
+    @State private var hasPresentedTaskRows = false
+    @State private var historyNavigationRevision = 0
+    @State private var historyDate: Date?
     @State private var didReconcileFlowProgress = false
     @State private var flowSnapshotCache: FlowDashboardSnapshot?
     @State private var flowTodoGroupsCache: FlowDashboardTodoGroups?
@@ -114,13 +117,21 @@ struct MacOSRootView: View {
             .navigationTitle(String(localized: "スルフロ"))
             .navigationSplitViewColumnWidth(min: 175, ideal: 190, max: 240)
         } detail: {
-            ZStack {
-                detailContent
+            GeometryReader { viewport in
+                ZStack {
+                    detailContent
+                }
+                .frame(width: viewport.size.width, height: viewport.size.height)
             }
-            .animation(animateDetailChange ? .smooth(duration: 0.20) : nil, value: selection ?? .flow)
+            .navigationTitle(currentSection.title)
+        }
+        .onChange(of: currentSection, initial: true) { oldSection, section in
+            if oldSection != section {
+                MacOSFocusController.dismissCurrentTextEditor()
+            }
+            visitedSections.insert(section)
         }
         .task {
-            historyDate = dayBoundary.day(containing: .now, calendar: calendar)
             guard !didReconcileFlowProgress else { return }
             didReconcileFlowProgress = true
             let modelContainer = modelContext.container
@@ -158,14 +169,15 @@ struct MacOSRootView: View {
         }
     }
 
-    private var animateDetailChange: Bool {
-        !reduceMotion && selection != nil && selection != .flow && selection != .statistics
+    private var currentSection: AppSection { selection ?? .flow }
+
+    private func hasVisited(_ section: AppSection) -> Bool {
+        currentSection == section || visitedSections.contains(section)
     }
 
     @ViewBuilder
     private var detailContent: some View {
-        switch selection ?? .flow {
-        case .flow:
+        if currentSection == .flow {
             FlowDashboardView(
                 isVisible: !onboarding.isPresented,
                 areas: areas,
@@ -173,31 +185,51 @@ struct MacOSRootView: View {
                 cachedTodoGroups: $flowTodoGroupsCache,
                 onOpenTasks: { filter in
                     tasksInitialFilter = filter
+                    tasksFilterRevision &+= 1
                     selection = .tasks
                 }
             )
-            .transition(.identity)
-        case .tasks:
-            TasksView(initialFilter: tasksInitialFilter)
-                .transition(reduceMotion ? .identity : .opacity)
-        case .history:
-            DayHistoryView(initialDate: historyDate)
-                .id(historyDate)
-                .transition(reduceMotion ? .identity : .opacity)
-        case .areas:
-            AreaListView()
-                .transition(reduceMotion ? .identity : .opacity)
-        case .statistics:
+        }
+        if hasVisited(.tasks) {
+            TasksView(
+                initialFilter: tasksInitialFilter,
+                filterRevision: tasksFilterRevision,
+                isVisible: currentSection == .tasks,
+                onFirstRows: beginTaskRowReveal
+            )
+            .macSectionVisibility(currentSection == .tasks)
+        }
+        if hasVisited(.history) {
+            DayHistoryView(
+                initialDate: historyDate ?? dayBoundary.day(containing: .now, calendar: calendar),
+                navigationRevision: historyNavigationRevision,
+                isVisible: currentSection == .history
+            )
+            .macSectionVisibility(currentSection == .history)
+        }
+        if hasVisited(.areas) {
+            AreaListView(isVisible: currentSection == .areas)
+                .macSectionVisibility(currentSection == .areas)
+        }
+        if hasVisited(.statistics) {
             StatisticsView(
                 areas: areas,
                 cache: $statisticsCache,
-                selection: $statisticsSelection
+                selection: $statisticsSelection,
+                isVisible: currentSection == .statistics
             ) { date in
                 historyDate = calendar.startOfDay(for: date)
+                historyNavigationRevision &+= 1
                 selection = .history
             }
-            .transition(.identity)
+            .macSectionVisibility(currentSection == .statistics)
         }
+    }
+
+    private func beginTaskRowReveal() -> Bool {
+        guard currentSection == .tasks, !hasPresentedTaskRows else { return false }
+        hasPresentedTaskRows = true
+        return true
     }
 
     private func showOnboardingScreenIfNeeded() {
@@ -378,6 +410,25 @@ private enum AppSection: Hashable {
     case history
     case areas
     case statistics
+
+    var title: String {
+        switch self {
+        case .flow: String(localized: "Flow")
+        case .tasks: String(localized: "タスク")
+        case .history: String(localized: "履歴")
+        case .areas: String(localized: "方向")
+        case .statistics: String(localized: "統計")
+        }
+    }
+}
+
+private extension View {
+    func macSectionVisibility(_ isVisible: Bool) -> some View {
+        opacity(isVisible ? 1 : 0)
+            .disabled(!isVisible)
+            .allowsHitTesting(isVisible)
+            .accessibilityHidden(!isVisible)
+    }
 }
 
 #Preview {

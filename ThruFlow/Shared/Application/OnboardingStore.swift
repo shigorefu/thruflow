@@ -12,6 +12,7 @@ final class OnboardingStore: ObservableObject {
     @Published private(set) var createdTaskID: UUID?
     @Published private(set) var createdTaskPresentation: OnboardingTaskPresentation?
     @Published private(set) var demoState: OnboardingDemoState = .idle
+    @Published private(set) var applicationDataResetRevision = 0
 
     let isPreviewMode: Bool
 
@@ -123,6 +124,7 @@ final class OnboardingStore: ObservableObject {
         hasPendingExistingWorkspace = false
         demoState = .idle
         isPresented = true
+        applicationDataResetRevision &+= 1
     }
 
     @discardableResult

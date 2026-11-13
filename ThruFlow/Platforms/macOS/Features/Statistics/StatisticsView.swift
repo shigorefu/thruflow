@@ -21,6 +21,7 @@ struct StatisticsView: View {
     @Binding private var cache: StatisticsPresentationCache
     @Binding private var filter: StatisticsPeriodFilter
     let onSelectHistoryDate: (Date) -> Void
+    private let isVisible: Bool
 
     @State private var didScrollToScreenshotDots = false
     @State private var customStartDraft = Date.now
@@ -33,6 +34,10 @@ struct StatisticsView: View {
     @State private var searchDeadline: ContinuousClock.Instant?
     @State private var failedRequest: StatisticsPeriodRefreshID?
     @State private var reportReveal = 0
+    @State private var pendingSummary: StatisticsPresentationSummary?
+    @State private var pendingSummaryRequest: StatisticsPeriodRefreshID?
+    @State private var stagedReportRequest: StatisticsPeriodRefreshID?
+    @State private var revealedReportRequest: StatisticsPeriodRefreshID?
     @State private var persistenceRevision = 0
     @State private var isExportPresented = false
     @State private var exportContent: StatisticsCSVContent = .all
@@ -48,9 +53,11 @@ struct StatisticsView: View {
         areas: [Area],
         cache: Binding<StatisticsPresentationCache>,
         selection: Binding<StatisticsPeriodFilter>,
+        isVisible: Bool = true,
         onSelectHistoryDate: @escaping (Date) -> Void = { _ in }
     ) {
         self.areas = areas
+        self.isVisible = isVisible
         _cache = cache
         _filter = selection
         self.onSelectHistoryDate = onSelectHistoryDate
@@ -116,49 +123,78 @@ struct StatisticsView: View {
 
     var body: some View {
         let request = refreshID
-        return workspace(failedToLoad: failedRequest == request)
-            .navigationTitle(String(localized: "統計"))
-            .toolbar { statisticsToolbar }
+        return workspace(request: request)
+            .toolbar {
+                if isVisible {
+                    statisticsToolbar
+                }
+            }
             .onReceive(NotificationCenter.default.publisher(for: ModelContext.didSave).receive(on: RunLoop.main)) { _ in
+                guard isVisible else { return }
                 persistenceRevision &+= 1
             }
             .onReceive(NotificationCenter.default.publisher(for: .NSPersistentStoreRemoteChange).receive(on: RunLoop.main)) { _ in
+                guard isVisible else { return }
                 persistenceRevision &+= 1
             }
-            .task(id: request) {
+            .task(id: isVisible ? request : nil) {
+                guard isVisible else {
+                    stagedReportRequest = nil
+                    pendingSummaryRequest = nil
+                    pendingSummary = nil
+                    return
+                }
                 await refreshStatisticsWhileVisible(request)
             }
     }
 
-    private func workspace(failedToLoad: Bool) -> some View {
-        GeometryReader { geometry in
+    private func workspace(request: StatisticsPeriodRefreshID) -> some View {
+        let snapshot = currentSnapshot
+        let summary = snapshot.map {
+            StatisticsPresentationSummary(summary: $0.summary, previousSummary: $0.previousSummary)
+        } ?? (pendingSummaryRequest == request ? pendingSummary : nil)
+        let reportIsReady = snapshot != nil && (
+            stagedReportRequest != request || revealedReportRequest == request
+        )
+
+        return GeometryReader { geometry in
             HStack(spacing: 0) {
                 ScrollViewReader { proxy in
                     ScrollView {
-                        // Report cards stay mounted during scrolling. Native
-                        // segmented controls should not churn with lazy row reuse.
-                        VStack(alignment: .leading, spacing: 16) {
-                            if let currentSnapshot {
-                                Group {
-                                    statisticsCards(snapshot: currentSnapshot)
-                                }
-                                .transition(reduceMotion ? .identity : .asymmetric(insertion: .opacity, removal: .identity))
-                            } else if failedToLoad {
+                        LazyVStack(alignment: .leading, spacing: 16) {
+                            if let summary {
+                                StatisticsSummaryCard(
+                                    title: periodTitle,
+                                    summary: summary.summary,
+                                    previousSummary: summary.previousSummary
+                                )
+                            }
+                            if let snapshot, reportIsReady {
+                                statisticsCards(snapshot: snapshot)
+                            } else if failedRequest == request {
                                 ContentUnavailableView(
                                     String(localized: "データを読み込めませんでした。"),
                                     systemImage: "exclamationmark.circle"
                                 )
-                            } else {
-                                StatisticsLoadingCards()
-                                    .transition(reduceMotion ? .identity : .opacity)
+                                .frame(maxWidth: .infinity)
+                            } else if !reportIsReady {
+                                FeatureLoadingIndicator()
+                                    .frame(minHeight: summary == nil ? 210 : 120)
                             }
                         }
                         .padding(20)
                         .animation(reduceMotion ? nil : .easeOut(duration: 0.14), value: reportReveal)
                     }
-                    .task(id: currentSnapshot?.filter) {
+                    .task(id: isVisible ? stagedReportRequest : nil) {
+                        guard isVisible, let stagedReportRequest, stagedReportRequest == request else { return }
+                        await Task.yield()
+                        guard !Task.isCancelled else { return }
+                        revealedReportRequest = request
+                        reportReveal &+= 1
+                    }
+                    .task(id: reportIsReady) {
                         guard ScreenshotMode.initialScreen() == .statisticsDots,
-                              currentSnapshot != nil, !didScrollToScreenshotDots else { return }
+                              reportIsReady, !didScrollToScreenshotDots else { return }
                         await Task.yield()
                         guard !Task.isCancelled else { return }
                         proxy.scrollTo("screenshot-statistics-dots", anchor: .top)
@@ -185,12 +221,6 @@ struct StatisticsView: View {
 
     @ViewBuilder
     private func statisticsCards(snapshot: StatisticsPeriodSnapshot) -> some View {
-        StatisticsSummaryCard(
-            title: periodTitle,
-            summary: snapshot.summary,
-            previousSummary: snapshot.previousSummary
-        )
-
         let habits = HabitCompletionCard(summary: snapshot.habitCompletion)
         let items = distributionItems(in: snapshot)
 
@@ -238,6 +268,7 @@ struct StatisticsView: View {
         )
         .id(presentationPeriod)
         .id("screenshot-statistics-dots")
+        .transition(reduceMotion ? .identity : .opacity)
     }
 
     @ToolbarContentBuilder
@@ -597,20 +628,35 @@ struct StatisticsView: View {
     private func refreshStatisticsCache(_ request: StatisticsPeriodRefreshID) async {
         let requestedBoundary = AppDayBoundary(hour: request.dayBoundaryHour)
         do {
-            let projection = try await StatisticsProjectionActor.loadForPresentation(
+            let updates = StatisticsProjectionActor.presentationUpdates(
                 modelContainer: modelContext.container,
                 filter: request.filter,
                 calendar: request.calendar,
                 dayBoundary: requestedBoundary
             )
-            guard !Task.isCancelled, request == refreshID else { return }
-            if currentSnapshot == nil {
-                reportReveal &+= 1
+            for try await update in updates {
+                guard !Task.isCancelled, request == refreshID else { return }
+                switch update {
+                case .summary(let summary):
+                    if currentSnapshot == nil {
+                        pendingSummaryRequest = request
+                        pendingSummary = summary
+                    }
+                case .report(let projection):
+                    if currentSnapshot == nil {
+                        stagedReportRequest = request
+                        revealedReportRequest = nil
+                    }
+                    cache.store(projection, calendar: request.calendar, dayBoundary: requestedBoundary)
+                    pendingSummaryRequest = nil
+                    pendingSummary = nil
+                    failedRequest = nil
+                }
             }
-            cache.store(projection, calendar: request.calendar, dayBoundary: requestedBoundary)
-            failedRequest = nil
         } catch {
             guard !Task.isCancelled, !(error is CancellationError), request == refreshID else { return }
+            pendingSummaryRequest = nil
+            pendingSummary = nil
             failedRequest = request
             PersistenceIssueCenter.shared.log(error, operation: .dataLoad)
         }
@@ -1585,49 +1631,6 @@ private struct StatisticsYearPicker: View {
         components.month = 1
         components.day = 1
         return components.date
-    }
-}
-
-private struct StatisticsLoadingCards: View {
-    private let summaryColumns = [
-        GridItem(.adaptive(minimum: 128, maximum: 220), spacing: 10)
-    ]
-
-    var body: some View {
-        StatisticsCard(title: String(localized: "概要")) {
-            ZStack {
-                LazyVGrid(columns: summaryColumns, spacing: 10) {
-                    ForEach(0..<5, id: \.self) { _ in
-                        loadingBlock(height: 106)
-                    }
-                }
-                ProgressView()
-            }
-        }
-
-        loadingLowerCard(title: String(localized: "集中時間の内訳"))
-
-        StatisticsCard(
-            title: String(localized: "傾向"),
-            subtitle: String(localized: "集中時間")
-        ) {
-            loadingBlock(height: 220)
-        }
-
-        loadingLowerCard(title: String(localized: "Dots"))
-    }
-
-    private func loadingLowerCard(title: String) -> some View {
-        StatisticsCard(title: title) {
-            loadingBlock(height: 250)
-        }
-    }
-
-    private func loadingBlock(height: CGFloat) -> some View {
-        RoundedRectangle(cornerRadius: 9, style: .continuous)
-            .fill(Color.secondary.opacity(0.08))
-            .frame(maxWidth: .infinity, minHeight: height, maxHeight: height)
-            .accessibilityHidden(true)
     }
 }
 

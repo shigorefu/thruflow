@@ -1,4 +1,5 @@
 import Foundation
+import SwiftData
 import Testing
 @testable import ThruFlow
 
@@ -29,5 +30,45 @@ struct StatisticsPresentationCacheTests {
         var filteredWeek = weekly
         filteredWeek.query = "report"
         #expect(cache.snapshot(for: filteredWeek, calendar: calendar, dayBoundary: boundary) == nil)
+    }
+
+    @Test func presentationPublishesTheMatchingSummaryBeforeTheReport() async throws {
+        let schema = AppModelContainerFactory.schema
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let anchor = Date(timeIntervalSince1970: 1_784_000_000)
+        let filter = StatisticsPeriodFilter(period: .month, anchorDate: anchor)
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let area = Area(name: "Reading", type: .neutral, symbolName: "📚", colorHex: "#34C759")
+        let endDate = anchor.addingTimeInterval(1_500)
+        let session = FlowSession(
+            area: area, mode: .twentyFiveFive, phase: .completed, status: .completed,
+            startedAt: anchor, plannedEndAt: endDate, endedAt: endDate,
+            plannedFocusDurationSeconds: 1_500, actualFocusDurationSeconds: 1_500,
+            plannedBreakDurationSeconds: 300
+        )
+        container.mainContext.insert(area)
+        container.mainContext.insert(session)
+        try container.mainContext.save()
+
+        let updates = StatisticsProjectionActor.presentationUpdates(
+            modelContainer: container,
+            filter: filter,
+            calendar: calendar,
+            dayBoundary: .midnight
+        )
+        var iterator = updates.makeAsyncIterator()
+        guard case let .summary(first)? = try await iterator.next(),
+              case let .report(report)? = try await iterator.next() else {
+            Issue.record("Expected a summary followed by the complete report")
+            return
+        }
+        #expect(first.summary.totalFocusSeconds == 1_500)
+        #expect(first.summary == report.summary)
+        #expect(first.previousSummary == report.previousSummary)
+        #expect(report.filter == filter)
+        let end = try await iterator.next()
+        #expect(end == nil)
     }
 }

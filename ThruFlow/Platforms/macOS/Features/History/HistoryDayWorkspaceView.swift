@@ -18,6 +18,7 @@ struct HistoryDayWorkspaceView: View {
     @Binding var manualFlowDraft: HistoryFlowCreationDraft?
     @Binding var visibleKinds: Set<HistoryCalendarItemKind>
     let sidebarHeader: AnyView
+    var historySessions: [FlowSession] = []
     var showsInspector = true
     let onEdit: (HistoryCalendarItem) -> Void
     let onMove: (HistoryCalendarItem, Date) -> Bool
@@ -48,6 +49,7 @@ struct HistoryDayWorkspaceView: View {
                         selectedItem: selectedItem,
                         manualFlowDraft: $manualFlowDraft,
                         sidebarHeader: sidebarHeader,
+                        historySessions: historySessions,
                         onEdit: onEdit,
                         onDropOnDay: onDropOnDay
                     )
@@ -165,32 +167,37 @@ struct HistoryMiniCalendar: View {
     var selectionMode: HistoryMiniCalendarSelectionMode = .day
     var indicatorSource: HistoryMiniCalendarIndicatorSource = .flowHistory
     var taskSnapshot: TaskCalendarSnapshot?
+    var historySessions: [FlowSession] = []
     var onDropPayload: ((String, Date) -> Bool)?
     var maximumDate: Date?
-
-    @Query(sort: \Todo.sortIndex, order: .forward) private var todos: [Todo]
-    @Query(sort: \FlowSession.startedAt, order: .forward) private var sessions: [FlowSession]
 
     private var columns: [GridItem] {
         Array(repeating: GridItem(.flexible(), spacing: selectionMode == .week ? 0 : 2), count: 7)
     }
 
+    static func displayedInterval(containing date: Date, calendar: Calendar) -> DateInterval? {
+        guard let month = calendar.dateInterval(of: .month, for: date),
+              let firstWeek = calendar.dateInterval(of: .weekOfYear, for: month.start),
+              let end = calendar.date(byAdding: .day, value: 42, to: firstWeek.start) else { return nil }
+        return DateInterval(start: firstWeek.start, end: end)
+    }
+
+    private var displayedInterval: DateInterval? {
+        Self.displayedInterval(containing: selectedDate, calendar: calendar)
+    }
+
     private var monthDays: [Date] {
-        guard let month = calendar.dateInterval(of: .month, for: selectedDate),
-              let firstWeek = calendar.dateInterval(of: .weekOfYear, for: month.start) else { return [] }
-        return (0..<42).compactMap { calendar.date(byAdding: .day, value: $0, to: firstWeek.start) }
+        guard let displayedInterval else { return [] }
+        return (0..<42).compactMap { calendar.date(byAdding: .day, value: $0, to: displayedInterval.start) }
     }
 
     private var historyItems: [HistoryCalendarItem] {
-        guard showsFlowHistoryIndicators,
-              let firstDay = monthDays.first,
-              let lastDay = monthDays.last,
-              let intervalEnd = calendar.date(byAdding: .day, value: 1, to: lastDay) else {
+        guard showsFlowHistoryIndicators, let displayedInterval, !historySessions.isEmpty else {
             return []
         }
         return HistoryCalendarBuilder(calendar: calendar).build(
-            interval: DateInterval(start: firstDay, end: intervalEnd),
-            sessions: sessions,
+            interval: displayedInterval,
+            sessions: historySessions,
             breaks: []
         ).items
     }
@@ -304,7 +311,7 @@ struct HistoryMiniCalendar: View {
             .accessibilityHidden(true)
         case .tasks(let filter):
             CalendarTaskIndicators(
-                todos: (taskSnapshot?.todos(on: date) ?? todos).filter(filter.includes),
+                todos: (taskSnapshot?.todos(on: date) ?? []).filter(filter.includes),
                 date: date,
                 maximumVisibleCount: 3
             )
@@ -455,6 +462,7 @@ struct HistoryDayInspectorPane: View {
     let selectedItem: HistoryCalendarItem?
     @Binding var manualFlowDraft: HistoryFlowCreationDraft?
     let sidebarHeader: AnyView
+    let historySessions: [FlowSession]
     let onEdit: (HistoryCalendarItem) -> Void
     let onDropOnDay: (String, Date) -> Bool
 
@@ -464,7 +472,11 @@ struct HistoryDayInspectorPane: View {
 
             Divider()
 
-            HistoryMiniCalendar(selectedDate: $selectedDate, onDropPayload: onDropOnDay)
+            HistoryMiniCalendar(
+                selectedDate: $selectedDate,
+                historySessions: historySessions,
+                onDropPayload: onDropOnDay
+            )
                 .padding(16)
 
             Divider()

@@ -316,11 +316,11 @@ struct IOSRootView: View {
                 open: open
             )
         case .tasks:
-            IOSTasksView()
+            IOSTasksView(isVisible: selection == .tasks)
         case .history:
-            IOSHistoryView(selectedDate: $selectedHistoryDate)
+            IOSHistoryView(isVisible: selection == .history, selectedDate: $selectedHistoryDate)
         case .areas:
-            IOSAreasView()
+            IOSAreasView(isVisible: selection == .areas)
         case .statistics:
             IOSStatisticsView(
                 isVisible: selection == .statistics,

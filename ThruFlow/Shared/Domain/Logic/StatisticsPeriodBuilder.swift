@@ -108,6 +108,11 @@ struct StatisticsPeriodSummary: Equatable, Sendable {
     }
 }
 
+struct StatisticsPresentationSummary: Equatable, Sendable {
+    let summary: StatisticsPeriodSummary
+    let previousSummary: StatisticsPeriodSummary
+}
+
 struct StatisticsTrendPoint: Identifiable, Equatable, Sendable {
     let index: Int
     let date: Date
@@ -278,7 +283,8 @@ struct StatisticsPeriodBuilder: Sendable {
         achievementRecords: [StatisticsPeriodAchievementRecord],
         filter: StatisticsPeriodFilter,
         habitRecords: [HabitCompletionRecord] = [],
-        now: Date = .now
+        now: Date = .now,
+        onSummary: (@Sendable (StatisticsPresentationSummary) -> Void)? = nil
     ) -> StatisticsPeriodSnapshot {
         let periodBounds = bounds(for: filter)
         let filteredFlows = flowRecords.filter {
@@ -301,21 +307,26 @@ struct StatisticsPeriodBuilder: Sendable {
             periodBounds.containsPrevious(dayBoundary.day(containing: $0.completedAt, calendar: calendar))
         }
 
+        let summary = makeSummary(flows: currentFlows, achievements: currentAchievements)
+        let previousSummary = makeSummary(flows: previousFlows, achievements: previousAchievements)
+        onSummary?(StatisticsPresentationSummary(summary: summary, previousSummary: previousSummary))
+
         let days = dates(from: periodBounds.currentStart, to: periodBounds.currentEnd)
+        let trendPeriod = trendPeriod(for: filter, bounds: periodBounds)
         return StatisticsPeriodSnapshot(
             filter: filter,
             bounds: periodBounds,
-            summary: makeSummary(flows: currentFlows, achievements: currentAchievements),
-            previousSummary: makeSummary(flows: previousFlows, achievements: previousAchievements),
+            summary: summary,
+            previousSummary: previousSummary,
             trend: makeTrend(
-                period: trendPeriod(for: filter, bounds: periodBounds),
+                period: trendPeriod,
                 bounds: periodBounds,
                 currentFlows: currentFlows,
                 previousFlows: previousFlows,
                 currentAchievements: currentAchievements,
                 previousAchievements: previousAchievements
             ),
-            trendPeriod: trendPeriod(for: filter, bounds: periodBounds),
+            trendPeriod: trendPeriod,
             taskDistribution: makeDistribution(flows: currentFlows, dimension: .task),
             areaDistribution: makeDistribution(flows: currentFlows, dimension: .area),
             projectDistribution: makeDistribution(flows: currentFlows, dimension: .project),

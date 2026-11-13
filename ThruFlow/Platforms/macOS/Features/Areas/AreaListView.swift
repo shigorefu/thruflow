@@ -15,9 +15,13 @@ struct AreaListView: View {
     @Environment(\.modelContext) private var modelContext
     @AppStorage("directionKanbanColumnOrder") private var areaGroupOrderRaw = AreaGroupOrder.encode(AreaGroupOrder.defaultValue)
 
-    @Query(sort: \Area.sortIndex, order: .forward) private var areas: [Area]
-    @Query(sort: \Project.createdAt) private var projects: [Project]
+    var isVisible = true
 
+    @State private var data: MacAreaListData?
+    @State private var startsDataSource = false
+    @State private var loadFailed = false
+    @State private var reportReveal = 0
+    @State private var hasNormalizedSortIndexes = false
     @State private var isShowingAddSheet = false
     @State private var editingAreaID: UUID?
     @State private var selectedProject: Project?
@@ -27,6 +31,8 @@ struct AreaListView: View {
     @State private var dropTargetID: UUID?
     @State private var draggedGroupType: AreaType?
     @State private var dropTargetGroupType: AreaType?
+
+    private var areas: [Area] { data?.areas ?? [] }
 
     private var visibleAreas: [Area] {
         areas
@@ -49,7 +55,105 @@ struct AreaListView: View {
     }
 
     var body: some View {
-        let projectsByArea = Dictionary(grouping: projects, by: { $0.area?.id })
+        Group {
+            if let data {
+                areaWorkspace(projectsByArea: data.projectsByArea)
+                    .transition(reduceMotion ? .identity : .opacity)
+            } else if loadFailed {
+                ContentUnavailableView(
+                    String(localized: "データを読み込めませんでした。"),
+                    systemImage: "exclamationmark.circle"
+                )
+            } else {
+                FeatureLoadingIndicator()
+            }
+        }
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: reportReveal)
+        .productContentFade(on: showingArchived)
+        .toolbar {
+            if isVisible {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        isShowingAddSheet = true
+                    } label: {
+                        Label(String(localized: "方向を追加"), systemImage: "plus")
+                    }
+                }
+
+                ToolbarItem {
+                    Toggle(isOn: $showingArchived) {
+                        Label(String(localized: "アーカイブ"), systemImage: "archivebox")
+                    }
+                    .toggleStyle(.button)
+                }
+            }
+        }
+        .background {
+            if isVisible && startsDataSource {
+                MacAreaListDataSource { result in
+                    switch result {
+                    case .success(let newData):
+                        let wasUncached = data == nil
+                        data = newData
+                        loadFailed = false
+                        if wasUncached {
+                            reportReveal &+= 1
+                        }
+                    case .failure(let error):
+                        loadFailed = true
+                        PersistenceIssueCenter.shared.log(error, operation: .dataLoad)
+                    }
+                }
+            }
+        }
+        .task(id: isVisible) {
+            guard isVisible else {
+                startsDataSource = false
+                return
+            }
+            await Task.yield()
+            guard !Task.isCancelled else { return }
+            startsDataSource = true
+        }
+        .task(id: isVisible && data != nil) {
+            guard isVisible, data != nil, !hasNormalizedSortIndexes else { return }
+            await Task.yield()
+            guard !Task.isCancelled else { return }
+            normalizeSortIndexesIfNeeded()
+            hasNormalizedSortIndexes = true
+        }
+        .alert(String(localized: "記録を保存できませんでした。"), isPresented: Binding(
+            get: { lifecycleError != nil }, set: { if !$0 { lifecycleError = nil } }
+        )) {
+            Button(String(localized: "閉じる"), role: .cancel) { lifecycleError = nil }
+        }
+        .sheet(item: $selectedProject) { project in
+            ProjectDetailView(project: project) { todo, project in
+                TodoFormView(
+                    mode: todo.map(TodoFormView.Mode.edit) ?? .create,
+                    fixedArea: todo == nil ? project.area : nil,
+                    project: project
+                )
+            }
+        }
+        .sheet(isPresented: $isShowingAddSheet) {
+            AreaFormView(mode: .create)
+                .frame(width: 420)
+        }
+        .sheet(
+            isPresented: Binding(
+                get: { editingAreaID != nil },
+                set: { if !$0 { editingAreaID = nil } }
+            )
+        ) {
+            if let editingArea {
+                AreaFormView(mode: .edit(editingArea))
+                    .frame(width: 420)
+            }
+        }
+    }
+
+    private func areaWorkspace(projectsByArea: [UUID?: [Project]]) -> some View {
         GeometryReader { viewport in
             let columnWidth = max(220, (viewport.size.width - 32 - 28) / 3)
 
@@ -162,54 +266,6 @@ struct AreaListView: View {
             .scrollIndicators(.visible)
         }
         .animation(reduceMotion ? nil : .smooth(duration: 0.22), value: visibleAreas.map(\.id))
-        .productContentFade(on: showingArchived)
-        .navigationTitle(String(localized: "方向"))
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    isShowingAddSheet = true
-                } label: {
-                    Label(String(localized: "方向を追加"), systemImage: "plus")
-                }
-            }
-
-            ToolbarItem {
-                Toggle(isOn: $showingArchived) {
-                    Label(String(localized: "アーカイブ"), systemImage: "archivebox")
-                }
-                .toggleStyle(.button)
-            }
-        }
-        .alert(String(localized: "記録を保存できませんでした。"), isPresented: Binding(
-            get: { lifecycleError != nil }, set: { if !$0 { lifecycleError = nil } }
-        )) {
-            Button(String(localized: "閉じる"), role: .cancel) { lifecycleError = nil }
-        }
-        .onAppear(perform: normalizeSortIndexesIfNeeded)
-        .sheet(item: $selectedProject) { project in
-            ProjectDetailView(project: project) { todo, project in
-                TodoFormView(
-                    mode: todo.map(TodoFormView.Mode.edit) ?? .create,
-                    fixedArea: todo == nil ? project.area : nil,
-                    project: project
-                )
-            }
-        }
-        .sheet(isPresented: $isShowingAddSheet) {
-            AreaFormView(mode: .create)
-                .frame(width: 420)
-        }
-        .sheet(
-            isPresented: Binding(
-                get: { editingAreaID != nil },
-                set: { if !$0 { editingAreaID = nil } }
-            )
-        ) {
-            if let editingArea {
-                AreaFormView(mode: .edit(editingArea))
-                    .frame(width: 420)
-            }
-        }
     }
 
     private func projectRows(for area: Area, projects: [Project]) -> some View {
@@ -355,6 +411,50 @@ struct AreaListView: View {
             in: areaGroupOrder
         )
         areaGroupOrderRaw = AreaGroupOrder.encode(reordered)
+    }
+}
+
+private struct MacAreaListData {
+    let areas: [Area]
+    let projectsByArea: [UUID?: [Project]]
+}
+
+private struct MacAreaListDataSource: View {
+    @Query(sort: \Area.sortIndex) private var areas: [Area]
+    @Query(sort: \Project.createdAt) private var projects: [Project]
+
+    let onUpdate: (Result<MacAreaListData, Error>) -> Void
+
+    var body: some View {
+        let revision = Revision(
+            areas: areas.map { RecordVersion(id: $0.id, updatedAt: $0.updatedAt) },
+            projects: projects.map { RecordVersion(id: $0.id, updatedAt: $0.updatedAt) },
+            failed: loadError != nil
+        )
+        Color.clear
+            .onChange(of: revision, initial: true) { _, _ in
+                if let loadError {
+                    onUpdate(.failure(loadError))
+                } else {
+                    onUpdate(.success(MacAreaListData(
+                        areas: areas,
+                        projectsByArea: Dictionary(grouping: projects, by: { $0.area?.id })
+                    )))
+                }
+            }
+    }
+
+    private var loadError: Error? { _areas.fetchError ?? _projects.fetchError }
+
+    private struct RecordVersion: Equatable {
+        let id: UUID
+        let updatedAt: Date
+    }
+
+    private struct Revision: Equatable {
+        let areas: [RecordVersion]
+        let projects: [RecordVersion]
+        let failed: Bool
     }
 }
 
