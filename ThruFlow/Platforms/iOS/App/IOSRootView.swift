@@ -1,46 +1,6 @@
 import SwiftData
 import SwiftUI
 
-enum IOSAppRoute: Hashable, CaseIterable, Identifiable {
-    case flow
-    case tasks
-    case history
-    case areas
-    case statistics
-    case connectors
-    case settings
-
-    var id: String { String(describing: self) }
-
-    var title: String {
-        switch self {
-        case .flow: String(localized: "Flow")
-        case .tasks: String(localized: "タスク")
-        case .history: String(localized: "履歴")
-        case .areas: String(localized: "方向")
-        case .statistics: String(localized: "統計")
-        case .connectors: String(localized: "コネクタ")
-        case .settings: String(localized: "設定")
-        }
-    }
-
-    var systemImage: String {
-        switch self {
-        case .flow: "waveform.path"
-        case .tasks: "checklist"
-        case .history: "clock.arrow.circlepath"
-        case .areas: ProductSymbol.area
-        case .statistics: "chart.bar.xaxis"
-        case .connectors: "puzzlepiece.extension"
-        case .settings: "gearshape"
-        }
-    }
-
-    static var tabs: [IOSAppRoute] {
-        [.flow, .tasks, .history, .areas, .statistics]
-    }
-}
-
 struct IOSRootView: View {
     @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.calendar) private var calendar
@@ -126,7 +86,14 @@ struct IOSRootView: View {
             IOSConnectorsView()
         }
         .sheet(item: onboardingPresentationBinding) { presentation in
-            onboardingSheet(for: presentation)
+            IOSOnboardingSheet(
+                onboarding: onboarding,
+                presentation: presentation,
+                areas: onboardingAreas,
+                calendar: calendar,
+                dayBoundary: dayBoundary,
+                hasExternalWorkspaceContent: hasExternalOnboardingWorkspaceContent(excludingAreaID:excludingTaskID:)
+            )
         }
         .onOpenURL { url in
             guard url.scheme == "thruflow" else { return }
@@ -355,114 +322,6 @@ struct IOSRootView: View {
                     onboarding.dismissPresentation()
                 }
             }
-        )
-    }
-
-    @ViewBuilder
-    private func onboardingSheet(for presentation: OnboardingPresentation) -> some View {
-        switch presentation {
-        case .areaEditor:
-            NavigationStack {
-                IOSAreaEditorView(
-                    mode: .create(),
-                    initialDraft: onboardingAreaDraft
-                ) { area in
-                    onboarding.resolveWorkspace(
-                        hasUserContent: hasExternalOnboardingWorkspaceContent(
-                            excludingAreaID: area.id
-                        )
-                    )
-                    _ = onboarding.recordArea(id: area.id)
-                }
-                .toolbar {
-                    ToolbarItem(placement: .bottomBar) {
-                        Button(String(localized: "ガイドをスキップ")) {
-                            onboarding.skip()
-                        }
-                    }
-                }
-            }
-            .interactiveDismissDisabled(false)
-
-        case .taskComposer:
-            NavigationStack {
-                VStack(spacing: 0) {
-                    Spacer(minLength: 0)
-
-                    if let area = onboardingCreatedArea {
-                        IOSTaskComposer(
-                            areas: activeOnboardingAreas,
-                            initialDraft: onboardingTaskDraft(area: area),
-                            onClose: onboarding.dismissPresentation
-                        ) { todo in
-                            onboarding.resolveWorkspace(
-                                hasUserContent: hasExternalOnboardingWorkspaceContent(
-                                    excludingTaskID: todo.id
-                                )
-                            )
-                            guard let area = todo.area else { return }
-                            _ = onboarding.recordTask(
-                                id: todo.id,
-                                presentation: OnboardingTaskPresentation(
-                                    title: TodoDisplay.title(for: todo),
-                                    areaName: area.name,
-                                    areaSymbol: area.symbolName,
-                                    areaColorHex: area.colorHex
-                                )
-                            )
-                        }
-                    } else {
-                        ContentUnavailableView(
-                            String(localized: "分野が見つかりません"),
-                            systemImage: ProductSymbol.area
-                        )
-                    }
-                }
-                .background(Color(.systemGroupedBackground))
-                .iosCenteredNavigationTitle(String(localized: "最初のタスクを作る"))
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button(String(localized: "キャンセル")) {
-                            onboarding.dismissPresentation()
-                        }
-                    }
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button(String(localized: "ガイドをスキップ")) {
-                            onboarding.skip()
-                        }
-                    }
-                }
-            }
-            .presentationDetents([.medium, .large])
-            .interactiveDismissDisabled(false)
-        }
-    }
-
-    private var activeOnboardingAreas: [Area] {
-        onboardingAreas.filter { !$0.isArchived && !DefaultAreas.isTaskInboxRecord($0) }
-    }
-
-    private var onboardingCreatedArea: Area? {
-        guard let id = onboarding.createdAreaID else { return nil }
-        return onboardingAreas.first { $0.id == id && !$0.isArchived }
-    }
-
-    private var onboardingAreaDraft: AreaDraft {
-        AreaDraft(
-            name: String(localized: "仕事"),
-            type: .neutral,
-            symbolName: "💼",
-            colorHex: "#007AFF"
-        )
-    }
-
-    private func onboardingTaskDraft(area: Area) -> TodoDraft {
-        TodoDraft(
-            title: String(localized: "レポートを仕上げる"),
-            area: area,
-            measurement: .checkbox,
-            priority: .medium,
-            scheduledDate: dayBoundary.day(containing: .now, calendar: calendar)
         )
     }
 

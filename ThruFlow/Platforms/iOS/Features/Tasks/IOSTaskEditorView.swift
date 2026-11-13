@@ -63,8 +63,8 @@ struct IOSTaskEditorView: View {
                 Section { ExternalTaskSourceLink(todo: todo) }
             }
 
-            if isHabitTodoEdit {
-                habitStructureSection
+            if let todo = editedTodo, todo.taskType == .habit {
+                IOSTaskHabitStructureSection(todo: todo)
             } else {
                 Section {
                     Picker(String(localized: "分野"), selection: selectedAreaBinding) {
@@ -157,8 +157,11 @@ struct IOSTaskEditorView: View {
         .taskTimingDefaults(timeMinutes: $draft.scheduledTimeMinutes, reminderEnabled: $draft.reminderEnabled)
         .safeAreaInset(edge: .top, spacing: 0) {
             if !titleSuggestions.isEmpty {
-                titleSuggestionPanel
-                    .transition(.move(edge: .top).combined(with: .opacity))
+                IOSTaskTitleSuggestionPanel(suggestions: titleSuggestions) { suggestion in
+                    draft.title = suggestion.title
+                    isTitleFocused = true
+                }
+                .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
         .animation(
@@ -197,40 +200,6 @@ struct IOSTaskEditorView: View {
         )
     }
 
-    private var titleSuggestionPanel: some View {
-        ScrollView(.horizontal) {
-            HStack(spacing: 8) {
-                ForEach(titleSuggestions) { suggestion in
-                    Button {
-                        draft.title = suggestion.title
-                        isTitleFocused = true
-                    } label: {
-                        Label(suggestion.title, systemImage: "clock.arrow.circlepath")
-                            .font(.subheadline)
-                            .lineLimit(1)
-                            .foregroundStyle(.primary)
-                            .padding(.horizontal, 12)
-                            .frame(height: 34)
-                            .background(.regularMaterial, in: Capsule())
-                            .overlay {
-                                Capsule()
-                                    .strokeBorder(Color.primary.opacity(0.1), lineWidth: 1)
-                            }
-                            .contentShape(Capsule())
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-        }
-        .scrollIndicators(.hidden)
-        .background(.bar)
-        .overlay(alignment: .bottom) {
-            Divider()
-        }
-    }
-
     private var isEditing: Bool {
         if case .edit = mode { return true }
         return false
@@ -239,10 +208,6 @@ struct IOSTaskEditorView: View {
     private var editedTodo: Todo? {
         if case .edit(let todo) = mode { return todo }
         return nil
-    }
-
-    private var isHabitTodoEdit: Bool {
-        editedTodo?.taskType == .habit
     }
 
     private var selectableAreas: [Area] {
@@ -297,60 +262,6 @@ struct IOSTaskEditorView: View {
         }
     }
 
-    @ViewBuilder
-    private var habitStructureSection: some View {
-        if let todo = editedTodo {
-            Section {
-                LabeledContent(String(localized: "分野")) {
-                    Text("\(todo.area?.symbolName ?? "📝") \(TodoDisplay.flowContextName(for: todo))")
-                }
-
-                LabeledContent(String(localized: "種類"), value: todo.measurement.displayName)
-
-                if todo.measurement != .checkbox {
-                    LabeledContent(String(localized: "目標")) {
-                        Text(habitTargetText(todo))
-                            .monospacedDigit()
-                    }
-                }
-
-                LabeledContent(String(localized: "優先度"), value: todo.priority.displayName)
-
-                if todo.priority == .low, todo.isRoomIfPossible {
-                    LabeledContent(String(localized: "余裕があれば")) {
-                        Image(systemName: "checkmark")
-                    }
-                }
-
-                LabeledContent(String(localized: "日付")) {
-                    if let date = todo.scheduledDate {
-                        Text(date, format: .dateTime.year().month().day())
-                    } else {
-                        Text(String(localized: "日付なし"))
-                    }
-                }
-
-                if let deadline = todo.deadline {
-                    LabeledContent(String(localized: "期限")) {
-                        Text(deadline, format: .dateTime.year().month().day())
-                    }
-                }
-            }
-        }
-    }
-
-    private func habitTargetText(_ todo: Todo) -> String {
-        let amount = todo.plannedAmount ?? 1
-        switch todo.measurement {
-        case .checkbox:
-            return ""
-        case .focusBlocks:
-            return "\(amount) \(String(localized: "ブロック"))"
-        case .minutes:
-            return "\(amount) \(String(localized: "分"))"
-        }
-    }
-
     private func save() {
         saveErrorMessage = nil
         do {
@@ -365,6 +276,18 @@ struct IOSTaskEditorView: View {
             saveErrorMessage = errors.map(\.localizedDescription).joined(separator: "\n")
         } catch {
             saveErrorMessage = String(localized: "記録を保存できませんでした。")
+        }
+    }
+}
+
+enum IOSTaskEditorMode: Identifiable {
+    case create
+    case edit(Todo)
+
+    var id: String {
+        switch self {
+        case .create: "create"
+        case .edit(let todo): todo.id.uuidString
         }
     }
 }

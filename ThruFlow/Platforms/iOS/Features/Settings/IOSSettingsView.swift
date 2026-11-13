@@ -9,7 +9,7 @@ struct IOSSettingsView: View {
     @EnvironmentObject private var onboarding: OnboardingStore
     @State private var showsResetConfirmation = false
     @State private var isResetting = false
-    @State private var resetStatus: AppResetStatus?
+    @State private var resetStatus: IOSAppResetStatus?
 
     var body: some View {
         Form {
@@ -100,7 +100,12 @@ struct IOSSettingsView: View {
 
             SupportSettingsSection()
 
-            appDataSection
+            IOSAppDataSettingsSection(
+                isResetting: isResetting,
+                hasActiveFlow: activeFlowStore.timerState != nil,
+                resetStatus: resetStatus,
+                onResetRequested: { showsResetConfirmation = true }
+            )
         }
         .iosCenteredNavigationTitle(String(localized: "設定"))
         .alert(
@@ -113,39 +118,6 @@ struct IOSSettingsView: View {
             }
         } message: {
             Text(String(localized: "タスク、分野、集中履歴、メモが、iCloudで同期しているすべての端末から削除されます。この端末の設定は残ります。この操作は取り消せません。"))
-        }
-    }
-
-    private var appDataSection: some View {
-        Section(String(localized: "データ")) {
-            Button(role: .destructive) {
-                showsResetConfirmation = true
-            } label: {
-                Label(String(localized: "アプリのデータをリセット"), systemImage: "arrow.counterclockwise")
-            }
-            .accessibilityIdentifier("settings.reset-app-data")
-            .disabled(isResetting || activeFlowStore.timerState != nil)
-
-            if isResetting {
-                HStack(spacing: 8) {
-                    ProgressView()
-                    Text(String(localized: "アプリのデータをリセットしています…"))
-                }
-                .foregroundStyle(.secondary)
-            } else if activeFlowStore.timerState != nil {
-                Label(
-                    String(localized: "リセットする前に、現在のFlowを終了してください。"),
-                    systemImage: "timer"
-                )
-                .foregroundStyle(.secondary)
-            } else if let resetStatus {
-                Label(resetStatus.message, systemImage: resetStatus.symbolName)
-                    .foregroundStyle(resetStatus.isError ? Color.red : Color.secondary)
-            }
-
-            Text(String(localized: "タスク、分野、集中履歴、メモがすべて削除されます。設定は残ります。"))
-                .font(.caption)
-                .foregroundStyle(.secondary)
         }
     }
 
@@ -182,28 +154,5 @@ struct IOSSettingsView: View {
 
     private func languageName(for code: String) -> String {
         Locale.autoupdatingCurrent.localizedString(forIdentifier: code) ?? code
-    }
-}
-
-private enum AppResetStatus {
-    case activeFlow
-    case failure
-
-    var message: String {
-        switch self {
-        case .activeFlow: String(localized: "リセットする前に、現在のFlowを終了してください。")
-        case .failure: String(localized: "アプリのデータをリセットできませんでした")
-        }
-    }
-
-    var symbolName: String {
-        switch self {
-        case .activeFlow: "timer"
-        case .failure: "exclamationmark.triangle"
-        }
-    }
-
-    var isError: Bool {
-        self == .failure
     }
 }

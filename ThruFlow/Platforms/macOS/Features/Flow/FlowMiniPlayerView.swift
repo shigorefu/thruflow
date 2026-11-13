@@ -153,7 +153,7 @@ struct FlowMiniPlayerView: View {
                     .transition(memoTransition)
                     .zIndex(1)
             } else if activeFlowStore.phase == .awaitingExtensionDecision {
-                adaptiveDecisionBar
+                FlowAdaptiveDecisionBar()
             } else if activeFlowStore.phase == .awaitingResult || activeFlowStore.isAwaitingBreakMemo {
                 resultBar
                     .transition(memoTransition)
@@ -189,7 +189,7 @@ struct FlowMiniPlayerView: View {
                             height: 0
                         )
                         .overlay(alignment: .topLeading) {
-                            taskTitleSuggestionPanel(suggestions) { suggestion in
+                            FlowTaskTitleSuggestions(suggestions: suggestions) { suggestion in
                                 taskTitleDraft = suggestion.title
                                 commitTaskTitle()
                             }
@@ -215,7 +215,12 @@ struct FlowMiniPlayerView: View {
                 timerCluster(now: tick.date)
             }
             TimelineView(overtimeSchedule) { tick in
-                transportControls(now: tick.date)
+                FlowMiniPlayerTransport(
+                    style: style,
+                    now: tick.date,
+                    artworkColor: artworkColor,
+                    handlePrimaryAction: handlePrimaryAction
+                )
             }
         }
         .padding(.horizontal, style == .dashboard ? 18 : 14)
@@ -251,7 +256,12 @@ struct FlowMiniPlayerView: View {
             modePickerButton
         } controls: {
             TimelineView(overtimeSchedule) { tick in
-                dashboardTransportControls(now: tick.date)
+                FlowMiniPlayerTransport(
+                    style: style,
+                    now: tick.date,
+                    artworkColor: artworkColor,
+                    handlePrimaryAction: handlePrimaryAction
+                )
             }
         }
     }
@@ -557,43 +567,6 @@ struct FlowMiniPlayerView: View {
         )
     }
 
-    private func taskTitleSuggestionPanel(
-        _ suggestions: [TaskTitleSuggestion],
-        highlightedID: String? = nil,
-        onSelect: @escaping (TaskTitleSuggestion) -> Void
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 1) {
-            ForEach(suggestions) { suggestion in
-                Button {
-                    onSelect(suggestion)
-                } label: {
-                    HStack(spacing: 7) {
-                        Image(systemName: "clock.arrow.circlepath")
-                            .foregroundStyle(.tint)
-                            .frame(width: 16)
-                        Text(suggestion.title)
-                            .lineLimit(1)
-                        Spacer(minLength: 0)
-                    }
-                    .padding(.horizontal, 8)
-                    .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
-                    .background(
-                        suggestion.id == highlightedID ? Color.accentColor.opacity(0.18) : Color.clear,
-                        in: RoundedRectangle(cornerRadius: 6)
-                    )
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(4)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
-        .overlay {
-            RoundedRectangle(cornerRadius: 8)
-                .strokeBorder(Color.primary.opacity(0.12))
-        }
-    }
-
     private func commitTaskTitle() {
         guard let selectedTodo, editingTaskTitleID == selectedTodo.id else {
             cancelTaskTitleEdit()
@@ -615,10 +588,6 @@ struct FlowMiniPlayerView: View {
         taskTitleDraft = selectedTodo?.title ?? ""
         editingTaskTitleID = nil
         isTaskTitleFocused = false
-    }
-
-    private var canSeek: Bool {
-        activeFlowStore.timerState?.canAdjustRemainingTime == true
     }
 
     private var flowArea: Area? {
@@ -706,271 +675,10 @@ struct FlowMiniPlayerView: View {
         return max(0, activeFlowStore.actualFocusSeconds(now: now) - segment.startFocusSeconds)
     }
 
-    private func transportControls(now: Date) -> some View {
-        HStack(spacing: 6) {
-            if style == .dashboard {
-                compactControlSlot(isEnabled: activeFlowStore.timerState != nil) {
-                    destroyButton
-                }
-
-                compactControlSlot(isEnabled: activeFlowStore.timerState != nil) {
-                    stopButton
-                }
-
-                compactControlSlot(isEnabled: activeFlowStore.canRequestBreak) {
-                    breakButton
-                }
-
-                compactControlSlot(isEnabled: canSeek) {
-                    seekBackwardButton
-                }
-
-                primaryButton(now: now)
-
-                compactControlSlot(isEnabled: canSeek) {
-                    seekForwardButton
-                }
-            } else {
-                if activeFlowStore.timerState != nil {
-                    destroyButton
-                    stopButton
-                }
-
-                if activeFlowStore.canRequestBreak {
-                    breakButton
-                }
-
-                if canSeek {
-                    seekBackwardButton
-                }
-
-                primaryButton(now: now)
-
-                if canSeek {
-                    seekForwardButton
-                }
-            }
-        }
-        .padding(3)
-        .background(Color.primary.opacity(0.06))
-        .clipShape(Capsule())
-    }
-
-    private func dashboardTransportControls(now: Date) -> some View {
-        FlowTimerTransportControls(
-            style: .dashboard,
-            presentation: FlowTimerTransportPresentation(
-                primarySymbol: primaryButtonImage(now: now),
-                primaryLabel: primaryButtonTitle(now: now),
-                primaryTint: primaryButtonColor(now: now),
-                isPrimaryEnabled: true,
-                canSeek: canSeek,
-                canDestroy: activeFlowStore.timerState != nil,
-                canStop: activeFlowStore.timerState != nil,
-                canStartBreak: activeFlowStore.canRequestBreak,
-                destroyLabel: activeFlowStore.isBreakPhase
-                    ? String(localized: "休憩を削除")
-                    : String(localized: "Flowを破壊"),
-                visuallyPressedAction: nil
-            ),
-            animatesPrimarySymbol: true
-        ) { action in
-            switch action {
-            case .seekBackward:
-                activeFlowStore.seekBackward(modelContext: modelContext)
-            case .primary:
-                handlePrimaryAction()
-            case .seekForward:
-                activeFlowStore.seekForward(modelContext: modelContext)
-            case .destroy:
-                activeFlowStore.destroy(modelContext: modelContext)
-            case .stop:
-                activeFlowStore.stop(modelContext: modelContext)
-            case .startBreak:
-                activeFlowStore.requestBreakMemo(modelContext: modelContext)
-            }
-        }
-    }
-
-    private func compactControlSlot<Content: View>(
-        isEnabled: Bool,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        content()
-            .disabled(!isEnabled)
-            .opacity(isEnabled ? 1 : 0.34)
-    }
-
-    private var controlButtonSize: CGFloat {
-        34
-    }
-
-    private var primaryControlButtonSize: CGFloat {
-        42
-    }
-
-    private var seekBackwardButton: some View {
-        Button {
-            activeFlowStore.seekBackward(modelContext: modelContext)
-        } label: {
-            Image(systemName: "gobackward.5")
-                .font(.callout.weight(.semibold))
-                .frame(width: controlButtonSize, height: controlButtonSize)
-        }
-        .buttonStyle(.plain)
-        .foregroundStyle(.secondary)
-        .accessibilityLabel(String(localized: "残り時間を5分短縮"))
-    }
-
-    private var seekForwardButton: some View {
-        Button {
-            activeFlowStore.seekForward(modelContext: modelContext)
-        } label: {
-            Image(systemName: "goforward.5")
-                .font(.callout.weight(.semibold))
-                .frame(width: controlButtonSize, height: controlButtonSize)
-        }
-        .buttonStyle(.plain)
-        .foregroundStyle(.secondary)
-        .accessibilityLabel(String(localized: "残り時間を5分延長"))
-    }
-
-    private var stopButton: some View {
-        Button {
-            activeFlowStore.stop(modelContext: modelContext)
-        } label: {
-            Image(systemName: "stop.fill")
-                .font(.callout.weight(.semibold))
-                .frame(width: controlButtonSize, height: controlButtonSize)
-        }
-        .buttonStyle(.plain)
-        .foregroundStyle(.secondary)
-        .accessibilityLabel(String(localized: "Flowを停止して保存"))
-    }
-
-    private var breakButton: some View {
-        Button {
-            activeFlowStore.requestBreakMemo(modelContext: modelContext)
-        } label: {
-            Image(systemName: "cup.and.saucer.fill")
-                .font(.callout.weight(.semibold))
-                .frame(width: controlButtonSize, height: controlButtonSize)
-        }
-        .buttonStyle(.plain)
-        .foregroundStyle(.secondary)
-        .accessibilityLabel(String(localized: "休憩を開始"))
-    }
-
-    private var destroyButton: some View {
-        Button(role: .destructive) {
-            activeFlowStore.destroy(modelContext: modelContext)
-        } label: {
-            Image(systemName: "trash.fill")
-                .font(.callout.weight(.semibold))
-                .frame(width: controlButtonSize, height: controlButtonSize)
-        }
-        .buttonStyle(.plain)
-        .foregroundStyle(.red)
-        .accessibilityLabel(activeFlowStore.isBreakPhase ? String(localized: "休憩を削除") : String(localized: "Flowを破壊"))
-    }
-
-    private func primaryButton(now: Date) -> some View {
-        Button {
-            handlePrimaryAction()
-        } label: {
-            if style == .dashboard {
-                Image(systemName: primaryButtonImage(now: now))
-                    .font(.title3.weight(.semibold))
-                    .frame(width: primaryControlButtonSize, height: primaryControlButtonSize)
-                    .background(primaryButtonColor(now: now))
-                    .foregroundStyle(.white)
-                    .clipShape(Circle())
-            } else {
-                Label(primaryButtonTitle(now: now), systemImage: primaryButtonImage(now: now))
-                    .font(.headline.weight(.semibold))
-                    .frame(width: 142, height: 44)
-                    .background(primaryButtonColor(now: now))
-                    .foregroundStyle(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-            }
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(primaryButtonTitle(now: now))
-    }
-
-    private func primaryButtonTitle(now: Date) -> String {
-        switch activeFlowStore.phase {
-        case .idle, .configured:
-            String(localized: "Flowを開始")
-        case .focusing:
-            activeFlowStore.isFocusOvertime(now: now) ? String(localized: "休憩") : String(localized: "一時停止")
-        case .paused:
-            String(localized: "再開")
-        case .breakTime:
-            String(localized: "Flowを開始")
-        case .awaitingExtensionDecision:
-            String(localized: "Flowを終了")
-        case .awaitingResult:
-            String(localized: "保存")
-        case .completed:
-            String(localized: "Flowを開始")
-        }
-    }
-
-    private func primaryButtonImage(now: Date) -> String {
-        switch activeFlowStore.phase {
-        case .focusing:
-            activeFlowStore.isFocusOvertime(now: now) ? "cup.and.saucer.fill" : "pause.fill"
-        case .awaitingResult:
-            "checkmark"
-        default:
-            "play.fill"
-        }
-    }
-
-    private func primaryButtonColor(now: Date) -> Color {
-        switch FlowTimerPrimaryTintRole(
-            phase: activeFlowStore.phase,
-            isFocusOvertime: activeFlowStore.isFocusOvertime(now: now)
-        ) {
-        case .area:
-            artworkColor
-        case .paused, .breakTime:
-            .blue
-        }
-    }
-
     private var timerRingColor: Color {
         if activeFlowStore.phase == .paused { return .blue }
         if activeFlowStore.isBreakPhase { return Color.secondary.opacity(0.72) }
         return artworkColor
-    }
-
-    private var adaptiveDecisionBar: some View {
-        HStack(spacing: 10) {
-            Text(String(localized: "次を選択"))
-                .font(.headline)
-
-            Spacer()
-
-            if activeFlowStore.timerState?.nextAdaptiveFocusDurationSeconds != nil {
-                Button(String(localized: "+\(adaptiveExtensionMinutes)分")) {
-                    activeFlowStore.extendAdaptive(modelContext: modelContext)
-                }
-            }
-
-            Button(String(localized: "休憩")) {
-                activeFlowStore.requestBreakMemo(modelContext: modelContext)
-            }
-
-            Button(String(localized: "Flowを終了")) {
-                activeFlowStore.finish(modelContext: modelContext)
-            }
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .background(.regularMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 
     private var resultBar: some View {
@@ -1125,8 +833,8 @@ struct FlowMiniPlayerView: View {
         }
         .background {
             TaskComposerSuggestionPanel(isPresented: !suggestions.isEmpty, showsBelow: taskSuggestionsBelow) {
-                taskTitleSuggestionPanel(
-                    suggestions,
+                FlowTaskTitleSuggestions(
+                    suggestions: suggestions,
                     highlightedID: highlightedResultTitleSuggestionID,
                     onSelect: selectSuggestion
                 )
@@ -1174,15 +882,6 @@ struct FlowMiniPlayerView: View {
         hasMemoText
             ? String(localized: "メモを保存して続ける")
             : String(localized: "メモなしで送信")
-    }
-
-    private var adaptiveExtensionMinutes: Int {
-        guard let state = activeFlowStore.timerState,
-              let next = state.nextAdaptiveFocusDurationSeconds else {
-            return 0
-        }
-
-        return (next - state.plannedFocusDurationSeconds) / 60
     }
 
     private func handlePrimaryAction() {
@@ -1279,7 +978,6 @@ struct FlowMiniPlayerView: View {
         return taskInbox
     }
 
-
     private func todoMenuTitle(_ todo: Todo) -> String {
         if todo.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             return TodoDisplay.title(for: todo)
@@ -1304,339 +1002,6 @@ private struct TaskTitleEditorBoundsPreferenceKey: PreferenceKey {
 
     static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) {
         value = nextValue() ?? value
-    }
-}
-
-struct FlowTaskPickerView: View {
-    let areas: [Area]
-    let todos: [Todo]
-    let selectedAreaID: UUID?
-    let selectedTodoID: UUID?
-    let onCreateTask: () -> Void
-    let onSelect: (Area?, Todo?) -> Void
-
-    @Environment(\.dismiss) private var dismiss
-    @State private var selectedTab: FlowTaskPickerTab = .tasks
-
-    private var projection: FlowContextPickerProjection {
-        FlowContextPickerProjection(areas: areas, todos: todos)
-    }
-
-    private var taskGroups: [FlowContextPickerTaskGroup] {
-        projection.taskGroups
-    }
-
-    private var habitTodos: [Todo] {
-        projection.habitTodos
-    }
-
-    private var otherArea: Area? {
-        projection.otherArea
-    }
-
-    private var userAreas: [Area] {
-        projection.userAreas
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text(String(localized: "Flowタスク"))
-                    .font(.headline.weight(.semibold))
-
-                Spacer(minLength: 0)
-
-                Button {
-                    dismiss()
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.caption.weight(.bold))
-                        .frame(width: 26, height: 26)
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
-            }
-
-            Picker(String(localized: "表示"), selection: $selectedTab) {
-                ForEach(FlowTaskPickerTab.allCases) { tab in
-                    Text(tab.title).tag(tab)
-                }
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-
-            ScrollView {
-                switch selectedTab {
-                case .tasks:
-                    taskTab
-                case .habits:
-                    habitTab
-                case .areas:
-                    areaTab
-                }
-            }
-            .scrollIndicators(.hidden)
-        }
-        .padding(14)
-        .background(.bar)
-    }
-
-    @ViewBuilder
-    private var taskTab: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Button {
-                onCreateTask()
-            } label: {
-                Label(String(localized: "タスクを追加"), systemImage: "plus.circle.fill")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.accentColor)
-                    .frame(maxWidth: .infinity, minHeight: 42, alignment: .leading)
-                    .padding(.horizontal, 12)
-                    .background(Color.accentColor.opacity(0.08))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-            }
-            .buttonStyle(.plain)
-
-            if taskGroups.isEmpty {
-                emptyState(String(localized: "今日のタスクはありません"))
-            } else {
-                ForEach(taskGroups) { group in
-                    sectionHeader(title: group.title, count: group.todos.count, tint: group.tint)
-
-                    VStack(spacing: 7) {
-                        ForEach(group.todos) { todo in
-                            taskRow(todo)
-                        }
-                    }
-                }
-            }
-        }
-        .padding(.top, 2)
-    }
-
-    @ViewBuilder
-    private var habitTab: some View {
-        if habitTodos.isEmpty {
-            emptyState(String(localized: "今日の習慣はありません"))
-        } else {
-            VStack(spacing: 7) {
-                ForEach(habitTodos) { todo in
-                    taskRow(todo)
-                }
-            }
-            .padding(.top, 2)
-        }
-    }
-
-    private var areaTab: some View {
-        LazyVGrid(
-            columns: [GridItem(.adaptive(minimum: 120, maximum: 170), spacing: 10)],
-            alignment: .leading,
-            spacing: 10
-        ) {
-            areaGridItem(
-                iconText: otherArea?.symbolName ?? DefaultAreas.taskInboxSymbol,
-                title: otherArea?.name ?? String(localized: "その他"),
-                color: .secondary,
-                isSelected: selectedTodoID == nil && (selectedAreaID == otherArea?.id || selectedAreaID == nil)
-            ) {
-                onSelect(otherArea, nil)
-                dismiss()
-            }
-
-            ForEach(userAreas) { area in
-                areaGridItem(
-                    iconText: area.symbolName,
-                    title: area.name,
-                    color: Color(hex: area.colorHex),
-                    isSelected: selectedTodoID == nil && selectedAreaID == area.id
-                ) {
-                    onSelect(area, nil)
-                    dismiss()
-                }
-            }
-        }
-        .padding(.top, 2)
-    }
-
-    private func taskRow(_ todo: Todo) -> some View {
-        Button {
-            onSelect(todo.area, todo)
-            dismiss()
-        } label: {
-            pickerRow(
-                iconText: todo.area?.symbolName ?? DefaultAreas.taskInboxSymbol,
-                title: TodoDisplay.flowTitle(for: todo),
-                subtitle: taskSubtitle(todo),
-                color: areaColor(todo.area),
-                isSelected: selectedTodoID == todo.id,
-                isPlaceholder: todo.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            )
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func areaGridItem(
-        iconText: String,
-        title: String,
-        color: Color,
-        isSelected: Bool,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            VStack(spacing: 8) {
-                Text(iconText)
-                    .font(.system(size: 28))
-                    .frame(width: 46, height: 46)
-                    .background(color.opacity(0.14))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-
-                Text(title)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.primary)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
-                    .frame(height: 32, alignment: .top)
-            }
-            .frame(maxWidth: .infinity, minHeight: 92)
-            .padding(8)
-            .background(isSelected ? color.opacity(0.14) : Color.primary.opacity(0.05))
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-            .overlay(alignment: .topTrailing) {
-                if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.caption)
-                        .foregroundStyle(color)
-                        .padding(7)
-                }
-            }
-            .overlay {
-                RoundedRectangle(cornerRadius: 8)
-                    .strokeBorder(isSelected ? color.opacity(0.65) : Color.clear, lineWidth: 1)
-            }
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func pickerRow(
-        iconText: String,
-        title: String,
-        subtitle: String,
-        color: Color,
-        isSelected: Bool,
-        isPlaceholder: Bool
-    ) -> some View {
-        HStack(spacing: 12) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(color.opacity(0.16))
-
-                Text(iconText)
-                    .font(.title3)
-            }
-            .frame(width: 38, height: 38)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(isPlaceholder ? .body.weight(.semibold).italic() : .body.weight(.semibold))
-                    .foregroundStyle(isPlaceholder ? Color.secondary.opacity(0.7) : Color.primary)
-                    .lineLimit(1)
-
-                Text(subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-
-            Spacer(minLength: 0)
-
-            if isSelected {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.tint)
-            }
-        }
-        .padding(10)
-        .background(isSelected ? Color.accentColor.opacity(0.12) : Color.primary.opacity(0.05))
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-    }
-
-    private func areaColor(_ area: Area?) -> Color {
-        guard let area, !DefaultAreas.isTaskInbox(area) else {
-            return .secondary
-        }
-
-        return Color(hex: area.colorHex)
-    }
-
-    private func taskSubtitle(_ todo: Todo) -> String {
-        let areaName = TodoDisplay.flowContextName(for: todo)
-        let priority = todo.priority == .low && todo.isRoomIfPossible ? String(localized: "余裕があれば") : todo.priority.displayName
-        return String(localized: "\(areaName) · \(priority)")
-    }
-
-    private func sectionHeader(title: String, count: Int, tint: Color) -> some View {
-        HStack(spacing: 7) {
-            Circle()
-                .fill(tint)
-                .frame(width: 7, height: 7)
-
-            Text(title)
-                .font(.caption.weight(.semibold))
-
-            Text("\(count)")
-                .font(.caption2.weight(.medium))
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
-                .background(Color.secondary.opacity(0.12))
-                .clipShape(Capsule())
-
-            Spacer(minLength: 0)
-        }
-        .padding(.top, 4)
-    }
-
-    private func emptyState(_ text: String) -> some View {
-        Text(text)
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
-            .frame(maxWidth: .infinity, minHeight: 240, alignment: .center)
-    }
-}
-
-private enum FlowTaskPickerTab: String, CaseIterable, Identifiable {
-    case tasks
-    case habits
-    case areas
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .tasks:
-            String(localized: "タスク")
-        case .habits:
-            String(localized: "習慣一覧")
-        case .areas:
-            String(localized: "方向")
-        }
-    }
-}
-
-private extension FlowContextPickerTaskGroup {
-    var title: String {
-        type.displayName
-    }
-
-    var tint: Color {
-        switch type {
-        case .habit:
-            .red
-        case .neutral:
-            .blue
-        case .nice:
-            .green
-        }
     }
 }
 

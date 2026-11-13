@@ -78,7 +78,11 @@ struct IOSTasksView: View {
             }
             if let snapshot {
                 if isSearching {
-                    globalSearchContent
+                    IOSTaskSearchResults(
+                        searchText: searchText,
+                        sections: searchSections,
+                        onEditTodo: { editorMode = .edit($0) }
+                    )
                 } else {
                     taskContent(snapshot: snapshot)
                         .productContentFade(on: range)
@@ -448,9 +452,11 @@ struct IOSTasksView: View {
                         searchQuery: taskSearchQuery
                     )
 
-                    daySection(
+                    IOSTaskDaySection(
                         date: selectedDate,
-                        todos: todos(on: selectedDate, in: snapshot)
+                        todos: todos(on: selectedDate, in: snapshot),
+                        revealsInitialRows: revealsInitialRows,
+                        onEditTodo: { editorMode = .edit($0) }
                     )
                 }
                 .padding(12)
@@ -469,7 +475,13 @@ struct IOSTasksView: View {
         return ScrollView {
             LazyVStack(spacing: 14) {
                 ForEach(Array(dates.enumerated()), id: \.element.0) { index, entry in
-                    daySection(date: entry.0, todos: entry.1, firstRowIndex: index == 0 ? 0 : 5)
+                    IOSTaskDaySection(
+                        date: entry.0,
+                        todos: entry.1,
+                        firstRowIndex: index == 0 ? 0 : 5,
+                        revealsInitialRows: revealsInitialRows,
+                        onEditTodo: { editorMode = .edit($0) }
+                    )
                 }
 
                 if dates.isEmpty {
@@ -493,155 +505,22 @@ struct IOSTasksView: View {
 
         return ScrollView {
             LazyVStack(spacing: 14) {
-                overdueTaskCard(overdueTodos)
-                daySection(
+                IOSTaskOverdueCard(
+                    todos: overdueTodos,
+                    revealsInitialRows: revealsInitialRows,
+                    onMoveToToday: moveTodosToToday,
+                    onEditTodo: { editorMode = .edit($0) }
+                )
+                IOSTaskDaySection(
                     date: date,
                     todos: todos,
                     suppressesEmptyState: !overdueTodos.isEmpty,
-                    firstRowIndex: overdueTodos.count
+                    firstRowIndex: overdueTodos.count,
+                    revealsInitialRows: revealsInitialRows,
+                    onEditTodo: { editorMode = .edit($0) }
                 )
             }
             .padding(12)
-        }
-    }
-
-    private func daySection(
-        date: Date,
-        todos: [Todo],
-        suppressesEmptyState: Bool = false,
-        firstRowIndex: Int = 0
-    ) -> some View {
-        LazyVStack(alignment: .leading, spacing: 10) {
-            Text(date, format: .dateTime.month().day().weekday())
-                .font(.headline)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-            let grouped = IOSGroupedTodos(todos: todos)
-            taskGroup(title: String(localized: "習慣一覧"), todos: grouped.habits, firstRowIndex: firstRowIndex)
-            taskGroup(
-                title: String(localized: "タスク"),
-                todos: grouped.tasks,
-                firstRowIndex: firstRowIndex + grouped.habits.count
-            )
-            if !grouped.nice.isEmpty {
-                taskGroup(
-                    title: String(localized: "ナイス"),
-                    todos: grouped.nice,
-                    firstRowIndex: firstRowIndex + grouped.habits.count + grouped.tasks.count
-                )
-            }
-
-            if todos.isEmpty && !suppressesEmptyState {
-                ContentUnavailableView(
-                    String(localized: "今日の項目はありません"),
-                    systemImage: "checkmark.circle"
-                )
-                .frame(maxWidth: .infinity, minHeight: 150)
-            }
-        }
-        .padding(14)
-        .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 16))
-    }
-
-    @ViewBuilder
-    private func overdueTaskCard(_ todos: [Todo]) -> some View {
-        if !todos.isEmpty {
-            LazyVStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 7) {
-                    Circle()
-                        .fill(.red)
-                        .frame(width: 7, height: 7)
-
-                    Text(String(localized: "やり残し"))
-                        .font(.caption.weight(.semibold))
-
-                    Text("\(todos.count)")
-                        .font(.caption2.monospacedDigit().weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color.secondary.opacity(0.14), in: Capsule())
-
-                    Spacer(minLength: 0)
-
-                    Button(String(localized: "すべて今日へ")) {
-                        moveTodosToToday(todos)
-                    }
-                    .font(.caption)
-                    .buttonStyle(.borderless)
-                }
-
-                taskRows(todos, firstRowIndex: 0)
-            }
-            .padding(14)
-            .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 16))
-        }
-    }
-
-    @ViewBuilder
-    private func taskGroup(title: String, todos: [Todo], firstRowIndex: Int) -> some View {
-        if !todos.isEmpty {
-            LazyVStack(alignment: .leading, spacing: 6) {
-                Text(title)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-
-                taskRows(todos, firstRowIndex: firstRowIndex)
-            }
-        }
-    }
-
-    private func taskRows(_ todos: [Todo], firstRowIndex: Int) -> some View {
-        ForEach(Array(todos.enumerated()), id: \.element.id) { index, todo in
-            IOSTaskRow(todo: todo) { editorMode = .edit(todo) }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 9)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
-                .featureRowReveal(index: firstRowIndex + index, enabled: revealsInitialRows)
-        }
-    }
-
-    @ViewBuilder
-    private var globalSearchContent: some View {
-        if searchSections.isEmpty {
-            ContentUnavailableView.search(text: searchText)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else {
-            ScrollView {
-                LazyVStack(spacing: 14) {
-                    ForEach(searchSections) { section in
-                        VStack(alignment: .leading, spacing: 8) {
-                            searchSectionTitle(section)
-                                .font(.headline)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-
-                            ForEach(section.todos) { todo in
-                                IOSTaskRow(todo: todo) {
-                                    editorMode = .edit(todo)
-                                }
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 9)
-                                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
-                            }
-                        }
-                        .padding(14)
-                        .background(
-                            Color.primary.opacity(0.035),
-                            in: RoundedRectangle(cornerRadius: 16)
-                        )
-                    }
-                }
-                .padding(12)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func searchSectionTitle(_ section: DatabaseTaskSearchSection) -> some View {
-        if let date = section.date {
-            Text(date, format: .dateTime.year().month().day().weekday())
-        } else {
-            Label(String(localized: "日付なし"), systemImage: "tray")
         }
     }
 
@@ -778,299 +657,6 @@ struct IOSTasksView: View {
     }
 }
 
-private struct IOSTaskCalendarRecords {
-    let todos: [Todo]
-    let areas: [Area]
-    let projects: [Project]
-    let snapshot: TaskCalendarSnapshot
-}
-
-private struct IOSTaskCalendarQuery: View {
-    @Environment(\.calendar) private var calendar
-    @Environment(\.appDayBoundary) private var dayBoundary
-    @Query(sort: \Todo.sortIndex) private var todos: [Todo]
-    @Query(sort: \Area.sortIndex) private var areas: [Area]
-    @Query(sort: \Project.createdAt) private var projects: [Project]
-
-    let calendarDayRevision: Int
-    let onUpdate: (Result<IOSTaskCalendarRecords, Error>) -> Void
-
-    var body: some View {
-        let revisions = [
-            todos.map { RecordRevision(id: $0.id, updatedAt: $0.updatedAt) },
-            areas.map { RecordRevision(id: $0.id, updatedAt: $0.updatedAt) },
-            projects.map { RecordRevision(id: $0.id, updatedAt: $0.updatedAt) }
-        ]
-        let error = _todos.fetchError ?? _areas.fetchError ?? _projects.fetchError
-        Color.clear
-            .allowsHitTesting(false)
-            .accessibilityHidden(true)
-            .task(id: QueryRevision(
-                records: revisions,
-                calendar: calendar,
-                dayBoundaryHour: dayBoundary.hour,
-                calendarDayRevision: calendarDayRevision,
-                failed: error != nil
-            )) {
-                guard !Task.isCancelled else { return }
-                if let error {
-                    onUpdate(.failure(error))
-                    return
-                }
-                let snapshot = TaskCalendarSnapshot(todos: todos, calendar: calendar, dayBoundary: dayBoundary)
-                onUpdate(.success(IOSTaskCalendarRecords(todos: todos, areas: areas, projects: projects, snapshot: snapshot)))
-            }
-    }
-
-    private struct RecordRevision: Hashable {
-        let id: UUID
-        let updatedAt: Date
-    }
-
-    private struct QueryRevision: Hashable {
-        let records: [[RecordRevision]]
-        let calendar: Calendar
-        let dayBoundaryHour: Int
-        let calendarDayRevision: Int
-        let failed: Bool
-    }
-}
-
-private struct IOSWeekDateStrip: View {
-    @Environment(\.calendar) private var calendar
-    @Environment(\.locale) private var locale
-
-    @Binding var selectedDate: Date
-    let snapshot: TaskCalendarSnapshot?
-    let filter: TaskCalendarFilter
-    let searchQuery: DatabaseSearchQuery
-
-    var body: some View {
-        IOSScrollablePeriodStrip(
-            selectedDate: $selectedDate,
-            unit: .day,
-            visibleItemCount: 7,
-            spacing: 5,
-            height: 55
-        ) { date, isSelected in
-            Button {
-                selectedDate = calendar.startOfDay(for: date)
-            } label: {
-                VStack(spacing: 4) {
-                    Text(date.formatted(.dateTime.locale(locale).weekday(.narrow)))
-                        .font(.caption2.weight(.semibold))
-                    Text("\(calendar.component(.day, from: date))")
-                        .font(.body.weight(.semibold))
-                        .monospacedDigit()
-                    HStack(spacing: 2) {
-                        ForEach(
-                            snapshot?.indicatorColors(
-                                on: date,
-                                filter: filter,
-                                matching: searchQuery
-                            ) ?? [],
-                            id: \.self
-                        ) { colorHex in
-                            Circle()
-                                .fill(Color(hex: colorHex))
-                                .frame(width: 4, height: 4)
-                        }
-                    }
-                    .frame(height: 4)
-                }
-                .foregroundStyle(isSelected ? Color.white : Color.primary)
-                .frame(maxWidth: .infinity, minHeight: 55)
-                .background(
-                    isSelected ? Color.accentColor : Color.primary.opacity(0.04),
-                    in: RoundedRectangle(cornerRadius: 10)
-                )
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityAddTraits(isSelected ? .isSelected : [])
-        }
-    }
-
-}
-
-private struct IOSWeekCardStrip: View {
-    @Environment(\.calendar) private var calendar
-    @Environment(\.locale) private var locale
-
-    @Binding var selectedDate: Date
-    let snapshot: TaskCalendarSnapshot?
-    let filter: TaskCalendarFilter
-    let searchQuery: DatabaseSearchQuery
-
-    var body: some View {
-        IOSScrollablePeriodStrip(
-            selectedDate: $selectedDate,
-            unit: .week,
-            visibleItemCount: 3,
-            spacing: 6,
-            height: 58
-        ) { anchor, isSelected in
-            let dates = weekDates(containing: anchor)
-
-            Button {
-                selectedDate = calendar.startOfDay(for: anchor)
-            } label: {
-                VStack(spacing: 3) {
-                    Text(monthText(for: dates))
-                        .font(.caption.weight(.semibold))
-                    Text(dayRangeText(for: dates))
-                        .font(.body.monospacedDigit().weight(.semibold))
-
-                    HStack(spacing: 2) {
-                        ForEach(
-                            snapshot?.indicatorColors(
-                                inWeekContaining: anchor,
-                                filter: filter,
-                                matching: searchQuery
-                            ) ?? [],
-                            id: \.self
-                        ) { colorHex in
-                            Circle()
-                                .fill(Color(hex: colorHex))
-                                .frame(width: 4, height: 4)
-                        }
-                    }
-                    .frame(height: 4)
-                }
-                .foregroundStyle(isSelected ? Color.white : Color.primary)
-                .frame(maxWidth: .infinity, minHeight: 58)
-                .background(
-                    isSelected ? Color.accentColor : Color.primary.opacity(0.04),
-                    in: RoundedRectangle(cornerRadius: 10)
-                )
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityAddTraits(isSelected ? .isSelected : [])
-        }
-    }
-
-    private func weekDates(containing date: Date) -> [Date] {
-        TaskCalendarBuilder(calendar: calendar).dates(for: .sevenDays, anchoredAt: date)
-    }
-
-
-    private func monthText(for dates: [Date]) -> String {
-        guard let first = dates.first else { return "" }
-        return first.formatted(.dateTime.locale(locale).month(.abbreviated))
-    }
-
-    private func dayRangeText(for dates: [Date]) -> String {
-        guard let first = dates.first, let last = dates.last else { return "" }
-        return "\(calendar.component(.day, from: first))–\(calendar.component(.day, from: last))"
-    }
-
-    private func weekStart(for date: Date) -> Date {
-        calendar.dateInterval(of: .weekOfYear, for: date)?.start
-            ?? calendar.startOfDay(for: date)
-    }
-}
-
-private struct IOSTaskMonthCalendar: View {
-    @Environment(\.calendar) private var calendar
-    @Environment(\.locale) private var locale
-
-    @Binding var selectedDate: Date
-    let snapshot: TaskCalendarSnapshot
-    let filter: TaskCalendarFilter
-    let searchQuery: DatabaseSearchQuery
-
-    private let columns = Array(
-        repeating: GridItem(.flexible(), spacing: 4),
-        count: 7
-    )
-
-    var body: some View {
-        VStack(spacing: 10) {
-            HStack {
-                Text(selectedDate.formatted(.dateTime.locale(locale).year().month(.wide)))
-                    .font(.headline)
-
-                Spacer()
-
-                Button {
-                    moveMonth(by: -1)
-                } label: {
-                    Image(systemName: "chevron.left")
-                }
-
-                Button {
-                    moveMonth(by: 1)
-                } label: {
-                    Image(systemName: "chevron.right")
-                }
-            }
-
-            LazyVGrid(columns: columns, spacing: 6) {
-                ForEach(CalendarWeekdaySymbols.orderedAbbreviated(calendar: calendar), id: \.self) {
-                    Text($0)
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity)
-                }
-
-                ForEach(monthDates, id: \.self) { date in
-                    dayCell(date)
-                }
-            }
-        }
-        .padding(12)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
-    }
-
-    private func dayCell(_ date: Date) -> some View {
-        let isSelected = calendar.isDate(date, inSameDayAs: selectedDate)
-        let isCurrentMonth = calendar.isDate(date, equalTo: selectedDate, toGranularity: .month)
-        let colors = snapshot.indicatorColors(
-            on: date,
-            filter: filter,
-            matching: searchQuery,
-            limit: 3
-        )
-
-        return Button {
-            selectedDate = calendar.startOfDay(for: date)
-        } label: {
-            VStack(spacing: 3) {
-                Text("\(calendar.component(.day, from: date))")
-                    .font(.callout.monospacedDigit())
-
-                HStack(spacing: 2) {
-                    ForEach(colors, id: \.self) { colorHex in
-                        Circle()
-                            .fill(Color(hex: colorHex))
-                            .frame(width: 4, height: 4)
-                    }
-                }
-                .frame(height: 4)
-            }
-            .foregroundStyle(isSelected ? Color.white : isCurrentMonth ? Color.primary : Color.secondary)
-            .frame(maxWidth: .infinity, minHeight: 38)
-            .background(isSelected ? Color.accentColor : Color.clear, in: RoundedRectangle(cornerRadius: 9))
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .opacity(isCurrentMonth ? 1 : 0.5)
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
-    }
-
-    private var monthDates: [Date] {
-        TaskCalendarBuilder(calendar: calendar).dates(for: .month, anchoredAt: selectedDate)
-    }
-
-    private func moveMonth(by value: Int) {
-        guard let date = calendar.date(byAdding: .month, value: value, to: selectedDate) else {
-            return
-        }
-        selectedDate = calendar.startOfDay(for: date)
-    }
-}
-
 private struct IOSRequiredTodoMaterializationID: Hashable {
     let isVisible: Bool
     let hasRecords: Bool
@@ -1093,158 +679,4 @@ private struct IOSProjectMaterializationRevision: Hashable {
     let completedAt: Date?
     let areaUpdatedAt: Date?
     let areaArchivedAt: Date?
-}
-
-private struct IOSGroupedTodos {
-    let habits: [Todo]
-    let tasks: [Todo]
-    let nice: [Todo]
-
-    init(todos: [Todo]) {
-        habits = todos.filter { $0.taskType == .habit }
-        tasks = todos.filter { todo in
-            guard let area = todo.area else { return true }
-            return todo.taskType == .neutral || DefaultAreas.isTaskInbox(area)
-        }
-        nice = todos.filter { $0.taskType == .nice }
-    }
-}
-
-private enum IOSBacklogMode: String, Identifiable {
-    case overdue
-    case unscheduled
-    var id: String { rawValue }
-}
-
-private struct IOSBacklogView: View {
-    @Environment(\.dismiss) private var dismiss
-    let mode: IOSBacklogMode
-    let todos: [Todo]
-    let edit: (Todo) -> Void
-
-    var body: some View {
-        List(todos) { todo in
-            IOSTaskRow(todo: todo) { edit(todo) }
-        }
-        .overlay {
-            if todos.isEmpty {
-                ContentUnavailableView(
-                    mode == .overdue ? String(localized: "やり残し") : String(localized: "日付なし"),
-                    systemImage: mode == .overdue ? "checkmark.circle" : "tray"
-                )
-            }
-        }
-        .iosCenteredNavigationTitle(
-            mode == .overdue ? String(localized: "やり残し") : String(localized: "日付なし")
-        )
-        .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
-                Button(String(localized: "完了")) { dismiss() }
-            }
-        }
-    }
-}
-
-struct IOSTaskRow: View {
-    @Environment(\.modelContext) private var modelContext
-
-    let todo: Todo
-    var showsContextSubtitle = false
-    let edit: () -> Void
-
-    var body: some View {
-        HStack(spacing: 10) {
-            TodoProgressControl(todo: todo) {
-                if todo.setManuallyCompleted(!todo.isCompleted) {
-                    _ = modelContext.saveReporting(.taskUpdate)
-                }
-            }
-
-            Text(todo.area?.symbolName ?? DefaultAreas.taskInboxSymbol)
-                .font(.title3)
-                .accessibilityLabel(todo.area?.name ?? String(localized: "その他"))
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text(TodoDisplay.taskTitle(for: todo))
-                    .font(.body.weight(.medium))
-                    .strikethrough(todo.isCompleted)
-                    .foregroundStyle(todo.isCompleted ? .secondary : .primary)
-
-                if showsContextSubtitle {
-                    Text(TodoDisplay.flowContextName(for: todo))
-                        .font(.caption)
-                        .foregroundStyle(todo.area.map { Color(hex: $0.colorHex) } ?? .accentColor)
-                        .lineLimit(1)
-
-                    HStack(spacing: 4) {
-                        Text(todo.priority.displayName)
-                        if todo.measurement != .checkbox {
-                            Text(verbatim: "・")
-                            Text(progressText)
-                        }
-                        if let minutes = todo.scheduledTimeMinutes {
-                            Text(verbatim: "・")
-                            TaskTimeLabel(minutes: minutes, reminderEnabled: todo.reminderEnabled)
-                        }
-                        if let firstTag = todo.hashtags.first {
-                            Text(verbatim: "・")
-                            Text(verbatim: "#\(firstTag)")
-                        }
-                    }
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                } else {
-                    HStack(spacing: 10) {
-                        Text(TodoDisplay.flowContextName(for: todo))
-                            .foregroundStyle(todo.area.map { Color(hex: $0.colorHex) } ?? .secondary)
-
-                        HStack(spacing: 5) {
-                            Text(todo.priority.displayName)
-                            if todo.measurement != .checkbox {
-                                Text(progressText)
-                            }
-                            if let minutes = todo.scheduledTimeMinutes {
-                                TaskTimeLabel(minutes: minutes, reminderEnabled: todo.reminderEnabled)
-                            }
-                            if let firstTag = todo.hashtags.first {
-                                Text("#\(firstTag)")
-                            }
-                        }
-                    }
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                }
-            }
-
-            Spacer(minLength: 0)
-            Image(systemName: "chevron.right")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.tertiary)
-        }
-        .contentShape(Rectangle())
-        .onTapGesture(perform: edit)
-    }
-
-    private var progressText: String {
-        TodoProgressCalculator().summary(
-            measurement: todo.measurement,
-            plannedAmount: todo.plannedAmount,
-            actualProgress: todo.actualProgress,
-            focusDurationSeconds: todo.recordedFocusSeconds
-        )
-    }
-}
-
-enum IOSTaskEditorMode: Identifiable {
-    case create
-    case edit(Todo)
-
-    var id: String {
-        switch self {
-        case .create: "create"
-        case .edit(let todo): todo.id.uuidString
-        }
-    }
 }

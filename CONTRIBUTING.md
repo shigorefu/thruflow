@@ -30,6 +30,8 @@ other material whose license is incompatible with this arrangement.
 ## Before opening a pull request
 
 - Keep the Area → Task → Flow → progress loop coherent.
+- Keep screen entry points focused on composition and put substantial components
+  beside them in the [feature folder](docs/ARCHITECTURE.md#source-layout).
 - Use Japanese as the default user-facing language and update Japanese,
   English, Russian, Simplified Chinese, and Traditional Chinese localizations together.
 - Keep business rules outside SwiftUI views and add focused tests for domain or

@@ -76,6 +76,8 @@ Read the documents relevant to the task rather than loading all documentation.
   and independently testable. Follow the dependency rules in Architecture.
 - `ThruFlow/Platforms/{macOS,iOS,watchOS}` owns platform presentation;
   `Shared/UI` contains small genuinely shared components.
+- Keep screen entry points focused on composition. Place substantial UI sections
+  with their feature and follow the [source layout](docs/ARCHITECTURE.md#source-layout).
 - Check consumers in `ThruFlowLiveActivity` and Watch when changing shared APIs.
   Widgets use snapshots; do not give them another timer or SwiftData store.
 - Follow Apple Human Interface Guidelines and system Liquid Glass conventions.

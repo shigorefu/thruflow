@@ -8,40 +8,61 @@ macOS remains the complete desktop editing and analysis surface. The iPhone app
 uses a separate, Flow-first presentation that reuses the same domain, application
 state, and persistence schema without copying the desktop UI.
 
-## Source Layout
+## Source layout
 
 ```text
 ThruFlow/
+  Platforms/{macOS,iOS,watchOS}/
+    App/                App scenes, navigation and platform configuration
+    Features/<Feature>/ Screen entry points and their components
+    Support/            Platform adapters and cross-feature presentation helpers
   Shared/
     Domain/
-      Models/       SwiftData entities and stable enums
-      Logic/        Pure calculations and product rules
-      Services/     Platform-neutral protocols and shared implementations
-    Application/    Shared observable state and use-case orchestration
-    Connectors/     External provider clients, credential storage, and OAuth
-    LiveActivity/   Shared ActivityKit attributes, content state, and intents
-    Widget/         Cross-process WidgetKit snapshots and App Group storage
-    UI/             Small reusable SwiftUI components
-  Localisation/     Shared Apple String Catalog used by every platform target
-  Platforms/
-    macOS/
-      App/          macOS scene composition and application delegate
-      Features/     Current macOS feature screens
-      Support/      AppKit adapters used by the macOS presentation layer
-    iOS/
-      App/          iPhone composition root, navigation, entitlements, and Info.plist
-      Features/     Native iPhone Flow, Tasks, History, Areas, Statistics, and Settings
-      Support/      ActivityKit and other iOS framework adapters
-    watchOS/
-      App/          Watch composition root and CloudKit entitlements
-      Features/     Native Watch Flow dashboard, player, Tasks, and Statistics
-ThruFlowLiveActivity/  Widget extension for Live Activity and Home Screen widgets
+      Models/           SwiftData entities and stable enums
+      Logic/<Feature>/  Calculations and product rules by feature
+      Services/         Shared capability protocols and implementations
+    Application/<Feature>/  Use cases, data access and shared state
+    UI/<Feature>/           UI shared by clients, with common controls in Components/
+    Connectors/         Provider clients, credential storage and OAuth
+    LiveActivity/       ActivityKit attributes and intents shared with the extension
+    Widget/             Cross-process snapshots and App Group storage
+  Localisation/         Shared Apple String Catalogs
+ThruFlowLiveActivity/
+  LiveActivity/         Lock Screen and Dynamic Island presentation
+  Widgets/<Feature>/   Widget configuration, snapshot provider and presentation
+ThruFlowTests/<Feature>/
+ThruFlowUITests/<Feature>/
 ```
 
-`ThruFlow`, `ThruFlow iOS`, and `ThruFlow Watch App` are separate application
-targets. Explicit source exclusions keep AppKit, UIKit, ActivityKit, and
-platform-owned presentation code out of incompatible targets. Shared tests
-remain in the macOS test target because they verify the platform-neutral core.
+Start at the platform's feature screen to follow how the screen is composed.
+The screen coordinates selection, navigation, toolbar actions, sheets and data
+loading. Give independently editable sections a named view with the inputs and
+actions that section uses. Keep small labels, rows and styling helpers next to
+their owner when they are easiest to understand together. Add a subdirectory
+when a section has multiple related files, such as a calendar's grid, date
+strip and controls.
+
+| Feature | macOS | iOS and iPadOS | Shared owners |
+| --- | --- | --- | --- |
+| Flow | [Dashboard and player](../ThruFlow/Platforms/macOS/Features/Flow) | [Dashboard and timeline](../ThruFlow/Platforms/iOS/Features/Flow) | [Timer and stream UI](../ThruFlow/Shared/UI/Flow), [active flow state](../ThruFlow/Shared/Application/Flow) |
+| Tasks | [Calendar, rows, composer and editor](../ThruFlow/Platforms/macOS/Features/Tasks) | [Calendar, composer and editor](../ThruFlow/Platforms/iOS/Features/Tasks) | [Task rules](../ThruFlow/Shared/Domain/Logic/Tasks), [editing and reminders](../ThruFlow/Shared/Application/Tasks) |
+| History | [Calendar, timeline and editors](../ThruFlow/Platforms/macOS/Features/History) | [Calendar, timeline and search](../ThruFlow/Platforms/iOS/Features/History) | [Calendar calculations](../ThruFlow/Shared/Domain/Logic/History/HistoryCalendarBuilder.swift), [record queries](../ThruFlow/Shared/Application/History), [record editor](../ThruFlow/Shared/UI/History) |
+| Areas and Projects | [Area board and editor](../ThruFlow/Platforms/macOS/Features/Areas) | [Area board and editor](../ThruFlow/Platforms/iOS/Features/Areas) | [Area operations](../ThruFlow/Shared/Application/Areas), [project UI](../ThruFlow/Shared/UI/Projects) |
+| Statistics | [Report, period controls and export](../ThruFlow/Platforms/macOS/Features/Statistics) | [Report cards and sheets](../ThruFlow/Platforms/iOS/Features/Statistics) | [Period and report calculations](../ThruFlow/Shared/Domain/Logic/Statistics), [projection and cache](../ThruFlow/Shared/Application/Statistics) |
+| Onboarding | [Setup sheet](../ThruFlow/Platforms/macOS/Features/Onboarding) | [Setup sheet](../ThruFlow/Platforms/iOS/Features/Onboarding) | [Tour and timer demo UI](../ThruFlow/Shared/UI/Onboarding), [onboarding state](../ThruFlow/Shared/Application/Onboarding) |
+
+The [Watch dashboard](../ThruFlow/Platforms/watchOS/Features/Dashboard/WatchFlowDashboardView.swift)
+composes the [Flow](../ThruFlow/Platforms/watchOS/Features/Flow),
+[Tasks](../ThruFlow/Platforms/watchOS/Features/Tasks) and
+[Statistics](../ThruFlow/Platforms/watchOS/Features/Statistics) pages.
+The [widget bundle](../ThruFlowLiveActivity/ThruFlowLiveActivityBundle.swift)
+registers the widget configurations and Live Activity.
+
+The Xcode project uses synchronized folders for app, test and widget sources.
+New platform-specific Swift files use an `os(...)` guard around their imports
+and declarations. Check target exclusions and explicit widget references before
+moving files across source roots or renaming platform-specific files. Keep
+test suite names stable so existing Xcode test selectors keep working.
 
 ## Dependency Rules
 
@@ -325,14 +346,14 @@ ownership and completion rules live only in [`AGENTS.md`](../AGENTS.md).
 | --- | --- | --- | --- |
 | 1 — Task quick-input state | Mac `TasksView` and iOS `IOSTaskComposer` | Shared token application/removal around the existing parser; creation and editor save already use `TaskEditingService` | Remove/replace Area, date, priority, and tag tokens while preserving native capture behavior |
 | 2 — Flow command dispatch | [Mac player](../ThruFlow/Platforms/macOS/Features/Flow/FlowMiniPlayerView.swift), [iOS Flow](../ThruFlow/Platforms/iOS/Features/Flow/IOSFlowView.swift) | Shared primary-action resolution and memo command; retain native sheet/popover state | Idle, focusing, paused, overtime, resting, pending result; memo submit/cancel and Task switching |
-| 2 — History commit and Task bulk actions | [Mac inspector](../ThruFlow/Platforms/macOS/Features/History/FlowHistoryInspectorView.swift), [iOS History](../ThruFlow/Platforms/iOS/Features/History/IOSHistoryView.swift); Mac `TasksView` / iOS `IOSTasksView` | Application transactions around existing `FlowHistoryEditor` and `TodoRescheduleService`, including rename/save/rollback and bulk ordering | Switched-session edit updates measured progress; failed save rolls back rename; mixed eligible/blocked Tasks move consistently |
+| 2 — History commit and Task bulk actions | [Mac inspector](../ThruFlow/Platforms/macOS/Features/History/Editors/FlowHistoryInspectorView.swift), [iOS History](../ThruFlow/Platforms/iOS/Features/History/IOSHistoryView.swift); Mac `TasksView` / iOS `IOSTasksView` | Application transactions around existing `FlowHistoryEditor` and `TodoRescheduleService`, including rename/save/rollback and bulk ordering | Switched-session edit updates measured progress; failed save rolls back rename; mixed eligible/blocked Tasks move consistently |
 | 3 — Statistics workspace | [Mac](../ThruFlow/Platforms/macOS/Features/Statistics/StatisticsView.swift), [iOS](../ThruFlow/Platforms/iOS/Features/Statistics/IOSStatisticsView.swift) | Pure period selection plus Application request/cache/export lifecycle; preserve cancellation and stale-result guards | September range; exact custom range; multiple Areas; calendar/day-boundary invalidation; late requests and CSV range |
 | Small first extraction — Settings | [Mac](../ThruFlow/Platforms/macOS/Features/Settings/MacOSSettingsView.swift), [iOS](../ThruFlow/Platforms/iOS/Features/Settings/IOSSettingsView.swift) | Shared language/calendar/clock/timeline sections and language-option projection; shared reset status with platform completion callback | Both Chinese variants and notice; restart hint; day boundary; active Flow blocks reset |
-| Lower priority — emoji selection and app composition | [Mac emoji picker](../ThruFlow/Platforms/macOS/Features/Areas/EmojiPickerView.swift), picker inside iOS Area editor; both App/RootView entry points | Shared emoji catalog/search/recents policy and common settings environment; assess lifecycle extraction separately | Literal emoji search, recent order and legacy preference migration; launch/foreground behavior without duplicate sync work |
+| Lower priority — emoji selection and app composition | [Mac emoji picker](../ThruFlow/Platforms/macOS/Features/Areas/Editor/EmojiPickerView.swift), picker inside iOS Area editor; both App/RootView entry points | Shared emoji catalog/search/recents policy and common settings environment; assess lifecycle extraction separately | Literal emoji search, recent order and legacy preference migration; launch/foreground behavior without duplicate sync work |
 
 ### Task and Area editing extraction (1.4.0)
 
-`Shared/Application/TaskEditingService.swift` owns Task validation, generated
+`Shared/Application/Tasks/TaskEditingService.swift` owns Task validation, generated
 Habit field protection, default Other Area resolution, creation ordering,
 completion initialization, updates, and explicit save/rollback. Mac Task forms,
 both Mac quick-capture paths, iOS editors/composer, and Watch creation call it.
@@ -342,7 +363,7 @@ Manual Tasks in Habit Areas remain independent, and editing keeps an existing
 archived Area. Native forms report failures and only dismiss, clear input, or
 invoke success callbacks after a successful save.
 
-`Shared/Application/AreaEditingService.swift` owns Area validation, ordering,
+`Shared/Application/Areas/AreaEditingService.swift` owns Area validation, ordering,
 updates and Habit schedule reconciliation in one save. Both clients use
 `AreaDraft.normalizedForEditing` for type/schedule transitions. Weekday Habits
 require at least one weekday; reconciliation preserves started/completed Tasks
@@ -351,7 +372,7 @@ and history. Persisted models and CloudKit fields are unchanged.
 This resolves the source audit's three confirmed discrepancies: iOS no longer
 substitutes today while editing an undated Task, rejects valid unnamed Tasks,
 or bypasses shared weekday validation. Regression coverage is in
-`ThruFlowTests/EditorServiceTests.swift`, including injected save failures and
+`ThruFlowTests/Tasks/EditorServiceTests.swift`, including injected save failures and
 rollback of Area schedule changes together with their Task projections.
 The editor mutation journal restores touched fields on retained models before
 rollback, including connector completion metadata and Habit projections. It

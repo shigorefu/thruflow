@@ -6,8 +6,6 @@ struct IOSAreasView: View {
     @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.modelContext) private var modelContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    @ScaledMetric(relativeTo: .body) private var minimumGroupWidth = 240.0
     @AppStorage("directionKanbanColumnOrder") private var groupOrderRaw = AreaGroupOrder.encode(AreaGroupOrder.defaultValue)
 
     private let isVisible: Bool
@@ -50,7 +48,16 @@ struct IOSAreasView: View {
     var body: some View {
         Group {
             if showsGroupBoard {
-                groupBoard
+                IOSAreasBoard(
+                    groupOrder: groupOrder,
+                    records: records,
+                    showingArchived: showingArchived,
+                    loadFailed: loadFailed,
+                    revealsInitialRows: revealsInitialRows,
+                    onEditArea: { editorMode = .edit($0) },
+                    onArchiveArea: updateArchiveState,
+                    onSelectProject: { selectedProject = $0 }
+                )
             } else {
                 selectedGroupList
                     .frame(maxWidth: 800)
@@ -159,7 +166,7 @@ struct IOSAreasView: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
 
-            groupHeader(selectedType)
+            IOSAreaGroupHeader(type: selectedType)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 20)
                 .padding(.top, 4)
@@ -172,13 +179,24 @@ struct IOSAreasView: View {
                 Section {
                     if isEditingOrder {
                         ForEach(visibleAreas) { area in
-                            areaButton(area)
+                            IOSAreaRow(
+                                area: area,
+                                isEditingOrder: isEditingOrder,
+                                onEditArea: { editorMode = .edit($0) },
+                                onArchiveArea: updateArchiveState
+                            )
                         }
                         .onMove(perform: moveAreas)
                     } else {
                         ForEach(Array(visibleAreas.enumerated()), id: \.element.id) { index, area in
-                            areaTree(area)
-                                .featureRowReveal(index: index, enabled: revealsInitialRows)
+                            IOSAreaTreeView(
+                                area: area,
+                                projects: records?.projectsByArea[area.id] ?? [],
+                                onEditArea: { editorMode = .edit($0) },
+                                onArchiveArea: updateArchiveState,
+                                onSelectProject: { selectedProject = $0 }
+                            )
+                            .featureRowReveal(index: index, enabled: revealsInitialRows)
                         }
                     }
                 }
@@ -187,7 +205,7 @@ struct IOSAreasView: View {
             .productContentFade(on: selectedType)
             .overlay {
                 if records == nil {
-                    loadingContent
+                    IOSAreasLoadingContent(loadFailed: loadFailed)
                 } else if visibleAreas.isEmpty {
                     ContentUnavailableView(
                         showingArchived ? String(localized: "アーカイブはありません") : String(localized: "方向はありません"),
@@ -197,192 +215,6 @@ struct IOSAreasView: View {
             }
             .environment(\.editMode, .constant(isEditingOrder ? .active : .inactive))
         }
-    }
-
-    @ViewBuilder
-    private var loadingContent: some View {
-        if loadFailed {
-            ContentUnavailableView(
-                String(localized: "データを読み込めませんでした。"),
-                systemImage: "exclamationmark.triangle"
-            )
-        } else {
-            FeatureLoadingIndicator()
-        }
-    }
-
-    private var groupBoard: some View {
-        GeometryReader { geometry in
-            let spacing: CGFloat = 14
-            let availableWidth = max(0, geometry.size.width - 32)
-            let fittedCount = Int((availableWidth + spacing) / (minimumGroupWidth + spacing))
-            let columnCount = dynamicTypeSize.isAccessibilitySize ? 1 : min(3, max(1, fittedCount))
-            ScrollView {
-                LazyVGrid(
-                    columns: Array(repeating: GridItem(.flexible(minimum: 0), spacing: spacing, alignment: .top), count: columnCount),
-                    alignment: .leading,
-                    spacing: spacing
-                ) {
-                    ForEach(Array(groupOrder.enumerated()), id: \.element) { index, type in
-                        groupColumn(type, columnIndex: index)
-                    }
-                }
-                .padding(16)
-            }
-        }
-        .overlay {
-            if records == nil { loadingContent }
-        }
-    }
-
-    private func groupColumn(_ type: AreaType, columnIndex: Int) -> some View {
-        let groupAreas = visibleAreas(for: type)
-        return LazyVStack(alignment: .leading, spacing: 12) {
-            groupHeader(type)
-            if records != nil && groupAreas.isEmpty {
-                Text(showingArchived ? String(localized: "アーカイブはありません") : String(localized: "方向はありません"))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, minHeight: 80, alignment: .center)
-            }
-            ForEach(Array(groupAreas.enumerated()), id: \.element.id) { index, area in
-                areaTree(area)
-                    .featureRowReveal(index: index + columnIndex, enabled: revealsInitialRows)
-            }
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .topLeading)
-        .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 12))
-    }
-
-    private func groupHeader(_ type: AreaType) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Label(type.displayName, systemImage: type.systemImage)
-                .font(.headline)
-                .fixedSize(horizontal: false, vertical: true)
-            Text(type.description)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-
-    private func areaButton(_ area: Area) -> some View {
-        Button {
-            editorMode = .edit(area)
-        } label: {
-            areaRow(area)
-        }
-        .buttonStyle(.plain)
-        .contextMenu {
-            archiveAction(for: area)
-        }
-        .padding(12)
-        .background(Color(hex: area.colorHex).opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
-    }
-
-    @ViewBuilder
-    private func archiveAction(for area: Area) -> some View {
-        if area.isArchived {
-            Button {
-                updateArchiveState(area, archived: false)
-            } label: {
-                Label(String(localized: "分野を復元"), systemImage: "arrow.uturn.backward")
-            }
-        } else {
-            Button(role: .destructive) {
-                updateArchiveState(area, archived: true)
-            } label: {
-                Label(String(localized: "アーカイブする"), systemImage: "archivebox")
-            }
-        }
-    }
-
-    private func areaTree(_ area: Area) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            areaButton(area)
-            ForEach(records?.projectsByArea[area.id] ?? []) { project in
-                projectButton(project)
-                    .padding(.leading, 56)
-            }
-        }
-        .backgroundPreferenceValue(IOSAreaTreeBoundsKey.self) { bounds in
-            GeometryReader { geometry in
-                if let emoji = bounds.emoji {
-                    let origin = geometry[emoji]
-                    let children = bounds.projects.values.map { geometry[$0] }.sorted { $0.midY < $1.midY }
-                    Path { path in
-                        if let last = children.last {
-                            path.move(to: CGPoint(x: origin.midX, y: origin.maxY))
-                            path.addLine(to: CGPoint(x: origin.midX, y: last.midY))
-                            for child in children {
-                                path.move(to: CGPoint(x: origin.midX, y: child.midY))
-                                path.addLine(to: CGPoint(x: child.minX, y: child.midY))
-                            }
-                        }
-                    }
-                    .stroke(Color(hex: area.colorHex).opacity(0.45), style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
-                }
-            }
-            .allowsHitTesting(false)
-            .accessibilityHidden(true)
-        }
-        .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
-        .listRowBackground(Color.clear)
-        .listRowSeparator(.hidden)
-    }
-
-    private func projectButton(_ project: Project) -> some View {
-        Button {
-            selectedProject = project
-        } label: {
-            HStack(spacing: 10) {
-                Text(project.name)
-                    .foregroundStyle(project.isCompleted ? .secondary : .primary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                if project.isCompleted {
-                    Image(systemName: "checkmark.circle")
-                        .foregroundStyle(.secondary)
-                }
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.tertiary)
-            }
-            .padding(12)
-            .frame(minHeight: 44)
-            .background(Color(hex: project.area?.colorHex ?? "#8E8E93").opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .anchorPreference(key: IOSAreaTreeBoundsKey.self, value: .bounds) {
-            IOSAreaTreeBounds(projects: [project.id: $0])
-        }
-        .accessibilityValue(project.isCompleted ? String(localized: "プロジェクト完了済み") : "")
-    }
-
-    private func areaRow(_ area: Area) -> some View {
-        HStack(spacing: 12) {
-            Text(area.symbolName)
-                .font(.title2)
-                .frame(width: 44, height: 44)
-                .background(Color(hex: area.colorHex).opacity(0.16), in: RoundedRectangle(cornerRadius: 10))
-                .anchorPreference(key: IOSAreaTreeBoundsKey.self, value: .bounds) {
-                    IOSAreaTreeBounds(emoji: $0)
-                }
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(area.name)
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(.primary)
-            }
-
-            Spacer(minLength: 0)
-            Image(systemName: isEditingOrder ? "line.3.horizontal" : "chevron.right")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.tertiary)
-        }
-        .contentShape(Rectangle())
     }
 
     private func moveAreas(from offsets: IndexSet, to destination: Int) {
@@ -411,122 +243,6 @@ struct IOSAreasView: View {
         }
     }
 
-}
-
-private struct IOSAreaRecords {
-    let areas: [Area]
-    let activeGroups: [AreaType: [Area]]
-    let archivedGroups: [AreaType: [Area]]
-    let projectsByArea: [UUID: [Project]]
-
-    init(areas: [Area], projects: [Project]) {
-        self.areas = areas
-        let sortedAreas = areas.filter { !DefaultAreas.isTaskInbox($0) }.sorted { lhs, rhs in
-            if lhs.sortIndex != rhs.sortIndex { return lhs.sortIndex < rhs.sortIndex }
-            return lhs.name.localizedStandardCompare(rhs.name) == .orderedAscending
-        }
-        activeGroups = Dictionary(grouping: sortedAreas.filter { !$0.isArchived }, by: \.type)
-        archivedGroups = Dictionary(grouping: sortedAreas.filter(\.isArchived), by: \.type)
-        let projectEntries = projects.compactMap { project in
-            project.area.map { (areaID: $0.id, project: project) }
-        }
-        projectsByArea = Dictionary(grouping: projectEntries, by: \.areaID).mapValues { entries in
-            let children = entries.map(\.project)
-            return children.filter { !$0.isCompleted } + children.filter(\.isCompleted)
-        }
-    }
-}
-
-private struct IOSAreasQuery: View {
-    @Query(sort: \Area.sortIndex) private var areas: [Area]
-    @Query(sort: \Project.createdAt) private var projects: [Project]
-
-    let onUpdate: (Result<IOSAreaRecords, Error>) -> Void
-
-    var body: some View {
-        let revision = [
-            areas.map { RecordRevision(id: $0.id, updatedAt: $0.updatedAt) },
-            projects.map { RecordRevision(id: $0.id, updatedAt: $0.updatedAt) }
-        ]
-        let error = _areas.fetchError ?? _projects.fetchError
-        Color.clear
-            .allowsHitTesting(false)
-            .accessibilityHidden(true)
-            .task(id: QueryRevision(records: revision, failed: error != nil)) {
-                guard !Task.isCancelled else { return }
-                if let error {
-                    onUpdate(.failure(error))
-                } else {
-                    onUpdate(.success(IOSAreaRecords(areas: areas, projects: projects)))
-                }
-            }
-    }
-
-    private struct RecordRevision: Hashable {
-        let id: UUID
-        let updatedAt: Date
-    }
-
-    private struct QueryRevision: Hashable {
-        let records: [[RecordRevision]]
-        let failed: Bool
-    }
-}
-
-private struct IOSAreaTreeBounds {
-    var emoji: Anchor<CGRect>?
-    var projects: [UUID: Anchor<CGRect>] = [:]
-}
-
-private struct IOSAreaTreeBoundsKey: PreferenceKey {
-    static var defaultValue: IOSAreaTreeBounds { IOSAreaTreeBounds() }
-
-    static func reduce(value: inout IOSAreaTreeBounds, nextValue: () -> IOSAreaTreeBounds) {
-        let next = nextValue()
-        value.emoji = next.emoji ?? value.emoji
-        value.projects.merge(next.projects) { _, latest in latest }
-    }
-}
-
-private struct IOSAreaGroupOrderView: View {
-    @Environment(\.dismiss) private var dismiss
-    @Binding var orderRawValue: String
-
-    @State private var order: [AreaType]
-
-    init(orderRawValue: Binding<String>) {
-        _orderRawValue = orderRawValue
-        _order = State(initialValue: AreaGroupOrder.decode(orderRawValue.wrappedValue))
-    }
-
-    var body: some View {
-        List {
-            ForEach(order) { type in
-                Label(type.displayName, systemImage: type.systemImage)
-            }
-            .onMove { offsets, destination in
-                order.move(fromOffsets: offsets, toOffset: destination)
-                orderRawValue = AreaGroupOrder.encode(order)
-            }
-        }
-        .environment(\.editMode, .constant(.active))
-        .iosCenteredNavigationTitle(String(localized: "グループを並び替え"))
-        .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
-                Button(String(localized: "完了")) { dismiss() }
-            }
-        }
-    }
-}
-
-private extension AreaType {
-    var systemImage: String {
-        switch self {
-        case .neutral: "checklist"
-        case .habit: "repeat"
-        case .nice: "sparkles"
-        }
-    }
 }
 
 enum IOSAreaEditorMode: Identifiable {

@@ -102,26 +102,12 @@ struct IOSTaskComposer: View {
             }
 
             VStack(spacing: 10) {
-                if !inlineTokens.isEmpty {
-                    ScrollView(.horizontal) {
-                        HStack(spacing: 5) {
-                            ForEach(inlineTokens) { token in
-                                Button {
-                                    removeInlineToken(token)
-                                } label: {
-                                    inlineTokenView(token)
-                                }
-                                .buttonStyle(.plain)
-                                .accessibilityLabel(
-                                    String(localized: "トークンを削除")
-                                )
-                            }
-                        }
-                    }
-                    .scrollIndicators(.hidden)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .transition(.move(edge: .leading).combined(with: .opacity))
-                }
+                IOSTaskComposerTokens(
+                    tokens: inlineTokens,
+                    areas: areas,
+                    currentAppDay: currentAppDay,
+                    onRemove: removeInlineToken
+                )
 
                 HStack(alignment: .top, spacing: 8) {
                     TextField(String(localized: "タスクを入力してください"), text: $title, axis: .vertical)
@@ -248,28 +234,15 @@ struct IOSTaskComposer: View {
             }
         }
         .sheet(isPresented: $showsDatePicker) {
-            NavigationStack {
-                DatePicker(
-                    String(localized: "日付"),
-                    selection: $datePickerValue,
-                    displayedComponents: .date
-                )
-                .datePickerStyle(.graphical)
-                .padding()
-                .iosCenteredNavigationTitle(String(localized: "日付を選択"))
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button(String(localized: "キャンセル")) { showsDatePicker = false }
-                    }
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button(String(localized: "完了")) {
-                            scheduledDate = calendar.startOfDay(for: datePickerValue)
-                            hasExplicitDate = true
-                            showsDatePicker = false
-                        }
-                    }
+            IOSTaskComposerDatePicker(
+                date: $datePickerValue,
+                onCancel: { showsDatePicker = false },
+                onApply: {
+                    scheduledDate = calendar.startOfDay(for: datePickerValue)
+                    hasExplicitDate = true
+                    showsDatePicker = false
                 }
-            }
+            )
             .presentationDetents([.medium, .large])
         }
         .alert(
@@ -450,103 +423,6 @@ struct IOSTaskComposer: View {
         }
     }
 
-    private var quickInputLegend: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Label(String(localized: "ショートカットを使えます"), systemImage: "command")
-                    .font(.caption.weight(.semibold))
-                Spacer(minLength: 0)
-                Button {
-                    showsQuickInputLegend = false
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.caption.weight(.semibold))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(String(localized: "クイック入力のヒントを非表示"))
-            }
-
-            Grid(alignment: .leading, horizontalSpacing: 18, verticalSpacing: 6) {
-                GridRow {
-                    legendItem("[ ]", String(localized: "チェック"))
-                    legendItem("@", String(localized: "分野"))
-                }
-                GridRow {
-                    legendItem("[1b]", String(localized: "1ブロック"))
-                    legendItem("!", String(localized: "優先度"))
-                }
-                GridRow {
-                    legendItem("[25m]", String(localized: "25分"))
-                    legendItem("/", String(localized: "日付"))
-                }
-                GridRow {
-                    legendItem("#", String(localized: "タグ"))
-                    legendItem("9:00", String(localized: "時刻"))
-                }
-            }
-        }
-        .foregroundStyle(.secondary)
-        .padding(11)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
-    }
-
-    private func legendItem(_ shortcut: String, _ label: String) -> some View {
-        HStack(spacing: 7) {
-            Text(verbatim: shortcut)
-                .font(.caption.monospaced().weight(.semibold))
-                .foregroundStyle(.primary)
-                .frame(width: 38, alignment: .leading)
-            Text(label)
-                .font(.caption)
-                .lineLimit(1)
-        }
-    }
-
-    private var autocompletePanel: some View {
-        VStack(spacing: 0) {
-            ForEach(autocompleteSuggestions) { suggestion in
-                Button {
-                    switch suggestion.action {
-                    case .token(let replacement):
-                        title = parser.replacingTrailingAutocompleteToken(in: title, with: replacement) + " "
-                        applyRecognizedQuickInput()
-                    case .area(let id):
-                        title = parser.replacingTrailingAutocompleteToken(in: title, with: "")
-                        areaID = id
-                        hasExplicitArea = true
-                        replaceInlineToken(.area(id))
-                    case .title(let value):
-                        title = value
-                    }
-                    isFocused = true
-                } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: suggestion.systemImage)
-                            .foregroundStyle(.tint)
-                            .frame(width: 22)
-                        Text(suggestion.title)
-                            .foregroundStyle(.primary)
-                        Spacer(minLength: 0)
-                        if let detail = suggestion.detail {
-                            Text(detail)
-                                .font(.caption.monospaced())
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .padding(.horizontal, 12)
-                    .frame(minHeight: 42)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-
-                if suggestion.id != autocompleteSuggestions.last?.id {
-                    Divider().padding(.leading, 44)
-                }
-            }
-        }
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
-    }
-
     private func compactLabel(
         _ title: String,
         systemImage: String? = nil,
@@ -647,10 +523,29 @@ struct IOSTaskComposer: View {
     @ViewBuilder
     private var suggestionContent: some View {
         if !autocompleteSuggestions.isEmpty {
-            autocompletePanel
+            IOSTaskComposerAutocompletePanel(
+                suggestions: autocompleteSuggestions,
+                onSelect: selectAutocompleteSuggestion
+            )
         } else if showsQuickInputLegend && isFocused && !title.isEmpty {
-            quickInputLegend
+            IOSTaskComposerQuickInputLegend { showsQuickInputLegend = false }
         }
+    }
+
+    private func selectAutocompleteSuggestion(_ suggestion: IOSQuickInputSuggestion) {
+        switch suggestion.action {
+        case .token(let replacement):
+            title = parser.replacingTrailingAutocompleteToken(in: title, with: replacement) + " "
+            applyRecognizedQuickInput()
+        case .area(let id):
+            title = parser.replacingTrailingAutocompleteToken(in: title, with: "")
+            areaID = id
+            hasExplicitArea = true
+            replaceInlineToken(.area(id))
+        case .title(let value):
+            title = value
+        }
+        isFocused = true
     }
 
     private var autocompleteSuggestions: [IOSQuickInputSuggestion] {
@@ -817,88 +712,6 @@ struct IOSTaskComposer: View {
         isFocused = true
     }
 
-    private func inlineTokenView(_ token: IOSTaskComposerInlineToken) -> some View {
-        HStack(spacing: 5) {
-            inlineTokenIcon(token)
-            Text(inlineTokenLabel(token))
-            Image(systemName: "xmark")
-                .font(.system(size: 7, weight: .bold))
-                .opacity(0.7)
-        }
-        .font(.caption.weight(.medium))
-        .foregroundStyle(inlineTokenTint(token))
-        .padding(.horizontal, 9)
-        .frame(height: 26)
-        .background(inlineTokenTint(token).opacity(0.12), in: Capsule())
-        .overlay {
-            Capsule().strokeBorder(inlineTokenTint(token).opacity(0.2), lineWidth: 1)
-        }
-        .accessibilityElement(children: .combine)
-    }
-
-    @ViewBuilder
-    private func inlineTokenIcon(_ token: IOSTaskComposerInlineToken) -> some View {
-        switch token {
-        case .measurement(let measurement, _):
-            Image(
-                systemName: measurement == .checkbox
-                    ? "square"
-                    : (measurement == .focusBlocks ? "circle" : "circle.lefthalf.filled")
-            )
-        case .area(let id):
-            Text(areas.first(where: { $0.id == id })?.symbolName ?? "@")
-        case .priority:
-            Image(systemName: "exclamationmark")
-        case .date:
-            Image(systemName: "calendar")
-        case .hashtag:
-            Image(systemName: "number")
-        }
-    }
-
-    private func inlineTokenLabel(_ token: IOSTaskComposerInlineToken) -> String {
-        switch token {
-        case .measurement(let measurement, let amount):
-            switch measurement {
-            case .checkbox:
-                return String(localized: "チェック")
-            case .focusBlocks:
-                return "\(max(1, amount ?? 1)) \(String(localized: "ブロック"))"
-            case .minutes:
-                return "\(max(1, amount ?? 1)) \(String(localized: "分"))"
-            }
-        case .area(let id):
-            return areas.first(where: { $0.id == id })?.name ?? String(localized: "分野")
-        case .priority(let priority, let later):
-            return later ? String(localized: "余裕があれば") : priority.displayName
-        case .date(let date):
-            return inlineTokenDateLabel(date)
-        case .hashtag(let hashtag):
-            return "#\(hashtag)"
-        }
-    }
-
-    private func inlineTokenDateLabel(_ date: Date?) -> String {
-        guard let date else { return String(localized: "日付なし") }
-        if calendar.isDate(date, inSameDayAs: currentAppDay) {
-            return String(localized: "今日")
-        }
-        if let tomorrow = calendar.date(byAdding: .day, value: 1, to: currentAppDay),
-           calendar.isDate(date, inSameDayAs: tomorrow) {
-            return String(localized: "明日")
-        }
-        return date.formatted(.dateTime.month(.abbreviated).day())
-    }
-
-    private func inlineTokenTint(_ token: IOSTaskComposerInlineToken) -> Color {
-        if case .area(let id) = token,
-           let area = areas.first(where: { $0.id == id }),
-           !DefaultAreas.isTaskInbox(area) {
-            return Color(hex: area.colorHex)
-        }
-        return .accentColor
-    }
-
     private func submit() {
         guard canSubmit else { return }
         saveErrorMessage = nil
@@ -992,63 +805,6 @@ struct IOSTaskComposer: View {
             .replacingOccurrences(of: "  ", with: " ")
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }
-}
-
-private struct IOSTaskComposerSuggestionQuery: View {
-    @Query(sort: \Todo.updatedAt, order: .reverse) private var todos: [Todo]
-    let onUpdate: ([Todo]) -> Void
-
-    var body: some View {
-        Color.clear
-            .allowsHitTesting(false)
-            .accessibilityHidden(true)
-            .task(id: todos.map { Revision(id: $0.id, updatedAt: $0.updatedAt) }) {
-                guard !Task.isCancelled else { return }
-                onUpdate(todos)
-            }
-    }
-
-    private struct Revision: Hashable {
-        let id: UUID
-        let updatedAt: Date
-    }
-}
-
-private enum IOSTaskComposerInlineToken: Equatable, Identifiable {
-    case measurement(TodoMeasurement, Int?)
-    case area(UUID)
-    case priority(TodoPriority, Bool)
-    case date(Date?)
-    case hashtag(String)
-
-    var id: String {
-        switch self {
-        case .measurement:
-            "measurement"
-        case .area:
-            "area"
-        case .priority:
-            "priority"
-        case .date:
-            "date"
-        case .hashtag(let value):
-            "hashtag:\(value.lowercased(with: Locale(identifier: "en_US_POSIX")))"
-        }
-    }
-}
-
-private struct IOSQuickInputSuggestion: Identifiable {
-    enum Action {
-        case area(UUID)
-        case token(String)
-        case title(String)
-    }
-
-    let id: String
-    let title: String
-    let detail: String?
-    let systemImage: String
-    let action: Action
 }
 
 private struct IOSAreaDraft: Identifiable {
