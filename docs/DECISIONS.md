@@ -1679,3 +1679,77 @@ that QA directory. The platform impact report is `compact-platform-review.md`
 in the same directory; `git diff --check` passed. Small-window and iOS runtime
 checks were not repeated for this refinement; Shared data and iOS presentation
 remain unchanged. No commit was made.
+
+
+### 2026-11-22 — One card for Habit Completion and Estimate Accuracy (1.4.2)
+
+Mac and iOS combine Habit Completion above Estimate Accuracy in one card with
+a horizontal divider between the vertically stacked sections. Each section
+retains its existing values, filters, accessible heading, independent async
+slot/reveal and empty state. Sections are shown while loading or when they
+have a value; the divider appears only when both are shown, including partial
+loading, and never remains alone after a missing-result failure. There is no
+combined percentage or new data projection.
+
+The existing shared bottom-card API remains compatible. Habit/Accuracy views
+add a default-off embedded presentation: embedded content omits its standalone
+padding, surface and infinite-height frame; one outer surface owns the combined
+card. Both sections retain natural content heights. On Mac six stable wrappers
+place Dots beside the combined card at report widths of at least 1100 points;
+both top-aligned card surfaces share the taller card's natural row height.
+A default-off combined-card fill option is enabled only for this Mac pair;
+inner async slots remain natural, without stretching chart/calendar content.
+Below that width Dots precedes the combined card, each at its natural height.
+iOS keeps the default natural-height option. Other analysis rows, chart modes,
+hover, localization and data rules are unchanged.
+
+The orchestrator and independent macOS and iOS reviewers explicitly agreed
+before implementation and on the final Shared source, with no source findings.
+Final macOS Release, iOS Release and iPhone Simulator builds passed. Logs are
+`combined-equal-mac-release.log`, `combined-final-ios-release.log` and
+`combined-ios-simulator.log` in `DerivedData/StatisticsUserPreview/`.
+
+Native Mac inspection of the actual database at 2560 × 1440 confirmed identical
+Calendar/combined-card bounds (approximately y=720–1132, height 412 points).
+The combined card showed Habit Completion 34%, the horizontal divider and
+Accuracy 75%, with natural section content. This equal-height result exists
+only in the native inspection image: file capture failed for the remote/off-
+screen window. The existing `combined-current-db-statistics.png` is from the
+preceding unequal layout and is not proof of the final equal-height result.
+No `combined-equal-current-db-statistics.png` artifact was produced.
+
+An iPhone 17 simulator running iOS 27.2 showed the entire combined card after
+scrolling: Habit Completion 100%, divider, Accuracy 100%. Its valid artifact is
+`DerivedData/StatisticsUserPreview/combined-iphone-demo.png`. The task's
+simulator app was terminated and device shut down; the Mac preview was left
+open for user review. iPad, narrow Mac and partial-load/failure-injection runtime
+checks were not performed. The platform report is `combined-platform-review.md`
+in the same QA directory; `git diff --check` passed. No commit was made.
+
+
+### 2026-11-22 — Expand paired Mac Week/Month calendar cells (1.4.2)
+
+When the Mac Calendar card fills its wide paired row, Week and Month grids use
+finite assigned height to grow date rows uniformly after reserving natural
+weekday headings and existing gaps. Natural minimum date-row heights remain
+22/16 points in compact Week/Month and 42/32 points otherwise. Unspecified,
+infinite or smaller proposals retain those minima, without increasing the
+report's natural row height. Card headers and the legend remain intrinsic.
+Year and dense custom-range grids, date interactions, focus/color calculations,
+the separate date-selection sidebar and iOS are unchanged. The change is scoped
+to the existing paired-card fill environment; no screen-global sizing or
+measurement state is introduced. Final macOS Release and isolated viewer Debug
+builds passed: `calendar-cells-final-release.log` and
+`calendar-cells-final-viewer.log` in `DerivedData/StatisticsUserPreview/`.
+The platform report is `calendar-cells-platform-review.md` in the same directory;
+`git diff --check` passed. After the Mac was unlocked, native inspection of the
+actual November 2026 database at 2560 × 1440 confirmed date cells about 64
+points tall instead of the former 16-point compact minimum. Five date rows
+occupied approximately y=774–1103, with the legend below near y=1115 and the
+paired card bottom at y=1132. Headers and metrics remained unchanged (31h11,
+Habit Completion 34%, Accuracy 75%); no clipping or overlap was observed.
+This evidence exists only in the native inspection image, with no filesystem
+screenshot because of the Window Sharing capture limitation. Week, smaller
+windows and day popovers were not freshly exercised; those paths have source
+agreement only. Year and custom-range code remains unchanged. No commit was
+made.

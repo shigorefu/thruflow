@@ -9,30 +9,41 @@ struct StatisticsBottomMetricsCards: View {
     let spacing: CGFloat
     let habitsPlaceholderHeight: CGFloat
     let estimatePlaceholderHeight: CGFloat
+    var fillsRow = false
+
+    private var showsHabits: Bool { showsLoading || cards.habits != nil }
+    private var showsEstimate: Bool { showsLoading || cards.estimateAccuracy != nil }
 
     var body: some View {
-        if showsLoading || cards.habits != nil || cards.estimateAccuracy != nil {
-            let layout = compact
-                ? AnyLayout(StatisticsEqualHeightGrid(columns: 2, spacing: spacing))
-                : AnyLayout(VStackLayout(alignment: .leading, spacing: spacing))
-            layout {
-                // The wrappers keep each column in place when only one card is available.
-                VStack(spacing: 0) {
+        if showsHabits || showsEstimate {
+            VStack(alignment: .leading, spacing: spacing) {
+                if showsHabits {
                     StatisticsCardSlot(
                         value: cards.habits, id: id, placeholderHeight: habitsPlaceholderHeight,
-                        showsLoading: showsLoading, fillsRow: compact
+                        showsLoading: showsLoading
                     ) { summary in
-                        HabitCompletionCard(summary: summary, compact: compact)
+                        HabitCompletionCard(summary: summary, compact: compact, embedded: true)
                     }
                 }
-                VStack(spacing: 0) {
+                if showsHabits && showsEstimate {
+                    Divider()
+                }
+                if showsEstimate {
                     StatisticsCardSlot(
                         value: cards.estimateAccuracy, id: id, placeholderHeight: estimatePlaceholderHeight,
-                        showsLoading: showsLoading, fillsRow: compact
+                        showsLoading: showsLoading
                     ) { value in
-                        StatisticsEstimateAccuracyCard(value: value, compact: compact)
+                        StatisticsEstimateAccuracyCard(value: value, compact: compact, embedded: true)
                     }
                 }
+            }
+            .padding(compact ? 12 : 16)
+            .frame(maxWidth: .infinity, maxHeight: fillsRow ? .infinity : nil, alignment: .topLeading)
+            .background(Color.secondary.opacity(0.055), in: RoundedRectangle(cornerRadius: 16))
+            .overlay {
+                RoundedRectangle(cornerRadius: 16)
+                    .strokeBorder(Color.primary.opacity(0.08))
+                    .allowsHitTesting(false)
             }
         }
     }

@@ -4,8 +4,25 @@ import SwiftUI
 struct StatisticsEstimateAccuracyCard: View {
     let value: StatisticsEstimateAccuracy
     let compact: Bool
+    var embedded = false
 
     var body: some View {
+        if embedded {
+            sectionContent
+        } else {
+            sectionContent
+            .padding(compact ? 12 : 16)
+            .frame(maxWidth: .infinity, maxHeight: compact ? .infinity : nil, alignment: .leading)
+            .background(Color.secondary.opacity(0.055), in: RoundedRectangle(cornerRadius: 16))
+            .overlay {
+                RoundedRectangle(cornerRadius: 16)
+                    .strokeBorder(Color.primary.opacity(0.08))
+                    .allowsHitTesting(false)
+            }
+        }
+    }
+
+    private var sectionContent: some View {
         VStack(alignment: .leading, spacing: compact ? 8 : 12) {
             Label(String(localized: "時間見積もりの精度"), systemImage: "scope")
                 .font(.headline)
@@ -31,14 +48,6 @@ struct StatisticsEstimateAccuracyCard: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(compact ? 12 : 16)
-        .frame(maxWidth: .infinity, maxHeight: compact ? .infinity : nil, alignment: .leading)
-        .background(Color.secondary.opacity(0.055), in: RoundedRectangle(cornerRadius: 16))
-        .overlay {
-            RoundedRectangle(cornerRadius: 16)
-                .strokeBorder(Color.primary.opacity(0.08))
-                .allowsHitTesting(false)
         }
     }
 

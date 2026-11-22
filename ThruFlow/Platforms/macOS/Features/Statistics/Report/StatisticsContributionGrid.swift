@@ -90,6 +90,7 @@ private struct StatisticsContributionDay: Identifiable {
 }
 
 private struct StatisticsContributionGrid: View {
+    @Environment(\.statisticsFillsRow) private var fillsRow
     @Environment(\.calendar) private var calendar
     @Environment(\.locale) private var locale
 
@@ -173,37 +174,38 @@ private struct StatisticsContributionGrid: View {
 
     private var weekGrid: some View {
         let spacing: CGFloat = compact ? 4 : 7
-        return HStack(alignment: .top, spacing: spacing) {
+        return StatisticsCalendarCellsLayout(
+            columns: max(1, days.count), spacing: spacing,
+            minimumCellWidth: compact ? 16 : 24,
+            minimumCellHeight: compact ? 22 : 42,
+            expandsVertically: fillsRow
+        ) {
             ForEach(days) { day in
-                VStack(spacing: spacing) {
-                    Text(day.date.formatted(.dateTime.locale(locale).weekday(.narrow)))
-                        .font(.caption2.weight(.medium))
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity)
-
-                    StatisticsContributionCell(
-                        day: day,
-                        maxValue: maxValue,
-                        isInteractive: day.isSelectable,
-                        onSelectDate: onSelectDate
-                    )
+                Text(day.date.formatted(.dateTime.locale(locale).weekday(.narrow)))
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity)
-                    .frame(height: compact ? 22 : 42)
-                }
-                .frame(maxWidth: .infinity)
+            }
+            ForEach(days) { day in
+                StatisticsContributionCell(
+                    day: day, maxValue: maxValue,
+                    isInteractive: day.isSelectable, onSelectDate: onSelectDate
+                )
             }
         }
+        .frame(maxHeight: fillsRow ? .infinity : nil)
     }
 
     private var monthGrid: some View {
         let spacing: CGFloat = compact ? 4 : (usesCompactCustomGrid ? 5 : 6)
         let cellSize: CGFloat = compact ? 16 : (usesCompactCustomGrid ? 18 : 24)
         let cellHeight: CGFloat = compact ? 16 : (usesCompactCustomGrid ? cellSize : 32)
-        let column = usesCompactCustomGrid
-            ? GridItem(.fixed(cellSize), spacing: spacing)
-            : GridItem(.flexible(minimum: cellSize), spacing: spacing)
-        let columns = Array(repeating: column, count: 7)
-        return LazyVGrid(columns: columns, alignment: .center, spacing: spacing) {
+        return StatisticsCalendarCellsLayout(
+            columns: 7, spacing: spacing,
+            minimumCellWidth: cellSize, minimumCellHeight: cellHeight,
+            fixedCellWidth: usesCompactCustomGrid ? cellSize : nil,
+            expandsVertically: fillsRow
+        ) {
             ForEach(CalendarWeekdaySymbols.orderedAbbreviated(calendar: calendar), id: \.self) { weekday in
                 Text(weekday)
                     .font(.caption2.weight(.medium))
@@ -222,15 +224,10 @@ private struct StatisticsContributionGrid: View {
                     hidesPlaceholder: usesCompactCustomGrid,
                     onSelectDate: onSelectDate
                 )
-                .frame(
-                    minWidth: usesCompactCustomGrid ? cellSize : nil,
-                    maxWidth: usesCompactCustomGrid ? cellSize : .infinity,
-                    minHeight: cellHeight,
-                    maxHeight: cellHeight
-                )
+
             }
         }
-        .frame(maxWidth: .infinity, alignment: .center)
+        .frame(maxWidth: .infinity, maxHeight: fillsRow ? .infinity : nil, alignment: .center)
     }
 
     private var yearGrid: some View {
@@ -293,6 +290,69 @@ private struct StatisticsContributionGrid: View {
         }
     }
 
+}
+
+/// Keeps natural calendar minima, expanding date rows only inside an assigned card height.
+private nonisolated struct StatisticsCalendarCellsLayout: Layout {
+    let columns: Int
+    let spacing: CGFloat
+    let minimumCellWidth: CGFloat
+    let minimumCellHeight: CGFloat
+    var fixedCellWidth: CGFloat? = nil
+    let expandsVertically: Bool
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let naturalWidth = CGFloat(columns) * minimumCellWidth + CGFloat(columns - 1) * spacing
+        let width = proposal.width.flatMap { $0.isFinite ? $0 : nil } ?? naturalWidth
+        let rows = dateRowCount(subviews: subviews)
+        let header = headerHeight(width: width, subviews: subviews)
+        let cell = cellHeight(proposedHeight: proposal.height, headerHeight: header, rows: rows)
+        return CGSize(width: width, height: header + CGFloat(rows) * (spacing + cell))
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let rows = dateRowCount(subviews: subviews)
+        let width = columnWidth(for: bounds.width)
+        let header = headerHeight(width: bounds.width, subviews: subviews)
+        let height = cellHeight(proposedHeight: bounds.height, headerHeight: header, rows: rows)
+        let contentWidth = CGFloat(columns) * width + CGFloat(columns - 1) * spacing
+        let startX = bounds.minX + max(0, (bounds.width - contentWidth) / 2)
+        for index in subviews.indices {
+            let isHeader = index < columns
+            let cellIndex = index - columns
+            let column = isHeader ? index : cellIndex % columns
+            let row = isHeader ? 0 : cellIndex / columns
+            subviews[index].place(
+                at: CGPoint(
+                    x: startX + CGFloat(column) * (width + spacing),
+                    y: isHeader ? bounds.minY : bounds.minY + header + spacing + CGFloat(row) * (height + spacing)
+                ),
+                anchor: .topLeading,
+                proposal: ProposedViewSize(width: width, height: isHeader ? header : height)
+            )
+        }
+    }
+
+    private func dateRowCount(subviews: Subviews) -> Int {
+        max(0, (subviews.count - columns + columns - 1) / columns)
+    }
+
+    private func columnWidth(for width: CGFloat) -> CGFloat {
+        fixedCellWidth ?? max(minimumCellWidth, (width - CGFloat(columns - 1) * spacing) / CGFloat(columns))
+    }
+
+    private func headerHeight(width: CGFloat, subviews: Subviews) -> CGFloat {
+        subviews.prefix(columns).map {
+            $0.sizeThatFits(ProposedViewSize(width: columnWidth(for: width), height: nil)).height
+        }.max() ?? 0
+    }
+
+    private func cellHeight(proposedHeight: CGFloat?, headerHeight: CGFloat, rows: Int) -> CGFloat {
+        guard expandsVertically, rows > 0, let proposedHeight, proposedHeight.isFinite else {
+            return minimumCellHeight
+        }
+        return max(minimumCellHeight, (proposedHeight - headerHeight - CGFloat(rows) * spacing) / CGFloat(rows))
+    }
 }
 
 private struct StatisticsContributionCell: View {

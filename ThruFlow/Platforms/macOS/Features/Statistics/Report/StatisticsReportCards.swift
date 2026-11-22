@@ -20,19 +20,19 @@ struct StatisticsReportCards: View {
 
     private var isCompact: Bool { reportWidth >= 610 }
     private var spacing: CGFloat { isCompact ? 10 : 16 }
-    private var triplesBottomCards: Bool { reportWidth >= 1100 }
+    private var pairsBottomCards: Bool { reportWidth >= 1100 }
     private var pairsAnalysisCards: Bool { reportWidth >= 700 && viewportHeight >= 650 }
     private var distributionWidth: CGFloat {
         pairsAnalysisCards ? StatisticsReportLayout.distributionWidth(for: reportWidth, spacing: spacing) : reportWidth
     }
     private var calendarWidth: CGFloat {
-        triplesBottomCards ? (reportWidth - 2 * spacing) / 3 : reportWidth
+        pairsBottomCards ? (reportWidth - spacing) / 2 : reportWidth
     }
 
     var body: some View {
         StatisticsReportLayout(
-            spacing: spacing, triplesBottomCards: triplesBottomCards,
-            pairsAnalysisCards: pairsAnalysisCards, pairsBottomMetrics: isCompact
+            spacing: spacing, pairsBottomCards: pairsBottomCards,
+            pairsAnalysisCards: pairsAnalysisCards
         ) {
             // Stable wrappers preserve slot identity, including partially available reports.
             VStack(spacing: 0) {
@@ -53,8 +53,7 @@ struct StatisticsReportCards: View {
             VStack(spacing: 0) { distributionCard }
             VStack(spacing: 0) { trendCard }
             VStack(spacing: 0) { calendarCard }
-            VStack(spacing: 0) { habitCard }
-            VStack(spacing: 0) { estimateAccuracyCard }
+            VStack(spacing: 0) { bottomMetricsCard }
         }
     }
 
@@ -104,7 +103,7 @@ struct StatisticsReportCards: View {
     private var calendarCard: some View {
         StatisticsCardSlot(
             value: cards.days, id: presentationID, placeholderHeight: 140,
-            showsLoading: showsLoading, fillsRow: triplesBottomCards
+            showsLoading: showsLoading, fillsRow: pairsBottomCards
         ) { days in
             StatisticsDotsCard(
                 mode: $dotsMode,
@@ -124,42 +123,28 @@ struct StatisticsReportCards: View {
         .id("screenshot-statistics-dots")
     }
 
-    private var habitCard: some View {
-        StatisticsCardSlot(
-            value: cards.habits, id: presentationID, placeholderHeight: isCompact ? 150 : 230,
-            showsLoading: showsLoading, fillsRow: isCompact
-        ) { summary in
-            HabitCompletionCard(summary: summary, compact: isCompact)
-        }
-    }
-
-    private var estimateAccuracyCard: some View {
-        StatisticsCardSlot(
-            value: cards.estimateAccuracy, id: presentationID, placeholderHeight: isCompact ? 110 : 150,
-            showsLoading: showsLoading, fillsRow: isCompact
-        ) { value in
-            StatisticsEstimateAccuracyCard(value: value, compact: isCompact)
-        }
+    private var bottomMetricsCard: some View {
+        StatisticsBottomMetricsCards(
+            cards: cards, id: presentationID, showsLoading: showsLoading,
+            compact: isCompact, spacing: spacing,
+            habitsPlaceholderHeight: isCompact ? 150 : 230,
+            estimatePlaceholderHeight: isCompact ? 110 : 150,
+            fillsRow: pairsBottomCards
+        )
     }
 }
 
 /// Keeps card identity stable while pairing rows only when the viewport has room.
 private nonisolated struct StatisticsReportLayout: Layout {
     let spacing: CGFloat
-    let triplesBottomCards: Bool
+    let pairsBottomCards: Bool
     let pairsAnalysisCards: Bool
-    let pairsBottomMetrics: Bool
 
     private var rows: [[Int]] {
         var rows = [[0]]
         rows += pairsAnalysisCards ? [[1, 2]] : [[1], [2]]
         rows.append([3])
-        if triplesBottomCards {
-            rows.append([4, 5, 6])
-        } else {
-            rows.append([4])
-            rows += pairsBottomMetrics ? [[5, 6]] : [[5], [6]]
-        }
+        rows += pairsBottomCards ? [[4, 5]] : [[4], [5]]
         return rows
     }
 
@@ -178,7 +163,7 @@ private nonisolated struct StatisticsReportLayout: Layout {
                 let width = cardWidth(card, in: row, width: bounds.width)
                 subviews[card].place(
                     at: CGPoint(x: x, y: y), anchor: .topLeading,
-                    proposal: ProposedViewSize(width: width, height: heights[index])
+                    proposal: ProposedViewSize(width: width, height: card >= 4 && !pairsBottomCards ? nil : heights[index])
                 )
                 x += width + spacing
             }
@@ -198,7 +183,6 @@ private nonisolated struct StatisticsReportLayout: Layout {
 
     private func cardWidth(_ card: Int, in row: [Int], width: CGFloat) -> CGFloat {
         guard row.count > 1 else { return width }
-        if row.count == 3 { return max(0, width - 2 * spacing) / 3 }
         let availableWidth = max(0, width - spacing)
         if card == 1 { return availableWidth - Self.distributionWidth(for: width, spacing: spacing) }
         if card == 2 { return Self.distributionWidth(for: width, spacing: spacing) }

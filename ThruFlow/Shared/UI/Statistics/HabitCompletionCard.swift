@@ -6,8 +6,25 @@ struct HabitCompletionCard: View {
 
     let summary: HabitCompletionSummary
     var compact = false
+    var embedded = false
 
     var body: some View {
+        if embedded {
+            sectionContent
+        } else {
+            sectionContent
+            .padding(compact ? 12 : 16)
+            .frame(maxWidth: .infinity, maxHeight: compact ? .infinity : nil, alignment: .leading)
+            .background(Color.secondary.opacity(0.055), in: RoundedRectangle(cornerRadius: 16))
+            .overlay {
+                RoundedRectangle(cornerRadius: 16)
+                    .strokeBorder(Color.primary.opacity(0.08))
+                    .allowsHitTesting(false)
+            }
+        }
+    }
+
+    private var sectionContent: some View {
         VStack(alignment: .leading, spacing: compact ? 8 : 16) {
             Label {
                 Text(String(localized: "習慣の達成率"))
@@ -61,14 +78,6 @@ struct HabitCompletionCard: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(compact ? 12 : 16)
-        .frame(maxWidth: .infinity, maxHeight: compact ? .infinity : nil, alignment: .leading)
-        .background(Color.secondary.opacity(0.055), in: RoundedRectangle(cornerRadius: 16))
-        .overlay {
-            RoundedRectangle(cornerRadius: 16)
-                .strokeBorder(Color.primary.opacity(0.08))
-                .allowsHitTesting(false)
         }
     }
 }

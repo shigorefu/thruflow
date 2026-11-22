@@ -123,14 +123,15 @@ The overview spans the report width. On Mac, Daily Focus Time pairs with
 Distribution when the report is at least 700 points wide and its viewport is
 at least 650 points high; otherwise those cards stack. Focus Quality always
 occupies the next full-width row with a plot at least 240 points high. Below
-Quality, Dots, Habit Completion and Time Estimate Accuracy share one row when
-the report is at least 1100 points wide. At smaller widths Dots gets its own
-full-width row, followed by the two metrics paired at the existing 610-point
-report-width breakpoint; narrower layouts stack those metrics. Seven stable
-wrappers retain card identity across resizing. Every row uses its natural
-content height measured at its actual column widths; cards sharing a row use
-the tallest card's natural height. The report stays top-aligned and does not
-distribute unused viewport height into cards. Empty space below the report is
+Quality, Dots and the combined metrics card share a two-column row when the
+report is at least 1100 points wide. In that row, Dots and the combined card
+share the taller card's natural surface height, aligned at the top; their inner
+content retains its natural size. At smaller widths Dots appears above the
+combined card, each at its own natural height.
+Six stable wrappers retain card identity across resizing. Every row measures
+its content at its actual column widths; Daily Focus/Distribution share the
+tallest card's natural height, as does the paired bottom row. The report stays top-aligned and does not distribute
+unused viewport height into cards. Empty space below the report is
 acceptable. Longer content and smaller windows scroll without compressing row
 content. The right-hand Mac date-selection calendar remains separate.
 
@@ -157,14 +158,26 @@ colors follow their source colors; Mac Project
 lines use deterministic identity-based colors to distinguish Projects sharing
 an Area. These colors do not change stored data or distribution colors.
 
-Wide iOS layouts retain their existing pairs and two trend modes. Each pair and
-the metric tiles within each overview row share the height of the tallest card
-in that row. Narrow layouts stack the report cards in reading order. Daily
+Habit Completion and Time Estimate Accuracy occupy one shared card on Mac and
+iOS. The Habit section appears above a horizontal divider, followed by Accuracy.
+Each section keeps its own loading/reveal and empty state; a section missing
+after a load failure is hidden, and the divider appears only when both sections
+have content or are loading. Each keeps its existing calculation and filters;
+there is no combined percentage. Sections use natural heights inside a single
+surface without nested card backgrounds.
+
+Wide iOS layouts retain the other analysis-card pairs and two trend modes.
+Those pairs and the metric tiles within each overview row share the height of
+the tallest card in that row. Narrow layouts stack the report in reading order. Daily
 Focus Time shows actual focus per elapsed logical day and scrolls horizontally
 through long ranges. Month trends use daily points and year trends use monthly
 points. The estimate card compares planned and recorded time for completed
-timed Tasks. Dots keeps its existing date selection, short wide-layout cells
-and custom-range rules. Reports scroll to fit longer lists and date ranges.
+timed Tasks. Dots retains its date selection and custom-range rules. In a wide
+Mac Calendar/combined-card pair, Week and Month date rows grow uniformly to
+use the finite height assigned to the calendar grid; weekday headings and the
+legend retain natural height. Without finite extra height the existing cell
+minimums apply. Year and dense custom-range grids keep their existing sizing,
+as do iOS grids. Reports scroll to fit longer lists and date ranges.
 
 Habit completion shows overall and per-Habit values. Fully met goals count
 immediately. Partial and zero progress count after the configured day ends.
