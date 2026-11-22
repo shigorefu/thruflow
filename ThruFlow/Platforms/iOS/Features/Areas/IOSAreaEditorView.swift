@@ -20,6 +20,7 @@ struct IOSAreaEditorView: View {
     @State private var goalUnit: GoalUnit
     @State private var goalSchedule: GoalScheduleKind
     @State private var weeklyTargetCount: Int
+    @State private var minimumRestDays: Int
     @State private var weekdayMask: Int
     @State private var showsEmojiPicker = false
     @State private var saveErrorMessage: String?
@@ -58,6 +59,7 @@ struct IOSAreaEditorView: View {
         _goalUnit = State(initialValue: draft.goalUnit ?? .occurrences)
         _goalSchedule = State(initialValue: draft.goalSchedule ?? .everyDay)
         _weeklyTargetCount = State(initialValue: max(1, draft.weeklyTargetCount ?? 1))
+        _minimumRestDays = State(initialValue: draft.minimumRestDays)
         _weekdayMask = State(initialValue: draft.weekdayMask ?? 0)
         _saveErrorMessage = State(initialValue: nil)
     }
@@ -135,6 +137,7 @@ struct IOSAreaEditorView: View {
                         WeeklyFrequencySlider(value: $weeklyTargetCount)
                             .frame(maxWidth: 260)
                             .padding(.horizontal, 8)
+                        HabitRestDaysPicker(value: $minimumRestDays, validationErrors: validationErrors)
                     }
 
                     if goalSchedule != .everyDay {
@@ -182,9 +185,9 @@ struct IOSAreaEditorView: View {
                 }
             }
 
-            if !draft.trimmedName.isEmpty, !validationErrors.isEmpty {
+            if !draft.trimmedName.isEmpty, !footerValidationErrors.isEmpty {
                 Section {
-                    ForEach(validationErrors, id: \.self) { error in
+                    ForEach(footerValidationErrors, id: \.self) { error in
                         Label(error.localizedDescription, systemImage: "exclamationmark.triangle")
                             .foregroundStyle(.red)
                     }
@@ -209,6 +212,7 @@ struct IOSAreaEditorView: View {
             goalUnit = normalized.goalUnit ?? .occurrences
             goalSchedule = normalized.goalSchedule ?? .everyDay
             weeklyTargetCount = normalized.weeklyTargetCount ?? 1
+            minimumRestDays = normalized.minimumRestDays
             weekdayMask = normalized.weekdayMask ?? 0
         }
         .sheet(isPresented: $showsEmojiPicker) {
@@ -260,7 +264,8 @@ struct IOSAreaEditorView: View {
             goalUnit: goalUnit,
             goalSchedule: goalSchedule,
             weeklyTargetCount: weeklyTargetCount,
-            weekdayMask: weekdayMask
+            weekdayMask: weekdayMask,
+            minimumRestDays: minimumRestDays
         )
     }
 
@@ -270,6 +275,10 @@ struct IOSAreaEditorView: View {
 
     private var validationErrors: [AreaValidationError] {
         editingService.validationErrors(for: draft)
+    }
+
+    private var footerValidationErrors: [AreaValidationError] {
+        validationErrors.filter { !$0.isRestScheduleError }
     }
 
     private var canSave: Bool {
@@ -290,7 +299,8 @@ struct IOSAreaEditorView: View {
             onSaved?(area)
             dismiss()
         } catch AreaEditingError.validation(let errors) {
-            saveErrorMessage = errors.map(\.localizedDescription).joined(separator: "\n")
+            let remaining = errors.filter { !$0.isRestScheduleError }
+            saveErrorMessage = remaining.isEmpty ? nil : remaining.map(\.localizedDescription).joined(separator: "\n")
         } catch {
             saveErrorMessage = String(localized: "記録を保存できませんでした。")
         }

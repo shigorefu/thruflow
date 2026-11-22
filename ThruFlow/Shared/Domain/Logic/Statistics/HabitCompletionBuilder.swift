@@ -11,6 +11,8 @@ struct HabitCompletionRecord: Equatable, Sendable {
     let areaColorHex: String
     let searchText: String
     let fraction: Double
+    let weeklyTargetCount: Int?
+    let completedDay: Date?
 
     nonisolated init?(todo: Todo, calendar: Calendar, dayBoundary: AppDayBoundary = .midnight) {
         guard let habit = HabitDefinition(todo: todo), !todo.isDeleted,
@@ -22,6 +24,7 @@ struct HabitCompletionRecord: Equatable, Sendable {
         } ?? true
         guard started || (!todo.isArchived && predatesAreaArchive &&
             !habit.isPaused(on: day, calendar: calendar)) else { return nil }
+        weeklyTargetCount = habit.goalSchedule == .weeklyCount ? max(1, habit.weeklyTargetCount ?? 1) : nil
         id = todo.id
         // scheduledDate is already a logical calendar date, not a Flow timestamp.
         scheduledDay = day
@@ -45,6 +48,9 @@ struct HabitCompletionRecord: Equatable, Sendable {
         } else {
             fraction = 0
         }
+        completedDay = fraction == 1
+            ? dayBoundary.day(containing: todo.completedAt ?? todo.updatedAt, calendar: calendar)
+            : nil
     }
 }
 
@@ -68,6 +74,12 @@ struct HabitCompletionSummary: Equatable, Sendable {
 }
 
 nonisolated struct HabitCompletionBuilder: Sendable {
+    var calendar: Calendar = .current
+
+    private struct WeeklyKey: Hashable {
+        let ownerKey: String
+        let weekStart: Date
+    }
     private nonisolated struct OccurrenceKey: Hashable, Sendable {
         let ownerKey: String
         let day: Date
@@ -95,7 +107,21 @@ nonisolated struct HabitCompletionBuilder: Sendable {
             }
             occurrences[key] = record
         }
-        let grouped = Dictionary(grouping: occurrences.values, by: \.ownerKey)
+        // Extra attempts do not create extra obligations beyond a weekly quota.
+        let weekly = Dictionary(grouping: occurrences.values.filter { $0.weeklyTargetCount != nil }) {
+            WeeklyKey(ownerKey: $0.ownerKey,
+                      weekStart: calendar.dateInterval(of: .weekOfYear, for: $0.scheduledDay)?.start ?? $0.scheduledDay)
+        }
+        var counted = occurrences.values.filter { $0.weeklyTargetCount == nil }
+        for records in weekly.values {
+            let ranked = records.sorted {
+                if $0.fraction != $1.fraction { return $0.fraction > $1.fraction }
+                if $0.scheduledDay != $1.scheduledDay { return $0.scheduledDay < $1.scheduledDay }
+                return $0.id.uuidString < $1.id.uuidString
+            }
+            counted.append(contentsOf: ranked.prefix(ranked.first?.weeklyTargetCount ?? 1))
+        }
+        let grouped = Dictionary(grouping: counted, by: \.ownerKey)
         let areas = grouped.map { id, records in
             let metadata = records.sorted { $0.id.uuidString < $1.id.uuidString }[0]
             return HabitCompletionArea(
@@ -109,8 +135,8 @@ nonisolated struct HabitCompletionBuilder: Sendable {
             return $0.name.localizedStandardCompare($1.name) == .orderedAscending
         }
         return HabitCompletionSummary(
-            completedFraction: occurrences.values.reduce(0) { $0 + $1.fraction },
-            occurrenceCount: occurrences.count,
+            completedFraction: counted.reduce(0) { $0 + $1.fraction },
+            occurrenceCount: counted.count,
             areas: areas
         )
     }

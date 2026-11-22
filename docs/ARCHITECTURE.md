@@ -564,8 +564,13 @@ only owns toolbar state, navigation, a bounded four-snapshot presentation
 cache, loading placeholders, independent Trend/Dots display modes, responsive
 card layout, interactive Dots, date bounds through today, chart presentation,
 and the system export/share surface. Switching Flow/Task presentation reuses the
-same data. Month trends use daily buckets and render separate current and
-comparison series. Export options create an independent period/filter projection only while
+same data. The trend result also carries default-empty additive Area/Project
+focus-series arrays, copied into complete snapshots and restored through the
+same cache path. Those series are calculated in Domain from the same filtered
+Flow records and bucket boundaries before distribution category collapsing.
+Mac exposes those grouped modes through its own presentation enum; iOS keeps
+its existing two modes and consumes the aggregate points. Month aggregate
+trends use daily buckets and render separate current and comparison series. Export options create an independent period/filter projection only while
 the Share popover is open; its period is always an exact inclusive start/end
 range. Pie selection remains local presentation state. CSV serialization and temporary-file creation run
 away from the main actor. iOS renders the same report as one touch-native

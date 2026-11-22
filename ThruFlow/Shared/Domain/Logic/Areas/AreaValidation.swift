@@ -18,6 +18,7 @@ struct AreaDraft {
     var goalSchedule: GoalScheduleKind?
     var weeklyTargetCount: Int?
     var weekdayMask: Int?
+    var minimumRestDays: Int
 
     init(
         name: String = "",
@@ -30,7 +31,8 @@ struct AreaDraft {
         goalUnit: GoalUnit? = .occurrences,
         goalSchedule: GoalScheduleKind? = .everyDay,
         weeklyTargetCount: Int? = 1,
-        weekdayMask: Int? = nil
+        weekdayMask: Int? = nil,
+        minimumRestDays: Int = 0
     ) {
         self.name = name
         self.type = type
@@ -43,6 +45,7 @@ struct AreaDraft {
         self.goalSchedule = goalSchedule
         self.weeklyTargetCount = weeklyTargetCount
         self.weekdayMask = weekdayMask
+        self.minimumRestDays = minimumRestDays
     }
 
     init(area: Area) {
@@ -57,6 +60,7 @@ struct AreaDraft {
         self.goalSchedule = area.goalSchedule ?? .everyDay
         self.weeklyTargetCount = area.weeklyTargetCount ?? 1
         self.weekdayMask = area.weekdayMask
+        self.minimumRestDays = area.minimumRestDays ?? 0
     }
 
     /// Defaults for editor controls; persisted values are selected by schedule below.
@@ -70,6 +74,7 @@ struct AreaDraft {
             draft.goalSchedule = nil
             draft.weeklyTargetCount = nil
             draft.weekdayMask = nil
+            draft.minimumRestDays = 0
             return draft
         }
         draft.goalEnabled = true
@@ -99,9 +104,15 @@ enum AreaValidationError: Error, Equatable, LocalizedError {
     case missingGoalSchedule
     case invalidWeeklyTargetCount
     case missingWeekdays
+    case invalidMinimumRestDays
+    case impossibleRestSchedule
 
     var errorDescription: String? {
         switch self {
+        case .invalidMinimumRestDays:
+            String(localized: "休息日数は0〜6日で選んでください。")
+        case .impossibleRestSchedule:
+            String(localized: "休息日と曜日の設定では、指定した週回数を達成できません。")
         case .emptyName:
             String(localized: "名前を入力してください。")
         case .invalidGoalTarget:
@@ -146,6 +157,14 @@ struct AreaValidator {
             case .weeklyCount:
                 if !(1...7).contains(draft.weeklyTargetCount ?? 0) {
                     errors.append(.invalidWeeklyTargetCount)
+                }
+                if !(0...6).contains(draft.minimumRestDays) {
+                    errors.append(.invalidMinimumRestDays)
+                } else if draft.minimumRestDays > 0 &&
+                    (draft.weeklyTargetCount ?? 1) > HabitRestSchedule.maximumWeeklyCount(
+                        minimumRestDays: draft.minimumRestDays, weekdayMask: draft.weekdayMask
+                    ) {
+                    errors.append(.impossibleRestSchedule)
                 }
             case .weekdays:
                 if (draft.weekdayMask ?? 0) == 0 {

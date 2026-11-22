@@ -135,8 +135,11 @@ actor StatisticsProjectionActor {
 
         // Habit rates include unfinished saved occurrences. These dates are
         // logical days, so do not shift the query by the Flow day boundary.
-        let habitStart = bounds.currentStart
-        let habitEnd = bounds.currentEnd
+        // Enclosing weeks provide quota context for both trend series, including
+        // custom ranges. The rate builder still scores only selected occurrences.
+        let habitStart = calendar.dateInterval(of: .weekOfYear, for: bounds.previousStart)?.start ?? bounds.previousStart
+        let lastDay = calendar.date(byAdding: .day, value: -1, to: bounds.currentEnd) ?? bounds.currentEnd
+        let habitEnd = calendar.dateInterval(of: .weekOfYear, for: lastDay)?.end ?? bounds.currentEnd
         let scheduledTodos = try modelContext.fetch(FetchDescriptor<Todo>(
             predicate: #Predicate { todo in
                 (todo.scheduledDate ?? missingCompletionDate) >= habitStart &&
@@ -145,6 +148,16 @@ actor StatisticsProjectionActor {
             }
         ))
 
+        let term = filter.query.trimmingCharacters(in: .whitespacesAndNewlines)
+        let ordinaryTaskDays = Set(scheduledTodos.compactMap { todo -> Date? in
+            guard !todo.isHabitOccurrence, !todo.isArchived, !todo.isCompleted,
+                  filter.areaIDs.isEmpty || todo.area.map({ filter.areaIDs.contains($0.id) }) == true else { return nil }
+            let candidates = [todo.title, todo.notes ?? "", todo.hashtags.joined(separator: " "),
+                              todo.area?.name ?? "", todo.area?.symbolName ?? ""]
+            guard term.isEmpty || candidates.contains(where: { $0.localizedCaseInsensitiveContains(term) }) else { return nil }
+            return todo.scheduledDate.map { calendar.startOfDay(for: $0) }
+        })
+
         try Task.checkCancellation()
         return builder.prepare(
             flowRecords: sessions.flatMap(makePeriodFlowRecords),
@@ -152,7 +165,8 @@ actor StatisticsProjectionActor {
             filter: filter,
             habitRecords: scheduledTodos.compactMap {
                 HabitCompletionRecord(todo: $0, calendar: calendar, dayBoundary: dayBoundary)
-            }
+            },
+            ordinaryTaskDays: ordinaryTaskDays
         )
     }
 

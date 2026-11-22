@@ -32,7 +32,6 @@ struct StatisticsDistributionCard: View {
             compact: compact
         ) {
             dimensionPicker
-                .pickerStyle(.menu)
         } content: {
             if items.isEmpty {
                 StatisticsEmptyState(label: String(localized: "この期間の集中記録はありません"))
@@ -46,7 +45,7 @@ struct StatisticsDistributionCard: View {
                     donut
                     detailOrLegend
                 }
-                .frame(maxWidth: .infinity)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .onChange(of: dimension) { _, _ in
@@ -65,8 +64,10 @@ struct StatisticsDistributionCard: View {
                 Text(dimension.displayName).tag(dimension)
             }
         }
+        .pickerStyle(.segmented)
         .labelsHidden()
         .controlSize(.small)
+        .fixedSize(horizontal: true, vertical: false)
     }
 
     private var donut: some View {
@@ -157,6 +158,7 @@ struct StatisticsDistributionCard: View {
                 .transition(.opacity)
             }
         }
+        .frame(maxWidth: 340, alignment: .leading)
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.18), value: selectedItemID)
     }
 

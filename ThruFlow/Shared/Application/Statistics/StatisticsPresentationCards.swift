@@ -26,7 +26,10 @@ nonisolated struct StatisticsPresentationCards: Sendable {
         summary = StatisticsPresentationSummary(
             summary: snapshot.summary, previousSummary: snapshot.previousSummary
         )
-        trend = StatisticsPresentationTrend(period: snapshot.trendPeriod, points: snapshot.trend)
+        trend = StatisticsPresentationTrend(
+            period: snapshot.trendPeriod, points: snapshot.trend,
+            areaSeries: snapshot.areaTrendSeries, projectSeries: snapshot.projectTrendSeries
+        )
         dailyFocus = snapshot.dailyFocus
         estimateAccuracy = snapshot.estimateAccuracy
         distribution = StatisticsPresentationDistribution(

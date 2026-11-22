@@ -82,14 +82,26 @@ struct HabitTodoMaterializer {
         ).reconcile(todos: todos, now: now)
         changed = archivedChanged || changed
 
-        var knownTodos = todos.filter { !$0.isDeleted && !$0.isArchived }
+        var knownTodos = todos.filter { !$0.isDeleted && (!$0.isArchived || $0.isCompleted) }
         var nextSortIndex = (knownTodos.map(\.sortIndex).min() ?? 0) - 1
         let today = dayBoundary.day(containing: now, calendar: calendar)
         let normalizedDates = uniqueDays(dates).sorted()
-        let planner = RequiredTodoPlanner(calendar: calendar)
+        let planner = RequiredTodoPlanner(calendar: calendar, dayBoundary: dayBoundary)
         let projects = try modelContext.fetch(FetchDescriptor<Project>())
         let activeHabits = (areas.map { HabitDefinition(area: $0) } +
             projects.compactMap { HabitDefinition(project: $0) }).filter(\.isActive)
+
+        // A completion imported after calendar planning can make an unused
+        // occurrence a rest day. Preserve all worked or history-bearing tasks.
+        for todo in knownTodos where !todo.isCompleted && !todo.isArchived {
+            guard let date = todo.scheduledDate, date >= today,
+                  let habit = HabitDefinition(todo: todo), habit.isActive,
+                  todo.actualProgress == 0 && todo.recordedFocusSeconds == 0,
+                  (todo.flowSessions?.isEmpty ?? true) && (todo.flowSegments?.isEmpty ?? true),
+                  planner.isRestDay(for: habit, in: knownTodos, on: date) else { continue }
+            todo.softDelete(now: now)
+            changed = true
+        }
 
         for date in normalizedDates {
             for area in activeHabits {

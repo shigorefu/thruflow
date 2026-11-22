@@ -119,6 +119,7 @@ struct AreaFormView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button(String(localized: "保存"), action: save)
                         .accessibilityIdentifier("area.editor.save")
+                        .disabled(!currentValidationErrors.isEmpty)
                 }
             }
         }
@@ -357,10 +358,11 @@ struct AreaFormView: View {
 
     @ViewBuilder
     private var validationCard: some View {
-        if !validationErrors.isEmpty || saveErrorMessage != nil {
+        let footerErrors = validationErrors.filter { !$0.isRestScheduleError }
+        if !footerErrors.isEmpty || saveErrorMessage != nil {
             EditorSectionCard {
                 VStack(alignment: .leading, spacing: 8) {
-                    ForEach(validationErrors, id: \.self) { error in
+                    ForEach(footerErrors, id: \.self) { error in
                         Label(error.localizedDescription, systemImage: "exclamationmark.triangle")
                             .foregroundStyle(.red)
                     }
@@ -393,6 +395,19 @@ struct AreaFormView: View {
                 }
             }
         }
+    }
+
+    private var currentDraft: AreaDraft {
+        var current = draft.normalizedForEditing
+        if current.type == .habit, let editedGoalTarget {
+            current.goalTarget = parseGoalTarget(editedGoalTarget) ?? 0
+        }
+        return current
+    }
+
+    private var currentValidationErrors: [AreaValidationError] {
+        AreaEditingService(calendar: calendar, dayBoundary: dayBoundary)
+            .validationErrors(for: currentDraft)
     }
 
     private var goalTargetText: Binding<String> {
@@ -453,6 +468,11 @@ struct AreaFormView: View {
                 .frame(maxWidth: 260)
                 .padding(.horizontal, 8)
 
+            HabitRestDaysPicker(
+                value: $draft.minimumRestDays,
+                validationErrors: currentValidationErrors
+            )
+
             VStack(alignment: .leading, spacing: 8) {
                 Text(String(localized: "任意: 曜日も選べます"))
                     .font(.footnote)
@@ -473,10 +493,7 @@ struct AreaFormView: View {
 
     private func save() {
         saveErrorMessage = nil
-        draft = draft.normalizedForEditing
-        if draft.type == .habit, let editedGoalTarget {
-            draft.goalTarget = parseGoalTarget(editedGoalTarget) ?? 0
-        }
+        draft = currentDraft
         let service = AreaEditingService(calendar: calendar, dayBoundary: dayBoundary)
         validationErrors = service.validationErrors(for: draft)
         guard validationErrors.isEmpty else { return }

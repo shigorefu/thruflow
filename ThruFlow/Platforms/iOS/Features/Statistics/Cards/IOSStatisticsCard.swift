@@ -2,6 +2,7 @@
 import SwiftUI
 
 struct IOSStatisticsCard<Content: View>: View {
+    @Environment(\.statisticsFillsRow) private var fillsRow
     let title: String?
     let subtitle: String?
     let headerAccessory: AnyView?
@@ -57,7 +58,7 @@ struct IOSStatisticsCard<Content: View>: View {
             }
             content
         }
-        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, maxHeight: fillsRow ? .infinity : nil, alignment: .topLeading)
         .padding(compact ? 10 : 16)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         .overlay {

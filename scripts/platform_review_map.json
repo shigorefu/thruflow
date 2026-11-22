@@ -85,6 +85,7 @@
         "ThruFlow/Platforms/macOS/Features/Areas",
         "ThruFlow/Platforms/iOS/Features/Areas",
         "ThruFlow/Shared/UI/Projects",
+        "ThruFlow/Shared/UI/Habits",
         "ThruFlow/Shared/Domain/Models/Project.swift",
         "ThruFlow/Shared/Application/Areas/ProjectEditingService.swift",
         "ThruFlow/Shared/Application/Areas/AreaLifecycleService.swift"
@@ -155,6 +156,7 @@
         "ThruFlow/Platforms/macOS/Features/Statistics",
         "ThruFlow/Platforms/iOS/Features/Statistics",
         "ThruFlow/Shared/Domain/Logic/Statistics/HabitCompletionBuilder.swift",
+        "ThruFlow/Shared/Domain/Logic/Statistics/WeeklyHabitRestDays.swift",
         "ThruFlow/Shared/UI/Statistics",
         "ThruFlow/Shared/Application/Statistics/StatisticsProjectionActor.swift",
         "ThruFlow/Platforms/watchOS/Features/Statistics"
@@ -168,6 +170,7 @@
       "tests": [
         "ThruFlowTests/Statistics/StatisticsTests.swift",
         "ThruFlowTests/Statistics/StatisticsPeriodTests.swift",
+        "ThruFlowTests/Statistics/StatisticsGroupedTrendTests.swift",
         "ThruFlowTests/Statistics/HabitCompletionTests.swift",
         "ThruFlowTests/Statistics/StatisticsTrendSmoothingTests.swift"
       ]

@@ -206,7 +206,7 @@ struct TaskRescheduleService {
             return .failure(.fixedHabit)
         }
 
-        let planner = RequiredTodoPlanner(calendar: calendar)
+        let planner = RequiredTodoPlanner(calendar: calendar, dayBoundary: dayBoundary)
         let referenceDate = todo.scheduledDate
             ?? dayBoundary.day(containing: now, calendar: calendar)
         let option = planner.weeklyRescheduleOptions(for: todo, in: todos, now: referenceDate)

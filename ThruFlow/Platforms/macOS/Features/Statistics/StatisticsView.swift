@@ -27,7 +27,7 @@ struct StatisticsView: View {
     @State private var isCustomRangePresented = false
     @State private var isSearchPresented = false
     @State private var distributionDimension: StatisticsDistributionDimension = .task
-    @State private var trendMode: StatisticsMode = .flow
+    @State private var trendMode: StatisticsQualityMode = .flow
     @State private var dotsMode: StatisticsMode = .flow
     @State private var searchDeadline: ContinuousClock.Instant?
     @State private var failedRequest: StatisticsPeriodRefreshID?
@@ -178,6 +178,7 @@ struct StatisticsView: View {
                                 presentationID: presentationID,
                                 showsLoading: !didFail,
                                 reportWidth: max(0, geometry.size.width - calendarWidth - 2 * reportPadding - 1),
+                                viewportHeight: max(0, geometry.size.height - 2 * reportPadding),
                                 periodTitle: periodTitle,
                                 today: today,
                                 presentationPeriod: presentationPeriod,

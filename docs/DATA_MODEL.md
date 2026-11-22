@@ -298,3 +298,11 @@ CloudKit. A restored outbox cannot be dispatched by a different recording device
 on macOS, iOS, watchOS, and history recording writes `false`; Habit generation writes
 `true`. Older stores and CloudKit records read `nil` and preserve legacy Area-based
 classification. No existing records are rewritten or guessed from their titles.
+
+## Minimum Habit rest days (1.4.2)
+
+`Direction.minimumRestDays` is an optional Int scalar, nil for older stores.
+`ProjectHabitSettings.minimumRestDays` is an optional JSON member inside the
+existing `Project.habitSettingsRawValue` String. Missing values resolve to zero,
+preserving old JSON decoding and existing schedules. No entity or relationship
+is renamed. The new Area property is included in editor save rollback.

@@ -82,11 +82,12 @@ struct StatisticsPeriodBuilder: Sendable {
         achievementRecords: [StatisticsPeriodAchievementRecord],
         filter: StatisticsPeriodFilter,
         habitRecords: [HabitCompletionRecord] = [],
+        ordinaryTaskDays: Set<Date> = [],
         now: Date = .now
     ) -> StatisticsPeriodSnapshot {
         let input = prepare(
             flowRecords: flowRecords, achievementRecords: achievementRecords,
-            filter: filter, habitRecords: habitRecords, now: now
+            filter: filter, habitRecords: habitRecords, ordinaryTaskDays: ordinaryTaskDays, now: now
         )
         return makeSnapshot(
             for: input, summary: summary(for: input), trend: trend(for: input),
@@ -104,6 +105,7 @@ struct StatisticsPeriodBuilder: Sendable {
         let currentAchievements: [StatisticsPeriodAchievementRecord]
         let previousAchievements: [StatisticsPeriodAchievementRecord]
         let habitRecords: [HabitCompletionRecord]
+        let ordinaryTaskDays: Set<Date>
         let today: Date
     }
 
@@ -112,6 +114,7 @@ struct StatisticsPeriodBuilder: Sendable {
         achievementRecords: [StatisticsPeriodAchievementRecord],
         filter: StatisticsPeriodFilter,
         habitRecords: [HabitCompletionRecord],
+        ordinaryTaskDays: Set<Date> = [],
         now: Date = .now
     ) -> ReportInput {
         let periodBounds = bounds(for: filter)
@@ -139,7 +142,7 @@ struct StatisticsPeriodBuilder: Sendable {
             filter: filter, bounds: periodBounds,
             currentFlows: currentFlows, previousFlows: previousFlows,
             currentAchievements: currentAchievements, previousAchievements: previousAchievements,
-            habitRecords: habitRecords, today: dayBoundary.day(containing: now, calendar: calendar)
+            habitRecords: habitRecords, ordinaryTaskDays: ordinaryTaskDays, today: dayBoundary.day(containing: now, calendar: calendar)
         )
     }
 
@@ -157,8 +160,14 @@ struct StatisticsPeriodBuilder: Sendable {
             points: makeTrend(
                 period: period, bounds: input.bounds,
                 currentFlows: input.currentFlows, previousFlows: input.previousFlows,
-                currentAchievements: input.currentAchievements, previousAchievements: input.previousAchievements
-            )
+                currentAchievements: input.currentAchievements, previousAchievements: input.previousAchievements,
+                restDays: WeeklyHabitRestDays(calendar: calendar).dates(
+                    records: input.habitRecords, filter: input.filter,
+                    ordinaryTaskDays: input.ordinaryTaskDays, today: input.today
+                )
+            ),
+            areaSeries: makeGroupedTrendSeries(flows: input.currentFlows, dimension: .area, period: period, bounds: input.bounds),
+            projectSeries: makeGroupedTrendSeries(flows: input.currentFlows, dimension: .project, period: period, bounds: input.bounds)
         )
     }
 
@@ -172,7 +181,7 @@ struct StatisticsPeriodBuilder: Sendable {
     }
 
     nonisolated func habits(for input: ReportInput) -> HabitCompletionSummary {
-        HabitCompletionBuilder().build(
+        HabitCompletionBuilder(calendar: calendar).build(
             records: input.habitRecords, filter: input.filter, bounds: input.bounds, today: input.today
         )
     }
@@ -238,6 +247,7 @@ struct StatisticsPeriodBuilder: Sendable {
             filter: input.filter, bounds: input.bounds,
             summary: summary.summary, previousSummary: summary.previousSummary,
             trend: trend.points, trendPeriod: trend.period,
+            areaTrendSeries: trend.areaSeries, projectTrendSeries: trend.projectSeries,
             dailyFocus: dailyFocus, estimateAccuracy: estimateAccuracy,
             taskDistribution: distribution.task, areaDistribution: distribution.area,
             projectDistribution: distribution.project, habitCompletion: habits,
@@ -323,7 +333,8 @@ struct StatisticsPeriodBuilder: Sendable {
         currentFlows: [StatisticsPeriodFlowRecord],
         previousFlows: [StatisticsPeriodFlowRecord],
         currentAchievements: [StatisticsPeriodAchievementRecord],
-        previousAchievements: [StatisticsPeriodAchievementRecord]
+        previousAchievements: [StatisticsPeriodAchievementRecord],
+        restDays: Set<Date>
     ) -> [StatisticsTrendPoint] {
         let currentBuckets = trendBuckets(
             for: period,
@@ -351,7 +362,11 @@ struct StatisticsPeriodBuilder: Sendable {
                     in: comparisonBucket,
                     records: previousAchievements
                 ),
-                hasComparison: previousBuckets.indices.contains(index)
+                hasComparison: previousBuckets.indices.contains(index),
+                skipsTaskDay: period != .year && restDays.contains(bucket.start) &&
+                    completionCount(in: bucket, records: currentAchievements) == 0,
+                skipsPreviousTaskDay: period != .year && restDays.contains(comparisonBucket.start) &&
+                    completionCount(in: comparisonBucket, records: previousAchievements) == 0
             )
         }
     }
@@ -436,10 +451,10 @@ struct StatisticsPeriodBuilder: Sendable {
         var records: [StatisticsPeriodFlowRecord] = []
     }
 
-    nonisolated private func makeDistribution(
+    nonisolated private func distributionAccumulators(
         flows: [StatisticsPeriodFlowRecord],
         dimension: DistributionDimension
-    ) -> [StatisticsDistributionItem] {
+    ) -> [String: DistributionAccumulator] {
         var grouped: [String: DistributionAccumulator] = [:]
 
         for record in flows where record.focusSeconds > 0 {
@@ -476,6 +491,41 @@ struct StatisticsPeriodBuilder: Sendable {
             }
             grouped[key] = accumulator
         }
+
+        return grouped
+    }
+
+    nonisolated private func makeGroupedTrendSeries(
+        flows: [StatisticsPeriodFlowRecord],
+        dimension: DistributionDimension,
+        period: StatisticsPeriod,
+        bounds: StatisticsPeriodBounds
+    ) -> [StatisticsGroupedTrendSeries] {
+        let buckets = trendBuckets(for: period, from: bounds.currentStart, to: bounds.currentEnd)
+        return distributionAccumulators(flows: flows, dimension: dimension).map { key, group in
+            StatisticsGroupedTrendSeries(
+                id: key, name: group.name, symbol: group.symbol,
+                colorHex: StatisticsHeatmapBuilder.mixedHexColor(group.colors),
+                totalFocusSeconds: group.focusSeconds,
+                points: buckets.enumerated().map { index, bucket in
+                    StatisticsGroupedTrendPoint(
+                        index: index, date: bucket.start,
+                        focusSeconds: totalFocus(in: bucket, records: group.records)
+                    )
+                }
+            )
+        }.sorted {
+            if $0.totalFocusSeconds != $1.totalFocusSeconds { return $0.totalFocusSeconds > $1.totalFocusSeconds }
+            let nameOrder = $0.name.localizedStandardCompare($1.name)
+            return nameOrder == .orderedSame ? $0.id < $1.id : nameOrder == .orderedAscending
+        }
+    }
+
+    nonisolated private func makeDistribution(
+        flows: [StatisticsPeriodFlowRecord],
+        dimension: DistributionDimension
+    ) -> [StatisticsDistributionItem] {
+        let grouped = distributionAccumulators(flows: flows, dimension: dimension)
 
         let sorted = grouped.map { key, value in
             StatisticsDistributionItem(

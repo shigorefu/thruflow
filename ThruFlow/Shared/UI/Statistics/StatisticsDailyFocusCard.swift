@@ -3,13 +3,16 @@ import Charts
 import SwiftUI
 
 struct StatisticsDailyFocusCard: View {
+    @Environment(\.statisticsFillsRow) private var fillsRow
     @Environment(\.locale) private var locale
     let points: [StatisticsDailyFocusPoint]
     let compact: Bool
+    var plotHeight: CGFloat? = nil
+    var expandsPlot = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: compact ? 8 : 14) {
-            Label("日ごとの集中時間", systemImage: "chart.bar.fill")
+            Label(String(localized: "日ごとの集中時間"), systemImage: "chart.bar.fill")
                 .font(.headline)
                 .accessibilityAddTraits(.isHeader)
             if points.contains(where: { $0.focusSeconds > 0 }) {
@@ -22,12 +25,12 @@ struct StatisticsDailyFocusCard: View {
                     plot
                 }
             } else {
-                Text("この期間のデータはありません")
+                Text(String(localized: "この期間のデータはありません"))
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, minHeight: compact ? 70 : 125)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: fillsRow ? .infinity : nil, alignment: .topLeading)
         .padding(compact ? 12 : 16)
         .background(Color.secondary.opacity(0.055), in: RoundedRectangle(cornerRadius: 16))
         .overlay {
@@ -73,7 +76,11 @@ struct StatisticsDailyFocusCard: View {
                 }
             }
         }
-        .frame(height: compact ? 113 : 190)
+        .frame(
+            minHeight: plotHeight ?? (compact ? 113 : 190),
+            idealHeight: plotHeight ?? (compact ? 113 : 190),
+            maxHeight: expandsPlot ? .infinity : (plotHeight ?? (compact ? 113 : 190))
+        )
     }
 
     private var axisIndexes: [Int] {

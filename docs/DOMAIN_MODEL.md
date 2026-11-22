@@ -18,6 +18,7 @@ Habit Areas may have:
 
 - schedule kind: every day, weekly count, or selected weekdays;
 - target amount;
+- optional 0–6 minimum rest days for weekly-count schedules;
 - goal unit: occurrences, focus blocks, minutes, or hours.
 
 A Habit Area may also contain one or more paused local-day intervals.
@@ -25,6 +26,21 @@ Paused days are ineligible for automatic Todo generation and weekly rescheduling
 Pausing soft-deletes only generated occurrences that have not been completed and
 have no measured progress or Flow history. Existing completed/progressed records
 remain intact. Resuming re-enables planning from the current logical day.
+
+Weekly-count Habits may reserve full logical rest days after each completed
+occurrence. With one rest day, Monday completion makes Tuesday unavailable and
+the next attempt can appear Wednesday. Completion timestamps follow the app's
+day boundary, with `updatedAt` as the legacy fallback. Rest spans weeks;
+incomplete attempts do not start it. Area and Project Habits keep independent
+rest settings, and missing values mean zero days.
+
+Validation checks a repeating seven-day pattern, including its week boundary
+and selected weekdays. For example, three weekly attempts with one rest day are
+valid; four are not sustainable every week. Invalid combinations are rejected
+without changing the requested target. Weekly moves must leave enough spaced,
+eligible dates to fulfill the remaining quota. A newly imported completion
+retires only unused current/future occurrences inside its rest window; worked
+or history-bearing occurrences retain their identity and progress.
 
 Editing the schedule or goal of an existing Habit Area reconciles its Todo
 occurrences from the current logical day through the already planned future
@@ -190,6 +206,19 @@ accuracy divides the sum of each task's smaller value by the sum of its
 larger value. A period with no comparable tasks has no accuracy percentage.
 The projection is derived and adds no persistent records.
 
+The trend payload also carries current-period focus series by Area and Project.
+They reuse the distribution's pre-collapse positive Flow-segment groups, UUID
+identity, nil-owner fallbacks, names and weighted Area colors. Every group is
+retained, independently of the distribution's top-five-plus-Other presentation.
+Each series fills the same daily/monthly buckets as the aggregate trend with
+zeroes where that group has no focus. Custom ranges use the existing trend-period
+selection and bucket boundaries. Group totals therefore cover the same filtered
+focused seconds as the aggregate and distribution. Future buckets remain in the
+value projection; native charts omit them when drawing, as in the aggregate.
+The new grouped modes do not add per-group comparisons or rolling averages.
+Aggregate Focus and Task trends retain their current/previous/average series;
+Task mode continues to count completed Tasks, including its weekly free-day gaps.
+
 Paused Habit days do not contribute a planned Todo, so they are excluded from
 the completion-rate denominator and never count as missed. Previously completed
 Todos and actual Flow recorded for that Habit remain visible in history and
@@ -260,9 +289,18 @@ Completed occurrences contribute 1, unchecked occurrences 0. Minutes use exact
 focused seconds / (target × 60); Blocks use seconds / (target × 1500), capped at
 1. This smooth fraction is separate from half-Block display credits; an already
 completed Block occurrence contributes 1. Legacy records with no seconds field
-fall back to stored progress, while an explicit zero remains zero. The overall
-rate is the mean across occurrences, not the mean of Area means. Empty input has
-no rate.
+fall back to stored progress, while an explicit zero remains zero. For every-day and selected-weekday schedules, all eligible occurrences count.
+For weekly-count schedules, group by Habit owner and configured calendar week,
+rank by fraction (then scheduled date and UUID), and retain up to the weekly
+target. Six completed attempts plus one missed attempt against a target of six
+therefore contribute six out of six. Partial attempts retain their exact
+fraction and cannot be pooled to substitute for a fully completed attempt.
+The overall rate weights the retained occurrences, rather than averaging owner
+percentages. Empty input has no rate.
+
+Month and custom ranges rank only occurrences inside the selected dates.
+Current settings provide the weekly target because historical schedule versions
+are not persisted. No missing historical obligations are manufactured.
 
 Deleted, independent, connector, future, and unstarted paused occurrences do
 not count. An unused archived Todo is canceled. Unstarted occurrences before an
@@ -270,3 +308,20 @@ Area's archive logical day remain obligations; on/after that day they are
 excluded. Started/completed history remains counted after archival or pause.
 The metric uses saved schedules, without inventing missed days or reconstructing
 historical goal changes.
+
+### Weekly free days in Task trends (1.4.2)
+
+The Task-mode trend omits zero-completion daily points after all relevant
+weekly Habit owners have met their full-completion quotas earlier in that
+configured week. Fulfillment uses the logical completion day from
+`completedAt`, falling back to `updatedAt` for legacy/full-progress records.
+Eligible saved every-day/weekday obligations and scheduled unfinished ordinary
+Tasks veto a free day. Current and comparison series classify their
+own dates independently. Remaining marks connect over the omitted dates.
+The seven-calendar-day Task average excludes those free-day samples without
+extending its window. Focus-time zeros, daily bars, Dots, totals, CSV rows,
+and annual monthly buckets retain their actual values.
+
+The model actor fetches the enclosing weeks for both periods as read-only
+context. Out-of-range attempts classify free days but never add to the
+selected-period completion rate.

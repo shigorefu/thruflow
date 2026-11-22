@@ -4,6 +4,7 @@ struct StatisticsSmoothedPoint: Identifiable, Equatable, Sendable {
     let index: Int
     let focusMinutes: Double
     let completedTasks: Double
+    var skipsTaskDay = false
     var id: Int { index }
 }
 
@@ -15,9 +16,12 @@ nonisolated enum StatisticsTrendSmoothing {
         let window = period == .year ? 3 : 7
         return elapsed.indices.map { index in
             let values = elapsed[max(0, index - window + 1)...index]
+            let taskValues = values.filter { !$0.skipsTaskDay }
             return StatisticsSmoothedPoint(index: elapsed[index].index,
                 focusMinutes: values.reduce(0.0) { $0 + Double($1.focusSeconds) / 60 } / Double(values.count),
-                completedTasks: values.reduce(0.0) { $0 + Double($1.completedTaskCount) } / Double(values.count))
+                completedTasks: taskValues.isEmpty ? 0 :
+                    taskValues.reduce(0.0) { $0 + Double($1.completedTaskCount) } / Double(taskValues.count),
+                skipsTaskDay: elapsed[index].skipsTaskDay)
         }
     }
 }

@@ -23,9 +23,12 @@ struct MacTaskContextMenu: View {
         Button(String(localized: "編集"), systemImage: "pencil", action: onEdit)
         if !todo.isCompleted {
             if todo.taskType == .habit {
-                if todo.area?.goalSchedule == .weeklyCount {
+                if HabitDefinition(todo: todo)?.goalSchedule == .weeklyCount {
                     Menu(String(localized: "移動")) {
-                        ForEach(RequiredTodoPlanner(calendar: calendar).weeklyRescheduleOptions(for: todo, in: todos), id: \.date) { option in
+                        ForEach(RequiredTodoPlanner(calendar: calendar, dayBoundary: dayBoundary).weeklyRescheduleOptions(
+                            for: todo, in: todos,
+                            now: dayBoundary.day(containing: .now, calendar: calendar)
+                        ), id: \.date) { option in
                             Button(dateLabel(option.date)) { move(to: option.date) }
                                 .disabled(!option.isAllowed)
                                 .help(option.isAllowed ? "" : String(localized: "週間目標を達成できなくなるため移動できません"))

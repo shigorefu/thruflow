@@ -173,7 +173,7 @@ private struct TaskDayColumn: View {
     private func canDrag(_ todo: Todo) -> Bool {
         guard !todo.isCompleted else { return false }
         guard todo.taskType == .habit else { return true }
-        return todo.area?.goalSchedule == .weeklyCount
+        return HabitDefinition(todo: todo)?.goalSchedule == .weeklyCount
     }
 
     private func taskID(from payload: String) -> UUID? {
@@ -305,7 +305,7 @@ struct TaskMonthGrid: View {
     private func canDrag(_ todo: Todo) -> Bool {
         guard !todo.isCompleted else { return false }
         guard todo.taskType == .habit else { return true }
-        return todo.area?.goalSchedule == .weeklyCount
+        return HabitDefinition(todo: todo)?.goalSchedule == .weeklyCount
     }
 
     private var weekdaySymbols: [String] {

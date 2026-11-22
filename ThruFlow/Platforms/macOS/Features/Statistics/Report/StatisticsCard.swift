@@ -2,6 +2,7 @@
 import SwiftUI
 
 struct StatisticsCard<Content: View>: View {
+    @Environment(\.statisticsFillsRow) private var fillsRow
     let title: String
     let subtitle: String?
     let minimumHeight: CGFloat?
@@ -60,6 +61,7 @@ struct StatisticsCard<Content: View>: View {
         .frame(
             maxWidth: .infinity,
             minHeight: minimumHeight,
+            maxHeight: fillsRow ? .infinity : nil,
             alignment: .topLeading
         )
         .padding(compact ? 10 : 16)
@@ -85,6 +87,7 @@ struct StatisticsCard<Content: View>: View {
 }
 
 struct StatisticsAnalysisCard<Accessory: View, Content: View>: View {
+    @Environment(\.statisticsFillsRow) private var fillsRow
     let title: String
     var subtitle: String? = nil
     let systemImage: String
@@ -108,7 +111,7 @@ struct StatisticsAnalysisCard<Accessory: View, Content: View>: View {
             content
         }
         .padding(compact ? 10 : 18)
-        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, maxHeight: fillsRow ? .infinity : nil, alignment: .topLeading)
         .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 16))
         .overlay {
             RoundedRectangle(cornerRadius: 16)

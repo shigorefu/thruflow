@@ -54,7 +54,7 @@ struct IOSStatisticsAnalysisCards: View {
             value: cards.dailyFocus,
             id: id,
             placeholderHeight: compact ? 140 : 230,
-            showsLoading: showsLoading
+            showsLoading: showsLoading, fillsRow: compact
         ) { points in
             StatisticsDailyFocusCard(points: points, compact: compact)
         }
@@ -65,7 +65,7 @@ struct IOSStatisticsAnalysisCards: View {
             value: cards.trend,
             id: id,
             placeholderHeight: compact ? 175 : 340,
-            showsLoading: showsLoading
+            showsLoading: showsLoading, fillsRow: compact
         ) { trend in
             IOSStatisticsTrendCard(
                 mode: $trendMode,
@@ -83,7 +83,7 @@ struct IOSStatisticsAnalysisCards: View {
             value: cards.distribution,
             id: id,
             placeholderHeight: compact ? 180 : 280,
-            showsLoading: showsLoading
+            showsLoading: showsLoading, fillsRow: compact
         ) { distribution in
             StatisticsDistributionOptions(selection: $distributionDimension) { selection, options in
                 IOSStatisticsDistributionCard(
@@ -103,7 +103,7 @@ struct IOSStatisticsAnalysisCards: View {
             value: cards.days,
             id: id,
             placeholderHeight: 160,
-            showsLoading: showsLoading
+            showsLoading: showsLoading, fillsRow: compact
         ) { days in
             IOSStatisticsDotsCard(
                 mode: $dotsMode,
@@ -147,13 +147,14 @@ private nonisolated struct IOSStatisticsReportLayout: Layout {
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
         var y = bounds.minY
         for row in rows {
+            let height = rowHeight(row, width: bounds.width, subviews: subviews)
             var x = bounds.minX
             for card in row {
-                let proposal = cardProposal(card, in: row, width: bounds.width)
+                var proposal = cardProposal(card, in: row, width: bounds.width)
+                if row.count > 1 { proposal.height = height }
                 subviews[card.rawValue].place(at: CGPoint(x: x, y: y), anchor: .topLeading, proposal: proposal)
                 x += (proposal.width ?? 0) + spacing
             }
-            let height = rowHeight(row, width: bounds.width, subviews: subviews)
             if height > 0 { y += height + spacing }
         }
     }

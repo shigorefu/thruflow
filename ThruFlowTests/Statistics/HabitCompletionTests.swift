@@ -229,4 +229,206 @@ struct HabitCompletionTests {
                                              modelContext: context, now: day(8, hour: 3)))
         #expect(try context.fetchCount(FetchDescriptor<Todo>()) == 1)
     }
+    private func weeklyArea(target: Int = 6) -> Area {
+        Area(name: "Exercise", type: .habit, goalTarget: 1, goalPeriod: .weekly,
+             goalUnit: .occurrences, goalSchedule: .weeklyCount, weeklyTargetCount: target)
+    }
+
+    private func weeklyAttempts(_ area: Area, days: ClosedRange<Int> = 7...13,
+                                completed: Set<Int>) -> [Todo] {
+        days.map { number in
+            let todo = Todo(title: "Exercise", area: area, scheduledDate: day(number))
+            if completed.contains(number) { todo.setCompleted(true, now: day(number, hour: 12)) }
+            return todo
+        }
+    }
+
+    @Test(arguments: [7, 13])
+    func sixWeeklyCompletionsMeetQuotaRegardlessOfMissedDay(missedDay: Int) {
+        let area = weeklyArea()
+        let todos = weeklyAttempts(area, completed: Set(7...13).subtracting([missedDay]))
+        let result = summary(todos, now: day(14))
+        #expect(result.occurrenceCount == 6)
+        #expect(result.completedFraction == 6)
+        #expect(result.rate == 1)
+        #expect(result == summary(todos.reversed(), now: day(14)))
+    }
+
+    @Test func weeklyPartialAttemptsDoNotCombineIntoExtraCompletedDays() {
+        let area = weeklyArea()
+        let todos = weeklyAttempts(area, completed: Set(7...11))
+        for todo in todos.suffix(2) {
+            todo.measurement = .minutes
+            todo.plannedAmount = 40
+            todo.focusDurationSeconds = 20 * 60
+        }
+        let result = summary(todos, now: day(14))
+        #expect(result.occurrenceCount == 6)
+        #expect(result.completedFraction == 5.5)
+        #expect(result.rate == 5.5 / 6)
+        area.weeklyTargetCount = 1
+        #expect(summary(Array(todos.suffix(2)), now: day(14)).rate == 0.5)
+    }
+
+    @Test func weeklyQuotaKeepsWeeksOwnersAndFiltersSeparate() {
+        let first = weeklyArea()
+        let second = weeklyArea(target: 2)
+        let complete = weeklyAttempts(first, completed: Set(7...12))
+        let nextWeek = weeklyAttempts(first, days: 14...15, completed: [14])
+        let other = weeklyAttempts(second, days: 7...8, completed: [])
+        let duplicate = Todo(title: "Exercise", area: first, scheduledDate: day(7))
+        let result = summary(complete + nextWeek + other + [duplicate], now: day(16))
+        #expect(result.occurrenceCount == 10)
+        #expect(result.completedFraction == 7)
+        let filtered = summary(complete + other, filter: StatisticsPeriodFilter(
+            period: .week, anchorDate: day(7), areaIDs: [first.id]), now: day(16))
+        #expect(filtered.rate == 1)
+        let clipped = summary(complete, filter: StatisticsPeriodFilter(
+            period: .month, anchorDate: day(13), customStartDate: day(13), customEndDate: day(13)),
+            now: day(16))
+        #expect(clipped.rate == 0)
+        #expect(clipped.occurrenceCount == 1)
+    }
+
+    @Test func weeklyQuotaRespectsWeekStartAndOpenLogicalDay() {
+        let area = weeklyArea(target: 1)
+        let saturday = weeklyAttempts(area, days: 12...12, completed: [12])
+        let sunday = weeklyAttempts(area, days: 13...13, completed: [])
+        var sundayCalendar = calendar
+        sundayCalendar.firstWeekday = 1
+        let result = StatisticsPeriodBuilder(calendar: sundayCalendar).build(
+            flowRecords: [], achievementRecords: [],
+            filter: StatisticsPeriodFilter(period: .month, anchorDate: day(13)),
+            habitRecords: (saturday + sunday).compactMap { HabitCompletionRecord(todo: $0, calendar: sundayCalendar) },
+            now: day(14)).habitCompletion
+        #expect(result.rate == 0.5)
+        let boundary = AppDayBoundary(hour: 2)
+        #expect(summary(saturday + sunday, now: day(14, hour: 1), boundary: boundary).rate == 1)
+        area.weeklyTargetCount = 2
+        #expect(summary(saturday + sunday, now: day(14, hour: 1), boundary: boundary).occurrenceCount == 1)
+        #expect(summary(saturday + sunday, now: day(14, hour: 2), boundary: boundary).rate == 0.5)
+    }
+
+    @Test func projectWeeklyQuotaIsIndependentFromParent() throws {
+        let area = weeklyArea(target: 6)
+        let project = Project(name: "Report", area: area, createdAt: day(1))
+        project.habitSettings = ProjectHabitSettings(
+            isEnabled: true, goalSchedule: .weeklyCount, weeklyTargetCount: 1, startsOn: day(1))
+        let first = Todo(title: "", area: area, project: project, habitOccurrence: true, scheduledDate: day(7))
+        first.setCompleted(true, now: day(7, hour: 12))
+        let missed = Todo(title: "", area: area, project: project, habitOccurrence: true, scheduledDate: day(8))
+        let parent = weeklyAttempts(area, days: 7...8, completed: [])
+        let result = summary([first, missed] + parent, now: day(14))
+        #expect(result.occurrenceCount == 3)
+        #expect(result.areas.first { $0.id == "project:\(project.id)" }?.rate == 1)
+        #expect(result.areas.first { $0.id == "area:\(area.id)" }?.rate == 0)
+    }
+
+    @Test func taskTrendSkipsOnlyPostQuotaRestDays() throws {
+        let area = weeklyArea()
+        let todos = weeklyAttempts(area, completed: Set(7...12))
+        let records = todos.compactMap { HabitCompletionRecord(todo: $0, calendar: calendar) }
+        let builder = StatisticsPeriodBuilder(calendar: calendar)
+        let filter = StatisticsPeriodFilter(period: .week, anchorDate: day(14))
+        let snapshot = builder.build(flowRecords: [], achievementRecords: [],
+            filter: filter, habitRecords: records, now: day(21))
+        #expect(snapshot.trend.first { $0.comparisonDate == day(13) }?.skipsPreviousTaskDay == true)
+        #expect(snapshot.trend.first?.skipsPreviousTaskDay == false)
+        #expect(snapshot.trend.allSatisfy { !$0.skipsTaskDay })
+
+        let current = StatisticsPeriodFilter(period: .week, anchorDate: day(7))
+        let initial = builder.build(flowRecords: [], achievementRecords: [],
+            filter: current, habitRecords: records, now: day(14))
+        #expect(initial.trend.last?.skipsTaskDay == true)
+        #expect(initial.trend.last?.focusSeconds == 0)
+        #expect(initial.trend.count == 7)
+        let ordinary = builder.build(flowRecords: [], achievementRecords: [],
+            filter: current, habitRecords: records, ordinaryTaskDays: [day(13)], now: day(14))
+        #expect(ordinary.trend.last?.skipsTaskDay == false)
+
+        let daily = Todo(title: "", area: Area(name: "Read", type: .habit), scheduledDate: day(13))
+        let guarded = builder.build(flowRecords: [], achievementRecords: [], filter: current,
+            habitRecords: records + [try #require(HabitCompletionRecord(todo: daily, calendar: calendar))],
+            now: day(14))
+        #expect(guarded.trend.last?.skipsTaskDay == false)
+        let yearly = builder.build(flowRecords: [], achievementRecords: [],
+            filter: StatisticsPeriodFilter(period: .year, anchorDate: day(7)),
+            habitRecords: records, now: day(14))
+        #expect(yearly.trend.allSatisfy { !$0.skipsTaskDay && !$0.skipsPreviousTaskDay })
+    }
+
+    @Test func actorLoadsEnclosingWeekForCustomRestDayAndPendingTaskGuard() async throws {
+        let config = ModelConfiguration(isStoredInMemoryOnly: true, cloudKitDatabase: .none)
+        let container = try ModelContainer(for: Area.self, Todo.self, FlowSession.self,
+                                           FlowSegment.self, FlowBreak.self, configurations: config)
+        let context = container.mainContext
+        let area = weeklyArea()
+        context.insert(area)
+        for todo in weeklyAttempts(area, completed: Set(7...12)) { context.insert(todo) }
+        try context.save()
+        let filter = StatisticsPeriodFilter(period: .month, anchorDate: day(13),
+            customStartDate: day(13), customEndDate: day(13))
+        let initial = try await StatisticsProjectionActor(modelContainer: container).load(
+            filter: filter, calendar: calendar, dayBoundary: .midnight)
+        #expect(initial.trend.count == 1)
+        #expect(initial.trend.first?.skipsTaskDay == true)
+        #expect(initial.habitCompletion.rate == 0)
+        let ordinary = Todo(title: "Report", area: area, habitOccurrence: false, scheduledDate: day(13))
+        context.insert(ordinary)
+        try context.save()
+        let guarded = try await StatisticsProjectionActor(modelContainer: container).load(
+            filter: filter, calendar: calendar, dayBoundary: .midnight)
+        #expect(guarded.trend.first?.skipsTaskDay == false)
+        ordinary.setCompleted(true, now: day(12, hour: 18))
+        try context.save()
+        let completedEarlier = try await StatisticsProjectionActor(modelContainer: container).load(
+            filter: filter, calendar: calendar, dayBoundary: .midnight)
+        #expect(completedEarlier.trend.first?.skipsTaskDay == true)
+    }
+
+    @Test func lateCompletionDoesNotTurnEarlierDaysIntoRestDays() {
+        let area = weeklyArea(target: 1)
+        let todos = weeklyAttempts(area, days: 7...7, completed: [])
+        todos[0].setCompleted(true, now: day(11, hour: 12))
+        let records = todos.compactMap { HabitCompletionRecord(todo: $0, calendar: calendar) }
+        let rest = WeeklyHabitRestDays(calendar: calendar).dates(records: records,
+            filter: StatisticsPeriodFilter(), ordinaryTaskDays: [], today: day(14))
+        #expect(!rest.contains(day(8)))
+        #expect(!rest.contains(day(11)))
+        #expect(rest.contains(day(12)))
+        #expect(rest.contains(day(13)))
+        let boundary = AppDayBoundary(hour: 2)
+        todos[0].setCompleted(false, now: day(11))
+        todos[0].setCompleted(true, now: day(12, hour: 1))
+        let shifted = todos.compactMap { HabitCompletionRecord(todo: $0, calendar: calendar, dayBoundary: boundary) }
+        let shiftedRest = WeeklyHabitRestDays(calendar: calendar).dates(records: shifted,
+            filter: StatisticsPeriodFilter(), ordinaryTaskDays: [], today: day(14))
+        #expect(shiftedRest == rest)
+    }
+
+    @Test func unmetOtherWeeklyQuotaAndActualCompletionsPreventTaskGaps() {
+        let area = weeklyArea(target: 1)
+        let completed = weeklyAttempts(area, days: 7...7, completed: [7])
+        let other = weeklyArea(target: 1)
+        let pending = weeklyAttempts(other, days: 8...8, completed: [])
+        let records = (completed + pending).compactMap { HabitCompletionRecord(todo: $0, calendar: calendar) }
+        let rest = WeeklyHabitRestDays(calendar: calendar).dates(records: records,
+            filter: StatisticsPeriodFilter(), ordinaryTaskDays: [], today: day(14))
+        #expect(rest.isEmpty)
+        let filtered = WeeklyHabitRestDays(calendar: calendar).dates(records: records,
+            filter: StatisticsPeriodFilter(areaIDs: [area.id]), ordinaryTaskDays: [], today: day(14))
+        #expect(filtered.contains(day(8)))
+
+        let achievement = StatisticsPeriodAchievementRecord(completedAt: day(8, hour: 12),
+            todoID: UUID(), todoTitle: "Report", todoHashtags: [], todoNotes: "",
+            areaID: area.id, areaName: area.name, areaSymbol: "", areaColorHex: nil)
+        let report = StatisticsPeriodBuilder(calendar: calendar).build(
+            flowRecords: [], achievementRecords: [achievement],
+            filter: StatisticsPeriodFilter(period: .week, anchorDate: day(7), areaIDs: [area.id]),
+            habitRecords: records, now: day(14))
+        #expect(report.trend[1].completedTaskCount == 1)
+        #expect(!report.trend[1].skipsTaskDay)
+        #expect(report.trend[2].skipsTaskDay)
+    }
+
 }

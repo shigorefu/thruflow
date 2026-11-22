@@ -1,6 +1,10 @@
 #if os(macOS) || os(iOS)
 import SwiftUI
 
+extension EnvironmentValues {
+    @Entry var statisticsFillsRow = false
+}
+
 struct StatisticsCardPresentationID: Equatable {
     let filter: StatisticsPeriodFilter
     let calendar: Calendar
@@ -39,6 +43,7 @@ struct StatisticsCardSlot<Value, Content: View>: View {
                     Group {
                         if let value {
                             content(value)
+                                .environment(\.statisticsFillsRow, fillsRow)
                         } else {
                             Color.clear
                         }

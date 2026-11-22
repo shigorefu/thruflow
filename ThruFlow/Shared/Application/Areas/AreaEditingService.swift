@@ -56,7 +56,8 @@ struct AreaEditingService {
                     symbolName: draft.normalizedSymbolName, colorHex: draft.colorHex,
                     goalTarget: draft.goalTarget, goalPeriod: schedule?.goalPeriod,
                     goalUnit: draft.goalUnit, goalSchedule: schedule,
-                    weeklyTargetCount: weeklyCount, weekdayMask: weekdayMask, now: now
+                    weeklyTargetCount: weeklyCount, weekdayMask: weekdayMask,
+                    minimumRestDays: schedule == .weeklyCount ? draft.minimumRestDays : nil, now: now
                 )
                 if wasHabit, area.type == .habit {
                     _ = HabitScheduleChangeReconciler(calendar: calendar, dayBoundary: dayBoundary)
@@ -73,6 +74,7 @@ struct AreaEditingService {
                     goalTarget: draft.goalTarget, goalPeriod: schedule?.goalPeriod,
                     goalUnit: draft.goalUnit, goalSchedule: schedule,
                     weeklyTargetCount: weeklyCount, weekdayMask: weekdayMask,
+                    minimumRestDays: schedule == .weeklyCount ? draft.minimumRestDays : nil,
                     sortIndex: sortIndex, createdAt: now, updatedAt: now
                 )
                 modelContext.insert(created)

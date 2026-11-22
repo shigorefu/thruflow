@@ -25,7 +25,7 @@ struct HabitScheduleChangeReconciler {
     func reconcile(habit area: HabitDefinition, todos: [Todo], modelContext: ModelContext, now: Date = .now) -> Bool {
 
         let today = dayBoundary.day(containing: now, calendar: calendar)
-        let planner = RequiredTodoPlanner(calendar: calendar)
+        let planner = RequiredTodoPlanner(calendar: calendar, dayBoundary: dayBoundary)
         let futureTodos = todos.filter { todo in
             guard HabitDefinition(todo: todo) != nil,
                   area.owns(todo),

@@ -7,7 +7,7 @@ struct StatisticsEstimateAccuracyCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: compact ? 8 : 12) {
-            Label("時間見積もりの精度", systemImage: "scope")
+            Label(String(localized: "時間見積もりの精度"), systemImage: "scope")
                 .font(.headline)
                 .accessibilityAddTraits(.isHeader)
 
@@ -23,11 +23,11 @@ struct StatisticsEstimateAccuracyCard: View {
                     }
                 }
             } else {
-                Text("見積もりと実績を比較できるタスクはありません")
+                Text(String(localized: "見積もりと実績を比較できるタスクはありません"))
                     .foregroundStyle(.secondary)
             }
 
-            Text("完了したタスクの見積もりと、記録された集中時間を比較します。")
+            Text(String(localized: "完了したタスクの見積もりと、記録された集中時間を比較します。"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -45,8 +45,8 @@ struct StatisticsEstimateAccuracyCard: View {
     private var bars: some View {
         let maximum = max(1, value.plannedSeconds, value.actualSeconds)
         return Grid(alignment: .leading, horizontalSpacing: 8, verticalSpacing: 7) {
-            bar("見積もり", seconds: value.plannedSeconds, maximum: maximum, tint: .indigo)
-            bar("実績", seconds: value.actualSeconds, maximum: maximum, tint: .accentColor)
+            bar(String(localized: "見積もり"), seconds: value.plannedSeconds, maximum: maximum, tint: .indigo)
+            bar(String(localized: "実績"), seconds: value.actualSeconds, maximum: maximum, tint: .accentColor)
         }
     }
 
@@ -56,11 +56,11 @@ struct StatisticsEstimateAccuracyCard: View {
             .monospacedDigit()
             .foregroundStyle(Color.accentColor)
             .fixedSize()
-            .accessibilityLabel(Text("時間見積もりの精度"))
+            .accessibilityLabel(Text(String(localized: "時間見積もりの精度")))
             .accessibilityValue(Text(rate, format: .percent.precision(.fractionLength(0))))
     }
 
-    private func bar(_ label: LocalizedStringKey, seconds: Double, maximum: Double, tint: Color) -> some View {
+    private func bar(_ label: String, seconds: Double, maximum: Double, tint: Color) -> some View {
         GridRow {
             Text(label)
                 .fixedSize()

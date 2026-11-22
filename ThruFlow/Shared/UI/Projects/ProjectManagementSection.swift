@@ -186,7 +186,7 @@ struct ProjectEditorView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(String(localized: "保存"), action: save)
-                        .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        .disabled(!canSave)
                 }
             }
         }
@@ -247,6 +247,11 @@ struct ProjectEditorView: View {
         }
     }
 
+    private var canSave: Bool {
+        !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && (!habit.isEnabled || AreaValidator().validate(habit.validationDraft).isEmpty)
+    }
+
     private var identitySpacing: CGFloat {
 #if os(macOS)
         18
@@ -261,6 +266,8 @@ struct ProjectEditorView: View {
                 name: name, notes: project?.notes ?? "", area: area, editing: project, habit: habit, modelContext: modelContext
             )
             dismiss()
+        } catch ProjectEditingError.invalidHabit(let errors) {
+            saveError = errors.first { !$0.isRestScheduleError }?.localizedDescription
         } catch let error as ProjectEditingError {
             saveError = error.localizedDescription
         } catch {

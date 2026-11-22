@@ -91,6 +91,19 @@ detail; editing completed history recalculates progress through shared commands.
 Habit occurrences keep their individual dates and identities. A series can be
 shown as a connected rail without merging its stored records.
 
+## Habit settings
+
+Area and Project Habit editors offer rest days when the schedule is a weekly
+count. The native menu defaults to None and offers one through six days.
+After full completion, automatic planning waits that many complete logical days.
+Incompatible frequency, rest and weekday choices show an inline error
+directly below the rest-day menu as soon as any relevant value changes.
+Correcting the inputs clears the message immediately; the form footer does
+not repeat these errors. Save is disabled while the current Area or enabled
+Project Habit draft has validation errors, and becomes available after correction.
+Disabling a Project Habit ignores its inactive settings; storage failures remain
+retryable. Mac weekly movement uses the same eligibility rule.
+
 ## Statistics
 
 Week, month and year presets show their calendar grids; custom ranges show only
@@ -106,20 +119,60 @@ in the selected period. If the selected Project mode becomes unavailable,
 the chart switches to Area. Selecting a Task shows daily
 minute bars; selecting an Area or Project shows Task/time bars. A day cell opens
 a summary with a History action. CSV export offers its own configurable scope.
-The overview spans the report width. Wide layouts pair Daily Focus Time with
-Distribution, Focus Quality with Dots, and Habit Completion with Time Estimate
-Accuracy at the bottom. The bottom pair and the metric tiles within each
-overview row share the height of the tallest card in that row. Narrow
-layouts stack the report cards in the same reading order. Daily Focus Time
-shows actual focus per elapsed logical day; users can scroll horizontally
-through long ranges. Focus Quality is the existing trend chart with Flow and
-Task modes, current and previous periods, and a rolling average. The estimate
-card compares planned and recorded time for completed timed tasks.
-The wide Dots grid retains short cells. Reports scroll to fit longer lists
-and date ranges.
+The overview spans the report width. On Mac, Daily Focus Time pairs with
+Distribution when the report is at least 700 points wide and its viewport is
+at least 650 points high; otherwise those cards stack. Focus Quality always
+occupies the next full-width row with a plot at least 240 points high. Below
+Quality, Dots, Habit Completion and Time Estimate Accuracy share one row when
+the report is at least 1100 points wide. At smaller widths Dots gets its own
+full-width row, followed by the two metrics paired at the existing 610-point
+report-width breakpoint; narrower layouts stack those metrics. Seven stable
+wrappers retain card identity across resizing. Every row uses its natural
+content height measured at its actual column widths; cards sharing a row use
+the tallest card's natural height. The report stays top-aligned and does not
+distribute unused viewport height into cards. Empty space below the report is
+acceptable. Longer content and smaller windows scroll without compressing row
+content. The right-hand Mac date-selection calendar remains separate.
+
+The Mac Distribution card uses a native Area/Project/Task segmented control.
+Its existing Project availability rule is unchanged. In paired layouts its width
+is 42 percent of the row after the gap, capped at 520 points. Legend/detail
+content stays at most 340 points wide to keep names
+and durations together. Quality offers Focus, Task, Area and Project modes, with
+Project available whenever the store contains a Project and falling back to
+Area if that availability ends. Switching Quality modes cross-fades the plot
+and legend over 0.2 seconds while the header and picker stay stable; Reduce
+Motion disables this animation. Focus and Task retain their existing aggregate
+current/previous/rolling-average lines and top inline legend; Task means
+completed-Task count. Area
+and Project show one current-period focus-time line per group, without collapsing
+groups. Their legend shows group names, matching line colors and totals, or the
+selected bucket's time on chart hover. It scrolls when there are many groups.
+These grouped-mode legends sit to the right where the Quality card is at least
+520 points wide and below the plot when narrower. Hovering a group legend row
+keeps that group's chart line and points colored and turns all others gray;
+all groups and values remain present. Leaving the legend or changing mode or
+series restores the full colors, independently of chart-date hover. Area
+colors follow their source colors; Mac Project
+lines use deterministic identity-based colors to distinguish Projects sharing
+an Area. These colors do not change stored data or distribution colors.
+
+Wide iOS layouts retain their existing pairs and two trend modes. Each pair and
+the metric tiles within each overview row share the height of the tallest card
+in that row. Narrow layouts stack the report cards in reading order. Daily
+Focus Time shows actual focus per elapsed logical day and scrolls horizontally
+through long ranges. Month trends use daily points and year trends use monthly
+points. The estimate card compares planned and recorded time for completed
+timed Tasks. Dots keeps its existing date selection, short wide-layout cells
+and custom-range rules. Reports scroll to fit longer lists and date ranges.
 
 Habit completion shows overall and per-Habit values. Fully met goals count
 immediately. Partial and zero progress count after the configured day ends.
+Weekly-count Habits retain the best attempts up to their weekly target, so
+meeting six out of six remains 100% despite another missed day. In the Task
+trend, zero-completion free days after every relevant weekly target is met
+are skipped, connecting the neighboring points. Days with other scheduled
+obligations still appear, and Focus mode continues to show actual time.
 
 Mac has a persistent calendar column; mobile uses native sheets and a vertical
 report. Widgets retain their separate compact snapshots.

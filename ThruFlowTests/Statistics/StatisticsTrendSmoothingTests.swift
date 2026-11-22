@@ -54,4 +54,19 @@ import Testing
         #expect(snapshot.trend.count == 90)
         #expect(snapshot.trendPeriod == .month)
     }
+    @Test func weeklyRestDaysDoNotLowerTaskAverageOrExtendItsCalendarWindow() {
+        let points = (0..<8).map { index in
+            StatisticsTrendPoint(index: index, date: date(2026, 9, index + 1),
+                comparisonDate: date(2026, 8, index + 1), focusSeconds: index == 0 ? 420 : 0,
+                previousFocusSeconds: 0, completedTaskCount: index == 0 ? 7 : 1,
+                previousCompletedTaskCount: 0, skipsTaskDay: index == 1)
+        }
+        let values = StatisticsTrendSmoothing.build(points: points, period: .month, today: date(2026, 9, 8))
+        #expect(values[1].skipsTaskDay)
+        #expect(values[1].focusMinutes == 3.5)
+        #expect(values[2].completedTasks == 4)
+        #expect(values[7].completedTasks == 1)
+        #expect(values[7].focusMinutes == 0)
+    }
+
 }

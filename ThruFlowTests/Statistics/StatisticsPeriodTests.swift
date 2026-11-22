@@ -469,12 +469,18 @@ struct StatisticsPeriodTests {
         #expect(snapshot.taskDistribution.first?.name == "Dune")
         #expect(snapshot.projectDistribution.first?.id == "project:\(project.id)")
         #expect(snapshot.projectDistribution.first?.focusSeconds == 12 * 60)
+        #expect(snapshot.areaTrendSeries.first?.id == "area:\(reading.id)")
+        #expect(snapshot.areaTrendSeries.first?.totalFocusSeconds == 12 * 60)
+        #expect(snapshot.projectTrendSeries.first?.id == "project:\(project.id)")
+        #expect(snapshot.projectTrendSeries.first?.totalFocusSeconds == 12 * 60)
         let all = try await StatisticsProjectionActor(modelContainer: container).load(
             filter: StatisticsPeriodFilter(period: .week, anchorDate: start),
             calendar: calendar, dayBoundary: .midnight
         )
         #expect(all.projectDistribution.first { $0.id == "project:unassigned" }?.focusSeconds == 13 * 60)
         #expect(all.projectDistribution.reduce(0) { $0 + $1.focusSeconds } == 25 * 60)
+        #expect(all.areaTrendSeries.first { $0.id == "area:\(work.id)" }?.totalFocusSeconds == 13 * 60)
+        #expect(all.projectTrendSeries.first { $0.id == "project:unassigned" }?.totalFocusSeconds == 13 * 60)
     }
 
     @Test func distributionDetailsGroupLogicalDaysAndAreaTasksWithinFilters() throws {

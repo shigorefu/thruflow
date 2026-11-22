@@ -9,6 +9,7 @@ nonisolated struct ProjectHabitSettings: Codable, Equatable {
     var goalSchedule: GoalScheduleKind = .everyDay
     var weeklyTargetCount = 1
     var weekdayMask: Int?
+    var minimumRestDays: Int?
     var startsOn: Date?
     var inactiveSince: Date?
     var inactivePeriods: [HabitPausePeriod] = []
@@ -16,7 +17,7 @@ nonisolated struct ProjectHabitSettings: Codable, Equatable {
     @MainActor var validationDraft: AreaDraft {
         AreaDraft(name: "Project", type: .habit, goalEnabled: true,
                   goalTarget: goalTarget, goalUnit: goalUnit, goalSchedule: goalSchedule,
-                  weeklyTargetCount: weeklyTargetCount, weekdayMask: weekdayMask)
+                  weeklyTargetCount: weeklyTargetCount, weekdayMask: weekdayMask, minimumRestDays: minimumRestDays ?? 0)
     }
 
     /// Editors only change configuration. History always comes from the saved value.
@@ -28,6 +29,7 @@ nonisolated struct ProjectHabitSettings: Codable, Equatable {
         result.goalSchedule = draft.goalSchedule
         result.weeklyTargetCount = draft.weeklyTargetCount
         result.weekdayMask = draft.weekdayMask
+        result.minimumRestDays = draft.goalSchedule == .weeklyCount ? draft.minimumRestDays : nil
         result.updateActivity(completed: completed, on: day)
         return result
     }

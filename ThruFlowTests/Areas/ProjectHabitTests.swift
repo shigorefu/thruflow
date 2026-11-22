@@ -218,6 +218,7 @@ struct ProjectHabitTests {
         let task = try #require(try c.fetch(FetchDescriptor<Todo>()).first)
         #expect(project.id == ids.project && project.notes == "Original memo")
         #expect(project.habitSettingsRawValue == nil)
+        #expect(project.area?.minimumRestDays == nil)
         #expect(task.id == ids.task && task.project?.id == project.id)
         #expect(task.habitOwnerKeyRawValue == nil && !task.isHabitOccurrence)
         #expect(task.scheduledTimeMinutes == 540 && task.reminderEnabled)

@@ -87,6 +87,7 @@ final class EditorMutationJournal {
         remember(area, \.goalScheduleRawValue)
         remember(area, \.weeklyTargetCount)
         remember(area, \.weekdayMask)
+        remember(area, \.minimumRestDays)
         remember(area, \.updatedAt)
         remember(area, \.archivedAt)
         remember(area, \.habitPausePeriodsRawValue)

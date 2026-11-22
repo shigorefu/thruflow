@@ -22,6 +22,10 @@ nonisolated struct HabitDefinition {
     var goalUnit: GoalUnit? { project.map { $0.habitSettings?.goalUnit } ?? area.goalUnit }
     var goalSchedule: GoalScheduleKind? { project.map { $0.habitSettings?.goalSchedule } ?? area.goalSchedule }
     var weeklyTargetCount: Int? { project.map { $0.habitSettings?.weeklyTargetCount } ?? area.weeklyTargetCount }
+    var minimumRestDays: Int {
+        guard goalSchedule == .weeklyCount else { return 0 }
+        return max(0, project.map { $0.habitSettings?.minimumRestDays ?? 0 } ?? (area.minimumRestDays ?? 0))
+    }
     var weekdayMask: Int? { project.map { $0.habitSettings?.weekdayMask } ?? area.weekdayMask }
     @MainActor var isActive: Bool {
         guard !area.isArchived, !DefaultAreas.isTaskInbox(area) else { return false }

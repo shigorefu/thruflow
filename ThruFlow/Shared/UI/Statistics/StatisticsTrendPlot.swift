@@ -11,105 +11,26 @@ struct StatisticsTrendPlot: View {
     let today: Date
     let height: CGFloat
     var compact = false
+    var expandsPlot = false
+    var legendOnRight = false
     @State private var selectedIndex: Int?
 
     private var selectedPoint: StatisticsTrendPoint? {
-        points.first { $0.index == selectedIndex && $0.date <= today }
+        points.first { $0.index == selectedIndex && $0.date <= today && (mode == .flow || !$0.skipsTaskDay) }
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: compact ? 5 : 12) {
-            ViewThatFits(in: .horizontal) {
-                legend
-                legend.font(.caption2)
-                VStack(alignment: .leading, spacing: 4) {
-                    Label(String(localized: "選択した期間"), systemImage: "minus").foregroundStyle(Color.accentColor)
-                    Label(averageLabel, systemImage: "waveform.path").foregroundStyle(Color.orange)
-                    Label(String(localized: "前の期間"), systemImage: "ellipsis").foregroundStyle(.secondary)
+            if legendOnRight {
+                HStack(alignment: .top, spacing: 16) {
+                    trendChart
+                    verticalLegend
+                        .frame(width: 130, alignment: .leading)
                 }
+            } else {
+                responsiveLegend
+                trendChart
             }
-            .font(compact ? .caption2 : .caption)
-            Chart {
-                ForEach(points) { point in
-                    if point.hasComparison && point.comparisonDate <= today {
-                        LineMark(x: .value(String(localized: "日"), point.index), y: .value(String(localized: "前の期間"), previousValue(point)),
-                                 series: .value(String(localized: "期間"), String(localized: "前の期間")))
-                            .foregroundStyle(Color.secondary.opacity(0.55))
-                            .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
-                            .interpolationMethod(.linear)
-                    }
-                    if point.date <= today {
-                        LineMark(x: .value(String(localized: "日"), point.index), y: .value(String(localized: "選択した期間"), currentValue(point)),
-                                 series: .value(String(localized: "期間"), String(localized: "選択した期間")))
-                            .foregroundStyle(Color.accentColor)
-                            .lineStyle(StrokeStyle(lineWidth: 2.2))
-                            .interpolationMethod(.linear)
-                        PointMark(x: .value(String(localized: "日"), point.index), y: .value(String(localized: "選択した期間"), currentValue(point)))
-                            .foregroundStyle(Color.accentColor)
-                            .symbolSize(22)
-                    }
-                }
-                ForEach(StatisticsTrendSmoothing.build(points: points, period: period, today: today)) { point in
-                    LineMark(x: .value(String(localized: "日"), point.index), y: .value(averageLabel, mode == .flow ? point.focusMinutes : point.completedTasks),
-                             series: .value(String(localized: "期間"), averageLabel))
-                        .foregroundStyle(Color.orange)
-                        .lineStyle(StrokeStyle(lineWidth: 2, dash: [8, 3, 2, 3]))
-                        .interpolationMethod(.linear)
-                }
-                if let selectedPoint {
-                    RuleMark(x: .value(String(localized: "日"), selectedPoint.index))
-                        .foregroundStyle(.secondary.opacity(0.5))
-                        .accessibilityHidden(true)
-                }
-            }
-            .chartXScale(domain: 0...max(1, points.count - 1), range: .plotDimension(padding: 12))
-            .chartYScale(range: .plotDimension(padding: 8))
-            .chartXSelection(value: $selectedIndex)
-            .chartXAxis {
-                AxisMarks(values: axisIndexes) { value in
-                    AxisGridLine()
-                    AxisValueLabel(anchor: .top) {
-                        if let index = value.as(Int.self), points.indices.contains(index) {
-                            Text(axisLabel(points[index].date)).fixedSize()
-                        }
-                    }
-                }
-            }
-            .chartYAxis {
-                AxisMarks(position: .leading) { value in
-                    AxisGridLine()
-                    AxisValueLabel {
-                        if let raw = value.as(Int.self) {
-                            Text(mode == .flow ? String(localized: "\(raw)分") : "\(raw)")
-                        }
-                    }
-                }
-            }
-            #if os(macOS)
-            .chartOverlay { proxy in
-                GeometryReader { geometry in
-                    Color.clear.contentShape(Rectangle())
-                        .onContinuousHover { phase in
-                            switch phase {
-                            case .active(let location):
-                                guard let frame = proxy.plotFrame else { return }
-                                let plot = geometry[frame]
-                                guard plot.contains(location) else { selectedIndex = nil; return }
-                                let value: Double? = proxy.value(atX: location.x - plot.minX)
-                                selectedIndex = value.map { Int($0.rounded()) }
-                            case .ended: selectedIndex = nil
-                            }
-                        }
-                }
-            }
-            #else
-            .chartGesture { proxy in
-                SpatialTapGesture().onEnded { value in
-                    proxy.selectXValue(at: value.location.x)
-                }
-            }
-            #endif
-            .frame(height: height)
 
             VStack(alignment: .leading, spacing: 4) {
                 if let selectedPoint {
@@ -140,6 +61,114 @@ struct StatisticsTrendPlot: View {
             .frame(minHeight: compact ? 26 : 42, alignment: .topLeading)
         }
         .onChange(of: points) { _, _ in selectedIndex = nil }
+    }
+
+    private var responsiveLegend: some View {
+        ViewThatFits(in: .horizontal) {
+            legend
+            legend.font(.caption2)
+            VStack(alignment: .leading, spacing: 4) {
+                Label(String(localized: "選択した期間"), systemImage: "minus").foregroundStyle(Color.accentColor)
+                Label(averageLabel, systemImage: "waveform.path").foregroundStyle(Color.orange)
+                Label(String(localized: "前の期間"), systemImage: "ellipsis").foregroundStyle(.secondary)
+            }
+        }
+        .font(compact ? .caption2 : .caption)
+    }
+
+    private var trendChart: some View {
+        Chart {
+            ForEach(points) { point in
+                if point.hasComparison && point.comparisonDate <= today && (mode == .flow || !point.skipsPreviousTaskDay) {
+                    LineMark(x: .value(String(localized: "日"), point.index), y: .value(String(localized: "前の期間"), previousValue(point)),
+                             series: .value(String(localized: "期間"), String(localized: "前の期間")))
+                        .foregroundStyle(Color.secondary.opacity(0.55))
+                        .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
+                        .interpolationMethod(.linear)
+                }
+                if point.date <= today && (mode == .flow || !point.skipsTaskDay) {
+                    LineMark(x: .value(String(localized: "日"), point.index), y: .value(String(localized: "選択した期間"), currentValue(point)),
+                             series: .value(String(localized: "期間"), String(localized: "選択した期間")))
+                        .foregroundStyle(Color.accentColor)
+                        .lineStyle(StrokeStyle(lineWidth: 2.2))
+                        .interpolationMethod(.linear)
+                    PointMark(x: .value(String(localized: "日"), point.index), y: .value(String(localized: "選択した期間"), currentValue(point)))
+                        .foregroundStyle(Color.accentColor)
+                        .symbolSize(22)
+                }
+            }
+            ForEach(StatisticsTrendSmoothing.build(points: points, period: period, today: today)
+                .filter { mode == .flow || !$0.skipsTaskDay }) { point in
+                LineMark(x: .value(String(localized: "日"), point.index), y: .value(averageLabel, mode == .flow ? point.focusMinutes : point.completedTasks),
+                         series: .value(String(localized: "期間"), averageLabel))
+                    .foregroundStyle(Color.orange)
+                    .lineStyle(StrokeStyle(lineWidth: 2, dash: [8, 3, 2, 3]))
+                    .interpolationMethod(.linear)
+            }
+            if let selectedPoint {
+                RuleMark(x: .value(String(localized: "日"), selectedPoint.index))
+                    .foregroundStyle(.secondary.opacity(0.5))
+                    .accessibilityHidden(true)
+            }
+        }
+        .chartXScale(domain: 0...max(1, points.count - 1), range: .plotDimension(padding: 12))
+        .chartYScale(range: .plotDimension(padding: 8))
+        .chartXSelection(value: $selectedIndex)
+        .chartXAxis {
+            AxisMarks(values: axisIndexes) { value in
+                AxisGridLine()
+                AxisValueLabel(anchor: .top) {
+                    if let index = value.as(Int.self), points.indices.contains(index) {
+                        Text(axisLabel(points[index].date)).fixedSize()
+                    }
+                }
+            }
+        }
+        .chartYAxis {
+            AxisMarks(position: .leading) { value in
+                AxisGridLine()
+                AxisValueLabel {
+                    if let raw = value.as(Int.self) {
+                        Text(mode == .flow ? String(localized: "\(raw)分") : "\(raw)")
+                    }
+                }
+            }
+        }
+        #if os(macOS)
+        .chartOverlay { proxy in
+            GeometryReader { geometry in
+                Color.clear.contentShape(Rectangle())
+                    .onContinuousHover { phase in
+                        switch phase {
+                        case .active(let location):
+                            guard let frame = proxy.plotFrame else { return }
+                            let plot = geometry[frame]
+                            guard plot.contains(location) else { selectedIndex = nil; return }
+                            let value: Double? = proxy.value(atX: location.x - plot.minX)
+                            selectedIndex = value.map { Int($0.rounded()) }
+                        case .ended: selectedIndex = nil
+                        }
+                    }
+            }
+        }
+        #else
+        .chartGesture { proxy in
+            SpatialTapGesture().onEnded { value in
+                proxy.selectXValue(at: value.location.x)
+            }
+        }
+        #endif
+        .frame(minHeight: height, idealHeight: height, maxHeight: expandsPlot ? .infinity : height)
+    }
+
+    private var verticalLegend: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label(String(localized: "選択した期間"), systemImage: "minus").foregroundStyle(Color.accentColor)
+            Label(averageLabel, systemImage: "waveform.path").foregroundStyle(Color.orange)
+            Label(String(localized: "前の期間"), systemImage: "ellipsis").foregroundStyle(.secondary)
+        }
+        .font(.caption)
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     @ViewBuilder

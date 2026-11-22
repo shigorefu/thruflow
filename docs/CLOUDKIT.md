@@ -350,3 +350,20 @@ indexes. Project Habit settings and the Todo Habit owner key remain STRING
 without indexes. The release changes no persisted models or entitlements.
 No schema deployment or data edits were made. Signed device exchange for this
 build remains pending.
+
+### Minimum Habit rest days — 2026-11-21
+
+Inspected the live Development and Production schemas for team `BR727PS795`,
+container `iCloud.com.shigorefu.thruflow`. Both initially lacked the new Area
+property. Added `CD_Direction.CD_minimumRestDays` as nullable `INT64` in
+Development using CloudKit Console. Deployment diff contained exactly that
+one additive field, zero index changes and zero security-role changes.
+Deployed it to Production and reloaded Production's `CD_Direction` fields;
+`CD_minimumRestDays INT(64)` is present with no indexes. The app reads this
+configuration from fetched Areas and does not query or sort on this field.
+
+The reviewed full schema also retains
+`CD_Project.CD_habitSettingsRawValue STRING`; Project rest days use an optional
+member of that existing JSON value, requiring no extra CloudKit field.
+No user records were edited. Signed Mac/iPhone exchange of this new setting
+has not yet been verified.

@@ -8,6 +8,7 @@ import Foundation
 
 struct RequiredTodoPlanner {
     var calendar: Calendar = .current
+    var dayBoundary: AppDayBoundary = .midnight
 
     struct RescheduleOption: Equatable {
         let date: Date
@@ -58,7 +59,8 @@ struct RequiredTodoPlanner {
         in todos: [Todo],
         on date: Date = .now
     ) -> Bool {
-        guard shouldAppearToday(area, on: date) else { return false }
+        guard shouldAppearToday(area, on: date),
+              !isRestDay(for: area, in: todos, on: date) else { return false }
 
         if area.goalSchedule != .weeklyCount {
             return existingRequiredTodo(for: area, in: todos, on: date) == nil
@@ -208,11 +210,35 @@ struct RequiredTodoPlanner {
                 let availableDates = dates(from: date, before: weekInterval.end)
                     .filter { isEligibleWeeklyDate($0, for: area) && !isPaused(area, on: $0) }
 
+                var nextAllowedDay = date
+                var capacity = 0
+                for available in availableDates where available >= nextAllowedDay &&
+                    !isRestDay(for: area, in: todos, on: available) {
+                    capacity += 1
+                    nextAllowedDay = calendar.date(byAdding: .day, value: area.minimumRestDays + 1, to: available)
+                        ?? .distantFuture
+                }
                 return RescheduleOption(
                     date: date,
-                    isAllowed: availableDates.count >= remainingCount
+                    isAllowed: !isRestDay(for: area, in: todos, on: date) && capacity >= remainingCount
                 )
             }
+    }
+
+    /// Completion timestamps, not scheduled dates, anchor recovery across week boundaries.
+    func isRestDay(for habit: HabitDefinition, in todos: [Todo], on date: Date) -> Bool {
+        guard habit.minimumRestDays > 0 else { return false }
+        let day = calendar.startOfDay(for: date)
+        let latestCompletion = todos.compactMap { todo -> Date? in
+            guard habit.owns(todo), todo.isCompleted, !todo.isDeleted,
+                  todo.externalTaskLinkRawValue == nil else { return nil }
+            let completedDay = dayBoundary.day(containing: todo.completedAt ?? todo.updatedAt, calendar: calendar)
+            return completedDay <= day ? completedDay : nil
+        }.max()
+        guard let latestCompletion,
+              let lastRestDay = calendar.date(byAdding: .day, value: habit.minimumRestDays, to: latestCompletion)
+        else { return false }
+        return day <= lastRestDay
     }
 
     private func measurement(for goalUnit: GoalUnit) -> TodoMeasurement {

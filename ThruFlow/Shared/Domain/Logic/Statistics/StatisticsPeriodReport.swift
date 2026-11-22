@@ -55,6 +55,25 @@ struct StatisticsPresentationSummary: Equatable, Sendable {
 struct StatisticsPresentationTrend: Equatable, Sendable {
     let period: StatisticsPeriod
     let points: [StatisticsTrendPoint]
+    var areaSeries: [StatisticsGroupedTrendSeries] = []
+    var projectSeries: [StatisticsGroupedTrendSeries] = []
+}
+
+struct StatisticsGroupedTrendPoint: Identifiable, Equatable, Sendable {
+    let index: Int
+    let date: Date
+    let focusSeconds: Int
+
+    var id: Int { index }
+}
+
+struct StatisticsGroupedTrendSeries: Identifiable, Equatable, Sendable {
+    let id: String
+    let name: String
+    let symbol: String?
+    let colorHex: String?
+    let totalFocusSeconds: Int
+    let points: [StatisticsGroupedTrendPoint]
 }
 
 struct StatisticsPresentationDistribution: Equatable, Sendable {
@@ -91,6 +110,8 @@ struct StatisticsTrendPoint: Identifiable, Equatable, Sendable {
     let completedTaskCount: Int
     let previousCompletedTaskCount: Int
     var hasComparison: Bool = true
+    var skipsTaskDay = false
+    var skipsPreviousTaskDay = false
 
     var id: Int { index }
 }
@@ -136,6 +157,8 @@ struct StatisticsPeriodSnapshot: Equatable, Sendable {
     let previousSummary: StatisticsPeriodSummary
     let trend: [StatisticsTrendPoint]
     let trendPeriod: StatisticsPeriod
+    var areaTrendSeries: [StatisticsGroupedTrendSeries] = []
+    var projectTrendSeries: [StatisticsGroupedTrendSeries] = []
     let dailyFocus: [StatisticsDailyFocusPoint]
     let estimateAccuracy: StatisticsEstimateAccuracy
     let taskDistribution: [StatisticsDistributionItem]

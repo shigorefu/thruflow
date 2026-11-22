@@ -41,14 +41,19 @@ struct StatisticsPresentationCacheTests {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         let area = Area(name: "Reading", type: .neutral, symbolName: "📚", colorHex: "#34C759")
+        let project = Project(name: "Reading project", area: area)
+        let todo = Todo(title: "Reading task", area: area)
+        todo.project = project
         let endDate = anchor.addingTimeInterval(1_500)
         let session = FlowSession(
-            area: area, mode: .twentyFiveFive, phase: .completed, status: .completed,
+            area: area, todo: todo, mode: .twentyFiveFive, phase: .completed, status: .completed,
             startedAt: anchor, plannedEndAt: endDate, endedAt: endDate,
             plannedFocusDurationSeconds: 1_500, actualFocusDurationSeconds: 1_500,
             plannedBreakDurationSeconds: 300
         )
         container.mainContext.insert(area)
+        container.mainContext.insert(project)
+        container.mainContext.insert(todo)
         container.mainContext.insert(session)
         try container.mainContext.save()
 
@@ -76,6 +81,10 @@ struct StatisticsPresentationCacheTests {
         let cachedCards = StatisticsPresentationCards(snapshot: report)
         #expect(partialCards.summary == cachedCards.summary)
         #expect(partialCards.trend == cachedCards.trend)
+        #expect(partialCards.trend?.areaSeries.first?.id == "area:\(area.id)")
+        #expect(partialCards.trend?.projectSeries.first?.id == "project:\(project.id)")
+        #expect(partialCards.trend?.projectSeries.first?.totalFocusSeconds == 1_500)
+        #expect(report.projectTrendSeries == cachedCards.trend?.projectSeries)
         #expect(partialCards.dailyFocus == cachedCards.dailyFocus)
         #expect(partialCards.estimateAccuracy == cachedCards.estimateAccuracy)
         #expect(report.dailyFocus.first { $0.date == calendar.startOfDay(for: anchor) }?.focusSeconds == 1_500)
