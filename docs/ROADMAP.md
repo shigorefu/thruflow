@@ -23,9 +23,14 @@ See [release notes](releases/1.4.0.md) for user-facing changes and
 (15) is the latest published version, confirmed by the maintainer on
 2026-11-12. Earlier release checklists are available in Git history.
 
+## 1.5.0 — in development
+
+- Docker-hosted APNs scheduling for Mac/iOS, with local notification fallback.
+  See [Notifications](NOTIFICATIONS.md) for actual scope and verification.
+
 ## Deferred — no committed release date
 
-- APNs infrastructure, webhooks and remote Live Activity delivery.
+- Webhooks and remote Live Activity delivery.
 - Writing external Task titles or dates back to providers.
 - Local recurrence generation for external Tasks.
 - Toggl history import and propagation of later history edits/deletions.

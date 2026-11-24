@@ -90,6 +90,23 @@ struct TaskReminderDeliveryTests {
         #expect(center.delivered == [item.identifier])
     }
 
+    @Test func serverGraceSurvivesRefreshButExplicitPastRescheduleCancelsIt() async {
+        let center = FakeTaskCenter()
+        let clock = Date(timeIntervalSince1970: 2_000_000_000)
+        let item = request(date: clock.addingTimeInterval(-5))
+        center.requests[item.identifier] = PendingTaskNotification(identifier: item.identifier, reminder: item,
+            fallbackFireDate: clock.addingTimeInterval(25))
+        let delivery = TaskReminderDelivery(center: center, now: { clock })
+        delivery.update(requests: [], retainedTaskIDs: [item.taskID], retainedRequests: [item])
+        await delivery.waitUntilIdle()
+        #expect(center.requests[item.identifier] != nil)
+        let changed = TaskReminderRequest(taskID: item.taskID, title: item.title, body: item.body,
+            fireDate: clock.addingTimeInterval(-60))
+        delivery.update(requests: [], retainedTaskIDs: [item.taskID], retainedRequests: [changed])
+        await delivery.waitUntilIdle()
+        #expect(center.requests[item.identifier] == nil)
+    }
+
     private func request(date: Date) -> TaskReminderRequest {
         TaskReminderRequest(taskID: UUID(), title: "Reminder", body: "Study", fireDate: date)
     }

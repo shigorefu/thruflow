@@ -204,7 +204,8 @@ Both can apply explicit Check completion/reopening commands. Missing rows never 
 `TodoistAuthorization` creates PKCE/state values, validates the callback, and
 exchanges/refreshes user tokens directly with Todoist. Only public client
 metadata and the callback page are hosted on the existing static website;
-there is no app-owned OAuth secret, signup service, webhook receiver, or APNs
+there is no app-owned OAuth secret, signup service, or webhook receiver.
+The separate [notification service](NOTIFICATIONS.md) adds an APNs
 backend. Platform support factories supply the native authentication window
 anchor to shared AuthenticationServices presentation. `ConnectorKeychain`
 keeps access and refresh tokens on the current device; only non-secret
@@ -506,7 +507,7 @@ continue to render `00:00`, but SwiftUI cannot switch to the overtime branch
 until new ActivityKit content arrives. A guaranteed `00:00 -> +00:01`
 transition while the app is suspended requires an ActivityKit push update
 through APNs; `staleDate`, widget timelines, background tasks, and local
-notifications are not reliable substitutes. Version 1.x explicitly accepts
+notifications are not reliable substitutes. The current implementation accepts
 this presentation limitation and does not require an APNs provider. Remote
 ActivityKit transport remains deferred and optional. The local
 connectors are independent of that transport under D-042, and neither may
@@ -699,4 +700,14 @@ can reduce that capacity. A later refresh refills the queue. `TaskTimingDefaults
 shared modifier; `TaskReminderAuthorization` coalesces user-action permission
 requests without retaining or mutating drafts and triggers immediate scheduling
 after authorization. Startup and synchronization never request permission. Widgets remain snapshot consumers and
-do not schedule notifications. No backend or APNs service is introduced.
+do not schedule notifications. Task reminders also use the [1.5.0 notification transport](NOTIFICATIONS.md);
+local-only scheduling remains its fallback.
+
+
+## Remote notification transport
+
+The application-owned [notification runtime and Docker service](NOTIFICATIONS.md)
+coordinate local safety requests and APNs delivery. Domain notification protocols
+remain transport-independent. Mac/iOS lifecycle adapters register device tokens;
+the separate notification service extension cancels matching safety requests.
+No timer, user-record API or SwiftData store is added to either extension.

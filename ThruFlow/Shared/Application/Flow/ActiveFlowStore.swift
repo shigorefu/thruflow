@@ -89,7 +89,7 @@ final class ActiveFlowStore: ObservableObject {
         saveModeChange: @escaping @MainActor (ModelContext) throws -> Void = { try $0.save() }
     ) {
         self.defaults = defaults
-        self.notifications = notifications ?? LocalFlowNotificationService()
+        self.notifications = notifications ?? LocalFlowNotificationService(center: RoutedFlowUserNotificationCenter())
         self.liveActivities = liveActivities ?? NoopLiveActivityService()
         self.persistenceNotificationCenter = persistenceNotificationCenter
         self.saveModeChange = saveModeChange

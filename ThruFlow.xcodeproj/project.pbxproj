@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		161ACB2A5E7C45F295B586A4 /* ThruFlowNotificationService.appex in Embed Notification Service */ = {isa = PBXBuildFile; fileRef = EFB82E07B2523BD17F4AFAFF /* ThruFlowNotificationService.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4A03D18CB47EF2A7C33E740D /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F0E7277ADCA2EE4B7765D9 /* NotificationService.swift */; };
 		5B2000013000000000000001 /* ThruFlowLiveActivityExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 5B2000023000000000000002 /* ThruFlowLiveActivityExtension.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		5B2000133000000000000013 /* ThruFlow/Shared/Domain/Services/LiveActivityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B20000F300000000000000F /* ThruFlow/Shared/Domain/Services/LiveActivityService.swift */; };
 		5B2000143000000000000014 /* ThruFlow/Shared/LiveActivity/FlowActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B2000103000000000000010 /* ThruFlow/Shared/LiveActivity/FlowActivityAttributes.swift */; };
@@ -16,9 +18,17 @@
 		5B2000193000000000000019 /* ThruFlow/Shared/Widget/ProductWidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B20001A300000000000001A /* ThruFlow/Shared/Widget/ProductWidgetSnapshot.swift */; };
 		5B20001B300000000000001B /* ThruFlowLiveActivityExtension.appex in Embed Widget Extension */ = {isa = PBXBuildFile; fileRef = 5B2000023000000000000002 /* ThruFlowLiveActivityExtension.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		6C3000013000000000000001 /* ThruFlow Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 6C3000023000000000000002 /* ThruFlow Watch App.app */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		FFFD6A7981E9390D7052434A /* ThruFlowNotificationService.appex in Embed Notification Service */ = {isa = PBXBuildFile; fileRef = EFB82E07B2523BD17F4AFAFF /* ThruFlowNotificationService.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		18BFD8FB846226058AD5DCE5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2E1176E52FFE20CF0011219C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F2F623C0274A5241FBE7E8E7;
+			remoteInfo = ThruFlowNotificationService;
+		};
 		2E1176FF2FFE20CF0011219C /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 2E1176E52FFE20CF0011219C /* Project object */;
@@ -54,6 +64,13 @@
 			remoteGlobalIDString = 6C3000073000000000000007;
 			remoteInfo = "ThruFlow Watch App";
 		};
+		6E84F55D04919B50AF8AB18A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2E1176E52FFE20CF0011219C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F2F623C0274A5241FBE7E8E7;
+			remoteInfo = ThruFlowNotificationService;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -79,6 +96,17 @@
 			name = "Embed Widget Extension";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		65B54B8A9E5AB88B99E33F82 /* Embed Notification Service */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				FFFD6A7981E9390D7052434A /* ThruFlowNotificationService.appex in Embed Notification Service */,
+			);
+			name = "Embed Notification Service";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		6C30000D300000000000000D /* Embed Watch Content */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -90,12 +118,24 @@
 			name = "Embed Watch Content";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C11C5652F40C31C7AA064947 /* Embed Notification Service */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				161ACB2A5E7C45F295B586A4 /* ThruFlowNotificationService.appex in Embed Notification Service */,
+			);
+			name = "Embed Notification Service";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		2E1176ED2FFE20CF0011219C /* ThruFlow.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ThruFlow.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		2E1176FE2FFE20CF0011219C /* ThruFlowTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ThruFlowTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		2E1177082FFE20CF0011219C /* ThruFlowUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ThruFlowUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		47678A1D616ECF28AC70F300 /* ThruFlowNotificationService.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = ThruFlowNotificationService.entitlements; sourceTree = "<group>"; };
 		4A1000013000000000000001 /* ThruFlow.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ThruFlow.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		5B2000023000000000000002 /* ThruFlowLiveActivityExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ThruFlowLiveActivityExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		5B20000F300000000000000F /* ThruFlow/Shared/Domain/Services/LiveActivityService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThruFlow/Shared/Domain/Services/LiveActivityService.swift; sourceTree = SOURCE_ROOT; };
@@ -105,6 +145,9 @@
 		5B2000183000000000000018 /* ThruFlow/Shared/Widget/FlowTimerWidgetSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThruFlow/Shared/Widget/FlowTimerWidgetSnapshot.swift; sourceTree = SOURCE_ROOT; };
 		5B20001A300000000000001A /* ThruFlow/Shared/Widget/ProductWidgetSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThruFlow/Shared/Widget/ProductWidgetSnapshot.swift; sourceTree = SOURCE_ROOT; };
 		6C3000023000000000000002 /* ThruFlow Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "ThruFlow Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		B3F0E7277ADCA2EE4B7765D9 /* NotificationService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
+		CC937F743A47DB7139D43F0C /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		EFB82E07B2523BD17F4AFAFF /* ThruFlowNotificationService.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ThruFlowNotificationService.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -221,9 +264,33 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		9E965D7674E8A5B583BEA2CF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		124C3738969876B6543D2323 /* ThruFlowNotificationService */ = {
+			isa = PBXGroup;
+			children = (
+				B3F0E7277ADCA2EE4B7765D9 /* NotificationService.swift */,
+				CC937F743A47DB7139D43F0C /* Info.plist */,
+				47678A1D616ECF28AC70F300 /* ThruFlowNotificationService.entitlements */,
+			);
+			path = ThruFlowNotificationService;
+			sourceTree = "<group>";
+		};
+		23A4F6D5FFB2B407008A5D0C /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = iOS;
+			sourceTree = "<group>";
+		};
 		2E1176E42FFE20CF0011219C = {
 			isa = PBXGroup;
 			children = (
@@ -233,6 +300,8 @@
 				2E11770B2FFE20CF0011219C /* ThruFlowUITests */,
 				2E1176EE2FFE20CF0011219C /* Products */,
 				2E8871CE301343EF00BA0328 /* Recovered References */,
+				F25CB6DAA44261ED020EE777 /* Frameworks */,
+				124C3738969876B6543D2323 /* ThruFlowNotificationService */,
 			);
 			sourceTree = "<group>";
 		};
@@ -245,6 +314,7 @@
 				2E1177082FFE20CF0011219C /* ThruFlowUITests.xctest */,
 				5B2000023000000000000002 /* ThruFlowLiveActivityExtension.appex */,
 				6C3000023000000000000002 /* ThruFlow Watch App.app */,
+				EFB82E07B2523BD17F4AFAFF /* ThruFlowNotificationService.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -262,6 +332,14 @@
 			name = "Recovered References";
 			sourceTree = "<group>";
 		};
+		F25CB6DAA44261ED020EE777 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				23A4F6D5FFB2B407008A5D0C /* iOS */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -273,18 +351,18 @@
 				2E1176EA2FFE20CF0011219C /* Frameworks */,
 				2E1176EB2FFE20CF0011219C /* Resources */,
 				5B20001C300000000000001C /* Embed Widget Extension */,
+				C11C5652F40C31C7AA064947 /* Embed Notification Service */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				5B20001D300000000000001D /* PBXTargetDependency */,
+				39A3D69CB00795C17094B543 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				2E1176EF2FFE20CF0011219C /* ThruFlow */,
 			);
 			name = ThruFlow;
-			packageProductDependencies = (
-			);
 			productName = ThruFlow;
 			productReference = 2E1176ED2FFE20CF0011219C /* ThruFlow.app */;
 			productType = "com.apple.product-type.application";
@@ -306,8 +384,6 @@
 				2E1177012FFE20CF0011219C /* ThruFlowTests */,
 			);
 			name = ThruFlowTests;
-			packageProductDependencies = (
-			);
 			productName = ThruFlowTests;
 			productReference = 2E1176FE2FFE20CF0011219C /* ThruFlowTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -329,8 +405,6 @@
 				2E11770B2FFE20CF0011219C /* ThruFlowUITests */,
 			);
 			name = ThruFlowUITests;
-			packageProductDependencies = (
-			);
 			productName = ThruFlowUITests;
 			productReference = 2E1177082FFE20CF0011219C /* ThruFlowUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
@@ -344,19 +418,19 @@
 				4A1000053000000000000005 /* Resources */,
 				5B20000C300000000000000C /* Embed Foundation Extensions */,
 				6C30000D300000000000000D /* Embed Watch Content */,
+				65B54B8A9E5AB88B99E33F82 /* Embed Notification Service */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				5B20000E300000000000000E /* PBXTargetDependency */,
 				6C30000C300000000000000C /* PBXTargetDependency */,
+				E4FA921FCF3D5F2E9503B014 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				2E1176EF2FFE20CF0011219C /* ThruFlow */,
 			);
 			name = "ThruFlow iOS";
-			packageProductDependencies = (
-			);
 			productName = ThruFlow;
 			productReference = 4A1000013000000000000001 /* ThruFlow.app */;
 			productType = "com.apple.product-type.application";
@@ -377,8 +451,6 @@
 				5B2000033000000000000003 /* ThruFlowLiveActivity */,
 			);
 			name = ThruFlowLiveActivityExtension;
-			packageProductDependencies = (
-			);
 			productName = ThruFlowLiveActivityExtension;
 			productReference = 5B2000023000000000000002 /* ThruFlowLiveActivityExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
@@ -399,11 +471,26 @@
 				2E1176EF2FFE20CF0011219C /* ThruFlow */,
 			);
 			name = "ThruFlow Watch App";
-			packageProductDependencies = (
-			);
 			productName = "ThruFlow Watch App";
 			productReference = 6C3000023000000000000002 /* ThruFlow Watch App.app */;
 			productType = "com.apple.product-type.application";
+		};
+		F2F623C0274A5241FBE7E8E7 /* ThruFlowNotificationService */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D606A0CFD111B1908FF568A1 /* Build configuration list for PBXNativeTarget "ThruFlowNotificationService" */;
+			buildPhases = (
+				EB7B92CEF02E61CDD31AEE4A /* Sources */,
+				9E965D7674E8A5B583BEA2CF /* Frameworks */,
+				C5FE220E3CB757DE5C395019 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ThruFlowNotificationService;
+			productName = ThruFlowNotificationService;
+			productReference = EFB82E07B2523BD17F4AFAFF /* ThruFlowNotificationService.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -461,6 +548,7 @@
 				6C3000073000000000000007 /* ThruFlow Watch App */,
 				2E1176FD2FFE20CF0011219C /* ThruFlowTests */,
 				2E1177072FFE20CF0011219C /* ThruFlowUITests */,
+				F2F623C0274A5241FBE7E8E7 /* ThruFlowNotificationService */,
 			);
 		};
 /* End PBXProject section */
@@ -503,6 +591,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		6C3000063000000000000006 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C5FE220E3CB757DE5C395019 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -559,6 +654,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		EB7B92CEF02E61CDD31AEE4A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4A03D18CB47EF2A7C33E740D /* NotificationService.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -571,6 +674,12 @@
 			isa = PBXTargetDependency;
 			target = 2E1176EC2FFE20CF0011219C /* ThruFlow */;
 			targetProxy = 2E1177092FFE20CF0011219C /* PBXContainerItemProxy */;
+		};
+		39A3D69CB00795C17094B543 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = ThruFlowNotificationService;
+			target = F2F623C0274A5241FBE7E8E7 /* ThruFlowNotificationService */;
+			targetProxy = 18BFD8FB846226058AD5DCE5 /* PBXContainerItemProxy */;
 		};
 		5B20000E300000000000000E /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -587,12 +696,19 @@
 			target = 6C3000073000000000000007 /* ThruFlow Watch App */;
 			targetProxy = 6C30000B300000000000000B /* PBXContainerItemProxy */;
 		};
+		E4FA921FCF3D5F2E9503B014 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = ThruFlowNotificationService;
+			target = F2F623C0274A5241FBE7E8E7 /* ThruFlowNotificationService */;
+			targetProxy = 6E84F55D04919B50AF8AB18A /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		2E1177122FFE20CF0011219C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				APS_ENVIRONMENT = development;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = ThruFlow/ThruFlow.entitlements;
@@ -643,12 +759,15 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 6;
+				THRUFLOW_PUSH_ENDPOINT = "https://matrix.shigorefu.com/thruflow-push/";
+				THRUFLOW_PUSH_ENVIRONMENT = sandbox;
 			};
 			name = Debug;
 		};
 		2E1177132FFE20CF0011219C /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				APS_ENVIRONMENT = production;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = ThruFlow/ThruFlow.entitlements;
@@ -700,6 +819,8 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 6;
+				THRUFLOW_PUSH_ENDPOINT = "https://matrix.shigorefu.com/thruflow-push/";
+				THRUFLOW_PUSH_ENVIRONMENT = production;
 			};
 			name = Release;
 		};
@@ -922,6 +1043,7 @@
 		4A1000093000000000000009 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				APS_ENVIRONMENT = development;
 				ASSETCATALOG_COMPILER_APPICON_NAME = "AppIcon-iOS";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = ThruFlow/Platforms/iOS/App/ThruFlowiOS.entitlements;
@@ -978,12 +1100,15 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				THRUFLOW_PUSH_ENDPOINT = "https://matrix.shigorefu.com/thruflow-push/";
+				THRUFLOW_PUSH_ENVIRONMENT = sandbox;
 			};
 			name = Debug;
 		};
 		4A10000A300000000000000A /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				APS_ENVIRONMENT = production;
 				ASSETCATALOG_COMPILER_APPICON_NAME = "AppIcon-iOS";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = ThruFlow/Platforms/iOS/App/ThruFlowiOS.entitlements;
@@ -1040,6 +1165,8 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				THRUFLOW_PUSH_ENDPOINT = "https://matrix.shigorefu.com/thruflow-push/";
+				THRUFLOW_PUSH_ENVIRONMENT = production;
 			};
 			name = Release;
 		};
@@ -1121,6 +1248,45 @@
 				"TARGETED_DEVICE_FAMILY[sdk=macosx*]" = 6;
 			};
 			name = Release;
+		};
+		636CC037EE7102552DD81846 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = ThruFlowNotificationService/ThruFlowNotificationService.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 15;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = BR727PS795;
+				"ENABLE_APP_SANDBOX[sdk=macosx*]" = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ThruFlowNotificationService/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.4.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.shigorefu.thruflow.notifications;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = auto;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				"TARGETED_DEVICE_FAMILY[sdk=iphoneos*]" = "1,2";
+				"TARGETED_DEVICE_FAMILY[sdk=iphonesimulator*]" = "1,2";
+				"TARGETED_DEVICE_FAMILY[sdk=macosx*]" = 6;
+			};
+			name = Debug;
 		};
 		6C3000083000000000000008 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -1306,6 +1472,46 @@
 			};
 			name = Release;
 		};
+		B7231D6B59E5B572BC05C218 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = ThruFlowNotificationService/ThruFlowNotificationService.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 15;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = BR727PS795;
+				"ENABLE_APP_SANDBOX[sdk=macosx*]" = YES;
+				"ENABLE_HARDENED_RUNTIME[sdk=macosx*]" = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ThruFlowNotificationService/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.4.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.shigorefu.thruflow.notifications;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = auto;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				"TARGETED_DEVICE_FAMILY[sdk=iphoneos*]" = "1,2";
+				"TARGETED_DEVICE_FAMILY[sdk=iphonesimulator*]" = "1,2";
+				"TARGETED_DEVICE_FAMILY[sdk=macosx*]" = 6;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1368,6 +1574,15 @@
 			buildConfigurations = (
 				6C3000083000000000000008 /* Debug */,
 				6C3000093000000000000009 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D606A0CFD111B1908FF568A1 /* Build configuration list for PBXNativeTarget "ThruFlowNotificationService" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B7231D6B59E5B572BC05C218 /* Release */,
+				636CC037EE7102552DD81846 /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

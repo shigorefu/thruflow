@@ -61,6 +61,9 @@ for calculations and date boundaries.
 - Widgets and Live Activities project app-owned state rather than running another
   timer or opening another SwiftData store.
 - Data is local first, with optional private CloudKit synchronization.
+- In 1.5.0, Mac/iOS notifications prefer the Docker-backed APNs scheduler with
+  a local safety notification. See [Notifications](NOTIFICATIONS.md) for delivery
+  limits, privacy and operational verification.
 - Connectors import Reminders/Todoist Tasks and synchronize checkbox
   completion both ways. Toggl exports eligible completed focus time from its
   recording device. See [Connectors](CONNECTORS.md) for exact limitations.

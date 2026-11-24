@@ -241,6 +241,30 @@
         "ThruFlowTests/Demo/ScreenshotDataSeederTests.swift",
         "ThruFlowTests/Infrastructure/LocalisationTests.swift"
       ]
+    },
+    {
+      "id": "notifications",
+      "name": "Remote notifications and local fallback",
+      "triggers": [
+        "ThruFlow/Shared/Application/Notifications",
+        "ThruFlow/Shared/Domain/Services/FlowNotificationService.swift",
+        "ThruFlow/Shared/Application/Tasks/TaskReminderScheduler.swift",
+        "ThruFlowNotificationService",
+        "server/notifications"
+      ],
+      "review": [
+        "ThruFlow/Platforms/macOS/App/MacOSAppDelegate.swift",
+        "ThruFlow/Platforms/iOS/App/IOSAppDelegate.swift",
+        "ThruFlow/Shared/Application/Notifications",
+        "ThruFlow/Shared/Application/Tasks/TaskReminderScheduler.swift",
+        "ThruFlowNotificationService",
+        "ThruFlow/Platforms/watchOS/App"
+      ],
+      "tests": [
+        "ThruFlowTests/Tasks/NotificationDeliveryRuntimeTests.swift",
+        "ThruFlowTests/Tasks/TaskReminderDeliveryTests.swift",
+        "server/notifications/test_server.py"
+      ]
     }
   ]
 }

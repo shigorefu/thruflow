@@ -4,6 +4,7 @@ import SwiftUI
 
 @main
 struct ThruFlowiOSApp: App {
+    @UIApplicationDelegateAdaptor(IOSAppDelegate.self) private var appDelegate
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var activeFlowStore: ActiveFlowStore
     @StateObject private var settings: AppSettings

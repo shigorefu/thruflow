@@ -1,0 +1,34 @@
+services:
+  thruflow-notifications:
+    build: .
+    restart: unless-stopped
+    init: true
+    user: '10001:10001'
+    read_only: true
+    mem_limit: 128m
+    cpus: 0.25
+    pids_limit: 64
+    logging:
+      driver: json-file
+      options:
+        max-size: '1m'
+        max-file: '2'
+    ports:
+      - '127.0.0.1:18081:8080'
+    environment:
+      APNS_KEY_PATH: /run/secrets/apns.p8
+      APNS_KEY_ID: ${APNS_KEY_ID:-}
+      APNS_TEAM_ID: ${APNS_TEAM_ID:-}
+      APNS_TOPIC: ${APNS_TOPIC:-com.shigorefu.thruflow}
+      MAX_INSTALLATIONS: ${MAX_INSTALLATIONS:-10000}
+    volumes:
+      - notification-state:/state
+      - ./secrets:/run/secrets:ro
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:size=8m,noexec,nosuid,nodev
+volumes:
+  notification-state:

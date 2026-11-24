@@ -1753,3 +1753,17 @@ screenshot because of the Window Sharing capture limitation. Week, smaller
 windows and day popovers were not freshly exercised; those paths have source
 agreement only. Year and custom-range code remains unchanged. No commit was
 made.
+
+### 2026-11-24 — Server-preferred notification delivery (1.5.0)
+
+The user authorized Mac/iOS notification delivery through `matrix-server` in
+Docker, with local fallback. The accepted contract keeps local requests until
+durable server acceptance, then reserves a 30-second safety delay; actual
+version-matched receipt cancels the reserve through the app or notification
+service extension. Acceptance alone is not delivery. Delivery is best effort,
+with explicit in-flight cancellation and duplicate limits. SwiftData/CloudKit
+remain authoritative; Watch stays local and ActivityKit transport is unchanged.
+The implementation/logic orchestrator and both client reviewers agreed before
+implementation and after resolving their findings. [Notifications](NOTIFICATIONS.md)
+owns the API, operational/privacy boundaries, actual verification and outstanding
+signed-device delivery checks. No persisted model change was introduced.

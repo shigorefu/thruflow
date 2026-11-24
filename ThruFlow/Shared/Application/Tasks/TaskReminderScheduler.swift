@@ -8,6 +8,7 @@ import UserNotifications
 struct PendingTaskNotification: Equatable {
     let identifier: String
     let reminder: TaskReminderRequest?
+    var fallbackFireDate: Date? = nil
 }
 
 @MainActor
@@ -40,21 +41,25 @@ final class SystemTaskNotificationCenter: TaskNotificationCenter {
     func pending() async -> [PendingTaskNotification] {
         await center.pendingNotificationRequests().map { request in
             let content = request.content
+            let identifier = content.userInfo["logical_identifier"] as? String ?? request.identifier
             let reminder: TaskReminderRequest?
-            if request.identifier.hasPrefix(TaskReminderRequest.prefix),
-               let id = UUID(uuidString: String(request.identifier.dropFirst(TaskReminderRequest.prefix.count))),
+            if identifier.hasPrefix(TaskReminderRequest.prefix),
+               let id = UUID(uuidString: String(identifier.dropFirst(TaskReminderRequest.prefix.count))),
                let timestamp = content.userInfo["taskReminderDate"] as? Double {
                 reminder = TaskReminderRequest(taskID: id, title: content.title, body: content.body,
                                                fireDate: Date(timeIntervalSince1970: timestamp))
             } else {
                 reminder = nil
             }
-            return PendingTaskNotification(identifier: request.identifier, reminder: reminder)
+            return PendingTaskNotification(identifier: identifier, reminder: reminder,
+                fallbackFireDate: (content.userInfo["fallback_fire_at"] as? Double).map(Date.init(timeIntervalSince1970:)))
         }
     }
 
     func deliveredIdentifiers() async -> [String] {
-        await center.deliveredNotifications().map { $0.request.identifier }
+        await center.deliveredNotifications().map {
+            $0.request.content.userInfo["logical_identifier"] as? String ?? $0.request.identifier
+        }
     }
 
     func add(_ reminder: TaskReminderRequest) async throws {
@@ -69,18 +74,18 @@ final class SystemTaskNotificationCenter: TaskNotificationCenter {
                                                   from: reminder.fireDate)
         components.calendar = calendar
         components.timeZone = calendar.timeZone
-        try await center.add(UNNotificationRequest(
+        try await NotificationDeliveryRuntime.shared.add(UNNotificationRequest(
             identifier: reminder.identifier, content: content,
             trigger: UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
         ))
     }
 
     func removePending(_ identifiers: [String]) {
-        center.removePendingNotificationRequests(withIdentifiers: identifiers)
+        NotificationDeliveryRuntime.shared.removePending(identifiers)
     }
 
     func removeDelivered(_ identifiers: [String]) {
-        center.removeDeliveredNotifications(withIdentifiers: identifiers)
+        NotificationDeliveryRuntime.shared.removeDelivered(identifiers)
     }
 }
 
@@ -101,6 +106,7 @@ final class TaskReminderDelivery {
     private struct Snapshot {
         let requests: [TaskReminderRequest]
         let retainedIdentifiers: Set<String>
+        let retainedRequests: [String: TaskReminderRequest]?
     }
     private let center: any TaskNotificationCenter
     private let now: () -> Date
@@ -113,10 +119,12 @@ final class TaskReminderDelivery {
         self.now = now
     }
 
-    func update(requests: [TaskReminderRequest], retainedTaskIDs: Set<UUID>) {
+    func update(requests: [TaskReminderRequest], retainedTaskIDs: Set<UUID>,
+                retainedRequests: [TaskReminderRequest]? = nil) {
         nextSnapshot = Snapshot(requests: requests, retainedIdentifiers: Set(retainedTaskIDs.map {
             TaskReminderRequest.prefix + $0.uuidString
-        }))
+        }), retainedRequests: retainedRequests.map { Dictionary($0.map { ($0.identifier, $0) },
+            uniquingKeysWith: { first, _ in first }) })
         guard worker == nil else { return }
         worker = Task { [weak self] in
             guard let self else { return }
@@ -137,7 +145,13 @@ final class TaskReminderDelivery {
         // Leave room for Flow's four notification kinds in the system's bounded queue.
         let capacity = max(0, 64 - max(4, foreignCount))
         let requests = authorized ? Array(snapshot.requests.filter { $0.fireDate > now() }.prefix(capacity)) : []
-        let identifiers = Set(requests.map(\.identifier))
+        let graceIdentifiers = Set(pending.filter {
+            authorized && snapshot.retainedIdentifiers.contains($0.identifier) &&
+            (snapshot.retainedRequests == nil || snapshot.retainedRequests?[$0.identifier] == $0.reminder) &&
+            $0.reminder.map { $0.fireDate <= now() } == true &&
+            $0.fallbackFireDate.map { $0 > now() } == true
+        }.map(\.identifier))
+        let identifiers = Set(requests.map(\.identifier)).union(graceIdentifiers)
         let obsolete = pending.map(\.identifier).filter {
             $0.hasPrefix(TaskReminderRequest.prefix) && !identifiers.contains($0)
         }
@@ -202,7 +216,9 @@ final class TaskReminderScheduler: ObservableObject {
             calendar.timeZone = .current
             let retained = Set(todos.filter(TaskReminderPlan.isEligible).map(\.id))
             delivery?.update(requests: TaskReminderPlan().requests(todos: todos, calendar: calendar, now: .now),
-                             retainedTaskIDs: retained)
+                             retainedTaskIDs: retained,
+                             retainedRequests: TaskReminderPlan().requests(todos: todos, calendar: calendar,
+                                 now: .distantPast, limit: Int.max))
         } catch {
             // A transient read failure must not erase previously scheduled reminders.
             logger.error("Could not read Tasks for reminders: \(error.localizedDescription, privacy: .public)")
