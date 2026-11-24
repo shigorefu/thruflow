@@ -47,4 +47,56 @@ nonisolated struct IOSFlowDashboardLayout: Layout {
         }
     }
 }
+
+#if DEBUG
+private enum IOSFlowScreenshotTarget {
+    static let timerID = "screenshot-flow-timer"
+
+    static var requestsTimer: Bool {
+        ScreenshotMode.isEnabled() && ScreenshotMode.initialScreen() == .flow &&
+            ProcessInfo.processInfo.arguments.contains("--screenshot-flow-section=timer")
+    }
+}
+
+/// Gives only the isolated screenshot launch a target on the existing player.
+struct IOSFlowScreenshotTimerTarget: ViewModifier {
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if IOSFlowScreenshotTarget.requestsTimer {
+            content.id(IOSFlowScreenshotTarget.timerID)
+        } else {
+            content
+        }
+    }
+}
+
+/// Frames an existing card after fixture-driven heights settle; normal launches
+/// retain the original ScrollView without a reader or programmatic scrolling.
+struct IOSFlowScreenshotFraming: ViewModifier {
+    let isReady: Bool
+    @State private var didFrameTimer = false
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if IOSFlowScreenshotTarget.requestsTimer {
+            ScrollViewReader { proxy in
+                content
+                    .task(id: isReady) {
+                        guard isReady, !didFrameTimer else { return }
+                        await Task.yield()
+                        guard !Task.isCancelled else { return }
+                        var transaction = Transaction(animation: nil)
+                        transaction.disablesAnimations = true
+                        withTransaction(transaction) {
+                            proxy.scrollTo(IOSFlowScreenshotTarget.timerID, anchor: .top)
+                        }
+                        didFrameTimer = true
+                    }
+            }
+        } else {
+            content
+        }
+    }
+}
+#endif
 #endif

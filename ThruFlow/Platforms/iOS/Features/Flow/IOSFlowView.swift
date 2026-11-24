@@ -250,6 +250,9 @@ struct IOSFlowView: View {
                     onTransportAction: handleTransportAction,
                     onAppDayChange: { reconcileSelectedTodo(now: $0) }
                 )
+                #if DEBUG
+                .modifier(IOSFlowScreenshotTimerTarget())
+                #endif
                 IOSFlowTasksCard(
                     taskFilter: $taskFilter,
                     isLoading: cachedTodoGroups == nil,
@@ -265,6 +268,11 @@ struct IOSFlowView: View {
             .padding(.bottom, 10)
             .frame(maxWidth: .infinity)
         }
+        #if DEBUG
+        .modifier(IOSFlowScreenshotFraming(
+            isReady: isVisible && cachedSnapshot != nil && cachedTodoGroups != nil
+        ))
+        #endif
         .background(backgroundColor.ignoresSafeArea())
     }
 
