@@ -153,10 +153,18 @@ Use Ruby 3.3 and the Bundler version recorded in `Gemfile.lock`:
 ```sh
 bundle install
 bundle exec fastlane lanes
-ruby fastlane/tests/testflight_support_test.rb
-ruby fastlane/tests/notification_profile_bootstrap_test.rb
+bundle exec ruby fastlane/tests/testflight_support_test.rb
+bundle exec ruby fastlane/tests/notification_profile_bootstrap_test.rb
 python3 -m unittest discover -s scripts/tests -p 'test_*.py'
 ```
+
+Minitest is a pinned test-only bundle dependency. Load the resolved bundle
+before Minitest and run both helper suites through `bundle exec`; loading a
+host-provided Minitest first can activate incompatible default gems before
+Bundler selects the versions in `Gemfile.lock`. Both helper suites run in the
+ordinary Apple CI job and TestFlight source verification before signing secrets
+are exposed. The Ubuntu profile bootstrap also validates its suite before its
+Apple API step.
 
 The upload lanes intentionally require GitHub Actions; the commands above only
 load lanes and run offline tests. Fastlane and its transitive dependencies are

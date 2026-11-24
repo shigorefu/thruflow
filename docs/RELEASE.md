@@ -51,6 +51,22 @@ architectures remain unchanged. No required tests, signing checks, environment
 protections or delivery gates were removed. The new host still needs actual CI
 and signed-export execution evidence.
 
+### Bootstrap test dependency correction — 2026-11-25
+
+[Profile bootstrap run 45441721647](https://github.com/shigorefu/thruflow/actions/runs/45441721647)
+failed its offline tests before the secret-bearing Apple API step. Hosted Ruby
+3.3.13 loaded the default `mutex_m 0.2.0` through Minitest before Bundler could
+activate the locked `mutex_m 0.3.0`. The Apple profile creation and artifact
+steps were skipped; no profiles or certificates were changed by that attempt.
+
+The correction declares pinned Minitest as a test-only bundle dependency, loads
+Bundler first and executes both Ruby helper suites through `bundle exec` in
+ordinary CI and TestFlight source verification. The bootstrap uses the same
+resolved bundle. App code, versions, Apple API operations, certificate permissions
+and all release gates remain unchanged. A fresh workflow run from the merged
+correction is required; rerunning the old source would repeat the dependency
+failure.
+
 ### Local validation
 
 - The final complete macOS suite passed **615 tests in 61 suites**, including
