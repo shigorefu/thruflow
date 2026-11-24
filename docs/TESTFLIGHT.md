@@ -161,7 +161,14 @@ python3 -m unittest discover -s scripts/tests -p 'test_*.py'
 The upload lanes intentionally require GitHub Actions; the commands above only
 load lanes and run offline tests. Fastlane and its transitive dependencies are
 locked. Delivery uses `BUNDLE_FROZEN=true`; update dependencies in a reviewed PR.
-The runner uses the same explicit Xcode 26.6 path as the regular CI. Fastlane's
+The ordinary CI and TestFlight jobs use the standard `macos-26-intel` runner
+with the same explicit `/Applications/Xcode_26.6.app` path. The
+[official Intel image inventory](https://github.com/actions/runner-images/blob/main/images/macos/macos-26-Readme.md)
+includes Xcode 26.6; GitHub lists this as a
+[standard runner for public repositories](https://docs.github.com/en/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for-public-repositories).
+This runner was selected after a hosted arm64 job failed to acquire a machine on
+2026-11-25. Device SDK destinations, Release architectures, tests, approval gates
+and signing checks are unchanged. Fastlane's
 supported `app-store` export method is used; Xcode may describe that method as
 `app-store-connect` in its own interface.
 

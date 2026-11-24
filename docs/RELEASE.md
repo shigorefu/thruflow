@@ -38,6 +38,19 @@ Python automation tests (14) also passed. Actual profile generation, signed
 export, Apple processing and physical notification delivery require their own
 execution evidence.
 
+### Hosted runner capacity — 2026-11-25
+
+[PR #41 CI, run 45433278706](https://github.com/shigorefu/thruflow/actions/runs/45433278706)
+initially cancelled the Apple job after 15 minutes without starting a build.
+GitHub reported that no hosted runner was acquired after multiple attempts and
+identified macOS arm64 capacity constraints. A job retry also remained queued.
+The three Apple job host labels in CI/TestFlight were changed to the standard
+`macos-26-intel` image with the same installed Xcode 26.6. Both client reviewers
+agreed that generic device destinations and default universal macOS Release
+architectures remain unchanged. No required tests, signing checks, environment
+protections or delivery gates were removed. The new host still needs actual CI
+and signed-export execution evidence.
+
 ### Local validation
 
 - The final complete macOS suite passed **615 tests in 61 suites**, including
