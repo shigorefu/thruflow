@@ -76,6 +76,10 @@ struct ProjectHabitFormSection: View {
                 WeeklyFrequencySlider(value: $settings.weeklyTargetCount)
                     .frame(maxWidth: 260)
                     .padding(.horizontal, 8)
+                HabitRestDaysPicker(
+                    value: minimumRestDaysBinding,
+                    validationErrors: AreaValidator().validate(settings.validationDraft)
+                )
             }
             VStack(alignment: .leading, spacing: 10) {
                 Text(settings.goalSchedule == .weekdays
@@ -115,6 +119,13 @@ struct ProjectHabitFormSection: View {
             let mask = settings.weekdayMask ?? 0
             settings.weekdayMask = selected ? mask | weekday.rawValue : mask & ~weekday.rawValue
         })
+    }
+
+    private var minimumRestDaysBinding: Binding<Int> {
+        Binding(
+            get: { settings.minimumRestDays ?? 0 },
+            set: { settings.minimumRestDays = $0 }
+        )
     }
 }
 #endif

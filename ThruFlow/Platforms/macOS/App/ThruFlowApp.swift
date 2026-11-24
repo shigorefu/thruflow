@@ -49,6 +49,7 @@ struct ThruFlowApp: App {
     var body: some Scene {
         WindowGroup("ThruFlow", id: MacOSWindowID.main) {
             MacOSRootView()
+                .id(onboarding.applicationDataResetRevision)
                 .onboardingJourney(store: onboarding)
                 .persistenceIssuePresenter()
                 .environmentObject(activeFlowStore)

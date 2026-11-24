@@ -1,0 +1,1530 @@
+//
+//  ActiveFlowStore.swift
+//  ThruFlow
+//
+//
+
+import Foundation
+import Combine
+import CoreData
+import SwiftData
+
+@MainActor
+struct FlowTaskSwitchRequest: Identifiable {
+    let id = UUID()
+    let sessionID: UUID
+    let todo: Todo
+    let area: Area
+    let destinationTodo: Todo?
+    let calendar: Calendar
+    let dayBoundary: AppDayBoundary
+}
+
+@MainActor
+final class ActiveFlowStore: ObservableObject {
+    private static let forgottenTimerReminderSeconds = 60 * 60
+    private static let persistenceReconciliationInterval: TimeInterval = 30
+
+    @Published var selectedAreaID: UUID?
+    @Published var selectedTodoID: UUID?
+    @Published var selectedMode: FlowMode
+    @Published var intent: String
+    @Published var timerState: FlowTimerState? {
+        didSet {
+            synchronizeDisplayClock()
+            invalidateTaskSwitchIfNeeded()
+        }
+    }
+    @Published var activeSession: FlowSession? {
+        didSet { invalidateTaskSwitchIfNeeded() }
+    }
+    @Published private(set) var pendingTaskSwitch: FlowTaskSwitchRequest?
+    var memoTodo: Todo? { pendingTaskSwitch?.todo ?? activeSession?.todo }
+    // Timer presentation surfaces own their local one-second TimelineView.
+    // Publishing this value would invalidate every ActiveFlowStore observer,
+    // including the 60 FPS Metal stream, once per second.
+    private(set) var displayDate: Date = .now
+    @Published private(set) var isAwaitingBreakMemo = false
+    @Published private(set) var flowBreakInteraction: FlowBreakInteraction?
+
+    private let engine = FlowTimerEngine()
+    private let progressReconciler = FlowProgressReconciler()
+    private let historyEditor = FlowHistoryEditor()
+    private let seriesPolicy = FlowSeriesPolicy()
+    private let contextSwitchPolicy = FlowContextSwitchPolicy()
+    private let syncCoordinator = ActiveFlowSyncCoordinator()
+    private let notifications: FlowNotificationService
+    private let liveActivities: any LiveActivityService
+    private let defaults: UserDefaults
+    private let persistenceNotificationCenter: NotificationCenter
+    private var didApplyProgress = false
+    private var stateBeforeResultPrompt: FlowTimerState?
+    private var displayClock: AnyCancellable?
+    private var synchronizationClock: AnyCancellable?
+    private var synchronizationTask: Task<Void, Never>?
+    private var pendingSynchronizationDate: Date?
+    private var persistenceChangeObservers: Set<AnyCancellable> = []
+    private var lastAppliedRuntimeVersion: FlowRuntimeVersion?
+    private var lastPublishedLiveActivityWasOvertime: Bool?
+    private var lastPersistenceReconciliationAt: Date?
+    private var nextFlowBreakInteractionSequence: UInt64 = 0
+    private let saveModeChange: @MainActor (ModelContext) throws -> Void
+    private var pendingModeChange: PendingModeChange?
+    private var modeCommitTask: Task<Void, Never>?
+
+    private struct PendingModeChange {
+        let originalMode: FlowMode
+        let originalState: FlowTimerState?
+        let sessionID: UUID?
+        let runtimeVersion: FlowRuntimeVersion?
+        let modelContext: ModelContext
+        var changedAt: Date
+    }
+
+    init(
+        defaults: UserDefaults = .standard,
+        notifications: FlowNotificationService? = nil,
+        liveActivities: (any LiveActivityService)? = nil,
+        persistenceNotificationCenter: NotificationCenter = .default,
+        saveModeChange: @escaping @MainActor (ModelContext) throws -> Void = { try $0.save() }
+    ) {
+        self.defaults = defaults
+        self.notifications = notifications ?? LocalFlowNotificationService()
+        self.liveActivities = liveActivities ?? NoopLiveActivityService()
+        self.persistenceNotificationCenter = persistenceNotificationCenter
+        self.saveModeChange = saveModeChange
+        selectedAreaID = defaults.uuid(forKey: "flow.selectedDirectionID")
+        selectedTodoID = defaults.uuid(forKey: "flow.selectedTodoID")
+        selectedMode = defaults.flowMode(forKey: "flow.selectedMode") ?? .twentyFiveFive
+        intent = defaults.string(forKey: "flow.lastIntent") ?? ""
+    }
+
+    var phase: FlowPhase {
+        timerState?.phase ?? (selectedAreaID == nil ? .idle : .configured)
+    }
+
+    var canStart: Bool {
+        selectedAreaID != nil && timerState == nil
+    }
+
+    var canChangeMode: Bool {
+        guard let timerState else { return true }
+        return timerState.phase == .focusing ||
+            (timerState.phase == .paused && timerState.phaseBeforePause != .breakTime)
+    }
+
+    var isBreakPhase: Bool {
+        guard let timerState else { return false }
+        return timerState.phase == .breakTime ||
+            (timerState.phase == .paused && timerState.phaseBeforePause == .breakTime)
+    }
+
+    var canRequestBreak: Bool {
+        timerState?.phase == .focusing || timerState?.phase == .awaitingExtensionDecision
+    }
+
+    var flowStreamBreakStyle: FlowStreamBreakStyle {
+        guard isBreakPhase else { return .none }
+        return timerState?.isLongBreak == true ? .long : .regular
+    }
+
+    func configure(area: Area?, todo: Todo?, intent: String? = nil, mode: FlowMode? = nil) {
+        guard flushPendingModeChange() else { return }
+        selectedAreaID = area?.id
+        selectedTodoID = todo?.id
+
+        if let intent {
+            self.intent = intent
+        }
+
+        if let mode {
+            selectedMode = mode
+        }
+
+        persistConfiguration()
+    }
+
+    @discardableResult
+    func reconcileSelectedTodoForCurrentDay(
+        todos: [Todo],
+        areas: [Area],
+        now: Date = .now,
+        calendar: Calendar = .current,
+        dayBoundary: AppDayBoundary = .midnight
+    ) -> Bool {
+        guard timerState == nil, let selectedTodoID else { return false }
+
+        let filter = TodayTodoFilter(calendar: calendar, dayBoundary: dayBoundary)
+        let todayTodos = FlowDashboardTodoSorter().sorted(
+            todos.filter { filter.includes($0, now: now) }
+        )
+        guard !todayTodos.contains(where: { $0.id == selectedTodoID }) else {
+            return false
+        }
+
+        let previousTodo = todos.first { $0.id == selectedTodoID }
+        let preferredAreaID = previousTodo?.area?.id ?? selectedAreaID
+        let replacement = todayTodos.first {
+            !$0.isCompleted && $0.area?.id == preferredAreaID
+        } ?? todayTodos.first(where: { !$0.isCompleted })
+
+        let activeAreas = areas.filter { !$0.isArchived }
+        let replacementArea = replacement?.area
+            ?? activeAreas.first(where: { $0.id == preferredAreaID })
+            ?? activeAreas.first
+        configure(area: replacementArea, todo: replacement)
+        return true
+    }
+
+    func resetAfterApplicationDataReset() {
+        guard timerState == nil else { return }
+        cancelPendingModeChange()
+
+        notifications.cancelPendingFlowNotifications()
+        notifications.clearBadge()
+        liveActivities.end()
+        selectedAreaID = nil
+        selectedTodoID = nil
+        selectedMode = .twentyFiveFive
+        intent = ""
+        activeSession = nil
+        didApplyProgress = false
+        isAwaitingBreakMemo = false
+        stateBeforeResultPrompt = nil
+        lastAppliedRuntimeVersion = nil
+        flowBreakInteraction = nil
+        persistConfiguration()
+    }
+
+    func start(area: Area, todo: Todo?, modelContext: ModelContext, now: Date = .now) {
+        guard flushPendingModeChange() else { return }
+        stateBeforeResultPrompt = nil
+        let state = engine.start(mode: selectedMode, now: now)
+        let sessionID = UUID()
+        let pendingBreak: FlowBreak?
+        do {
+            pendingBreak = try eligiblePendingBreak(modelContext: modelContext, at: now)
+        } catch {
+            PersistenceIssueCenter.shared.report(error, operation: .dataLoad)
+            return
+        }
+        let seriesID = pendingBreak?.seriesID ?? sessionID
+        let session = FlowSession(
+            id: sessionID,
+            seriesID: seriesID,
+            recordingDeviceID: FlowRecordingDevice.id,
+            area: area,
+            todo: todo,
+            intent: intent.trimmingCharacters(in: .whitespacesAndNewlines),
+            mode: selectedMode,
+            startedAt: state.startedAt,
+            plannedEndAt: state.plannedEndAt,
+            plannedFocusDurationSeconds: state.plannedFocusDurationSeconds,
+            plannedBreakDurationSeconds: state.plannedBreakDurationSeconds,
+            createdAt: now,
+            updatedAt: now
+        )
+
+        modelContext.insert(session)
+        let segment = FlowSegment(
+            session: session,
+            area: area,
+            todo: todo,
+            startedAt: now,
+            startFocusSeconds: 0
+        )
+        modelContext.insert(segment)
+        if !session.resolvedSegments.contains(where: { $0.id == segment.id }) {
+            session.resolvedSegments.append(segment)
+        }
+        pendingBreak?.connect(to: sessionID, at: now)
+        activeSession = session
+        timerState = state
+        didApplyProgress = false
+        persistConfiguration()
+        guard modelContext.saveReporting(.flowStart) else {
+            activeSession = nil
+            timerState = nil
+            didApplyProgress = false
+            return
+        }
+        notifications.requestAuthorizationIfNeeded()
+        replaceNotifications(for: state)
+        lastAppliedRuntimeVersion = session.runtimeVersion
+        startLiveActivity(now: now)
+    }
+
+    /// Explicit Area selection in the timer creates a normal, editable Task.
+    /// Initial configuration and historical Area-only records remain untouched.
+    @discardableResult
+    func selectPickerContext(
+        area: Area?,
+        todo: Todo?,
+        modelContext: ModelContext,
+        now: Date = .now,
+        calendar: Calendar = .current,
+        dayBoundary: AppDayBoundary = .midnight
+    ) -> Bool {
+        guard flushPendingModeChange() else { return false }
+        guard let area, !area.isArchived else { return false }
+        guard pendingTaskSwitch == nil else { return false }
+        if let session = activeSession, let oldTodo = session.todo,
+           canSwitchActiveTask, !isAwaitingBreakMemo,
+           shouldRequestTaskSwitchMemo(session: session, now: now),
+           oldTodo.id != todo?.id || session.area?.id != area.id {
+            pendingTaskSwitch = FlowTaskSwitchRequest(
+                sessionID: session.id, todo: oldTodo, area: area,
+                destinationTodo: todo, calendar: calendar, dayBoundary: dayBoundary
+            )
+            return true
+        }
+        let selectedTask: Todo
+        if let todo {
+            selectedTask = todo
+        } else {
+            selectedTask = Todo(
+                title: "",
+                area: area,
+                habitOccurrence: false,
+                scheduledDate: dayBoundary.day(containing: now, calendar: calendar),
+                createdAt: now,
+                updatedAt: now
+            )
+            modelContext.insert(selectedTask)
+        }
+        return selectContext(area: area, todo: selectedTask, modelContext: modelContext, now: now)
+    }
+
+    private func shouldRequestTaskSwitchMemo(session: FlowSession, now: Date) -> Bool {
+        guard let state = timerState,
+              let segment = session.resolvedSegments.last(where: { $0.endedAt == nil }) else {
+            return true
+        }
+        return !contextSwitchPolicy.shouldTransferCurrentSegment(
+            totalFocusSeconds: engine.actualFocusDuration(for: state, now: now),
+            segmentStartFocusSeconds: segment.startFocusSeconds
+        )
+    }
+
+    private var canSwitchActiveTask: Bool {
+        guard let phase = timerState?.phase else { return false }
+        return phase == .focusing || phase == .awaitingExtensionDecision ||
+            (phase == .paused && timerState?.phaseBeforePause != .breakTime)
+    }
+
+    private func invalidateTaskSwitchIfNeeded() {
+        guard let request = pendingTaskSwitch else { return }
+        if !canSwitchActiveTask || activeSession?.id != request.sessionID ||
+            activeSession?.todo?.id != request.todo.id {
+            pendingTaskSwitch = nil
+        }
+    }
+
+    func cancelTaskSwitchMemo() {
+        pendingTaskSwitch = nil
+    }
+
+    @discardableResult
+    func completeTaskSwitchMemo(
+        _ result: String?, taskTitle: String? = nil, taskProject: Project? = nil,
+        modelContext: ModelContext, now: Date = .now
+    ) -> Bool {
+        guard flushPendingModeChange() else { return false }
+        invalidateTaskSwitchIfNeeded()
+        guard let request = pendingTaskSwitch, let session = activeSession,
+              !request.todo.isDeleted, !request.todo.isArchived,
+              !request.area.isArchived else { return false }
+        if let destination = request.destinationTodo {
+            guard !destination.isDeleted, !destination.isArchived,
+                  destination.area?.id == request.area.id else { return false }
+        }
+        do {
+            try FlowMemoProjectPolicy.validate(taskProject, for: request.todo)
+        } catch {
+            PersistenceIssueCenter.shared.report(error, operation: .flowUpdate)
+            return false
+        }
+        let journal = EditorMutationJournal(modelContext: modelContext)
+        journal.capture(session)
+        if let title = taskTitle {
+            request.todo.title = title.trimmingCharacters(in: .whitespacesAndNewlines)
+            request.todo.updatedAt = now
+        }
+        if let taskProject, request.todo.project == nil {
+            request.todo.project = taskProject
+            request.todo.updatedAt = now
+        }
+        if let result = normalizedResult(result) {
+            request.todo.setMemo(result, now: now)
+        }
+        let destination: Todo
+        if let todo = request.destinationTodo {
+            destination = todo
+        } else {
+            destination = Todo(
+                title: "", area: request.area, habitOccurrence: false,
+                scheduledDate: request.dayBoundary.day(containing: now, calendar: request.calendar),
+                createdAt: now, updatedAt: now
+            )
+            modelContext.insert(destination)
+        }
+        guard selectContext(area: request.area, todo: destination, modelContext: modelContext, now: now) else {
+            journal.restore(modelContext: modelContext)
+            return false
+        }
+        pendingTaskSwitch = nil
+        return true
+    }
+
+    @discardableResult
+    func selectContext(
+        area: Area?,
+        todo: Todo?,
+        modelContext: ModelContext,
+        now: Date = .now
+    ) -> Bool {
+        guard flushPendingModeChange() else { return false }
+        guard let area else { return false }
+        let previousAreaID = selectedAreaID
+        let previousTodoID = selectedTodoID
+        let journal = EditorMutationJournal(modelContext: modelContext)
+        if let session = activeSession { journal.capture(session) }
+
+        if let state = timerState,
+           state.phase == .focusing || state.phase == .paused || state.phase == .awaitingExtensionDecision,
+           let session = activeSession {
+            let currentTodoID = session.resolvedSegments.last(where: { $0.endedAt == nil })?.todo?.id
+            let currentAreaID = session.resolvedSegments.last(where: { $0.endedAt == nil })?.area?.id
+
+            if currentTodoID != todo?.id || currentAreaID != area.id {
+                let focusedSeconds = engine.actualFocusDuration(for: state, now: now)
+                if let currentSegment = session.resolvedSegments.last(where: { $0.endedAt == nil }),
+                   contextSwitchPolicy.shouldTransferCurrentSegment(
+                       totalFocusSeconds: focusedSeconds,
+                       segmentStartFocusSeconds: currentSegment.startFocusSeconds
+                   ) {
+                    transferCurrentSegment(
+                        currentSegment,
+                        to: area,
+                        todo: todo,
+                        session: session,
+                        modelContext: modelContext
+                    )
+                } else {
+                    closeCurrentSegment(at: now, totalFocusSeconds: focusedSeconds)
+                    openSegment(
+                        area: area,
+                        todo: todo,
+                        session: session,
+                        modelContext: modelContext,
+                        now: now,
+                        startFocusSeconds: focusedSeconds
+                    )
+                }
+                session.area = area
+                session.todo = todo
+                session.recordRuntimeMutation(now: now)
+            }
+        }
+
+        configure(area: area, todo: todo)
+        guard modelContext.saveReporting(.flowUpdate) else {
+            journal.restore(modelContext: modelContext)
+            selectedAreaID = previousAreaID
+            selectedTodoID = previousTodoID
+            persistConfiguration()
+            return false
+        }
+        lastAppliedRuntimeVersion = activeSession?.runtimeVersion
+        synchronizeLiveActivity(now: now)
+        return true
+    }
+
+    func beginSynchronization(modelContext: ModelContext, now: Date = .now) {
+        observePersistenceChangesIfNeeded(modelContext: modelContext)
+        synchronizeFromPersistence(modelContext: modelContext, now: now)
+        guard synchronizationClock == nil else { return }
+
+        synchronizationClock = Timer.publish(every: 2, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] date in
+                self?.requestSynchronization(modelContext: modelContext, now: date)
+            }
+    }
+
+    func endSynchronization() {
+        _ = flushPendingModeChange()
+        synchronizationClock?.cancel()
+        synchronizationClock = nil
+    }
+
+    private func observePersistenceChangesIfNeeded(modelContext: ModelContext) {
+        guard persistenceChangeObservers.isEmpty else { return }
+
+        persistenceNotificationCenter.publisher(
+            for: NSPersistentCloudKitContainer.eventChangedNotification
+        )
+        .compactMap(ActiveFlowPersistenceEvent.completedCloudKitImportDate)
+        .receive(on: RunLoop.main)
+        .sink { [weak self] importedAt in
+            self?.requestSynchronization(modelContext: modelContext, now: importedAt)
+        }
+        .store(in: &persistenceChangeObservers)
+
+        persistenceNotificationCenter.publisher(for: .NSPersistentStoreRemoteChange)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.requestSynchronization(modelContext: modelContext, now: .now)
+            }
+            .store(in: &persistenceChangeObservers)
+    }
+
+    private func requestSynchronization(modelContext: ModelContext, now: Date) {
+        pendingSynchronizationDate = max(pendingSynchronizationDate ?? now, now)
+        guard synchronizationTask == nil else { return }
+        synchronizationTask = Task { [weak self] in
+            await self?.drainSynchronizationRequests(modelContext: modelContext)
+        }
+    }
+
+    private func drainSynchronizationRequests(modelContext: ModelContext) async {
+        defer { synchronizationTask = nil }
+        let container = modelContext.container
+
+        while pendingSynchronizationDate != nil {
+            // A CloudKit import and a store notification can report the same change.
+            try? await Task.sleep(for: .milliseconds(25))
+            if let modeCommitTask { await modeCommitTask.value }
+            guard pendingModeChange == nil, let now = pendingSynchronizationDate else { continue }
+            pendingSynchronizationDate = nil
+
+            reconcilePersistenceIfNeeded(modelContext: modelContext, now: now)
+            if modelContext.hasChanges {
+                resolvePersistedRuntime(modelContext: modelContext, now: now)
+                continue
+            }
+
+            let candidates = try? await Task.detached(priority: .utility) {
+                let reader = ActiveFlowSyncReader(modelContainer: container)
+                return try await reader.candidates()
+            }.value
+
+            guard pendingModeChange == nil else {
+                pendingSynchronizationDate = pendingSynchronizationDate ?? now
+                continue
+            }
+
+            if !modelContext.hasChanges, let candidates {
+                if candidates.isEmpty && timerState == nil { continue }
+                if candidates.count == 1, let candidate = candidates.first,
+                   candidate.id == activeSession?.id,
+                   candidate.version == lastAppliedRuntimeVersion {
+                    continue
+                }
+            }
+
+            // Re-read in the owning context before applying anything. The probe
+            // may predate a local command or a newer import.
+            resolvePersistedRuntime(modelContext: modelContext, now: now)
+        }
+    }
+
+    func synchronizeFromPersistence(modelContext: ModelContext, now: Date = .now) {
+        // Do not let periodic/import reconciliation interrupt the ring animation
+        // or adopt the durable state while the new mode is still optimistic.
+        guard pendingModeChange == nil else { return }
+        reconcilePersistenceIfNeeded(modelContext: modelContext, now: now)
+        resolvePersistedRuntime(modelContext: modelContext, now: now)
+    }
+
+    private func resolvePersistedRuntime(modelContext: ModelContext, now: Date) {
+        let resolution: ActiveFlowSyncResolution
+        do {
+            resolution = try syncCoordinator.resolve(modelContext: modelContext)
+        } catch {
+            PersistenceIssueCenter.shared.report(error, operation: .flowSynchronization)
+            return
+        }
+
+        if let canonicalSession = resolution.canonicalSession,
+           !resolution.supersededSessions.isEmpty {
+            syncCoordinator.interruptSuperseded(
+                resolution.supersededSessions,
+                canonicalSession: canonicalSession,
+                now: now
+            )
+            guard modelContext.saveReporting(.flowSynchronization) else { return }
+        }
+
+        guard let canonicalSession = resolution.canonicalSession,
+              var synchronizedState = canonicalSession.reconstructableTimerState else {
+            clearSynchronizedRuntimeIfNeeded()
+            return
+        }
+
+        let version = canonicalSession.runtimeVersion
+        guard canonicalSession.id != activeSession?.id ||
+                version != lastAppliedRuntimeVersion else {
+            return
+        }
+
+        if synchronizedState.isBreakTimer {
+            do {
+                if let flowBreak = try openBreak(
+                    for: canonicalSession.id,
+                    modelContext: modelContext
+                ) {
+                    synchronizedState.plannedBreakIsLong = flowBreak.isLongBreak
+                }
+            } catch {
+                PersistenceIssueCenter.shared.log(error, operation: .flowSynchronization)
+            }
+        }
+
+        adopt(
+            session: canonicalSession,
+            timerState: synchronizedState,
+            now: now
+        )
+    }
+
+    private func reconcilePersistenceIfNeeded(modelContext: ModelContext, now: Date) {
+        if let lastPersistenceReconciliationAt,
+           now.timeIntervalSince(lastPersistenceReconciliationAt) < Self.persistenceReconciliationInterval {
+            return
+        }
+
+        do {
+            try DefaultAreaReconciler().reconcile(modelContext: modelContext, now: now)
+            try OrphanTodoReconciler().reconcile(modelContext: modelContext, now: now)
+            try ConnectorTaskImporter().reconcileDuplicates(modelContext: modelContext, now: now)
+            lastPersistenceReconciliationAt = now
+        } catch {
+            PersistenceIssueCenter.shared.log(error, operation: .flowSynchronization)
+        }
+    }
+
+    func refresh(modelContext: ModelContext, now: Date = .now) {
+        guard let state = timerState,
+              engine.advanceIfNeeded(state, now: now) != state else { return }
+        guard flushPendingModeChange(), let current = timerState else { return }
+        let next = engine.advanceIfNeeded(current, now: now)
+        guard next != current else { return }
+        _ = apply(next, modelContext: modelContext, now: now)
+    }
+
+    func pause(modelContext: ModelContext, now: Date = .now) {
+        guard flushPendingModeChange() else { return }
+        guard let timerState else { return }
+        _ = apply(engine.pause(timerState, now: now), modelContext: modelContext, now: now)
+    }
+
+    func resume(modelContext: ModelContext, now: Date = .now) {
+        guard flushPendingModeChange() else { return }
+        guard let timerState else { return }
+        let next = engine.resume(timerState, now: now)
+        _ = apply(next, modelContext: modelContext, now: now)
+    }
+
+    func finish(modelContext: ModelContext, now: Date = .now) {
+        guard flushPendingModeChange() else { return }
+        guard let timerState else { return }
+        if timerState.phase == .breakTime {
+            _ = completeBreak(modelContext: modelContext, now: now)
+            return
+        }
+
+        guard !discardShortFlowIfNeeded(timerState, modelContext: modelContext, now: now) else { return }
+        stateBeforeResultPrompt = timerState
+        _ = apply(engine.finish(timerState, now: now), modelContext: modelContext, now: now)
+    }
+
+    @discardableResult
+    func completeResult(_ result: String?, taskTitle: String? = nil, taskProject: Project? = nil, modelContext: ModelContext, now: Date = .now) -> Bool {
+        guard flushPendingModeChange() else { return false }
+        guard let timerState, activeSession != nil, timerState.phase == .awaitingResult else { return false }
+        let completedSessionID = activeSession?.id
+        guard validateMemoProject(taskProject) else { return false }
+        let memoJournal = EditorMutationJournal(modelContext: modelContext)
+        if let session = activeSession { memoJournal.capture(session) }
+        if let taskProject, activeSession?.todo?.project == nil {
+            activeSession?.todo?.project = taskProject
+            activeSession?.todo?.updatedAt = now
+        }
+        updateMemoTaskTitle(taskTitle, now: now)
+        let normalizedResult = normalizedResult(result)
+        activeSession?.result = normalizedResult
+        if let normalizedResult {
+            activeSession?.todo?.setMemo(normalizedResult, now: now)
+        }
+        activeSession?.complete(now: now)
+
+        guard apply(
+            engine.completeResult(timerState, now: now),
+            modelContext: modelContext,
+            now: now
+        ) else {
+            memoJournal.restore(modelContext: modelContext)
+            return false
+        }
+
+        activeSession = nil
+        self.timerState = nil
+        didApplyProgress = false
+        isAwaitingBreakMemo = false
+        stateBeforeResultPrompt = nil
+        lastAppliedRuntimeVersion = nil
+        liveActivities.end()
+
+        if let completedSessionID {
+            TaskCompletionFeedbackPlayer.shared.playFlow(for: completedSessionID, now: now)
+            NotificationCenter.default.post(name: .flowDidComplete, object: completedSessionID)
+        }
+        return true
+    }
+
+    func cancelResultMemo(modelContext: ModelContext, now: Date = .now) {
+        guard flushPendingModeChange() else { return }
+        guard timerState?.phase == .awaitingResult,
+              let restoredState = stateBeforeResultPrompt,
+              let activeSession else {
+            return
+        }
+        let previousState = timerState
+        let previousDidApplyProgress = didApplyProgress
+        let previousStateBeforeResultPrompt = stateBeforeResultPrompt
+
+        activeSession.resolvedSegments.max(by: { $0.startedAt < $1.startedAt })?.reopen()
+        timerState = restoredState
+        activeSession.apply(timerState: restoredState, now: now)
+        do {
+            try progressReconciler.reconcile(
+                session: activeSession,
+                modelContext: modelContext,
+                now: now
+            )
+        } catch {
+            modelContext.rollback()
+            timerState = previousState
+            PersistenceIssueCenter.shared.report(error, operation: .flowUpdate)
+            return
+        }
+        didApplyProgress = false
+        stateBeforeResultPrompt = nil
+
+        guard modelContext.saveReporting(.flowUpdate) else {
+            timerState = previousState
+            didApplyProgress = previousDidApplyProgress
+            stateBeforeResultPrompt = previousStateBeforeResultPrompt
+            return
+        }
+        replaceNotifications(for: restoredState)
+        synchronizeLiveActivity(now: now)
+    }
+
+    func extendAdaptive(modelContext: ModelContext, now: Date = .now) {
+        guard flushPendingModeChange() else { return }
+        guard let timerState else { return }
+        let next = engine.extendAdaptive(timerState, now: now)
+        _ = apply(next, modelContext: modelContext, now: now)
+    }
+
+    func startBreak(modelContext: ModelContext, now: Date = .now) {
+        guard flushPendingModeChange() else { return }
+        guard let timerState else { return }
+        guard !discardShortFlowIfNeeded(timerState, modelContext: modelContext, now: now) else { return }
+        _ = beginBreak(from: timerState, modelContext: modelContext, now: now)
+    }
+
+    func requestBreakMemo(modelContext: ModelContext, now: Date = .now) {
+        guard flushPendingModeChange() else { return }
+        guard let timerState else { return }
+        guard canRequestBreak else { return }
+        publishFlowBreakInteraction(.requested, at: now)
+        guard !discardShortFlowIfNeeded(timerState, modelContext: modelContext, now: now) else { return }
+        isAwaitingBreakMemo = true
+    }
+
+    @discardableResult
+    func completeBreakMemo(_ result: String?, taskTitle: String? = nil, taskProject: Project? = nil, modelContext: ModelContext, now: Date = .now) -> Bool {
+        guard flushPendingModeChange() else { return false }
+        guard let timerState else { return false }
+        guard isAwaitingBreakMemo else { return false }
+        guard timerState.phase == .focusing || timerState.phase == .awaitingExtensionDecision else {
+            isAwaitingBreakMemo = false
+            return false
+        }
+
+        guard !discardShortFlowIfNeeded(timerState, modelContext: modelContext, now: now) else { return false }
+        guard validateMemoProject(taskProject) else { return false }
+        let memoJournal = EditorMutationJournal(modelContext: modelContext)
+        if let session = activeSession { memoJournal.capture(session) }
+        if let taskProject, activeSession?.todo?.project == nil {
+            activeSession?.todo?.project = taskProject
+            activeSession?.todo?.updatedAt = now
+        }
+        updateMemoTaskTitle(taskTitle, now: now)
+        let normalizedResult = normalizedResult(result)
+        activeSession?.result = normalizedResult
+        if let normalizedResult {
+            activeSession?.todo?.setMemo(normalizedResult, now: now)
+        }
+        guard beginBreak(from: timerState, modelContext: modelContext, now: now) else {
+            memoJournal.restore(modelContext: modelContext)
+            return false
+        }
+        isAwaitingBreakMemo = false
+        return true
+    }
+
+    private func validateMemoProject(_ project: Project?) -> Bool {
+        do {
+            try FlowMemoProjectPolicy.validate(project, for: activeSession?.todo)
+            return true
+        } catch {
+            PersistenceIssueCenter.shared.report(error, operation: .flowUpdate)
+            return false
+        }
+    }
+
+    private func updateMemoTaskTitle(_ title: String?, now: Date) {
+        guard let title, let todo = activeSession?.todo else { return }
+        let normalized = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard todo.title != normalized else { return }
+        todo.title = normalized
+        todo.updatedAt = now
+    }
+
+    private func normalizedResult(_ result: String?) -> String? {
+        let trimmed = result?.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed?.isEmpty == true ? nil : trimmed
+    }
+
+    func cancelBreakMemo() {
+        isAwaitingBreakMemo = false
+    }
+
+    func seekForward(modelContext: ModelContext, now: Date = .now) {
+        guard flushPendingModeChange() else { return }
+        guard let timerState else { return }
+        let next = engine.seekForward(timerState, now: now)
+        guard next != timerState else { return }
+        _ = apply(next, modelContext: modelContext, now: now)
+    }
+
+    func seekBackward(modelContext: ModelContext, now: Date = .now) {
+        guard flushPendingModeChange() else { return }
+        guard let timerState else { return }
+        let next = engine.seekBackward(timerState, now: now)
+        guard next != timerState else { return }
+        _ = apply(next, modelContext: modelContext, now: now)
+    }
+
+    func selectMode(_ mode: FlowMode, modelContext: ModelContext, now: Date = .now) {
+        guard mode != selectedMode, canChangeMode else { return }
+        if pendingModeChange == nil {
+            pendingModeChange = PendingModeChange(
+                originalMode: selectedMode,
+                originalState: timerState,
+                sessionID: activeSession?.id,
+                runtimeVersion: activeSession?.runtimeVersion,
+                modelContext: modelContext,
+                changedAt: now
+            )
+        } else {
+            pendingModeChange?.changedAt = now
+        }
+        selectedMode = mode
+        if let state = timerState {
+            timerState = engine.changeMode(mode, for: state)
+        }
+
+        // Keep disk work out of the 380 ms ring transition. SwiftData remains on
+        // its owning MainActor; this is deferred persistence, not background IO.
+        modeCommitTask?.cancel()
+        modeCommitTask = Task { @MainActor [weak self] in
+            do { try await Task.sleep(for: .milliseconds(450)) }
+            catch { return }
+            guard !Task.isCancelled else { return }
+            _ = self?.flushPendingModeChange()
+        }
+    }
+
+    /// Commits the latest coalesced mode before another timer command or teardown.
+    @discardableResult
+    func flushPendingModeChange() -> Bool {
+        guard let pending = pendingModeChange else { return true }
+        modeCommitTask?.cancel()
+        modeCommitTask = nil
+        pendingModeChange = nil
+
+        if let sessionID = pending.sessionID {
+            guard let session = activeSession, session.id == sessionID,
+                  !session.isDeleted, session.runtimeVersion == pending.runtimeVersion,
+                  let state = timerState else {
+                // A remote/runtime change won the race. Never overwrite it with
+                // the optimistic mode, or revive a removed/completed session.
+                if let session = activeSession, !session.isDeleted,
+                   let state = session.reconstructableTimerState {
+                    adopt(session: session, timerState: state, now: pending.changedAt)
+                } else {
+                    selectedMode = pending.originalMode
+                    clearSynchronizedRuntimeIfNeeded()
+                    persistConfiguration()
+                }
+                return false
+            }
+            let originalMode = session.mode
+            let originalEnd = session.plannedEndAt
+            let originalFocusDuration = session.plannedFocusDurationSeconds
+            let originalBreakDuration = session.plannedBreakDurationSeconds
+            let originalVersion = session.runtimeVersion
+            session.mode = state.mode
+            session.plannedEndAt = state.plannedEndAt
+            session.plannedFocusDurationSeconds = state.plannedFocusDurationSeconds
+            session.plannedBreakDurationSeconds = state.plannedBreakDurationSeconds
+            session.recordRuntimeMutation(now: pending.changedAt)
+            do {
+                try saveModeChange(pending.modelContext)
+            } catch {
+                // Restore only our fields; another editor may have unsaved work
+                // in this same context. A whole-context rollback would lose it.
+                session.mode = originalMode
+                session.plannedEndAt = originalEnd
+                session.plannedFocusDurationSeconds = originalFocusDuration
+                session.plannedBreakDurationSeconds = originalBreakDuration
+                session.runtimeRevision = originalVersion.revision
+                session.runtimeMutationID = originalVersion.mutationID
+                session.updatedAt = originalVersion.updatedAt
+                selectedMode = pending.originalMode
+                timerState = pending.originalState
+                PersistenceIssueCenter.shared.report(error, operation: .flowUpdate)
+                return false
+            }
+            lastAppliedRuntimeVersion = session.runtimeVersion
+            replaceNotifications(for: state)
+            synchronizeLiveActivity(now: pending.changedAt)
+        }
+        persistConfiguration()
+        return true
+    }
+
+    private func cancelPendingModeChange() {
+        modeCommitTask?.cancel()
+        modeCommitTask = nil
+        pendingModeChange = nil
+    }
+
+    func stop(modelContext: ModelContext, now: Date = .now) {
+        guard flushPendingModeChange() else { return }
+        guard let timerState else { return }
+        if timerState.phase == .breakTime {
+            _ = completeBreak(modelContext: modelContext, now: now)
+            return
+        }
+
+        guard !discardShortFlowIfNeeded(timerState, modelContext: modelContext, now: now) else { return }
+        stateBeforeResultPrompt = timerState
+        _ = apply(engine.finish(timerState, now: now), modelContext: modelContext, now: now)
+    }
+
+    func destroy(modelContext: ModelContext, now: Date = .now) {
+        guard flushPendingModeChange() else { return }
+        if isBreakPhase {
+            if let activeSession {
+                do {
+                    if let flowBreak = try openBreak(for: activeSession.id, modelContext: modelContext) {
+                        flowBreak.deletedAt = now
+                        flowBreak.updatedAt = now
+                    }
+                } catch {
+                    PersistenceIssueCenter.shared.report(error, operation: .dataLoad)
+                    return
+                }
+                activeSession.complete(now: now)
+            }
+        } else if let activeSession {
+            if didApplyProgress {
+                do {
+                    try historyEditor.delete(session: activeSession, modelContext: modelContext, now: now)
+                } catch {
+                    modelContext.rollback()
+                    PersistenceIssueCenter.shared.report(error, operation: .flowDelete)
+                    return
+                }
+            } else {
+                modelContext.delete(activeSession)
+            }
+        }
+
+        guard modelContext.saveReporting(.flowDelete) else { return }
+        activeSession = nil
+        timerState = nil
+        flowBreakInteraction = nil
+        didApplyProgress = false
+        isAwaitingBreakMemo = false
+        stateBeforeResultPrompt = nil
+        lastAppliedRuntimeVersion = nil
+        notifications.cancelPendingFlowNotifications()
+        liveActivities.end()
+    }
+
+    func skipBreak(modelContext: ModelContext, now: Date = .now) {
+        guard flushPendingModeChange() else { return }
+        guard let timerState else { return }
+        guard timerState.phase == .breakTime else { return }
+        _ = completeBreak(modelContext: modelContext, now: now)
+    }
+
+    func startNextFlow(
+        area: Area,
+        todo: Todo?,
+        modelContext: ModelContext,
+        now: Date = .now
+    ) {
+        guard flushPendingModeChange() else { return }
+        guard timerState?.phase == .breakTime else { return }
+
+        guard completeBreak(modelContext: modelContext, now: now) else { return }
+        configure(area: area, todo: todo)
+        start(area: area, todo: todo, modelContext: modelContext, now: now)
+    }
+
+    @discardableResult
+    private func completeBreak(modelContext: ModelContext, now: Date) -> Bool {
+        guard let timerState else { return false }
+        if let activeSession {
+            do {
+                try openBreak(for: activeSession.id, modelContext: modelContext)?.stopTimer(at: now)
+            } catch {
+                PersistenceIssueCenter.shared.report(error, operation: .dataLoad)
+                return false
+            }
+        }
+        guard apply(
+            engine.skipBreak(timerState, now: now),
+            modelContext: modelContext,
+            now: now
+        ) else { return false }
+        activeSession = nil
+        self.timerState = nil
+        flowBreakInteraction = nil
+        didApplyProgress = false
+        isAwaitingBreakMemo = false
+        lastAppliedRuntimeVersion = nil
+        liveActivities.end()
+        return true
+    }
+
+    @discardableResult
+    private func beginBreak(
+        from state: FlowTimerState,
+        modelContext: ModelContext,
+        now: Date
+    ) -> Bool {
+        guard let activeSession else { return false }
+
+        let focusedSeconds = engine.actualFocusDuration(for: state, now: now)
+        let seriesID = activeSession.seriesID ?? activeSession.id
+        let storedSessions: [FlowSession]
+        let storedBreaks: [FlowBreak]
+        do {
+            storedSessions = try sessions(modelContext: modelContext)
+            storedBreaks = try flowBreaks(modelContext: modelContext)
+        } catch {
+            PersistenceIssueCenter.shared.report(error, operation: .dataLoad)
+            return false
+        }
+        let priorSessions = storedSessions
+            .filter { $0.id != activeSession.id && ($0.seriesID ?? $0.id) == seriesID }
+            .sorted {
+                if $0.startedAt != $1.startedAt { return $0.startedAt < $1.startedAt }
+                return $0.id.uuidString < $1.id.uuidString
+            }
+        let breaksBySession = Dictionary(grouping: storedBreaks.filter {
+            $0.seriesID == seriesID && !$0.isDeleted
+        }, by: \.previousSessionID)
+        var periods = priorSessions.enumerated().map { index, session in
+            // Bound rest at the next focus start, even if edited history overlaps it.
+            let nextStart = index + 1 < priorSessions.count
+                ? priorSessions[index + 1].startedAt : activeSession.startedAt
+            let flowBreak = breaksBySession[session.id]?.max { $0.startedAt < $1.startedAt }
+            let restedSeconds = flowBreak.map {
+                max(0, Int(min($0.resolvedEndAt(referenceDate: now), nextStart, now)
+                    .timeIntervalSince($0.startedAt)))
+            } ?? 0
+            return FlowSeriesPolicy.FocusPeriod(
+                focusedSeconds: session.resolvedActualFocusDurationSeconds,
+                restedSeconds: restedSeconds
+            )
+        }
+        periods.append(.init(focusedSeconds: focusedSeconds))
+        let recommendation = seriesPolicy.recommendation(after: periods)
+        let plannedBreakSeconds = recommendation.durationSeconds
+        let usesLongBreak = recommendation.isLong
+        let next = engine.startBreak(
+            state,
+            now: now,
+            plannedBreakDurationSeconds: plannedBreakSeconds,
+            isLongBreak: usesLongBreak
+        )
+        let flowBreak = FlowBreak(
+            seriesID: seriesID,
+            previousSessionID: activeSession.id,
+            startedAt: now,
+            plannedDurationSeconds: plannedBreakSeconds,
+            isLongBreak: usesLongBreak
+        )
+
+        modelContext.insert(flowBreak)
+        guard apply(next, modelContext: modelContext, now: now) else { return false }
+        publishFlowBreakInteraction(.started(isLong: usesLongBreak), at: now)
+        TaskCompletionFeedbackPlayer.shared.playFlow(for: activeSession.id, now: now)
+        return true
+    }
+
+    private func publishFlowBreakInteraction(
+        _ kind: FlowBreakInteraction.Kind,
+        at date: Date
+    ) {
+        nextFlowBreakInteractionSequence &+= 1
+        flowBreakInteraction = FlowBreakInteraction(
+            sequence: nextFlowBreakInteractionSequence,
+            kind: kind,
+            occurredAt: date
+        )
+    }
+
+    private func eligiblePendingBreak(modelContext: ModelContext, at date: Date) throws -> FlowBreak? {
+        try flowBreaks(modelContext: modelContext)
+            .filter { flowBreak in
+                flowBreak.timerStoppedAt != nil && seriesPolicy.canContinueSeries(after: flowBreak, at: date)
+            }
+            .max { $0.startedAt < $1.startedAt }
+    }
+
+    private func openBreak(for sessionID: UUID, modelContext: ModelContext) throws -> FlowBreak? {
+        try modelContext.fetch(FetchDescriptor<FlowBreak>(predicate: #Predicate {
+            $0.previousSessionID == sessionID &&
+                $0.timerStoppedAt == nil &&
+                $0.deletedAt == nil
+        })).max { $0.startedAt < $1.startedAt }
+    }
+
+    private func sessions(modelContext: ModelContext) throws -> [FlowSession] {
+        try modelContext.fetch(FetchDescriptor<FlowSession>())
+    }
+
+    private func flowBreaks(modelContext: ModelContext) throws -> [FlowBreak] {
+        try modelContext.fetch(FetchDescriptor<FlowBreak>())
+    }
+
+    func remainingText(now: Date = .now) -> String {
+        guard let timerState else { return "--:--" }
+        let seconds = engine.remainingSeconds(for: timerState, now: now)
+        if isBreakPhase {
+            return Self.timeText(seconds: seconds, allowsOvertime: true)
+        }
+        return Self.timeText(seconds: seconds, allowsOvertime: timerState.phase == .focusing)
+    }
+
+    func actualFocusSeconds(now: Date = .now) -> Int {
+        guard let timerState else { return 0 }
+        return engine.actualFocusDuration(for: timerState, now: now)
+    }
+
+    func phaseProgress(now: Date = .now) -> Double {
+        guard let timerState else { return 0 }
+
+        let duration = isBreakPhase
+            ? timerState.plannedBreakDurationSeconds
+            : timerState.plannedFocusDurationSeconds
+
+        guard duration > 0 else { return 0 }
+        let remaining = engine.remainingSeconds(for: timerState, now: now)
+
+        if isBreakPhase {
+            return min(max(Double(remaining) / Double(duration), 0), 1)
+        }
+
+        return min(max(1 - (Double(remaining) / Double(duration)), 0), 1)
+    }
+
+    func timerRingSlices(now: Date = .now) -> [FlowTimerRingSlice] {
+        guard let timerState, let activeSession, !isBreakPhase else { return [] }
+        return FlowTimerRingProjection().slices(
+            session: activeSession,
+            plannedSeconds: timerState.plannedFocusDurationSeconds,
+            focusedSeconds: actualFocusSeconds(now: now)
+        )
+    }
+
+    func activeTimerTimelineEndAt(now: Date = .now) -> Date? {
+        guard let timerState else { return nil }
+        return engine.timelineEndAt(for: timerState, now: now)
+    }
+
+    func isFocusOvertime(now: Date = .now) -> Bool {
+        guard let timerState, timerState.phase == .focusing else { return false }
+        return engine.remainingSeconds(for: timerState, now: now) <= 0
+    }
+
+    func clearNotificationBadge() {
+        notifications.clearBadge()
+    }
+
+    @discardableResult
+    private func apply(_ state: FlowTimerState, modelContext: ModelContext, now: Date) -> Bool {
+        guard state != timerState else { return true }
+
+        let previousState = timerState
+        let previousDidApplyProgress = didApplyProgress
+        timerState = state
+        activeSession?.apply(timerState: state, now: now)
+
+        if state.phase == .breakTime || state.phase == .awaitingResult || state.phase == .completed {
+            let focusedSeconds = state.actualFocusDurationSeconds ?? engine.actualFocusDuration(for: state, now: now)
+            closeCurrentSegment(at: now, totalFocusSeconds: focusedSeconds)
+            do {
+                try applyProgressIfNeeded(modelContext: modelContext, now: now)
+            } catch {
+                modelContext.rollback()
+                timerState = previousState
+                didApplyProgress = previousDidApplyProgress
+                PersistenceIssueCenter.shared.report(error, operation: .flowUpdate)
+                return false
+            }
+        }
+
+        guard modelContext.saveReporting(.flowUpdate) else {
+            timerState = previousState
+            didApplyProgress = previousDidApplyProgress
+            return false
+        }
+        replaceNotifications(for: state)
+        lastAppliedRuntimeVersion = activeSession?.runtimeVersion
+        synchronizeLiveActivity(now: now)
+        return true
+    }
+
+    private func adopt(
+        session: FlowSession,
+        timerState: FlowTimerState,
+        now: Date
+    ) {
+        notifications.cancelPendingFlowNotifications()
+        activeSession = session
+        self.timerState = timerState
+        flowBreakInteraction = nil
+        selectedAreaID = session.area?.id
+        selectedTodoID = session.todo?.id
+        selectedMode = timerState.mode
+        intent = session.intent
+        didApplyProgress = timerState.phase == .breakTime ||
+            (timerState.phase == .paused && timerState.phaseBeforePause == .breakTime)
+        isAwaitingBreakMemo = false
+        stateBeforeResultPrompt = nil
+        lastAppliedRuntimeVersion = session.runtimeVersion
+        persistConfiguration()
+
+        if timerState.phase == .focusing || timerState.phase == .breakTime {
+            scheduleNotifications(for: timerState)
+        }
+        synchronizeLiveActivity(now: now)
+    }
+
+    private func clearSynchronizedRuntimeIfNeeded() {
+        guard timerState != nil else { return }
+        guard timerState?.phase != .awaitingResult, !isAwaitingBreakMemo else { return }
+
+        notifications.cancelPendingFlowNotifications()
+        activeSession = nil
+        timerState = nil
+        flowBreakInteraction = nil
+        didApplyProgress = false
+        lastAppliedRuntimeVersion = nil
+        liveActivities.end()
+    }
+
+    private func scheduleNotifications(for state: FlowTimerState) {
+        switch state.phase {
+        case .focusing:
+            notifications.scheduleFocusFinished(
+                mode: state.mode,
+                focusedSeconds: state.plannedFocusDurationSeconds,
+                fireDate: state.plannedEndAt
+            )
+            if let reminderDate = runningTooLongReminderDate(for: state) {
+                notifications.scheduleRunningTooLong(phase: .focus, fireDate: reminderDate)
+            }
+        case .breakTime:
+            notifications.scheduleBreakFinished(fireDate: state.plannedEndAt)
+            if let reminderDate = runningTooLongReminderDate(for: state) {
+                notifications.scheduleRunningTooLong(phase: .breakTime, fireDate: reminderDate)
+            }
+        default:
+            break
+        }
+    }
+
+    private func replaceNotifications(for state: FlowTimerState) {
+        notifications.cancelPendingFlowNotifications()
+        scheduleNotifications(for: state)
+    }
+
+    private func runningTooLongReminderDate(for state: FlowTimerState) -> Date? {
+        let plannedDuration = state.phase == .breakTime
+            ? state.plannedBreakDurationSeconds
+            : state.plannedFocusDurationSeconds
+        guard plannedDuration <= Self.forgottenTimerReminderSeconds else { return nil }
+        let activePhaseStart = state.plannedEndAt.addingTimeInterval(-TimeInterval(plannedDuration))
+        return activePhaseStart.addingTimeInterval(TimeInterval(Self.forgottenTimerReminderSeconds))
+    }
+
+    private func synchronizeDisplayClock() {
+        displayDate = .now
+
+        guard timerState != nil else {
+            displayClock?.cancel()
+            displayClock = nil
+            return
+        }
+
+        guard displayClock == nil else { return }
+
+        displayClock = Timer.publish(every: 1, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] date in
+                self?.displayDate = date
+                self?.refreshLiveActivityTimeBoundary(now: date)
+            }
+    }
+
+    private func applyProgressIfNeeded(modelContext: ModelContext, now: Date) throws {
+        guard !didApplyProgress else { return }
+
+        if let activeSession {
+            try progressReconciler.reconcile(
+                session: activeSession,
+                modelContext: modelContext,
+                now: now
+            )
+        }
+        didApplyProgress = true
+    }
+
+    private func closeCurrentSegment(at date: Date, totalFocusSeconds: Int) {
+        activeSession?.resolvedSegments
+            .last(where: { $0.endedAt == nil })?
+            .close(at: date, totalFocusSeconds: totalFocusSeconds)
+    }
+
+    private func openSegment(
+        area: Area,
+        todo: Todo?,
+        session: FlowSession,
+        modelContext: ModelContext,
+        now: Date,
+        startFocusSeconds: Int
+    ) {
+        let segment = FlowSegment(
+            session: session,
+            area: area,
+            todo: todo,
+            startedAt: now,
+            startFocusSeconds: startFocusSeconds
+        )
+        modelContext.insert(segment)
+        if !session.resolvedSegments.contains(where: { $0.id == segment.id }) {
+            session.resolvedSegments.append(segment)
+        }
+    }
+
+    private func transferCurrentSegment(
+        _ currentSegment: FlowSegment,
+        to area: Area,
+        todo: Todo?,
+        session: FlowSession,
+        modelContext: ModelContext
+    ) {
+        let previousSegment = session.resolvedSegments
+            .filter { $0.id != currentSegment.id && $0.endedAt != nil }
+            .max { $0.startedAt < $1.startedAt }
+
+        if previousSegment?.area?.id == area.id,
+           previousSegment?.todo?.id == todo?.id,
+           let previousSegment {
+            session.resolvedSegments.removeAll { $0.id == currentSegment.id }
+            modelContext.delete(currentSegment)
+            previousSegment.reopen()
+            return
+        }
+
+        currentSegment.area = area
+        currentSegment.todo = todo
+    }
+
+    private func discardShortFlowIfNeeded(
+        _ state: FlowTimerState,
+        modelContext: ModelContext,
+        now: Date
+    ) -> Bool {
+        guard engine.actualFocusDuration(for: state, now: now) < FlowTimerEngine.minimumCreditableFocusDurationSeconds else {
+            return false
+        }
+
+        if let activeSession {
+            modelContext.delete(activeSession)
+        }
+
+        guard modelContext.saveReporting(.flowDelete) else { return true }
+        activeSession = nil
+        timerState = nil
+        didApplyProgress = false
+        isAwaitingBreakMemo = false
+        stateBeforeResultPrompt = nil
+        lastAppliedRuntimeVersion = nil
+        notifications.cancelPendingFlowNotifications()
+        liveActivities.end()
+        return true
+    }
+
+    private func startLiveActivity(now: Date) {
+        guard let content = liveActivityContent(now: now) else {
+            lastPublishedLiveActivityWasOvertime = nil
+            liveActivities.end()
+            return
+        }
+        lastPublishedLiveActivityWasOvertime = content.remainingSeconds < 0
+        liveActivities.start(content: content)
+    }
+
+    private func synchronizeLiveActivity(now: Date) {
+        guard let content = liveActivityContent(now: now) else {
+            lastPublishedLiveActivityWasOvertime = nil
+            liveActivities.end()
+            return
+        }
+        lastPublishedLiveActivityWasOvertime = content.remainingSeconds < 0
+        liveActivities.update(content: content)
+    }
+
+    func refreshLiveActivityTimeBoundary(now: Date = .now) {
+        guard let content = liveActivityContent(now: now) else {
+            lastPublishedLiveActivityWasOvertime = nil
+            return
+        }
+
+        let isOvertime = content.remainingSeconds < 0
+        guard lastPublishedLiveActivityWasOvertime != isOvertime else { return }
+
+        lastPublishedLiveActivityWasOvertime = isOvertime
+        liveActivities.update(content: content)
+    }
+
+    func liveActivityContent(now: Date = .now) -> FlowLiveActivityContent? {
+        guard let state = timerState, let activeSession else { return nil }
+
+        let status: FlowLiveActivityStatus
+        let timerKind: FlowLiveActivityTimerKind
+        switch state.phase {
+        case .focusing, .awaitingExtensionDecision:
+            status = .focus
+            timerKind = .focus
+        case .breakTime:
+            status = .breakTime
+            timerKind = .breakTime
+        case .paused:
+            status = .paused
+            timerKind = state.phaseBeforePause == .breakTime ? .breakTime : .focus
+        case .idle, .configured, .awaitingResult, .completed:
+            return nil
+        }
+
+        let currentSegment = activeSession.resolvedSegments.last(where: { $0.endedAt == nil })
+        let area = currentSegment?.area ?? activeSession.area
+        let todo = currentSegment?.todo ?? activeSession.todo
+        let areaName = area?.name ?? String(localized: "その他")
+        let trimmedTitle = todo?.title.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let duration = timerKind == .breakTime
+            ? state.plannedBreakDurationSeconds
+            : state.plannedFocusDurationSeconds
+        let timerStartedAt = timerKind == .breakTime
+            ? (state.breakStartedAt ?? state.plannedEndAt.addingTimeInterval(-Double(duration)))
+            : state.plannedEndAt.addingTimeInterval(-Double(duration))
+
+        return FlowLiveActivityContent(
+            sessionID: activeSession.id,
+            taskEmoji: area?.symbolName ?? "📝",
+            taskTitle: trimmedTitle.isEmpty ? (TodoDisplay.flowProjectName(for: todo) ?? areaName) : trimmedTitle,
+            areaEmoji: area?.symbolName ?? "📝",
+            areaName: TodoDisplay.flowContextName(for: todo, area: area),
+            areaColorHex: area?.colorHex ?? "#007AFF",
+            modeRawValue: state.mode.rawValue,
+            modeName: state.mode.displayName,
+            status: status,
+            timerKind: timerKind,
+            timerStartedAt: timerStartedAt,
+            plannedEndAt: state.plannedEndAt,
+            remainingSeconds: engine.remainingSeconds(for: state, now: now),
+            progress: phaseProgress(now: now),
+            updatedAt: now
+        )
+    }
+
+    private func persistConfiguration() {
+        defaults.set(uuid: selectedAreaID, forKey: "flow.selectedDirectionID")
+        defaults.set(uuid: selectedTodoID, forKey: "flow.selectedTodoID")
+        defaults.set(selectedMode.rawValue, forKey: "flow.selectedMode")
+        defaults.set(intent, forKey: "flow.lastIntent")
+    }
+
+    nonisolated static func timeText(
+        seconds: Int,
+        allowsOvertime: Bool = false,
+        overtimePrefix: String = "+"
+    ) -> String {
+        if allowsOvertime, seconds < 0 {
+            let overtimeSeconds = abs(seconds)
+            return String(format: "%@%02d:%02d", overtimePrefix, overtimeSeconds / 60, overtimeSeconds % 60)
+        }
+
+        let clampedSeconds = max(0, seconds)
+        return String(format: "%02d:%02d", clampedSeconds / 60, clampedSeconds % 60)
+    }
+}
+
+private enum ActiveFlowPersistenceEvent {
+    static func completedCloudKitImportDate(from notification: Notification) -> Date? {
+        guard let event = notification.userInfo?[
+            NSPersistentCloudKitContainer.eventNotificationUserInfoKey
+        ] as? NSPersistentCloudKitContainer.Event,
+        event.type == .import,
+        let endDate = event.endDate,
+        event.succeeded else {
+            return nil
+        }
+
+        return endDate
+    }
+}
+
+extension Notification.Name {
+    static let flowDidComplete = Notification.Name("com.shigorefu.thruflow.flowDidComplete")
+}
+
+private extension UserDefaults {
+    func uuid(forKey key: String) -> UUID? {
+        guard let value = string(forKey: key) else { return nil }
+        return UUID(uuidString: value)
+    }
+
+    func set(uuid: UUID?, forKey key: String) {
+        set(uuid?.uuidString, forKey: key)
+    }
+
+    func flowMode(forKey key: String) -> FlowMode? {
+        guard let value = string(forKey: key) else { return nil }
+        return FlowMode.persistedMode(rawValue: value)
+    }
+}

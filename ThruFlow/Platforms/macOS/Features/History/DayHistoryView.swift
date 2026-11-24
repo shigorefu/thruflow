@@ -12,10 +12,14 @@ struct DayHistoryView: View {
     @Environment(\.calendar) private var calendar
     @Environment(\.locale) private var locale
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \FlowSession.startedAt, order: .reverse) private var sessions: [FlowSession]
-    @Query(sort: \FlowBreak.startedAt, order: .reverse) private var breaks: [FlowBreak]
-    @Query(sort: \Todo.updatedAt, order: .reverse) private var todos: [Todo]
-    @Query(sort: \Area.sortIndex) private var areas: [Area]
+
+    private let initialDate: Date
+    private let navigationRevision: Int
+    private let isVisible: Bool
+    @State private var startsDataSource = false
+    @State private var dataCache: [MacHistoryCacheEntry] = []
+    @State private var failedRequest: MacHistoryRequest?
+    @State private var reportReveal = 0
 
     @State private var selectedDate: Date
     @State private var selectedMode: DayHistoryMode = .calendar
@@ -46,6 +50,30 @@ struct DayHistoryView: View {
         DatabaseSearchQuery(text: searchText).isActive
     }
 
+    private var periodInterval: DateInterval {
+        selectedRange.interval(containing: selectedDate, calendar: calendar, dayBoundary: dayBoundary)
+    }
+
+    private var request: MacHistoryRequest {
+        let miniCalendar = selectedRange == .month
+            ? nil
+            : HistoryMiniCalendar.displayedInterval(containing: selectedDate, calendar: calendar)
+        return MacHistoryRequest(
+            period: isSearching ? nil : periodInterval,
+            miniCalendar: isSearching ? nil : miniCalendar,
+            calendar: calendar
+        )
+    }
+
+    private var currentData: MacHistoryData? {
+        dataCache.first { $0.request == request }?.data
+    }
+
+    private var sessions: [FlowSession] { currentData?.sessions ?? [] }
+    private var breaks: [FlowBreak] { currentData?.breaks ?? [] }
+    private var todos: [Todo] { currentData?.todos ?? [] }
+    private var areas: [Area] { currentData?.areas ?? [] }
+
     private var globalCalendarSearchItems: [HistoryCalendarItem] {
         searchBuilder.historyCalendarItems(
             query: searchText,
@@ -55,7 +83,15 @@ struct DayHistoryView: View {
         .filter { visibleCalendarKinds.contains($0.kind) }
     }
 
-    init(initialDate: Date = .now, onClose: (() -> Void)? = nil) {
+    init(
+        initialDate: Date = .now,
+        navigationRevision: Int = 0,
+        isVisible: Bool = true,
+        onClose: (() -> Void)? = nil
+    ) {
+        self.initialDate = initialDate
+        self.navigationRevision = navigationRevision
+        self.isVisible = isVisible
         _selectedDate = State(initialValue: Calendar.current.startOfDay(for: initialDate))
         self.onClose = onClose
     }
@@ -69,56 +105,98 @@ struct DayHistoryView: View {
             )
         }
         return builder.build(
-            interval: selectedRange.interval(
-                containing: selectedDate,
-                calendar: calendar,
-                dayBoundary: dayBoundary
-            ),
-            sessions: searchFilteredSessions,
-            todos: searchFilteredTodos
+            interval: periodInterval,
+            sessions: sessions,
+            todos: todos
         )
     }
 
     var body: some View {
         VStack(spacing: 0) {
             modeContent
+                .productContentFade(on: selectedMode)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .navigationTitle(String(localized: "履歴"))
         .toolbar {
-            ToolbarItem(placement: .navigation) {
-                if let onClose {
-                    Button(action: onClose) {
-                        Image(systemName: "chevron.left")
+            if isVisible {
+                ToolbarItem(placement: .navigation) {
+                    if let onClose {
+                        Button(action: onClose) {
+                            Image(systemName: "chevron.left")
+                        }
+                        .help(String(localized: "統計に戻る"))
+                        .accessibilityLabel(String(localized: "統計に戻る"))
                     }
-                    .help(String(localized: "統計に戻る"))
-                    .accessibilityLabel(String(localized: "統計に戻る"))
                 }
-            }
 
-            ToolbarItem(placement: .principal) {
-                modePicker
-                    .fixedSize(horizontal: true, vertical: false)
-            }
+                ToolbarItem(placement: .principal) {
+                    modePicker
+                        .fixedSize(horizontal: true, vertical: false)
+                }
 
-            ToolbarItem(placement: .primaryAction) {
-                HStack(spacing: 8) {
-                    contextualFilterMenu
-                    MacToolbarSearchControl(
-                        text: $searchText,
-                        isPresented: $isSearchPresented
-                    )
-                    Button {
-                        toggleHistoryRecord()
-                    } label: {
-                        Image(systemName: "plus")
+                ToolbarItem(placement: .primaryAction) {
+                    HStack(spacing: 8) {
+                        contextualFilterMenu
+                        MacToolbarSearchControl(
+                            text: $searchText,
+                            isPresented: $isSearchPresented
+                        )
+                        Button {
+                            toggleHistoryRecord()
+                        } label: {
+                            Image(systemName: "plus")
+                        }
+                        .help(String(localized: "記録を追加"))
+                        .accessibilityLabel(String(localized: "記録を追加"))
                     }
-                    .help(String(localized: "記録を追加"))
-                    .accessibilityLabel(String(localized: "記録を追加"))
                 }
             }
         }
-        .inspector(isPresented: $isAddingTaskRecord) {
+        .background {
+            if isVisible && startsDataSource {
+                let requested = request
+                MacHistoryDataSource(request: requested) { result in
+                    guard requested == request else { return }
+                    switch result {
+                    case .success(let data):
+                        let wasUncached = currentData == nil
+                        if wasUncached { reportReveal &+= 1 }
+                        dataCache.removeAll { $0.request == requested }
+                        dataCache.insert(MacHistoryCacheEntry(request: requested, data: data), at: 0)
+                        if dataCache.count > 4 { dataCache.removeLast() }
+                        failedRequest = nil
+                    case .failure(let error):
+                        failedRequest = requested
+                        PersistenceIssueCenter.shared.log(error, operation: .dataLoad)
+                    }
+                }
+                .id(requested)
+            }
+        }
+        .task(id: isVisible) {
+            guard isVisible else {
+                startsDataSource = false
+                return
+            }
+            await Task.yield()
+            guard !Task.isCancelled else { return }
+            startsDataSource = true
+        }
+        .onChange(of: isSearching) { _, isSearching in
+            if !isSearching {
+                dataCache.removeAll { $0.request.period == nil }
+            }
+        }
+        .onChange(of: navigationRevision) { _, _ in
+            selectedDate = calendar.startOfDay(for: initialDate)
+            selectedMode = .calendar
+            selectedRange = .week
+            searchText = ""
+        }
+        .inspector(isPresented: Binding(
+            get: { isVisible && isAddingTaskRecord },
+            set: { if isVisible { isAddingTaskRecord = $0 } }
+        )) {
             HistoryTaskRecordForm(
                 startedAt: historyRecordStart,
                 context: HistoryRecordContext(selectedMode),
@@ -233,28 +311,48 @@ struct DayHistoryView: View {
     @ViewBuilder
     private var modeContent: some View {
         if isSearching {
-            globalSearchContent
+            if currentData != nil {
+                globalSearchContent
+            } else {
+                loadStatus
+            }
         } else {
             switch selectedMode {
             case .calendar:
                 HistoryCalendarView(
                     selectedDate: $selectedDate,
                     range: $selectedRange,
-                    sessions: searchFilteredSessions,
-                    breaks: searchFilteredBreaks,
+                    sessions: sessions,
+                    breaks: breaks,
+                    hasLoaded: currentData != nil,
+                    loadFailed: failedRequest == request,
+                    reportReveal: reportReveal,
                     visibleKinds: $visibleCalendarKinds,
                     sidebarTitle: dateTitle,
                     sidebarHeader: AnyView(historyToolbar),
-                    sidebarSummary: selectedRange == .day
+                    sidebarSummary: selectedRange == .day && currentData != nil
                         ? AnyView(daySidebarSummary)
                         : nil,
                     onAddRecord: presentHistoryRecord
                 )
+                .productContentFade(on: selectedRange)
             case .tasks:
                 aggregateWorkspace { tasksContent }
             case .areas:
                 aggregateWorkspace { areasContent }
             }
+        }
+    }
+
+    @ViewBuilder
+    private var loadStatus: some View {
+        if failedRequest == request {
+            ContentUnavailableView(
+                String(localized: "データを読み込めませんでした。"),
+                systemImage: "exclamationmark.circle"
+            )
+        } else {
+            FeatureLoadingIndicator()
         }
     }
 
@@ -321,8 +419,13 @@ struct DayHistoryView: View {
                     VStack(alignment: .leading, spacing: 18) {
                         historyToolbar
                         aggregatePeriodPicker
-                        summary
-                        content()
+                        if currentData != nil {
+                            summary
+                            content()
+                                .productContentFade(on: reportReveal)
+                        } else {
+                            loadStatus.frame(minHeight: 220)
+                        }
                     }
                     .padding(16)
                 }
@@ -332,9 +435,14 @@ struct DayHistoryView: View {
 
     private func aggregateList<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         ScrollView {
-            content()
-                .frame(maxWidth: 920, alignment: .leading)
-                .padding(16)
+            if currentData != nil {
+                content()
+                    .productContentFade(on: reportReveal)
+                    .frame(maxWidth: 920, alignment: .leading)
+                    .padding(16)
+            } else {
+                loadStatus.frame(minHeight: 220)
+            }
         }
     }
 
@@ -350,9 +458,11 @@ struct DayHistoryView: View {
             Divider()
 
             VStack(alignment: .leading, spacing: 12) {
-                Text(periodSummaryTitle)
-                    .font(.headline)
-                summary
+                if currentData != nil {
+                    Text(periodSummaryTitle)
+                        .font(.headline)
+                    summary
+                }
             }
             .padding(16)
 
@@ -370,7 +480,7 @@ struct DayHistoryView: View {
     }
 
     private var tasksContent: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        LazyVStack(alignment: .leading, spacing: 12) {
             Text(String(localized: "タスク別"))
                 .font(.headline)
 
@@ -404,7 +514,7 @@ struct DayHistoryView: View {
     }
 
     private var areasContent: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        LazyVStack(alignment: .leading, spacing: 12) {
             Text(String(localized: "方向別"))
                 .font(.headline)
 
@@ -490,13 +600,15 @@ struct DayHistoryView: View {
         case .day:
             HistoryMiniCalendar(
                 selectedDate: $selectedDate,
-                indicatorSource: indicatorSource
+                indicatorSource: indicatorSource,
+                historySessions: sessions
             )
         case .week:
             HistoryMiniCalendar(
                 selectedDate: $selectedDate,
                 selectionMode: .week,
-                indicatorSource: indicatorSource
+                indicatorSource: indicatorSource,
+                historySessions: sessions
             )
         case .month:
             HistoryYearMonthPicker(selectedDate: $selectedDate)
@@ -522,8 +634,8 @@ struct DayHistoryView: View {
             guard let date = calendar.date(byAdding: .day, value: offset, to: interval.start) else { return nil }
             let daySnapshot = builder.build(
                 date: date,
-                sessions: searchFilteredSessions,
-                todos: searchFilteredTodos
+                sessions: sessions,
+                todos: todos
             )
             guard !filteredTasks(in: daySnapshot).isEmpty else { return nil }
             return HistoryTaskDaySection(date: date, snapshot: daySnapshot)
@@ -542,48 +654,12 @@ struct DayHistoryView: View {
         snapshot.taskSummaries.filter { visibleTaskTypes.contains($0.areaType) }
     }
 
-    private var searchFilteredTodos: [Todo] {
-        todos.filter(matchesSearch)
-    }
-
-    private var searchFilteredSessions: [FlowSession] {
-        sessions.filter(matchesSearch)
-    }
-
-    private var searchFilteredBreaks: [FlowBreak] {
-        let query = normalizedSearchQuery
-        guard !query.isEmpty else { return breaks }
-        if String(localized: "休憩").localizedCaseInsensitiveContains(query) {
-            return breaks
-        }
-
-        let sessionIDs = Set(searchFilteredSessions.map(\.id))
-        let seriesIDs = Set(searchFilteredSessions.compactMap(\.seriesID))
-        return breaks.filter { flowBreak in
-            sessionIDs.contains(flowBreak.previousSessionID)
-                || flowBreak.nextSessionID.map(sessionIDs.contains) == true
-                || seriesIDs.contains(flowBreak.seriesID)
-        }
-    }
-
-    private var normalizedSearchQuery: String {
-        searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
     private func moveHistoryPeriod(by value: Int) {
         selectedDate = selectedRange.moving(selectedDate, by: value, calendar: calendar)
     }
 
     private func moveHistoryToToday() {
         selectedDate = dayBoundary.day(containing: .now, calendar: calendar)
-    }
-
-    private func matchesSearch(_ todo: Todo) -> Bool {
-        DatabaseSearchQuery(text: searchText).matchesHistory(todo)
-    }
-
-    private func matchesSearch(_ session: FlowSession) -> Bool {
-        DatabaseSearchQuery(text: searchText).matchesHistory(session)
     }
 
     private func openGlobalHistoryItem(_ item: HistoryCalendarItem) {
@@ -686,45 +762,6 @@ struct DayHistoryView: View {
     }
 }
 
-private struct MacHistoryGlobalSearchRow: View {
-    @Environment(\.locale) private var locale
-    let item: HistoryCalendarItem
-
-    var body: some View {
-        HStack(spacing: 12) {
-            Text(item.symbol)
-                .font(.title3)
-                .frame(width: 38, height: 38)
-                .background(
-                    Color(hex: item.colorHex).opacity(0.16),
-                    in: RoundedRectangle(cornerRadius: 8)
-                )
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text(item.title)
-                    .font(.body.weight(.semibold))
-                    .lineLimit(2)
-                Text(item.subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-
-            Spacer(minLength: 8)
-
-            VStack(alignment: .trailing, spacing: 3) {
-                Text(item.startedAt, format: .dateTime.locale(locale).year().month().day())
-                    .font(.caption.weight(.semibold))
-                Text(item.startedAt, format: .dateTime.locale(locale).hour().minute())
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding(.vertical, 8)
-        .contentShape(Rectangle())
-    }
-}
-
 private struct HistoryManualFlowRequest: Identifiable {
     let id = UUID()
     let todo: Todo
@@ -736,441 +773,6 @@ private struct HistoryTaskDaySection: Identifiable {
     let snapshot: DayHistorySnapshot
 
     var id: String { date.ISO8601Format() }
-}
-
-private struct HistorySummaryTile: View {
-    let title: String
-    let value: String
-    let systemImage: String
-
-    var body: some View {
-        HStack(spacing: 9) {
-            Image(systemName: systemImage)
-                .font(.title3)
-                .foregroundStyle(.secondary)
-                .frame(width: 24)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(value)
-                    .font(.callout.weight(.semibold))
-                    .monospacedDigit()
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.75)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(11)
-        .background(Color.secondary.opacity(0.09))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-    }
-}
-
-private struct HistoryAggregateFilterMenu: View {
-    @Binding var visibleTypes: Set<AreaType>
-    let neutralLabel: String
-
-    var body: some View {
-        Menu {
-            filterToggle(neutralLabel, type: .neutral)
-            filterToggle(String(localized: "習慣一覧"), type: .habit)
-            filterToggle(String(localized: "ナイス"), type: .nice)
-        } label: {
-            Image(systemName: "line.3.horizontal.decrease")
-                .frame(width: 24, height: 24)
-        }
-        .menuStyle(.borderlessButton)
-        .fixedSize()
-        .accessibilityLabel(String(localized: "表示内容"))
-    }
-
-    private func filterToggle(_ title: String, type: AreaType) -> some View {
-        Toggle(
-            title,
-            isOn: Binding(
-                get: { visibleTypes.contains(type) },
-                set: { isVisible in
-                    if isVisible {
-                        visibleTypes.insert(type)
-                    } else {
-                        visibleTypes.remove(type)
-                    }
-                }
-            )
-        )
-        .toggleStyle(.checkbox)
-    }
-}
-
-private struct HistoryExpandableTaskRow: View {
-    let task: DayHistoryTaskSummary
-    let flows: [DayHistoryFlow]
-    let isExpanded: Bool
-    let onToggleExpansion: () -> Void
-    let onToggleCheckbox: (() -> Void)?
-    let onEdit: (Todo) -> Void
-    let onEditFlow: (DayHistoryFlow) -> Void
-    let onAddFlow: (Todo) -> Void
-
-    var body: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 10) {
-                HistoryTodoProgressIndicator(
-                    task: task,
-                    onToggleCheckbox: onToggleCheckbox
-                )
-
-                HStack(spacing: 10) {
-                    HStack(spacing: 10) {
-                        Text(task.areaSymbol)
-                            .font(.title3)
-
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(task.title)
-                                .font(.body.weight(.medium))
-                                .strikethrough(task.todo?.isCompleted == true)
-                                .lineLimit(1)
-                            Text(String(localized: "\(task.areaName)・集中\(task.flowCount)回"))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .contentShape(Rectangle())
-                    .onTapGesture(count: 2) {
-                        if let todo = task.todo { onEdit(todo) }
-                    }
-
-                    Spacer(minLength: 8)
-
-                    Text(durationText(task.focusSeconds))
-                        .font(.callout.weight(.semibold).monospacedDigit())
-
-                    if let todo = task.todo {
-                        Button {
-                            onAddFlow(todo)
-                        } label: {
-                            Image(systemName: "plus")
-                                .frame(width: 24, height: 24)
-                        }
-                        .buttonStyle(.plain)
-                        .help(String(localized: "このタスクに集中記録を追加"))
-                        .accessibilityLabel(String(localized: "このタスクに集中記録を追加"))
-                    }
-
-                    Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .rotationEffect(.degrees(isExpanded ? 90 : 0))
-                }
-                .contentShape(Rectangle())
-                .onTapGesture(perform: onToggleExpansion)
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-
-            if isExpanded {
-                Divider().padding(.leading, 54)
-                if flows.isEmpty {
-                    Text(String(localized: "この期間には集中記録がありません"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.leading, 56)
-                        .padding(.vertical, 10)
-                } else {
-                    ForEach(flows) { flow in
-                        HistoryFlowDisclosureRow(flow: flow) {
-                            onEditFlow(flow)
-                        }
-                    }
-                }
-            }
-        }
-        .background(Color.secondary.opacity(0.055))
-        .clipShape(RoundedRectangle(cornerRadius: 7))
-    }
-
-    private func durationText(_ seconds: Int) -> String {
-        let minutes = max(0, seconds) / 60
-        return minutes < 60 ? String(localized: "\(minutes)分") : String(localized: "\(minutes / 60)時間\(minutes % 60)分")
-    }
-}
-
-private struct HistoryTodoProgressIndicator: View {
-    let task: DayHistoryTaskSummary
-    let onToggleCheckbox: (() -> Void)?
-
-    @ViewBuilder
-    var body: some View {
-        switch measurement {
-        case .checkbox:
-            if let onToggleCheckbox {
-                Button(action: onToggleCheckbox) {
-                    checkbox
-                        .frame(width: 34, height: 34)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .frame(width: 34, height: 34)
-                .accessibilityLabel(isCompleted ? String(localized: "未完了に戻す") : String(localized: "完了にする"))
-                .accessibilityValue(progressDescription)
-            } else {
-                checkbox
-                    .frame(width: 34, height: 34)
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityLabel(String(localized: "タスク進捗"))
-                    .accessibilityValue(progressDescription)
-            }
-        case .focusBlocks, .minutes:
-            progressRing
-                .frame(width: 34, height: 34)
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel(String(localized: "タスク進捗"))
-                .accessibilityValue(progressDescription)
-        }
-    }
-
-    private var checkbox: some View {
-        RoundedRectangle(cornerRadius: 5)
-            .strokeBorder(tint, lineWidth: 1.6)
-            .background {
-                RoundedRectangle(cornerRadius: 5)
-                    .fill(isCompleted ? tint : Color.clear)
-            }
-            .overlay {
-                if isCompleted {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(.white)
-                }
-            }
-            .frame(width: 20, height: 20)
-    }
-
-    private var progressRing: some View {
-        ZStack {
-            Circle()
-                .stroke(tint.opacity(0.22), lineWidth: 3)
-            Circle()
-                .trim(from: 0, to: progress)
-                .stroke(tint, style: StrokeStyle(lineWidth: 3, lineCap: .round))
-                .rotationEffect(.degrees(-90))
-
-            if measurement == .minutes {
-                Image(systemName: "timer")
-                    .font(.system(size: 9, weight: .semibold))
-                    .foregroundStyle(tint)
-            } else if isCompleted {
-                Image(systemName: "checkmark")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(tint)
-            }
-        }
-        .frame(width: 22, height: 22)
-    }
-
-    private var measurement: TodoMeasurement {
-        task.todo?.measurement ?? .checkbox
-    }
-
-    private var isCompleted: Bool {
-        !task.todos.isEmpty && task.todos.allSatisfy(\.isCompleted)
-    }
-
-    private var progress: Double {
-        guard !task.todos.isEmpty else { return 0 }
-        switch measurement {
-        case .checkbox:
-            return Double(task.todos.filter(\.isCompleted).count) / Double(task.todos.count)
-        case .focusBlocks:
-            let target = task.todos.reduce(0) { $0 + max(1, $1.plannedAmount ?? 1) }
-            return min(BlockUnit.blocks(forFocusedSeconds: task.focusSeconds) / Double(target), 1)
-        case .minutes:
-            let target = task.todos.reduce(0) { $0 + max(1, $1.plannedAmount ?? 1) }
-            return min(Double(task.focusSeconds) / 60 / Double(target), 1)
-        }
-    }
-
-    private var tint: Color {
-        Color(hex: task.areaColorHex)
-    }
-
-    private var progressDescription: String {
-        if isCompleted { return String(localized: "完了済み") }
-        return "\(Int((progress * 100).rounded()))%"
-    }
-}
-
-private struct HistoryExpandableAreaRow: View {
-    @Environment(\.locale) private var locale
-
-    let area: DayHistoryAreaSummary
-    let tasks: [DayHistoryTaskSummary]
-    let isExpanded: Bool
-    let onToggleExpansion: () -> Void
-    let onToggleCheckbox: (DayHistoryTaskSummary) -> Void
-    let onEditTask: (Todo) -> Void
-    let areaOnlyFlows: [DayHistoryFlow]
-    let onEditFlow: (DayHistoryFlow) -> Void
-    let onAddTask: () -> Void
-
-    var body: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 12) {
-                Text(area.symbol)
-                    .font(.title2)
-                    .frame(width: 34, height: 34)
-                    .background(Color(hex: area.colorHex).opacity(0.14))
-                    .clipShape(RoundedRectangle(cornerRadius: 7))
-
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(area.name)
-                        .font(.body.weight(.medium))
-                    Text(String(localized: "タスク\(area.taskCount)件・集中\(area.flowCount)回"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-
-                Text(durationText(area.focusSeconds))
-                    .font(.callout.weight(.semibold).monospacedDigit())
-
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .rotationEffect(.degrees(isExpanded ? 90 : 0))
-            }
-            .padding(12)
-            .contentShape(Rectangle())
-            .onTapGesture(perform: onToggleExpansion)
-
-            if isExpanded {
-                Divider().padding(.leading, 54)
-                if tasks.isEmpty && areaOnlyFlows.isEmpty {
-                    Text(String(localized: "この期間のタスクはありません"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.leading, 56)
-                        .padding(.vertical, 10)
-                } else {
-                    ForEach(tasks) { task in
-                        HStack(spacing: 10) {
-                            if task.todo != nil {
-                                HistoryTodoProgressIndicator(
-                                    task: task,
-                                    onToggleCheckbox: task.todos.count == 1 ? { onToggleCheckbox(task) } : nil
-                                )
-                            }
-                            Text(task.areaSymbol)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(task.title)
-                                    .strikethrough(task.todo?.isCompleted == true)
-                                    .lineLimit(1)
-                                Text(taskSubtitle(task))
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                            }
-                            .contentShape(Rectangle())
-                            .onTapGesture(count: 2) {
-                                if let todo = task.todo { onEditTask(todo) }
-                            }
-                            Spacer()
-                            Text(durationText(task.focusSeconds))
-                                .font(.caption.monospacedDigit())
-                                .foregroundStyle(.secondary)
-                        }
-                        .padding(.trailing, 12)
-                        .padding(.vertical, 4)
-                    }
-                }
-
-                ForEach(areaOnlyFlows) { flow in
-                    HistoryFlowDisclosureRow(flow: flow) {
-                        onEditFlow(flow)
-                    }
-                }
-
-                Button(action: onAddTask) {
-                    Label(String(localized: "タスクを追加"), systemImage: "plus")
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.leading, 46)
-                        .padding(.vertical, 7)
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(Color.accentColor)
-                .accessibilityLabel(String(localized: "\(area.name)にタスクを追加"))
-            }
-        }
-        .background(Color.secondary.opacity(0.055))
-        .clipShape(RoundedRectangle(cornerRadius: 7))
-    }
-
-    private func durationText(_ seconds: Int) -> String {
-        let minutes = max(0, seconds) / 60
-        return minutes < 60 ? String(localized: "\(minutes)分") : String(localized: "\(minutes / 60)時間\(minutes % 60)分")
-    }
-
-    private func taskSubtitle(_ task: DayHistoryTaskSummary) -> String {
-        let flowCount = String(localized: "集中\(task.flowCount)回")
-        guard let scheduledDate = task.todo?.scheduledDate else { return flowCount }
-        let date = scheduledDate.formatted(
-            .dateTime.locale(locale).month().day().weekday(.abbreviated)
-        )
-        return "\(date)・\(flowCount)"
-    }
-}
-
-private struct HistoryFlowDisclosureRow: View {
-    @Environment(\.locale) private var locale
-
-    let flow: DayHistoryFlow
-    let onEdit: () -> Void
-
-    var body: some View {
-        Button(action: onEdit) {
-            HStack(spacing: 10) {
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(Color(hex: flow.areaColorHex))
-                    .frame(width: 4, height: 26)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(flow.taskTitle)
-                        .font(.callout)
-                        .lineLimit(1)
-                    Text("\(time(flow.startedAt))–\(time(flow.endedAt))")
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-
-                Text(duration(flow.focusSeconds))
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
-
-                Image(systemName: "chevron.right")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.tertiary)
-            }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .padding(.leading, 56)
-        .padding(.trailing, 12)
-        .padding(.vertical, 7)
-        .accessibilityLabel(String(localized: "集中記録を編集"))
-    }
-
-    private func time(_ date: Date) -> String {
-        date.formatted(.dateTime.locale(locale).hour().minute())
-    }
-
-    private func duration(_ seconds: Int) -> String {
-        String(localized: "\(max(0, seconds) / 60)分")
-    }
 }
 
 #Preview {

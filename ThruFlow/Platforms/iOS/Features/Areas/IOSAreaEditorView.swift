@@ -20,6 +20,7 @@ struct IOSAreaEditorView: View {
     @State private var goalUnit: GoalUnit
     @State private var goalSchedule: GoalScheduleKind
     @State private var weeklyTargetCount: Int
+    @State private var minimumRestDays: Int
     @State private var weekdayMask: Int
     @State private var showsEmojiPicker = false
     @State private var saveErrorMessage: String?
@@ -58,6 +59,7 @@ struct IOSAreaEditorView: View {
         _goalUnit = State(initialValue: draft.goalUnit ?? .occurrences)
         _goalSchedule = State(initialValue: draft.goalSchedule ?? .everyDay)
         _weeklyTargetCount = State(initialValue: max(1, draft.weeklyTargetCount ?? 1))
+        _minimumRestDays = State(initialValue: draft.minimumRestDays)
         _weekdayMask = State(initialValue: draft.weekdayMask ?? 0)
         _saveErrorMessage = State(initialValue: nil)
     }
@@ -135,6 +137,7 @@ struct IOSAreaEditorView: View {
                         WeeklyFrequencySlider(value: $weeklyTargetCount)
                             .frame(maxWidth: 260)
                             .padding(.horizontal, 8)
+                        HabitRestDaysPicker(value: $minimumRestDays, validationErrors: validationErrors)
                     }
 
                     if goalSchedule != .everyDay {
@@ -182,9 +185,9 @@ struct IOSAreaEditorView: View {
                 }
             }
 
-            if !draft.trimmedName.isEmpty, !validationErrors.isEmpty {
+            if !draft.trimmedName.isEmpty, !footerValidationErrors.isEmpty {
                 Section {
-                    ForEach(validationErrors, id: \.self) { error in
+                    ForEach(footerValidationErrors, id: \.self) { error in
                         Label(error.localizedDescription, systemImage: "exclamationmark.triangle")
                             .foregroundStyle(.red)
                     }
@@ -209,6 +212,7 @@ struct IOSAreaEditorView: View {
             goalUnit = normalized.goalUnit ?? .occurrences
             goalSchedule = normalized.goalSchedule ?? .everyDay
             weeklyTargetCount = normalized.weeklyTargetCount ?? 1
+            minimumRestDays = normalized.minimumRestDays
             weekdayMask = normalized.weekdayMask ?? 0
         }
         .sheet(isPresented: $showsEmojiPicker) {
@@ -260,7 +264,8 @@ struct IOSAreaEditorView: View {
             goalUnit: goalUnit,
             goalSchedule: goalSchedule,
             weeklyTargetCount: weeklyTargetCount,
-            weekdayMask: weekdayMask
+            weekdayMask: weekdayMask,
+            minimumRestDays: minimumRestDays
         )
     }
 
@@ -270,6 +275,10 @@ struct IOSAreaEditorView: View {
 
     private var validationErrors: [AreaValidationError] {
         editingService.validationErrors(for: draft)
+    }
+
+    private var footerValidationErrors: [AreaValidationError] {
+        validationErrors.filter { !$0.isRestScheduleError }
     }
 
     private var canSave: Bool {
@@ -290,7 +299,8 @@ struct IOSAreaEditorView: View {
             onSaved?(area)
             dismiss()
         } catch AreaEditingError.validation(let errors) {
-            saveErrorMessage = errors.map(\.localizedDescription).joined(separator: "\n")
+            let remaining = errors.filter { !$0.isRestScheduleError }
+            saveErrorMessage = remaining.isEmpty ? nil : remaining.map(\.localizedDescription).joined(separator: "\n")
         } catch {
             saveErrorMessage = String(localized: "記録を保存できませんでした。")
         }
@@ -309,135 +319,5 @@ struct IOSAreaEditorView: View {
         } catch {
             saveErrorMessage = String(localized: "記録を保存できませんでした。")
         }
-    }
-}
-
-private struct IOSEmojiPickerView: View {
-    @Binding var selection: String
-
-    @Environment(\.dismiss) private var dismiss
-    @AppStorage("direction.recent-emojis") private var storedRecents = ""
-
-    @State private var searchText = ""
-    @State private var isSearchPresented = false
-    @State private var customEmoji = ""
-    @State private var customError = false
-
-    private let columns = [GridItem(.adaptive(minimum: 42), spacing: 8)]
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 20) {
-                    if !recents.isEmpty, searchText.isEmpty {
-                        emojiSection(String(localized: "最近"), emojis: recents)
-                    }
-
-                    ForEach(Array(filteredSections.enumerated()), id: \.offset) { _, section in
-                        emojiSection(section.title, emojis: section.emojis)
-                    }
-
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(String(localized: "その他の絵文字"))
-                            .font(.headline)
-                        HStack {
-                            TextField("🙂", text: $customEmoji)
-                                .textInputAutocapitalization(.never)
-                                .font(.title2)
-                            Button(String(localized: "選択")) {
-                                guard let emoji = EmojiValidation.normalizedSingleEmoji(from: customEmoji) else {
-                                    customError = true
-                                    return
-                                }
-                                choose(emoji)
-                            }
-                            .buttonStyle(.borderedProminent)
-                        }
-                        if customError {
-                            Text(String(localized: "絵文字を1つ入力してください"))
-                                .font(.caption)
-                                .foregroundStyle(.red)
-                        }
-                    }
-                }
-                .padding(16)
-            }
-            .iosCenteredNavigationTitle(String(localized: "絵文字"))
-            .iosToolbarSearch(
-                text: $searchText,
-                isPresented: $isSearchPresented,
-                prompt: String(localized: "絵文字を検索")
-            )
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(String(localized: "閉じる")) { dismiss() }
-                }
-            }
-        }
-        .presentationDetents([.medium, .large])
-    }
-
-    private func emojiSection(_ title: String, emojis: [String]) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(title)
-                .font(.headline)
-
-            LazyVGrid(columns: columns, spacing: 8) {
-                ForEach(emojis, id: \.self) { emoji in
-                    Button {
-                        choose(emoji)
-                    } label: {
-                        Text(emoji)
-                            .font(.title2)
-                            .frame(width: 42, height: 42)
-                            .background(
-                                selection == emoji ? Color.accentColor.opacity(0.18) : Color.primary.opacity(0.045),
-                                in: RoundedRectangle(cornerRadius: 9)
-                            )
-                            .overlay {
-                                if selection == emoji {
-                                    RoundedRectangle(cornerRadius: 9)
-                                        .strokeBorder(Color.accentColor, lineWidth: 2)
-                                }
-                            }
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-        }
-    }
-
-    private var recents: [String] {
-        storedRecents.split(separator: "|").map(String.init)
-    }
-
-    private var filteredSections: [(title: String, emojis: [String])] {
-        emojiSections.compactMap { section in
-            guard !searchText.isEmpty else { return section }
-            let query = searchText.lowercased()
-            guard section.title.lowercased().contains(query) else { return nil }
-            return section
-        }
-    }
-
-    private var emojiSections: [(title: String, emojis: [String])] {
-        [
-            (String(localized: "People"), ["😀", "🙂", "🤓", "🧑‍💻", "🧑‍🎨", "🧑‍🏫", "💪", "🧘"]),
-            (String(localized: "Activities"), ["🏃", "🏋️", "⚽️", "🎾", "🎨", "🎵", "🎮", "🏆"]),
-            (String(localized: "Work & Study"), ["💻", "📚", "📝", "📖", "🎓", "🧠", "🔬", "📊"]),
-            (String(localized: "Objects"), ["📱", "⌚️", "💡", "🔧", "📌", "🗂️", "✏️", "🎯"]),
-            (String(localized: "Food"), ["☕️", "🍎", "🥗", "🍜", "🍙", "🥐", "🍵", "🥛"]),
-            (String(localized: "Travel"), ["🚶", "🚲", "🚆", "✈️", "🗺️", "🏠", "🏫", "🏢"]),
-            (String(localized: "Nature"), ["🌱", "🌿", "🌳", "🌊", "🔥", "☀️", "🌙", "⛰️"]),
-            (String(localized: "Symbols"), ["✅", "⭐️", "❤️", "💜", "🔵", "🟢", "⚡️", "♾️"]),
-        ]
-    }
-
-    private func choose(_ emoji: String) {
-        selection = emoji
-        var updated = recents.filter { $0 != emoji }
-        updated.insert(emoji, at: 0)
-        storedRecents = updated.prefix(20).joined(separator: "|")
-        dismiss()
     }
 }

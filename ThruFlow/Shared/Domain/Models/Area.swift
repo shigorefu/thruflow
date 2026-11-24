@@ -168,6 +168,7 @@ final class Direction {
     var goalScheduleRawValue: String?
     var weeklyTargetCount: Int?
     var weekdayMask: Int?
+    var minimumRestDays: Int?
     var focusDurationSeconds: Int?
     var habitPausePeriodsRawValue: String?
     var sortIndex: Int = 0
@@ -196,6 +197,7 @@ final class Direction {
         goalSchedule: GoalScheduleKind? = nil,
         weeklyTargetCount: Int? = nil,
         weekdayMask: Int? = nil,
+        minimumRestDays: Int? = nil,
         focusDurationSeconds: Int? = nil,
         sortIndex: Int = 0,
         createdAt: Date = .now,
@@ -214,6 +216,7 @@ final class Direction {
         self.goalScheduleRawValue = goalSchedule?.rawValue
         self.weeklyTargetCount = weeklyTargetCount
         self.weekdayMask = weekdayMask
+        self.minimumRestDays = minimumRestDays
         self.focusDurationSeconds = focusDurationSeconds
         self.sortIndex = sortIndex
         self.createdAt = createdAt
@@ -291,6 +294,7 @@ final class Direction {
         goalSchedule: GoalScheduleKind? = nil,
         weeklyTargetCount: Int? = nil,
         weekdayMask: Int? = nil,
+        minimumRestDays: Int? = nil,
         now: Date = .now
     ) {
         self.name = name
@@ -303,6 +307,7 @@ final class Direction {
         self.goalSchedule = goalSchedule
         self.weeklyTargetCount = weeklyTargetCount
         self.weekdayMask = weekdayMask
+        self.minimumRestDays = minimumRestDays
         updatedAt = now
     }
 

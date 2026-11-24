@@ -6,17 +6,21 @@
 
 import SwiftData
 import SwiftUI
-import UniformTypeIdentifiers
 
 struct AreaListView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.calendar) private var calendar
     @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.modelContext) private var modelContext
     @AppStorage("directionKanbanColumnOrder") private var areaGroupOrderRaw = AreaGroupOrder.encode(AreaGroupOrder.defaultValue)
 
-    @Query(sort: \Area.sortIndex, order: .forward) private var areas: [Area]
-    @Query(sort: \Project.createdAt) private var projects: [Project]
+    var isVisible = true
 
+    @State private var data: MacAreaListData?
+    @State private var startsDataSource = false
+    @State private var loadFailed = false
+    @State private var reportReveal = 0
+    @State private var hasNormalizedSortIndexes = false
     @State private var isShowingAddSheet = false
     @State private var editingAreaID: UUID?
     @State private var selectedProject: Project?
@@ -26,6 +30,8 @@ struct AreaListView: View {
     @State private var dropTargetID: UUID?
     @State private var draggedGroupType: AreaType?
     @State private var dropTargetGroupType: AreaType?
+
+    private var areas: [Area] { data?.areas ?? [] }
 
     private var visibleAreas: [Area] {
         areas
@@ -42,152 +48,97 @@ struct AreaListView: View {
         AreaGroup.order(from: areaGroupOrderRaw)
     }
 
-    private var areaGridColumns: [GridItem] {
-        [
-            GridItem(
-                .adaptive(minimum: 300),
-                spacing: 14,
-                alignment: .top
-            )
-        ]
-    }
-
     private var editingArea: Area? {
         guard let editingAreaID else { return nil }
         return areas.first { $0.id == editingAreaID }
     }
 
     var body: some View {
-        ScrollView(.vertical) {
-            LazyVGrid(
-                columns: areaGridColumns,
-                alignment: .leading,
-                spacing: 14
-            ) {
-                ForEach(areaGroups) { group in
-                    VStack(alignment: .leading, spacing: 10) {
-                        AreaSectionHeader(group: group)
-                            .contentShape(Rectangle())
-                            .overlay {
-                                if dropTargetGroupType == group.type {
-                                    RoundedRectangle(cornerRadius: 6)
-                                        .strokeBorder(Color.accentColor, lineWidth: 2)
-                                }
-                            }
-                            .onDrag {
-                                draggedGroupType = group.type
-                                return NSItemProvider(
-                                    object: "area-group:\(group.type.rawValue)" as NSString
-                                )
-                            }
-
-                        LazyVStack(spacing: 8) {
-                            if group.areas.isEmpty {
-                                ContentUnavailableView(
-                                    String(localized: "方向はありません"),
-                                    systemImage: ProductSymbol.area,
-                                    description: Text(String(localized: "この列に該当する方向はまだありません。"))
-                                )
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 40)
-                            }
-
-                            ForEach(group.areas) { area in
-                                VStack(alignment: .leading, spacing: 4) {
-                                    HStack(spacing: 6) {
-                                        AreaRow(area: area)
-                                            .contentShape(Rectangle())
-                                            .overlay {
-                                                if dropTargetID == area.id {
-                                                    RoundedRectangle(cornerRadius: 8)
-                                                        .strokeBorder(Color.accentColor, lineWidth: 2)
-                                                }
-                                            }
-                                            .onTapGesture {
-                                                editingAreaID = area.id
-                                            }
-                                            .onDrag {
-                                                draggedAreaID = area.id
-                                                return NSItemProvider(object: area.id.uuidString as NSString)
-                                            }
-                                            .onDrop(
-                                                of: [UTType.text],
-                                                delegate: AreaReorderDropDelegate(
-                                                    targetID: area.id,
-                                                    draggedAreaID: $draggedAreaID,
-                                                    dropTargetID: $dropTargetID,
-                                                    move: moveArea
-                                                )
-                                            )
-                                            .contextMenu {
-                                                if area.isArchived {
-                                                    Button(String(localized: "分野を復元"), systemImage: "arrow.uturn.backward") {
-                                                        updateArchiveState(area, restore: true)
-                                                    }
-                                                } else {
-                                                    Button(String(localized: "アーカイブする"), systemImage: "archivebox", role: .destructive) {
-                                                        updateArchiveState(area, restore: false)
-                                                    }
-                                                }
-                                            }
-
-                                    }
-                                    .background {
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .fill(Color(hex: area.colorHex).opacity(area.isArchived ? 0.04 : 0.08))
-                                    }
-
-                                    projectRows(for: area)
-                                }
-                                .backgroundPreferenceValue(AreaProjectTreeAnchors.self) { anchors in
-                                    treeConnections(for: area, anchors: anchors)
-                                }
-                            }
-                        }
-                        .padding(.bottom, 8)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .topLeading)
-                    .padding(12)
-                    .background(Color.primary.opacity(0.035))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .onDrop(
-                        of: [UTType.text],
-                        delegate: AreaGroupReorderDropDelegate(
-                            targetType: group.type,
-                            draggedGroupType: $draggedGroupType,
-                            dropTargetGroupType: $dropTargetGroupType,
-                            move: moveAreaGroup
-                        )
-                    )
-                }
+        Group {
+            if let data {
+                AreaBoard(
+                    areaGroups: areaGroups,
+                    visibleAreas: visibleAreas,
+                    projectsByArea: data.projectsByArea,
+                    draggedAreaID: $draggedAreaID,
+                    dropTargetID: $dropTargetID,
+                    draggedGroupType: $draggedGroupType,
+                    dropTargetGroupType: $dropTargetGroupType,
+                    moveArea: moveArea,
+                    moveAreaGroup: moveAreaGroup,
+                    onEdit: { editingAreaID = $0.id },
+                    onSelectProject: { selectedProject = $0 },
+                    onSetArchived: updateArchiveState
+                )
+                    .transition(reduceMotion ? .identity : .opacity)
+            } else if loadFailed {
+                ContentUnavailableView(
+                    String(localized: "データを読み込めませんでした。"),
+                    systemImage: "exclamationmark.circle"
+                )
+            } else {
+                FeatureLoadingIndicator()
             }
-            .padding(16)
         }
-        .scrollIndicators(.visible)
-        .animation(.default, value: visibleAreas.map(\.id))
-        .navigationTitle(String(localized: "方向"))
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: reportReveal)
+        .productContentFade(on: showingArchived)
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    isShowingAddSheet = true
-                } label: {
-                    Label(String(localized: "方向を追加"), systemImage: "plus")
+            if isVisible {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        isShowingAddSheet = true
+                    } label: {
+                        Label(String(localized: "方向を追加"), systemImage: "plus")
+                    }
                 }
-            }
 
-            ToolbarItem {
-                Toggle(isOn: $showingArchived) {
-                    Label(String(localized: "アーカイブ"), systemImage: "archivebox")
+                ToolbarItem {
+                    Toggle(isOn: $showingArchived) {
+                        Label(String(localized: "アーカイブ"), systemImage: "archivebox")
+                    }
+                    .toggleStyle(.button)
                 }
-                .toggleStyle(.button)
             }
+        }
+        .background {
+            if isVisible && startsDataSource {
+                MacAreaListDataSource { result in
+                    switch result {
+                    case .success(let newData):
+                        let wasUncached = data == nil
+                        data = newData
+                        loadFailed = false
+                        if wasUncached {
+                            reportReveal &+= 1
+                        }
+                    case .failure(let error):
+                        loadFailed = true
+                        PersistenceIssueCenter.shared.log(error, operation: .dataLoad)
+                    }
+                }
+            }
+        }
+        .task(id: isVisible) {
+            guard isVisible else {
+                startsDataSource = false
+                return
+            }
+            await Task.yield()
+            guard !Task.isCancelled else { return }
+            startsDataSource = true
+        }
+        .task(id: isVisible && data != nil) {
+            guard isVisible, data != nil, !hasNormalizedSortIndexes else { return }
+            await Task.yield()
+            guard !Task.isCancelled else { return }
+            normalizeSortIndexesIfNeeded()
+            hasNormalizedSortIndexes = true
         }
         .alert(String(localized: "記録を保存できませんでした。"), isPresented: Binding(
             get: { lifecycleError != nil }, set: { if !$0 { lifecycleError = nil } }
         )) {
             Button(String(localized: "閉じる"), role: .cancel) { lifecycleError = nil }
         }
-        .onAppear(perform: normalizeSortIndexesIfNeeded)
         .sheet(item: $selectedProject) { project in
             ProjectDetailView(project: project) { todo, project in
                 TodoFormView(
@@ -212,65 +163,6 @@ struct AreaListView: View {
                     .frame(width: 420)
             }
         }
-    }
-
-    private func projectRows(for area: Area) -> some View {
-        let areaProjects = projects.filter { $0.area?.id == area.id }
-        let orderedProjects = areaProjects.filter { !$0.isCompleted } + areaProjects.filter(\.isCompleted)
-        return ForEach(orderedProjects) { project in
-            Button { selectedProject = project } label: {
-                HStack(spacing: 8) {
-                    Text(project.name)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    if project.isCompleted {
-                        Text(String(localized: "プロジェクト完了済み"))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.vertical, 10)
-                .padding(.horizontal, 12)
-                .background {
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color(hex: area.colorHex).opacity(project.isCompleted ? 0.045 : 0.08))
-                }
-                .contentShape(RoundedRectangle(cornerRadius: 8))
-                .anchorPreference(key: AreaProjectTreeAnchors.self, value: .bounds) {
-                    [.project(project.id): $0]
-                }
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(project.isCompleted ? .secondary : .primary)
-            .padding(.leading, 52)
-        }
-    }
-
-    private func treeConnections(
-        for area: Area,
-        anchors: [AreaProjectTreeNode: Anchor<CGRect>]
-    ) -> some View {
-        GeometryReader { geometry in
-            Path { path in
-                guard let areaAnchor = anchors[.area(area.id)] else { return }
-                let parent = geometry[areaAnchor]
-                let children = projects.filter { $0.area?.id == area.id }.compactMap { project in
-                    anchors[.project(project.id)].map { geometry[$0] }
-                }
-                guard let lastY = children.map(\.midY).max() else { return }
-                path.move(to: CGPoint(x: parent.midX, y: parent.maxY))
-                path.addLine(to: CGPoint(x: parent.midX, y: lastY))
-                for child in children {
-                    path.move(to: CGPoint(x: parent.midX, y: child.midY))
-                    path.addLine(to: CGPoint(x: child.minX, y: child.midY))
-                }
-            }
-            .stroke(Color(hex: area.colorHex).opacity(0.38), style: StrokeStyle(lineWidth: 1.25, lineCap: .round))
-        }
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
     }
 
     private func updateArchiveState(_ area: Area, restore: Bool) {
@@ -357,217 +249,6 @@ struct AreaListView: View {
             in: areaGroupOrder
         )
         areaGroupOrderRaw = AreaGroupOrder.encode(reordered)
-    }
-}
-
-private struct AreaReorderDropDelegate: DropDelegate {
-    let targetID: UUID
-    @Binding var draggedAreaID: UUID?
-    @Binding var dropTargetID: UUID?
-    let move: (UUID, UUID) -> Void
-
-    func validateDrop(info: DropInfo) -> Bool {
-        draggedAreaID != nil
-    }
-
-    func dropEntered(info: DropInfo) {
-        guard let draggedAreaID, draggedAreaID != targetID else { return }
-        dropTargetID = targetID
-        withAnimation(.easeInOut(duration: 0.16)) {
-            move(draggedAreaID, targetID)
-        }
-    }
-
-    func dropUpdated(info: DropInfo) -> DropProposal? {
-        DropProposal(operation: .move)
-    }
-
-    func dropExited(info: DropInfo) {
-        if dropTargetID == targetID {
-            dropTargetID = nil
-        }
-    }
-
-    func performDrop(info: DropInfo) -> Bool {
-        draggedAreaID = nil
-        dropTargetID = nil
-        return true
-    }
-}
-
-private struct AreaGroupReorderDropDelegate: DropDelegate {
-    let targetType: AreaType
-    @Binding var draggedGroupType: AreaType?
-    @Binding var dropTargetGroupType: AreaType?
-    let move: (AreaType, AreaType) -> Void
-
-    func validateDrop(info: DropInfo) -> Bool {
-        draggedGroupType != nil
-    }
-
-    func dropEntered(info: DropInfo) {
-        guard let draggedGroupType, draggedGroupType != targetType else { return }
-        dropTargetGroupType = targetType
-        withAnimation(.easeInOut(duration: 0.16)) {
-            move(draggedGroupType, targetType)
-        }
-    }
-
-    func dropUpdated(info: DropInfo) -> DropProposal? {
-        DropProposal(operation: .move)
-    }
-
-    func dropExited(info: DropInfo) {
-        if dropTargetGroupType == targetType {
-            dropTargetGroupType = nil
-        }
-    }
-
-    func performDrop(info: DropInfo) -> Bool {
-        draggedGroupType = nil
-        dropTargetGroupType = nil
-        return true
-    }
-}
-
-private struct AreaRow: View {
-    let area: Area
-
-    var body: some View {
-        HStack(spacing: 12) {
-            Text(area.symbolName)
-                .font(.title2)
-                .frame(width: 36, height: 36)
-                .background(Color(hex: area.colorHex).opacity(0.12))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-                .accessibilityHidden(true)
-                .anchorPreference(key: AreaProjectTreeAnchors.self, value: .bounds) {
-                    [.area(area.id): $0]
-                }
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(area.name)
-                    .font(.headline)
-
-                if let summary {
-                    Text(summary)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            Spacer()
-
-            Image(systemName: area.isArchived ? "archivebox" : "line.3.horizontal")
-                .foregroundStyle(.secondary)
-                .accessibilityLabel(area.isArchived ? String(localized: "アーカイブ済み") : String(localized: "並び替え"))
-        }
-        .padding(.vertical, 8)
-        .padding(.horizontal, 8)
-    }
-
-    private var summary: String? {
-        guard
-            let target = area.goalTarget,
-            let period = area.goalPeriod,
-            let unit = area.goalUnit
-        else {
-            return nil
-        }
-
-        return "\(target) \(unit.displayName.lowercased()) \(period.displayName.lowercased())"
-    }
-
-}
-
-private enum AreaProjectTreeNode: Hashable {
-    case area(UUID)
-    case project(UUID)
-}
-
-private struct AreaProjectTreeAnchors: PreferenceKey {
-    static let defaultValue: [AreaProjectTreeNode: Anchor<CGRect>] = [:]
-
-    static func reduce(
-        value: inout [AreaProjectTreeNode: Anchor<CGRect>],
-        nextValue: () -> [AreaProjectTreeNode: Anchor<CGRect>]
-    ) {
-        value.merge(nextValue(), uniquingKeysWith: { _, new in new })
-    }
-}
-
-private struct AreaGroup: Identifiable {
-    let type: AreaType
-    let areas: [Area]
-
-    var id: String { type.rawValue }
-
-    static func order(from rawValue: String) -> [AreaType] {
-        AreaGroupOrder.decode(rawValue)
-    }
-
-    var title: String {
-        switch type {
-        case .neutral: String(localized: "通常")
-        case .habit: String(localized: "習慣一覧")
-        case .nice: String(localized: "ナイス")
-        }
-    }
-
-    var systemImage: String {
-        switch type {
-        case .neutral: "checklist"
-        case .habit: "repeat"
-        case .nice: "sparkles"
-        }
-    }
-
-    static func groups(for areas: [Area], order: [AreaType]) -> [AreaGroup] {
-        order.map { type in
-            AreaGroup(
-                type: type,
-                areas: areas.filter { $0.type == type }
-            )
-        }
-    }
-}
-
-private struct AreaSectionHeader: View {
-    let group: AreaGroup
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            HStack(spacing: 8) {
-                Image(systemName: group.systemImage)
-                    .font(.caption.weight(.semibold))
-                    .frame(width: 14)
-                    .accessibilityHidden(true)
-
-                Text(group.title)
-                    .font(.caption.weight(.semibold))
-
-                Text("\(group.areas.count)")
-                    .font(.caption2.weight(.medium))
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.secondary.opacity(0.12))
-                    .clipShape(Capsule())
-
-                Spacer(minLength: 0)
-
-                Image(systemName: "line.3.horizontal")
-                    .foregroundStyle(.secondary)
-                    .accessibilityLabel(String(localized: "グループを並び替え"))
-            }
-
-            Text(group.type.description)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(.vertical, 4)
-        .textCase(nil)
     }
 }
 

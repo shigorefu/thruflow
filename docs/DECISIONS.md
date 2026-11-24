@@ -651,7 +651,10 @@ progress, Area, measurement, or date. In the macOS Flow timer's existing inline
 rename field, the same history source supplies up to three suggestions. The
 iPhone Task editor presents its suggestions above the edit form rather than
 inside the form. In either editing surface, a selection renames only the current
-Todo rather than switching Flow context.
+Todo rather than switching Flow context. The Flow memo offers up to three
+suggestions from the same history, excluding the Todo being edited. Selecting
+a suggestion changes the draft title only; the existing memo submission remains
+the sole commit point.
 
 Reason: recurring work should be quick to type without reviving a completed
 Todo or recreating the cross-day identity confusion fixed for Habit history.
@@ -1079,7 +1082,9 @@ separate bucket; Project details group Tasks by UUID. Segment-based attribution,
 filters and total focused time are preserved. The existing top-five-plus-Other
 rule applies above six groups; equal name/duration ties use stable identity.
 This is a read projection and does not add a persisted Project snapshot to Flow.
-Compact Flow dashboard statistics retain their existing Task/Area modes.
+Full Statistics orders the modes Area, Project, Task. It hides Project only
+when the store contains no Projects and falls back to Area if Project was
+selected. Compact Flow dashboard statistics retain their existing Task/Area modes.
 
 Orchestrator, macOS and iOS/Watch agents explicitly agreed before implementation.
 Native presentation: iOS uses a menu for the three grouping modes; Mac uses a
@@ -1332,3 +1337,419 @@ cases and an Area-only destination case. Unsigned macOS and iOS Release builds
 passed, including the embedded Watch app. Mac/Watch and iOS/iPadOS reviewers
 agreed on the shared contract and final source changes. Native interaction
 review was source-only; signed device behavior was not exercised.
+
+
+### 2026-11-13 — Stage destination data after navigation (1.4.2)
+
+Tasks, History, Areas and Statistics show their controls before loading
+uncached content on macOS and iOS. Tasks reveals up to five visible rows with
+a short stagger and leaves other rows to the scroll container. History
+browsing reads the visible range and calendar indicator dates, with global
+search still available. Statistics sends its overview before the complete
+report and displays an exact cached report immediately on return. The native
+navigation and editing state remain platform-owned. Reveal animations follow
+Reduce Motion, and existing Flow timer and connector operations keep their
+separate loading lifecycle.
+
+### 2026-11-13 — Load Statistics cards independently (1.4.2)
+
+Statistics keeps its five cards on Mac and iOS. Wide layouts use one overview
+row and pair distribution with Habit completion. Wide iPad and unfolded iPhone
+Duo also pair Trend with Dots. Narrow layouts stack the cards. A compact Dots
+grid bounds the height of its cells without changing date selection or padding
+rules. Wide iOS places the same period controls in one horizontal row.
+Each card calculation runs independently on the same fetched data and can
+reveal its result without waiting for the others. Cached data may reveal
+immediately. Routine refreshes update already visible cards in place.
+This supersedes the earlier arrangement and overview-first loading sequence.
+
+### 2026-11-13 — Add daily focus and task estimate accuracy to Statistics
+
+On macOS and iOS, the report ends with habit completion followed by task
+estimate accuracy. Wide layouts pair those two cards, the daily focus bar
+chart with distribution, and the existing trend (titled Focus Quality) with
+Dots. The trend retains its existing measures. Each loaded card animates from
+its placeholder height to its natural height unless Reduce Motion is enabled.
+See the domain model for the task-estimate calculation.
+
+### 2026-11-21 — Weekly Habit quotas in completion rates and Task trends (1.4.2)
+
+Weekly-count completion rates retain the best saved due attempts up to the
+configured weekly quota, independently per Area/Project owner and calendar week.
+This supersedes the weekly-denominator rule in the 2026-10-22 statistics entry.
+Six full attempts out of a six-attempt target count as 100%, even with a missed
+seventh attempt. Exact partial fractions, daily deduplication, current-day
+deferral, pause/archive eligibility and selected-range filters remain in force.
+Clipped weeks score selected records only; no off-range progress is credited.
+
+The Task-mode trend skips zero-completion free days only after every relevant
+weekly owner met its quota earlier in that week, using the logical completion
+day (`completedAt`, or legacy `updatedAt`). Other saved Habit obligations and
+unfinished ordinary Tasks veto skipping. Current/comparison series and the fixed-window
+Task average honor those gaps. Focus values and annual buckets keep their
+existing meaning. Enclosing-week context is detached on the model actor.
+No persisted fields or CloudKit schema changes are introduced.
+
+macOS and iOS/iPadOS reviewers agreed on this shared contract and final source
+after correcting late-completion chronology and excluding already completed
+ordinary Tasks from the pending-obligation guard. The focused regression run
+passed 57 checks across Habit completion, Project Habits, period reports,
+presentation updates and smoothing. A separate temporary Mac rendering check
+confirmed the Task line bridges the free day and the weekly rate is 100%.
+The macOS and iOS Release builds passed.
+The iPhone simulator displayed the normal demo trend correctly. The exact
+weekly-quota interaction was covered by shared regressions and the Mac chart
+render; it was not exercised through iPhone/iPad controls. The temporary Mac
+renderer cannot capture the native progress bar, so that image verifies the
+rate text and chart only.
+
+### 2026-11-21 — Minimum rest between weekly Habit completions (1.4.2)
+
+Weekly-count Area and Project Habits may set zero through six full logical rest
+days after completion, independently of each other. Partial or missed attempts
+start no rest. Recovery uses `completedAt`, with legacy `updatedAt` fallback,
+and the configured logical-day boundary across calendar weeks.
+The editor rejects impossible cyclic weekday/rest/weekly-target combinations.
+Movement validates spaced remaining capacity. Completion import or settings
+updates retire only unused current/future occurrences that become ineligible;
+past, worked and history-bearing records survive.
+
+Both client reviewers agreed on one Shared planner/validator and native
+editor wiring. Mac supports the existing weekly movement controls; iOS retains
+its existing presentation. Watch uses the same materializer, while widgets
+consume snapshots. Persistence adds one nullable Area Int and one optional
+Project settings JSON member. The additive Production field was deployed and
+reloaded in CloudKit Console; physical-device exchange remains unverified.
+
+Validation completed on 2026-11-21: the full unit suite passed 589 tests in
+58 suites, excluding the release screenshot fixture. macOS and iOS Release
+builds and the iPhone simulator build passed. The Mac and iPhone simulator
+editors both saved a three-per-week/one-rest-day Habit and retained its values
+after reopening. Copies were reviewed in all five supported locales.
+The full run also exposed pre-existing implicit localization API usage in two
+Statistics cards; these callers now use the existing explicit localized keys.
+The live schema check is recorded in CloudKit; physical-device settings sync
+and native iPad/Watch interaction remain unverified.
+
+### 2026-11-21 — Inline Habit rest-day feedback (1.4.2)
+
+Mac/iOS Area and shared Project editors show the existing rest validation
+messages directly under the rest-day picker, updating live with frequency,
+rest days and weekday selections. Form footers omit those same messages.
+Validation criteria and persistence commands are unchanged.
+
+The counterpart UI reviewer agreed on the Mac, iOS and shared Project wiring.
+The focused test run passed 42 checks in four suites; macOS/iOS Release and
+iOS Simulator builds passed. An isolated Mac editor showed the error immediately
+for four weekly attempts plus one rest day and cleared it after changing to
+three attempts, without Save. iPhone interaction verification was attempted,
+but Device Hub exposed no app accessibility elements and did not deliver
+simulated-screen taps, even after selecting another device and returning.
+The temporary simulator and Mac demo were stopped.
+
+### 2026-11-21 — Disable Save for invalid Habit drafts (1.4.2)
+
+Mac Area and shared Project editors disable Save while current validation fails.
+The Mac Area editor validates the pending localized numeric text before focus
+leaves the field, using the same normalized draft that Save submits. Project
+validation ignores inactive Habit settings. iOS Area already uses live validation
+for Save. Storage errors remain retryable and do not disable Save.
+
+The macOS and iOS reviewers explicitly agreed before and after implementation;
+there are no intentional validation differences. All 42 focused tests passed,
+and macOS/iOS Release builds succeeded. An isolated Mac demo confirmed that
+four weekly attempts plus one rest day immediately disables Save; reducing
+the target to three clears the error and enables Save without submitting.
+iPhone button interaction was not reverified: the preceding Device Hub check
+was blocked by unavailable simulator interaction. Shared Project behavior has
+source review and build coverage, without a new runtime interaction check.
+
+
+### 2026-11-22 — Full-width Mac Statistics analysis rows (1.4.2)
+
+Mac places Daily Focus Time, Distribution, Focus Quality and Dots in that order
+as full-width rows below the overview, retaining the responsive Habit Completion
+and Time Estimate Accuracy pair at the bottom. This supersedes the paired Mac
+analysis rows in the 2026-11-13 arrangement; iOS keeps its existing pairs.
+The report first measures natural row heights at the available width, then gives
+spare viewport height to the loaded daily focus and trend plots. Compact Mac
+plots start at 90 and 80 points respectively; narrow layouts keep their larger
+plot sizes. No row is compressed to force the report into the viewport: longer
+legends, calendar ranges and small windows scroll. Calendar cells, calculations,
+card loading/reveal behavior and supported locales retain their existing rules.
+
+Verification on 2026-11-22: macOS Debug and Release builds and the iOS Release
+build passed; logs are in the local `DerivedData/StatisticsStackQA/` directory.
+An isolated native Mac app at 2560 × 1440 showed all six report rows, a 12-point
+bottom margin and expanded daily focus/trend plots. At 1194 × 800, the top
+content remained readable and native scrolling reached Dots and the bottom
+metric pair. Screenshots are local QA artifacts:
+`DerivedData/StatisticsStackQA/mac-fullscreen.png`, `mac-small-top.png` and
+`mac-small-bottom.png` in the same directory. The independent counterpart source
+and visual reviews agreed, with no findings across all three artifacts: the
+full-screen report fits, the small-window bottom pair is reachable, and content
+is not clipped. No fresh iOS visual check
+was performed for this Mac arrangement; shared plot options retain the previous
+iOS defaults. All-locale layouts, large custom ranges and distribution-detail
+states were not exhaustively checked.
+
+
+### 2026-11-22 — Responsive Mac Statistics analysis pairs (1.4.2)
+
+This supersedes the full-width-only Mac arrangement above. At a report width of
+at least 700 points and an available viewport height of at least 650 points,
+Mac pairs Daily Focus Time with Distribution (42/58 percent of the space after
+the gap), then Focus Quality with Dots (50/50). Smaller viewports stack the four
+cards in that reading order. These decisions use local view geometry, not screen
+or full-screen state. The overview and the bottom metric pair retain their
+existing behavior; the latter uses its own 610-point width breakpoint.
+
+Six stable card wrappers retain identity across resizing. Each row is measured
+at its actual column widths; paired surfaces share the greater natural height.
+Positive spare viewport height grows rows containing loaded daily focus/trend
+plots. Minimum plot sizes, loading/reveal behavior, calendars, calculations and
+iOS defaults remain unchanged. Content that exceeds the viewport scrolls.
+The full-width-only QA above describes the preceding revision.
+
+Verification on 2026-11-22: macOS Debug and Release builds passed; logs are in
+`DerivedData/StatisticsAdaptiveQA/`. Native Mac inspection at 2560 × 1440
+confirmed the paired analysis rows, both bottom metrics and a 12-point bottom
+margin. Leaving full screen for a 1194 × 800 window automatically stacked the
+four analysis cards and exposed vertical scrolling. A later 1805 × 800 window
+also showed paired rows, consistent with geometry-based rather than full-screen
+selection. The independent counterpart source review agreed, with no blocking
+findings. The local `DerivedData/StatisticsAdaptiveQA/mac-stacked.png` screenshot
+shows the stacked report at 1175 × 800; paired layouts were observed in the
+native inspection but have no exported screenshot artifact for this revision.
+
+Concurrent window changes and delayed UI commands limited the interaction
+checks. Nondefault picker-state preservation across resizing, reaching the
+scroll end, empty/year views and exhaustive locale/custom-range/detail layouts
+were not verified for this responsive revision. Earlier revision evidence does
+not establish those checks here. No fresh iOS visual check was performed;
+this revision changes Mac presentation only and preserves the shared defaults.
+
+
+### 2026-11-22 — Compact Mac Distribution width and segmented grouping (1.4.2)
+
+The paired Mac Daily Focus/Distribution row now gives Distribution 42 percent
+of the available width after the gap, capped at 520 points; Daily Focus takes
+the remainder. This supersedes the 42/58 Daily Focus/Distribution ratio above.
+One shared Mac layout helper supplies both measured placement and the chart's
+available width. Stacked cards remain full width, with legend/detail content
+capped at 340 points to keep labels and durations together.
+Mac Distribution now uses the native segmented picker in existing Area, Project,
+Task order. Existing Project availability, selection, detail and chart behavior
+are unchanged. Header layout can place the control below the heading. Existing
+localized labels and iOS presentation are unchanged.
+
+
+### 2026-11-22 — Mac Quality modes and three-column analysis row (1.4.2)
+
+Mac Quality offers Focus, Task, Area and Project. Focus and Task keep the existing
+current-period, previous-period and rolling-average series; Task still means
+completed-Task count, including weekly-rest gaps. Area and Project add only
+current-period focus-time lines per positive group, with every group retained.
+They reuse filtered Flow-segment attribution, stable Area/Project UUIDs,
+existing nil-owner fallbacks, source metadata and exact trend buckets. The
+Domain builder owns these additive value projections. Partial trend updates,
+complete snapshots and cached cards carry the same default-empty series arrays;
+no persisted field, enum raw value or CloudKit schema changes.
+
+Mac uses a separate local Quality-mode enum and the existing Project-availability
+rule. iOS retains its two aggregate modes; Watch and widgets have no affected
+trend-payload consumers. Group legends show all names/colors and focus totals,
+with bucket values on hover, scrolling for dense lists and moving below the
+plot on narrow cards. Area colors use source metadata; Mac Project colors are
+deterministic from identity to distinguish Projects sharing one Area. Grouped
+modes do not fabricate a quality score or per-group comparison/average series.
+Existing localized labels are reused; localization review removed two unused
+stale Statistics keys without adding new labels.
+
+At report widths of at least 1100 points, Mac puts Daily Focus, Distribution and
+Quality in one row, with Quality largest and a 240-point minimum plot, followed
+by Dots. This supersedes the earlier two-pair wide layout. At report widths
+from 700 to below 1100 points with a viewport at least 650 points high, only
+Daily Focus and Distribution share a row; Quality and Dots each occupy the
+full width below it. Smaller viewports stack all four analysis cards. The
+overview, bottom metrics and right-hand calendar retain their existing adaptive
+roles. Geometry and natural content sizes still control placement and scrolling.
+
+Before implementation, the orchestrator and independent macOS and iOS reviewers
+explicitly agreed on this contract and exchanged findings. All three final
+source verdicts agreed, including the medium-width layout refinement, with no
+outstanding findings. The independent localization reviewer approved affected
+copy in Japanese, English, Russian, Simplified Chinese and Traditional Chinese.
+Regression coverage adds pre-collapse group completeness, duplicate-name UUIDs,
+nil fallbacks, deterministic ordering, filter/logical-day and aggregate Task
+count invariants, exact daily/monthly/custom buckets, segmented attribution and
+real-Project partial/snapshot/cache roundtrips.
+
+Verification on 2026-11-22: all 592 unit tests in 59 suites passed after the
+localization cleanup. Final macOS and iOS Release builds passed. Logs are in
+`DerivedData/StatisticsQualityQA/`. Native Mac inspection at 1812 × 800 verified
+all four Quality modes: Task kept a completed-count axis (0–3), Area showed five
+focus-time lines, and Project showed three lines including No Project. The
+right-hand legend and three-card analysis row with Dots below were observed.
+At 2560 × 1440, all report cards fit. Local screenshots:
+`DerivedData/StatisticsQualityQA/mac-area.png` and `mac-area-fullscreen.png` in
+the same directory. Independent Mac visual review is pending. The isolated
+demo was left open at the user's request for review.
+
+Medium/narrow runtime behavior was not freshly verified because concurrent
+user window changes interfered with UI automation; the source agreement covers
+those layouts without claiming runtime parity. No new iOS visual check was
+performed: the new modes are Mac-only and existing iOS defaults are retained.
+Source checks include the platform impact report, final diff inspection and
+`git diff --check`. All-locale layouts and dense/custom-range interactions
+remain outside the completed visual checks. No persisted model or CloudKit
+schema changed.
+
+
+### 2026-11-22 — Full-width Quality and grouped legend hover (1.4.2)
+
+This supersedes the three-card analysis-row placement above. Mac keeps the
+overview first, followed by the responsive Daily Focus/Distribution pair, then
+Quality on its own full-width row. Below Quality, Dots, Habit Completion and
+Time Estimate Accuracy share a row at report widths of at least 1100 points.
+Below that threshold Dots occupies a full-width row and the two metrics retain
+their existing 610-point pairing breakpoint. Daily Focus/Distribution retain
+their 700-point width and 650-point viewport-height pairing requirements and
+the narrow Distribution width cap. Seven stable wrappers preserve identity
+through resizing. Spare viewport height grows only the loaded full-width
+Quality plot; the Daily Focus/Distribution row keeps its natural shared height.
+The separate right-hand date-selection calendar is unchanged.
+
+Focus and Task keep the legacy top inline legend, current/previous/average
+lines, completed-Task counts and weekly-rest behavior. Area and Project keep
+current-period focus lines and their right-hand legend with a narrow-card
+fallback below the plot. Hovering a grouped legend row preserves that series'
+color while all other chart lines and points turn gray. No groups, marks,
+values or totals are filtered. Leaving the active row/container restores every
+color; changing mode or series clears the transient hovered identity. An exit
+from an old row cannot clear a newer row's active identity. Chart-date hover
+and its per-bucket legend values remain independent of this color highlight.
+The interaction is Mac-only presentation state; no Shared model, calculations,
+localization labels or persistence contracts change.
+
+The orchestrator, macOS and iOS reviewers explicitly agreed before edits and
+on the final source for the seven-child layout, responsive thresholds, transient
+hover/reset behavior and unchanged data contract. No source objections remain.
+Empty-content disappearance also clears the transient date/series hover state.
+The earlier 592-test full-suite and macOS/iOS Release results above cover the
+existing data feature; this latest refinement makes no Domain changes.
+
+Verification on 2026-11-22: the corrected Mac Debug and Release builds passed,
+with logs in `DerivedData/StatisticsQualityLayoutQA/debug.log` and `release.log`
+in the same directory. A new isolated demo with a unique bundle identity showed
+Area and Project lines and confirmed the full-screen full-width Quality row
+followed by Dots, Habit Completion and Time Estimate Accuracy in three equal
+columns. Screenshots are `isolated-area-fullscreen.png` and
+`isolated-project-fullscreen.png` in that QA directory.
+
+Grouped legend hover remains runtime-unverified. The available UI automation
+has no hover operation; moving the pointer via click/drag did not reliably
+trigger hover events. Source review confirmed that both line and point marks
+become gray without filtering and that row/container exits, series/mode changes
+and empty-content disappearance reset the state. The older `hover-area.png`
+artifact actually shows Task mode from an ambiguously selected same-bundle app
+and is not hover evidence. Medium/narrow resizing and fresh iOS visual checks
+were not repeated for this Mac-only refinement. Final diff/impact review and
+`git diff --check` passed; no commit was made.
+
+
+### 2026-11-22 — Natural Statistics card heights (1.4.2)
+
+The latest user requirement replaces both Quality-only viewport growth and the
+proposed balanced growth. Mac measures each row at its actual column widths and
+uses the tallest child's natural height, without allocating spare viewport
+height to any card. The report remains top-aligned; unused space below it is
+acceptable. Content may require scrolling, and row content is not compressed.
+Existing row order, responsive breakpoints, seven stable wrappers, chart modes,
+hover behavior and Shared/iOS data contracts remain unchanged. Viewport height
+is used only for the existing responsive pairing decision, not card sizing.
+Final orchestrator, macOS and iOS source reviews agreed. Mac Debug and Release
+builds passed (`DerivedData/StatisticsQualityLayoutQA/compact-debug.log` and
+`compact-release.log` in the same directory). Native isolated full-screen Mac
+inspection at 2560 × 1440 showed natural Daily Focus/Distribution cards of about
+175 points, Area Quality of about 324 points, and the bottom three cards of
+about 196 points, with unused space outside the cards and no overlap. The
+independent macOS reviewer visually agreed with `compact-fullscreen.png` in
+that QA directory. The platform impact report is `compact-platform-review.md`
+in the same directory; `git diff --check` passed. Small-window and iOS runtime
+checks were not repeated for this refinement; Shared data and iOS presentation
+remain unchanged. No commit was made.
+
+
+### 2026-11-22 — One card for Habit Completion and Estimate Accuracy (1.4.2)
+
+Mac and iOS combine Habit Completion above Estimate Accuracy in one card with
+a horizontal divider between the vertically stacked sections. Each section
+retains its existing values, filters, accessible heading, independent async
+slot/reveal and empty state. Sections are shown while loading or when they
+have a value; the divider appears only when both are shown, including partial
+loading, and never remains alone after a missing-result failure. There is no
+combined percentage or new data projection.
+
+The existing shared bottom-card API remains compatible. Habit/Accuracy views
+add a default-off embedded presentation: embedded content omits its standalone
+padding, surface and infinite-height frame; one outer surface owns the combined
+card. Both sections retain natural content heights. On Mac six stable wrappers
+place Dots beside the combined card at report widths of at least 1100 points;
+both top-aligned card surfaces share the taller card's natural row height.
+A default-off combined-card fill option is enabled only for this Mac pair;
+inner async slots remain natural, without stretching chart/calendar content.
+Below that width Dots precedes the combined card, each at its natural height.
+iOS keeps the default natural-height option. Other analysis rows, chart modes,
+hover, localization and data rules are unchanged.
+
+The orchestrator and independent macOS and iOS reviewers explicitly agreed
+before implementation and on the final Shared source, with no source findings.
+Final macOS Release, iOS Release and iPhone Simulator builds passed. Logs are
+`combined-equal-mac-release.log`, `combined-final-ios-release.log` and
+`combined-ios-simulator.log` in `DerivedData/StatisticsUserPreview/`.
+
+Native Mac inspection of the actual database at 2560 × 1440 confirmed identical
+Calendar/combined-card bounds (approximately y=720–1132, height 412 points).
+The combined card showed Habit Completion 34%, the horizontal divider and
+Accuracy 75%, with natural section content. This equal-height result exists
+only in the native inspection image: file capture failed for the remote/off-
+screen window. The existing `combined-current-db-statistics.png` is from the
+preceding unequal layout and is not proof of the final equal-height result.
+No `combined-equal-current-db-statistics.png` artifact was produced.
+
+An iPhone 17 simulator running iOS 27.2 showed the entire combined card after
+scrolling: Habit Completion 100%, divider, Accuracy 100%. Its valid artifact is
+`DerivedData/StatisticsUserPreview/combined-iphone-demo.png`. The task's
+simulator app was terminated and device shut down; the Mac preview was left
+open for user review. iPad, narrow Mac and partial-load/failure-injection runtime
+checks were not performed. The platform report is `combined-platform-review.md`
+in the same QA directory; `git diff --check` passed. No commit was made.
+
+
+### 2026-11-22 — Expand paired Mac Week/Month calendar cells (1.4.2)
+
+When the Mac Calendar card fills its wide paired row, Week and Month grids use
+finite assigned height to grow date rows uniformly after reserving natural
+weekday headings and existing gaps. Natural minimum date-row heights remain
+22/16 points in compact Week/Month and 42/32 points otherwise. Unspecified,
+infinite or smaller proposals retain those minima, without increasing the
+report's natural row height. Card headers and the legend remain intrinsic.
+Year and dense custom-range grids, date interactions, focus/color calculations,
+the separate date-selection sidebar and iOS are unchanged. The change is scoped
+to the existing paired-card fill environment; no screen-global sizing or
+measurement state is introduced. Final macOS Release and isolated viewer Debug
+builds passed: `calendar-cells-final-release.log` and
+`calendar-cells-final-viewer.log` in `DerivedData/StatisticsUserPreview/`.
+The platform report is `calendar-cells-platform-review.md` in the same directory;
+`git diff --check` passed. After the Mac was unlocked, native inspection of the
+actual November 2026 database at 2560 × 1440 confirmed date cells about 64
+points tall instead of the former 16-point compact minimum. Five date rows
+occupied approximately y=774–1103, with the legend below near y=1115 and the
+paired card bottom at y=1132. Headers and metrics remained unchanged (31h11,
+Habit Completion 34%, Accuracy 75%); no clipping or overlap was observed.
+This evidence exists only in the native inspection image, with no filesystem
+screenshot because of the Window Sharing capture limitation. Week, smaller
+windows and day popovers were not freshly exercised; those paths have source
+agreement only. Year and custom-range code remains unchanged. No commit was
+made.
