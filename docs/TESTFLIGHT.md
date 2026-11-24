@@ -42,8 +42,9 @@ The platform matrix is sequential and does not cancel the other platform on fail
    Do not paste the key into an issue, PR, repository file or agent chat.
 3. Prepare an encrypted **private** Fastlane match Git repository using the
    maintainer's existing signing identities. Do not run `match nuke` or revoke
-   working certificates. Bootstrap/renew profiles outside CI, then use read-only
-   credentials in CI. The app's public repository must never store signing assets.
+   working certificates. Bootstrap/renew profiles outside the ordinary upload job (see the
+   [bounded notification-profile exception](#adding-notification-service-distribution-profiles)),
+   then use read-only credentials in CI. The app's public repository must never store signing assets.
 4. Prepare App Store distribution profiles for these bundle IDs:
 
    | Platform | Bundle IDs |
@@ -61,6 +62,28 @@ The platform matrix is sequential and does not cancel the other platform on fail
    read-only match job cannot create missing profiles.
 5. Add the environment settings below. The implementation deliberately fails
    closed until setup and the release-specific CloudKit gate are complete.
+
+### Adding notification service distribution profiles
+
+The maintainer-only **Notification signing profiles** workflow is an explicit
+bootstrap exception to the read-only upload pipeline. Run it manually from
+`main` and approve the existing protected `testflight` environment. It may
+prepare only the iOS and macOS App Store profiles for
+`com.shigorefu.thruflow.notifications`, using the existing approved distribution
+certificate and App Group. It must not create/revoke certificates, export private
+keys, alter app capabilities, or grant the CI deploy key write access.
+
+The bootstrap validates the profile platform, distribution class, team,
+application identifier, certificate and App Group before encrypting it with the
+existing match passphrase. Its short-lived artifact contains only the two
+allowlisted match-encrypted profile files. Download the ciphertext, inspect the
+allowlisted inventory, and add it to the private signing repository using the
+maintainer's existing authenticated access. Never put raw profiles, certificates,
+private keys or passphrases in the public app repository or an artifact.
+
+The ordinary **TestFlight** workflow still uses read-only match storage and cannot
+repair missing profiles. Bootstrap success alone does not establish signed export
+validity, Apple processing, device notification delivery, or CloudKit readiness.
 
 ### Environment secrets
 
@@ -97,9 +120,9 @@ The CloudKit variable is a maintainer attestation, not an automatic schema test.
 Record the inspected environment, fields/indexes, date and evidence in
 [CLOUDKIT.md](CLOUDKIT.md), then set the variable to the final candidate commit.
 Do not set it merely to make the workflow green. Recheck for a new candidate SHA.
-Live Production was inspected for build 14 on 2026-10-29; see the dated evidence
-in CloudKit. Set the variable only for the final reviewed source commit. Signed
-physical-device checks remain separate from this schema attestation.
+See the candidate-specific dated evidence in CloudKit, including the 1.5.0 (16)
+delivery check on 2026-11-25. Set the variable only for the final reviewed source
+commit. Signed physical-device checks remain separate from this schema attestation.
 
 ## Per-candidate procedure
 
@@ -131,6 +154,7 @@ Use Ruby 3.3 and the Bundler version recorded in `Gemfile.lock`:
 bundle install
 bundle exec fastlane lanes
 ruby fastlane/tests/testflight_support_test.rb
+ruby fastlane/tests/notification_profile_bootstrap_test.rb
 python3 -m unittest discover -s scripts/tests -p 'test_*.py'
 ```
 

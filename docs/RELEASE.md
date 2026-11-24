@@ -9,10 +9,34 @@ configurations. Reviewed app source is `8603de2749d6af717d1fe7bccd77784768e8ebb9
 Native images were captured on 2026-11-24; final local validation and inventory
 were recorded on 2026-11-25. CI results below refer to this app source, not a
 subsequent documentation-only commit.
-This remains an unreleased candidate: maintainer selection and approval of the
-app, screenshots and [five-language release copy](releases/1.5.0.md) are required
-before merging into `main`. No merge, release tag, TestFlight upload, App Store
-submission or publication is authorized by this preparation record.
+On 2026-11-25 the maintainer authorized merging the candidate and uploading both
+platform builds to App Store Connect/TestFlight. [PR #40](https://github.com/shigorefu/thruflow/pull/40)
+was squash-merged as `cd71d58bbc44a860753001e87c1d4319ba0fa85e`.
+This is not authorization for App Review submission, public App Store publication,
+or a production release tag. Delivery and processing results are recorded
+separately from preparation checks below. The [five-language release copy](releases/1.5.0.md)
+and screenshot set remain available for App Store preparation.
+
+### Merge validation — 2026-11-25
+
+[Main CI run 45428901958](https://github.com/shigorefu/thruflow/actions/runs/45428901958)
+passed at merged source `cd71d58bbc44a860753001e87c1d4319ba0fa85e`: automation
+checks, macOS unit tests, macOS Release and iOS Release with the embedded Watch
+app. Live Production and Development schema verification was repeated for this
+delivery; see [CloudKit](CLOUDKIT.md#release-150-16-delivery-verification--2026-11-25).
+The two notification-service App Store profiles require the bounded bootstrap
+in [TestFlight delivery](TESTFLIGHT.md#adding-notification-service-distribution-profiles)
+before read-only signing can upload this candidate.
+
+The Sol orchestrator and independent macOS/iOS reviewers agreed on the bounded
+two-profile bootstrap contract and final implementation. The existing upload
+job stays read-only, with no platform presentation or persisted-model changes.
+The bootstrap regression suite passed **13 tests / 126 assertions** under Ruby
+3.3, including real CMS decoding, binary certificate checks, match v2 round trips
+and absence of raw API payload logs. Existing delivery-helper tests (13/35) and
+Python automation tests (14) also passed. Actual profile generation, signed
+export, Apple processing and physical notification delivery require their own
+execution evidence.
 
 ### Local validation
 

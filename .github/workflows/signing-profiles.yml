@@ -1,0 +1,54 @@
+name: Notification signing profiles
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: testflight-upload
+  cancel-in-progress: false
+
+env:
+  FASTLANE_SKIP_UPDATE_CHECK: '1'
+  FASTLANE_HIDE_CHANGELOG: '1'
+  FASTLANE_OPT_OUT_USAGE: '1'
+  BUNDLE_FROZEN: 'true'
+  SPACESHIP_TIMEOUT: '30'
+
+jobs:
+  bootstrap:
+    name: Prepare encrypted notification profiles
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.repository == 'shigorefu/thruflow'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: testflight
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ruby/setup-ruby@b3aaceaef7e0ee231b499e7b5f49c03fc1d32199 # v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true
+      - name: Validate bootstrap offline before exposing secrets
+        run: |
+          bundle exec ruby -c fastlane/lib/notification_profile_bootstrap.rb
+          ruby fastlane/tests/notification_profile_bootstrap_test.rb
+      - name: Create or reuse and encrypt only notification profiles
+        env:
+          APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_CONTENT_BASE64: ${{ secrets.ASC_KEY_CONTENT_BASE64 }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+        run: bundle exec ruby fastlane/lib/notification_profile_bootstrap.rb build/signing-profiles
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: notification-appstore-profiles-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build/signing-profiles/AppStore_com.shigorefu.thruflow.notifications.mobileprovision
+            build/signing-profiles/AppStore_com.shigorefu.thruflow.notifications.provisionprofile
+          if-no-files-found: error
+          retention-days: 1

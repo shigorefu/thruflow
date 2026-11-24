@@ -389,3 +389,35 @@ model field. The minimum-rest-days addition from 1.4.2 is already deployed, as
 recorded above, and was read back again here. Production schema inspection does
 not establish a real Mac/iPhone exchange or notification delivery; exact-build
 physical-device checks remain pending before distribution.
+
+## Release 1.5.0 (16) delivery verification — 2026-11-25
+
+After maintainer sign-in, read the live **Production** and **Development** field
+pages in CloudKit Console for team `BR727PS795`, container
+`iCloud.com.shigorefu.thruflow`: `CD_Direction`, `CD_Todo`, `CD_Project`,
+`CD_FlowSession`, `CD_FlowSegment` and `CD_FlowBreak`. The existing fields, types
+and single-field indexes match between both environments. In particular:
+
+- Direction: `CD_minimumRestDays INT(64)`, no index.
+- Project: `CD_habitSettingsRawValue STRING`, no index.
+- Todo: `CD_habitOwnerKeyRawValue STRING`, no index; `CD_project STRING`
+  Queryable/Searchable/Sortable; `CD_scheduledTimeMinutes` and
+  `CD_reminderEnabled INT(64)`, plus `CD_scheduledTimeUpdatedAt DATE/TIME`,
+  all Queryable/Sortable.
+- FlowSession: `CD_recordingDeviceID STRING`, no index; runtime revision,
+  runtime mutation ID, phase, timestamps and Task/Area relationships retain
+  their existing indexes.
+- FlowSegment: start/end focus counters and session/Task/Area relationships
+  retain their existing types and indexes. FlowBreak retains duration,
+  start/end anchors, series/session links and existing indexes.
+
+Evidence is the live Console field tables at
+`/dashboard/database/teams/BR727PS795/containers/iCloud.com.shigorefu.thruflow/`
+`environments/{PRODUCTION,DEVELOPMENT}/types/{recordType}/fields`, read back
+after selecting each environment/type. No fields, indexes, permissions or user
+records were changed or deployed. The merged app source from PR #40 and the
+subsequent signing-bootstrap tooling have no further persisted-model changes.
+The protected delivery SHA can be set to the final reviewed candidate carrying
+this verification record. Signed Mac/iPhone exchange and actual APNs/NSE delivery
+remain separate physical-device checks; this schema inspection does not prove
+either.
