@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require "minitest/autorun"
 require "bundler/setup"
+require "minitest/autorun"
 require "tmpdir"
 require "yaml"
 require_relative "../lib/notification_profile_bootstrap"

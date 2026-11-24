@@ -35,7 +35,7 @@ jobs:
       - name: Validate bootstrap offline before exposing secrets
         run: |
           bundle exec ruby -c fastlane/lib/notification_profile_bootstrap.rb
-          ruby fastlane/tests/notification_profile_bootstrap_test.rb
+          bundle exec ruby fastlane/tests/notification_profile_bootstrap_test.rb
       - name: Create or reuse and encrypt only notification profiles
         env:
           APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}

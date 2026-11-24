@@ -88,15 +88,20 @@ jobs:
       - uses: ruby/setup-ruby@b3aaceaef7e0ee231b499e7b5f49c03fc1d32199 # v1
         with:
           ruby-version: '3.3'
+          bundler-cache: true
       - name: Validate TestFlight tooling without signing secrets
         run: |
-          ruby -c fastlane/Fastfile
-          ruby fastlane/tests/testflight_support_test.rb
+          bundle exec ruby -c fastlane/Fastfile
+          bundle exec ruby fastlane/tests/testflight_support_test.rb
+          bundle exec ruby fastlane/tests/notification_profile_bootstrap_test.rb
 
       - name: Show toolchain
         run: |
           xcodebuild -version
           swift --version
+
+      - name: Prepare Apple Metal toolchain
+        run: bash scripts/prepare_apple_toolchain.sh
 
       - name: Test macOS domain and app logic
         env:
