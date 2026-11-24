@@ -58,6 +58,9 @@ jobs:
           bundle exec ruby -c fastlane/Fastfile
           bundle exec ruby fastlane/tests/testflight_support_test.rb
           bundle exec ruby fastlane/tests/notification_profile_bootstrap_test.rb
+      - name: Prepare Apple Metal toolchain
+        run: bash scripts/prepare_apple_toolchain.sh
+
       - name: Test macOS domain and app logic
         env:
           THRUFLOW_DISABLE_CLOUDKIT: '1'
@@ -121,6 +124,9 @@ jobs:
                   output.write('github.com ' + key + '\n')
           os.chmod(path, 0o600)
           PYTHON
+      - name: Prepare Apple Metal toolchain
+        run: bash scripts/prepare_apple_toolchain.sh
+
       - name: Archive, validate and upload
         env:
           RELEASE_PLATFORM: ${{ matrix.platform }}

@@ -158,6 +158,14 @@ bundle exec ruby fastlane/tests/notification_profile_bootstrap_test.rb
 python3 -m unittest discover -s scripts/tests -p 'test_*.py'
 ```
 
+Before native tests or archives, CI and TestFlight call
+[`prepare_apple_toolchain.sh`](../scripts/prepare_apple_toolchain.sh) using the
+pinned `DEVELOPER_DIR`. The helper executes the Metal compiler, installs Apple's
+Metal Toolchain component only if that probe fails, then verifies the compiler
+again. A failed installation or final probe stops the job before signing.
+Hosted component mount failures can persist after installation and remain visible
+as failures; source review alone cannot establish that a hosted machine is ready.
+
 Minitest is a pinned test-only bundle dependency. Load the resolved bundle
 before Minitest and run both helper suites through `bundle exec`; loading a
 host-provided Minitest first can activate incompatible default gems before

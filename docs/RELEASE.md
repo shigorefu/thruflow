@@ -67,6 +67,23 @@ and all release gates remain unchanged. A fresh workflow run from the merged
 correction is required; rerunning the old source would repeat the dependency
 failure.
 
+### Hosted Metal compiler readiness — 2026-11-25
+
+[Main CI run 45441591964](https://github.com/shigorefu/thruflow/actions/runs/45441591964)
+failed before unit tests could start because the hosted machine could not remount
+the downloadable Metal Toolchain (`kDAReturnBusy`); compilation reported that the
+Metal compiler was unavailable and requested `xcodebuild -downloadComponent
+MetalToolchain`. The application source was unchanged from the successful PR CI.
+
+CI and both TestFlight job types now call a shared compiler preparation helper
+before native tests/archives. It probes the real compiler, downloads the Apple
+component only when needed and requires a successful final probe. Errors remain
+fatal; the shader, application code, test selections and signing gates are
+unchanged. Four isolated command-stub regressions cover an existing compiler,
+a successful installation and failed installation/final probe. No component was
+installed on the maintainer's Mac for these tests. The corresponding hosted run
+still provides the actual readiness evidence.
+
 ### Local validation
 
 - The final complete macOS suite passed **615 tests in 61 suites**, including
