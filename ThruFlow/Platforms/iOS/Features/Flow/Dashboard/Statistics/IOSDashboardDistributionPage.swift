@@ -8,6 +8,7 @@ struct IOSDashboardDistributionPage: View {
 
     var body: some View {
         let rows = distributionRows(in: snapshot)
+        let scale = DashboardDistributionBarScale(focusSeconds: rows.map(\.focusSeconds))
         VStack(spacing: 12) {
             Picker(String(localized: "集計単位"), selection: $distributionMode) {
                 ForEach(IOSDashboardDistributionMode.allCases) { mode in
@@ -34,13 +35,13 @@ struct IOSDashboardDistributionPage: View {
                                 .monospacedDigit()
                         }
                         DashboardDistributionBar(
-                            fraction: snapshot.focusShare(for: row.focusSeconds),
+                            fraction: scale.fraction(for: row.focusSeconds),
                             color: Color(hex: row.colorHex)
                         )
                     }
                 }
                 if !rows.isEmpty {
-                    DashboardDistributionScale(total: focusText(snapshot.totalFocusSeconds))
+                    DashboardDistributionScale(maximum: focusText(scale.maximumFocusSeconds))
                 }
             }
             .productContentFade(on: distributionMode)
@@ -60,9 +61,10 @@ struct IOSDashboardDistributionPage: View {
     ) -> some View {
         ZStack {
             Circle()
-                .stroke(Color.primary.opacity(0.08), lineWidth: 12)
+                .strokeBorder(Color.primary.opacity(0.08), lineWidth: 12)
             ForEach(distributionSlices(rows: rows, snapshot: snapshot)) { slice in
                 Circle()
+                    .inset(by: 6)
                     .trim(from: slice.start, to: slice.end)
                     .stroke(
                         Color(hex: slice.colorHex),

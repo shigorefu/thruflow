@@ -107,8 +107,11 @@ private struct IOSDashboardStatisticsBars: View {
     var body: some View {
         GeometryReader { proxy in
             let maximum = max(days.map(\.focusSeconds).max() ?? 0, 1)
+            let spacing: CGFloat = 7
+            let cellWidth = max(0, (proxy.size.width - spacing * CGFloat(max(0, days.count - 1))) / CGFloat(max(1, days.count)))
+            let barWidth = min(cellWidth, min(26, cellWidth * 0.55))
 
-            HStack(alignment: .bottom, spacing: 7) {
+            HStack(alignment: .bottom, spacing: spacing) {
                 ForEach(days) { day in
                     let minimumHeight: CGFloat = day.focusSeconds > 0 ? 4 : 2
                     let availableHeight = max(proxy.size.height - 23, 0)
@@ -121,17 +124,18 @@ private struct IOSDashboardStatisticsBars: View {
                         Spacer(minLength: 0)
                         Capsule()
                             .fill(Color(hex: day.colorHex))
-                            .frame(width: 7, height: barHeight)
+                            .frame(width: barWidth, height: barHeight)
                         Text(day.date.formatted(.dateTime.day()))
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                             .monospacedDigit()
                     }
-                    .frame(maxWidth: .infinity)
+                    .frame(width: cellWidth)
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel(dayAccessibilityLabel(day))
                 }
             }
+            .frame(width: proxy.size.width, height: proxy.size.height)
         }
     }
 

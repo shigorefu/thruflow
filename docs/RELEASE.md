@@ -26,8 +26,8 @@ satisfy this distribution gate. No signing assets are stored in this repository.
 
 Checks completed on the final source candidate:
 
-- The 613 ordinary macOS unit tests passed; the separate five-language screenshot
-  fixture also passed (614 tests total). Tests used isolated storage and disabled
+- The final complete macOS suite passed 615 tests in 61 suites, including the
+  five-language screenshot fixture. Tests used isolated storage and disabled
   CloudKit. Logs are in ignored `DerivedData/Release150QA/`.
 - Both unsigned Release builds passed, including embedded Watch. The notification
   service extension's privacy manifest is present in both built products.
@@ -39,6 +39,14 @@ Checks completed on the final source candidate:
   preference leaves iCloud and connectors unchanged. See
   [Notifications](NOTIFICATIONS.md#per-device-server-preference).
 
+Flow dashboard follow-up: both client reviewers agreed on left-anchored duration
+bars scaled to the longest row, centered wider seven-day bars, and bounded
+larger achievement rings. Daily donut shares and completion calculations remain
+unchanged. The final Mac and iOS Release builds passed after these edits; the
+complete test run above includes the new normalization regression. Mac runtime
+inspection confirmed all three slides and the server switch in isolated demo
+mode. Mobile size-class checks and the final screenshot review are in progress.
+
 The privacy policy and app/extension manifests were updated for notification
 installation IDs, device tokens and schedule metadata. App Store privacy answers
 and the public policy page still need to be updated before distribution. These
@@ -47,7 +55,8 @@ source edits do not establish that the external disclosures were published.
 Open gates:
 
 - Finish and review screenshots and copy, then obtain maintainer approval before
-  merging into `main`. Native capture is incomplete while the Mac is locked.
+  merging into `main`. Native capture is in progress; image counts alone do not
+  establish completed visual review.
 - Prepare and inspect extension distribution profiles and signed exports.
 - Complete the signed-device notification and cross-device checks recorded in
   [Notifications](NOTIFICATIONS.md) and [CloudKit](CLOUDKIT.md), or retain their

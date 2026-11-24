@@ -8,8 +8,12 @@ struct DashboardStatisticsBars: View {
     var body: some View {
         GeometryReader { proxy in
             let maximum = max(days.map(\.focusSeconds).max() ?? 0, 1)
+            let spacing: CGFloat = 7
+            let cellWidth = max(0, proxy.size.width - spacing * CGFloat(max(days.count - 1, 0)))
+                / CGFloat(max(days.count, 1))
+            let barWidth = min(26, cellWidth * 0.55)
 
-            HStack(alignment: .bottom, spacing: 7) {
+            HStack(alignment: .bottom, spacing: spacing) {
                 ForEach(days) { day in
                     let minimumHeight: CGFloat = day.focusSeconds > 0 ? 4 : 2
                     let availableHeight = max(proxy.size.height - 23, 0)
@@ -20,16 +24,18 @@ struct DashboardStatisticsBars: View {
                         Spacer(minLength: 0)
                         Capsule()
                             .fill(Color(hex: day.colorHex))
-                            .frame(width: 7, height: barHeight)
+                            .frame(width: barWidth, height: barHeight)
                         Text(dayLabel(day.date))
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                             .monospacedDigit()
                     }
+                    .frame(width: cellWidth)
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel(dayAccessibilityLabel(day))
                 }
             }
+            .frame(width: proxy.size.width, height: proxy.size.height)
         }
     }
 

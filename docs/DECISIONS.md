@@ -804,6 +804,10 @@ records retain their existing classification without a destructive backfill.
 
 ### 2026-09-19 — Cumulative Flow distribution bars (1.3.1)
 
+The bar width and cumulative placement rule below is superseded by
+[the 2026-11-24 compact statistics decision](#2026-11-24--compact-flow-statistics-readability-150).
+The unchanged donut proportions, duration labels and recorded data remain valid.
+
 On macOS and iOS, compact Flow Statistics bars stack from right to left across
 rows sorted by focused duration. Width remains each Task/Area's share of the
 entire daily focus total, including entries beyond the four visible rows.
@@ -1767,3 +1771,34 @@ The implementation/logic orchestrator and both client reviewers agreed before
 implementation and after resolving their findings. [Notifications](NOTIFICATIONS.md)
 owns the API, operational/privacy boundaries, actual verification and outstanding
 signed-device delivery checks. No persisted model change was introduced.
+
+### 2026-11-24 — Compact Flow Statistics readability (1.5.0)
+
+The latest user requirement replaces the compact Mac/iOS distribution bars'
+full-day denominator and cumulative placement. Rows retain their existing
+duration-descending order and use a common left-hand zero edge. The longest Task or
+Area duration in the selected mode fills the available bar width; all remaining
+rows scale against that same maximum and extend rightward without cumulative
+offsets: 60/30/15 minutes produce full/half/quarter-width bars. The scale labels
+zero on the left and that maximum duration on the right. The shared presentation
+owner is `DashboardDistributionBarScale`; both native clients use it for the visible
+rows and their scale. The donut continues to represent shares of the full daily
+focus total, and row labels retain actual recorded durations.
+
+The seven-day trend uses seven equal-width day cells spanning the proposed plot
+width, with a thicker capsule centered in each cell. Height calculations, dates
+and comparisons are unchanged. Achievement uses a 160-point outer ring with a
+16-point stroke, a larger percentage and callout rows with closer spacing.
+Distribution rings retain their 108-point Mac and 112-point iOS outer diameters.
+Tracks use inset borders and arcs inset by half their line width before trimming
+and stroking, keeping every ring within its declared bounds without added padding.
+Native scrolling and card constraints remain;
+completion criteria, Task/Habit counts, timers and persistence are unchanged.
+Watch and widget consumers do not use these compact presentation components.
+
+The orchestrator and independent macOS and iOS reviewers agreed before edits
+and on the final Shared and native source. Regression assertions distinguish
+50/25-minute bars of 1/0.5 from unchanged daily shares of 2/3 and 1/3, and cover
+empty, zero and negative presentation inputs. Builds, test execution and native
+layout inspection remain separate verification steps; source agreement alone
+does not establish those results.

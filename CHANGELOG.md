@@ -10,6 +10,8 @@ Proposed localized App Store notes are in [the release draft](docs/releases/1.5.
 
 - Redesign Statistics with daily focus time, Task estimate accuracy, responsive
   analysis cards and improved Mac chart controls.
+- Make Flow's compact statistics easier to read with longest-relative time bars,
+  centered seven-day bars and a larger completion summary.
 - Improve screen transitions and independent loading of report sections.
 - Support rest days between weekly Habit completions and calculate completion
   against weekly goals while preserving recorded history.

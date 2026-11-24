@@ -65,6 +65,16 @@ then Edit and Move when available, with Delete in its own final group. Task and
 Habit headings navigate to their corresponding Tasks groups. On mobile, the
 player places its dial beside the controls, including expanded Duo.
 
+The compact Statistics carousel ranks Task/Area time rows by recorded duration.
+The longest row fills the common left-to-right bar width; other rows use that
+same maximum as their denominator, and the scale labels that maximum duration
+on the right and zero at the shared left edge. Row durations remain actual
+recorded time. The donut retains each row's share of the full daily total.
+The seven-day trend centers thicker bars in seven equal-width day cells across
+the plot. Completion uses a larger ring and percentage with larger row text and
+closer spacing; totals and completion criteria are unchanged. Both native cards
+retain their existing scrolling and available-size constraints.
+
 Selecting an Area explicitly creates an unnamed Task for today. Selecting a Task
 with a Project shows Area/Project context. Earlier focus ring colors remain when
 context changes; pauses add no colored time. The planned-end setting applies to
@@ -225,8 +235,9 @@ fade in and animate to their content height individually when data is ready, inc
 change. An exact cached result can begin its reveal immediately. Background
 refreshes update displayed values in place. Reveal animations follow Reduce
 Motion and leave the controls interactive.
-In the compact Flow Statistics card, time-allocation bars share a right-hand
-zero edge and a scale based on today's total focused time.
+In the compact Flow Statistics card, time-allocation bars share a left-hand
+zero edge and extend rightward on a scale based on the longest Task/Area duration
+in the current mode.
 
 ## Onboarding and companion surfaces
 

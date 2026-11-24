@@ -70,10 +70,25 @@ struct FlowDashboardTests {
         #expect(abs(snapshot.paletteWeights[1] - (1.0 / 3.0)) < 0.0001)
         #expect(snapshot.areaSummaries.map(\.name) == ["執筆", "読書"])
         #expect(snapshot.areaSummaries.map(\.focusSeconds) == [50 * 60, 25 * 60])
+        let barScale = DashboardDistributionBarScale(focusSeconds: snapshot.areaSummaries.map(\.focusSeconds))
+        #expect(barScale.maximumFocusSeconds == 50 * 60)
+        #expect(barScale.fraction(for: 50 * 60) == 1)
+        #expect(barScale.fraction(for: 25 * 60) == 0.5)
+        // Donut proportions still refer to the full recorded 75 minutes.
         #expect(abs(snapshot.focusShare(for: 50 * 60) - (2.0 / 3.0)) < 0.0001)
         #expect(abs(snapshot.focusShare(for: 25 * 60) - (1.0 / 3.0)) < 0.0001)
         #expect(abs(snapshot.segments[0].startFraction - 0.25) < 0.0001)
         #expect(abs(snapshot.segments[1].startFraction - 0.75) < 0.0001)
+    }
+
+    @Test func dashboardDistributionBarScaleKeepsEmptyDurationsAtZero() {
+        for durations in [[], [0, 0], [-60, 0]] {
+            let scale = DashboardDistributionBarScale(focusSeconds: durations)
+            #expect(scale.maximumFocusSeconds == 0)
+            #expect(scale.fraction(for: 0) == 0)
+        }
+        let scale = DashboardDistributionBarScale(focusSeconds: [3_000, 1_500])
+        #expect(scale.fraction(for: -60) == 0)
     }
 
     @Test func dashboardKeepsEarlyMorningFlowInPreviousLogicalDay() {

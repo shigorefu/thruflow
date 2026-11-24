@@ -78,6 +78,7 @@ struct FlowDashboardStatisticsPanel: View {
 
     private func statisticsDistributionPage(snapshot: FlowDashboardSnapshot) -> some View {
         let rows = distributionRows(snapshot: snapshot)
+        let scale = DashboardDistributionBarScale(focusSeconds: rows.map(\.focusSeconds))
         return VStack(spacing: 12) {
             Picker(String(localized: "集計単位"), selection: $distributionMode) {
                 ForEach(DashboardDistributionMode.allCases) { mode in
@@ -104,13 +105,13 @@ struct FlowDashboardStatisticsPanel: View {
                                 .monospacedDigit()
                         }
                         DashboardDistributionBar(
-                            fraction: snapshot.focusShare(for: row.focusSeconds),
+                            fraction: scale.fraction(for: row.focusSeconds),
                             color: Color(hex: row.colorHex)
                         )
                     }
                 }
                 if !rows.isEmpty {
-                    DashboardDistributionScale(total: focusText(snapshot.totalFocusSeconds))
+                    DashboardDistributionScale(maximum: focusText(scale.maximumFocusSeconds))
                 }
             }
             .productContentFade(on: distributionMode)
@@ -127,9 +128,10 @@ struct FlowDashboardStatisticsPanel: View {
     private func statisticsDonut(snapshot: FlowDashboardSnapshot, rows: [DashboardDistributionRow]) -> some View {
         ZStack {
             Circle()
-                .stroke(Color.primary.opacity(0.08), lineWidth: 12)
+                .strokeBorder(Color.primary.opacity(0.08), lineWidth: 12)
             ForEach(distributionSlices(snapshot: snapshot, rows: rows)) { slice in
                 Circle()
+                    .inset(by: 6)
                     .trim(from: slice.start, to: slice.end)
                     .stroke(Color(hex: slice.colorHex), style: StrokeStyle(lineWidth: 12, lineCap: .butt))
                     .rotationEffect(.degrees(-90))
@@ -181,19 +183,20 @@ struct FlowDashboardStatisticsPanel: View {
         let completed = required.filter(\.isCompleted).count
         let ratio = required.isEmpty ? 0 : Double(completed) / Double(required.count)
 
-        return VStack(spacing: 16) {
+        return VStack(spacing: 10) {
             ZStack {
                 Circle()
-                    .stroke(Color.primary.opacity(0.08), lineWidth: 12)
+                    .strokeBorder(Color.primary.opacity(0.08), lineWidth: 16)
                 Circle()
+                    .inset(by: 8)
                     .trim(from: 0, to: ratio)
-                    .stroke(Color.accentColor, style: StrokeStyle(lineWidth: 12, lineCap: .round))
+                    .stroke(Color.accentColor, style: StrokeStyle(lineWidth: 16, lineCap: .round))
                     .rotationEffect(.degrees(-90))
                 Text(ratio, format: .percent.precision(.fractionLength(0)))
-                    .font(.title3.bold())
+                    .font(.largeTitle.bold())
                     .monospacedDigit()
             }
-            .frame(width: 112, height: 112)
+            .frame(width: 160, height: 160)
 
             achievementRow(String(localized: "タスク"), completed: standard.filter(\.isCompleted).count, total: standard.count)
             achievementRow(String(localized: "習慣一覧"), completed: habits.filter(\.isCompleted).count, total: habits.count)
@@ -202,7 +205,7 @@ struct FlowDashboardStatisticsPanel: View {
             }
 
             Text(String(localized: "今日の達成 \(completed) / \(required.count)"))
-                .font(.caption.weight(.medium))
+                .font(.callout.weight(.medium))
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
         }
@@ -279,10 +282,10 @@ struct FlowDashboardStatisticsPanel: View {
     private func achievementRow(_ title: String, completed: Int, total: Int) -> some View {
         HStack {
             Text(title)
-                .font(.caption)
+                .font(.callout)
             Spacer()
             Text("\(completed) / \(total)")
-                .font(.caption.weight(.semibold))
+                .font(.callout.weight(.semibold))
                 .monospacedDigit()
         }
     }

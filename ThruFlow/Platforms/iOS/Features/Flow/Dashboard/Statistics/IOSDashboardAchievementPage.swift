@@ -12,22 +12,23 @@ struct IOSDashboardAchievementPage: View {
         let completed = required.filter(\.isCompleted).count
         let ratio = required.isEmpty ? 0 : Double(completed) / Double(required.count)
 
-        VStack(spacing: 14) {
+        VStack(spacing: 10) {
             ZStack {
                 Circle()
-                    .stroke(Color.primary.opacity(0.08), lineWidth: 12)
+                    .strokeBorder(Color.primary.opacity(0.08), lineWidth: 16)
                 Circle()
+                    .inset(by: 8)
                     .trim(from: 0, to: ratio)
                     .stroke(
                         Color.accentColor,
-                        style: StrokeStyle(lineWidth: 12, lineCap: .round)
+                        style: StrokeStyle(lineWidth: 16, lineCap: .round)
                     )
                     .rotationEffect(.degrees(-90))
                 Text(ratio, format: .percent.precision(.fractionLength(0)))
-                    .font(.title3.bold())
+                    .font(.largeTitle.bold())
                     .monospacedDigit()
             }
-            .frame(width: 112, height: 112)
+            .frame(width: 160, height: 160)
 
             achievementRow(
                 String(localized: "タスク"),
@@ -48,7 +49,7 @@ struct IOSDashboardAchievementPage: View {
             }
 
             Text(String(localized: "今日の達成 \(completed) / \(required.count)"))
-                .font(.caption.weight(.medium))
+                .font(.callout.weight(.medium))
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
         }
@@ -58,10 +59,10 @@ struct IOSDashboardAchievementPage: View {
     private func achievementRow(_ title: String, completed: Int, total: Int) -> some View {
         HStack {
             Text(title)
-                .font(.caption)
+                .font(.callout)
             Spacer()
             Text("\(completed) / \(total)")
-                .font(.caption.weight(.semibold))
+                .font(.callout.weight(.semibold))
                 .monospacedDigit()
         }
     }
