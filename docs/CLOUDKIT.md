@@ -350,3 +350,42 @@ indexes. Project Habit settings and the Todo Habit owner key remain STRING
 without indexes. The release changes no persisted models or entitlements.
 No schema deployment or data edits were made. Signed device exchange for this
 build remains pending.
+
+### Minimum Habit rest days — 2026-11-21
+
+Inspected the live Development and Production schemas for team `BR727PS795`,
+container `iCloud.com.shigorefu.thruflow`. Both initially lacked the new Area
+property. Added `CD_Direction.CD_minimumRestDays` as nullable `INT64` in
+Development using CloudKit Console. Deployment diff contained exactly that
+one additive field, zero index changes and zero security-role changes.
+Deployed it to Production and reloaded Production's `CD_Direction` fields;
+`CD_minimumRestDays INT(64)` is present with no indexes. The app reads this
+configuration from fetched Areas and does not query or sort on this field.
+
+The reviewed full schema also retains
+`CD_Project.CD_habitSettingsRawValue STRING`; Project rest days use an optional
+member of that existing JSON value, requiring no extra CloudKit field.
+No user records were edited. Signed Mac/iPhone exchange of this new setting
+has not yet been verified.
+
+
+## Release 1.5.0 (16) preparation — 2026-11-24
+
+Read the live `iCloud.com.shigorefu.thruflow` **Production** field pages for
+`CD_Direction`, `CD_Todo`, `CD_Project`, `CD_FlowSession`, `CD_FlowSegment` and
+`CD_FlowBreak` in CloudKit Console. Direction's `CD_minimumRestDays INT(64)`
+is present without indexes; Project's `CD_habitSettingsRawValue STRING` and
+Todo's `CD_habitOwnerKeyRawValue STRING` are present without indexes. Todo's
+`CD_scheduledTimeMinutes` and `CD_reminderEnabled` remain INT(64), and
+`CD_scheduledTimeUpdatedAt` remains DATE/TIME, all Queryable/Sortable.
+Task/Project and Flow relationships, runtime revision/mutation, timestamps and
+focus counters are present with the existing indexes. Session's recording
+device ID remains STRING without indexes. No fields, indexes, permissions or
+user records were changed during this inspection.
+
+Notification transport and its per-device switch use local preferences,
+Keychain and the separate server queue; they introduce no SwiftData/CloudKit
+model field. The minimum-rest-days addition from 1.4.2 is already deployed, as
+recorded above, and was read back again here. Production schema inspection does
+not establish a real Mac/iPhone exchange or notification delivery; exact-build
+physical-device checks remain pending before distribution.

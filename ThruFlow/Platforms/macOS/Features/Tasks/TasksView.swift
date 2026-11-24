@@ -9,14 +9,20 @@ import SwiftUI
 
 struct TasksView: View {
     @Environment(\.calendar) private var calendar
-    @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.locale) private var locale
+    @Environment(\.appDayBoundary) private var dayBoundary
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var activeFlowStore: ActiveFlowStore
 
-    @Query(sort: \Area.name, order: .forward) private var areas: [Area]
-    @Query(sort: \Todo.sortIndex, order: .forward) private var todos: [Todo]
-    @Query(sort: \Project.createdAt) private var projects: [Project]
+    let initialFilter: TaskCalendarFilter
+    var filterRevision = 0
+    var isVisible = true
+    private let onFirstRows: () -> Bool
+
+    @State private var data: MacTasksData?
+    @State private var startsDataSource = false
+    @State private var rowRevealDeadline: ContinuousClock.Instant?
+    @State private var loadFailed = false
 
     @State private var editingTodo: Todo?
     @State private var newTodoTitle = ""
@@ -42,8 +48,26 @@ struct TasksView: View {
     @State private var calendarDayRevision = 0
     @AppStorage("today.groupOrder") private var groupOrderRaw = TasksTodoGroup.defaultOrderRaw
 
-    init(initialFilter: TaskCalendarFilter = .all) {
+    init(
+        initialFilter: TaskCalendarFilter = .all,
+        filterRevision: Int = 0,
+        isVisible: Bool = true,
+        onFirstRows: @escaping () -> Bool = { true }
+    ) {
+        self.initialFilter = initialFilter
+        self.filterRevision = filterRevision
+        self.isVisible = isVisible
+        self.onFirstRows = onFirstRows
         _taskFilter = State(initialValue: initialFilter)
+    }
+
+    private var areas: [Area] { data?.areas ?? [] }
+    private var todos: [Todo] { data?.todos ?? [] }
+    private var projects: [Project] { data?.projects ?? [] }
+
+    private var revealsRows: Bool {
+        guard isVisible, let rowRevealDeadline else { return false }
+        return ContinuousClock.now < rowRevealDeadline
     }
 
     private var calendarBuilder: TaskCalendarBuilder { TaskCalendarBuilder(calendar: calendar) }
@@ -86,58 +110,58 @@ struct TasksView: View {
     }
 
     var body: some View {
-        let snapshot = TaskCalendarSnapshot(
-            todos: todos,
-            calendar: calendar,
-            dayBoundary: dayBoundary
-        )
-
-        content(snapshot: snapshot)
-    }
-
-    private func content(snapshot: TaskCalendarSnapshot) -> some View {
+        let snapshot = data?.snapshot
         VStack(spacing: 0) {
             if isSearching {
-                globalSearchContent
+                if snapshot != nil {
+                    TasksSearchResults(
+                        searchText: searchText,
+                        searchSections: searchSections,
+                        row: draggableTodoRow
+                    )
+                } else {
+                    loadStatus
+                }
             } else {
                 tasksWorkspace(snapshot: snapshot)
             }
         }
-        .navigationTitle(String(localized: "タスク"))
         .toolbar {
-            ToolbarItem(placement: .principal) {
-                taskFilterPicker
-                    .fixedSize(horizontal: true, vertical: false)
-            }
+            if isVisible {
+                ToolbarItem(placement: .principal) {
+                    taskFilterPicker
+                        .fixedSize(horizontal: true, vertical: false)
+                }
 
-            ToolbarItem(placement: .primaryAction) {
-                HStack(spacing: 10) {
-                    backlogToolbarButton(
-                        String(localized: "やり残し"),
-                        count: snapshot.backlog.overdue.count,
-                        mode: .overdue
-                    )
+                ToolbarItem(placement: .primaryAction) {
+                    HStack(spacing: 10) {
+                        backlogToolbarButton(
+                            String(localized: "やり残し"),
+                            count: snapshot?.backlog.overdue.count,
+                            mode: .overdue
+                        )
 
-                    Rectangle()
-                        .fill(Color.secondary.opacity(0.3))
-                        .frame(width: 1, height: 16)
+                        Rectangle()
+                            .fill(Color.secondary.opacity(0.3))
+                            .frame(width: 1, height: 16)
 
-                    backlogToolbarButton(
-                        String(localized: "日付なし"),
-                        count: snapshot.backlog.unscheduled.count,
-                        mode: .unscheduled
+                        backlogToolbarButton(
+                            String(localized: "日付なし"),
+                            count: snapshot?.backlog.unscheduled.count,
+                            mode: .unscheduled
+                        )
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .fixedSize(horizontal: true, vertical: true)
+                }
+
+                ToolbarItem(placement: .primaryAction) {
+                    MacToolbarSearchControl(
+                        text: $searchText,
+                        isPresented: $isSearchPresented
                     )
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .fixedSize(horizontal: true, vertical: true)
-            }
-
-            ToolbarItem(placement: .primaryAction) {
-                MacToolbarSearchControl(
-                    text: $searchText,
-                    isPresented: $isSearchPresented
-                )
             }
         }
         .safeAreaInset(edge: .bottom) {
@@ -154,6 +178,8 @@ struct TasksView: View {
                 hashtags: $newTodoHashtags,
                 areas: visibleAreas,
                 validationMessage: newTodoError,
+                suggestionTodos: todos,
+                allowsSubmission: snapshot != nil,
                 onSubmit: createInlineTodo
             )
         }
@@ -161,8 +187,22 @@ struct TasksView: View {
             TodoFormView(mode: .edit(todo))
         }
         .inspector(isPresented: backlogInspectorIsPresented) {
-            backlogInspector(snapshot: snapshot)
-                .inspectorColumnWidth(min: 300, ideal: 340, max: 420)
+            Group {
+                if let snapshot {
+                    TasksBacklogInspector(
+                        backlogInspectorTitle: backlogInspectorTitle,
+                        backlogInspectorSystemImage: backlogInspectorSystemImage,
+                        inspectorTodos: backlogInspectorTodos(in: snapshot),
+                        onMoveAllToToday: moveTodosToToday,
+                        onMoveToToday: { _ = moveTodo($0, to: .now) },
+                        onClose: { backlogInspectorMode = nil },
+                        row: draggableTodoRow
+                    )
+                } else {
+                    loadStatus
+                }
+            }
+            .inspectorColumnWidth(min: 300, ideal: 340, max: 420)
         }
         .alert(String(localized: "移動できません"), isPresented: moveErrorIsPresented) {
             Button(String(localized: "OK"), role: .cancel) {
@@ -171,16 +211,48 @@ struct TasksView: View {
         } message: {
             Text(moveError ?? "")
         }
-        .task {
-            guard !hasPerformedInitialMaterialization else { return }
-            alignInitialSelectionWithCurrentAppDay()
-            selectComposerDate(selectedDate)
+        .background {
+            if isVisible && startsDataSource {
+                MacTasksDataSource(dayRevision: calendarDayRevision) { result in
+                    switch result {
+                    case .success(let newData):
+                        if data == nil, isVisible, !newData.snapshot.activeTodos.isEmpty, onFirstRows() {
+                            rowRevealDeadline = ContinuousClock.now.advanced(by: .milliseconds(350))
+                        }
+                        data = newData
+                        loadFailed = false
+                    case .failure(let error):
+                        loadFailed = true
+                        PersistenceIssueCenter.shared.log(error, operation: .dataLoad)
+                    }
+                }
+            }
+        }
+        .onChange(of: isVisible) { _, visible in
+            if !visible {
+                startsDataSource = false
+                rowRevealDeadline = nil
+            }
+        }
+        .task(id: isVisible) {
+            guard isVisible else { return }
+            if !hasPerformedInitialMaterialization {
+                alignInitialSelectionWithCurrentAppDay()
+                selectComposerDate(selectedDate)
+            }
             await Task.yield()
+            guard !Task.isCancelled else { return }
+            startsDataSource = true
+        }
+        .task(id: isVisible && snapshot != nil) {
+            guard isVisible, snapshot != nil, !hasPerformedInitialMaterialization else { return }
+            await Task.yield()
+            guard !Task.isCancelled else { return }
             ensureRequiredTodosForVisibleDates(reconcilesDuplicates: true)
             hasPerformedInitialMaterialization = true
         }
-        .task(id: requiredTodoMaterializationID) {
-            guard hasPerformedInitialMaterialization else { return }
+        .task(id: isVisible ? requiredTodoMaterializationID : nil) {
+            guard isVisible, hasPerformedInitialMaterialization else { return }
             do {
                 try await Task.sleep(for: .milliseconds(180))
             } catch {
@@ -189,19 +261,38 @@ struct TasksView: View {
             guard !Task.isCancelled else { return }
             ensureRequiredTodosForVisibleDates(reconcilesDuplicates: false)
         }
+        .onChange(of: filterRevision) { _, _ in
+            taskFilter = initialFilter
+        }
         .onChange(of: calendarRange) { _, _ in
+            rowRevealDeadline = nil
             anchorDate = selectedDate
         }
         .onChange(of: selectedDate) { _, newDate in
+            rowRevealDeadline = nil
             selectComposerDate(newDate)
         }
+        .onChange(of: taskFilter) { _, _ in rowRevealDeadline = nil }
+        .onChange(of: isSearching) { _, _ in rowRevealDeadline = nil }
         .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) { _ in
-            calendarDayRevision += 1
+            if isVisible { calendarDayRevision += 1 }
         }
         .onTapGesture {
 #if os(macOS)
             MacOSFocusController.dismissCurrentEditor()
 #endif
+        }
+    }
+
+    @ViewBuilder
+    private var loadStatus: some View {
+        if loadFailed {
+            ContentUnavailableView(
+                String(localized: "データを読み込めませんでした。"),
+                systemImage: "exclamationmark.circle"
+            )
+        } else {
+            FeatureLoadingIndicator()
         }
     }
 
@@ -217,78 +308,24 @@ struct TasksView: View {
         .accessibilityValue(taskFilter.displayName)
     }
 
-    @ViewBuilder
-    private func tasksWorkspace(snapshot: TaskCalendarSnapshot) -> some View {
-        GeometryReader { geometry in
-            HStack(spacing: 0) {
+    private func tasksWorkspace(snapshot: TaskCalendarSnapshot?) -> some View {
+        TasksCalendarWorkspace(
+            title: taskPeriodTitle,
+            snapshot: snapshot,
+            taskFilter: taskFilter,
+            calendarRange: $calendarRange,
+            selectedDate: selectedDateBinding,
+            onPrevious: { moveTaskPeriod(by: -1) },
+            onToday: moveToToday,
+            onNext: { moveTaskPeriod(by: 1) },
+            onDropPayload: moveTaskPayload
+        ) {
+            if let snapshot {
                 boardContent(snapshot: snapshot)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                Divider()
-
-                VStack(spacing: 0) {
-                    MacCalendarNavigationHeader(
-                        title: taskPeriodTitle,
-                        onPrevious: { moveTaskPeriod(by: -1) },
-                        onToday: moveToToday,
-                        onNext: { moveTaskPeriod(by: 1) }
-                    ) {
-                        taskRangePicker
-                    }
-
-                    Divider()
-
-                    ScrollView {
-                    taskPeriodPicker(snapshot: snapshot)
-                        .padding(16)
-                    }
-
-                    Spacer(minLength: 0)
-                }
-                .frame(
-                    width: MacCalendarSidebarLayout.width(
-                        for: taskPeriodTitle,
-                        in: geometry.size.width,
-                        preferredFraction: 0.29,
-                        minimum: 300
-                    )
-                )
-                .background(Color.secondary.opacity(0.035))
+                    .productContentFade(on: calendarRange)
+            } else {
+                loadStatus
             }
-        }
-    }
-
-    private var taskRangePicker: some View {
-        Picker(String(localized: "表示範囲"), selection: $calendarRange) {
-            ForEach(TaskCalendarRange.allCases) { option in
-                Text(option.displayName).tag(option)
-            }
-        }
-        .pickerStyle(.segmented)
-        .labelsHidden()
-        .accessibilityLabel(String(localized: "表示範囲"))
-    }
-
-    @ViewBuilder
-    private func taskPeriodPicker(snapshot: TaskCalendarSnapshot) -> some View {
-        switch calendarRange {
-        case .oneDay:
-            HistoryMiniCalendar(
-                selectedDate: selectedDateBinding,
-                indicatorSource: .tasks(taskFilter),
-                taskSnapshot: snapshot,
-                onDropPayload: moveTaskPayload
-            )
-        case .sevenDays:
-            HistoryMiniCalendar(
-                selectedDate: selectedDateBinding,
-                selectionMode: .week,
-                indicatorSource: .tasks(taskFilter),
-                taskSnapshot: snapshot,
-                onDropPayload: moveTaskPayload
-            )
-        case .month:
-            HistoryYearMonthPicker(selectedDate: selectedDateBinding)
         }
     }
 
@@ -307,7 +344,18 @@ struct TasksView: View {
     private func boardContent(snapshot: TaskCalendarSnapshot) -> some View {
         switch calendarRange {
         case .oneDay:
-            oneDayList(snapshot: snapshot)
+            TasksDayList(
+                selectedDate: selectedDate,
+                selectedTodos: selectedDateTodos(in: snapshot),
+                overdueTodos: visibleOverdueTodos(in: snapshot),
+                groupOrder: groupOrder,
+                revealsRows: revealsRows,
+                rowRevealDeadline: rowRevealDeadline,
+                onMoveAllToToday: moveTodosToToday,
+                onMoveTodos: moveTodos,
+                onMoveGroups: moveGroups,
+                row: draggableTodoRow
+            )
         case .sevenDays:
             TaskMultiDayBoard(
                 dates: visibleDates,
@@ -316,6 +364,8 @@ struct TasksView: View {
                 filter: taskFilter,
                 searchQuery: taskSearchQuery,
                 columnWidth: 238,
+                revealsRows: revealsRows,
+                rowRevealDeadline: rowRevealDeadline,
                 onSelectDate: selectDate,
                 onToggle: toggleTodo,
                 onEdit: { editingTodo = $0 },
@@ -339,101 +389,11 @@ struct TasksView: View {
         }
     }
 
-    private func oneDayList(snapshot: TaskCalendarSnapshot) -> some View {
-        let selectedTodos = selectedDateTodos(in: snapshot)
-        let selectedGroups = TasksTodoGroup.groups(for: selectedTodos, order: groupOrder)
-        let overdueTodos = visibleOverdueTodos(in: snapshot)
-        let showsOverdueSection = calendar.isDateInToday(selectedDate) && !overdueTodos.isEmpty
-
-        return List {
-            if showsOverdueSection {
-                Section {
-                    ForEach(overdueTodos) { todo in
-                        draggableTodoRow(todo)
-                    }
-                } header: {
-                    TasksOverdueHeader(
-                        count: overdueTodos.count,
-                        onMoveAllToToday: { moveTodosToToday(overdueTodos) }
-                    )
-                }
-                .listSectionSeparator(.hidden)
-            }
-
-            if selectedGroups.isEmpty {
-                if !showsOverdueSection {
-                    EmptyRow(text: String(localized: "この日のタスクはありません。"))
-                        .listRowSeparator(.hidden)
-                }
-            } else {
-                ForEach(selectedGroups) { group in
-                    Section {
-                        ForEach(group.todos) { todo in
-                            draggableTodoRow(todo)
-                        }
-                        .onMove { source, destination in
-                            moveTodos(
-                                in: group.type,
-                                from: source,
-                                to: destination,
-                                selectedTodos: selectedTodos
-                            )
-                        }
-                    } header: {
-                        TasksSectionHeader(group: group)
-                    }
-                    .listSectionSeparator(.hidden)
-                }
-                .onMove { source, destination in
-                    moveGroups(
-                        from: source,
-                        to: destination,
-                        selectedGroups: selectedGroups
-                    )
-                }
-            }
-        }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
-    }
-
-    @ViewBuilder
-    private var globalSearchContent: some View {
-        if searchSections.isEmpty {
-            ContentUnavailableView.search(text: searchText)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else {
-            List {
-                ForEach(searchSections) { section in
-                    Section {
-                        ForEach(section.todos) { todo in
-                            draggableTodoRow(todo)
-                        }
-                    } header: {
-                        searchSectionTitle(section)
-                    }
-                    .listSectionSeparator(.hidden)
-                }
-            }
-            .listStyle(.plain)
-            .scrollContentBackground(.hidden)
-        }
-    }
-
-    @ViewBuilder
-    private func searchSectionTitle(_ section: DatabaseTaskSearchSection) -> some View {
-        if let date = section.date {
-            Text(date, format: .dateTime.locale(locale).year().month().day().weekday())
-        } else {
-            Label(String(localized: "日付なし"), systemImage: "tray")
-        }
-    }
-
     private var backlogInspectorIsPresented: Binding<Bool> {
         Binding(
-            get: { backlogInspectorMode != nil },
+            get: { isVisible && backlogInspectorMode != nil },
             set: { isPresented in
-                if !isPresented {
+                if isVisible && !isPresented {
                     backlogInspectorMode = nil
                 }
             }
@@ -442,7 +402,7 @@ struct TasksView: View {
 
     private func backlogToolbarButton(
         _ title: String,
-        count: Int,
+        count: Int?,
         mode: MacTaskBacklogMode
     ) -> some View {
         Button {
@@ -450,17 +410,19 @@ struct TasksView: View {
         } label: {
             HStack(spacing: 6) {
                 Text(title)
-                Text("\(count)")
-                    .font(.caption2.monospacedDigit().weight(.semibold))
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.secondary.opacity(0.16), in: Capsule())
+                if let count {
+                    Text("\(count)")
+                        .font(.caption2.monospacedDigit().weight(.semibold))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.secondary.opacity(0.16), in: Capsule())
+                }
             }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .foregroundStyle(count == 0 ? .secondary : .primary)
-        .accessibilityLabel(String(localized: "項目 \(title)、件数 \(count)"))
+        .foregroundStyle((count ?? 0) == 0 ? .secondary : .primary)
+        .accessibilityLabel(count.map { String(localized: "項目 \(title)、件数 \($0)") } ?? title)
     }
 
     private func backlogInspectorTodos(in snapshot: TaskCalendarSnapshot) -> [Todo] {
@@ -486,75 +448,6 @@ struct TasksView: View {
 
     private var backlogInspectorSystemImage: String {
         backlogInspectorMode == .overdue ? "exclamationmark.circle" : "tray"
-    }
-
-    private func backlogInspector(snapshot: TaskCalendarSnapshot) -> some View {
-        let inspectorTodos = backlogInspectorTodos(in: snapshot)
-
-        return VStack(spacing: 0) {
-            HStack(spacing: 8) {
-                Label(backlogInspectorTitle, systemImage: backlogInspectorSystemImage)
-                    .font(.headline)
-
-                Text("\(inspectorTodos.count)")
-                    .font(.caption.monospacedDigit().weight(.semibold))
-                    .foregroundStyle(.secondary)
-
-                Spacer(minLength: 0)
-
-                if !inspectorTodos.isEmpty {
-                    Button(String(localized: "すべて今日へ")) {
-                        moveTodosToToday(inspectorTodos)
-                    }
-                    .buttonStyle(.bordered)
-                }
-
-                Button {
-                    backlogInspectorMode = nil
-                } label: {
-                    Image(systemName: "xmark")
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
-                .accessibilityLabel(String(localized: "「\(backlogInspectorTitle)」パネルを閉じる"))
-            }
-            .padding(16)
-
-            Divider()
-
-            if inspectorTodos.isEmpty {
-                ContentUnavailableView(
-                    backlogInspectorTitle,
-                    systemImage: backlogInspectorSystemImage
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                List {
-                    ForEach(inspectorTodos) { todo in
-                        unscheduledTodoRow(todo)
-                            .listRowSeparator(.hidden)
-                    }
-                }
-                .listStyle(.plain)
-                .scrollContentBackground(.hidden)
-            }
-        }
-    }
-
-    private func unscheduledTodoRow(_ todo: Todo) -> some View {
-        HStack(spacing: 8) {
-            draggableTodoRow(todo)
-
-            Button {
-                _ = moveTodo(todo, to: .now)
-            } label: {
-                Image(systemName: "calendar.badge.plus")
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(.secondary)
-            .help(String(localized: "今日へ移動"))
-            .accessibilityLabel(String(localized: "\(TodoDisplay.taskTitle(for: todo))を今日へ移動"))
-        }
     }
 
     private var moveErrorIsPresented: Binding<Bool> {
@@ -915,1738 +808,6 @@ private struct MacHabitMaterializationRevision: Hashable {
     let id: UUID
     let updatedAt: Date
     let isArchived: Bool
-}
-
-/// Quick-add volume selection for the composer. `checkbox` means "no target amount",
-/// `blocks(n)` targets `n` focus blocks (1 Block = 25 focused minutes).
-enum QuickTodoVolume: Hashable {
-    case unspecified
-    case checkbox
-    case blocks(Int)
-    case minutes(Int)
-
-    var measurement: TodoMeasurement {
-        switch self {
-        case .unspecified, .checkbox:
-            .checkbox
-        case .blocks:
-            .focusBlocks
-        case .minutes:
-            .minutes
-        }
-    }
-
-    var plannedAmount: Int? {
-        switch self {
-        case .unspecified, .checkbox:
-            nil
-        case .blocks(let count), .minutes(let count):
-            count
-        }
-    }
-
-    var menuLabel: String {
-        switch self {
-        case .unspecified:
-            String(localized: "種類")
-        case .checkbox:
-            String(localized: "チェックのみ")
-        case .blocks(let count):
-            count == 1 ? String(localized: "1 Block") : String(localized: "\(count) Blocks")
-        case .minutes(let count):
-            String(localized: "\(count)分")
-        }
-    }
-
-    var chipLabel: String {
-        switch self {
-        case .unspecified:
-            String(localized: "種類")
-        case .checkbox:
-            String(localized: "チェック")
-        case .blocks(let count):
-            count == 1 ? String(localized: "1 Block") : String(localized: "\(count) Blocks")
-        case .minutes(let count):
-            String(localized: "\(count)分")
-        }
-    }
-}
-
-/// Quick-add date selection for the composer.
-enum QuickTodoDate: Hashable {
-    case today
-    case tomorrow
-    case none
-    case custom(Date)
-
-    func resolvedDate(
-        calendar: Calendar,
-        dayBoundary: AppDayBoundary
-    ) -> Date? {
-        let today = dayBoundary.day(containing: .now, calendar: calendar)
-        switch self {
-        case .today:
-            return today
-        case .tomorrow:
-            return calendar.date(byAdding: .day, value: 1, to: today)
-        case .none:
-            return nil
-        case .custom(let date):
-            return calendar.startOfDay(for: date)
-        }
-    }
-
-    var chipLabel: String {
-        switch self {
-        case .today:
-            String(localized: "今日")
-        case .tomorrow:
-            String(localized: "明日")
-        case .none:
-            String(localized: "日付なし")
-        case .custom(let date):
-            Self.formatter.string(from: date)
-        }
-    }
-
-    private static let formatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "M/d"
-        return formatter
-    }()
-}
-
-/// Compact, chip-based quick-add composer pinned to the bottom of Tasks.
-struct MessengerTodoComposer: View {
-    @Environment(\.appDayBoundary) private var dayBoundary
-    @Environment(\.calendar) private var calendar
-    @Query(sort: \Todo.updatedAt, order: .reverse) private var suggestionTodos: [Todo]
-
-    @Binding var title: String
-    @Binding var selectedAreaID: UUID?
-    @Binding var selectedProject: Project?
-    @Binding var volume: QuickTodoVolume
-    @Binding var priority: TodoPriority
-    @Binding var isRoomIfPossible: Bool
-    @Binding var dateOption: QuickTodoDate
-    @Binding var timeMinutes: Int?
-    @Binding var reminderEnabled: Bool
-    @Binding var hashtags: [String]
-
-    let areas: [Area]
-    let validationMessage: String?
-    var allowsDateSelection = true
-    var showsOuterBackground = true
-    var suggestionsBelow = false
-    var allowsQuickInputLegend = true
-    var onCancel: (() -> Void)?
-    let onSubmit: () -> Bool
-
-    @FocusState private var isFocused: Bool
-    @AppStorage("settings.showsTaskQuickInputLegend") private var showsQuickInputLegend = true
-    @State private var parserMessage: String?
-    @State private var pendingAreaName: String?
-    @State private var isApplyingParserResult = false
-    @State private var inlineTokens: [TaskComposerInlineToken] = []
-    @State private var hasExplicitArea = false
-    @State private var hasExplicitPriority = false
-    @State private var hasExplicitDate = false
-    @State private var showsTimingControls = false
-    @State private var selectedAutocompleteSuggestionID: String?
-
-    private let parser = TaskQuickInputParser()
-
-    private var trimmedTitle: String {
-        title.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    var body: some View {
-        composerSurface
-        .animation(.snappy(duration: 0.22), value: hasComposerContent)
-        .animation(.snappy(duration: 0.18), value: activeAutocompleteSuggestions.map(\.id))
-        .padding(.horizontal, showsOuterBackground ? 12 : 0)
-        .padding(.vertical, showsOuterBackground ? 8 : 0)
-        .background {
-            if showsOuterBackground {
-                Rectangle().fill(.bar)
-            }
-        }
-        .background {
-            TaskComposerSuggestionPanel(isPresented: !activeAutocompleteSuggestions.isEmpty ||
-                (allowsQuickInputLegend && showsQuickInputLegend && isFocused && hasComposerContent), showsBelow: suggestionsBelow) {
-                if !activeAutocompleteSuggestions.isEmpty {
-                    autocompleteSuggestions(activeAutocompleteSuggestions)
-                } else {
-                    quickInputLegend.frame(width: 360)
-                }
-            }
-        }
-        .taskTimingDefaults(timeMinutes: $timeMinutes, reminderEnabled: $reminderEnabled)
-        .onChange(of: volume) { _, newValue in
-            updateExistingInlineToken(
-                .measurement(newValue.measurement, newValue.plannedAmount)
-            )
-        }
-        .onChange(of: selectedAreaID) { _, newValue in
-            if selectedProject?.area?.id != newValue { selectedProject = nil }
-            updateExistingInlineToken(newValue.map(TaskComposerInlineToken.area), id: "area")
-        }
-        .onChange(of: priority) { _, newValue in
-            updateExistingInlineToken(.priority(newValue, isRoomIfPossible))
-        }
-        .onChange(of: isRoomIfPossible) { _, newValue in
-            updateExistingInlineToken(.priority(priority, newValue))
-        }
-        .onChange(of: dateOption) { _, newValue in
-            updateExistingInlineToken(.date(newValue))
-            clearTimingIfUndated()
-        }
-        .onChange(of: activeAutocompleteSuggestions.map(\.id)) { _, _ in
-            selectedAutocompleteSuggestionID = nil
-        }
-    }
-
-    private var composerSurface: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            inputArea
-
-            controlBar
-            if let area = areas.first(where: { $0.id == selectedAreaID }) {
-                TaskProjectPicker(area: area, selection: $selectedProject)
-                    .font(.caption)
-            }
-
-            if let message = parserMessage ?? validationMessage {
-                Text(message)
-                    .font(.caption)
-                    .foregroundStyle(.red)
-            }
-
-            if let pendingAreaName {
-                unresolvedAreaActions(name: pendingAreaName)
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.top, 14)
-        .padding(.bottom, 10)
-        .background {
-            RoundedRectangle(cornerRadius: 22)
-                .fill(Color.primary.opacity(0.08))
-        }
-        .overlay {
-            RoundedRectangle(cornerRadius: 22)
-                .strokeBorder(Color.primary.opacity(0.12))
-        }
-    }
-
-    private var inputArea: some View {
-        VStack(alignment: .leading, spacing: 9) {
-            if !inlineTokens.isEmpty {
-                ScrollView(.horizontal) {
-                    HStack(spacing: 5) {
-                        ForEach(inlineTokens) { token in
-                            Button {
-                                removeInlineToken(token)
-                            } label: {
-                                inlineTokenView(token)
-                            }
-                            .buttonStyle(.plain)
-                            .help(String(localized: "トークンを削除"))
-                        }
-                    }
-                }
-                .scrollIndicators(.hidden)
-                .transition(.move(edge: .leading).combined(with: .opacity))
-            }
-
-            HStack(alignment: .top, spacing: 8) {
-                TextField(String(localized: "タスクを入力してください"), text: $title, axis: .vertical)
-                    .textFieldStyle(.plain)
-                    .font(.body)
-                    .lineLimit(2...5)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .focused($isFocused)
-                    .onSubmit {
-                        if !activateSelectedAutocompleteSuggestion() {
-                            submit()
-                        }
-                    }
-                    .onKeyPress(.upArrow) {
-                        moveAutocompleteSelection(by: -1) ? .handled : .ignored
-                    }
-                    .onKeyPress(.downArrow) {
-                        moveAutocompleteSelection(by: 1) ? .handled : .ignored
-                    }
-                    .onChange(of: title) { _, newValue in
-                        parseCommittedTokens(in: newValue)
-                    }
-
-                if let onCancel {
-                    Button(action: onCancel) {
-                        Image(systemName: "xmark")
-                            .font(.caption.weight(.bold))
-                            .frame(width: 28, height: 28)
-                    }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.secondary)
-                    .help(String(localized: "閉じる"))
-                    .accessibilityLabel(String(localized: "タスク作成を閉じる"))
-                }
-
-                submitButton
-            }
-        }
-        .animation(.snappy(duration: 0.22), value: inlineTokens)
-    }
-
-    private var controlBar: some View {
-        HStack(spacing: 8) {
-            VolumeChip(volume: $volume)
-
-            AreaChip(
-                selectedAreaID: $selectedAreaID,
-                isExplicit: $hasExplicitArea,
-                areas: areas
-            )
-                .fixedSize(horizontal: true, vertical: false)
-                .layoutPriority(3)
-
-            PriorityChip(
-                priority: $priority,
-                isRoomIfPossible: $isRoomIfPossible,
-                isExplicit: $hasExplicitPriority
-            )
-
-            if priority == .low {
-                RoomIfPossibleChip(isSelected: $isRoomIfPossible)
-            }
-
-            if allowsDateSelection {
-                DateChip(dateOption: $dateOption, isExplicit: $hasExplicitDate)
-            } else {
-                Text(String(localized: "今日"))
-                    .chipStyle(tint: .secondary)
-                    .accessibilityLabel(String(localized: "日付 今日"))
-            }
-
-            timingButton
-
-            ForEach(hashtags, id: \.self) { hashtag in
-                Button {
-                    hashtags.removeAll { $0.caseInsensitiveCompare(hashtag) == .orderedSame }
-                    inlineTokens.removeAll { $0.hashtagMatches(hashtag) }
-                } label: {
-                    Text(verbatim: "#\(hashtag)")
-                        .chipStyle(tint: .accentColor)
-                }
-                .buttonStyle(.plain)
-                .help(String(localized: "タグを削除"))
-            }
-
-            Spacer(minLength: 0)
-        }
-        .lineLimit(1)
-        .minimumScaleFactor(0.8)
-    }
-
-    private var timingButton: some View {
-        Button {
-            showsTimingControls = true
-        } label: {
-            HStack(spacing: 5) {
-                if let timeMinutes {
-                    TaskTimeLabel(minutes: timeMinutes, reminderEnabled: reminderEnabled)
-                } else {
-                    Label(String(localized: "時刻"), systemImage: "clock")
-                }
-                Image(systemName: "chevron.down")
-                    .font(.caption2)
-            }
-        }
-        .buttonStyle(.bordered)
-        .controlSize(.small)
-        .accessibilityIdentifier("task.composer.timing")
-        .popover(isPresented: $showsTimingControls) {
-            TaskTimingControls(
-                scheduledDate: dateOption.resolvedDate(calendar: calendar, dayBoundary: dayBoundary),
-                timeMinutes: $timeMinutes,
-                reminderEnabled: $reminderEnabled
-            )
-            .padding(16)
-            .frame(width: 300)
-        }
-    }
-
-    private func clearTimingIfUndated() {
-        guard dateOption == .none else { return }
-        timeMinutes = nil
-        reminderEnabled = false
-    }
-
-    private func submit() {
-        guard canSubmit else { return }
-        let result = parser.parse(
-            title,
-            areas: parserAreas,
-            anchorDate: dayBoundary.day(containing: .now, calendar: calendar),
-            calendar: calendar,
-            consumeTrailingToken: true
-        )
-        apply(result)
-        // A trailing @ token can change Area before onChange is delivered.
-        if selectedProject?.area?.id != selectedAreaID { selectedProject = nil }
-        if let unresolved = result.unresolvedArea, !unresolved.isEmpty {
-            pendingAreaName = unresolved
-            parserMessage = String(localized: "方向「\(unresolved)」が見つかりません")
-            isFocused = true
-            return
-        }
-        pendingAreaName = nil
-        parserMessage = nil
-        if onSubmit() {
-            clearInlineTokensAfterSubmission()
-        }
-        isFocused = true
-    }
-
-    private var parserAreas: [TaskQuickInputArea] {
-        areas.map { TaskQuickInputArea(id: $0.id, name: $0.name) }
-    }
-
-    private var hasComposerContent: Bool {
-        !trimmedTitle.isEmpty || !inlineTokens.isEmpty
-    }
-
-    private var canSubmit: Bool {
-        hasComposerContent || hasExplicitArea || hasExplicitPriority || hasExplicitDate
-            || volume != .unspecified || !hashtags.isEmpty || selectedProject != nil || timeMinutes != nil
-    }
-
-    private var autocompleteToken: String? {
-        guard isFocused else { return nil }
-        return parser.trailingAutocompleteToken(in: title)
-    }
-
-    private var activeAutocompleteSuggestions: [TaskComposerAutocompleteSuggestion] {
-        guard isFocused else { return [] }
-        if let autocompleteToken {
-            return autocompleteSuggestionItems(for: autocompleteToken)
-        }
-        return TaskTitleSuggestionBuilder()
-            .suggestions(query: title, todos: suggestionTodos)
-            .map { suggestion in
-                TaskComposerAutocompleteSuggestion(
-                    id: "title:\(suggestion.id)",
-                    icon: "clock.arrow.circlepath",
-                    title: suggestion.title,
-                    action: .title(suggestion.title)
-                )
-            }
-    }
-
-    private var submitButton: some View {
-        Button(action: submit) {
-            Image(systemName: "arrow.up")
-                .font(.system(size: 13, weight: .bold))
-                .frame(width: 30, height: 30)
-                .background(Color.accentColor, in: Circle())
-                .foregroundStyle(.white)
-        }
-        .buttonStyle(.plain)
-        .help(String(localized: "タスクを追加"))
-        .accessibilityLabel(String(localized: "タスクを追加"))
-        .accessibilityIdentifier("task.composer.submit")
-        .disabled(!canSubmit)
-        .opacity(canSubmit ? 1 : 0.45)
-    }
-
-    private var quickInputLegend: some View {
-        VStack(alignment: .leading, spacing: 7) {
-            HStack {
-                Label(String(localized: "ショートカットを使えます"), systemImage: "command")
-                    .font(.caption.weight(.semibold))
-                Spacer(minLength: 0)
-                Button {
-                    showsQuickInputLegend = false
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.caption.weight(.semibold))
-                }
-                .buttonStyle(.plain)
-                .help(String(localized: "クイック入力のヒントを非表示"))
-            }
-
-            Grid(alignment: .leading, horizontalSpacing: 24, verticalSpacing: 6) {
-                GridRow {
-                    legendItem(shortcut: "[ ]", label: String(localized: "チェック"))
-                    legendItem(shortcut: "@", label: String(localized: "分野"))
-                    legendItem(shortcut: "!", label: String(localized: "優先度"))
-                }
-
-                GridRow {
-                    legendItem(shortcut: "[1b]", label: String(localized: "1ブロック"))
-                    legendItem(shortcut: "/", label: String(localized: "日付"))
-                    legendItem(shortcut: "#", label: String(localized: "タグ"))
-                }
-
-                GridRow {
-                    legendItem(shortcut: "[25m]", label: String(localized: "25分"))
-                    legendItem(shortcut: "9:00", label: String(localized: "時刻"))
-                }
-            }
-        }
-        .foregroundStyle(.secondary)
-        .padding(10)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 9))
-        .overlay {
-            RoundedRectangle(cornerRadius: 9)
-                .strokeBorder(Color.primary.opacity(0.1))
-        }
-    }
-
-    @ViewBuilder
-    private func legendItem(shortcut: String, label: String) -> some View {
-        HStack(spacing: 7) {
-            Text(verbatim: shortcut)
-                .font(.caption.monospaced().weight(.semibold))
-                .foregroundStyle(.primary)
-                .frame(minWidth: 30, alignment: .leading)
-            Text(label)
-                .font(.caption)
-                .lineLimit(1)
-        }
-    }
-
-    @ViewBuilder
-    private func autocompleteSuggestions(_ suggestions: [TaskComposerAutocompleteSuggestion]) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            ForEach(suggestions) { suggestion in
-                suggestionRow(
-                    suggestion,
-                    isSelected: selectedSuggestionID(in: suggestions) == suggestion.id
-                )
-            }
-        }
-        .padding(5)
-        .frame(width: 320, alignment: .leading)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
-        .overlay {
-            RoundedRectangle(cornerRadius: 10)
-                .strokeBorder(Color.primary.opacity(0.12))
-        }
-        .shadow(color: .black.opacity(0.16), radius: 12, y: 5)
-    }
-
-    private func autocompleteSuggestionItems(for token: String) -> [TaskComposerAutocompleteSuggestion] {
-        let query = String(token.dropFirst())
-        switch token.first {
-        case "@": return areaAutocompleteSuggestions(query: query)
-        case "#": return TaskComposerSuggestionBuilder().tags(query: query, todos: suggestionTodos).map {
-            TaskComposerAutocompleteSuggestion(id: "tag:\($0)", icon: "number", title: $0, action: .token("#\($0)"))
-        }
-        case "!", "/", "[":
-            return TaskQuickInputOption.suggestions(for: token).map {
-                TaskComposerAutocompleteSuggestion(
-                    id: $0.id, icon: $0.systemImage, title: $0.title,
-                    detail: $0.token, action: .token($0.token)
-                )
-            }
-        default: return []
-        }
-    }
-
-    private func areaAutocompleteSuggestions(query: String) -> [TaskComposerAutocompleteSuggestion] {
-        let matches = TaskComposerSuggestionBuilder().areas(
-            query: query, areas: areas, todos: suggestionTodos
-        )
-        return matches.map { area in
-            TaskComposerAutocompleteSuggestion(
-                id: "area:\(area.id.uuidString)",
-                symbol: area.symbolName,
-                title: area.name,
-                action: .area(area.id)
-            )
-        }
-    }
-
-    private func suggestionRow(
-        _ suggestion: TaskComposerAutocompleteSuggestion,
-        isSelected: Bool
-    ) -> some View {
-        Button {
-            activateAutocompleteSuggestion(suggestion)
-        } label: {
-            HStack(spacing: 9) {
-                if let icon = suggestion.icon {
-                    Image(systemName: icon)
-                        .frame(width: 18)
-                } else if let symbol = suggestion.symbol {
-                    Text(symbol)
-                        .frame(width: 18)
-                }
-                Text(suggestion.title)
-                    .lineLimit(1)
-                Spacer(minLength: 8)
-                if let detail = suggestion.detail {
-                    Text(verbatim: detail)
-                        .font(.caption.monospaced())
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .padding(.horizontal, 9)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(height: 32)
-            .contentShape(Rectangle())
-            .background(
-                isSelected ? Color.accentColor.opacity(0.18) : Color.clear,
-                in: RoundedRectangle(cornerRadius: 7)
-            )
-        }
-        .buttonStyle(.plain)
-        .contentShape(Rectangle())
-        .onHover { isHovering in
-            if isHovering {
-                selectedAutocompleteSuggestionID = suggestion.id
-            }
-        }
-    }
-
-    private func selectedSuggestionID(in suggestions: [TaskComposerAutocompleteSuggestion]) -> String? {
-        if let selectedAutocompleteSuggestionID,
-           suggestions.contains(where: { $0.id == selectedAutocompleteSuggestionID }) {
-            return selectedAutocompleteSuggestionID
-        }
-        return suggestions.first?.id
-    }
-
-    private func moveAutocompleteSelection(by offset: Int) -> Bool {
-        let suggestions = activeAutocompleteSuggestions
-        guard !suggestions.isEmpty else { return false }
-        let currentID = selectedSuggestionID(in: suggestions)
-        let currentIndex = suggestions.firstIndex { $0.id == currentID } ?? 0
-        let nextIndex = min(max(currentIndex + offset, 0), suggestions.count - 1)
-        selectedAutocompleteSuggestionID = suggestions[nextIndex].id
-        return true
-    }
-
-    private func activateSelectedAutocompleteSuggestion() -> Bool {
-        let suggestions = activeAutocompleteSuggestions
-        guard let selectedID = selectedSuggestionID(in: suggestions),
-              let suggestion = suggestions.first(where: { $0.id == selectedID }) else {
-            return false
-        }
-        activateAutocompleteSuggestion(suggestion)
-        return true
-    }
-
-    private func activateAutocompleteSuggestion(_ suggestion: TaskComposerAutocompleteSuggestion) {
-        switch suggestion.action {
-        case .area(let id):
-            guard let area = areas.first(where: { $0.id == id }) else { return }
-            choose(area)
-        case .token(let token):
-            completeAutocompleteToken(token)
-        case .title(let value):
-            title = value
-            isFocused = true
-        }
-        selectedAutocompleteSuggestionID = nil
-    }
-
-    private func unresolvedAreaActions(name: String) -> some View {
-        HStack(spacing: 8) {
-            Button(String(localized: "その他として追加")) {
-                selectedAreaID = nil
-                hasExplicitArea = true
-                removeAreaToken(named: name)
-                pendingAreaName = nil
-                parserMessage = nil
-                if onSubmit() {
-                    clearInlineTokensAfterSubmission()
-                }
-            }
-            .buttonStyle(.bordered)
-        }
-    }
-
-    private func parseCommittedTokens(in input: String) {
-        guard !isApplyingParserResult else { return }
-        let result = parser.parse(
-            input,
-            areas: parserAreas,
-            anchorDate: dayBoundary.day(containing: .now, calendar: calendar),
-            calendar: calendar,
-            consumeTrailingToken: false
-        )
-        apply(result)
-    }
-
-    private func apply(_ result: TaskQuickInputParseResult) {
-        isApplyingParserResult = true
-        defer { isApplyingParserResult = false }
-
-        recordInlineTokens(from: result)
-        if title != result.title {
-            title = result.title
-        }
-        if let measurement = result.measurement {
-            let amount = max(1, result.plannedAmount ?? 1)
-            switch measurement {
-            case .checkbox: volume = .checkbox
-            case .focusBlocks: volume = .blocks(amount)
-            case .minutes: volume = .minutes(amount)
-            }
-        }
-        if let areaID = result.areaID {
-            selectedAreaID = areaID
-            hasExplicitArea = true
-        }
-        if let priority = result.priority {
-            self.priority = priority
-            isRoomIfPossible = result.isRoomIfPossible ?? false
-            hasExplicitPriority = true
-        }
-        if allowsDateSelection, let date = result.date {
-            dateOption = quickDate(for: date)
-            hasExplicitDate = true
-        }
-        if let time = result.timeMinutes {
-            if timeMinutes == nil { reminderEnabled = true }
-            timeMinutes = time
-        }
-        clearTimingIfUndated()
-        hashtags = TodoHashtagNormalizer.normalize(hashtags + result.hashtags)
-    }
-
-    private func choose(_ area: Area) {
-        guard let query = parser.trailingAreaQuery(in: title) else { return }
-        removeAreaToken(named: query)
-        selectedAreaID = area.id
-        hasExplicitArea = true
-        replaceInlineToken(.area(area.id))
-        parserMessage = nil
-    }
-
-    private func completeAutocompleteToken(_ token: String) {
-        title = parser.replacingTrailingAutocompleteToken(in: title, with: "\(token) ")
-        parseCommittedTokens(in: title)
-        isFocused = true
-    }
-
-    private func recordInlineTokens(from result: TaskQuickInputParseResult) {
-        if let measurement = result.measurement {
-            replaceInlineToken(.measurement(measurement, result.plannedAmount))
-        }
-        if let areaID = result.areaID {
-            replaceInlineToken(.area(areaID))
-        }
-        if let priority = result.priority {
-            replaceInlineToken(.priority(priority, result.isRoomIfPossible ?? false))
-        }
-        if allowsDateSelection, let date = result.date {
-            replaceInlineToken(.date(quickDate(for: date)))
-        }
-        for hashtag in result.hashtags {
-            replaceInlineToken(.hashtag(hashtag))
-        }
-    }
-
-    private func replaceInlineToken(_ token: TaskComposerInlineToken) {
-        inlineTokens.removeAll { $0.id == token.id }
-        inlineTokens.append(token)
-    }
-
-    private func updateExistingInlineToken(_ token: TaskComposerInlineToken?, id: String? = nil) {
-        let targetID = id ?? token?.id
-        guard let targetID, inlineTokens.contains(where: { $0.id == targetID }) else { return }
-        inlineTokens.removeAll { $0.id == targetID }
-        if let token {
-            inlineTokens.append(token)
-        }
-    }
-
-    private func clearInlineTokensAfterSubmission() {
-        if trimmedTitle.isEmpty {
-            inlineTokens = []
-            hasExplicitArea = false
-            hasExplicitPriority = false
-            hasExplicitDate = false
-        }
-    }
-
-    private func removeInlineToken(_ token: TaskComposerInlineToken) {
-        inlineTokens.removeAll { $0.id == token.id }
-        switch token {
-        case .measurement:
-            volume = .unspecified
-        case .area:
-            selectedAreaID = nil
-            hasExplicitArea = false
-        case .priority:
-            priority = .medium
-            isRoomIfPossible = false
-            hasExplicitPriority = false
-        case .date:
-            dateOption = .today
-            hasExplicitDate = false
-        case .hashtag(let hashtag):
-            hashtags.removeAll { $0.caseInsensitiveCompare(hashtag) == .orderedSame }
-        }
-        isFocused = true
-    }
-
-    private func quickDate(for date: TaskQuickInputDate) -> QuickTodoDate {
-        switch date {
-        case .scheduled(let value):
-            let today = dayBoundary.day(containing: .now, calendar: calendar)
-            if calendar.isDate(value, inSameDayAs: today) { return .today }
-            if let tomorrow = calendar.date(byAdding: .day, value: 1, to: today),
-               calendar.isDate(value, inSameDayAs: tomorrow) {
-                return .tomorrow
-            }
-            return .custom(value)
-        case .noDate:
-            return .none
-        }
-    }
-
-    private func inlineTokenView(_ token: TaskComposerInlineToken) -> some View {
-        HStack(spacing: 5) {
-            inlineTokenIcon(token)
-            Text(inlineTokenLabel(token))
-            Image(systemName: "xmark")
-                .font(.system(size: 7, weight: .bold))
-                .opacity(0.7)
-        }
-        .font(.caption.weight(.medium))
-        .foregroundStyle(inlineTokenTint(token))
-        .padding(.horizontal, 9)
-        .frame(height: 26)
-        .background(inlineTokenTint(token).opacity(0.12), in: Capsule())
-        .overlay {
-            Capsule().strokeBorder(inlineTokenTint(token).opacity(0.2), lineWidth: 1)
-        }
-        .accessibilityElement(children: .combine)
-    }
-
-    @ViewBuilder
-    private func inlineTokenIcon(_ token: TaskComposerInlineToken) -> some View {
-        switch token {
-        case .measurement(let measurement, _):
-            Image(systemName: measurement == .checkbox ? "square" :
-                (measurement == .focusBlocks ? "circle" : "circle.lefthalf.filled"))
-        case .area(let id):
-            Text(areas.first(where: { $0.id == id })?.symbolName ?? "@")
-        case .priority:
-            Image(systemName: "exclamationmark")
-        case .date:
-            Image(systemName: "calendar")
-        case .hashtag:
-            Image(systemName: "number")
-        }
-    }
-
-    private func inlineTokenLabel(_ token: TaskComposerInlineToken) -> String {
-        switch token {
-        case .measurement(let measurement, let amount):
-            switch measurement {
-            case .checkbox:
-                return String(localized: "チェック")
-            case .focusBlocks:
-                return "\(max(1, amount ?? 1)) \(String(localized: "ブロック"))"
-            case .minutes:
-                return "\(max(1, amount ?? 1)) \(String(localized: "分"))"
-            }
-        case .area(let id):
-            return areas.first(where: { $0.id == id })?.name ?? String(localized: "分野")
-        case .priority(let priority, let later):
-            return later ? String(localized: "余裕があれば") : priority.displayName
-        case .date(let date):
-            return date.chipLabel
-        case .hashtag(let hashtag):
-            return "#\(hashtag)"
-        }
-    }
-
-    private func inlineTokenTint(_ token: TaskComposerInlineToken) -> Color {
-        if case .area(let id) = token,
-           let area = areas.first(where: { $0.id == id }),
-           !DefaultAreas.isTaskInbox(area) {
-            return Color(hex: area.colorHex)
-        }
-        return .accentColor
-    }
-
-    private func removeAreaToken(named name: String) {
-        let target = "@\(name)"
-        title = title
-            .split(whereSeparator: \.isWhitespace)
-            .filter { String($0).caseInsensitiveCompare(target) != .orderedSame }
-            .joined(separator: " ")
-    }
-}
-
-private struct TaskComposerAutocompleteSuggestion: Identifiable {
-    enum Action {
-        case area(UUID)
-        case token(String)
-        case title(String)
-    }
-
-    let id: String
-    var icon: String?
-    var symbol: String?
-    let title: String
-    var detail: String?
-    let action: Action
-}
-
-private enum TaskComposerInlineToken: Equatable, Identifiable {
-    case measurement(TodoMeasurement, Int?)
-    case area(UUID)
-    case priority(TodoPriority, Bool)
-    case date(QuickTodoDate)
-    case hashtag(String)
-
-    var id: String {
-        switch self {
-        case .measurement: "measurement"
-        case .area: "area"
-        case .priority: "priority"
-        case .date: "date"
-        case .hashtag(let value): "hashtag:\(value.lowercased(with: Locale(identifier: "en_US_POSIX")))"
-        }
-    }
-
-    func hashtagMatches(_ value: String) -> Bool {
-        guard case .hashtag(let hashtag) = self else { return false }
-        return hashtag.caseInsensitiveCompare(value) == .orderedSame
-    }
-}
-
-struct QuickTodoCreationPopover: View {
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.calendar) private var calendar
-    @Environment(\.appDayBoundary) private var dayBoundary
-    @Environment(\.modelContext) private var modelContext
-
-    let areas: [Area]
-    let showsQuickInputLegend: Bool
-    let suggestionsBelow: Bool
-    let initialDraft: TodoDraft?
-    let isPresented: Binding<Bool>?
-    let onCreated: ((Todo) -> Void)?
-
-    @State private var title = ""
-    @State private var selectedAreaID: UUID?
-    @State private var selectedProject: Project?
-    @State private var volume: QuickTodoVolume = .unspecified
-    @State private var priority: TodoPriority = .medium
-    @State private var isRoomIfPossible = false
-    @State private var dateOption: QuickTodoDate = .today
-    @State private var timeMinutes: Int?
-    @State private var reminderEnabled = false
-    @State private var hashtags: [String] = []
-    @State private var validationMessage: String?
-
-    init(
-        areas: [Area],
-        scheduledDate: Date? = .now,
-        showsQuickInputLegend: Bool = true,
-        suggestionsBelow: Bool = false,
-        initialDraft: TodoDraft? = nil,
-        isPresented: Binding<Bool>? = nil,
-        onCreated: ((Todo) -> Void)? = nil
-    ) {
-        self.areas = areas
-        self.showsQuickInputLegend = showsQuickInputLegend
-        self.suggestionsBelow = suggestionsBelow
-        self.initialDraft = initialDraft
-        self.isPresented = isPresented
-        self.onCreated = onCreated
-
-        let resolvedScheduledDate: Date?
-        let initialVolume: QuickTodoVolume
-        if let initialDraft {
-            resolvedScheduledDate = initialDraft.scheduledDate
-            switch initialDraft.measurement {
-            case .checkbox:
-                initialVolume = .checkbox
-            case .focusBlocks:
-                initialVolume = .blocks(max(1, initialDraft.plannedAmount ?? 1))
-            case .minutes:
-                initialVolume = .minutes(max(1, initialDraft.plannedAmount ?? 1))
-            }
-        } else {
-            resolvedScheduledDate = scheduledDate
-            initialVolume = .unspecified
-        }
-
-        _title = State(initialValue: initialDraft?.title ?? "")
-        _selectedAreaID = State(initialValue: initialDraft?.area?.id)
-        _selectedProject = State(initialValue: initialDraft?.project)
-        _volume = State(initialValue: initialVolume)
-        _priority = State(initialValue: initialDraft?.priority ?? .medium)
-        _isRoomIfPossible = State(
-            initialValue: initialDraft?.priority == .low && initialDraft?.isRoomIfPossible == true
-        )
-        _dateOption = State(
-            initialValue: resolvedScheduledDate.map(QuickTodoDate.custom) ?? .none
-        )
-        _timeMinutes = State(initialValue: initialDraft?.scheduledTimeMinutes)
-        _reminderEnabled = State(initialValue: initialDraft?.reminderEnabled ?? false)
-        _hashtags = State(initialValue: initialDraft?.hashtags ?? [])
-        _validationMessage = State(initialValue: nil)
-    }
-
-    private var activeAreas: [Area] {
-        areas.filter { !$0.isArchived }
-    }
-
-    private var selectableAreas: [Area] {
-        activeAreas.filter { !DefaultAreas.isTaskInbox($0) }
-    }
-
-    var body: some View {
-        MessengerTodoComposer(
-            title: $title,
-            selectedAreaID: $selectedAreaID,
-            selectedProject: $selectedProject,
-            volume: $volume,
-            priority: $priority,
-            isRoomIfPossible: $isRoomIfPossible,
-            dateOption: $dateOption,
-            timeMinutes: $timeMinutes,
-            reminderEnabled: $reminderEnabled,
-            hashtags: $hashtags,
-            areas: selectableAreas,
-            validationMessage: validationMessage,
-            allowsDateSelection: true,
-            showsOuterBackground: false,
-            suggestionsBelow: suggestionsBelow,
-            allowsQuickInputLegend: showsQuickInputLegend,
-            onCancel: closeComposer,
-            onSubmit: createTodo
-        )
-        .frame(width: 520)
-        .onExitCommand(perform: closeComposer)
-    }
-
-    private func closeComposer() {
-        if let isPresented {
-            isPresented.wrappedValue = false
-        } else {
-            dismiss()
-        }
-    }
-
-    private func createTodo() -> Bool {
-        validationMessage = nil
-        let selectedArea = selectedAreaID.flatMap { id in
-            selectableAreas.first { $0.id == id }
-        }
-        let draft = TodoDraft(
-            title: title,
-            notes: initialDraft?.notes ?? "",
-            hashtags: hashtags,
-            area: selectedArea,
-            project: selectedProject,
-            measurement: volume.measurement,
-            priority: priority,
-            isRoomIfPossible: priority == .low && isRoomIfPossible,
-            plannedAmount: volume.plannedAmount,
-            actualProgress: initialDraft?.actualProgress ?? 0,
-            scheduledDate: dateOption.resolvedDate(calendar: calendar, dayBoundary: dayBoundary),
-            scheduledTimeMinutes: timeMinutes,
-            reminderEnabled: reminderEnabled,
-            deadline: initialDraft?.deadline
-        )
-        do {
-            let todo = try TaskEditingService().save(draft: draft, modelContext: modelContext)
-            if todo.reminderEnabled { TaskReminderAuthorization.requestForUserAction() }
-            onCreated?(todo)
-            closeComposer()
-            return true
-        } catch TaskEditingError.validation(let errors) {
-            validationMessage = errors.map(\.localizedDescription).joined(separator: "\n")
-            return false
-        } catch {
-            validationMessage = String(localized: "記録を保存できませんでした。")
-            return false
-        }
-    }
-}
-
-private struct PriorityChip: View {
-    @Binding var priority: TodoPriority
-    @Binding var isRoomIfPossible: Bool
-    @Binding var isExplicit: Bool
-
-    var body: some View {
-        Menu {
-            ForEach(TodoPriority.allCases) { option in
-                Button {
-                    priority = option
-                    isExplicit = true
-                    if option != .low {
-                        isRoomIfPossible = false
-                    }
-                } label: {
-                    menuRow(text: option.displayName, isSelected: priority == option)
-                }
-            }
-
-            if priority == .low {
-                Divider()
-
-                Button {
-                    isRoomIfPossible.toggle()
-                    isExplicit = true
-                } label: {
-                    menuRow(text: String(localized: "余裕があれば"), isSelected: isRoomIfPossible)
-                }
-            }
-        } label: {
-            Text(labelText)
-                .chipStyle(tint: tint)
-        }
-        .menuStyle(.borderlessButton)
-        .accessibilityLabel(String(localized: "優先度を選択"))
-    }
-
-    private var labelText: String {
-        isExplicit ? priority.displayName : String(localized: "優先度")
-    }
-
-    private var tint: Color {
-        switch priority {
-        case .high:
-            .red
-        case .medium:
-            .secondary
-        case .low:
-            .green
-        }
-    }
-
-    @ViewBuilder
-    private func menuRow(text: String, isSelected: Bool) -> some View {
-        if isSelected {
-            Label(text, systemImage: "checkmark").labelStyle(.titleAndIcon)
-        } else {
-            Text(text)
-        }
-    }
-}
-
-private struct RoomIfPossibleChip: View {
-    @Binding var isSelected: Bool
-
-    var body: some View {
-        Button {
-            isSelected.toggle()
-        } label: {
-            HStack(spacing: 5) {
-                RoundedRectangle(cornerRadius: 3)
-                    .strokeBorder(Color.green, lineWidth: 1.4)
-                    .background(
-                        RoundedRectangle(cornerRadius: 3)
-                            .fill(isSelected ? Color.green : Color.clear)
-                    )
-                    .overlay {
-                        if isSelected {
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 8, weight: .bold))
-                                .foregroundStyle(.white)
-                        }
-                    }
-                    .frame(width: 13, height: 13)
-
-                Text(String(localized: "余裕があれば"))
-            }
-            .chipStyle(tint: .green)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(String(localized: "余裕があれば"))
-        .accessibilityAddTraits(isSelected ? [.isSelected] : [])
-    }
-}
-
-private struct AreaChip: View {
-    @Binding var selectedAreaID: UUID?
-    @Binding var isExplicit: Bool
-
-    let areas: [Area]
-
-    private var selectedArea: Area? {
-        guard let selectedAreaID else { return nil }
-        return areas.first { $0.id == selectedAreaID }
-    }
-
-    private var labelText: String {
-        guard isExplicit else {
-            return String(localized: "分野")
-        }
-        guard let selectedArea else {
-            return String(localized: "その他")
-        }
-
-        return "\(selectedArea.symbolName) \(selectedArea.name)"
-    }
-
-    var body: some View {
-        Menu {
-            ForEach(areas) { area in
-                Button {
-                    selectedAreaID = area.id
-                    isExplicit = true
-                } label: {
-                    menuRow(
-                        text: "\(area.symbolName) \(area.name)",
-                        isSelected: selectedAreaID == area.id
-                    )
-                }
-            }
-
-            if !areas.isEmpty { Divider() }
-
-            Button {
-                selectedAreaID = nil
-                isExplicit = true
-            } label: {
-                menuRow(text: String(localized: "その他"), isSelected: selectedAreaID == nil)
-            }
-        } label: {
-            Text(labelText)
-                .lineLimit(1)
-                .fixedSize(horizontal: true, vertical: false)
-                .chipStyle(tint: chipColor)
-        }
-        .menuStyle(.borderlessButton)
-        .accessibilityLabel(String(localized: "方向を選択"))
-    }
-
-    @ViewBuilder
-    private func menuRow(text: String, isSelected: Bool) -> some View {
-        if isSelected {
-            Label(text, systemImage: "checkmark").labelStyle(.titleAndIcon)
-        } else {
-            Text(text)
-        }
-    }
-
-    private var chipColor: Color {
-        guard let selectedArea, !DefaultAreas.isTaskInbox(selectedArea) else {
-            return .secondary
-        }
-        return Color(hex: selectedArea.colorHex)
-    }
-}
-
-private struct VolumeChip: View {
-    @Binding var volume: QuickTodoVolume
-
-    var body: some View {
-        HStack(spacing: 3) {
-            Image(systemName: typeIcon)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(iconColor)
-                .frame(width: 13, height: 16)
-                .contentTransition(.symbolEffect(.replace))
-
-            if volume.measurement == .checkbox {
-                Text(typeLabel)
-                    .foregroundStyle(volume == .unspecified ? .secondary : .primary)
-                    .transition(.opacity.combined(with: .scale(scale: 0.92)))
-            } else {
-                TextField("1", value: amountBinding, format: .number)
-                    .textFieldStyle(.plain)
-                    .multilineTextAlignment(.trailing)
-                    .font(.caption.monospacedDigit().weight(.semibold))
-                    .frame(width: 25)
-
-                Text(volume.measurement == .focusBlocks ? String(localized: "ブロック") : String(localized: "分"))
-                    .foregroundStyle(.secondary)
-                    .transition(.opacity.combined(with: .move(edge: .leading)))
-            }
-
-            Menu {
-                Button { volume = .checkbox } label: {
-                    menuRow(String(localized: "チェック"), selected: volume.measurement == .checkbox && volume != .unspecified)
-                }
-                Button { volume = .blocks(max(1, volume.plannedAmount ?? 1)) } label: {
-                    menuRow(String(localized: "ブロック"), selected: volume.measurement == .focusBlocks)
-                }
-                Button { volume = .minutes(max(1, volume.plannedAmount ?? 25)) } label: {
-                    menuRow(TodoMeasurement.minutes.displayName, selected: volume.measurement == .minutes)
-                }
-            } label: {
-                Image(systemName: "chevron.down")
-                    .font(.system(size: 8, weight: .bold))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 16, height: 20)
-                    .contentShape(Rectangle())
-            }
-            .menuStyle(.borderlessButton)
-            .menuIndicator(.hidden)
-        }
-        .font(.caption.weight(.medium))
-        .padding(.leading, 9)
-        .padding(.trailing, 5)
-        .frame(height: 30)
-        .background(Color.secondary.opacity(0.1), in: RoundedRectangle(cornerRadius: 7))
-        .overlay {
-            RoundedRectangle(cornerRadius: 7)
-                .strokeBorder(Color.secondary.opacity(0.12), lineWidth: 1)
-        }
-        .animation(.snappy(duration: 0.22), value: volume.measurement)
-        .accessibilityLabel(String(localized: "タスクの分量を選択"))
-    }
-
-    private var typeIcon: String {
-        switch volume {
-        case .unspecified: "square.dashed"
-        case .checkbox: "checkmark.square"
-        case .blocks: "circle"
-        case .minutes: "circle.lefthalf.filled"
-        }
-    }
-
-    private var iconColor: Color {
-        volume == .unspecified ? .secondary : .accentColor
-    }
-
-    private var typeLabel: String {
-        switch volume {
-        case .unspecified: String(localized: "種類")
-        case .checkbox: String(localized: "チェック")
-        case .blocks: String(localized: "ブロック")
-        case .minutes: TodoMeasurement.minutes.displayName
-        }
-    }
-
-    private var amountBinding: Binding<Int> {
-        Binding(
-            get: { max(1, volume.plannedAmount ?? 1) },
-            set: { value in
-                let amount = max(1, value)
-                volume = volume.measurement == .focusBlocks ? .blocks(amount) : .minutes(amount)
-            }
-        )
-    }
-
-    @ViewBuilder
-    private func menuRow(_ text: String, selected: Bool) -> some View {
-        if selected { Label(text, systemImage: "checkmark").labelStyle(.titleAndIcon) } else { Text(text) }
-    }
-}
-
-private struct DateChip: View {
-    @Environment(\.appDayBoundary) private var dayBoundary
-    @Environment(\.calendar) private var calendar
-
-    @Binding var dateOption: QuickTodoDate
-    @Binding var isExplicit: Bool
-
-    @State private var showingCustomPicker = false
-    @State private var customDate = Date.now
-
-    var body: some View {
-        Menu {
-            Button {
-                dateOption = .today
-                isExplicit = true
-            } label: {
-                menuRow(text: String(localized: "今日"), isSelected: dateOption == .today)
-            }
-
-            Button {
-                dateOption = .tomorrow
-                isExplicit = true
-            } label: {
-                menuRow(text: String(localized: "明日"), isSelected: dateOption == .tomorrow)
-            }
-
-            Button {
-                dateOption = .none
-                isExplicit = true
-            } label: {
-                menuRow(text: String(localized: "日付なし"), isSelected: dateOption == .none)
-            }
-
-            Divider()
-
-            Button(String(localized: "他の日付...")) {
-                customDate = dateOption.resolvedDate(
-                    calendar: calendar,
-                    dayBoundary: dayBoundary
-                ) ?? .now
-                showingCustomPicker = true
-            }
-        } label: {
-            Text(isExplicit ? dateOption.chipLabel : String(localized: "日付"))
-                .chipStyle(tint: .secondary)
-        }
-        .menuStyle(.borderlessButton)
-        .accessibilityLabel(String(localized: "日付を選択"))
-        .popover(isPresented: $showingCustomPicker) {
-            VStack(spacing: 12) {
-                DatePicker(String(localized: "日付"), selection: $customDate, displayedComponents: .date)
-                    .datePickerStyle(.graphical)
-                    .labelsHidden()
-
-                Button(String(localized: "設定")) {
-                    dateOption = .custom(customDate)
-                    isExplicit = true
-                    showingCustomPicker = false
-                }
-                .buttonStyle(.borderedProminent)
-            }
-            .padding()
-            .frame(minWidth: 280)
-        }
-    }
-
-    @ViewBuilder
-    private func menuRow(text: String, isSelected: Bool) -> some View {
-        if isSelected {
-            Label(text, systemImage: "checkmark").labelStyle(.titleAndIcon)
-        } else {
-            Text(text)
-        }
-    }
-}
-
-private extension View {
-    func chipStyle(tint: Color) -> some View {
-        self
-            .font(.caption.weight(.medium))
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(tint.opacity(0.16))
-            .foregroundStyle(tint)
-            .clipShape(Capsule())
-    }
-}
-
-private struct TasksTodoGroup: Identifiable {
-    let type: AreaType
-    let todos: [Todo]
-
-    var id: String { type.rawValue }
-
-    var title: String {
-        switch type {
-        case .habit:
-            String(localized: "習慣一覧")
-        case .neutral:
-            String(localized: "通常")
-        case .nice:
-            String(localized: "ナイス")
-        }
-    }
-
-    var tint: Color {
-        switch type {
-        case .habit:
-            .red
-        case .neutral:
-            .blue
-        case .nice:
-            .green
-        }
-    }
-
-    static let defaultOrderRaw = "habit,neutral,nice"
-
-    static func order(from rawValue: String) -> [AreaType] {
-        let parsed = rawValue
-            .split(separator: ",")
-            .compactMap { AreaType.normalized(rawValue: String($0)) }
-        let missing = AreaType.allCases.filter { !parsed.contains($0) }
-        return parsed.isEmpty ? [.habit, .neutral, .nice] : parsed + missing
-    }
-
-    static func groups(for todos: [Todo], order: [AreaType]) -> [TasksTodoGroup] {
-        order.compactMap { type in
-            let items = todos
-                .filter { Self.type(for: $0) == type }
-                .sorted(by: todoSort)
-            guard !items.isEmpty else { return nil }
-            return TasksTodoGroup(type: type, todos: items)
-        }
-    }
-
-    static func type(for todo: Todo) -> AreaType {
-        todo.taskType
-    }
-
-    nonisolated private static func todoSort(_ lhs: Todo, _ rhs: Todo) -> Bool {
-        if lhs.isCompleted != rhs.isCompleted {
-            return !lhs.isCompleted
-        }
-
-        if lhs.sortIndex != rhs.sortIndex {
-            return lhs.sortIndex < rhs.sortIndex
-        }
-
-        return lhs.createdAt < rhs.createdAt
-    }
-}
-
-private struct TasksSectionHeader: View {
-    let group: TasksTodoGroup
-
-    var body: some View {
-        HStack(spacing: 8) {
-            Circle()
-                .fill(group.tint)
-                .frame(width: 7, height: 7)
-
-            Text(group.title)
-                .font(.caption.weight(.semibold))
-
-            Text("\(group.todos.count)")
-                .font(.caption2.weight(.medium))
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
-                .background(Color.secondary.opacity(0.12))
-                .clipShape(Capsule())
-
-            Spacer(minLength: 0)
-        }
-        .padding(.top, 12)
-        .padding(.bottom, 4)
-        .textCase(nil)
-    }
-}
-
-private struct TasksOverdueHeader: View {
-    let count: Int
-    let onMoveAllToToday: () -> Void
-
-    var body: some View {
-        HStack(spacing: 8) {
-            Circle()
-                .fill(.red)
-                .frame(width: 7, height: 7)
-
-            Text(String(localized: "やり残し"))
-                .font(.caption.weight(.semibold))
-
-            Text("\(count)")
-                .font(.caption2.monospacedDigit().weight(.medium))
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
-                .background(Color.secondary.opacity(0.12), in: Capsule())
-
-            Spacer(minLength: 0)
-
-            Button(String(localized: "すべて今日へ"), action: onMoveAllToToday)
-                .font(.caption)
-                .buttonStyle(.borderless)
-        }
-        .padding(.top, 12)
-        .padding(.bottom, 4)
-        .textCase(nil)
-    }
-}
-
-private struct TodoRow: View {
-    @Environment(\.modelContext) private var modelContext
-
-    let todo: Todo
-    let summary: String
-
-    @State private var isHovering = false
-    @State private var isEditingTitle = false
-    @State private var draftTitle = ""
-    @FocusState private var isTitleFocused: Bool
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            TodoProgressControl(todo: todo) {
-                if todo.setManuallyCompleted(!todo.isCompleted) {
-                    _ = modelContext.saveReporting(.taskUpdate)
-                }
-            }
-
-            VStack(alignment: .leading, spacing: 4) {
-                titleEditor
-
-                HStack(spacing: 6) {
-                    if let area = todo.area, !DefaultAreas.isTaskInbox(area) {
-                        Text(area.symbolName)
-                            .foregroundStyle(checkboxTint)
-                            .help(area.name)
-                            .accessibilityLabel(area.name)
-                        Text("·")
-                    }
-
-                    if let project = todo.project, !titleIsPlaceholder {
-                        Label(project.name, systemImage: "folder")
-                        Text("·")
-                    }
-
-                    if let minutes = todo.scheduledTimeMinutes {
-                        TaskTimeLabel(minutes: minutes, reminderEnabled: todo.reminderEnabled)
-                        Text("·")
-                    }
-
-                    Text(priorityLabel)
-
-                    if todo.measurement != .checkbox {
-                        Text("·")
-                        Text(summary)
-                    }
-
-                    ForEach(todo.hashtags, id: \.self) { hashtag in
-                        Text(verbatim: "#\(hashtag)")
-                            .foregroundStyle(checkboxTint)
-                    }
-                }
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding(.vertical, 6)
-        .padding(.horizontal, 4)
-        .opacity(todo.isCompleted ? 0.55 : 1)
-        .contentShape(Rectangle())
-        .onHover { hovering in
-            isHovering = hovering
-        }
-        .onAppear {
-            draftTitle = todo.title
-        }
-        .onChange(of: todo.title) { _, newValue in
-            guard !isEditingTitle else { return }
-            draftTitle = newValue
-        }
-        .onChange(of: isTitleFocused) { _, isFocused in
-            if !isFocused, isEditingTitle {
-                commitTitle()
-            }
-        }
-        .onDisappear(perform: commitTitleIfNeeded)
-        .listRowInsets(EdgeInsets(top: 3, leading: 10, bottom: 3, trailing: 10))
-        .listRowSeparator(.hidden)
-        .listRowBackground(rowBackground)
-    }
-
-    @ViewBuilder
-    private var titleEditor: some View {
-        if isEditingTitle {
-            TextField(titlePlaceholder, text: $draftTitle)
-                .textFieldStyle(.plain)
-                .font(.body.weight(.medium))
-                .strikethrough(todo.isCompleted)
-                .foregroundStyle(todo.isCompleted ? .secondary : .primary)
-                .focused($isTitleFocused)
-                .onSubmit(commitTitle)
-                .accessibilityLabel(String(localized: "タスク名"))
-        } else {
-            Text(TodoDisplay.taskTitle(for: todo))
-                .font(titleIsPlaceholder ? .body.weight(.medium).italic() : .body.weight(.medium))
-                .strikethrough(todo.isCompleted)
-                .foregroundStyle(titleColor)
-                .lineLimit(1)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .contentShape(Rectangle())
-                .onTapGesture(count: 2) {
-                    beginTitleEdit()
-                }
-                .accessibilityLabel(String(localized: "タスク名"))
-        }
-    }
-
-    private func beginTitleEdit() {
-        draftTitle = todo.title
-        isEditingTitle = true
-
-        Task { @MainActor in
-            isTitleFocused = true
-        }
-    }
-
-    private func commitTitle() {
-        let normalizedTitle = draftTitle.trimmingCharacters(in: .whitespacesAndNewlines)
-        if todo.title != normalizedTitle {
-            todo.title = normalizedTitle
-            todo.updatedAt = .now
-        }
-
-        isEditingTitle = false
-        isTitleFocused = false
-        _ = modelContext.saveReporting(.taskUpdate)
-    }
-
-    private func commitTitleIfNeeded() {
-        guard isEditingTitle else { return }
-        commitTitle()
-    }
-
-    private var priorityLabel: String {
-        if todo.priority == .low, todo.isRoomIfPossible {
-            return String(localized: "余裕があれば")
-        }
-        return todo.priority.displayName
-    }
-
-    private var titlePlaceholder: String {
-        TodoDisplay.taskPlaceholder(for: todo)
-    }
-
-    private var titleIsPlaceholder: Bool {
-        todo.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    }
-
-    private var titleColor: Color {
-        if todo.isCompleted {
-            return .secondary
-        }
-
-        return titleIsPlaceholder ? .secondary.opacity(0.7) : .primary
-    }
-
-    private var rowBackground: some View {
-        RoundedRectangle(cornerRadius: 10)
-            .fill(tintColor)
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(Color.primary.opacity(isHovering ? 0.05 : 0))
-            )
-            .padding(.vertical, 2)
-    }
-
-    private var tintColor: Color {
-        guard let area = todo.area, !DefaultAreas.isTaskInbox(area) else {
-            return .clear
-        }
-
-        return Color(hex: area.colorHex).opacity(0.08)
-    }
-
-    private var checkboxTint: Color {
-        guard let area = todo.area, !DefaultAreas.isTaskInbox(area) else {
-            return Color.secondary.opacity(0.6)
-        }
-
-        return Color(hex: area.colorHex)
-    }
-}
-
-private struct EmptyRow: View {
-    let text: String
-
-    var body: some View {
-        Text(text)
-            .foregroundStyle(.secondary)
-    }
 }
 
 #Preview {

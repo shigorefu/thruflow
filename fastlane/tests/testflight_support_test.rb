@@ -21,6 +21,7 @@ class TestFlightSupportTest < Minitest::Test
     TestFlightSupport::TARGETS.fetch(platform).values.map do |id|
       { info: { "CFBundleIdentifier" => id, "CFBundleShortVersionString" => "1.4.0", "CFBundleVersion" => "13" },
         entitlements: { "com.apple.developer.team-identifier" => "BR727PS795",
+                        "com.apple.security.application-groups" => [TestFlightSupport::APP_GROUP],
                         "com.apple.developer.icloud-container-environment" => "Production",
                         "com.apple.developer.icloud-container-identifiers" => [TestFlightSupport::CLOUD_CONTAINER] } }
     end
@@ -93,8 +94,27 @@ class TestFlightSupportTest < Minitest::Test
     values = records
     values[1][:entitlements].delete("com.apple.developer.icloud-container-environment")
     TestFlightSupport.validate_records!(values, configuration, signed: true)
-    values.last[:entitlements]["com.apple.developer.icloud-container-environment"] = "Development"
+    values.find { |record| record[:info]["CFBundleIdentifier"].end_with?(".watchapp") }[:entitlements]["com.apple.developer.icloud-container-environment"] = "Development"
     assert_raises(RuntimeError) { TestFlightSupport.validate_records!(values, configuration, signed: true) }
+  end
+
+  def test_notification_service_is_required_on_both_platforms
+    %w[ios macos].each do |platform|
+      values = records(platform).reject { |record| record[:info]["CFBundleIdentifier"].end_with?(".notifications") }
+      assert_raises(RuntimeError) { TestFlightSupport.validate_records!(values, configuration(platform), signed: false) }
+    end
+  end
+
+  def test_notification_service_requires_app_group_but_not_cloudkit
+    %w[ios macos].each do |platform|
+      values = records(platform)
+      service = values.find { |record| record[:info]["CFBundleIdentifier"].end_with?(".notifications") }
+      service[:entitlements].delete("com.apple.developer.icloud-container-environment")
+      service[:entitlements].delete("com.apple.developer.icloud-container-identifiers")
+      TestFlightSupport.validate_records!(values, configuration(platform), signed: true)
+      service[:entitlements].delete("com.apple.security.application-groups")
+      assert_raises(RuntimeError) { TestFlightSupport.validate_records!(values, configuration(platform), signed: true) }
+    end
   end
 
   def test_wrong_team_or_debuggable_binary_rejected

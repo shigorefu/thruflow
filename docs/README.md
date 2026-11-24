@@ -17,9 +17,10 @@ original spelling; documentation cleanup must not rename those contracts.
 | How do I use each screen? | [UX flows](UX_FLOWS.md) |
 | What do product terms mean? | [Vocabulary](VOCABULARY.md) |
 | How do Tasks, Habits and timers behave? | [Domain model](DOMAIN_MODEL.md) |
-| Where does code belong? | [Architecture](ARCHITECTURE.md) |
+| Where do I edit a screen, component, shared rule or test? | [Architecture source layout](ARCHITECTURE.md#source-layout) |
 | Which fields and identities must stay compatible? | [Data model](DATA_MODEL.md) |
 | How does iCloud work, and what is deployed? | [CloudKit](CLOUDKIT.md) |
+| How are notifications delivered and operated? | [Notifications](NOTIFICATIONS.md) |
 | How are external services connected? | [Connectors](CONNECTORS.md), [artwork provenance](CONNECTOR_ASSETS.md) |
 | How are translations maintained? | [Localization](LOCALISATION.md) |
 | How do I test with isolated data? | [Development and QA](TECHNICAL_PLAN.md) |

@@ -4255,6 +4255,40 @@
         }
       }
     },
+    "ThruFlowの通知サーバーを使用" : {
+      "localizations" : {
+        "ja": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ThruFlowの通知サーバーを使用"
+          }
+        },
+        "en": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use ThruFlow notification server"
+          }
+        },
+        "ru": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Использовать сервер уведомлений ThruFlow"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用 ThruFlow 通知服务器"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用 ThruFlow 通知伺服器"
+          }
+        }
+      }
+    },
     "ThruFlowは、タスク管理、柔軟な集中タイマー、時間の振り返りをひとつにまとめたアプリです。まずは分野とタスクをひとつずつ作り、基本のフローを試してみましょう。" : {
       "localizations" : {
         "en" : {
@@ -5386,6 +5420,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "自動"
+          }
+        }
+      }
+    },
+    "オフにすると、この端末の通知は端末内で予約します。iCloud同期とコネクタの設定は変わりません。" : {
+      "localizations" : {
+        "ja": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "オフにすると、この端末の通知は端末内で予約します。iCloud同期とコネクタの設定は変わりません。"
+          }
+        },
+        "en": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When off, this device schedules notifications locally. iCloud sync and connector settings are unchanged."
+          }
+        },
+        "ru": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Если выключить, уведомления на этом устройстве будут планироваться локально. Настройки синхронизации iCloud и коннекторов не изменятся."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭后，此设备的通知将在本机安排。iCloud 同步和连接器设置不会改变。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "關閉後，此裝置的通知會在本機排程。iCloud 同步與連接器設定不會變更。"
           }
         }
       }
@@ -6843,6 +6911,74 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "刪除本次專注記錄？"
+          }
+        }
+      }
+    },
+    "サーバーで予約済みの通知は、オフライン中や送信済みの場合、届くことがあります。" : {
+      "localizations" : {
+        "ja": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サーバーで予約済みの通知は、オフライン中や送信済みの場合、届くことがあります。"
+          }
+        },
+        "en": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifications already scheduled on the server may still arrive if this device is offline or they have already been sent."
+          }
+        },
+        "ru": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Уведомления, уже запланированные на сервере, могут прийти, если устройство не в сети или уведомление уже отправлено."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已在服务器上安排的通知，在设备离线或通知已发出的情况下，仍可能送达。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已在伺服器上排程的通知，在裝置離線或通知已送出的情況下，仍可能送達。"
+          }
+        }
+      }
+    },
+    "サーバー上の通知予約の削除を確認できません" : {
+      "localizations" : {
+        "ja": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サーバー上の通知予約の削除を確認できません"
+          }
+        },
+        "en": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't confirm removal of scheduled notifications from the server."
+          }
+        },
+        "ru": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось подтвердить удаление уведомлений, запланированных на сервере."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法确认服务器上的通知安排已删除。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法確認伺服器上的通知排程已刪除。"
           }
         }
       }
@@ -9031,6 +9167,40 @@
         }
       }
     },
+    "なし" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "None"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "なし"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無"
+          }
+        }
+      }
+    },
     "パープル" : {
       "localizations" : {
         "en" : {
@@ -9813,40 +9983,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "新增專案"
-          }
-        }
-      }
-    },
-    "プロジェクト別" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "By Project"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "プロジェクト別"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "По проектам"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "按项目"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "按專案"
           }
         }
       }
@@ -11936,6 +12072,96 @@
         }
       }
     },
+    "休息日" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rest Days"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дни отдыха"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "休息日"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "休息日"
+          }
+        }
+      }
+    },
+    "休息日と曜日の設定では、指定した週回数を達成できません。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The selected rest days and weekdays make the weekly target unattainable."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "休息日と曜日の設定では、週の目標回数を達成できません。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "С учетом дней отдыха и выбранных дней недели недельную цель выполнить невозможно."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所选休息日和星期设置无法达到每周目标次数。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所選休息日和星期設定無法達到每週目標次數。"
+          }
+        }
+      }
+    },
+    "休息日数は0〜6日で選んでください。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose 0–6 rest days."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите от 0 до 6 дней отдыха."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请选择 0 至 6 天休息日。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請選擇 0 至 6 天休息日。"
+          }
+        }
+      }
+    },
     "休憩" : {
       "localizations" : {
         "en" : {
@@ -12460,40 +12686,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "儲存"
-          }
-        }
-      }
-    },
-    "傾向" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Trend"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "推移"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Динамика"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "趋势"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "趨勢"
           }
         }
       }
@@ -14852,6 +15044,34 @@
         }
       }
     },
+    "完了したタスクの見積もりと、記録された集中時間を比較します。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compare estimates for completed tasks with their recorded focus time."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сравнивает оценки завершённых задач с записанным временем фокусировки."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "比较已完成任务的预估时间与记录的专注时长。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "比較已完成任務的預估時間與記錄的專注時長。"
+          }
+        }
+      }
+    },
     "完了したタスクは移動できません" : {
       "localizations" : {
         "en" : {
@@ -15074,6 +15294,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "完成狀態等待傳送"
+          }
+        }
+      }
+    },
+    "実績" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actual"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Факт"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "实际"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "實際"
           }
         }
       }
@@ -17138,6 +17386,34 @@
         }
       }
     },
+    "日ごとの集中時間" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daily Focus Time"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Время фокусировки по дням"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每日专注时长"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每日專注時長"
+          }
+        }
+      }
+    },
     "日付" : {
       "localizations" : {
         "en" : {
@@ -17811,6 +18087,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "小時"
+          }
+        }
+      }
+    },
+    "時間見積もりの精度" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Time Estimate Accuracy"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Точность оценки времени"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "时间估算准确度"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "時間估算準確度"
           }
         }
       }
@@ -20195,6 +20499,40 @@
         }
       }
     },
+    "習慣を完了した後、指定した日数は次のタスクを作成しません。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "After fully completing a habit, take the selected number of full days off. Create the next task the day after the rest period."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "習慣を完全に達成した翌日から指定日数を休み、休息期間の翌日に次のタスクを作成します。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "После полного выполнения привычки отдохните указанное число полных дней. Следующая задача будет создана на следующий день после отдыха."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "习惯完全完成后，休息所选的完整天数。休息期结束后的次日创建下一项任务。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "習慣完全完成後，休息所選的完整天數。休息期結束後的次日建立下一項任務。"
+          }
+        }
+      }
+    },
     "習慣を設定" : {
       "localizations" : {
         "en" : {
@@ -20570,6 +20908,62 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "如果輸入多個表情符號，只會儲存第一個。"
+          }
+        }
+      }
+    },
+    "見積もり" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Planned"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "План"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "预计"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "預估"
+          }
+        }
+      }
+    },
+    "見積もりと実績を比較できるタスクはありません" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No tasks with estimates to compare"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет задач с оценками для сравнения"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有可供比较的任务估算"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有可供比較的任務預估"
           }
         }
       }
@@ -21619,6 +22013,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "隨時"
+          }
+        }
+      }
+    },
+    "通知" : {
+      "localizations" : {
+        "ja": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通知"
+          }
+        },
+        "en": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifications"
+          }
+        },
+        "ru": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Уведомления"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通知"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通知"
           }
         }
       }
@@ -22854,6 +23282,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "以半透明條顯示至預計專注結束時間。關閉此選項時及休息期間，僅顯示已經過的時間。"
+          }
+        }
+      }
+    },
+    "集中の質" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Focus Quality"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Качество фокусировки"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "专注质量"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "專注品質"
           }
         }
       }

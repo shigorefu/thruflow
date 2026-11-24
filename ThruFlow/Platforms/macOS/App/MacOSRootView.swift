@@ -20,13 +20,20 @@ struct MacOSRootView: View {
     @Query private var onboardingFlowSessions: [FlowSession]
     @Query private var onboardingFlowBreaks: [FlowBreak]
     @State private var selection: AppSection?
+    @State private var visitedSections: Set<AppSection> = []
     @State private var showsConnectors = false
     @State private var tasksInitialFilter: TaskCalendarFilter = .all
-    @State private var historyDate = Calendar.current.startOfDay(for: .now)
+    @State private var tasksFilterRevision = 0
+    @State private var hasPresentedTaskRows = false
+    @State private var historyNavigationRevision = 0
+    @State private var historyDate: Date?
     @State private var didReconcileFlowProgress = false
     @State private var flowSnapshotCache: FlowDashboardSnapshot?
     @State private var flowTodoGroupsCache: FlowDashboardTodoGroups?
-    @State private var statisticsPeriodCache: StatisticsPeriodSnapshot?
+    @State private var statisticsCache = StatisticsPresentationCache()
+    @State private var statisticsSelection = StatisticsPeriodFilter(
+        period: ScreenshotMode.isEnabled() ? .month : .week
+    )
 
     init() {
         let initialSelection: AppSection = switch ScreenshotMode.initialScreen() {
@@ -34,7 +41,7 @@ struct MacOSRootView: View {
         case .tasks: .tasks
         case .history: .history
         case .directions: .areas
-        case .statistics, .statisticsDots: .statistics
+        case .statistics, .statisticsTrend, .statisticsBreakdown, .statisticsDots: .statistics
         }
         _selection = State(initialValue: initialSelection)
 
@@ -110,10 +117,21 @@ struct MacOSRootView: View {
             .navigationTitle(String(localized: "スルフロ"))
             .navigationSplitViewColumnWidth(min: 175, ideal: 190, max: 240)
         } detail: {
-            detailContent
+            GeometryReader { viewport in
+                ZStack {
+                    detailContent
+                }
+                .frame(width: viewport.size.width, height: viewport.size.height)
+            }
+            .navigationTitle(currentSection.title)
+        }
+        .onChange(of: currentSection, initial: true) { oldSection, section in
+            if oldSection != section {
+                MacOSFocusController.dismissCurrentTextEditor()
+            }
+            visitedSections.insert(section)
         }
         .task {
-            historyDate = dayBoundary.day(containing: .now, calendar: calendar)
             guard !didReconcileFlowProgress else { return }
             didReconcileFlowProgress = true
             let modelContainer = modelContext.container
@@ -147,51 +165,78 @@ struct MacOSRootView: View {
             MacOSConnectorsView()
         }
         .sheet(item: onboardingPresentationBinding) { presentation in
-            onboardingSheet(for: presentation)
+            MacOSOnboardingSheet(
+                onboarding: onboarding,
+                presentation: presentation,
+                areas: areas,
+                calendar: calendar,
+                dayBoundary: dayBoundary,
+                hasExternalWorkspaceContent: hasExternalOnboardingWorkspaceContent(excludingAreaID:excludingTaskID:)
+            )
         }
+    }
+
+    private var currentSection: AppSection { selection ?? .flow }
+
+    private func hasVisited(_ section: AppSection) -> Bool {
+        currentSection == section || visitedSections.contains(section)
     }
 
     @ViewBuilder
     private var detailContent: some View {
-        switch selection ?? .flow {
-        case .flow:
-            DeferredFeatureMount(
-                isActive: (selection ?? .flow) == .flow,
-                title: String(localized: "Flow")
-            ) {
-                FlowDashboardView(
-                    isVisible: !onboarding.isPresented,
-                    areas: areas,
-                    cachedSnapshot: $flowSnapshotCache,
-                    cachedTodoGroups: $flowTodoGroupsCache,
-                    onOpenTasks: { filter in
-                        tasksInitialFilter = filter
-                        selection = .tasks
-                    }
-                )
-            }
-        case .tasks:
-            TasksView(initialFilter: tasksInitialFilter)
-        case .history:
-            DayHistoryView(initialDate: historyDate)
-                .id(historyDate)
-        case .areas:
-            AreaListView()
-        case .statistics:
-            DeferredFeatureMount(
-                isActive: selection == .statistics,
-                title: String(localized: "統計")
-            ) {
-                StatisticsView(
-                    isVisible: true,
-                    areas: areas,
-                    cachedSnapshot: $statisticsPeriodCache
-                ) { date in
-                    historyDate = calendar.startOfDay(for: date)
-                    selection = .history
+        if currentSection == .flow {
+            FlowDashboardView(
+                isVisible: !onboarding.isPresented,
+                areas: areas,
+                cachedSnapshot: $flowSnapshotCache,
+                cachedTodoGroups: $flowTodoGroupsCache,
+                onOpenTasks: { filter in
+                    tasksInitialFilter = filter
+                    tasksFilterRevision &+= 1
+                    selection = .tasks
                 }
-            }
+            )
         }
+        if hasVisited(.tasks) {
+            TasksView(
+                initialFilter: tasksInitialFilter,
+                filterRevision: tasksFilterRevision,
+                isVisible: currentSection == .tasks,
+                onFirstRows: beginTaskRowReveal
+            )
+            .macSectionVisibility(currentSection == .tasks)
+        }
+        if hasVisited(.history) {
+            DayHistoryView(
+                initialDate: historyDate ?? dayBoundary.day(containing: .now, calendar: calendar),
+                navigationRevision: historyNavigationRevision,
+                isVisible: currentSection == .history
+            )
+            .macSectionVisibility(currentSection == .history)
+        }
+        if hasVisited(.areas) {
+            AreaListView(isVisible: currentSection == .areas)
+                .macSectionVisibility(currentSection == .areas)
+        }
+        if hasVisited(.statistics) {
+            StatisticsView(
+                areas: areas,
+                cache: $statisticsCache,
+                selection: $statisticsSelection,
+                isVisible: currentSection == .statistics
+            ) { date in
+                historyDate = calendar.startOfDay(for: date)
+                historyNavigationRevision &+= 1
+                selection = .history
+            }
+            .macSectionVisibility(currentSection == .statistics)
+        }
+    }
+
+    private func beginTaskRowReveal() -> Bool {
+        guard currentSection == .tasks, !hasPresentedTaskRows else { return false }
+        hasPresentedTaskRows = true
+        return true
     }
 
     private func showOnboardingScreenIfNeeded() {
@@ -213,107 +258,6 @@ struct MacOSRootView: View {
                     onboarding.dismissPresentation()
                 }
             }
-        )
-    }
-
-    @ViewBuilder
-    private func onboardingSheet(for presentation: OnboardingPresentation) -> some View {
-        switch presentation {
-        case .areaEditor:
-            AreaFormView(
-                mode: .create,
-                initialDraft: onboardingAreaDraft
-            ) { area in
-                onboarding.resolveWorkspace(
-                    hasUserContent: hasExternalOnboardingWorkspaceContent(
-                        excludingAreaID: area.id
-                    )
-                )
-                _ = onboarding.recordArea(id: area.id)
-            }
-            .toolbar {
-                ToolbarItem(placement: .automatic) {
-                    Button(String(localized: "ガイドをスキップ")) {
-                        onboarding.skip()
-                    }
-                }
-            }
-
-        case .taskComposer:
-            if let area = onboardingCreatedArea {
-                VStack(alignment: .leading, spacing: 14) {
-                    HStack {
-                        Label(String(localized: "最初のタスクを作る"), systemImage: "checklist")
-                            .font(.headline)
-
-                        Spacer()
-
-                        Button(String(localized: "ガイドをスキップ")) {
-                            onboarding.skip()
-                        }
-                        .buttonStyle(.plain)
-                        .foregroundStyle(.secondary)
-                    }
-
-                    QuickTodoCreationPopover(
-                        areas: activeOnboardingAreas,
-                        scheduledDate: dayBoundary.day(containing: .now, calendar: calendar),
-                        showsQuickInputLegend: true,
-                        initialDraft: onboardingTaskDraft(area: area)
-                    ) { todo in
-                        onboarding.resolveWorkspace(
-                            hasUserContent: hasExternalOnboardingWorkspaceContent(
-                                excludingTaskID: todo.id
-                            )
-                        )
-                        guard let area = todo.area else { return }
-                        _ = onboarding.recordTask(
-                            id: todo.id,
-                            presentation: OnboardingTaskPresentation(
-                                title: TodoDisplay.title(for: todo),
-                                areaName: area.name,
-                                areaSymbol: area.symbolName,
-                                areaColorHex: area.colorHex
-                            )
-                        )
-                    }
-                }
-                .padding(18)
-            } else {
-                ContentUnavailableView(
-                    String(localized: "分野が見つかりません"),
-                    systemImage: ProductSymbol.area
-                )
-                .frame(width: 420, height: 260)
-            }
-        }
-    }
-
-    private var activeOnboardingAreas: [Area] {
-        areas.filter { !$0.isArchived && !DefaultAreas.isTaskInboxRecord($0) }
-    }
-
-    private var onboardingCreatedArea: Area? {
-        guard let id = onboarding.createdAreaID else { return nil }
-        return areas.first { $0.id == id && !$0.isArchived }
-    }
-
-    private var onboardingAreaDraft: AreaDraft {
-        AreaDraft(
-            name: String(localized: "仕事"),
-            type: .neutral,
-            symbolName: "💼",
-            colorHex: "#007AFF"
-        )
-    }
-
-    private func onboardingTaskDraft(area: Area) -> TodoDraft {
-        TodoDraft(
-            title: String(localized: "レポートを仕上げる"),
-            area: area,
-            measurement: .checkbox,
-            priority: .medium,
-            scheduledDate: dayBoundary.day(containing: .now, calendar: calendar)
         )
     }
 
@@ -372,6 +316,25 @@ private enum AppSection: Hashable {
     case history
     case areas
     case statistics
+
+    var title: String {
+        switch self {
+        case .flow: String(localized: "Flow")
+        case .tasks: String(localized: "タスク")
+        case .history: String(localized: "履歴")
+        case .areas: String(localized: "方向")
+        case .statistics: String(localized: "統計")
+        }
+    }
+}
+
+private extension View {
+    func macSectionVisibility(_ isVisible: Bool) -> some View {
+        opacity(isVisible ? 1 : 0)
+            .disabled(!isVisible)
+            .allowsHitTesting(isVisible)
+            .accessibilityHidden(!isVisible)
+    }
 }
 
 #Preview {

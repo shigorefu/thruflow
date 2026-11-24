@@ -19,7 +19,7 @@ class RoutingTests(unittest.TestCase):
 
     def test_known_features_and_union(self):
         self.assertEqual(self.ids(['ThruFlow/Platforms/iOS/Features/Settings/IOSSettingsView.swift']), {'settings'})
-        self.assertEqual(self.ids(['ThruFlow/Platforms/macOS/Features/Todos/TodoFormView.swift',
+        self.assertEqual(self.ids(['ThruFlow/Platforms/macOS/Features/Tasks/Editor/TodoFormView.swift',
                                    'ThruFlow/Platforms/iOS/Features/History/IOSHistoryView.swift']), {'tasks', 'history'})
 
     def test_unknown_shared_app_and_test_paths_review_every_group(self):

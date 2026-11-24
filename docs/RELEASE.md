@@ -2,6 +2,113 @@
 
 This document is the operational checklist for ThruFlow releases. Product scope remains in [`ROADMAP.md`](ROADMAP.md), and CloudKit details remain in [`CLOUDKIT.md`](CLOUDKIT.md).
 
+## Preparing 1.5.0 build 16 — 2026-11-24
+
+Version `1.5.0`, build `16` is prepared on branch `1.5.0` across all 14 target
+configurations. Reviewed app source is `8603de2749d6af717d1fe7bccd77784768e8ebb9`.
+Native images were captured on 2026-11-24; final local validation and inventory
+were recorded on 2026-11-25. CI results below refer to this app source, not a
+subsequent documentation-only commit.
+This remains an unreleased candidate: maintainer selection and approval of the
+app, screenshots and [five-language release copy](releases/1.5.0.md) are required
+before merging into `main`. No merge, release tag, TestFlight upload, App Store
+submission or publication is authorized by this preparation record.
+
+### Local validation
+
+- The final complete macOS suite passed **615 tests in 61 suites**, including
+  the five-language screenshot fixture, on the reviewed source. Tests used
+  isolated storage with CloudKit disabled; the suite completed in 8.461 seconds
+  and the test command exited 0 with `TEST SUCCEEDED`. Evidence:
+  `DerivedData/Release150QA/release-final-tests.log`.
+- The latest iOS screenshot/demo and unsigned iOS Release builds passed; iOS
+  Release includes embedded Watch. Evidence: `flow-framing-ios-demo.log` and
+  `flow-framing-ios-release.log` in the same QA directory. Mac Debug and unsigned
+  macOS Release passed at `4f08d4d`; Mac presentation source is unchanged by the
+  later iOS-only screenshot-framing addition. The earlier `duration-fit-*.log`
+  builds also passed. The notification service privacy manifest was inspected
+  in both platform build products.
+- Preparation checks passed: 28 backend tests, 13 Ruby delivery-helper tests
+  with 35 assertions, 14 Python automation tests, platform-review mapping and
+  whitespace checks. Live CloudKit Production was inspected without changes;
+  see the [dated schema record](CLOUDKIT.md#release-150-16-preparation--2026-11-24).
+- [App-source CI for `8603de2`, run 45414260579, attempt 2](https://github.com/shigorefu/thruflow/actions/runs/45414260579)
+  passed both classification and Apple build/test jobs. The initial attempt did
+  not acquire a hosted Apple runner after repeated attempts, as recorded by
+  GitHub's capacity annotation; the rerun resolved this infrastructure failure.
+  [Earlier CI for `4f08d4d`](https://github.com/shigorefu/thruflow/actions/runs/45410358538)
+  also passed.
+
+### Local screenshot set and platform review
+
+All **200 native JPEG candidates** are captured under the Git-ignored
+`screenshots/1.5.0/`: eight routes × five layouts × five languages. Identified
+loading-state, text-fit and framing images were replaced. This completes the
+local candidate set; maintainer selection and approval remain pending.
+The local `index.html` gallery, `manifest.json` inventory and 25 final review
+sheets (`review/<language>-<layout>.jpg`) are present. The manifest records all
+200 originals, 40 per layout, their dimensions and SHA-256 hashes, together with
+the reviewed app-source identifier. These are local review materials; no App Store
+upload is recorded.
+
+Independent overview review agreed on all 25 canonical sheets / 200 thumbnails:
+10 iPad/iPhone sheets (80 thumbnails) and 15 Mac/Duo Closed/Duo Open sheets
+(120 thumbnails). This complements the native image checks below; it is not a
+full native-size text or native-speaker audit.
+
+| Layout | Native JPEG dimensions | Images |
+| --- | --- | --- |
+| Mac | 2560 × 1600 | 40 |
+| iPhone | 1206 × 2622 | 40 |
+| iPad | 2752 × 2064 | 40 |
+| iPhone Duo Closed | 1398 × 2034 | 40 |
+| iPhone Duo Open | 2853 × 2007 | 40 |
+
+Independent visual checks confirmed the final Mac Statistics images 05–08 in
+all five languages: data loaded, complete rings, two-line English/Russian center
+captions and full Chinese durations. Reviewed Chinese Duo Open Statistics
+captures retain their native 2853 × 2007 frame. Closed Duo Flow 01 in all five
+languages shows the complete timer and controls using the isolated Debug framing
+flag. All 40 iPhone captures were viewed; the History/Areas clocks were confirmed
+in the actual image files, with no app status-bar change. All 40 iPad captures
+passed after replacing the three loading-state images; no specific underlying
+cause for those transient captures was established.
+
+Long Task properties, titles and legends retain native ellipsis where space is
+limited. Large iPad Statistics images 05–08 may coincide when the full report
+fits without scrolling.
+
+Both client reviewers agreed on longest-relative, left-anchored distribution
+bars, centered wider seven-day bars and bounded larger achievement rings.
+Daily donut shares, completion calculations and recorded data are unchanged.
+Counterpart reviews also agreed on bounded caption/value fitting and the
+Debug-only iOS screenshot scroll, with normal and Release launches unaffected.
+Native Mac and iPad checks covered all three compact Flow Statistics pages.
+The server-OFF setting was exercised in the Mac demo. iPhone timer start/pause was exercised, with the countdown
+observed at 24:52 after starting from 25 minutes. Compact iPhone Flow Statistics
+pages two and three were not gesture-verified because automated scrolling was
+unavailable; the screenshots do not establish those interactions.
+
+### Remaining distribution gates
+
+- Obtain maintainer selection and approval of the app, screenshots and localized
+  release copy before merging into `main`.
+- Prepare and inspect App Store distribution profiles and signed exports for
+  `com.shigorefu.thruflow.notifications` on both platforms. Automation includes
+  this extension in match/signing/export checks and requires its App Group;
+  it does not require CloudKit entitlements. Development profiles and unsigned
+  builds do not establish distribution readiness.
+- Update App Store privacy answers and the public policy page before
+  distribution. Source privacy policy and app/extension manifest edits do not
+  establish that external disclosures were published.
+- Complete the exact-build signed-device notification and cross-device checks
+  in [Notifications](NOTIFICATIONS.md) and [CloudKit](CLOUDKIT.md), or retain
+  their explicit unverified status in the release decision. Physical APNs/NSE
+  delivery, production-signed exports and real device exchange remain unverified.
+  Server-only opt-out leaves iCloud and connectors unchanged; its contract and
+  actual server checks are recorded in
+  [Notifications](NOTIFICATIONS.md#per-device-server-preference).
+
 ## Released 1.4.1 build 15
 
 The maintainer confirmed App Store publication on 2026-11-12. The [TestFlight
@@ -114,25 +221,72 @@ calendar dates are not byte-for-byte identical.
 2. In **Edit Scheme > Run > Arguments**, keep `--screenshot-mode` and the scheme's
    `--screenshot-language=<language>` enabled. The matching `-AppleLanguages` and
    `-AppleLocale` arguments localize system controls too.
-3. Enable exactly one `--screenshot-screen=<route>` argument. All six are supplied
-   by each scheme; `flow` is enabled by default.
-4. Run, wait for the real screen to finish laying out, and capture it at the
-   intended App Store device/window size. Build/run does not itself capture or
-   upload an image. Check text wrapping, selected dates and chart loading in each
-   language before using the image.
-5. Save images under the visible local `screenshots/1.4.0/` directory, organized
-   by platform and language. `/screenshots/` is ignored by Git; do not commit
-   generated captures or private user screenshots. Stop temporary QA apps after
-   capture.
+3. Enable exactly one `--screenshot-screen=<route>` argument; `flow` is enabled
+   by default. Each checked-in scheme supplies six presets. For
+   `statistics-trend` or `statistics-breakdown`, add the matching argument
+   manually and disable every other screen argument. `ScreenshotScreen` supports
+   all eight routes below; the two extra routes are not prelisted in the schemes.
+4. Run and wait for the actual screen and fixture data to finish loading before
+   capturing at the intended App Store device/window size. Verify the language,
+   selected date, non-placeholder metrics and intended chart/scroll position.
+   Statistics anchor routes wait for report data before scrolling; a fixed delay
+   or a nonblank frame alone does not establish readiness. Check duration/unit
+   wrapping and donut center text in every language. Build/run does not itself
+   capture or upload an image.
+5. Save `screenshots/<version>/<language>/<layout>/<NN>-<route>.jpg`. The five
+   layouts are `Mac`, `iPhone`, `iPad`, `iPhoneDuo-Closed` and `iPhoneDuo-Open`.
+   Eight routes × five languages × five layouts make 200 candidate files;
+   their presence is separate from visual review and maintainer approval.
+   `/screenshots/` is ignored by Git; do not commit generated captures or private
+   user screenshots. Stop temporary QA apps after capture.
 
-| Route | Native screen |
-| --- | --- |
-| `flow` | Flow dashboard |
-| `tasks` | Tasks |
-| `history` | History |
-| `directions` | Areas, including Project children |
-| `statistics` | Statistics, initially Month |
-| `statistics-dots` | Statistics, initially Month and scrolled to Dots |
+| File | Route | Native start | Scheme preset |
+| --- | --- | --- | --- |
+| `01-flow.jpg` | `flow` | Flow dashboard | Yes; default |
+| `02-tasks.jpg` | `tasks` | Tasks | Yes |
+| `03-history.jpg` | `history` | History | Yes |
+| `04-directions.jpg` | `directions` | Areas, including Project children | Yes |
+| `05-statistics.jpg` | `statistics` | Statistics, initially Month | Yes |
+| `06-statistics-trend.jpg` | `statistics-trend` | Month report scrolled to Focus Quality | Add manually |
+| `07-statistics-breakdown.jpg` | `statistics-breakdown` | Month report scrolled to Distribution | Add manually |
+| `08-statistics-dots.jpg` | `statistics-dots` | Month report scrolled to Dots | Yes |
+
+### Native iPhone Duo capture
+
+For the Duo simulator used for 1.5.0 preparation, capture the native display
+matching its actual posture:
+
+| Posture | `simctl io <UDID> screenshot` option | Output layout |
+| --- | --- | --- |
+| Closed | `--display=1` | `iPhoneDuo-Closed` |
+| Open | `--display=3` | `iPhoneDuo-Open` |
+
+Select Closed or Open using the simulator's native posture control before
+launch/capture. A display option selects a buffer; it does not change posture.
+After a posture change or relaunch, confirm that the visible compact/expanded
+layout, active display and fixture data agree, then wait for the intended route
+to settle. Reject blank, stale, transitional or wrong-posture frames rather
+than renaming them into the other layout. Preserve native aspect ratios.
+The display numbering is specific to the tested simulator; reconfirm it when
+changing the simulated device or toolchain.
+
+For a timer-focused mobile Flow capture, optionally add
+`--screenshot-flow-section=timer` together with `--screenshot-mode` and
+`--screenshot-screen=flow`. After the visible fixture snapshot and Task groups
+load, the iOS Debug presentation scrolls the existing player to the top without
+animation. It does not resize or reorder cards, start a timer or change data.
+The flag is inert in normal launches and Release, and has no Mac/Watch effect.
+Use this framing for Closed Duo `01-flow.jpg` when a timer-focused view is
+needed. All five 1.5.0 language captures were replaced and independently checked
+with the complete timer and controls visible; other routes retain their normal
+framing.
+
+Local review composites belong under `screenshots/<version>/review/` and are not
+App Store candidates or part of the 200-file count. Rebuild any gallery/manifest
+after replacing captures so dimensions, hashes and missing-file status describe
+the current originals. Review composites never replace individual image review.
+
+### Isolation and Watch
 
 Watch has no dedicated screenshot schemes. A Debug Watch launch with the same
 arguments supports its native Flow, Tasks and Statistics pages; History and

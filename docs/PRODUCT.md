@@ -26,7 +26,9 @@ default reminders on; existing reminder choices are preserved.
 
 Habits generate scheduled occurrences with independent identities and progress.
 An incomplete earlier occurrence remains on its date; a fresh eligible day does
-not inherit its progress. Statistics includes partial progress. Detailed schedule,
+not inherit its progress. Weekly Habits can reserve rest days after full
+completion; the app validates the weekly target against rest and weekday limits.
+Statistics includes partial progress. Detailed schedule,
 archive and ownership rules belong in [Domain model](DOMAIN_MODEL.md).
 
 ## Focus and reflection
@@ -44,7 +46,10 @@ One Focus Block always means 25 focused minutes; breaks do not count. History
 preserves sessions, context segments and breaks, and edits rebuild derived progress.
 
 Statistics reports selected periods, multiple Area filters, search, Task/Area/
-Project distributions, trends, a focus calendar, Habit completion and CSV export.
+Project distributions, daily focus time, trends, a focus calendar, task estimate
+accuracy, Habit completion and CSV export. Mac Focus Quality also offers
+current-period focus lines by Area and Project; its Task mode remains a count
+of completed Tasks. iOS retains the existing Focus/Task trend presentation.
 See [UX flows](UX_FLOWS.md) for presentation and [Domain model](DOMAIN_MODEL.md)
 for calculations and date boundaries.
 
@@ -56,6 +61,9 @@ for calculations and date boundaries.
 - Widgets and Live Activities project app-owned state rather than running another
   timer or opening another SwiftData store.
 - Data is local first, with optional private CloudKit synchronization.
+- In 1.5.0, Mac/iOS notifications prefer the Docker-backed APNs scheduler with
+  a local safety notification. See [Notifications](NOTIFICATIONS.md) for delivery
+  limits, privacy and operational verification.
 - Connectors import Reminders/Todoist Tasks and synchronize checkbox
   completion both ways. Toggl exports eligible completed focus time from its
   recording device. See [Connectors](CONNECTORS.md) for exact limitations.

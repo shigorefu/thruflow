@@ -4,6 +4,7 @@ import SwiftUI
 
 @main
 struct ThruFlowiOSApp: App {
+    @UIApplicationDelegateAdaptor(IOSAppDelegate.self) private var appDelegate
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var activeFlowStore: ActiveFlowStore
     @StateObject private var settings: AppSettings
@@ -75,6 +76,7 @@ struct ThruFlowiOSApp: App {
     var body: some Scene {
         WindowGroup {
             IOSRootView()
+                .id(onboarding.applicationDataResetRevision)
                 .defaultAppStorage(appDefaults)
                 .onboardingJourney(store: onboarding)
                 .persistenceIssuePresenter()

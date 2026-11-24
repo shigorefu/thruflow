@@ -1,0 +1,141 @@
+//
+//  HabitTodoMaterializer.swift
+//  ThruFlow
+//
+
+import Foundation
+import SwiftData
+
+@MainActor
+struct HabitTodoMaterializer {
+    var calendar: Calendar = .current
+    var dayBoundary: AppDayBoundary = .midnight
+
+    @discardableResult
+    func materialize(
+        areas: [Area],
+        dates: [Date],
+        modelContext: ModelContext,
+        now: Date = .now,
+        knownTodos: [Todo]? = nil,
+        reconcilesDuplicates: Bool = true
+    ) throws -> Bool {
+        var todos: [Todo]
+        if let knownTodos {
+            todos = knownTodos
+        } else {
+            todos = try modelContext.fetch(FetchDescriptor<Todo>())
+        }
+        var changed = false
+
+        // Live view updates use the lightweight path, but imported duplicates
+        // still require reconciliation even when no full refresh was requested.
+        if reconcilesDuplicates || HabitTodoReconciler(calendar: calendar).hasDuplicateOccurrences(in: todos) {
+            let sessions = try modelContext.fetch(FetchDescriptor<FlowSession>())
+            let segments = try modelContext.fetch(FetchDescriptor<FlowSegment>())
+            let reconciliation = HabitTodoReconciler(calendar: calendar).reconcile(
+                todos: todos,
+                sessions: sessions,
+                segments: segments,
+                now: now
+            )
+            changed = reconciliation.changed
+
+            if reconciliation.changed {
+                try FlowProgressReconciler().reconcile(
+                    todos: reconciliation.canonicalTodos.map(Optional.some),
+                    areas: reconciliation.affectedAreas.map(Optional.some),
+                    modelContext: modelContext,
+                    now: now
+                )
+                todos = try modelContext.fetch(FetchDescriptor<Todo>())
+            }
+        }
+
+        // Flow history and its derived Todo status may arrive separately.
+        // Resolve measured weekly occurrences before deciding which one is
+        // completed and counts toward the weekly quota.
+        let measuredWeeklyTodos = todos.filter {
+            !$0.isDeleted && !$0.isArchived && $0.measurement != .checkbox &&
+                HabitDefinition(todo: $0)?.goalSchedule == .weeklyCount
+        }
+        if !measuredWeeklyTodos.isEmpty {
+            let previous = measuredWeeklyTodos.map {
+                (todo: $0, seconds: $0.recordedFocusSeconds,
+                 progress: $0.actualProgress, status: $0.status)
+            }
+            try FlowProgressReconciler().reconcile(
+                todos: measuredWeeklyTodos.map(Optional.some), areas: [],
+                modelContext: modelContext, now: now
+            )
+            changed = changed || previous.contains {
+                $0.todo.recordedFocusSeconds != $0.seconds ||
+                    $0.todo.actualProgress != $0.progress || $0.todo.status != $0.status
+            }
+        }
+
+        // A calendar may have generated future days before archiving, including
+        // records received later from another device. The Area need not be in
+        // the caller's active-area list for these unused occurrences to retire.
+        let archivedChanged = ArchivedHabitTodoReconciler(
+            calendar: calendar, dayBoundary: dayBoundary
+        ).reconcile(todos: todos, now: now)
+        changed = archivedChanged || changed
+
+        var knownTodos = todos.filter { !$0.isDeleted && (!$0.isArchived || $0.isCompleted) }
+        var nextSortIndex = (knownTodos.map(\.sortIndex).min() ?? 0) - 1
+        let today = dayBoundary.day(containing: now, calendar: calendar)
+        let normalizedDates = uniqueDays(dates).sorted()
+        let planner = RequiredTodoPlanner(calendar: calendar, dayBoundary: dayBoundary)
+        let projects = try modelContext.fetch(FetchDescriptor<Project>())
+        let activeHabits = (areas.map { HabitDefinition(area: $0) } +
+            projects.compactMap { HabitDefinition(project: $0) }).filter(\.isActive)
+
+        // A completion imported after calendar planning can make an unused
+        // occurrence a rest day. Preserve all worked or history-bearing tasks.
+        for todo in knownTodos where !todo.isCompleted && !todo.isArchived {
+            guard let date = todo.scheduledDate, date >= today,
+                  let habit = HabitDefinition(todo: todo), habit.isActive,
+                  todo.actualProgress == 0 && todo.recordedFocusSeconds == 0,
+                  (todo.flowSessions?.isEmpty ?? true) && (todo.flowSegments?.isEmpty ?? true),
+                  planner.isRestDay(for: habit, in: knownTodos, on: date) else { continue }
+            todo.softDelete(now: now)
+            changed = true
+        }
+
+        for date in normalizedDates {
+            for area in activeHabits {
+                if area.goalSchedule == .weeklyCount &&
+                    !calendar.isDate(date, inSameDayAs: today) {
+                    continue
+                }
+
+                guard let todo = planner.makeRequiredTodo(
+                    for: area,
+                    existingTodos: knownTodos,
+                    on: date,
+                    sortIndex: nextSortIndex
+                ) else {
+                    continue
+                }
+
+                modelContext.insert(todo)
+                knownTodos.append(todo)
+                nextSortIndex -= 1
+                changed = true
+            }
+        }
+
+        if changed {
+            try modelContext.save()
+        }
+        return changed
+    }
+
+    private func uniqueDays(_ dates: [Date]) -> [Date] {
+        var seen = Set<Date>()
+        return dates
+            .map(calendar.startOfDay(for:))
+            .filter { seen.insert($0).inserted }
+    }
+}
