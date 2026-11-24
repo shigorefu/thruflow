@@ -170,7 +170,11 @@ Wide iOS layouts retain the other analysis-card pairs and two trend modes.
 Those pairs and the metric tiles within each overview row share the height of
 the tallest card in that row. Narrow layouts stack the report in reading order. Daily
 Focus Time shows actual focus per elapsed logical day and scrolls horizontally
-through long ranges. Month trends use daily points and year trends use monthly
+through long ranges. On Mac and iOS its bars occupy 70 percent of each day slot,
+including the unchanged gaps for zero-focus days. The minute axis starts at
+zero and uses an explicit rounded ceiling around 10 percent above the selected
+range's maximum (at least two minutes), with distinct whole-minute labels.
+Ranges longer than 31 days keep the existing 31-day scrolling window. Month trends use daily points and year trends use monthly
 points. The estimate card compares planned and recorded time for completed
 timed Tasks. Dots retains its date selection and custom-range rules. In a wide
 Mac Calendar/combined-card pair, Week and Month date rows grow uniformly to
