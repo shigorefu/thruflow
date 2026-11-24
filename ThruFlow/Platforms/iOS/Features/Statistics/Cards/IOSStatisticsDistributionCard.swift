@@ -88,7 +88,7 @@ struct IOSStatisticsDistributionCard: View {
             VStack(spacing: 3) {
                 Text(IOSStatisticsFormatting.duration(selectedItem?.focusSeconds ?? totalFocusSeconds))
                     .font((compact ? Font.caption : Font.title3).weight(.semibold).monospacedDigit())
-                    .minimumScaleFactor(0.65)
+                    .minimumScaleFactor(0.5)
                     .lineLimit(1)
                 Text(selectedItem?.name ?? String(localized: "集中時間"))
                     .font(compact ? .caption2 : .caption)

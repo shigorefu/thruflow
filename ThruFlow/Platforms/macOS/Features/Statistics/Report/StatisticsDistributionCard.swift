@@ -102,7 +102,7 @@ struct StatisticsDistributionCard: View {
                 Text(StatisticsFormatting.duration(selectedItem?.focusSeconds ?? totalFocusSeconds))
                     .font((compact ? Font.caption.bold() : .headline).monospacedDigit())
                     .lineLimit(1)
-                    .minimumScaleFactor(0.66)
+                    .minimumScaleFactor(0.5)
                 Text(selectedItem?.name ?? String(localized: "集中時間"))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
