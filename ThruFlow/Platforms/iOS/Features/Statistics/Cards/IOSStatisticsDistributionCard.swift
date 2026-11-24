@@ -93,7 +93,8 @@ struct IOSStatisticsDistributionCard: View {
                 Text(selectedItem?.name ?? String(localized: "集中時間"))
                     .font(compact ? .caption2 : .caption)
                     .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                    .lineLimit(selectedItem == nil ? 2 : 1)
+                    .multilineTextAlignment(.center)
                 if selectedItem != nil {
                     Button {
                         selectedItemID = nil

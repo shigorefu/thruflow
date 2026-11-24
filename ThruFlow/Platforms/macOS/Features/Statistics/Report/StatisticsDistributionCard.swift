@@ -106,7 +106,8 @@ struct StatisticsDistributionCard: View {
                 Text(selectedItem?.name ?? String(localized: "集中時間"))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                    .lineLimit(selectedItem == nil ? 2 : 1)
+                    .multilineTextAlignment(.center)
                 if selectedItem != nil {
                     Button(action: clearSelection) {
                         Image(systemName: "xmark.circle.fill")
