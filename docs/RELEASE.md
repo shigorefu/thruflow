@@ -2,87 +2,77 @@
 
 This document is the operational checklist for ThruFlow releases. Product scope remains in [`ROADMAP.md`](ROADMAP.md), and CloudKit details remain in [`CLOUDKIT.md`](CLOUDKIT.md).
 
-## Preparing 1.5.0 build 16 — 2026-11-24
+## 1.5.0 (16) delivered to App Store Connect — 2026-11-25
 
-Version `1.5.0`, build `16` is prepared on branch `1.5.0` across all 14 target
-configurations. Reviewed app source is `8603de2749d6af717d1fe7bccd77784768e8ebb9`.
-Native images were captured on 2026-11-24; final local validation and inventory
-were recorded on 2026-11-25. CI results below refer to this app source, not a
-subsequent documentation-only commit.
-On 2026-11-25 the maintainer authorized merging the candidate and uploading both
-platform builds to App Store Connect/TestFlight. [PR #40](https://github.com/shigorefu/thruflow/pull/40)
-was squash-merged as `cd71d58bbc44a860753001e87c1d4319ba0fa85e`.
-This is not authorization for App Review submission, public App Store publication,
-or a production release tag. Delivery and processing results are recorded
-separately from preparation checks below. The [five-language release copy](releases/1.5.0.md)
-and screenshot set remain available for App Store preparation.
+Both platforms were uploaded and finished Apple processing from tested source
+`435d5ae1df4662c31afb35fc9cbbabc60bc214ef`. All 14 target configurations use
+`1.5.0` / `16`. App, project and extension source is unchanged from reviewed
+`8603de2749d6af717d1fe7bccd77784768e8ebb9`; subsequent changes prepared delivery
+tooling and recorded verification. This is a TestFlight/App Store Connect
+candidate, not a published App Store release. No App Review submission or
+production release tag was created.
 
-### Merge validation — 2026-11-25
+[PR #40](https://github.com/shigorefu/thruflow/pull/40) merged the app candidate;
+[PR #41](https://github.com/shigorefu/thruflow/pull/41) and
+[PR #42](https://github.com/shigorefu/thruflow/pull/42) prepared signing and hosted
+tooling. The maintainer authorized merge and both uploads on 2026-11-25.
 
-[Main CI run 45428901958](https://github.com/shigorefu/thruflow/actions/runs/45428901958)
-passed at merged source `cd71d58bbc44a860753001e87c1d4319ba0fa85e`: automation
-checks, macOS unit tests, macOS Release and iOS Release with the embedded Watch
-app. Live Production and Development schema verification was repeated for this
-delivery; see [CloudKit](CLOUDKIT.md#release-150-16-delivery-verification--2026-11-25).
-The two notification-service App Store profiles require the bounded bootstrap
-in [TestFlight delivery](TESTFLIGHT.md#adding-notification-service-distribution-profiles)
-before read-only signing can upload this candidate.
+### Delivery evidence
 
-The Sol orchestrator and independent macOS/iOS reviewers agreed on the bounded
-two-profile bootstrap contract and final implementation. The existing upload
-job stays read-only, with no platform presentation or persisted-model changes.
-The bootstrap regression suite passed **13 tests / 126 assertions** under Ruby
-3.3, including real CMS decoding, binary certificate checks, match v2 round trips
-and absence of raw API payload logs. Existing delivery-helper tests (13/35) and
-Python automation tests (14) also passed. Actual profile generation, signed
-export, Apple processing and physical notification delivery require their own
-execution evidence.
+[TestFlight run 45452911016](https://github.com/shigorefu/thruflow/actions/runs/45452911016)
+completed successfully, including signed export validation and temporary Keychain
+cleanup for both platforms. Times below are **JST, 2026-11-25**.
 
-### Hosted runner capacity — 2026-11-25
+| Platform | Upload accepted | Processing completed | App Store Connect |
+| --- | --- | --- | --- |
+| iOS, including Watch | 03:27:41 | 03:30:17 | [1.5.0 (16)](https://appstoreconnect.apple.com/teams/577567e5-2bb3-4b5b-bd40-37252e6f118a/apps/6798609191/testflight/ios/00d813c5-7872-40c5-b633-7b686f46a030) |
+| macOS | 03:41:08 | 03:43:14 | [1.5.0 (16)](https://appstoreconnect.apple.com/teams/577567e5-2bb3-4b5b-bd40-37252e6f118a/apps/6798609191/testflight/macos/cb696acf-ed0f-4708-86ca-77dccb88c619) |
 
-[PR #41 CI, run 45433278706](https://github.com/shigorefu/thruflow/actions/runs/45433278706)
-initially cancelled the Apple job after 15 minutes without starting a build.
-GitHub reported that no hosted runner was acquired after multiple attempts and
-identified macOS arm64 capacity constraints. A job retry also remained queued.
-The three Apple job host labels in CI/TestFlight were changed to the standard
-`macos-26-intel` image with the same installed Xcode 26.6. Both client reviewers
-agreed that generic device destinations and default universal macOS Release
-architectures remain unchanged. No required tests, signing checks, environment
-protections or delivery gates were removed. The new host still needs actual CI
-and signed-export execution evidence.
+Both live TestFlight pages were read back with version `1.5.0`, build `16` and
+status `提出準備完了` (Ready to Submit). No tester groups were added, external
+beta review requested, or public release performed. These uploaded binaries keep
+the source SHA above even after documentation-only follow-up commits.
 
-### Bootstrap test dependency correction — 2026-11-25
+- [Final main CI 45452350929](https://github.com/shigorefu/thruflow/actions/runs/45452350929)
+  passed automation checks, macOS unit tests and both Release builds, including
+  embedded Watch. [PR #42 CI](https://github.com/shigorefu/thruflow/actions/runs/45445669292)
+  also passed on the standard Intel runner with Xcode 26.6.
+- TestFlight source verification passed **615 tests in 61 suites**, including
+  the release screenshot fixture, with CloudKit disabled and isolated data. The
+  hosted test run completed in 1155.338 seconds with `TEST SUCCEEDED`.
+- Delivery tooling passed **26 Ruby tests / 161 assertions** and **18 Python
+  tests**, plus syntax, YAML and diff checks. The actual Ubuntu bootstrap tests
+  also passed before its Apple API step.
+- [Bootstrap 45452440651](https://github.com/shigorefu/thruflow/actions/runs/45452440651)
+  created the two NSE App Store profiles using the existing distribution
+  certificate and App Group. Both profiles were validated and match-v2 encrypted;
+  the exact two-file ciphertext artifact was checked and committed to the private
+  signing repository (`129f0a5`). Its CI deploy key remains read-only. No existing
+  certificate was revoked, exported or replaced.
+- Export validation checked signatures, expected bundle IDs, version/build,
+  signing team, development entitlements, NSE App Group and required CloudKit
+  Production entitlements before upload. Installer signature validation passed
+  for macOS. [Live CloudKit verification](CLOUDKIT.md#release-150-16-delivery-verification--2026-11-25)
+  covered both environments and all six model types without mutations.
 
-[Profile bootstrap run 45441721647](https://github.com/shigorefu/thruflow/actions/runs/45441721647)
-failed its offline tests before the secret-bearing Apple API step. Hosted Ruby
-3.3.13 loaded the default `mutex_m 0.2.0` through Minitest before Bundler could
-activate the locked `mutex_m 0.3.0`. The Apple profile creation and artifact
-steps were skipped; no profiles or certificates were changed by that attempt.
+The Sol orchestrator and independent macOS/iOS reviewers agreed on the common
+profile/tooling contract, final source and runtime delivery evidence. Intentional
+profile platform/identifier differences are retained; app presentation and
+persisted models were unchanged. Physical APNs/NSE delivery, real device CloudKit
+exchange and exact-build native UI behavior remain unverified.
 
-The correction declares pinned Minitest as a test-only bundle dependency, loads
-Bundler first and executes both Ruby helper suites through `bundle exec` in
-ordinary CI and TestFlight source verification. The bootstrap uses the same
-resolved bundle. App code, versions, Apple API operations, certificate permissions
-and all release gates remain unchanged. A fresh workflow run from the merged
-correction is required; rerunning the old source would repeat the dependency
-failure.
+### Resolved hosted delivery issues
 
-### Hosted Metal compiler readiness — 2026-11-25
+| Evidence | Cause | Correction |
+| --- | --- | --- |
+| [Runner acquisition failure](https://github.com/shigorefu/thruflow/actions/runs/45433278706) | macOS arm64 capacity; no build started for 15 minutes | Standard `macos-26-intel`, same Xcode 26.6, destinations and gates |
+| [Offline bootstrap failure](https://github.com/shigorefu/thruflow/actions/runs/45441721647) | Host Minitest activated `mutex_m 0.2.0` before locked `0.3.0` | Pinned test-only Minitest; Bundler first and bundled helper suites |
+| [Unavailable Metal compiler](https://github.com/shigorefu/thruflow/actions/runs/45441591964) | Downloadable component could not remount (`kDAReturnBusy`) | Shared compiler probe, conditional Apple component installation and mandatory recheck |
 
-[Main CI run 45441591964](https://github.com/shigorefu/thruflow/actions/runs/45441591964)
-failed before unit tests could start because the hosted machine could not remount
-the downloadable Metal Toolchain (`kDAReturnBusy`); compilation reported that the
-Metal compiler was unavailable and requested `xcodebuild -downloadComponent
-MetalToolchain`. The application source was unchanged from the successful PR CI.
-
-CI and both TestFlight job types now call a shared compiler preparation helper
-before native tests/archives. It probes the real compiler, downloads the Apple
-component only when needed and requires a successful final probe. Errors remain
-fatal; the shader, application code, test selections and signing gates are
-unchanged. Four isolated command-stub regressions cover an existing compiler,
-a successful installation and failed installation/final probe. No component was
-installed on the maintainer's Mac for these tests. The corresponding hosted run
-still provides the actual readiness evidence.
+The failed bootstrap stopped before secrets-bearing Apple calls; it changed no
+profiles. No tests, shader behavior, signing checks or environment protections
+were removed to resolve these issues. See [TestFlight delivery](TESTFLIGHT.md)
+for the maintained procedure.
 
 ### Local validation
 
@@ -159,25 +149,19 @@ observed at 24:52 after starting from 25 minutes. Compact iPhone Flow Statistics
 pages two and three were not gesture-verified because automated scrolling was
 unavailable; the screenshots do not establish those interactions.
 
-### Remaining distribution gates
+### Remaining public release gates
 
-- Obtain maintainer selection and approval of the app, screenshots and localized
-  release copy before merging into `main`.
-- Prepare and inspect App Store distribution profiles and signed exports for
-  `com.shigorefu.thruflow.notifications` on both platforms. Automation includes
-  this extension in match/signing/export checks and requires its App Group;
-  it does not require CloudKit entitlements. Development profiles and unsigned
-  builds do not establish distribution readiness.
-- Update App Store privacy answers and the public policy page before
-  distribution. Source privacy policy and app/extension manifest edits do not
-  establish that external disclosures were published.
-- Complete the exact-build signed-device notification and cross-device checks
-  in [Notifications](NOTIFICATIONS.md) and [CloudKit](CLOUDKIT.md), or retain
-  their explicit unverified status in the release decision. Physical APNs/NSE
-  delivery, production-signed exports and real device exchange remain unverified.
-  Server-only opt-out leaves iCloud and connectors unchanged; its contract and
-  actual server checks are recorded in
-  [Notifications](NOTIFICATIONS.md#per-device-server-preference).
+- Select the final screenshots and localized [release copy](releases/1.5.0.md)
+  and apply App Store metadata. The 200-image local set remains available; no
+  screenshot or metadata upload was performed by the build-delivery workflow.
+- Update App Store privacy answers and the public policy page before public
+  distribution. Source policy/manifests do not establish published disclosures.
+- Complete exact-build signed-device checks in [Notifications](NOTIFICATIONS.md)
+  and [CloudKit](CLOUDKIT.md), or retain their explicit unverified status in the
+  release decision. Physical APNs/NSE delivery and real Mac/iPhone exchange remain
+  unverified; signed exports and Apple processing are verified above. Server-only
+  opt-out leaves iCloud and connectors unchanged; see
+  [the notification contract](NOTIFICATIONS.md#per-device-server-preference).
 
 ## Released 1.4.1 build 15
 

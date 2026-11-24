@@ -421,3 +421,11 @@ The protected delivery SHA can be set to the final reviewed candidate carrying
 this verification record. Signed Mac/iPhone exchange and actual APNs/NSE delivery
 remain separate physical-device checks; this schema inspection does not prove
 either.
+
+The delivery attestation was bound to final source
+`435d5ae1df4662c31afb35fc9cbbabc60bc214ef` after confirming that app/project/model
+source was unchanged from the inspected candidate.
+[TestFlight delivery 45452911016](https://github.com/shigorefu/thruflow/actions/runs/45452911016)
+then completed signed export validation, upload and Apple processing for both
+1.5.0 (16) platforms. This completes binary delivery, while the physical-device
+exchange and notification checks above retain their unverified status.
