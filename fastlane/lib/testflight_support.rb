@@ -9,12 +9,15 @@ require "securerandom"
 module TestFlightSupport
   APP_ID = "com.shigorefu.thruflow"
   CLOUD_CONTAINER = "iCloud.com.shigorefu.thruflow"
+  APP_GROUP = "group.com.shigorefu.thruflow"
   TARGETS = {
     "ios" => { "ThruFlow iOS" => APP_ID,
                "ThruFlowLiveActivityExtension" => "#{APP_ID}.liveactivity",
+               "ThruFlowNotificationService" => "#{APP_ID}.notifications",
                "ThruFlow Watch App" => "#{APP_ID}.watchapp" },
     "macos" => { "ThruFlow" => APP_ID,
-                 "ThruFlowLiveActivityExtension" => "#{APP_ID}.liveactivity" }
+                 "ThruFlowLiveActivityExtension" => "#{APP_ID}.liveactivity",
+                 "ThruFlowNotificationService" => "#{APP_ID}.notifications" }
   }.freeze
 
   def self.required(env, name)
@@ -98,7 +101,13 @@ module TestFlightSupport
       rights = record.fetch(:entitlements)
       raise "Wrong signing team in #{id}" unless rights["com.apple.developer.team-identifier"] == config[:team]
       raise "Development signing in #{id}" if rights["get-task-allow"] == true || rights["com.apple.security.get-task-allow"] == true
-      next if id.end_with?(".liveactivity")
+      if id == "#{APP_ID}.notifications"
+        unless Array(rights["com.apple.security.application-groups"]).include?(APP_GROUP)
+          raise "Notification service App Group entitlement missing in #{id}"
+        end
+        next
+      end
+      next if id == "#{APP_ID}.liveactivity"
       unless rights["com.apple.developer.icloud-container-environment"] == "Production" &&
              Array(rights["com.apple.developer.icloud-container-identifiers"]).include?(CLOUD_CONTAINER)
         raise "CloudKit Production entitlement missing in #{id}"

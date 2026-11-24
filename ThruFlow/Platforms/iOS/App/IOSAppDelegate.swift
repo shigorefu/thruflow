@@ -1,28 +1,44 @@
 #if os(iOS)
+import Combine
 import UIKit
 
 /// Adapts UIKit lifecycle callbacks to the shared notification delivery owner.
 @MainActor
 final class IOSAppDelegate: NSObject, UIApplicationDelegate {
+    private var remotePreferenceObserver: AnyCancellable?
+
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         guard NotificationDeliveryRuntime.isEnabled else { return true }
         NotificationDeliveryRuntime.shared.start()
+        remotePreferenceObserver = NotificationCenter.default.publisher(for: .notificationRemotePreferenceChanged)
+            .sink { [weak self, weak application] _ in
+                Task { @MainActor in
+                    guard let application else { return }
+                    self?.updatePushRegistration(application)
+                }
+            }
+        updatePushRegistration(application)
+        return true
+    }
+
+    private func updatePushRegistration(_ application: UIApplication) {
         // APNs registration does not request alert authorization. Existing explicit
         // Flow/Task actions remain responsible for asking the user for permission.
-        if pushEnvironment != nil {
+        if NotificationDeliveryRuntime.isRemoteEnabled, pushEnvironment != nil {
             application.registerForRemoteNotifications()
+        } else {
+            application.unregisterForRemoteNotifications()
         }
-        return true
     }
 
     func application(
         _ application: UIApplication,
         didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
     ) {
-        guard NotificationDeliveryRuntime.isEnabled,
+        guard NotificationDeliveryRuntime.isRemoteEnabled,
               let environment = pushEnvironment else { return }
         NotificationDeliveryRuntime.shared.registerDeviceToken(deviceToken, environment: environment)
     }
@@ -31,7 +47,7 @@ final class IOSAppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         didFailToRegisterForRemoteNotificationsWithError error: any Error
     ) {
-        guard NotificationDeliveryRuntime.isEnabled else { return }
+        guard NotificationDeliveryRuntime.isRemoteEnabled else { return }
         NotificationDeliveryRuntime.shared.registrationFailed()
     }
 
@@ -40,7 +56,7 @@ final class IOSAppDelegate: NSObject, UIApplicationDelegate {
         didReceiveRemoteNotification userInfo: [AnyHashable: Any],
         fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
     ) {
-        guard NotificationDeliveryRuntime.isEnabled else {
+        guard NotificationDeliveryRuntime.isRemoteEnabled else {
             completionHandler(.noData)
             return
         }

@@ -33,6 +33,44 @@ notification schedule through existing CloudKit exchange, not through a new
 server-wide user identity. The server cannot instantly cancel an offline
 second device's old schedule.
 
+## Per-device server preference
+
+The notification setting enables server delivery by default on Mac and iOS.
+It is stored only on that device as `notification.remote.enabled`; it does not
+change iCloud synchronization, connectors or another device's setting. Turning
+it off keeps local notification routing active and requires no restart.
+
+OFF immediately blocks enrollment, schedule uploads and periodic retries,
+cancels in-flight transport work and invalidates its asynchronous responses.
+The serialized local queue restores future notifications to their original
+deadlines. An already-due notification with a still-pending 30-second safety
+request keeps that existing future deadline, including across rapid toggles
+and relaunches; it is not replayed immediately. Transport event versions change
+so an old push or extension receipt cannot cancel the restored notification.
+The extension also checks the shared App Group preference before cancelling
+local requests.
+
+If an existing installation capability is available, switching off makes one
+final authenticated `DELETE /v1/installations/<id>` cleanup request. It does not
+create or enroll an identity for cleanup. Success erases that installation's
+token and event rows; a bounded revocation tombstone rejects a late enrollment
+or schedule request for the old identity. No cleanup retry, enrollment or
+schedule upload runs while OFF, including after relaunch. A failed cleanup
+request leaves a persistent unconfirmed-cancellation warning; a later successful
+cleanup for a different identity cannot clear that earlier uncertainty.
+
+Offline cleanup cannot recall the server's accepted queue, and no cleanup can
+recall an APNs push already in flight. Previously accepted notifications may
+therefore still arrive late or duplicate a local notification after OFF. The
+setting must not promise immediate withdrawal of all previously sent alerts.
+Turning ON creates a fresh installation identity and requests fresh native APNs
+registration without restarting the app; local notifications remain available
+when registration or server acceptance fails.
+
+Demo, screenshot and test isolation gates take precedence over this preference:
+changing the switch there does not contact the server or write live App Group
+state, create a Keychain installation identity, or change normal app preferences.
+
 ## Data and safety
 
 The server receives APNs device token/environment, installation/event IDs,
@@ -43,7 +81,10 @@ Local fallback retains its normal detailed copy. Enrollment secrets are stored
 as hashes server-side; device tokens are stored in the private SQLite volume.
 No request bodies, authorization headers, tokens or notification copy are logged.
 Terminal event text is cleared; terminal rows are retained seven days, and
-inactive installations without events expire after 90 days.
+inactive installations without events expire after 90 days. Successful
+revocation deletes installation and event data immediately, retaining only the
+random installation ID, capability hash and revocation timestamp until
+maintenance removes the tombstone after 90 days. Active installations and revocation tombstones share the enrollment bound.
 
 The public enrollment API has request/body/event/concurrency/installation bounds
 and an Nginx IP rate limit. It is an installation capability API, not verified
@@ -157,3 +198,21 @@ App Store delivery, and load testing. Do not mark those release gates complete
 from the successful signed builds or synthetic APNs response. Before App Store
 submission, review the privacy disclosures for the new installation/token and
 schedule metadata processed by the server.
+
+### Server preference follow-up — 2026-11-24
+
+The backend suite passed 28 tests, including authenticated revocation, private
+schedule deletion, pre-enrollment revocation races and bounded tombstone
+retention. A live isolated synthetic installation passed enrollment by `PUT`,
+revocation by `DELETE`, and rejection of a subsequent stale enrollment with
+HTTP 410. The synthetic test data was removed. These checks establish the
+server cleanup path, not actual device delivery or offline withdrawal of an
+already accepted APNs push.
+
+The final preference candidate passed 613 ordinary macOS unit tests plus the
+separate release screenshot fixture (614 tests total), 28 backend tests, and both
+unsigned Release builds. Both built notification extensions contain their
+required-reason privacy manifest. The macOS and iOS reviewers agreed on the
+server-only preference contract and final source; the localization reviewer
+agreed on its five new strings in all five supported locales. Physical-device
+delivery and exact production-signed exports remain unverified.

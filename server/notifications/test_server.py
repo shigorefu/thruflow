@@ -64,6 +64,46 @@ class StoreTests(unittest.TestCase):
             self.store.replace(str(uuid.uuid4()), SECRET, snapshot([]), 999)
         self.assertIsNone(self.store.db.execute("SELECT revision FROM installations").fetchone()[0])
 
+    def test_revoke_erases_schedules_and_invalidates_inflight_work(self):
+        self.store.replace(INSTALLATION, SECRET, snapshot([event()]), 999)
+        claimed = self.store.claim(1000)
+        with self.assertRaises(server.RequestError):
+            self.store.revoke(INSTALLATION, OTHER_SECRET, 1000)
+        self.assertTrue(self.store.current(claimed))
+        self.store.revoke(INSTALLATION, SECRET, 1000)
+        self.assertFalse(self.store.current(claimed))
+        self.store.finish(claimed, 503, 1001)
+        self.assertIsNone(self.store.claim(1001))
+        self.assertEqual(self.store.db.execute("SELECT count(*) FROM events").fetchone()[0], 0)
+        self.assertEqual(self.store.db.execute("SELECT count(*) FROM installations").fetchone()[0], 0)
+        self.store.revoke(INSTALLATION, SECRET, 1001)
+        with self.assertRaises(server.RequestError) as error:
+            self.store.register(INSTALLATION, SECRET, REGISTRATION, 1001)
+        self.assertEqual(error.exception.status, 410)
+        with self.assertRaises(server.RequestError):
+            self.store.replace(INSTALLATION, SECRET, snapshot([], 2), 1001)
+
+    def test_revoke_before_first_enrollment_blocks_late_registration_and_is_scoped(self):
+        other = str(uuid.uuid4())
+        self.store.revoke(other, OTHER_SECRET, 1000)
+        with self.assertRaises(server.RequestError):
+            self.store.register(other, OTHER_SECRET, REGISTRATION, 1001)
+        self.store.replace(INSTALLATION, SECRET, snapshot([event()]), 1001)
+        self.assertIsNotNone(self.store.claim(1001))
+        self.assertEqual(self.store.db.execute("SELECT secret_hash FROM revoked_installations WHERE id=?", (other,)).fetchone()[0], self.store.secret_hash(OTHER_SECRET))
+
+    def test_revocation_tombstones_are_bounded_and_expire_without_private_data(self):
+        self.store.enrollment_limit = 2
+        other = str(uuid.uuid4())
+        self.store.revoke(other, OTHER_SECRET, 1000)
+        with self.assertRaises(server.RequestError):
+            self.store.register(str(uuid.uuid4()), SECRET, REGISTRATION, 1001)
+        with self.assertRaises(server.RequestError):
+            self.store.revoke(str(uuid.uuid4()), SECRET, 1001)
+        self.store.revoke(INSTALLATION, SECRET, 1001)
+        self.store.maintain(1002 + 90 * 86400)
+        self.assertEqual(self.store.db.execute("SELECT count(*) FROM revoked_installations").fetchone()[0], 0)
+
     def test_snapshot_strict_revision_idempotence_and_reordered_event_equivalence(self):
         events = [event(), event(identifier="task.reminder.test")]
         self.store.replace(INSTALLATION, SECRET, snapshot(events, 2), 999)
@@ -344,6 +384,19 @@ class HTTPTests(unittest.TestCase):
         self.assertEqual(self.request("PUT", self.path + "/schedule", snapshot([], 2))[0], 200)
         self.assertEqual(self.store.db.execute("SELECT state FROM events").fetchone()[0], "cancelled")
         self.assertEqual(self.request("PUT", self.path, REGISTRATION), (200, {"ready": True, "revision": 2}))
+
+    def test_delete_revokes_existing_and_pre_enrollment_identity_without_readiness(self):
+        self.request("PUT", self.path, REGISTRATION)
+        self.assertEqual(self.request("DELETE", self.path, secret=OTHER_SECRET)[0], 401)
+        self.assertEqual(self.request("DELETE", self.path), (200, {"revoked": True}))
+        self.assertEqual(self.request("DELETE", self.path), (200, {"revoked": True}))
+        self.assertEqual(self.request("PUT", self.path, REGISTRATION)[0], 410)
+        other = "/v1/installations/" + str(uuid.uuid4())
+        self.assertEqual(self.request("DELETE", other)[0], 200)
+        self.assertEqual(self.request("PUT", other, REGISTRATION)[0], 410)
+        self.assertEqual(self.request("DELETE", self.path + "/schedule")[0], 404)
+        self.assertEqual(self.request("DELETE", self.path + "?debug=1")[0], 404)
+        self.assertEqual(self.request("DELETE", self.path, raw=b"x")[0], 400)
 
     def test_malformed_json_unicode_size_and_route_are_bounded(self):
         self.assertEqual(self.request("PUT", self.path, raw=b"{broken")[0], 400)

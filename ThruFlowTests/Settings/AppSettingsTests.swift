@@ -13,6 +13,7 @@ struct AppSettingsTests {
     @Test func newInstallationDefaultsToJapanese() {
         let settings = AppSettings(defaults: makeDefaults())
 
+        #expect(settings.serverNotificationsEnabled)
         #expect(settings.showsTimelinePlannedEnd)
         #expect(settings.languageCode == "ja")
         #expect(settings.effectiveLocale.language.languageCode?.identifier == "ja")
@@ -29,6 +30,7 @@ struct AppSettingsTests {
         settings.dayStartHour = 2
         settings.showsTaskQuickInputLegend = false
         settings.showsTimelinePlannedEnd = false
+        settings.serverNotificationsEnabled = false
 
         let restored = AppSettings(defaults: defaults)
         #expect(restored.appearance == .dark)
@@ -39,6 +41,7 @@ struct AppSettingsTests {
         #expect(restored.dayBoundary == AppDayBoundary(hour: 2))
         #expect(restored.showsTaskQuickInputLegend == false)
         #expect(restored.showsTimelinePlannedEnd == false)
+        #expect(restored.serverNotificationsEnabled == false)
         #expect(defaults.stringArray(forKey: "AppleLanguages") == ["ja"])
     }
 

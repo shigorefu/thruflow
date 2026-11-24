@@ -13,17 +13,20 @@ final class MacOSAppDelegate: NSObject, NSApplicationDelegate {
 
         guard NotificationDeliveryRuntime.isEnabled else { return }
         NotificationDeliveryRuntime.shared.start()
-        guard let environment = signedPushEnvironment else { return }
-        remoteNotificationEnvironment = environment
-        // Registration does not request permission to display notifications.
-        NSApplication.shared.registerForRemoteNotifications()
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(remoteNotificationPreferenceChanged(_:)),
+            name: .notificationRemotePreferenceChanged,
+            object: nil
+        )
+        updateRemoteNotificationRegistration()
     }
 
     func application(
         _ application: NSApplication,
         didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
     ) {
-        guard NotificationDeliveryRuntime.isEnabled,
+        guard NotificationDeliveryRuntime.isRemoteEnabled,
               let environment = remoteNotificationEnvironment else { return }
         NotificationDeliveryRuntime.shared.registerDeviceToken(deviceToken, environment: environment)
     }
@@ -32,7 +35,7 @@ final class MacOSAppDelegate: NSObject, NSApplicationDelegate {
         _ application: NSApplication,
         didFailToRegisterForRemoteNotificationsWithError error: Error
     ) {
-        guard NotificationDeliveryRuntime.isEnabled else { return }
+        guard NotificationDeliveryRuntime.isRemoteEnabled else { return }
         NotificationDeliveryRuntime.shared.registrationFailed()
     }
 
@@ -40,10 +43,26 @@ final class MacOSAppDelegate: NSObject, NSApplicationDelegate {
         _ application: NSApplication,
         didReceiveRemoteNotification userInfo: [String: Any]
     ) {
-        guard NotificationDeliveryRuntime.isEnabled else { return }
+        guard NotificationDeliveryRuntime.isRemoteEnabled else { return }
         Task {
             _ = await NotificationDeliveryRuntime.shared.receive(userInfo: userInfo)
         }
+    }
+
+    @objc private func remoteNotificationPreferenceChanged(_ notification: Notification) {
+        updateRemoteNotificationRegistration()
+    }
+
+    private func updateRemoteNotificationRegistration() {
+        guard NotificationDeliveryRuntime.isRemoteEnabled,
+              let environment = signedPushEnvironment else {
+            remoteNotificationEnvironment = nil
+            NSApplication.shared.unregisterForRemoteNotifications()
+            return
+        }
+        remoteNotificationEnvironment = environment
+        // Registration does not request permission to display notifications.
+        NSApplication.shared.registerForRemoteNotifications()
     }
 
     private var signedPushEnvironment: String? {

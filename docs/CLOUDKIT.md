@@ -367,3 +367,25 @@ The reviewed full schema also retains
 member of that existing JSON value, requiring no extra CloudKit field.
 No user records were edited. Signed Mac/iPhone exchange of this new setting
 has not yet been verified.
+
+
+## Release 1.5.0 (16) preparation — 2026-11-24
+
+Read the live `iCloud.com.shigorefu.thruflow` **Production** field pages for
+`CD_Direction`, `CD_Todo`, `CD_Project`, `CD_FlowSession`, `CD_FlowSegment` and
+`CD_FlowBreak` in CloudKit Console. Direction's `CD_minimumRestDays INT(64)`
+is present without indexes; Project's `CD_habitSettingsRawValue STRING` and
+Todo's `CD_habitOwnerKeyRawValue STRING` are present without indexes. Todo's
+`CD_scheduledTimeMinutes` and `CD_reminderEnabled` remain INT(64), and
+`CD_scheduledTimeUpdatedAt` remains DATE/TIME, all Queryable/Sortable.
+Task/Project and Flow relationships, runtime revision/mutation, timestamps and
+focus counters are present with the existing indexes. Session's recording
+device ID remains STRING without indexes. No fields, indexes, permissions or
+user records were changed during this inspection.
+
+Notification transport and its per-device switch use local preferences,
+Keychain and the separate server queue; they introduce no SwiftData/CloudKit
+model field. The minimum-rest-days addition from 1.4.2 is already deployed, as
+recorded above, and was read back again here. Production schema inspection does
+not establish a real Mac/iPhone exchange or notification delivery; exact-build
+physical-device checks remain pending before distribution.

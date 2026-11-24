@@ -4255,6 +4255,40 @@
         }
       }
     },
+    "ThruFlowの通知サーバーを使用" : {
+      "localizations" : {
+        "ja": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ThruFlowの通知サーバーを使用"
+          }
+        },
+        "en": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use ThruFlow notification server"
+          }
+        },
+        "ru": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Использовать сервер уведомлений ThruFlow"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用 ThruFlow 通知服务器"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用 ThruFlow 通知伺服器"
+          }
+        }
+      }
+    },
     "ThruFlowは、タスク管理、柔軟な集中タイマー、時間の振り返りをひとつにまとめたアプリです。まずは分野とタスクをひとつずつ作り、基本のフローを試してみましょう。" : {
       "localizations" : {
         "en" : {
@@ -5386,6 +5420,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "自動"
+          }
+        }
+      }
+    },
+    "オフにすると、この端末の通知は端末内で予約します。iCloud同期とコネクタの設定は変わりません。" : {
+      "localizations" : {
+        "ja": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "オフにすると、この端末の通知は端末内で予約します。iCloud同期とコネクタの設定は変わりません。"
+          }
+        },
+        "en": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When off, this device schedules notifications locally. iCloud sync and connector settings are unchanged."
+          }
+        },
+        "ru": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Если выключить, уведомления на этом устройстве будут планироваться локально. Настройки синхронизации iCloud и коннекторов не изменятся."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭后，此设备的通知将在本机安排。iCloud 同步和连接器设置不会改变。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "關閉後，此裝置的通知會在本機排程。iCloud 同步與連接器設定不會變更。"
           }
         }
       }
@@ -6843,6 +6911,74 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "刪除本次專注記錄？"
+          }
+        }
+      }
+    },
+    "サーバーで予約済みの通知は、オフライン中や送信済みの場合、届くことがあります。" : {
+      "localizations" : {
+        "ja": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サーバーで予約済みの通知は、オフライン中や送信済みの場合、届くことがあります。"
+          }
+        },
+        "en": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifications already scheduled on the server may still arrive if this device is offline or they have already been sent."
+          }
+        },
+        "ru": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Уведомления, уже запланированные на сервере, могут прийти, если устройство не в сети или уведомление уже отправлено."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已在服务器上安排的通知，在设备离线或通知已发出的情况下，仍可能送达。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已在伺服器上排程的通知，在裝置離線或通知已送出的情況下，仍可能送達。"
+          }
+        }
+      }
+    },
+    "サーバー上の通知予約の削除を確認できません" : {
+      "localizations" : {
+        "ja": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サーバー上の通知予約の削除を確認できません"
+          }
+        },
+        "en": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't confirm removal of scheduled notifications from the server."
+          }
+        },
+        "ru": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось подтвердить удаление уведомлений, запланированных на сервере."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法确认服务器上的通知安排已删除。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法確認伺服器上的通知排程已刪除。"
           }
         }
       }
@@ -21877,6 +22013,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "隨時"
+          }
+        }
+      }
+    },
+    "通知" : {
+      "localizations" : {
+        "ja": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通知"
+          }
+        },
+        "en": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifications"
+          }
+        },
+        "ru": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Уведомления"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通知"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通知"
           }
         }
       }

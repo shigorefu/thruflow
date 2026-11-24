@@ -86,6 +86,8 @@ struct MacOSSettingsView: View {
                 Toggle(String(localized: "クイック入力のヒントを表示"), isOn: $settings.showsTaskQuickInputLegend)
             }
 
+            NotificationSettingsSection()
+
             CloudSyncSettingsSection()
 
             Section(String(localized: "ヘルプ")) {

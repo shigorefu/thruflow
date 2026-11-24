@@ -84,6 +84,8 @@ struct IOSSettingsView: View {
                 )
             }
 
+            NotificationSettingsSection()
+
             CloudSyncSettingsSection()
 
             Section(String(localized: "ヘルプ")) {

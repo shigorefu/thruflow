@@ -1,15 +1,16 @@
 # TestFlight delivery
 
-This pipeline prepares signed macOS and iOS builds (including Watch and widget/
-Live Activity targets) and uploads them to App Store Connect for TestFlight.
+This pipeline prepares signed macOS and iOS builds (including Watch, widget/
+Live Activity and notification service targets) and uploads them to App Store Connect for TestFlight.
 It does not publish an App Store release, submit review, or distribute to
 external testers automatically. No Apple password is stored in GitHub.
 
 ## Entry points
 
 - Ordinary pushes and PRs use [CI](../.github/workflows/ci.yml); they do not upload.
-- Push `testflight/v<version>-<build>` to run both platforms. For the current
-  candidate the tag is `testflight/v1.4.0-14`.
+- Push `testflight/v<version>-<build>` to run both platforms. For the 1.5.0 build 16
+  candidate the matching tag would be `testflight/v1.5.0-16`; preparation does not
+  authorize creating or pushing it.
 - Run **TestFlight** manually from `main` or the matching TestFlight tag. Choose
   `ios`, `macos`, or `both`; selecting one platform allows recovery when the
   other platform already uploaded successfully.
@@ -17,7 +18,7 @@ external testers automatically. No Apple password is stored in GitHub.
   have the same marketing version and build, matching the tag. Release settings
   are not incremented or rewritten at upload time.
 - TestFlight tags identify upload attempts, not published releases. Reserve
-  `v1.4.0` for the accepted, tested release source as described in [Release](RELEASE.md).
+  `v<version>` for the accepted, tested release source as described in [Release](RELEASE.md).
   Never move published tags or overwrite builds already accepted by Apple.
 
 GitHub concurrency serializes delivery runs and does not cancel a running upload.
@@ -47,13 +48,17 @@ The platform matrix is sequential and does not cancel the other platform on fail
 
    | Platform | Bundle IDs |
    | --- | --- |
-   | iOS | `com.shigorefu.thruflow`, `com.shigorefu.thruflow.liveactivity`, `com.shigorefu.thruflow.watchapp` |
-   | macOS | `com.shigorefu.thruflow`, `com.shigorefu.thruflow.liveactivity` |
+   | iOS | `com.shigorefu.thruflow`, `com.shigorefu.thruflow.liveactivity`, `com.shigorefu.thruflow.watchapp`, `com.shigorefu.thruflow.notifications` |
+   | macOS | `com.shigorefu.thruflow`, `com.shigorefu.thruflow.liveactivity`, `com.shigorefu.thruflow.notifications` |
 
    iOS and macOS profiles remain separate even where bundle IDs match. Include
    the Mac App Store installer certificate/private key for producing the `.pkg`.
    Profiles must include the existing App Groups, CloudKit, push and associated
-   domain capabilities required by their targets.
+   domain capabilities required by their targets. The notification service needs
+   `group.com.shigorefu.thruflow`, but does not open a CloudKit store or require
+   CloudKit entitlements. Prepare its iOS and macOS App Store profiles separately;
+   existing Development profiles do not establish distribution readiness. The
+   read-only match job cannot create missing profiles.
 5. Add the environment settings below. The implementation deliberately fails
    closed until setup and the release-specific CloudKit gate are complete.
 

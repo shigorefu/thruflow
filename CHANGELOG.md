@@ -3,6 +3,22 @@
 All notable user-facing changes to ThruFlow are documented in this file.
 Release dates below record GitHub publication in Asia/Tokyo (JST).
 
+## [Unreleased 1.5.0]
+
+Candidate version **1.5.0**, build **16**. Publication is not confirmed.
+Proposed localized App Store notes are in [the release draft](docs/releases/1.5.0.md).
+
+- Redesign Statistics with daily focus time, Task estimate accuracy, responsive
+  analysis cards and improved Mac chart controls.
+- Improve screen transitions and independent loading of report sections.
+- Support rest days between weekly Habit completions and calculate completion
+  against weekly goals while preserving recorded history.
+- Refine the Mac Task editor and retain Area context in Task presentation.
+- Prefer server notification delivery on Mac and iOS with an on-device safety
+  notification. A per-device switch restores local scheduling without changing
+  iCloud or connectors. Actual signed-device delivery remains unverified; see
+  [release preparation](docs/RELEASE.md#preparing-150-build-16--2026-11-24).
+
 ## [1.4.1] - 2026-11-12
 
 Version **1.4.1**, build **15**. App Store publication confirmed by the maintainer on 2026-11-12.

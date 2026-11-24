@@ -7,6 +7,13 @@ final class NotificationService: UNNotificationServiceExtension {
         _ request: UNNotificationRequest,
         withContentHandler contentHandler: @escaping (UNNotificationContent) -> Void
     ) {
+        // Disabling server delivery must never let a late remote receipt cancel
+        // a restored local notification. It cannot recall a push already in flight.
+        let preferences = UserDefaults(suiteName: "group.com.shigorefu.thruflow")
+        guard preferences?.object(forKey: "notification.remote.enabled") as? Bool != false else {
+            contentHandler(request.content)
+            return
+        }
         let info = request.content.userInfo
         guard let identifier = info["local_identifier"] as? String,
               let version = info["event_version"] as? String,

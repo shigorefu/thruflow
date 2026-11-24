@@ -94,6 +94,10 @@ final class AppSettings: ObservableObject {
         didSet { defaults.set(showsTimelinePlannedEnd, forKey: Keys.showsTimelinePlannedEnd) }
     }
 
+    @Published var serverNotificationsEnabled: Bool {
+        didSet { defaults.set(serverNotificationsEnabled, forKey: "notification.remote.enabled") }
+    }
+
     let launchLanguageCode: String
 
     private let defaults: UserDefaults
@@ -117,6 +121,7 @@ final class AppSettings: ObservableObject {
         )
         showsTaskQuickInputLegend = defaults.object(forKey: Keys.showsTaskQuickInputLegend) as? Bool ?? true
         showsTimelinePlannedEnd = defaults.object(forKey: Keys.showsTimelinePlannedEnd) as? Bool ?? true
+        serverNotificationsEnabled = defaults.object(forKey: "notification.remote.enabled") as? Bool ?? true
         launchLanguageCode = storedLanguageCode
         applyLanguagePreference()
     }

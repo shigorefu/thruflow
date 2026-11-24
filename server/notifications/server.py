@@ -113,6 +113,9 @@ class Store:
                 environment TEXT NOT NULL, platform TEXT NOT NULL,
                 revision INTEGER, snapshot_hash TEXT, updated REAL NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS revoked_installations (
+                id TEXT PRIMARY KEY, secret_hash TEXT NOT NULL, revoked_at REAL NOT NULL
+            );
             CREATE TABLE IF NOT EXISTS events (
                 installation TEXT NOT NULL REFERENCES installations(id) ON DELETE CASCADE,
                 identifier TEXT NOT NULL, version TEXT NOT NULL, revision INTEGER NOT NULL,
@@ -151,6 +154,10 @@ class Store:
         with self.lock:
             self.db.execute("BEGIN IMMEDIATE")
             try:
+                revoked = self.db.execute("SELECT secret_hash FROM revoked_installations WHERE id=?", (installation,)).fetchone()
+                if revoked is not None:
+                    matches = hmac.compare_digest(revoked["secret_hash"], self.secret_hash(secret))
+                    raise RequestError(410 if matches else 401, "revoked" if matches else "unauthorized")
                 row = self.db.execute("SELECT * FROM installations WHERE id=?", (installation,)).fetchone()
                 if row is not None:
                     self.authenticate(installation, secret)
@@ -159,11 +166,39 @@ class Store:
                     if row["token"] != token.lower() or row["environment"] != environment:
                         self.db.execute("UPDATE events SET state='queued' WHERE installation=? AND state='sending'", (installation,))
                 else:
-                    count = self.db.execute("SELECT count(*) FROM installations").fetchone()[0]
+                    count = self.db.execute("SELECT (SELECT count(*) FROM installations) + (SELECT count(*) FROM revoked_installations)").fetchone()[0]
                     if count >= self.enrollment_limit:
                         raise RequestError(503, "enrollment_full")
                     self.db.execute("INSERT INTO installations(id,secret_hash,token,environment,platform,updated) VALUES(?,?,?,?,?,?)",
                                     (installation, self.secret_hash(secret), token.lower(), environment, platform, now))
+                self.db.execute("COMMIT")
+            except BaseException:
+                self.db.execute("ROLLBACK")
+                raise
+
+    def revoke(self, installation: str, secret: str, now: float) -> None:
+        """Erase private scheduling data and retain a bounded capability tombstone.
+
+        A DELETE racing first enrollment must tombstone an as-yet unknown ID;
+        otherwise that already in-flight PUT could recreate the revoked device.
+        """
+        with self.lock:
+            self.db.execute("BEGIN IMMEDIATE")
+            try:
+                row = self.db.execute("SELECT * FROM installations WHERE id=?", (installation,)).fetchone()
+                revoked = self.db.execute("SELECT secret_hash FROM revoked_installations WHERE id=?", (installation,)).fetchone()
+                if row is not None:
+                    self.authenticate(installation, secret)
+                elif revoked is not None:
+                    if not hmac.compare_digest(revoked["secret_hash"], self.secret_hash(secret)):
+                        raise RequestError(401, "unauthorized")
+                else:
+                    count = self.db.execute("SELECT (SELECT count(*) FROM installations) + (SELECT count(*) FROM revoked_installations)").fetchone()[0]
+                    if count >= self.enrollment_limit:
+                        raise RequestError(503, "revocation_full")
+                self.db.execute("INSERT INTO revoked_installations(id,secret_hash,revoked_at) VALUES(?,?,?) ON CONFLICT(id) DO NOTHING",
+                                (installation, self.secret_hash(secret), now))
+                self.db.execute("DELETE FROM installations WHERE id=?", (installation,))
                 self.db.execute("COMMIT")
             except BaseException:
                 self.db.execute("ROLLBACK")
@@ -263,6 +298,7 @@ class Store:
             self.db.execute("DELETE FROM events WHERE state IN ('sent','cancelled','expired') AND updated<?", (now - 7 * 86400,))
             self.db.execute("DELETE FROM installations WHERE updated<? AND NOT EXISTS (SELECT 1 FROM events WHERE installation=installations.id)",
                             (now - 90 * 86400,))
+            self.db.execute("DELETE FROM revoked_installations WHERE revoked_at<?", (now - 90 * 86400,))
             self.db.execute("PRAGMA wal_checkpoint(PASSIVE)")
 
 
@@ -435,6 +471,24 @@ class Handler(BaseHTTPRequestHandler):
             self.response(200, {"ready": bool(self.server.apns.ready)})
         else:
             self.response(404, {"error": "not_found"})
+
+    def do_DELETE(self):
+        try:
+            match = PATH.fullmatch(urlsplit(self.path).path)
+            if match is None or match.group(2) or urlsplit(self.path).query:
+                raise RequestError(404, "not_found")
+            installation = checked_uuid(match.group(1)).lower()
+            authorization = self.headers.get("Authorization", "")
+            if not authorization.startswith("Bearer ") or not SECRET.fullmatch(authorization[7:]):
+                raise RequestError(401, "unauthorized")
+            if self.headers.get("Transfer-Encoding") or self.headers.get("Content-Length", "0") != "0":
+                raise RequestError(400, "unexpected_body")
+            self.server.store.revoke(installation, authorization[7:], time.time())
+            self.response(200, {"revoked": True})
+        except RequestError as error:
+            self.response(error.status, {"error": error.code})
+        except (OSError, sqlite3.Error):
+            self.response(503, {"error": "temporarily_unavailable"})
 
     def do_PUT(self):
         try:

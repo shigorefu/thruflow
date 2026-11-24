@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 import LocalAuthentication
 import Security
 import UserNotifications
@@ -51,6 +52,13 @@ nonisolated struct RemoteNotificationSnapshot: Codable, Equatable, Sendable {
 protocol RemoteNotificationTransport {
     func enroll(token: String, environment: String) async throws -> RemoteNotificationEnrollment
     func replace(_ snapshot: RemoteNotificationSnapshot) async throws -> Bool
+    func revoke() async throws
+    func cancelPendingRequests()
+    func renewed() throws -> any RemoteNotificationTransport
+}
+
+extension Notification.Name {
+    static let notificationRemotePreferenceChanged = Notification.Name("notification.remote.preferenceChanged")
 }
 
 nonisolated struct RemoteNotificationEnrollment: Sendable {
@@ -81,10 +89,21 @@ private final class SystemNotificationDeliveryCenter: NotificationDeliveryCenter
 /// proves APNs delivery; only matching receipt cancels the fallback. NSE execution
 /// is best effort, so delivery cannot be described as exactly once.
 @MainActor
-final class NotificationDeliveryRuntime {
+final class NotificationDeliveryRuntime: ObservableObject {
     static let shared = NotificationDeliveryRuntime()
     private static let stateKey = "notifications.remote.snapshot.v1"
     private static let deferredKey = "notifications.remote.deferred.v1"
+    private static let preferenceKey = "notification.remote.enabled"
+    private static let unconfirmedKey = "notification.remote.revocationUnconfirmed"
+    private static let pendingRevocationsKey = "notification.remote.pendingRevocations"
+    private var pendingRevocations: Int
+    static var isRemoteEnabled: Bool {
+        isEnabled && (UserDefaults.standard.object(forKey: preferenceKey) as? Bool ?? true)
+    }
+    @Published private(set) var remoteEnabled: Bool
+    @Published private(set) var revocationUnconfirmed: Bool
+    private var generation = 0
+    private var revocations: [Task<Void, Never>] = []
     static var isEnabled: Bool {
 #if os(watchOS)
         false
@@ -108,6 +127,7 @@ final class NotificationDeliveryRuntime {
     private let now: () -> Date
     private let systemHooks: Bool
     private var transport: (any RemoteNotificationTransport)?
+    private var retiredTransport: (any RemoteNotificationTransport)?
     private var snapshot: RemoteNotificationSnapshot
     private var deferred: Set<String>
     private var receipts: [String: String] = [:]
@@ -135,6 +155,9 @@ final class NotificationDeliveryRuntime {
         self.enabled = enabled
         self.now = now
         self.systemHooks = systemHooks
+        remoteEnabled = defaults.object(forKey: Self.preferenceKey) as? Bool ?? true
+        pendingRevocations = max(defaults.integer(forKey: Self.pendingRevocationsKey), defaults.bool(forKey: Self.unconfirmedKey) ? 1 : 0)
+        revocationUnconfirmed = pendingRevocations > 0
         snapshot = defaults.data(forKey: Self.stateKey).flatMap {
             try? JSONDecoder().decode(RemoteNotificationSnapshot.self, from: $0)
         } ?? RemoteNotificationSnapshot(revision: Int64(now().timeIntervalSince1970 * 1_000))
@@ -144,22 +167,128 @@ final class NotificationDeliveryRuntime {
     func start() {
         guard enabled(), !started else { return }
         started = true
-        if transport == nil, let endpoint = Self.endpoint {
+        if remoteEnabled, transport == nil, let endpoint = Self.endpoint {
             transport = try? HTTPRemoteNotificationTransport(endpoint: endpoint)
         }
+        if !remoteEnabled {
+            var retainedSafetyVersions = Set<String>()
+            for event in snapshot.events {
+                if event.fireAt > now().timeIntervalSince1970 {
+                    queueAdd(event.request(deferred: false), event: event)
+                } else if deferred.contains(event.version), event.fireAt + 30 > now().timeIntervalSince1970 {
+                    retainedSafetyVersions.insert(event.version)
+                    queueAdd(event.request(deferred: true), event: event)
+                }
+            }
+            deferred = retainedSafetyVersions
+            persist()
+        }
         if systemHooks {
+            UserDefaults(suiteName: "group.com.shigorefu.thruflow")?.set(remoteEnabled, forKey: Self.preferenceKey)
             let delegate = RemoteNotificationPresentationDelegate(runtime: self)
             presentationDelegate = delegate
             UNUserNotificationCenter.current().delegate = delegate
-            retryTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
-                Task { @MainActor [weak self] in self?.scheduleSynchronization() }
-            }
+            if remoteEnabled { startRetryTimer() }
         }
         Task { [weak self] in await self?.reconcileDeliveredNotifications() }
     }
 
+    /// Stops scheduling immediately. The single explicit revocation request is
+    /// the only network operation allowed after switching off; it is never retried.
+    func setRemoteEnabled(_ value: Bool) {
+        guard enabled() else { return }
+        defaults.set(value, forKey: Self.preferenceKey)
+        guard remoteEnabled != value else { return }
+        remoteEnabled = value
+        generation += 1
+        synchronization?.cancel()
+        synchronization = nil
+        needsSync = false
+        retryTimer?.invalidate()
+        retryTimer = nil
+        registered = false
+        token = nil
+        environment = nil
+        if systemHooks {
+            UserDefaults(suiteName: "group.com.shigorefu.thruflow")?.set(value, forKey: Self.preferenceKey)
+        }
+        let previous = transport ?? retiredTransport
+        previous?.cancelPendingRequests()
+        if value {
+            if let previous { transport = try? previous.renewed() }
+            else if let endpoint = Self.endpoint {
+                transport = try? HTTPRemoteNotificationTransport(endpoint: endpoint, rotateIdentity: true)
+            }
+            start()
+            if systemHooks { startRetryTimer() }
+        } else {
+            restoreLocalDeadlines()
+            let existing: (any RemoteNotificationTransport)?
+            if let previous { existing = previous }
+            else if let endpoint = Self.endpoint {
+                existing = try? HTTPRemoteNotificationTransport(endpoint: endpoint, existingIdentityOnly: true)
+            } else { existing = nil }
+            transport = nil
+            retiredTransport = existing
+            if let existing {
+                pendingRevocations += 1
+                setRevocationUnconfirmed(true)
+                let revocation = Task { [weak self] in
+                    do {
+                        try await existing.revoke()
+                        guard let self else { return }
+                        self.pendingRevocations = max(0, self.pendingRevocations - 1)
+                        self.setRevocationUnconfirmed(self.pendingRevocations > 0)
+                    } catch {
+                        // Persist an honest warning; staying off never triggers retries.
+                    }
+                }
+                revocations.append(revocation)
+            }
+        }
+        NotificationCenter.default.post(name: .notificationRemotePreferenceChanged, object: nil)
+    }
+
+    private func setRevocationUnconfirmed(_ value: Bool) {
+        revocationUnconfirmed = value
+        defaults.set(value, forKey: Self.unconfirmedKey)
+        defaults.set(pendingRevocations, forKey: Self.pendingRevocationsKey)
+    }
+
+    private func startRetryTimer() {
+        retryTimer?.invalidate()
+        retryTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
+            Task { @MainActor [weak self] in self?.scheduleSynchronization() }
+        }
+    }
+
+    private func restoreLocalDeadlines() {
+        // Already-due safety requests retain their current pending deadline;
+        // replaying a past calendar date could lose the alert or cause a burst.
+        let previousEvents = snapshot.events
+        snapshot.events = previousEvents.map { event in
+            RemoteNotificationEvent(identifier: event.identifier, version: UUID().uuidString,
+                fireAt: event.fireAt, title: event.title, body: event.body, badge: event.badge)
+        }
+        var retainedSafetyVersions = Set<String>()
+        for (old, event) in zip(previousEvents, snapshot.events) {
+            enqueue { [center] in center.removePending([old.systemIdentifier]) }
+            if event.fireAt > now().timeIntervalSince1970 {
+                queueAdd(event.request(deferred: false), event: event)
+            } else if deferred.contains(old.version), event.fireAt + 30 > now().timeIntervalSince1970 {
+                retainedSafetyVersions.insert(event.version)
+                queueAdd(event.request(deferred: true), event: event)
+            }
+        }
+        // New versions also protect restored local requests if an old NSE runs
+        // after the user re-enables the server and its App Group gate is open.
+        // Keep the due-window metadata across rapid toggles and relaunches.
+        deferred = retainedSafetyVersions
+        persist()
+    }
+
     func registerDeviceToken(_ data: Data, environment: String) {
-        guard enabled(), ["sandbox", "production"].contains(environment), !data.isEmpty else { return }
+        guard enabled(), remoteEnabled, ["sandbox", "production"].contains(environment), !data.isEmpty else { return }
         start()
         token = data.map { String(format: "%02x", $0) }.joined()
         self.environment = environment
@@ -246,7 +375,7 @@ final class NotificationDeliveryRuntime {
 
     @discardableResult
     func receive(userInfo: [AnyHashable: Any]) async -> Bool {
-        guard enabled(), let id = userInfo["local_identifier"] as? String,
+        guard enabled(), remoteEnabled, let id = userInfo["local_identifier"] as? String,
               let version = userInfo["event_version"] as? String else { return false }
         let logicalID = id.components(separatedBy: ".delivery.").first ?? id
         let current = snapshot.events.first { $0.identifier == logicalID }
@@ -294,17 +423,22 @@ final class NotificationDeliveryRuntime {
     func waitUntilIdle() async {
         await localWorker?.value
         await synchronization?.value
+        for revocation in revocations { await revocation.value }
+        revocations.removeAll()
         await localWorker?.value
     }
 
     private func queueAdd(_ request: UNNotificationRequest, event: RemoteNotificationEvent,
                           completion: (@Sendable ((any Error)?) -> Void)? = nil) {
+        let scheduledGeneration = generation
         enqueue { [weak self, center] in
             guard let self, self.isCurrent(event), !self.hasReceipt(event.version) else {
                 completion?(nil); return
             }
             do {
-                try await center.add(request)
+                let effective = (!self.remoteEnabled || self.generation != scheduledGeneration) && event.fireAt > self.now().timeIntervalSince1970
+                    ? event.request(deferred: false) : request
+                try await center.add(effective)
                 completion?(nil)
                 self.scheduleSynchronization()
             } catch { completion?(error) }
@@ -323,7 +457,7 @@ final class NotificationDeliveryRuntime {
         snapshot.events.contains { $0.identifier == event.identifier && $0.version == event.version }
     }
     private func hasReceipt(_ version: String) -> Bool {
-        guard systemHooks else { return false }
+        guard systemHooks, remoteEnabled else { return false }
         return UserDefaults(suiteName: "group.com.shigorefu.thruflow")?
             .object(forKey: "notification.receipt.\(version)") != nil
     }
@@ -338,20 +472,24 @@ final class NotificationDeliveryRuntime {
         defaults.set(Array(deferred), forKey: Self.deferredKey)
     }
     private func scheduleSynchronization() {
-        guard started, registered, transport != nil else { return }
+        guard enabled(), remoteEnabled, started, registered, transport != nil else { return }
         needsSync = true
         guard synchronization == nil else { return }
+        let currentGeneration = generation
         synchronization = Task { [weak self] in
             guard let self else { return }
-            while self.needsSync { self.needsSync = false; await self.synchronize() }
-            self.synchronization = nil
+            while self.needsSync && self.generation == currentGeneration && !Task.isCancelled {
+                self.needsSync = false
+                await self.synchronize(generation: currentGeneration)
+            }
+            if self.generation == currentGeneration { self.synchronization = nil }
         }
     }
-    private func synchronize() async {
-        guard registered, let token, let environment, let transport else { return }
+    private func synchronize(generation expectedGeneration: Int) async {
+        guard enabled(), remoteEnabled, generation == expectedGeneration, registered, let token, let environment, let transport else { return }
         do {
             let enrollment = try await transport.enroll(token: token, environment: environment)
-            guard enrollment.ready, registered else { return }
+            guard enrollment.ready, registered, remoteEnabled, generation == expectedGeneration, !Task.isCancelled else { return }
             if snapshot.revision <= enrollment.revision {
                 snapshot.revision = enrollment.revision + 1
                 persist()
@@ -362,7 +500,7 @@ final class NotificationDeliveryRuntime {
             // Let the backend complete its bounded APNs retry window after the original deadline.
             let outgoing = snapshot.events.filter { $0.fireAt + 25 > now().timeIntervalSince1970 && !hasReceipt($0.version) }
             let sent = RemoteNotificationSnapshot(revision: snapshot.revision, events: outgoing.map(\.publicPayload))
-            guard try await transport.replace(sent), registered else { return }
+            guard try await transport.replace(sent), registered, remoteEnabled, generation == expectedGeneration, !Task.isCancelled else { return }
             for sentEvent in sent.events {
                 guard let event = snapshot.events.first(where: { $0.version == sentEvent.version }),
                       !hasReceipt(event.version), !deferred.contains(event.version),
@@ -432,7 +570,7 @@ private final class HTTPRemoteNotificationTransport: RemoteNotificationTransport
     private let endpoint: URL
     private let identity: Identity
     private let session: URLSession
-    init(endpoint: URL) throws {
+    init(endpoint: URL, existingIdentityOnly: Bool = false, rotateIdentity: Bool = false) throws {
         self.endpoint = endpoint
         let config = URLSessionConfiguration.ephemeral
         config.timeoutIntervalForRequest = 10
@@ -450,9 +588,9 @@ private final class HTTPRemoteNotificationTransport: RemoteNotificationTransport
         query[kSecMatchLimit as String] = kSecMatchLimitOne
         var result: CFTypeRef?
         let status = SecItemCopyMatching(query as CFDictionary, &result)
-        if status == errSecSuccess, let data = result as? Data,
+        if !rotateIdentity, status == errSecSuccess, let data = result as? Data,
            let stored = try? JSONDecoder().decode(Identity.self, from: data) { identity = stored }
-        else if status == errSecItemNotFound {
+        else if !existingIdentityOnly && (status == errSecItemNotFound || (rotateIdentity && status == errSecSuccess)) {
             var random = [UInt8](repeating: 0, count: 32)
             guard SecRandomCopyBytes(kSecRandomDefault, random.count, &random) == errSecSuccess else { throw Failure.keychain }
             identity = Identity(id: UUID().uuidString, secret: random.map { String(format: "%02x", $0) }.joined())
@@ -461,7 +599,13 @@ private final class HTTPRemoteNotificationTransport: RemoteNotificationTransport
             query.removeValue(forKey: kSecUseAuthenticationContext as String)
             query[kSecValueData as String] = try JSONEncoder().encode(identity)
             query[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
-            guard SecItemAdd(query as CFDictionary, nil) == errSecSuccess else { throw Failure.keychain }
+            if status == errSecSuccess {
+                let value = query.removeValue(forKey: kSecValueData as String)!
+                query[kSecUseAuthenticationContext as String] = authentication
+                guard SecItemUpdate(query as CFDictionary, [kSecValueData as String: value] as CFDictionary) == errSecSuccess else { throw Failure.keychain }
+            } else {
+                guard SecItemAdd(query as CFDictionary, nil) == errSecSuccess else { throw Failure.keychain }
+            }
         } else { throw Failure.keychain }
     }
     func enroll(token: String, environment: String) async throws -> RemoteNotificationEnrollment {
@@ -480,6 +624,29 @@ private final class HTTPRemoteNotificationTransport: RemoteNotificationTransport
         let response = try JSONDecoder().decode(Accepted.self, from: data)
         return response.accepted && response.revision == snapshot.revision
     }
+    func cancelPendingRequests() { session.invalidateAndCancel() }
+
+    func renewed() throws -> any RemoteNotificationTransport {
+        try HTTPRemoteNotificationTransport(endpoint: endpoint, rotateIdentity: true)
+    }
+
+    func revoke() async throws {
+        // The scheduling session was invalidated first. A fresh, short-lived
+        // session performs only this deliberate final request for the old identity.
+        let config = URLSessionConfiguration.ephemeral
+        config.timeoutIntervalForRequest = 10
+        config.timeoutIntervalForResource = 20
+        config.httpShouldSetCookies = false
+        config.urlCache = nil
+        let revocationSession = URLSession(configuration: config)
+        defer { revocationSession.invalidateAndCancel() }
+        var request = URLRequest(url: endpoint.appendingPathComponent("v1/installations/\(identity.id)"))
+        request.httpMethod = "DELETE"
+        request.setValue("Bearer \(identity.secret)", forHTTPHeaderField: "Authorization")
+        let (_, response) = try await revocationSession.data(for: request)
+        guard let response = response as? HTTPURLResponse, (200..<300).contains(response.statusCode) else { throw Failure.response }
+    }
+
     private func put(path: String, body: Data) async throws -> Data {
         var request = URLRequest(url: endpoint.appendingPathComponent(path))
         request.httpMethod = "PUT"

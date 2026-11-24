@@ -2,6 +2,58 @@
 
 This document is the operational checklist for ThruFlow releases. Product scope remains in [`ROADMAP.md`](ROADMAP.md), and CloudKit details remain in [`CLOUDKIT.md`](CLOUDKIT.md).
 
+## Preparing 1.5.0 build 16 — 2026-11-24
+
+Version `1.5.0`, build `16` is prepared on branch `1.5.0` across all 14 Debug
+and Release target configurations, including both apps, Watch, widgets/Live
+Activities, the notification service extension and tests. This is an unreleased
+candidate. The maintainer must approve the app, screenshots and localized release
+copy before merging into `main`. No release tag, TestFlight upload, App Store
+submission or publication is authorized by this preparation record.
+
+The proposed five-language App Store copy is in [the release draft](releases/1.5.0.md).
+A new isolated screenshot set is planned: eight routes, five layouts and five
+languages, up to 200 candidate images. Capture, image review and selection are
+pending; a planned count does not establish a complete or approved asset set.
+Generated images stay in the Git-ignored `screenshots/1.5.0/` directory.
+
+Release automation now includes `com.shigorefu.thruflow.notifications` in both
+platforms' match, signing, export and exact bundle checks. Its signed App Group
+is required; CloudKit entitlements are not required for that extension.
+App Store distribution profiles for the new extension on both platforms remain
+pending. Existing Development profiles and earlier signed Debug builds do not
+satisfy this distribution gate. No signing assets are stored in this repository.
+
+Checks completed on the final source candidate:
+
+- The 613 ordinary macOS unit tests passed; the separate five-language screenshot
+  fixture also passed (614 tests total). Tests used isolated storage and disabled
+  CloudKit. Logs are in ignored `DerivedData/Release150QA/`.
+- Both unsigned Release builds passed, including embedded Watch. The notification
+  service extension's privacy manifest is present in both built products.
+- The 28 backend tests, 13 Ruby delivery-helper tests (35 assertions), 14 Python
+  automation tests, platform-review mapping and `git diff --check` passed.
+- The live CloudKit Production schema was inspected without changes; see the
+  [dated evidence](CLOUDKIT.md#release-150-16-preparation--2026-11-24).
+- Server-only opt-out behavior was agreed by both client reviewers. The local
+  preference leaves iCloud and connectors unchanged. See
+  [Notifications](NOTIFICATIONS.md#per-device-server-preference).
+
+The privacy policy and app/extension manifests were updated for notification
+installation IDs, device tokens and schedule metadata. App Store privacy answers
+and the public policy page still need to be updated before distribution. These
+source edits do not establish that the external disclosures were published.
+
+Open gates:
+
+- Finish and review screenshots and copy, then obtain maintainer approval before
+  merging into `main`. Native capture is incomplete while the Mac is locked.
+- Prepare and inspect extension distribution profiles and signed exports.
+- Complete the signed-device notification and cross-device checks recorded in
+  [Notifications](NOTIFICATIONS.md) and [CloudKit](CLOUDKIT.md), or retain their
+  explicit unverified status in the release decision. Unsigned Release builds
+  and earlier signed Debug builds do not establish exact-build device delivery.
+
 ## Released 1.4.1 build 15
 
 The maintainer confirmed App Store publication on 2026-11-12. The [TestFlight
@@ -120,7 +172,7 @@ calendar dates are not byte-for-byte identical.
    intended App Store device/window size. Build/run does not itself capture or
    upload an image. Check text wrapping, selected dates and chart loading in each
    language before using the image.
-5. Save images under the visible local `screenshots/1.4.0/` directory, organized
+5. Save images under the visible local `screenshots/<version>/` directory, organized
    by platform and language. `/screenshots/` is ignored by Git; do not commit
    generated captures or private user screenshots. Stop temporary QA apps after
    capture.

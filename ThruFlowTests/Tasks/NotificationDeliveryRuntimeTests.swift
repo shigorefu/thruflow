@@ -113,6 +113,186 @@ struct NotificationDeliveryRuntimeTests {
         #expect(fixture.transport.enrollmentCount == 0)
     }
 
+    @Test func disablingRestoresFutureLocalDeadlineAndStopsAllLaterSynchronization() async throws {
+        let fixture = Fixture()
+        defer { fixture.clean() }
+        fixture.runtime.registerDeviceToken(Data([1]), environment: "sandbox")
+        try await fixture.runtime.add(fixture.request())
+        await fixture.runtime.waitUntilIdle()
+        fixture.runtime.setRemoteEnabled(false)
+        await fixture.runtime.waitUntilIdle()
+        let local = try #require(fixture.center.logicalRequest(fixture.identifier))
+        #expect(abs(local.fireDate!.timeIntervalSince(fixture.fireDate)) < 2)
+        #expect(fixture.transport.revocationCount == 1)
+        #expect(fixture.transport.cancellationCount == 1)
+        #expect(!fixture.runtime.revocationUnconfirmed)
+        let enrollments = fixture.transport.enrollmentCount
+        fixture.runtime.registerDeviceToken(Data([2]), environment: "production")
+        try await fixture.runtime.add(fixture.request(date: fixture.fireDate.addingTimeInterval(60)))
+        await fixture.runtime.waitUntilIdle()
+        #expect(fixture.transport.enrollmentCount == enrollments)
+        #expect(fixture.transport.revocationCount == 1)
+        #expect(!(await fixture.runtime.receive(userInfo: local.content.userInfo)))
+    }
+
+    @Test func disablingDuringEnrollmentNeverSendsSnapshot() async throws {
+        let fixture = Fixture()
+        defer { fixture.clean() }
+        try await fixture.runtime.add(fixture.request())
+        fixture.transport.onEnroll = { fixture.runtime.setRemoteEnabled(false) }
+        fixture.runtime.registerDeviceToken(Data([1]), environment: "sandbox")
+        await fixture.runtime.waitUntilIdle()
+        #expect(fixture.transport.snapshots.isEmpty)
+        #expect(fixture.transport.revocationCount == 1)
+    }
+
+    @Test func disablingDuringAcceptanceCannotReapplySafetyDelay() async throws {
+        let fixture = Fixture()
+        defer { fixture.clean() }
+        try await fixture.runtime.add(fixture.request())
+        fixture.transport.onReplace = { fixture.runtime.setRemoteEnabled(false) }
+        fixture.runtime.registerDeviceToken(Data([1]), environment: "sandbox")
+        await fixture.runtime.waitUntilIdle()
+        let local = try #require(fixture.center.logicalRequest(fixture.identifier))
+        #expect(abs(local.fireDate!.timeIntervalSince(fixture.fireDate)) < 2)
+        #expect(fixture.transport.revocationCount == 1)
+    }
+
+    @Test func offlineRevocationStaysUnconfirmedAcrossRelaunchWithoutRetry() async throws {
+        let fixture = Fixture()
+        defer { fixture.clean() }
+        fixture.transport.failsRevocation = true
+        fixture.runtime.registerDeviceToken(Data([1]), environment: "sandbox")
+        try await fixture.runtime.add(fixture.request())
+        await fixture.runtime.waitUntilIdle()
+        fixture.runtime.setRemoteEnabled(false)
+        await fixture.runtime.waitUntilIdle()
+        #expect(fixture.runtime.revocationUnconfirmed)
+        let restoredTransport = FakeRemoteTransport()
+        let restored = NotificationDeliveryRuntime(center: fixture.center, defaults: fixture.defaults,
+            transport: restoredTransport, enabled: { true }, systemHooks: false)
+        restored.start()
+        restored.registerDeviceToken(Data([2]), environment: "sandbox")
+        try await restored.add(fixture.request())
+        await restored.waitUntilIdle()
+        #expect(!restored.remoteEnabled)
+        #expect(restored.revocationUnconfirmed)
+        #expect(restoredTransport.enrollmentCount == 0)
+        #expect(restoredTransport.revocationCount == 0)
+    }
+
+    @Test func reenableRotatesIdentityAndLateRevokeDoesNotDisableNewGeneration() async throws {
+        let fixture = Fixture()
+        defer { fixture.clean() }
+        fixture.runtime.registerDeviceToken(Data([1]), environment: "sandbox")
+        try await fixture.runtime.add(fixture.request())
+        await fixture.runtime.waitUntilIdle()
+        let replacement = FakeRemoteTransport()
+        fixture.transport.replacement = replacement
+        let previousEnrollmentCount = fixture.transport.enrollmentCount
+        fixture.runtime.setRemoteEnabled(false)
+        fixture.runtime.setRemoteEnabled(true)
+        fixture.runtime.registerDeviceToken(Data([2]), environment: "production")
+        await fixture.runtime.waitUntilIdle()
+        #expect(fixture.runtime.remoteEnabled)
+        #expect(fixture.transport.renewalCount == 1)
+        // Local restoration and its safety ACK can each request an idempotent
+        // sync. Every enrollment must use the new identity's fresh registration.
+        #expect(!replacement.enrollments.isEmpty)
+        #expect(replacement.enrollments.allSatisfy { $0.token == "02" && $0.environment == "production" })
+        #expect(fixture.transport.enrollmentCount == previousEnrollmentCount)
+        #expect(replacement.snapshots.last?.events.count == 1)
+        fixture.runtime.setRemoteEnabled(false)
+        await fixture.runtime.waitUntilIdle()
+        #expect(!fixture.runtime.remoteEnabled)
+        #expect(replacement.revocationCount == 1)
+        #expect(fixture.transport.revocationCount == 1)
+        #expect(fixture.transport.enrollmentCount == previousEnrollmentCount)
+    }
+
+    @Test func laterSuccessfulRevocationCannotHideEarlierOfflineIdentity() async throws {
+        let fixture = Fixture()
+        defer { fixture.clean() }
+        fixture.transport.failsRevocation = true
+        let replacement = FakeRemoteTransport()
+        fixture.transport.replacement = replacement
+        fixture.runtime.setRemoteEnabled(false)
+        fixture.runtime.setRemoteEnabled(true)
+        fixture.runtime.setRemoteEnabled(false)
+        await fixture.runtime.waitUntilIdle()
+        #expect(fixture.transport.revocationCount == 1)
+        #expect(replacement.revocationCount == 1)
+        #expect(fixture.runtime.revocationUnconfirmed)
+        #expect(fixture.defaults.integer(forKey: "notification.remote.pendingRevocations") == 1)
+    }
+
+    @Test func oldReceiptCannotCancelReenabledLocalGeneration() async throws {
+        let fixture = Fixture()
+        defer { fixture.clean() }
+        fixture.runtime.registerDeviceToken(Data([1]), environment: "sandbox")
+        try await fixture.runtime.add(fixture.request())
+        await fixture.runtime.waitUntilIdle()
+        let old = try #require(fixture.center.logicalRequest(fixture.identifier))
+        fixture.runtime.setRemoteEnabled(false)
+        fixture.runtime.setRemoteEnabled(true)
+        await fixture.runtime.waitUntilIdle()
+        let current = try #require(fixture.center.logicalRequest(fixture.identifier))
+        #expect(current.content.userInfo["event_version"] as? String != old.content.userInfo["event_version"] as? String)
+        #expect(!(await fixture.runtime.receive(userInfo: old.content.userInfo)))
+        #expect(fixture.center.logicalRequest(fixture.identifier) != nil)
+    }
+
+    @Test func disablingKeepsAlreadyDueSafetyRequestInsteadOfReplayingPastDeadline() async throws {
+        let clock = MutableClock()
+        let fixture = Fixture(now: { clock.date })
+        defer { fixture.clean() }
+        fixture.runtime.registerDeviceToken(Data([1]), environment: "sandbox")
+        try await fixture.runtime.add(fixture.request())
+        await fixture.runtime.waitUntilIdle()
+        let previous = try #require(fixture.center.logicalRequest(fixture.identifier))
+        clock.date = fixture.fireDate.addingTimeInterval(10)
+        fixture.runtime.setRemoteEnabled(false)
+        await fixture.runtime.waitUntilIdle()
+        let current = try #require(fixture.center.logicalRequest(fixture.identifier))
+        #expect(current.content.userInfo["fallback_fire_at"] as? Double == previous.content.userInfo["fallback_fire_at"] as? Double)
+        #expect((current.content.userInfo["fallback_fire_at"] as? Double ?? 0) > clock.date.timeIntervalSince1970)
+    }
+
+    @Test func alreadyDueSafetyRequestSurvivesRapidTogglesAndColdOffRelaunch() async throws {
+        let clock = MutableClock()
+        let fixture = Fixture(now: { clock.date })
+        defer { fixture.clean() }
+        fixture.runtime.registerDeviceToken(Data([1]), environment: "sandbox")
+        try await fixture.runtime.add(fixture.request())
+        await fixture.runtime.waitUntilIdle()
+        clock.date = fixture.fireDate.addingTimeInterval(10)
+        fixture.runtime.setRemoteEnabled(false)
+        fixture.runtime.setRemoteEnabled(true)
+        fixture.runtime.setRemoteEnabled(false)
+        await fixture.runtime.waitUntilIdle()
+        let first = try #require(fixture.center.logicalRequest(fixture.identifier))
+        #expect(first.content.userInfo["fallback_fire_at"] as? Double == fixture.fireDate.addingTimeInterval(30).timeIntervalSince1970)
+        let restored = NotificationDeliveryRuntime(center: fixture.center, defaults: fixture.defaults,
+            transport: FakeRemoteTransport(), enabled: { true }, now: { clock.date }, systemHooks: false)
+        restored.start()
+        restored.setRemoteEnabled(true)
+        restored.setRemoteEnabled(false)
+        await restored.waitUntilIdle()
+        let current = try #require(fixture.center.logicalRequest(fixture.identifier))
+        #expect(current.content.userInfo["fallback_fire_at"] as? Double == fixture.fireDate.addingTimeInterval(30).timeIntervalSince1970)
+        #expect((current.content.userInfo["fallback_fire_at"] as? Double ?? 0) > clock.date.timeIntervalSince1970)
+    }
+
+    @Test func isolatedRuntimePreferenceCommandHasNoPersistentOrTransportEffects() async {
+        let fixture = Fixture(enabled: false)
+        defer { fixture.clean() }
+        fixture.runtime.setRemoteEnabled(false)
+        await fixture.runtime.waitUntilIdle()
+        #expect(fixture.defaults.object(forKey: "notification.remote.enabled") == nil)
+        #expect(fixture.transport.cancellationCount == 0)
+        #expect(fixture.transport.revocationCount == 0)
+    }
+
     @Test func foregroundPresentsEachVersionOnceAcrossLocalAndRemoteCallbacks() async throws {
         let fixture = Fixture()
         defer { fixture.clean() }
@@ -155,10 +335,10 @@ private final class Fixture {
     let identifier = "task.reminder.\(UUID().uuidString)"
     let defaults: UserDefaults
     let runtime: NotificationDeliveryRuntime
-    init(enabled: Bool = true) {
+    init(enabled: Bool = true, now: @escaping () -> Date = { .now }) {
         defaults = UserDefaults(suiteName: suite)!
         runtime = NotificationDeliveryRuntime(center: center, defaults: defaults, transport: transport,
-                                              enabled: { enabled }, systemHooks: false)
+                                              enabled: { enabled }, now: now, systemHooks: false)
     }
     func clean() { defaults.removePersistentDomain(forName: suite) }
     func request(date: Date? = nil) -> UNNotificationRequest {
@@ -189,12 +369,31 @@ private final class FakeDeliveryCenter: NotificationDeliveryCenter {
 private final class FakeRemoteTransport: RemoteNotificationTransport {
     var ready = true
     var enrollmentCount = 0
+    var enrollments: [(token: String, environment: String)] = []
     var snapshots: [RemoteNotificationSnapshot] = []
     var onReplace: (() -> Void)?
     var onReplaceAsync: (() async -> Void)?
     var revision: Int64 = 0
+    var revocationCount = 0
+    var cancellationCount = 0
+    var renewalCount = 0
+    var failsRevocation = false
+    var replacement: FakeRemoteTransport?
+    var onEnroll: (() -> Void)?
+    func cancelPendingRequests() { cancellationCount += 1 }
+    func renewed() throws -> any RemoteNotificationTransport {
+        renewalCount += 1
+        return replacement ?? FakeRemoteTransport()
+    }
+    func revoke() async throws {
+        revocationCount += 1
+        if failsRevocation { throw URLError(.notConnectedToInternet) }
+    }
     func enroll(token: String, environment: String) async throws -> RemoteNotificationEnrollment {
         enrollmentCount += 1
+        enrollments.append((token: token, environment: environment))
+        onEnroll?()
+        onEnroll = nil
         return RemoteNotificationEnrollment(ready: ready, revision: revision)
     }
     func replace(_ snapshot: RemoteNotificationSnapshot) async throws -> Bool {
@@ -208,6 +407,9 @@ private final class FakeRemoteTransport: RemoteNotificationTransport {
         return true
     }
 }
+
+@MainActor
+private final class MutableClock { var date = Date.now }
 
 private extension UNNotificationRequest {
     var fireDate: Date? {
