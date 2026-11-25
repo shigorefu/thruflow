@@ -104,12 +104,13 @@ for the maintained procedure.
 All **200 native JPEG candidates** are captured under the Git-ignored
 `screenshots/1.5.0/`: eight routes × five layouts × five languages. Identified
 loading-state, text-fit and framing images were replaced. This completes the
-local candidate set; maintainer selection and approval remain pending.
+local candidate set. The selected draft uploads are recorded below; maintainer
+review and approval remain pending.
 The local `index.html` gallery, `manifest.json` inventory and 25 final review
 sheets (`review/<language>-<layout>.jpg`) are present. The manifest records all
 200 originals, 40 per layout, their dimensions and SHA-256 hashes, together with
-the reviewed app-source identifier. These are local review materials; no App Store
-upload is recorded.
+the reviewed app-source identifier. The complete local set remains available;
+155 selected images were uploaded to the App Store drafts as recorded below.
 
 Independent overview review agreed on all 25 canonical sheets / 200 thumbnails:
 10 iPad/iPhone sheets (80 thumbnails) and 15 Mac/Duo Closed/Duo Open sheets
@@ -149,11 +150,54 @@ observed at 24:52 after starting from 25 minutes. Compact iPhone Flow Statistics
 pages two and three were not gesture-verified because automated scrolling was
 unavailable; the screenshots do not establish those interactions.
 
+### App Store Connect drafts — 2026-11-25
+
+Created the iOS and macOS `1.5.0` versions and selected processed build `16` on
+both. The [iOS draft](https://appstoreconnect.apple.com/apps/6798609191/distribution/ios/version/inflight)
+and [macOS draft](https://appstoreconnect.apple.com/apps/6798609191/distribution/macos/version/inflight)
+remain `提出準備中` (Prepare for Submission). No App Review item was added or
+submitted, and no public release was performed.
+
+Saved the [five-language release notes and description addendum](releases/1.5.0.md)
+in Japanese, US English, Russian, Simplified Chinese and Traditional Chinese on
+both platforms. Existing descriptions were retained and extended with the
+notification server default, per-device local-only option and exclusion of Task
+names/notes from server requests. Existing names, keywords, pricing, review
+contacts and public privacy answers were not changed. Independent localization
+review agreed on the source copy in all five languages; this is not a full
+native-speaker or live layout audit.
+
+Uploaded the following images from `screenshots/1.5.0/{locale}/`, in the order
+shown, for each of the five locales:
+
+| App Store set | Selection | Per locale | Total |
+| --- | --- | --- | --- |
+| Mac | `Mac/01–08` | 8 | 40 |
+| iPhone, medium Dynamic Island display | `iPhone/01–08` | 8 | 40 |
+| iPad, 13-inch display | `iPad/01–05` | 5 | 25 |
+| iPhone Duo | Combined selection below | 10 | 50 |
+| **Total** | | **31** | **155** |
+
+The Duo sequence is Closed Flow, Open Flow, Closed Tasks, Open Tasks, Closed
+History, Open History, Open Areas, Open Statistics, Open Statistics Trend and
+Open Statistics Breakdown. The iPad Statistics captures `05–08` are byte-identical,
+so only `05` was selected. Duo Open `06` and `08` are also byte-identical; the
+selection uses `06`. Independent asset review verified all 200 source hashes
+and dimensions against the manifest and checked representative contact sheets.
+
+All 20 device/locale sets were read back with the expected counts and filename
+order. Both saved drafts were reloaded, and all ten localized text pages were
+read back with matching release notes and description additions. Old screenshot
+associations were replaced only in the new drafts; original assets remain in
+Apple's asset library. A local, Git-ignored selection/evidence inventory is
+`screenshots/1.5.0/appstore-draft.json`. These checks establish saved metadata
+and assets, not App Review approval or physical-device notification/sync behavior.
+
 ### Remaining public release gates
 
-- Select the final screenshots and localized [release copy](releases/1.5.0.md)
-  and apply App Store metadata. The 200-image local set remains available; no
-  screenshot or metadata upload was performed by the build-delivery workflow.
+- Obtain maintainer review and approval of the saved App Store drafts above.
+  The 200-image local candidate set remains available alongside the 155 uploaded
+  selections. Do not add to App Review or submit until explicitly authorized.
 - Update App Store privacy answers and the public policy page before public
   distribution. Source policy/manifests do not establish published disclosures.
 - Complete exact-build signed-device checks in [Notifications](NOTIFICATIONS.md)
