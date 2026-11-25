@@ -30,10 +30,70 @@ on the final source. Offline checks passed: 22 Python tests and 16 Ruby delivery
 helper tests with 672 assertions, syntax/YAML/whitespace checks, and actual local
 Xcode/SDK 27.2 preflight. A dated [live Production inspection](CLOUDKIT.md#sdk-27-rebuild-150-17--2026-11-25)
 was completed without changes. No repeated UI check is claimed; the maintainer
-waived it after their own testing. Signed build 17 archives, Apple processing and
-new submission status require actual delivery evidence and are pending here.
-The previously prepared five-language metadata and 155 screenshots remain in
-the App Store versions for reuse with build 17.
+waived it after their own testing.
+
+[PR #45](https://github.com/shigorefu/thruflow/pull/45) merged the SDK guards and
+build 17 at source `3954656841faad130aeb60e63693adb201597b8c`. Its
+[main CI](https://github.com/shigorefu/thruflow/actions/runs/45536657252) passed 614
+tests in 60 suites and both unsigned Release builds with Xcode 27.2 / SDK 27.2.
+[TestFlight 45536774271](https://github.com/shigorefu/thruflow/actions/runs/45536774271)
+passed its complete 615-test / 61-suite verification, including the screenshot
+fixture, and was approved for the existing protected `testflight` environment.
+The signed iOS archive and exported IPA passed validation for the main app,
+widget and notification extension (`iphoneos27.2`, SDK build `24B8118`) and
+Watch (`watchos27.2`, SDK build `24S118`), all with Xcode `2720` / `27B52`.
+The iOS job completed with temporary signing cleanup and Apple processing
+confirmed. App Store Connect readback shows binary state Validated, build 17,
+SDK build `24B8118`, Production entitlements and all five localizations.
+
+iOS build 17 was selected, saved and submitted at 13:03 JST on 2026-11-25.
+The new submission
+[`c3ee62ed-451b-42d6-a816-6668489d6e84`](https://appstoreconnect.apple.com/apps/6798609191/distribution/reviewsubmissions/details/c3ee62ed-451b-42d6-a816-6668489d6e84)
+was read back as `審査待ち` (Waiting for Review).
+
+The macOS job also completed successfully. All three archived and exported
+bundles (main app, widget and notification extension) carry `macosx27.2`, SDK
+build `26B118`, Xcode `2720` / `27B52`, and both arm64 and x86_64 slices.
+Installer signature validation and temporary signing cleanup passed. Upload was
+accepted at 13:07:59 JST, and Apple processing completed at 13:10:05 JST.
+App Store Connect readback confirms binary state Validated, version `1.5.0`,
+build `17`, SDK build `26B118`, both architectures, all five localizations,
+and Production CloudKit/APNs entitlements.
+
+macOS build 17 was selected, saved and submitted at 13:12 JST. Submission
+[`c2882c48-6849-4ad7-b65a-8cf6a8854505`](https://appstoreconnect.apple.com/apps/6798609191/distribution/reviewsubmissions/details/c2882c48-6849-4ad7-b65a-8cf6a8854505)
+was read back as `審査待ち`, with `1.5.0 (17)` in its submitted item. The
+reloaded App Review table shows both new submissions Waiting for Review and
+both previous build 16 submissions Removed. The complete TestFlight run and
+[main CI](https://github.com/shigorefu/thruflow/actions/runs/45536657252)
+succeeded. Both client reviewers independently inspected each other's actual
+archive/export and Apple-processing evidence and explicitly agreed; no
+delivery objections remain. This establishes signed delivery, not new native
+UI, physical APNs or device-sync verification.
+
+The previously prepared five-language metadata and 155 screenshots are reused;
+no asset or release-mode setting was changed. The existing automatic release
+after approval remains selected. App Review approval and public release are
+not claimed. These binaries retain source
+`3954656841faad130aeb60e63693adb201597b8c` after documentation-only commits;
+do not redispatch their upload from a documentation SHA.
+
+### Notification privacy disclosure
+
+On 2026-11-25, App Store Connect App Privacy was updated, published and reloaded
+with exactly two collected types: Device ID and Product Interaction. Each is
+used only for App Functionality, linked to the installation/device, and not
+used for tracking. This matches the existing app privacy manifest and approved
+[`PRIVACY.md`](../PRIVACY.md); no new collection behavior was added.
+
+The existing public privacy URL was aligned with that policy in Japanese,
+English and Russian through
+[website PR #2](https://github.com/shigorefu/thruflow-site/pull/2), source
+`3441035be27a30a2f5ed75978742c93ae5e9b364`. Existing Amplify automatic deployment
+8 succeeded at 12:07:35 JST. HTTPS readback of `/privacy/`, `/ja/privacy/`,
+`/en/privacy/` and `/ru/privacy/` returned HTTP 200 and the exact reviewed
+exported text, including notification data, device opt-out and seven-/90-day
+retention rules. No hosting settings, access or infrastructure were changed.
 
 ## 1.5.0 (16) delivered to App Store Connect — 2026-11-25
 
@@ -42,8 +102,8 @@ Both platforms were uploaded and finished Apple processing from tested source
 `1.5.0` / `16`. App, project and extension source is unchanged from reviewed
 `8603de2749d6af717d1fe7bccd77784768e8ebb9`; subsequent changes prepared delivery
 tooling and recorded verification. This is a TestFlight/App Store Connect
-candidate, not a published App Store release. No App Review submission or
-production release tag was created.
+candidate, not a published App Store release. At completion of this initial
+upload, no App Review submission or production release tag had yet been created.
 
 [PR #40](https://github.com/shigorefu/thruflow/pull/40) merged the app candidate;
 [PR #41](https://github.com/shigorefu/thruflow/pull/41) and

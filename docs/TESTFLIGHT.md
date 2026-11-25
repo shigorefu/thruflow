@@ -120,9 +120,10 @@ The CloudKit variable is a maintainer attestation, not an automatic schema test.
 Record the inspected environment, fields/indexes, date and evidence in
 [CLOUDKIT.md](CLOUDKIT.md), then set the variable to the final candidate commit.
 Do not set it merely to make the workflow green. Recheck for a new candidate SHA.
-See the candidate-specific dated evidence in CloudKit, including the 1.5.0 (16)
-delivery check on 2026-11-25. Set the variable only for the final reviewed source
-commit. Signed physical-device checks remain separate from this schema attestation.
+See the candidate-specific dated evidence in CloudKit, including the
+[SDK 27 rebuild, 1.5.0 (17)](CLOUDKIT.md#sdk-27-rebuild-150-17--2026-11-25)
+on 2026-11-25. Set the variable only for the final reviewed source commit.
+Signed physical-device checks remain separate from this schema attestation.
 
 ## Per-candidate procedure
 

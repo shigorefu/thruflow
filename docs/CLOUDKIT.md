@@ -447,7 +447,13 @@ Evidence: the live Production pages under
 `/dashboard/database/teams/BR727PS795/containers/iCloud.com.shigorefu.thruflow/`
 `environments/PRODUCTION/types/{recordType}/fields`. Development comparison and
 schema deployment are not required for this rebuild because persisted models and
-entitlements are unchanged. Bind the protected attestation only to the final
-reviewed build 17 source after confirming that unchanged-model diff. The
-maintainer reports that application checks are complete; no new independent
-physical-device sync or notification check is claimed for the rebuilt binary.
+entitlements are unchanged. The protected attestation was bound to reviewed
+source `3954656841faad130aeb60e63693adb201597b8c` after confirming the unchanged
+model/app-source diff. TestFlight run
+[45536774271](https://github.com/shigorefu/thruflow/actions/runs/45536774271)
+used that source, passed the gate and delivered both SDK 27.2 build 17 binaries.
+App Store Connect independently shows Production CloudKit entitlements in both
+processed builds, including Watch inside the iOS package. The maintainer reports
+that application checks are complete; no new independent physical-device sync
+or notification check is claimed for the rebuilt binary. Documentation-only
+follow-ups do not change this candidate source or justify another upload.

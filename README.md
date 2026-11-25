@@ -64,7 +64,7 @@ The project was built from scratch, without basing it on another project or usin
 
 ## Building from source
 
-Local development uses Xcode 27.1. The app uses Apple system frameworks, with no third-party runtime dependencies.
+Local development uses Xcode 27.2. The app uses Apple system frameworks, with no third-party runtime dependencies.
 
 1. Clone the repository and open `ThruFlow.xcodeproj` in Xcode.
 2. Select the `ThruFlow`, `ThruFlow iOS`, or `ThruFlow Watch` scheme.
