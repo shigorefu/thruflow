@@ -74,10 +74,10 @@ jobs:
     name: Build and test Apple targets
     needs: changed_files
     if: needs.changed_files.outputs.run_apple == 'true'
-    runs-on: macos-26-intel
+    runs-on: xcode-27
     timeout-minutes: 45
     env:
-      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+      DEVELOPER_DIR: /Applications/Xcode_27.2.app/Contents/Developer
 
     steps:
       - name: Check out repository
@@ -99,6 +99,9 @@ jobs:
         run: |
           xcodebuild -version
           swift --version
+
+      - name: Require Xcode and device SDK 27
+        run: bash scripts/verify_apple_sdk.sh
 
       - name: Prepare Apple Metal toolchain
         run: bash scripts/prepare_apple_toolchain.sh

@@ -97,6 +97,14 @@ module TestFlightSupport
       unless info["CFBundleShortVersionString"] == config[:version] && info["CFBundleVersion"] == config[:build]
         raise "Version/build mismatch in #{id}"
       end
+      sdk = config[:platform] == "macos" ? "macosx" : (id == "#{APP_ID}.watchapp" ? "watchos" : "iphoneos")
+      unless info["DTSDKName"].to_s.match?(/\A#{sdk}27(?:\.\d+)*\z/) &&
+             info["DTXcode"].to_s.match?(/\A27\d{2}\z/) && !info["DTSDKBuild"].to_s.strip.empty?
+        raise "Xcode 27 and #{sdk} SDK 27 metadata required in #{id}"
+      end
+      if config[:platform] == "macos" && Array(record[:architectures]).sort != %w[arm64 x86_64]
+        raise "Universal arm64 and x86_64 binary required in #{id}"
+      end
       next unless signed
       rights = record.fetch(:entitlements)
       raise "Wrong signing team in #{id}" unless rights["com.apple.developer.team-identifier"] == config[:team]
@@ -121,6 +129,12 @@ module TestFlightSupport
       path = File.join(bundle, "Info.plist")
       path = File.join(bundle, "Contents", "Info.plist") unless File.exist?(path)
       record = { info: plist(path) }
+      if config[:platform] == "macos"
+        executable = record[:info]["CFBundleExecutable"].to_s
+        raise "Missing bundle executable in #{bundle}" if executable.empty? || File.basename(executable) != executable
+        binary = File.join(bundle, "Contents", "MacOS", executable)
+        record[:architectures] = command!("/usr/bin/lipo", "-archs", binary).split
+      end
       if signed
         command!("/usr/bin/codesign", "--verify", "--strict", bundle)
         record[:entitlements] = entitlements(bundle)
@@ -128,6 +142,13 @@ module TestFlightSupport
       record
     end
     validate_records!(records, config, signed: signed)
+    records.each do |record|
+      info = record[:info]
+      puts "Validated #{signed ? 'export' : 'archive'} #{info['CFBundleIdentifier']}: " \
+           "SDK=#{info['DTSDKName']} (#{info['DTSDKBuild']}), " \
+           "Xcode=#{info['DTXcode']} (#{info['DTXcodeBuild']}), " \
+           "architectures=#{Array(record[:architectures]).join(',')}"
+    end
   end
 
   def self.validate_export!(artifact, config)
