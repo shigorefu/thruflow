@@ -19,7 +19,10 @@ class TestFlightSupportTest < Minitest::Test
 
   def records(platform = "ios")
     TestFlightSupport::TARGETS.fetch(platform).values.map do |id|
-      { info: { "CFBundleIdentifier" => id, "CFBundleShortVersionString" => "1.4.0", "CFBundleVersion" => "13" },
+      { info: { "CFBundleIdentifier" => id, "CFBundleShortVersionString" => "1.4.0", "CFBundleVersion" => "13",
+                "DTSDKName" => "#{platform == 'macos' ? 'macosx' : (id.end_with?('.watchapp') ? 'watchos' : 'iphoneos')}27.2",
+                "DTXcode" => "2720", "DTSDKBuild" => "27B52" },
+        architectures: platform == "macos" ? %w[arm64 x86_64] : nil,
         entitlements: { "com.apple.developer.team-identifier" => "BR727PS795",
                         "com.apple.security.application-groups" => [TestFlightSupport::APP_GROUP],
                         "com.apple.developer.icloud-container-environment" => "Production",
@@ -75,6 +78,48 @@ class TestFlightSupportTest < Minitest::Test
     %w[ios macos].each do |platform|
       TestFlightSupport.validate_records!(records(platform), configuration(platform), signed: true)
     end
+  end
+
+  def test_every_archive_and_export_bundle_requires_sdk_27_metadata
+    %w[ios macos].each do |platform|
+      [false, true].each do |signed|
+        records(platform).each_index do |index|
+          { "DTSDKName" => [nil, "", "iphoneos26.5", "macosx27beta", "iphonesimulator27.2"],
+            "DTXcode" => [nil, "", "2660", "27", "2720beta"],
+            "DTSDKBuild" => [nil, "", " "] }.each do |key, invalid_values|
+            invalid_values.each do |invalid|
+              values = records(platform)
+              values[index][:info][key] = invalid
+              error = assert_raises(RuntimeError) do
+                TestFlightSupport.validate_records!(values, configuration(platform), signed: signed)
+              end
+              assert_includes error.message, "SDK 27 metadata required"
+            end
+          end
+        end
+      end
+    end
+  end
+
+  def test_every_mac_archive_and_export_bundle_requires_both_supported_architectures
+    [false, true].each do |signed|
+      records("macos").each_index do |index|
+        [nil, [], %w[arm64], %w[x86_64], %w[arm64 x86_64 i386]].each do |architectures|
+          values = records("macos")
+          values[index][:architectures] = architectures
+          error = assert_raises(RuntimeError) do
+            TestFlightSupport.validate_records!(values, configuration("macos"), signed: signed)
+          end
+          assert_includes error.message, "Universal arm64 and x86_64 binary required"
+        end
+      end
+    end
+  end
+
+  def test_embedded_watch_requires_watch_device_sdk
+    values = records
+    values.last[:info]["DTSDKName"] = "iphoneos27.2"
+    assert_raises(RuntimeError) { TestFlightSupport.validate_records!(values, configuration, signed: false) }
   end
 
   def test_missing_watch_or_duplicate_bundle_is_rejected

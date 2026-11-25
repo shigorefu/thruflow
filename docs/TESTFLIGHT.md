@@ -8,8 +8,8 @@ external testers automatically. No Apple password is stored in GitHub.
 ## Entry points
 
 - Ordinary pushes and PRs use [CI](../.github/workflows/ci.yml); they do not upload.
-- Push `testflight/v<version>-<build>` to run both platforms. For the 1.5.0 build 16
-  candidate the matching tag would be `testflight/v1.5.0-16`; preparation does not
+- Push `testflight/v<version>-<build>` to run both platforms. For the 1.5.0 build 17
+  candidate the matching tag would be `testflight/v1.5.0-17`; preparation does not
   authorize creating or pushing it.
 - Run **TestFlight** manually from `main` or the matching TestFlight tag. Choose
   `ios`, `macos`, or `both`; selecting one platform allows recovery when the
@@ -158,7 +158,14 @@ bundle exec ruby fastlane/tests/notification_profile_bootstrap_test.rb
 python3 -m unittest discover -s scripts/tests -p 'test_*.py'
 ```
 
-Before native tests or archives, CI and TestFlight call
+Before native tests or archives, CI and TestFlight require Xcode 27 and all three
+device SDKs (macOS, iOS and watchOS) to report major version 27 through
+[`verify_apple_sdk.sh`](../scripts/verify_apple_sdk.sh). Every archived and exported
+app/extension must also carry the correct device `DTSDKName` (including
+`watchos27.x` for Watch), Xcode 27 `DTXcode`, and nonempty `DTSDKBuild`; mismatches
+stop delivery before upload. Every Mac app/extension executable must contain
+exactly `arm64` and `x86_64` slices in both the archive and exported package.
+They then call
 [`prepare_apple_toolchain.sh`](../scripts/prepare_apple_toolchain.sh) using the
 pinned `DEVELOPER_DIR`. The helper executes the Metal compiler, installs Apple's
 Metal Toolchain component only if that probe fails, then verifies the compiler
@@ -177,14 +184,14 @@ Apple API step.
 The upload lanes intentionally require GitHub Actions; the commands above only
 load lanes and run offline tests. Fastlane and its transitive dependencies are
 locked. Delivery uses `BUNDLE_FROZEN=true`; update dependencies in a reviewed PR.
-The ordinary CI and TestFlight jobs use the standard `macos-26-intel` runner
-with the same explicit `/Applications/Xcode_26.6.app` path. The
-[official Intel image inventory](https://github.com/actions/runner-images/blob/main/images/macos/macos-26-Readme.md)
-includes Xcode 26.6; GitHub lists this as a
-[standard runner for public repositories](https://docs.github.com/en/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for-public-repositories).
-This runner was selected after a hosted arm64 job failed to acquire a machine on
-2026-11-25. Device SDK destinations, Release architectures, tests, approval gates
-and signing checks are unchanged. Fastlane's
+The ordinary CI and TestFlight jobs use the standard ARM `xcode-27` runner
+with the explicit `/Applications/Xcode_27.2.app` path. The
+[official image inventory](https://github.com/actions/runner-images/blob/main/images/macos/xcode-27-arm64-Readme.md)
+lists Xcode 27.2 (27B52) and device SDKs 27.2. GitHub announced this runner's
+[general availability on 2026-10-15](https://github.blog/changelog/2026-10-15-xcode-27-runner-image-generally-available/).
+The 1.5.0 (17) candidate replaces the already uploaded SDK 26 build 16; it must
+not fall back to Xcode or SDK 26. Device SDK destinations, Release architectures,
+tests, approval gates and signing checks are unchanged. Fastlane's
 supported `app-store` export method is used; Xcode may describe that method as
 `app-store-connect` in its own interface.
 

@@ -21,7 +21,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+  DEVELOPER_DIR: /Applications/Xcode_27.2.app/Contents/Developer
   FASTLANE_SKIP_UPDATE_CHECK: '1'
   FASTLANE_HIDE_CHANGELOG: '1'
   FASTLANE_OPT_OUT_USAGE: '1'
@@ -30,7 +30,7 @@ env:
 jobs:
   verify:
     name: Verify release source (no signing secrets)
-    runs-on: macos-26-intel
+    runs-on: xcode-27
     timeout-minutes: 45
     outputs:
       version: ${{ steps.release.outputs.version }}
@@ -58,6 +58,9 @@ jobs:
           bundle exec ruby -c fastlane/Fastfile
           bundle exec ruby fastlane/tests/testflight_support_test.rb
           bundle exec ruby fastlane/tests/notification_profile_bootstrap_test.rb
+      - name: Require Xcode and device SDK 27
+        run: bash scripts/verify_apple_sdk.sh
+
       - name: Prepare Apple Metal toolchain
         run: bash scripts/prepare_apple_toolchain.sh
 
@@ -74,7 +77,7 @@ jobs:
   upload:
     name: TestFlight ${{ matrix.platform }}
     needs: verify
-    runs-on: macos-26-intel
+    runs-on: xcode-27
     timeout-minutes: 90
     environment: testflight
     strategy:
@@ -124,6 +127,9 @@ jobs:
                   output.write('github.com ' + key + '\n')
           os.chmod(path, 0o600)
           PYTHON
+      - name: Require Xcode and device SDK 27
+        run: bash scripts/verify_apple_sdk.sh
+
       - name: Prepare Apple Metal toolchain
         run: bash scripts/prepare_apple_toolchain.sh
 

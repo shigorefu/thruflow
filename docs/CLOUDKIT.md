@@ -8,8 +8,8 @@
 - Shared container: `iCloud.com.shigorefu.thruflow`.
 - Service: CloudKit private database. There is no public/shared database product
   behavior in version 1.x.
-- iOS minimum deployment target: 17.0. Builds use Xcode 26 and the installed iOS
-  26 SDK without making iOS 26 the deployment target.
+- iOS minimum deployment target: 17.0. Delivery builds use Xcode 27.2 and iOS
+  SDK 27.2 without raising the deployment target.
 - macOS minimum deployment target: 14.0; watchOS minimum deployment target: 10.0.
 
 Both app targets contain the CloudKit entitlement. `AppModelContainerFactory`
@@ -429,3 +429,25 @@ source was unchanged from the inspected candidate.
 then completed signed export validation, upload and Apple processing for both
 1.5.0 (16) platforms. This completes binary delivery, while the physical-device
 exchange and notification checks above retain their unverified status.
+
+
+## SDK 27 rebuild, 1.5.0 (17) — 2026-11-25
+
+Read the live **Production** field tables again for team `BR727PS795`, container
+`iCloud.com.shigorefu.thruflow`, before the SDK 27 rebuild. Inspected
+`CD_Direction` (26 total fields), `CD_Todo` (34), `CD_Project` (15),
+`CD_FlowSession` (34), `CD_FlowSegment` (16) and `CD_FlowBreak` (20), including
+six system metadata fields per type. Field names, types and required single-field
+indexes remain consistent with the build 16 verification above: Direction rest
+days, Project Habit settings, Todo owner/Project/time/reminder fields, Session
+recording identity/runtime mutation/revision, Segment focus counters and Break
+anchors are present. No schema or user records were changed or deployed.
+
+Evidence: the live Production pages under
+`/dashboard/database/teams/BR727PS795/containers/iCloud.com.shigorefu.thruflow/`
+`environments/PRODUCTION/types/{recordType}/fields`. Development comparison and
+schema deployment are not required for this rebuild because persisted models and
+entitlements are unchanged. Bind the protected attestation only to the final
+reviewed build 17 source after confirming that unchanged-model diff. The
+maintainer reports that application checks are complete; no new independent
+physical-device sync or notification check is claimed for the rebuilt binary.

@@ -2,6 +2,39 @@
 
 This document is the operational checklist for ThruFlow releases. Product scope remains in [`ROADMAP.md`](ROADMAP.md), and CloudKit details remain in [`CLOUDKIT.md`](CLOUDKIT.md).
 
+## SDK 27 rebuild, 1.5.0 (17) — 2026-11-25
+
+The maintainer requested withdrawal of build 16 from App Review, rebuild with
+SDK 27 and resubmission of both platforms, and reported that application checks
+were already complete. Build 16 remains a historical accepted binary and must
+not be overwritten. All 14 target configurations now use `1.5.0` / `17`.
+
+The two build 16 submissions, made by the maintainer at 11:25 JST, were cancelled
+and read back as `削除済み` (Removed) in App Review:
+
+- macOS submission `976834f3-2fef-4159-baeb-deb57f9c1de8`.
+- iOS submission `0f97c815-dc0e-4c57-a594-c5f2ca87c374`.
+
+CI and TestFlight now select the standard `xcode-27` Apple Silicon runner and
+explicit `/Applications/Xcode_27.2.app/Contents/Developer`. The official image
+inventory and local toolchain both report Xcode `27.2` (`27B52`) with iOS,
+macOS and watchOS SDK `27.2`. A preflight checks the actual selected toolchain;
+every archived and exported app/extension must also carry platform-correct SDK
+27 metadata before upload. Mac binaries must contain both arm64 and x86_64.
+Signing, Production CloudKit, deployment targets and protected release gates
+remain unchanged; app implementation and persisted models are unchanged.
+See [TestFlight](TESTFLIGHT.md) for the checks and official image references.
+
+The Sol orchestrator and independent macOS/iOS reviewers agreed before edits and
+on the final source. Offline checks passed: 22 Python tests and 16 Ruby delivery
+helper tests with 672 assertions, syntax/YAML/whitespace checks, and actual local
+Xcode/SDK 27.2 preflight. A dated [live Production inspection](CLOUDKIT.md#sdk-27-rebuild-150-17--2026-11-25)
+was completed without changes. No repeated UI check is claimed; the maintainer
+waived it after their own testing. Signed build 17 archives, Apple processing and
+new submission status require actual delivery evidence and are pending here.
+The previously prepared five-language metadata and 155 screenshots remain in
+the App Store versions for reuse with build 17.
+
 ## 1.5.0 (16) delivered to App Store Connect — 2026-11-25
 
 Both platforms were uploaded and finished Apple processing from tested source
